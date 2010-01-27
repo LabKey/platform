@@ -366,7 +366,7 @@ public enum Method
 		}
 
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
-        // Even though we are generationg {fn ROUND()}, SQL Server requires 2 arguments
+        // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
 		public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
 		{

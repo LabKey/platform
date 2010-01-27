@@ -533,7 +533,7 @@ public class ListDefinitionImpl implements ListDefinition
             }
 
             PropertyDescriptor[] pds = propSet.toArray(new PropertyDescriptor[propSet.size()]);
-            OntologyManager.insertTabDelimited(getContainer(), null, helper, pds, rows, true);
+            OntologyManager.insertTabDelimited(getContainer(), user, null, helper, pds, rows, true);
             if (transaction)
             {
                 ExperimentService.get().commitTransaction();

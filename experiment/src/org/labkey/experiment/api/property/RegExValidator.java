@@ -15,10 +15,11 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
@@ -80,10 +81,16 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         return false;
     }
 
-    public boolean validate(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
+    public boolean validate(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         try {
-            Pattern expression = Pattern.compile(validator.getExpressionValue());
+            Pattern expression = (Pattern)validatorCache.get(RegExValidator.class, validator.getExpressionValue());
+            if (expression == null)
+            {
+                expression = Pattern.compile(validator.getExpressionValue());
+                // Cache the pattern so that it can be reused
+                validatorCache.put(RegExValidator.class, validator.getExpressionValue(), expression);
+            }
             Matcher matcher = expression.matcher(String.valueOf(value));
             boolean failOnMatch = BooleanUtils.toBoolean(validator.getProperties().get(FAIL_ON_MATCH));
             boolean matched = matcher.matches();

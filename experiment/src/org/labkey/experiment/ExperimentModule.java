@@ -44,6 +44,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
+import org.labkey.experiment.api.property.LookupValidator;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
@@ -256,6 +257,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
+        PropertyService.get().registerValidatorKind(new LookupValidator());
 
         // TODO: Remove this hack
         ListImporterViewGetter.setClass(ListImporter.class);

@@ -190,13 +190,13 @@ public class QueryManager
         if (!inheritable)
             return views;
 
-        Container containerCur = container;
-        while (!containerCur.isRoot())
+        Container containerCur = container.getParent();
+        while (containerCur != null && !containerCur.isRoot())
         {
-            containerCur = containerCur.getParent();
-            views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, user, true)));
+            views.addAll(Arrays.asList(getCstmViews(containerCur, schemaName, queryName, null, user, true)));
             if (user != null)
-                views.addAll(Arrays.asList(getCstmViews(container, schemaName, queryName, null, null, true)));
+                views.addAll(Arrays.asList(getCstmViews(containerCur, schemaName, queryName, null, null, true)));
+            containerCur = containerCur.getParent();
         }
 
         // look in the shared project

@@ -15,7 +15,9 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
@@ -170,12 +172,12 @@ public class PropertyValidatorImpl implements IPropertyValidator
         Table.delete(DomainPropertyManager.get().getTinfoValidator(), new Integer(getRowId()));
     }
 
-    public boolean validate(String field, Object value, List<ValidationError> errors)
+    public boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         ValidatorKind kind = getType();
 
         if (kind != null)
-            return kind.validate(this, field, value, errors);
+            return kind.validate(this, prop, value, errors, validatorCache);
         else
             errors.add(new SimpleValidationError("Validator type : " + getTypeURI() + " does not exist."));
         return false;

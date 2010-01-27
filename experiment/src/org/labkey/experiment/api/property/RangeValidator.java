@@ -17,9 +17,10 @@ package org.labkey.experiment.api.property;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.query.ValidationError;
@@ -63,7 +64,7 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         return true;
     }
 
-    public boolean validate(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
+    public boolean validate(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         for (Pair<String, String> constraint : parseExpression(validator.getExpressionValue()))
         {

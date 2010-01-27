@@ -1983,35 +1983,12 @@ public class DavController extends SpringActionController
                     if (!temp)
                     {
                         if (exists)
-                            audit(resource, "replaced");
-                        else
-                            audit(resource, "created");
-                        addToIndex(resource);
-
-                        if (file != null)
                         {
-                            Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
-                            if (c != null)
-                            {
-                                ExpData data = ExperimentService.get().getExpDataByURL(file, c);
-
-                                if (data == null)
-                                {
-                                    data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
-                                    data.setName(file.getName());
-                                    data.setDataFileURI(file.toURI());
-                                }
-                                data.save(getUser());
-
-                                if (getRequest().getParameter("description") != null)
-                                {
-                                    try
-                                    {
-                                        data.setComment(getUser(), getRequest().getParameter("description"));
-                                    }
-                                    catch (ValidationException e) {}
-                                }
-                            }
+                            fireFileReplacedEvent(resource);
+                        }
+                        else
+                        {
+                            fireFileCreatedEvent(resource);
                         }
                     }
                 }
@@ -2037,7 +2014,6 @@ public class DavController extends SpringActionController
                 return WebdavStatus.SC_CREATED;
         }
     }
-
 
     @RequiresNoPermission
     public class DeleteAction extends DavAction
@@ -2093,19 +2069,7 @@ public class DavController extends SpringActionController
             boolean temp = rmTempFile(resource);
             if (!temp)
             {
-                audit(resource, "deleted");
-                removeFromIndex(resource);
-
-                Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
-                File file = resource.getFile();
-                if (c != null && file != null)
-                {
-                    ExpData data = ExperimentService.get().getExpDataByURL(file, c);
-                    if (data != null && ExperimentService.get().getRunsUsingDatas(Arrays.asList(data)).isEmpty())
-                    {
-                        data.delete(getUser());
-                    }
-                }
+                fireFileDeletedEvent(resource);
             }
             return WebdavStatus.SC_NO_CONTENT;
         }
@@ -2120,6 +2084,69 @@ public class DavController extends SpringActionController
             if (!errorList.isEmpty())
                 return sendReport(errorList);
             return WebdavStatus.SC_NO_CONTENT;
+        }
+    }
+
+    // The following fire*Event() methods should be replaced with a full subscribe-notify implementation, but for now
+    // just add to the method bodies
+    private void fireFileReplacedEvent(Resource resource)
+    {
+        audit(resource, "replaced");
+        updateIndexAndDataObject(resource);
+    }
+
+    private void fireFileCreatedEvent(Resource resource)
+    {
+        audit(resource, "created");
+        updateIndexAndDataObject(resource);
+    }
+
+    private void updateIndexAndDataObject(Resource resource)
+    {
+        addToIndex(resource);
+
+        File file = resource.getFile();
+        if (file != null)
+        {
+            Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+            if (c != null)
+            {
+                ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+
+                if (data == null)
+                {
+                    data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                    data.setName(file.getName());
+                    data.setDataFileURI(file.toURI());
+                }
+                data.save(getUser());
+
+                if (getRequest().getParameter("description") != null)
+                {
+                    try
+                    {
+                        data.setComment(getUser(), getRequest().getParameter("description"));
+                    }
+                    catch (ValidationException e) {}
+                }
+            }
+        }
+    }
+
+    private void fireFileDeletedEvent(Resource resource)
+    {
+        audit(resource, "deleted");
+        removeFromIndex(resource);
+
+        Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+        File file = resource.getFile();
+        if (c != null && file != null)
+        {
+            ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+            if (data != null && ExperimentService.get().getRunsUsingDatas(Arrays.asList(data)).isEmpty())
+            {
+                data.delete(getUser());
+            }
         }
     }
 
@@ -2353,24 +2380,6 @@ public class DavController extends SpringActionController
                             tmp.renameTo(dest.getFile());
                         throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not move source:" + src.getPath());
                     }
-
-                    Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
-                    Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
-                    if (PageFlowUtil.nullSafeEquals(srcContainer, destContainer))
-                    {
-                        ExpData data = ExperimentService.get().getExpDataByURL(src.getFile(), srcContainer);
-                        if (data == null)
-                        {
-                            data = ExperimentService.get().getExpDataByURL(dest.getFile(), srcContainer);
-                        }
-                        if (data == null)
-                        {
-                            data = ExperimentService.get().createData(srcContainer, new DataType("UploadedFile"));
-                        }
-                        data.setDataFileURI(dest.getFile().toURI());
-                        data.setName(dest.getFile().getName());
-                        data.save(getUser());
-                    }
                 }
                 finally
                 {
@@ -2389,15 +2398,11 @@ public class DavController extends SpringActionController
 
             if (rmTempFile(src))
             {
-                audit(dest, "created");
-                addToIndex(dest);
+                fireFileCreatedEvent(dest);
             }
             else
             {
-                audit(src, null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
-                audit(dest, null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
-                removeFromIndex(src);
-                addToIndex(dest);
+                fireFileMovedEvent(dest, src);
             }
 
             // Removing any lock-null resource which would be present at
@@ -2405,6 +2410,32 @@ public class DavController extends SpringActionController
             lockNullResources.remove(destinationPath);
             
             return exists ? WebdavStatus.SC_OK : WebdavStatus.SC_CREATED;
+        }
+    }
+
+    private void fireFileMovedEvent(Resource dest, Resource src)
+    {
+        audit(src, null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
+        audit(dest, null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
+        removeFromIndex(src);
+        addToIndex(dest);
+
+        Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
+        Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
+        if (PageFlowUtil.nullSafeEquals(srcContainer, destContainer))
+        {
+            ExpData data = ExperimentService.get().getExpDataByURL(src.getFile(), srcContainer);
+            if (data == null)
+            {
+                data = ExperimentService.get().getExpDataByURL(dest.getFile(), srcContainer);
+            }
+            if (data == null)
+            {
+                data = ExperimentService.get().createData(srcContainer, new DataType("UploadedFile"));
+            }
+            data.setDataFileURI(dest.getFile().toURI());
+            data.setName(dest.getFile().getName());
+            data.save(getUser());
         }
     }
 

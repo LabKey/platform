@@ -171,7 +171,7 @@ public class PipelineController extends SpringActionController
         {
             if (path.startsWith("\\\\"))
             {
-                errors.reject(ERROR_MSG, "UNC paths are not supported for pipline roots");
+                errors.reject(ERROR_MSG, "UNC paths are not supported for pipeline roots. Consider creating a Network Drive configuration in the Admin Console under Site Settings.");
                 return false;
             }
             File fileRoot = new File(path);

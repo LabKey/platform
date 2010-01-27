@@ -23,6 +23,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
@@ -164,10 +165,14 @@ public class ExperimentRunGraph
 
             try
             {
-                if (null != focus)
+                if (null != focus && focus.length() > 0 )
                 {
                     typeCode = focus.substring(0, 1);
-                    focusId = Integer.parseInt(focus.substring(1));
+                    try
+                    {
+                        focusId = Integer.parseInt(focus.substring(1));
+                    }
+                    catch (NumberFormatException e) {}
                     run.trimRunTree(focusId, typeCode);
                 }
                 StringWriter writer = new StringWriter();

@@ -885,6 +885,7 @@ experiment/src/org/labkey/experiment/api/flag/setFlagScript.jsp -text
 experiment/src/org/labkey/experiment/api/property/DomainImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyImpl.java -text
 experiment/src/org/labkey/experiment/api/property/DomainPropertyManager.java -text
+experiment/src/org/labkey/experiment/api/property/LookupValidator.java -text
 experiment/src/org/labkey/experiment/api/property/PrimitiveType.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/property/PropertyValidator.java -text
@@ -1233,6 +1234,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.21-9.22.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.30-9.31.sql -text
+pipeline/src/META-INF/pipeline/jars.txt -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text

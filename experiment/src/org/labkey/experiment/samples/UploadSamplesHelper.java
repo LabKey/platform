@@ -375,7 +375,7 @@ public class UploadSamplesHelper
         int ownerObjectId = OntologyManager.ensureObject(c, source.getLSID());
         MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
 
-        OntologyManager.insertTabDelimited(c, ownerObjectId, helper, descriptors, rows, false);
+        OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, false);
 
         if (source.getParentCol() != null)
         {

@@ -2538,7 +2538,7 @@ public class StudyManager
                 String typeURI = def.getTypeURI();
                 PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
                 helper = new DatasetImportHelper(user, scope.getConnection(), c, def, lastModified);
-                imported = OntologyManager.insertTabDelimited(c, null, helper, pds, dataMaps, true);
+                imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, true);
 
                 if (startedTransaction)
                 {

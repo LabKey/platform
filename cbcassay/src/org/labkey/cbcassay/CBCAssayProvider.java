@@ -247,7 +247,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         try
         {
             for (ResultDomainProperty ddp : RESULT_DOMAIN_PROPERTIES)
-                setMinMaxUnits(container, dataDomainUri, ddp.name, ddp.min, ddp.max, ddp.units);
+                setMinMaxUnits(container, user, dataDomainUri, ddp.name, ddp.min, ddp.max, ddp.units);
         }
         catch (SQLException e)
         {
@@ -258,7 +258,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         return protocol;
     }
 
-    private void setMinMaxUnits(Container c, String domainUri, String name, Double min, Double max, String units) throws SQLException
+    private void setMinMaxUnits(Container c, User user, String domainUri, String name, Double min, Double max, String units) throws SQLException
     {
         if (min == null && max == null && units == null)
             return;
@@ -288,7 +288,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
                 public void afterBatchInsert(int currentRow) throws SQLException {
                 }
             };
-            OntologyManager.insertTabDelimited(c, null, helper, props, Arrays.asList(rows), false);
+            OntologyManager.insertTabDelimited(c, user, null, helper, props, Arrays.asList(rows), false);
         }
         catch (ValidationException e)
         {

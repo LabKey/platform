@@ -31,6 +31,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -232,6 +233,8 @@ public class ListItemImpl implements ListItem
                 dps.put(dp.getPropertyURI(), dp);
             }
 
+            ValidatorContext validatorCache = new ValidatorContext(_list.getContainer(), user);
+
             if (_properties != null)
             {
                 List<ValidationError> errors = new ArrayList<ValidationError>();
@@ -239,7 +242,7 @@ public class ListItemImpl implements ListItem
                 {
                     DomainProperty dp = dps.get(entry.getKey());
                     if (dp != null)
-                        validateProperty(dp, entry.getValue(), errors);
+                        validateProperty(dp, entry.getValue(), errors, validatorCache);
                 }
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
@@ -353,14 +356,14 @@ public class ListItemImpl implements ListItem
         }
     }
 
-    private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors)
+    private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
         for (IPropertyValidator validator : prop.getValidators())
         {
             if (value instanceof ObjectProperty)
                 value = ((ObjectProperty)value).value();
-            if (!validator.validate(prop.getLabel() != null ? prop.getLabel() : prop.getName(), value, errors)) ret = false;
+            if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
         }
         return ret;
     }
