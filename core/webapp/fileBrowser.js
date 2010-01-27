@@ -1651,6 +1651,26 @@ Ext.extend(_TextItem, Ext.Toolbar.Item,
 //  FILE BROWSER UI
 //
 
+/**
+ * A version of a tab panel that doesn't render the tab strip, used to swap
+ * in panels programmatically
+ * @param w
+ * @param h
+ */
+LABKEY.TinyTabPanel = Ext.extend(Ext.TabPanel, {
+
+    adjustBodyWidth : function(w){
+        if(this.header){
+            this.header.setWidth(w);
+            this.header.setHeight(1);
+        }
+        if(this.footer){
+            this.footer.setWidth(w);
+            this.header.setHeight(1);
+        }
+        return w;
+    }
+});
 
 var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange", doubleclick:"doubleclick",  transferstarted:'transferstarted', transfercomplete:'transfercomplete'};
 
@@ -1687,12 +1707,20 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     currentDirectory: null,
     selectedRecord: null,
 
+    // collapsible tab panel used to display dialog-like content
+    fileUploadPanel : undefined,
+
+    // file upload form field
+    fileUploadField : undefined,
+
+    tbarItems : undefined,
+
     //
     // actions
     //
 
     actions : {},
-    tbar : null,
+    //tbar : null,
 
     getDownloadAction : function()
     {
@@ -2393,24 +2421,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.changeDirectory(root);
     },
 
-
     layoutAppletWindow : function()
     {
         var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
         var url = uri.toString();
         this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
         this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
-
-        this.actions.appletFileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew', handler:function()
-        {
-            var a = this.applet.getApplet();
-            if (a) a.showFileChooser();
-        }});
-        this.actions.appletDirAction = new Ext.Action({text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen', handler:function()
-        {
-            var a = this.applet.getApplet();
-            if (a) a.showDirectoryChooser();
-        }});
 
         var toolbar = new Ext.Toolbar({buttons:[
             this.actions.appletFileAction, this.actions.appletDirAction
@@ -2497,6 +2513,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         });
         delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
 
+        // add any other actions
+        this.initializeActions();
+
         var me = this; // for anonymous inner functions
 
         //
@@ -2530,90 +2549,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         //
         // Toolbar and Actions
         //
-
         var tbarConfig = this.getTbarConfig();
-
-        //
-        // Upload
-        //
-
-        var submitFileUploadForm = function(fb, v)
-        {
-            if (this.currentDirectory)
-            {
-                var form = this.formPanel.getForm();
-                var path = this.fileUploadField.getValue();
-                var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-                var name = path.substring(i+1);
-                var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
-                var file = this.fileSystem.recordFromCache(target);
-                if (file)
-                {
-                    alert('file already exists on server: ' + name);
-                }
-                else
-                {
-                    var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
-                    // set errorReader, so that handleResponse() doesn't try to eval() the XML response
-                    // assume that we've got a WebdavFileSystem
-                    form.errorReader = this.fileSystem.transferReader;
-                    form.doAction(new Ext.form.Action.Submit(form, options));
-                    Ext.getBody().dom.style.cursor = "wait";
-                }
-            }
-        };
-
-        this.fileUploadField = new Ext.form.FileUploadField(
-        {
-            id: this.id ? this.id + 'Upload' : 'fileUpload',
-            buttonText: "Upload File...",
-            buttonOnly: true,
-            buttonCfg: {cls: "labkey-button"},
-            listeners: {scope:this, "fileselected":submitFileUploadForm}
-        });
-
-        this.formPanel = new Ext.FormPanel({
-            formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
-            method : 'POST',
-            fileUpload: true,
-            enctype:'multipart/form-data',
-            layout:'fit',
-            border:false,
-            bodyStyle : 'background-color:#f0f0f0; padding:5px;',
-            defaults: {bodyStyle : 'background-color:#f0f0f0'},
-            items: [this.fileUploadField], //new Ext.Button({type:'submit', text:'Submit', id:'fileUpload-submit', handler:submitFileUploadForm, score:this})],
-            listeners: {
-                "actioncomplete" : function (f, action)
-                {
-                    me.fileUploadField.reset();
-                    Ext.getBody().dom.style.cursor = "pointer";
-                    console.log("upload actioncomplete");
-                    console.log(action);
-                    var options = action.options;
-                    // UNDONE: update data store directly
-                    me.refreshDirectory();
-                    me.selectFile(me.fileSystem.concatPaths(options.record.data.path, options.name));
-                    me.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:me.fileSystem.concatPaths(options.record.data.path, options.name), path:options.record.data.path}]});
-                },
-                "actionfailed" : function (f, action)
-                {
-                    me.fileUploadField.reset();
-                    Ext.getBody().dom.style.cursor = "pointer";
-                    console.log("upload actionfailed");
-                    console.log(action);
-                    me.refreshDirectory();
-                }
-            }
-        });
-
-        this.uploadPanel = new Ext.Panel({
-            id : 'uploadPanel',
-            border : false,
-            layout:'fit',
-            items:this.formPanel,
-            bodyStyle : 'background-color:#f0f0f0;',
-            defaults: {bodyStyle : 'background-color:#f0f0f0'}
-        });
 
         //
         // Layout top panel
@@ -2685,7 +2621,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var dav = this.fileSystem.ready && this.fileSystem.prefixUrl;
             var canWrite = dav && this.fileSystem.canWrite(record);
             var canMkdir = dav && this.fileSystem.canMkdir(record);
-            this.fileUploadField[canWrite?'enable':'disable']();
+
+            this.actions.upload[canWrite?'enable':'disable']();
             this.actions.uploadTool[canWrite?'enable':'disable']();
             this.actions.createDirectory[canMkdir?'enable':'disable']();
         }, this);
@@ -2722,12 +2659,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         // applet
         this.on(BROWSER_EVENTS.directorychange, this.updateAppletState, this);
+
+        this.on(BROWSER_EVENTS.transfercomplete, function(result) {
+            if (this.appletStatusBar)
+                this.appletStatusBar.setVisible(false);
+        }, this);
+        this.on(BROWSER_EVENTS.transferstarted, function(result) {
+            if (this.appletStatusBar)
+                this.appletStatusBar.setVisible(true);
+        }, this);
     },
 
     getTbarConfig : function()
     {
         var tbarConfig = [];
-        if (!this.tbar)
+        if (!this.tbarItems)
         {
             // UNDONE: need default ordering
             if (!this.allowChangeDirectory)
@@ -2741,9 +2687,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
         else
         {
-            for (var i=0 ; i<this.tbar.length ; i++)
+            for (var i=0 ; i<this.tbarItems.length ; i++)
             {
-                var item = this.tbar[i];
+                var item = this.tbarItems[i];
                 if (typeof item == "string" && typeof this.actions[item] == "object")
                     tbarConfig.push(this.actions[item]);
                 else
@@ -2754,11 +2700,48 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     },
 
     /**
+     * Initialize additional actions and components
+     */
+    initializeActions : function()
+    {
+        this.actions.upload = new Ext.Action({
+            text: 'Upload',
+            iconCls: 'iconUpload',
+            tooltip: 'Upload files or folders from your local machine to the server',
+            listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
+        });
+
+        this.actions.appletFileAction = new Ext.Action({
+            text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew',
+            handler:function(){
+                if (this.applet)
+                {
+                    var a = this.applet.getApplet();
+                    if (a) a.showFileChooser();
+                }
+            }
+        });
+
+        this.actions.appletDirAction = new Ext.Action({
+            text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen',
+            handler:function(){
+                if (this.applet)
+                {
+                    var a = this.applet.getApplet();
+                    if (a) a.showDirectoryChooser();
+                }
+            }
+        });
+    },
+
+    /**
      * Returns the array of items contained by this panel.
      */
     getItems : function()
     {
         var layoutItems = [];
+
+        // currently the address bar and the file upload panel occupy the same region, need to address this for 10.1
         if (this.showAddressBar)
         {
             layoutItems.push(
@@ -2771,6 +2754,133 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
             });
         }
+
+        if (this.showFileUpload)
+        {
+            // the file upload collapsible panel
+            this.fileUploadField = new Ext.form.FileUploadField(
+            {
+                id: this.id ? this.id + 'Upload' : 'fileUpload',
+                buttonText: "Browse...",
+                fieldLabel: 'Choose a file'
+            });
+
+            var uploadPanel_rb1 = new Ext.form.Radio({
+                style: 'background-color:#f0f0f0;',
+                boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, checked: true
+            });
+            var uploadPanel_rb2 = new Ext.form.Radio({
+                boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2,
+                listeners:{check:function(button, checked) {
+                    if (checked)
+                        this.onMultipleFileUpload();
+                }, scope:this}
+            });
+
+            var uploadPanel = new Ext.FormPanel({
+                id: 'uploadFileTab',
+                formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
+                method : 'POST',
+                fileUpload: true,
+                enctype:'multipart/form-data',
+                border:false,
+                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                items: [
+                    {
+                    xtype: 'radiogroup',
+                    fieldLabel: 'File Upload Type',
+                    items: [
+                        uploadPanel_rb1,
+                        uploadPanel_rb2
+                    ]},
+                    this.fileUploadField,
+                    {xtype: 'textfield', fieldLabel: 'Description', width: 350}
+                ],
+                buttons:[
+                    {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
+                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
+                ],
+                listeners: {
+                    "actioncomplete" : {fn: this.uploadSuccess, scope: this},
+                    "actionfailed" : {fn: this.uploadFailed, scope: this}
+                }
+            });
+            uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
+
+            var uploadMultiPanel_rb1 = new Ext.form.Radio({
+                boxLabel: 'Single file', name: 'rb-auto', inputValue: 1,
+                listeners:{check:function(button, checked) {
+                    if (checked)
+                        this.toggleTabPanel('uploadFileTab');
+                }, scope:this}
+            });
+            var uploadMultiPanel_rb2 = new Ext.form.Radio({
+                boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2, checked: true
+            });
+
+            this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
+            this.appletStatusBar = new Ext.StatusBar({
+                id:'appletStatusBar', defaultText:'', busyText:'Copying...',
+                width: 200,
+                hidden: true,
+                statusAlign: 'right',
+                style : 'background-color:#f0f0f0;',
+                items:[{
+                    xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120
+                }]
+            });
+
+            this.appletPanel = new Ext.Panel({
+                fieldLabel: 'File and Folder Drop Target',
+                isFormField: true,
+                height: 60,
+                width: 325
+            });
+
+            var uploadMultiPanel = new Ext.FormPanel({
+                id: 'uploadMultiFileTab',
+                layout: 'form',
+                border:false,
+                bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                items: [{
+                    xtype: 'radiogroup',
+                    fieldLabel: 'File Upload Type',
+                    items: [
+                        uploadMultiPanel_rb1,
+                        uploadMultiPanel_rb2
+                    ]},
+                    this.appletPanel
+                ],
+                buttons:[
+                    new Ext.Button(this.actions.appletFileAction),
+                    new Ext.Button(this.actions.appletDirAction),
+                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
+                        this.appletStatusBar
+                ]
+            });
+            uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
+
+            this.fileUploadPanel = new LABKEY.TinyTabPanel({
+                region: 'north',
+                collapseMode: 'mini',
+                height: 130,
+                header: false,
+                margins:'1 1 1 1',
+                bodyStyle: 'background-color:#f0f0f0;',
+                cmargins:'1 1 1 1',
+                collapsible: true,
+                collapsed: true,
+                hideCollapseTool: true,
+                activeTab: 'uploadFileTab',
+                deferredRender: false,
+                items: [
+                    uploadPanel,
+                    uploadMultiPanel
+                ]});
+
+            layoutItems.push(this.fileUploadPanel);
+        }
+
         if (this.showDetails)
         {
             layoutItems.push(
@@ -2796,20 +2906,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var centerItems = [];
 
         centerItems.push({region:'center', layout:'fit', border:false, items:[this.grid]});
-        if (this.showFileUpload)
-            centerItems.push(
-                {
-                    region:'south',
-                    layout:'fit',
-                    border:false,
-                    height:40,
-                    minSize:40,
-                    margins:'1 0 0 0',
-                    items:[this.uploadPanel],
-                    bodyStyle : 'background-color:#f0f0f0; padding:5px;',
-                    defaults: {bodyStyle : 'background-color:#f0f0f0'}
-                });
-
         layoutItems.push(
             {
                 region:'center',
@@ -2834,6 +2930,119 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
         }
         return layoutItems;
+    },
+
+    submitFileUploadForm : function(fb, v)
+    {
+        if (this.currentDirectory)
+        {
+            var form = this.fileUploadPanel.getActiveTab().getForm();
+            var path = this.fileUploadField.getValue();
+            var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+            var name = path.substring(i+1);
+            var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
+            var file = this.fileSystem.recordFromCache(target);
+            if (file)
+            {
+                alert('file already exists on server: ' + name);
+            }
+            else
+            {
+                var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+                // set errorReader, so that handleResponse() doesn't try to eval() the XML response
+                // assume that we've got a WebdavFileSystem
+                form.errorReader = this.fileSystem.transferReader;
+                form.doAction(new Ext.form.Action.Submit(form, options));
+                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:id}]});
+                Ext.getBody().dom.style.cursor = "wait";
+            }
+        }
+    },
+
+    // handler for a file upload complete event
+    uploadSuccess : function(f, action)
+    {
+        this.fileUploadField.reset();
+        Ext.getBody().dom.style.cursor = "pointer";
+        console.log("upload actioncomplete");
+        console.log(action);
+        var options = action.options;
+        // UNDONE: update data store directly
+        //this.toggleTabPanel();
+        this.refreshDirectory();
+        this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
+        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:this.fileSystem.concatPaths(options.record.data.uri, options.name)}]});
+    },
+
+    // handler for a file upload failed event
+    uploadFailed : function(f, action)
+    {
+        this.fileUploadField.reset();
+        Ext.getBody().dom.style.cursor = "pointer";
+        console.log("upload actionfailed");
+        console.log(action);
+        this.refreshDirectory();
+    },
+
+    toggleTabPanel : function(tabId)
+    {
+        if (!tabId)
+            this.fileUploadPanel.collapse();
+
+        if (this.fileUploadPanel.isVisible())
+        {
+            var activeTab = this.fileUploadPanel.getActiveTab();
+
+            if (activeTab && activeTab.getId() == tabId)
+                this.fileUploadPanel.collapse();
+            else
+                this.fileUploadPanel.setActiveTab(tabId);
+        }
+        else
+        {
+            this.fileUploadPanel.setActiveTab(tabId);
+            this.fileUploadPanel.expand();
+        }
+    },
+
+    onMultipleFileUpload : function()
+    {
+        this.toggleTabPanel('uploadMultiFileTab');
+        if (!this.applet)
+        {
+            var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
+            var url = uri.toString();
+            this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
+
+            this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
+            this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
+            this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
+
+            // make sure that the applet still matches the current directory when it appears
+            this.applet.onReady(function()
+            {
+                this.updateAppletState(this.currentDirectory);
+            }, this);
+
+            this.appletPanel.add(this.applet);
+            this.appletPanel.doLayout();
+        }
+        else
+        {
+            var task = {
+                interval:100,
+                applet:this.applet,
+                run : function()
+                {
+                    if (this.applet.isActive())
+                    {
+                        this.applet.setText("Drop files and folders here");
+                        Ext.TaskMgr.stop(this);
+                    }
+                }
+            };
+            Ext.TaskMgr.start(task);
+        }
     },
 
     createTreePanel : function()
@@ -2881,6 +3090,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 {header: "Created By", width: 150, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
             ]
         });
+        // hack to get the file input field to size correctly
+        grid.on('render', function(c){this.fileUploadField.setSize(350);}, this);
         return grid;
     }
 });

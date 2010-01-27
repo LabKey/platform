@@ -122,8 +122,8 @@ function renderBrowser(rootPath, dir)
         ,showDetails:true
         ,allowChangeDirectory:false
         ,actions:{drop:dropAction, configure:configureAction}
-        ,tbar:['refresh', 'download', 'deletePath',
-        <%=c.hasPermission(context.getUser(), InsertPermission.class) ? ",'uploadTool'" : ""%>
+        ,tbarItems:['refresh', 'upload', 'download', 'deletePath',
+        <%=c.hasPermission(context.getUser(), InsertPermission.class) ? ",'upload'" : ""%>
         ,'->'
         , new Ext.form.Label({html:'File Set:&nbsp;'}), combo
         <%=c.hasPermission(context.getUser(), AdminPermission.class) ? ",'configure'" : ""%>

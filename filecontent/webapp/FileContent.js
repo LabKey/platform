@@ -14,48 +14,15 @@
  * limitations under the License.
  */
 
-/**
- * A version of a tab panel that doesn't render the tab strip, used to swap
- * in panels programmatically
- * @param w
- * @param h
- */
-LABKEY.TinyTabPanel = Ext.extend(Ext.TabPanel, {
-
-    adjustBodyWidth : function(w){
-        if(this.header){
-            this.header.setWidth(w);
-            this.header.setHeight(1);
-        }
-        if(this.footer){
-            this.footer.setWidth(w);
-            this.header.setHeight(1);
-        }
-        return w;
-    }
-});
-
 // subclass the filebrowser panel
 
 LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
-
-    // collapsible tab panel used to display dialog-like content
-    collapsibleTabPanel : undefined,
-
-    // import data tab
-    importDataTab : undefined,
-
-    // panel for the drop applet
-    appletPanel : undefined,
 
     actionsConnection : new Ext.data.Connection({autoAbort:true}),
 
     // pipeline actions
     pipelineActions : undefined,
     importActions : undefined,
-
-    // file upload form field
-    fileInputField : undefined,
 
     // toolbar buttons
     toolbarButtons : [],
@@ -72,72 +39,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
         this.grid.getSelectionModel().on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
-
-        this.on(BROWSER_EVENTS.transfercomplete, function(result) {
-            if (this.appletStatusBar)
-                this.appletStatusBar.setVisible(false);
-        }, this);
-        this.on(BROWSER_EVENTS.transferstarted, function(result) {
-            if (this.appletStatusBar)
-                this.appletStatusBar.setVisible(true);
-        }, this);
-    },
-
-    getTbarConfig : function()
-    {
-        // no toolbar on the filebrowser grid, we'll display our own so we can insert a ribbon panel
-        return [];
-    },
-
-    uploadFile : function(fb, v)
-    {
-        if (this.currentDirectory)
-        {
-            var form = this.collapsibleTabPanel.getActiveTab().getForm();
-            var path = this.fileInputField.getValue();
-            var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-            var name = path.substring(i+1);
-            var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
-            var id = this.fileSystem.concatPaths(this.currentDirectory.data.uri, target);
-            var file = this.fileSystem.recordFromCache(target);
-            if (file)
-            {
-                alert('file already exists on server: ' + name);
-            }
-            else
-            {
-                var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileInputField.getValue()};
-                // set errorReader, so that handleResponse() doesn't try to eval() the XML response
-                // assume that we've got a WebdavFileSystem
-                form.errorReader = this.fileSystem.transferReader;
-                form.doAction(new Ext.form.Action.Submit(form, options));
-                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:id}]});
-                Ext.getBody().dom.style.cursor = "wait";
-            }
-        }
-    },
-
-    uploadSuccess : function(f, action)
-    {
-        this.fileInputField.reset();
-        Ext.getBody().dom.style.cursor = "pointer";
-        console.log("upload actioncomplete");
-        console.log(action);
-        var options = action.options;
-        // UNDONE: update data store directly
-        this.toggleTabPanel();
-        this.refreshDirectory();
-        this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
-        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:this.fileSystem.concatPaths(options.record.data.uri, options.name)}]});
-    },
-
-    uploadFailed : function(f, action)
-    {
-        this.fileInputField.reset();
-        Ext.getBody().dom.style.cursor = "pointer";
-        console.log("upload actionfailed");
-        console.log(action);
-        this.refreshDirectory();
     },
 
     /**
@@ -145,12 +46,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
      */
     initializeActions : function()
     {
-        this.actions.upload = new Ext.Action({
-            text: 'Upload',
-            iconCls: 'iconUpload',
-            tooltip: 'Upload files or folders from your local machine to the server',
-            listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
-        });
+        LABKEY.FilesWebPartPanel.superclass.initializeActions.call(this);
 
         this.actions.importData = new Ext.Action({
             text: 'Import Data',
@@ -165,33 +61,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             tooltip: 'Configure the buttons shown on the toolbar',
             listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
         });
-
-        this.actions.appletFileAction = new Ext.Action({
-            text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew',
-            handler:function(){
-                if (this.applet)
-                {
-                    var a = this.applet.getApplet();
-                    if (a) a.showFileChooser();
-                }
-            }
-        });
-
-        this.actions.appletDirAction = new Ext.Action({
-            text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen',
-            handler:function(){
-                if (this.applet)
-                {
-                    var a = this.applet.getApplet();
-                    if (a) a.showDirectoryChooser();
-                }
-            }
-        });
-
-        this.toolbar = new Ext.Panel({
-            id: 'toolbarPanel',
-            renderTo: 'toolbar'
-        });
     },
 
     /**
@@ -202,209 +71,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     {
         var items = LABKEY.FilesWebPartPanel.superclass.getItems.call(this);
 
-        this.initializeActions();
-
-        this.importDataTab = new Ext.Panel({
-            id: 'importDataTab'
-        });
-
-        this.fileInputField = new Ext.form.FileUploadField(
-        {
-            id: this.id ? this.id + 'Upload' : 'fileUpload',
-            buttonText: "Browse...",
-            fieldLabel: 'Choose a file'
-        });
-
-        var uploadPanel_rb1 = new Ext.form.Radio({
-            style: 'background-color:#f0f0f0;',
-            boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, checked: true
-        });
-        var uploadPanel_rb2 = new Ext.form.Radio({
-            boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2,
-            listeners:{check:function(button, checked) {
-                if (checked)
-                    this.onMultipleFileUpload();
-            }, scope:this}
-        });
-
-        var uploadPanel = new Ext.FormPanel({
-            id: 'uploadFileTab',
-            formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
-            method : 'POST',
-            fileUpload: true,
-            enctype:'multipart/form-data',
-            border:false,
-            bodyStyle : 'background-color:#f0f0f0; padding:10px;',
-            items: [
-                {
-                xtype: 'radiogroup',
-                fieldLabel: 'File Upload Type',
-                items: [
-                    uploadPanel_rb1,
-                    uploadPanel_rb2
-                ]},
-                this.fileInputField,
-                {xtype: 'textfield', fieldLabel: 'Description', width: 350}
-            ],
-            buttons:[
-                {text: 'Submit', handler:this.uploadFile, scope:this},
-                {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
-            ],
-            listeners: {
-                "actioncomplete" : {fn: this.uploadSuccess, scope: this},
-                "actionfailed" : {fn: this.uploadFailed, scope: this}
-            }
-        });
-        uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
-
-        var uploadMultiPanel_rb1 = new Ext.form.Radio({
-            boxLabel: 'Single file', name: 'rb-auto', inputValue: 1,
-            listeners:{check:function(button, checked) {
-                if (checked)
-                    this.toggleTabPanel('uploadFileTab');
-            }, scope:this}
-        });
-        var uploadMultiPanel_rb2 = new Ext.form.Radio({
-            boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2, checked: true
-        });
-
-        this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
-        this.appletStatusBar = new Ext.StatusBar({
-            id:'appletStatusBar', defaultText:'', busyText:'Copying...',
-            width: 200,
-            hidden: true,
-            statusAlign: 'right',
-            style : 'background-color:#f0f0f0;',
-            items:[{
-                xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120
-            }]
-        });
-
-        this.appletPanel = new Ext.Panel({
-            fieldLabel: 'File and Folder Drop Target',
-            isFormField: true,
-            height: 60,
-            width: 325
-        });
-
-        var uploadMultiPanel = new Ext.FormPanel({
-            id: 'uploadMultiFileTab',
-            layout: 'form',
-            border:false,
-            bodyStyle : 'background-color:#f0f0f0; padding:10px;',
-            items: [{
-                xtype: 'radiogroup',
-                fieldLabel: 'File Upload Type',
-                items: [
-                    uploadMultiPanel_rb1,
-                    uploadMultiPanel_rb2
-                ]},
-                this.appletPanel
-/*
-                    new Ext.Panel({
-                        layout: 'table',
-                        border: false,
-                        layoutConfig: {
-                            columns:2
-                        },
-                        fieldLabel: 'File and Folder Drop Target',
-                        isFormField: true,
-                        items: [
-                            this.appletPanel
-                        ]
-                    })
-*/
-            ],
-            buttons:[
-                new Ext.Button(this.actions.appletFileAction),
-                new Ext.Button(this.actions.appletDirAction),
-                {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
-                    this.appletStatusBar
-            ]
-        });
-        uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
-
-        this.collapsibleTabPanel = new LABKEY.TinyTabPanel({
-            region: 'north',
-            collapseMode: 'mini',
-            height: 130,
-            header: false,
-            margins:'1 1 1 1',
-            bodyStyle: 'background-color:#f0f0f0;',
-            cmargins:'1 1 1 1',
-            collapsible: true,
-            collapsed: true,
-            hideCollapseTool: true,
-            activeTab: 'uploadFileTab',
-            deferredRender: false,
-            items: [
-                uploadPanel,
-                uploadMultiPanel
-            ]});
-
-        items.push(this.collapsibleTabPanel);
         return items;
-    },
-
-    onMultipleFileUpload : function()
-    {
-        this.toggleTabPanel('uploadMultiFileTab');
-        if (!this.applet)
-        {
-            var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
-            var url = uri.toString();
-            this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
-
-            this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
-            this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);
-            this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
-
-            // make sure that the applet still matches the current directory when it appears
-            this.applet.onReady(function()
-            {
-                this.updateAppletState(this.currentDirectory);
-            }, this);
-
-            this.appletPanel.add(this.applet);
-            this.appletPanel.doLayout();
-        }
-        else
-        {
-            var task = {
-                interval:100,
-                applet:this.applet,
-                run : function()
-                {
-                    if (this.applet.isActive())
-                    {
-                        this.applet.setText("Drop files and folders here");
-                        Ext.TaskMgr.stop(this);
-                    }
-                }
-            };
-            Ext.TaskMgr.start(task);
-        }
-    },
-
-    toggleTabPanel : function(tabId)
-    {
-        if (!tabId)
-            this.collapsibleTabPanel.collapse();
-
-        if (this.collapsibleTabPanel.isVisible())
-        {
-            var activeTab = this.collapsibleTabPanel.getActiveTab();
-
-            if (activeTab && activeTab.getId() == tabId)
-                this.collapsibleTabPanel.collapse();
-            else
-                this.collapsibleTabPanel.setActiveTab(tabId);
-        }
-        else
-        {
-            this.collapsibleTabPanel.setActiveTab(tabId);
-            this.collapsibleTabPanel.expand();
-        }
     },
 
     createGrid : function()
@@ -430,7 +97,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             ]
         });
         // hack to get the file input field to size correctly
-        grid.on('render', function(c){this.fileInputField.setSize(350);}, this);
+        grid.on('render', function(c){this.fileUploadField.setSize(350);}, this);
         return grid;
     },
 
@@ -514,12 +181,16 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     displayPipelineActions : function(toolbarActions, importActions)
     {
-        // delete the actions container
-        if (this.importDataTab && this.importDataTab.items)
-            this.importDataTab.remove('importDataPanel');
-
-        if (this.toolbar && this.toolbar.items)
-            this.toolbar.remove('toolbarPanelToolbar');
+        var toolbar = this.getTopToolbar();
+        if (toolbar && toolbar.items)
+        {
+            for (var i=0; i < toolbar.items.getCount(); i++)
+            {
+                var o = toolbar.items.item(i);
+                o.destroy();
+            }
+            toolbar.items.clear();
+        }
 
         var tbarButtons = [];
         var importDataButtons = [];
@@ -542,16 +213,20 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
 
         // add the standard buttons to the toolbar
-        if (this.buttonCfg && this.buttonCfg.length)
+        if (this.tbarItems && this.tbarItems.length)
         {
-            for (var i=0; i < this.buttonCfg.length; i++)
+            for (var i=0; i < this.tbarItems.length; i++)
             {
-                var item = this.buttonCfg[i];
+                var item = this.tbarItems[i];
                 if (typeof item == "string" && typeof this.actions[item] == "object")
                 {
                     // don't add the import data button if there are no import data actions
                     if (this.importActions.length || item != 'importData')
+                    {
                         tbarButtons.push(new Ext.Button(this.actions[item]));
+                        toolbar.addButton(this.actions[item]);
+
+                    }
                 }
                 else
                     tbarButtons.push(item);
@@ -567,31 +242,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 var tbarAction = new LABKEY.PipelineAction(a.getActionConfig());
                 tbarButtons.push(new Ext.Button(tbarAction));
 
+                toolbar.addButton(tbarAction);
                 this.pipelineActions.push(tbarAction);
             }
         }
-
-        // add the appropriate import actions to the import data tabpanel
-        var importData = new Ext.Panel({
-            id: 'importDataPanel',
-            bodyStyle : 'background-color:#f0f0f0; padding:10px;',
-            items: new Ext.Toolbar({items:importDataButtons}),
-            buttons:[
-                {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('importDataTab');}, scope:this}}
-            ],
-            buttonAlign: 'center'
-        });
-        this.importDataTab.add(importData);
-        this.importDataTab.doLayout();
-
-        var toolbar = new Ext.Toolbar({
-            id: 'toolbarPanelToolbar',
-            //renderTo: 'toolbar',
-            border: false,
-            items: tbarButtons
-        });
-        this.toolbar.add(toolbar);
-        this.toolbar.doLayout();
     },
 
     // selection change handler
@@ -810,9 +464,9 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     canImportData : function()
     {
-        for (var i=0; i < this.buttonCfg.length; i++)
+        for (var i=0; i < this.tbarItems.length; i++)
         {
-            if (this.buttonCfg[i] == 'importData')
+            if (this.tbarItems[i] == 'importData')
                 return true;
         }
         return false;
