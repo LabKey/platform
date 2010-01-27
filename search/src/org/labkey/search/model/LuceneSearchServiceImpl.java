@@ -31,17 +31,20 @@ import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.apache.pdfbox.exceptions.WrappedIOException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
-import org.labkey.api.data.Container;
 import org.xml.sax.ContentHandler;
 
 import java.io.File;
@@ -239,22 +242,49 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (NoClassDefFoundError err)
         {
-            // Suppress stack trace, etc., if Bouncy Castle isn't present.
-            if ("org/bouncycastle/cms/CMSException".equals(err.getMessage()))
+            Throwable cause = err.getCause();
+            // Suppress stack trace, etc., if Bouncy Castle isn't present.  Use cause since ClassNotFoundException's
+            //  message is consistent across JVMs; NoClassDefFoundError's is not.
+            if (cause != null && cause instanceof ClassNotFoundException && cause.getMessage().equals("org.bouncycastle.cms.CMSException"))
                 _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
             else
-                throw err;
+                logAsIndexingError(r, err);
+        }
+        catch (TikaException e)
+        {
+            Throwable cause = e.getCause();
+
+            // Ignore NoSuchElementException in PDFBox -- see http://issues.apache.org/jira/browse/PDFBOX-546
+            if (cause instanceof WrappedIOException && cause.getCause() instanceof NoSuchElementException)
+                return null;
+
+            logAsIndexingError(r, e);
         }
         catch (Throwable e)
         {
-            String name = r.getPath().toString();
-            File f = r.getFile();
-            if (null != f)
-                name = f.getPath();
-            _log.warn("Indexing error: " + name, e);
+            logAsIndexingError(r, e);
         }
 
         return null;
+    }
+
+    private void logAsIndexingError(Resource r, Throwable e)
+    {
+        String name = r.getPath().toString();
+        File f = r.getFile();
+        if (null != f)
+            name = f.getPath();
+
+        //noinspection ThrowableInstanceNeverThrown
+        ExceptionUtil.logExceptionToMothership(null, new IndexingException(name, e));
+    }
+
+    private static class IndexingException extends Exception
+    {
+        private IndexingException(String name, Throwable cause)
+        {
+            super(name, cause);
+        }
     }
 
     private static final int SUMMARY_LENGTH = 400;
@@ -409,8 +439,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             boosts.put(standardFields[i], standardBoosts[i]);
     }
 
-    private final QueryParser _titleBodyQueryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
-
     public SearchResult search(String queryString, SearchCategory searchCategory, User user, Container root, int offset, int limit) throws IOException
     {
         String category = null==searchCategory ? null : searchCategory.toString();
@@ -430,7 +458,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            QueryParser queryParser = _titleBodyQueryParser;
+            QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
             query = queryParser.parse(queryString);
 
             if (null != category)

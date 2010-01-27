@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -32,7 +31,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.search.SearchModule;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
@@ -40,7 +38,10 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -564,6 +565,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    // See https://issues.apache.org/jira/browse/TIKA-374 for status of a Tika concurrency problem that forces
+    // us to use single-threaded pre-processing.
     protected boolean isPreprocessThreadSafe()
     {
         return true;
@@ -1205,6 +1208,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             _log.error("maintenance error", x);
         }
+
+
     }
 
 
