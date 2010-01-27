@@ -1102,6 +1102,7 @@ th.labkey-expand-collapse-area
 table.labkey-nav-tree
 {
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    width: 100%;
 }
 
 span.labkey-nav-tree-selected
