@@ -139,7 +139,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         String link = nav.getValue() == null ? null : nav.getValue();
         String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript()) : null;
         if(null == onClickScript && null != link)
-            onClickScript = PageFlowUtil.filter("window.location='" + link + "'; return false;");
+            onClickScript = "window.location='" + PageFlowUtil.filter(link) + "'; return false;";
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
         if (level == 0 && null != nav.getKey())
             level = 1;

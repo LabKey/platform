@@ -58,7 +58,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     }
 
     @Override
-    public void setLastIndexed(long ms)
+    public void setLastIndexed(long ms, long modified)
     {
         //UNDONE
     }

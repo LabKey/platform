@@ -246,7 +246,7 @@ public interface SearchService
 
 
     /** default implementation saving lastIndexed */
-    void setLastIndexedForPath(Path path, long time);
+    void setLastIndexedForPath(Path path, long indexed, long modified);
 
     void deleteContainer(String id);
 

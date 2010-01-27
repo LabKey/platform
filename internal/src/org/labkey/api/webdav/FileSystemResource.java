@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.util.FileUtil;
@@ -70,6 +71,7 @@ public class FileSystemResource extends AbstractResource
     protected FileSystemResource(Path path)
     {
         super(path);
+        setProperty(SearchService.fileCategory);
     }
 
     protected FileSystemResource(Path folder, String name)
@@ -85,6 +87,7 @@ public class FileSystemResource extends AbstractResource
     public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
     {
         super(folder.getPath(), name);
+        setProperty(SearchService.fileCategory);
         _folder = folder;
         _name = name;
         _policy = policy;
@@ -95,6 +98,7 @@ public class FileSystemResource extends AbstractResource
     public FileSystemResource(FileSystemResource folder, String relativePath)
     {
         super(folder, relativePath);
+        setProperty(SearchService.fileCategory);
         _folder = folder;
         _policy = folder._policy;
         _file = new File(folder._file, relativePath);

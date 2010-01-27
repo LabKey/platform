@@ -69,8 +69,7 @@ public interface Resource
     // may return Long.MIN_VALUE
     long getLastIndexed();
 
-    // may silently ignore
-    void setLastIndexed(long ms);
+    void setLastIndexed(long msLastIndexed, long msModified);
 
     String getContentType();
 

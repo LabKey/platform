@@ -117,10 +117,10 @@ public abstract class AbstractResource implements Resource
         return Long.MIN_VALUE;
     }
 
-    public void setLastIndexed(long ms)
+    public void setLastIndexed(long indexed, long modified)
     {
         if (isFile())
-            ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), ms);
+            ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), indexed, modified);
     }
 
     public User getModifiedBy()
@@ -161,7 +161,8 @@ public abstract class AbstractResource implements Resource
 
     public String getExecuteHref(ViewContext context)
     {
-        return c(AppProps.getInstance().getContextPath(), getPath().toString());
+        Path contextPath = null==context ? AppProps.getInstance().getParsedContextPath() : Path.parse(context.getContextPath());
+        return contextPath.append(getPath()).encode();
     }
 
 

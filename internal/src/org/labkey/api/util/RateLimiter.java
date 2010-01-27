@@ -68,6 +68,13 @@ public class RateLimiter
         accumulateInterval = history/3;
     }
 
+
+    public Rate getTarget()
+    {
+        return _target;
+    }
+    
+
     private final RateAccumulator aggregateRate(long now)
     {
         long start = now;
@@ -137,10 +144,10 @@ public class RateLimiter
     }
 
 
-    static class Rate
+    public static class Rate
     {
-        double _rate;
-        String _toString;        
+        final double _rate;
+        final String _toString;        
 
         Rate(long count, long duration, TimeUnit unit)
         {
@@ -158,6 +165,13 @@ public class RateLimiter
                 _toString = "" + count + "/(" + duration + " "  + StringUtils.stripEnd(unit.toString(),"S") + ")";
         }
 
+
+        public double getRate(TimeUnit unit)
+        {
+            return _rate * unit.toMillis(1);    
+        }
+
+
         @Override
         public String toString()
         {
@@ -166,20 +180,22 @@ public class RateLimiter
     }
 
 
-    static class RateAccumulator
+    /** Not thread safe */
+    public static class RateAccumulator
     {
-        final long _start;
-        long _count = 0;
-        RateAccumulator(long now)
+        private final long _start;
+        private long _count = 0;
+
+        public RateAccumulator(long now)
         {
             _start = now;
         }
-        RateAccumulator(long start, long count)
+        public RateAccumulator(long start, long count)
         {
             _start = start;
             _count = count;
         }
-        void accumulate(long add)
+        public void accumulate(long add)
         {
             _count += add;
         }
@@ -193,6 +209,14 @@ public class RateLimiter
                 return 0;
             double remainder = (double)_count/target._rate + _start - now;
             return (long)Math.max(0,remainder);
+        }
+        public long getStart()
+        {
+            return _start;
+        }
+        public long getCount()
+        {
+            return _count;
         }
     }
 
