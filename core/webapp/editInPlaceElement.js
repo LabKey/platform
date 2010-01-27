@@ -111,7 +111,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (!this.multiLine)
             config.type = 'text';
 
-        this.editor = this.el.parent().createChild(config);
+        this.editor = this.el.parent().createChild(config, this.el.next());
 
         //create the offscreen sizing div
         this.sizingDiv = Ext.getBody().createChild({
@@ -194,7 +194,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
         if (value != this.oldText && false !== this.fireEvent("beforecomplete", value, this.oldText))
             this.processChange(value, this.oldText);
         else
-            this.onUpdateComplete(value, this.oldText);
+            this.onUpdateComplete(this.oldText);
     },
 
     cancelEdit: function(){
@@ -226,7 +226,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
             reqConfig.jsonData = {};
             reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = value;
             reqConfig.success = function(){
-                this.onUpdateComplete(value, oldValue);
+                this.onUpdateComplete(value);
             };
             reqConfig.failure = function(){
                 this.onUpdateFailure(value, oldValue);
@@ -244,10 +244,11 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
             this.onUpdateComplete(value);
     },
 
-    onUpdateComplete: function(value, oldValue){
+    onUpdateComplete: function(value){
         this.el.removeClass("labkey-edit-in-place-updating");
         this.el.update(value);
         this.checkForEmpty();
+        this.editIcon.alignTo(this.el, 'tr-tr');
         this.fireEvent("complete");
     },
 

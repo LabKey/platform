@@ -1313,16 +1313,16 @@ td.labkey-crumb-trail
 }
 
 /* This is the title that is contained at the top of the project area */
-td.labkey-nav-page-header
+.labkey-nav-page-header-container
 {
     padding-left: 12px;
+    
 }
-
 .labkey-nav-page-header
 {
-	font-weight: bold;
-	font-size: 11pt;
-	color: #003399;
+    font-weight: bold;
+    font-size: 11pt;
+    color: #003399;
 }
 
 /* This is the table that contains each web part in the portal view */

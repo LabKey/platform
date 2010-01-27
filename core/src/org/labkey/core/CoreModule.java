@@ -211,7 +211,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
                         view.setTitle("Workbook Description");
-                        view.setFrame(WebPartView.FrameType.PORTAL);
+                        view.setFrame(WebPartView.FrameType.NONE);
                         return view;
                     }
                 });

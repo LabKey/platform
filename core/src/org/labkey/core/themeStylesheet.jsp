@@ -237,7 +237,7 @@ tr.labkey-nav-tree-row:hover
     background-color: #<%= wpHeaderPanel %>;
 }
 
-td.labkey-nav-page-header
+.labkey-nav-page-header
 {
 	font-size: <%= themeFont.getPageHeaderSize() %>;
 	color: #<%=linkAndHeaderText%>;

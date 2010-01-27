@@ -28,48 +28,21 @@
     LABKEY.requiresScript("editInPlaceElement.js");
 </script>
 
+<script type="text/javascript">
+    var _wb_titleId = Ext.id();
+    LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=PageFlowUtil.filter(container.getTitle())%></span>",
+            undefined, "<%=container.getTitle()%>");
+    //LABKEY.NavTrail.setTrail("<%=PageFlowUtil.filter(container.getTitle())%>");
+</script>
+
 <style type="text/css">
-    .wb-name-container
-    {
-        width: 1%;
-        white-space: nowrap;
-        padding: 0;
-    }
     .wb-name
     {
-        font-size: 12pt;
-        font-weight: bold;
-    }
-    .wb-title-container
-    {
-        width: 99%;
-    }
-    .wb-title
-    {
-        font-size: 12pt;
-        font-weight: bold;
-    }
-    .wb-name-title-container
-    {
-        padding-bottom: 5px;
-        width: 100%;
-        border: 0;
-    }
-    td .wb-name-title-container
-    {
-        text-align: left;
-        vertical-align: top;
+        color: #999999;
     }
 </style>
 
-<table class="wb-name-title-container">
-    <tr>
-        <td class="wb-name-container"><div class="wb-name"><%=PageFlowUtil.filter(container.getName() + ":")%></div></td>
-        <td class="wb-title-container"><div id="wb-title" class="wb-title"><%=PageFlowUtil.filter(container.getTitle())%></div></td>
-    </tr>
-</table>
-
-<div id="wb-description"><%=null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "&nbsp;"%></div>
+<div id="wb-description" class="labkey-edit-in-place"><%=null != container.getDescription() ? PageFlowUtil.filter(container.getDescription()) : "&nbsp;"%></div>
 
 <script type="text/javascript">
     Ext.onReady(function(){
@@ -87,7 +60,7 @@
         });
 
         new LABKEY.ext.EditInPlaceElement({
-            applyTo: 'wb-title',
+            applyTo: _wb_titleId,
             updateConfig: {
                 url: LABKEY.ActionURL.buildURL("core", "updateTitle"),
                 jsonDataPropName: 'title'
