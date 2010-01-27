@@ -16,6 +16,8 @@
 package org.labkey.search.model;
 
 import org.apache.log4j.Category;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -23,6 +25,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;
@@ -75,7 +78,21 @@ public class DavCrawler implements ShutdownListener
     // CONSIDER: file count limiter
     final RateLimiter _filesIndexRateLimiter = new RateLimiter("file index", 100, 1000);
 
+
+    public static class ResourceInfo
+    {
+        ResourceInfo(Date indexed, Date modified)
+        {
+            this.lastIndexed = indexed;
+            this.modified = modified;
+        }
+        
+        Date lastIndexed;
+        Date modified;
+        //long length;
+    }
     
+
     // to make testing easier, break out the interface for persisting crawl state
     public interface SavePaths
     {
@@ -97,8 +114,8 @@ public class DavCrawler implements ShutdownListener
         public Date getNextCrawl();
 
         // files
-        public Map<String,Date> getFiles(Path path);
-        public boolean updateFile(Path path, Date lastIndexed);
+        public Map<String,ResourceInfo> getFiles(Path path);
+        public boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, @Nullable Date modified);
     }
     
 
@@ -166,7 +183,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    LinkedList<Pair<Resource,Date>> _recent = new LinkedList<Pair<Resource,Date>>();
+    LinkedList<Pair<String,Date>> _recent = new LinkedList<Pair<String,Date>>();
 
     
     class IndexDirectoryJob implements Runnable
@@ -212,7 +229,8 @@ public class DavCrawler implements ShutdownListener
 
             if (null == r || !r.isCollection() || !r.shouldIndex())
             {
-                _paths.deletePath(_path);
+                if (_path.startsWith(getResolver().getRootPath()))
+                    _paths.deletePath(_path);
                 return;
             }
 
@@ -225,7 +243,6 @@ public class DavCrawler implements ShutdownListener
                 public void run()
                 {
                     _paths.updatePath(_path, _indexTime, _nextCrawl, true);
-                    r.setLastIndexed(_indexTime.getTime());
                     addRecent(r);
                 }
             });
@@ -242,20 +259,23 @@ public class DavCrawler implements ShutdownListener
             // get current index status for files
             // CONSIDER: store lastModifiedTime in crawlResources
             // CONSIDER: store documentId in crawlResources
-            Map<String,Date> map = _paths.getFiles(_path);
+            Map<String,ResourceInfo> map = _paths.getFiles(_path);
 
             for (Resource child : r.list())
             {
                 if (_shuttingDown)
                     return;
+
                 if (child.isFile())
                 {
-                    Date lastIndexed = map.remove(child.getName());
-                    if (null == lastIndexed)
-                        lastIndexed = SavePaths.nullDate;
+                    ResourceInfo info =  map.remove(child.getName());
+                    Date lastIndexed   = (null==info || null==info.lastIndexed) ? SavePaths.nullDate : info.lastIndexed;
+                    Date savedModified = (null==info || null==info.modified) ? SavePaths.nullDate : info.modified;
                     long lastModified = child.getLastModified();
-                    if (lastModified <= lastIndexed.getTime())
+
+                    if (lastModified == savedModified.getTime() && lastModified <= lastIndexed.getTime())
                         continue;
+
                     if (skipFile(child))
                     {
                         // just index the name and that's all
@@ -264,9 +284,9 @@ public class DavCrawler implements ShutdownListener
                         child = new SimpleDocumentResource(r.getPath(), r.getDocumentId(), r.getContainerId(), r.getContentType(),
                                 new byte[0], url, null){
                             @Override
-                            public void setLastIndexed(long ms)
+                            public void setLastIndexed(long ms, long modified)
                             {
-                                wrap.setLastIndexed(ms);
+                                wrap.setLastIndexed(ms, modified);
                             }
                         };
                     }
@@ -276,6 +296,7 @@ public class DavCrawler implements ShutdownListener
                         _fileIORateLimiter.add(f.length(), isCrawlerThread);
 
                     _task.addResource(child, SearchService.PRIORITY.background);
+                    addRecent(child);
                 }
                 else if (!child.exists()) // happens when pipeline is defined but directory doesn't exist
                 {
@@ -310,8 +331,8 @@ public class DavCrawler implements ShutdownListener
             SearchService ss = getSearchService();
             for (String missing : map.keySet())
             {
-                Path path = Path.parse(missing);
-                String docId =  "dav:" + missing;
+                Path missingPath = _path.append(missing);
+                String docId =  "dav:" + missingPath.toString();
                 ss.deleteResource(docId);
             }
 
@@ -325,11 +346,12 @@ public class DavCrawler implements ShutdownListener
         synchronized (_recent)
         {
             Date d = new Date(System.currentTimeMillis());
-            while (_recent.size() > 20)
+            while (_recent.size() > 40)
                 _recent.removeFirst();
             while (_recent.size() > 0 && _recent.getFirst().second.getTime() < d.getTime()-10*60000)
                 _recent.removeFirst();
-            _recent.add(new Pair(r,d));
+            String text = r.isCollection() ? r.getName() + "/" : r.getName();
+            _recent.add(new Pair(text,d));
         }
     }
 
@@ -527,53 +549,29 @@ public class DavCrawler implements ShutdownListener
     {
         SearchService ss = getSearchService();
         boolean paused = !ss.isRunning();
-        
+        long now = System.currentTimeMillis();
+
         Map m = new LinkedHashMap();
         try
         {
             DbSchema s = DbSchema.get("search");
-            long now = System.currentTimeMillis();
 
             Integer uniqueCollections = Table.executeSingleton(s, "SELECT count(*) FROM search.crawlcollections", null, Integer.class);
             m.put("Number of unique folders/directories", uniqueCollections);
             
             if (!paused)
             {
-                Date nextHour = new Date(now + 60*60000);
-                Integer countNext = Table.executeSingleton(s, "SELECT count(*) FROM search.crawlcollections where nextCrawl < ?", new Object[]{nextHour}, Integer.class);
-                m.put("Directories scheduled for scan in next 60 minutes", countNext);
+                Date nextHour = new Date(now + TimeUnit.SECONDS.toMillis(60*60));
+                Long countNext = Table.executeSingleton(s, "SELECT count(*) FROM search.crawlcollections where nextCrawl < ?", new Object[]{nextHour}, Long.class);
+                double max = (60*60) * _listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS);
+                long scheduled = Math.min(countNext.longValue(), Math.round(max));
+                m.put("Directories to scan in next 1 hr", scheduled);
             }
 
-            Pair<Resource,Date>[] recent;
-            synchronized(_recent)
-            {
-                recent = new Pair[_recent.size()];
-                _recent.toArray(recent);
-                Arrays.sort(recent, new Comparator<Pair<Resource,Date>>(){
-                    public int compare(Pair<Resource,Date> o1, Pair<Resource,Date> o2)
-                    {
-                        return o1.second.compareTo(o2.second);
-                    }
-                });
-            }
-            StringBuilder activity = new StringBuilder();
-            long time = now - 5*60000;
-            for (Pair<Resource,Date> p : recent)
-            {
-                Resource r = p.first;
-                Date d = p.second;
-                if (d.getTime() < time) continue;
-                long dur = now-d.getTime();
-                dur -= dur % 1000;
-                String ago = DateUtil.formatDuration(dur);
-                activity.append("<a href='" + PageFlowUtil.filter(r.getLocalHref(null)) + "'>" + PageFlowUtil.filter(r.getName()) + "</a> (" + ago + " ago)<br>\n");
-            }
-            if (paused)
-            {
-                activity.append("PAUSED");
-                if (recent.length > 0)
-                    activity.append (" (queue may take a while to clear)");
-            }
+            m.put("Directory limiter", Math.round(_listingRateLimiter.getTarget().getRate(TimeUnit.SECONDS)) + "/sec");
+            m.put("File I/O limiter", (_fileIORateLimiter.getTarget().getRate(TimeUnit.SECONDS)/1000000) + " MB/sec");
+
+            String activity = getActivityHtml();
             m.put("Recent crawler activity", activity.toString());
         }
         catch (SQLException x)
@@ -581,5 +579,49 @@ public class DavCrawler implements ShutdownListener
             _log.error("Unexpected error", x);
         }
         return m;
+    }
+
+    String getActivityHtml()
+    {
+        SearchService ss = getSearchService();
+        boolean paused = !ss.isRunning();
+
+        Pair<String,Date>[] recent;
+        synchronized(_recent)
+        {
+            recent = new Pair[_recent.size()];
+            _recent.toArray(recent);
+            Arrays.sort(recent, new Comparator<Pair<String,Date>>(){
+                public int compare(Pair<String,Date> o1, Pair<String,Date> o2)
+                {
+                    return o2.second.compareTo(o1.second);
+                }
+            });
+        }
+
+        StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
+        String last = "";
+        long now = System.currentTimeMillis();
+        long cutoff = now - 5*60000;
+        now = now - (now % 1000);
+        for (Pair<String,Date> p : recent)
+        {
+            String text  = p.first;
+            long time = p.second.getTime();
+            if (time < cutoff) continue;
+            long dur = Math.max(0,now - (time-(time%1000)));
+            String ago = DateUtil.formatDuration(dur) + " ago";
+            activity.append("<tr><td align=right color=#c0c0c0>" + (ago.equals(last)?"":ago) + "&nbsp;</td><td>" + PageFlowUtil.filter(text) + "</td></tr>\n");
+            last = ago;
+        }
+        if (paused)
+        {
+            activity.append("<tr><td colspan=2>PAUSED");
+            if (recent.length > 0)
+                activity.append (" (queue may take a while to clear)");
+            activity.append("</td></tr>");
+        }
+        activity.append("</table>");
+        return activity.toString();
     }
 }

@@ -463,7 +463,13 @@ public class QueryController extends SpringActionController
             QueryDefinition d = form.getQueryDef();
             if (null == d)
                 return false;
-            d.delete(getUser());
+            try
+            {
+                d.delete(getUser());
+            }
+            catch (Table.OptimisticConflictException x)
+            {
+            }
             return true;
         }
 

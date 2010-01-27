@@ -38,6 +38,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletResponse;
 import java.sql.Date;
 import java.util.List;
 import java.util.Map;
@@ -486,6 +487,12 @@ public class SearchController extends SpringActionController
             _category = form.getCategory();
 
             audit(form);
+
+            // reenable caching for search results page (fast browser back button)
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setDateHeader("Expires", System.currentTimeMillis() + (5 * 60 * 1000));
+            response.setHeader("Cache-Control", "private");
+            response.setHeader("Pragma", "cache");
 
             HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
             return search;

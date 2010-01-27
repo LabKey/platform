@@ -143,7 +143,6 @@ public class QueryManager
     public void delete(User user, QueryDef queryDef) throws SQLException
     {
         Table.delete(getTableInfoQueryDef(), queryDef.getQueryDefId());
-        
     }
 
     public void delete(User user, QuerySnapshotDef querySnapshotDef) throws SQLException

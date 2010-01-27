@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.search.model.DavCrawler" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -72,7 +73,10 @@ else
         for (Map.Entry e : m.entrySet())
         {
             String l = String.valueOf(e.getKey());
-            String v = String.valueOf(e.getValue());
+            Object v = e.getValue();
+            if (v instanceof Integer || v instanceof Long)
+                v = Formats.commaf0.format(((Number)v).longValue());
+            v = null==v ? "" : String.valueOf(v);
             %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
         }
     }
@@ -80,7 +84,10 @@ else
     for (Map.Entry e : m.entrySet())
     {
         String l = String.valueOf(e.getKey());
-        String v = String.valueOf(e.getValue());
+        Object v = e.getValue();
+        if (v instanceof Integer || v instanceof Long)
+            v = Formats.commaf0.format(((Number)v).longValue());
+        v = null==v ? "" : String.valueOf(v);
         %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
     }
     %></table><%

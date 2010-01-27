@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -220,8 +221,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         Resource _res;
         Runnable _run;
         PRIORITY _pri;
-        long _start = 0;
+
+        long _modified = 0; // used by setLastIndexed
+        long _start = 0;    // used by setLastIndexed
         long _complete = 0; // really just for debugging
+
         Map<?,?> _preprocessMap = null;
         
         Item(IndexTask task, OPERATION op, String id, Resource r, PRIORITY pri)
@@ -312,9 +316,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     SavePaths _savePaths = new SavePaths();
 
-    public void setLastIndexedForPath(Path path, long time)
+    public void setLastIndexedForPath(Path path, long time, long indexed)
     {
-        _savePaths.updateFile(path, new Date(time));
+        _savePaths.updateFile(path, new Date(time), new Date(indexed));
     }
 
 
@@ -438,6 +442,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             SearchHit hit = ((LuceneSearchServiceImpl)this).find(docid);
             if (null == hit || null == hit.url)
                 return;
+
             URLHelper expected = new URLHelper(hit.url);
             expected.deleteParameter("_docid");
             expected.deleteParameter("_print");
@@ -448,7 +453,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (docid.startsWith("dav:"))
             {
                 Path path = Path.parse(docid.substring("dav:".length()));
-                DavCrawler.getInstance().addPathToCrawl(path.getParent(), null);
+                DavCrawler.getInstance().addPathToCrawl(path.getParent(), SavePaths.oldDate);
+            }
+
+            if (!StringUtils.isEmpty(hit.container))
+            {
+                Container c = ContainerManager.getForId(hit.container);
+                if (null == c)
+                    deleteContainer(hit.container);
             }
         }
         catch (Throwable x)
@@ -732,10 +744,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         if (_commitItem == i)
             return true;
+
         Resource r = i.getResource();
         if (null == r || !r.exists())
             return false;
-        assert MemTracker.put(r);
+        
+        i._modified = r.getLastModified();
 
         try
         {
@@ -886,10 +900,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     assert MemTracker.put(r);
                     _log.debug("index(" + i._id + ")");
                     index(i._id, i._res, i._preprocessMap);
-                    i._res.setLastIndexed(i._start);
+                    i._res.setLastIndexed(i._start, i._modified);
                     success = true;
                     synchronized (_commitLock)
                     {
+                        incrementIndexStat(ms);
                         _countIndexedSinceCommit++;
                         _lastIndexedTime = ms;
                         if (_countIndexedSinceCommit > 10000)
@@ -1182,10 +1197,54 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+
+    LinkedList<RateLimiter.RateAccumulator> _history = new LinkedList<RateLimiter.RateAccumulator>();
+    RateLimiter.RateAccumulator _current = new RateLimiter.RateAccumulator(System.currentTimeMillis());
+    long _currentHour = _current.getStart() / (60*60*1000L);
+
+
+    // call when holding _commitLock
+    private void incrementIndexStat(long now)
+    {
+        assert Thread.holdsLock(_commitLock);
+        long hour = now / (60*60*1000L);
+        if (hour > _currentHour)
+        {
+            _history.addFirst(_current);
+            _current = new RateLimiter.RateAccumulator(now);
+            _currentHour = hour;
+            while (_history.size() > 24)
+                _history.removeLast();
+        }
+        _current.accumulate(1);
+    }
+
     
     public Map<String,Object> getStats()
     {
-        return new HashMap<String,Object>();
+        HashMap<String,Object> map = new HashMap<String,Object>();
+
+        ArrayList<RateLimiter.RateAccumulator> history;
+        synchronized (_commitLock)
+        {
+            history = new ArrayList<RateLimiter.RateAccumulator>(_history.size()+1);
+            history.add(new RateLimiter.RateAccumulator(_current.getStart(),_current.getCount()));
+            history.addAll(_history);
+        }
+        SimpleDateFormat f = new SimpleDateFormat("h:mm a");
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table>");
+        for (RateLimiter.RateAccumulator r : history)
+        {
+            long start = r.getStart();
+            start -= start % (60*60*1000);
+            sb.append("<tr><td align=right>").append(f.format(start)).append("&nbsp;</td>");
+            sb.append("<td align=right>").append(Formats.commaf0.format(r.getCount())).append("</td></tr>");
+        }
+        sb.append("</table>");
+        map.put("Indexing history added/updated", sb.toString());
+
+        return map;
     }
     
 
@@ -1199,6 +1258,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     "DELETE FROM search.ParticipantIndex " +
                     "WHERE LastIndexed < ?",
                     new Object[] {new Date(System.currentTimeMillis() - 7*24*60*60*1000L)});
+            Table.execute(search, "DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)", null);
             if (search.getSqlDialect().isPostgreSQL())
             {
                 Table.execute(search, "CLUSTER search.CrawlResources", null);

@@ -168,7 +168,7 @@ public class CrawlerTest extends junit.framework.TestCase
     class TestSavePaths implements DavCrawler.SavePaths
     {
         Map<Path, Pair<Date,Date>> collections = new HashMap<Path,Pair<Date,Date>>();
-        Map<Path, Date> files = new HashMap<Path, Date>();
+        Map<Path, DavCrawler.ResourceInfo> files = new HashMap<Path, DavCrawler.ResourceInfo>();
 
         public boolean insertPath(Path path, Date nextCrawl)
         {
@@ -221,10 +221,10 @@ public class CrawlerTest extends junit.framework.TestCase
         }
         
 
-        public synchronized Map<String, Date> getFiles(Path path)
+        public synchronized Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
         {
-            Map<String,Date> ret = new TreeMap<String,Date>();
-            for (Map.Entry<Path,Date> e : files.entrySet())
+            Map<String,DavCrawler.ResourceInfo> ret = new TreeMap<String,DavCrawler.ResourceInfo>();
+            for (Map.Entry<Path,DavCrawler.ResourceInfo> e : files.entrySet())
             {
                 if (e.getKey().startsWith(path))
                     ret.put(e.getKey().getName(), e.getValue());
@@ -232,9 +232,9 @@ public class CrawlerTest extends junit.framework.TestCase
             return ret;
         }
 
-        public synchronized boolean updateFile(Path path, Date lastIndexed)
+        public synchronized boolean updateFile(Path path, Date lastIndexed, Date modified)
         {
-            files.put(path, lastIndexed);
+            files.put(path, new DavCrawler.ResourceInfo(lastIndexed,modified));
             return true;
         }
     }

@@ -163,14 +163,14 @@ public class QueryUnion extends QueryRelation
             {
                 if (_query.getParseErrors().size() > 0)
                     return null;
-                    String src = "";
-                    int line = 0, col=0;
-                    if (term instanceof QuerySelect && null != ((QuerySelect)term)._root)
-                    {
-                        src=((QuerySelect)term)._root.getSourceText();
-                        line = ((QuerySelect)term)._root.getLine();
-                        col  = ((QuerySelect)term)._root.getColumn();
-                    }
+                String src = "";
+                int line = 0, col=0;
+                if (term instanceof QuerySelect && null != ((QuerySelect)term)._root)
+                {
+                    src=((QuerySelect)term)._root.getSourceText();
+                    line = ((QuerySelect)term)._root.getLine();
+                    col  = ((QuerySelect)term)._root.getColumn();
+                }
                 String message = "Unexpected error parsing union term: " + src;
                 _query.getParseErrors().add(new QueryParseException(message, null, line, col));
                 unionSql.append("#ERROR: " + message + "#");

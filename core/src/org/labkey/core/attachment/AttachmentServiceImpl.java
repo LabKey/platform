@@ -1367,7 +1367,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public void setLastIndexed(long ms)
+        public void setLastIndexed(long ms, long modified)
         {
             try
             {

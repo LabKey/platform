@@ -129,10 +129,11 @@ public class SavePaths implements DavCrawler.SavePaths
         map.put("Path", toPathString(path));
         map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
         map.put("Parent", parent);
-        map.put("NextCrawl", _futureDate);
+        map.put("NextCrawl", new Date());
         map.put("LastCrawled", nullDate);
         try
         {
+            // UNDONE : this has side-effect of setting Modified field (which we're not using anyway)
             map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
             int id = ((Integer)map.get("id")).intValue();
             return id;
@@ -334,7 +335,7 @@ public class SavePaths implements DavCrawler.SavePaths
     // FILES/RESOURCES
     //
 
-    public Map<String,Date> getFiles(Path path)
+    public Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
     {
         SQLFragment s = new SQLFragment(
                 "SELECT D.ChangeInterval, D.Path, D.id, F.Name, F.Modified, F.LastIndexed\n" +
@@ -342,7 +343,7 @@ public class SavePaths implements DavCrawler.SavePaths
                 "WHERE D.path = ?");
         s.add(toPathString(path));
 
-        Map<String,Date> map = new HashMap<String, Date>();
+        Map<String,DavCrawler.ResourceInfo> map = new HashMap<String, DavCrawler.ResourceInfo>();
         CachedRowSetImpl rs = null;
         try
         {
@@ -352,8 +353,9 @@ public class SavePaths implements DavCrawler.SavePaths
                 String name = rs.getString("Name");
                 if (null == name)
                     continue;
+                Date modified = rs.getTimestamp("Modified");
                 Date lastIndex = rs.getTimestamp("LastIndexed");
-                map.put(name, lastIndex);
+                map.put(name, new DavCrawler.ResourceInfo(lastIndex, modified));
             }
             rs.close();
             rs = null;
@@ -370,20 +372,22 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
-    public boolean updateFile(Path path, Date lastIndexed)
+    public boolean updateFile(Path path, Date lastIndexed, Date modified)
     {
         try
         {
+            if (modified.getTime() == Long.MIN_VALUE)
+                modified = null;
             int id = _getParentId(path);
             SQLFragment upd = new SQLFragment(
-                    "UPDATE search.CrawlResources SET LastIndexed=? WHERE Parent=? AND Name=?",
-                    lastIndexed, id, path.getName());
+                    "UPDATE search.CrawlResources SET LastIndexed=?, Modified=? WHERE Parent=? AND Name=?",
+                    lastIndexed, modified, id, path.getName());
             int count = Table.execute(getSearchSchema(), upd);
             if (count > 0)
                 return true;
             SQLFragment ins = new SQLFragment(
-                    "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed) VALUES (?,?,?)",
-                    id, path.getName(), lastIndexed);
+                    "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed, Modified) VALUES (?,?,?,?)",
+                    id, path.getName(), lastIndexed, modified);
             count = Table.execute(getSearchSchema(), ins);
             return count > 0;
         }

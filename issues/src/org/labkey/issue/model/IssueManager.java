@@ -852,7 +852,7 @@ public class IssueManager
 
 
         @Override
-        public void setLastIndexed(long ms)
+        public void setLastIndexed(long ms, long modified)
         {
             IssueManager.setLastIndexed(_containerId, _issueId, ms);
         }

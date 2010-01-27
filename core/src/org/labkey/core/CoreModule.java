@@ -512,7 +512,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put(SearchService.PROPERTY.title.toString(), title);
-        //properties.put(SearchService.PROPERTY.category.toString(), SearchService.navigationCategory);
+        properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
         Resource doc = new SimpleDocumentResource(c.getParsedPath(),
                 "link:" + c.getId(),
                 c.getId(),
@@ -551,8 +551,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         v.setUser(User.getSearchUser());
         ActionURL url = c.getStartURL(v);
         final String docid = "container:" + c.getId();
-        HashMap map = new HashMap();
+        HashMap<String,Object> map = new HashMap<String,Object>();
         map.put(SearchService.PROPERTY.title.toString(), title);
+        map.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
         ActionResource r = new ActionResource(SearchService.navigationCategory, docid, url, url, map);
         task.addResource(r, SearchService.PRIORITY.item);
     }

@@ -359,7 +359,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
 
         @Override
-        public void setLastIndexed(long ms)
+        public void setLastIndexed(long ms, long modified)
         {
             WikiManager.setLastIndexed(_c, _name, ms);
         }

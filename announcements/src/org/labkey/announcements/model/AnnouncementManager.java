@@ -1014,7 +1014,7 @@ public class AnnouncementManager
         ActionResource r = new ActionResource(searchCategory, docid, url)
         {
             @Override
-            public void setLastIndexed(long ms)
+            public void setLastIndexed(long ms, long modified)
             {
                 AnnouncementManager.setLastIndexed(entityId, ms);
             }

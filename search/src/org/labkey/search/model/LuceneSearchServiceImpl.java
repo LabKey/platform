@@ -171,6 +171,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 try
                 {
                     Metadata metadata = new Metadata();
+                    metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                    metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
                     ContentHandler handler = new BodyContentHandler();
                     is = r.getInputStream(User.getSearchUser());
                     AutoDetectParser parser = new AutoDetectParser();
@@ -594,7 +596,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public Map<String, Object> getStats()
     {
-        Map<String,Object> map = super.getStats();
+        Map<String,Object> map = new LinkedHashMap<String,Object>();
         try
         {
             IndexSearcher is = getIndexSearcher();
@@ -604,6 +606,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             
         }
+        map.putAll(super.getStats());
         return map;
     }
 }
