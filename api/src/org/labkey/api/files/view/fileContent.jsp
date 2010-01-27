@@ -56,7 +56,6 @@
 
 <div class="extContainer">
     <table>
-        <tr><td><div id="toolbar"></div></td></tr>
         <tr><td><div id="files"></div></td></tr>
     </table>
 </div>
@@ -123,11 +122,10 @@ function renderBrowser(rootPath, dir)
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         showProperties: false,
-        showFileUpload: false,
         showDetails: <%=bean.isShowDetails()%>,
         allowChangeDirectory: true,
-        actions: {drop:dropAction, configure:configureAction},
-        buttonCfg: buttonActions
+        //actions: {drop:dropAction, configure:configureAction},
+        tbarItems: buttonActions
 /*
         buttonCfg:['download','deletePath','refresh'
         <%=c.hasPermission(context.getUser(), InsertPermission.class)?",'uploadTool'":""%>
