@@ -156,10 +156,17 @@ public class QueryWebPart extends WebPartView
                 String buttonBarPositionProp = _properties.get("buttonBarPosition");
                 if (null != buttonBarPositionProp)
                 {
-                    queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase()));
+                    try
+                    {
+                        queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase()));
+                    }
+                    catch(IllegalArgumentException ignore) {}
                     if (queryView._buttonBarPosition == DataRegion.ButtonBarPosition.NONE)
                         queryView.setShowRecordSelectors(false);
                 }
+
+                if (null != _properties.get("showRecordSelectors"))
+                    queryView.setShowRecordSelectors(Boolean.parseBoolean(_properties.get("showRecordSelectors")));
 
                 view = queryView;
             }
