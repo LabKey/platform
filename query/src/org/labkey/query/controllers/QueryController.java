@@ -1623,7 +1623,13 @@ public class QueryController extends SpringActionController
     {
         if (!getViewContext().getContainer().hasPermission(getUser(), DeletePermission.class))
             return false;
-        return table != null && table.getUpdateService() != null;
+        QueryUpdateService updateService = null;
+        try
+        {
+            updateService = table.getUpdateService();
+        }
+        catch(Exception ignore) {}
+        return null != table && null != updateService;
     }
 
     public static class ExecuteSqlForm
