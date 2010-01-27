@@ -2170,9 +2170,6 @@ public class StudyManager
         loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
         loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
 
-        if (AppProps.getInstance().isDevMode() && (loader instanceof AbstractTabLoader))
-            ((AbstractTabLoader)loader).setThrowOnErrors(true);
-
         return loader.load();
     }
 
