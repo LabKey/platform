@@ -42,7 +42,7 @@ LABKEY.NavTrail.setTrail("People View",
     );
  </pre>
         */
-        setTrail: function (currentPageTitle, ancestorArray)
+        setTrail: function (currentPageTitle, ancestorArray, documentTitle)
         {
             var elem = document.getElementById("labkey-nav-trail-current-page");
             if(elem)
@@ -71,7 +71,7 @@ LABKEY.NavTrail.setTrail("People View",
 
             //set document title:
             //<currentPageTitle>: <container path>
-            document.title = currentPageTitle + ": " +  decodeURI(LABKEY.ActionURL.getContainer());
+            document.title = (documentTitle || currentPageTitle) + ": " +  decodeURI(LABKEY.ActionURL.getContainer());
         }
     };
 };

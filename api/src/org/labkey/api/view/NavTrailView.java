@@ -234,13 +234,13 @@ public class NavTrailView extends HttpView
 
         out.print("</tr>\n<tr><td colspan=");
         out.print(hasCrumbTrail ? "2" : "1");
-        out.print(" class=\"labkey-nav-page-header\">");
+        out.print(" class=\"labkey-nav-page-header-container\">");
         String lastCaption = _title;
         if (_crumbTrail.size() > 0)
             lastCaption = _crumbTrail.get(_crumbTrail.size()-1).getKey();
         if (lastCaption != null)
         {
-            _out.print("<span id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
+            _out.print("<span class=\"labkey-nav-page-header\" id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
         if (!hasCrumbTrail && !laf.isShowMenuBar())
