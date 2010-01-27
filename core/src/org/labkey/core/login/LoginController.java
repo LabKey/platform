@@ -138,14 +138,11 @@ public class LoginController extends SpringActionController
             // Use root as placeholder; extra path of returnURL determines the real login URL path
             ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
 
-            if (null != returnURL && returnURL instanceof ActionURL)
-            {
-                url.setExtraPath(((ActionURL)returnURL).getExtraPath());
-            }
-            else
-            {
+            if (null == returnURL)
                 returnURL = AppProps.getInstance().getHomePageActionURL();
-            }
+
+            if (returnURL instanceof ActionURL)
+                url.setExtraPath(((ActionURL)returnURL).getExtraPath());
 
             url.addReturnURL(returnURL);
             return url;
