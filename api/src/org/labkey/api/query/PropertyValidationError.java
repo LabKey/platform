@@ -37,7 +37,7 @@ public class PropertyValidationError extends SimpleValidationError
         _propety = property;
     }
 
-    public String getPropety()
+    public String getProperty()
     {
         return _propety;
     }

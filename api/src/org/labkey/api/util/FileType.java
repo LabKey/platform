@@ -274,7 +274,6 @@ public class FileType implements Serializable
     {
         if (!isType(file))
             return file.getName();
-        int n = 0;
         String suffix = null;
         for (String s : _suffixes)
         {
@@ -416,7 +415,7 @@ public class FileType implements Serializable
 
     public String getDefaultRole()
     {
-        if (_defaultSuffix.indexOf(".") != -1)
+        if (_defaultSuffix.contains("."))
         {
             return _defaultSuffix.substring(_defaultSuffix.indexOf(".") + 1);
         }

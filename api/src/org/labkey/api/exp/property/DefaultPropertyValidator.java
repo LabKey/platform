@@ -16,6 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 
@@ -33,14 +34,14 @@ public abstract class DefaultPropertyValidator implements ValidatorKind
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type);
     }
 
-    protected void createErrorMessage(IPropertyValidator validator, String field, Object value, List<ValidationError> errors)
+    protected void createErrorMessage(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors)
     {
         StringBuffer sb = new StringBuffer();
 
         sb.append("Value '");
         sb.append(value);
         sb.append("' for field '");
-        sb.append(field);
+        sb.append(field.getNonBlankCaption());
         sb.append("' is invalid. ");
 
         if (validator.getErrorMessage() != null)

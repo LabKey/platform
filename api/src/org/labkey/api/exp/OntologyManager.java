@@ -27,6 +27,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -44,6 +45,8 @@ import java.util.*;
 import java.util.Date;
 
 import static org.labkey.api.search.SearchService.PROPERTY;
+
+import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
@@ -92,7 +95,7 @@ public class OntologyManager
 
     public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
 
-    public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
+    public static String[] insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -105,6 +108,8 @@ public class OntologyManager
         int resultingLsidsIndex = 0;
         // Make sure we have enough rows to hande the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
+
+        ValidatorContext validatorCache = new ValidatorContext(c, user);
 
 		try
 		{
@@ -168,7 +173,7 @@ public class OntologyManager
                     else
                     {
                         if (validatorMap.containsKey(pd.getPropertyId()))
-                            validateProperty(validatorMap.get(pd.getPropertyId()), pd, value, errors);
+                            validateProperty(validatorMap.get(pd.getPropertyId()), pd, value, errors, validatorCache);
                     }
                     try
                     {
@@ -220,14 +225,15 @@ public class OntologyManager
 		return resultingLsids;
 	}
 
-    private static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value, List<ValidationError> errors)
+    private static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value,
+                                            List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
 
         if (validators != null)
         {
             for (IPropertyValidator validator : validators)
-                if (!validator.validate(prop.getLabel() != null ? prop.getLabel() : prop.getName(), value, errors)) ret = false;
+                if (!validator.validate(prop, value, errors, validatorCache)) ret = false;
         }
         return ret;
     }
@@ -238,40 +244,6 @@ public class OntologyManager
 		String beforeImportObject(Map<String, Object> map) throws SQLException;
 		void afterBatchInsert(int currentRow) throws SQLException;
     }
-
-
-	public static class SubstImportHelper implements OntologyManager.ImportHelper
-	{
-		StringExpression expr;
-
-		public SubstImportHelper(String expr)
-		{
-			this.expr = StringExpressionFactory.create(expr);
-		}
-
-		public String beforeImportObject(Map<String, Object> map) throws SQLException
-		{
-			return expr.eval(map);
-		}
-
-		public void afterBatchInsert(int currentRow) throws SQLException
-		{
-		}
-    }
-
-
-	public static class GuidImportHelper implements OntologyManager.ImportHelper
-	{
-		public String beforeImportObject(Map<String, Object> map) throws SQLException
-		{
-			return GUID.makeURN();
-		}
-
-		public void afterBatchInsert(int currentRow) throws SQLException
-		{
-		}
-    }
-
 
 	/**
 	 * Get the name for a property. First check name attached to the property
@@ -1327,7 +1299,10 @@ public class OntologyManager
 		HashMap<String,PropertyDescriptor> descriptors = new HashMap<String, PropertyDescriptor>();
 		HashMap<String,Integer> objects = new HashMap<String, Integer>();
         List<ValidationError> errors = new ArrayList<ValidationError>();
-       // assert !c.equals(ContainerManager.getRoot());
+        // assert !c.equals(ContainerManager.getRoot());
+        // TODO - make user a parameter to this method 
+        User user = HttpView.hasCurrentView() ? HttpView.currentContext().getUser() : null;
+        ValidatorContext validatorCache = new ValidatorContext(c, user);
 
         for (ObjectProperty property : props)
 		{
@@ -1349,7 +1324,7 @@ public class OntologyManager
 					descriptors.put(property.getPropertyURI(), pd);
 				}
 				property.setPropertyId(pd.getPropertyId());
-                validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors);
+                validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors, validatorCache);
             }
 			if (0 == property.getObjectId())
 			{

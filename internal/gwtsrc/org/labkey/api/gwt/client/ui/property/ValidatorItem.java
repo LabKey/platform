@@ -39,6 +39,7 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     private HTML _noValidatorsLabel = new HTML("<i>This field has no validators</i>");
     private ImageButton _addRangeButton;
     private ImageButton _addRegexButton;
+    private ImageButton _addLookupButton;
     private boolean _validatorChanged;
 
     public ValidatorItem(PropertyPane<DomainType, FieldType> propertyPane)
@@ -61,10 +62,12 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 //
 //        row++;
 
-        _addRegexButton = new ImageButton("Add New Regular Expression", new RegexClickHandler());
+        _addRegexButton = new ImageButton("Add Regular Expression Validator", new RegexClickHandler());
         flexTable.setWidget(row++, INPUT_COLUMN, _addRegexButton);
-        _addRangeButton = new ImageButton("Add New Range", new RangeClickHandler());
+        _addRangeButton = new ImageButton("Add Range Validator", new RangeClickHandler());
         flexTable.setWidget(row++, INPUT_COLUMN, _addRangeButton);
+        _addLookupButton = new ImageButton("Add Lookup Validator", new LookupClickHandler());
+        flexTable.setWidget(row++, INPUT_COLUMN, _addLookupButton);
 
         _validatorTable = new FlexTable();
         int col = 1;
@@ -101,6 +104,7 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         _addRegexButton.setEnabled(isEnabled());
         _addRangeButton.setEnabled(isEnabled());
+        _addLookupButton.setEnabled(isEnabled());
     }
 
     @Override
@@ -109,6 +113,17 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         String rangeURI = field.getRangeURI();
         _addRangeButton.setVisible(TypePicker.xsdDateTime.equals(rangeURI) || TypePicker.xsdDouble.equals(rangeURI) || TypePicker.xsdInt.equals(rangeURI));
         _validators = field.getPropertyValidators();
+        boolean hasLookup = field.getLookupQuery() != null && field.getLookupSchema() != null;
+        boolean hasLookupValidator = false;
+        for (GWTPropertyValidator validator : _validators)
+        {
+            if (GWTPropertyValidator.TYPE_LOOKUP.equals(validator.getType()))
+            {
+                hasLookupValidator = true;
+                break;
+            }
+        }
+        _addLookupButton.setVisible(hasLookup && !hasLookupValidator);
         refreshValidators();
     }
 
@@ -157,6 +172,30 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
             dlg.setListener(ValidatorItem.this);
             dlg.center();
             dlg.show();
+        }
+    }
+
+    class LookupClickHandler implements ClickHandler
+    {
+        GWTPropertyValidator _validator;
+
+        LookupClickHandler()
+        {
+            this(null);
+        }
+
+        LookupClickHandler(GWTPropertyValidator validator)
+        {
+            _validator = validator;
+        }
+
+        public void onClick(ClickEvent event)
+        {
+            // No need for a dialog on this one - there are no options
+            GWTPropertyValidator validator = new GWTPropertyValidator();
+            validator.setName("Lookup validator");
+            validator.setType(GWTPropertyValidator.TYPE_LOOKUP);
+            propertyChanged(validator);
         }
     }
 
@@ -222,5 +261,10 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         _validatorChanged = true;
         refreshValidators();
         _propertyPane.copyValuesToPropertyDescriptor();
+    }
+
+    public void propertyDescriptorChanged(FieldType field)
+    {
+        showPropertyDescriptor(null, field);
     }
 }

@@ -51,11 +51,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private boolean mvEnabled;
     private DefaultValueType _defaultValueType;
 
+    /** Entity id for the lookup's target container */
     public String getLookupContainer()
     {
         return lookupContainer;
     }
 
+    /** Entity id for the lookup's target container */
     public void setLookupContainer(String lookupContainer)
     {
         this.lookupContainer = lookupContainer;

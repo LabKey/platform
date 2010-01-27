@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
@@ -447,7 +448,16 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         QuerySchema fkSchema = fromSchema;
         if (fk.getFkDbSchema() != null)
         {
-            fkSchema = QueryService.get().getUserSchema(fromSchema.getUser(), fromSchema.getContainer(), fk.getFkDbSchema());
+            Container targetContainer = fromSchema.getContainer();
+            if (fk.getFkFolderPath() != null)
+            {
+                targetContainer = ContainerManager.getForPath(fk.getFkFolderPath());
+                if (targetContainer == null || !targetContainer.hasPermission(fromSchema.getUser(), ReadPermission.class))
+                {
+                    return null;
+                }
+            }
+            fkSchema = QueryService.get().getUserSchema(fromSchema.getUser(), targetContainer, fk.getFkDbSchema());
             if (fkSchema == null)
                 return null;
         }

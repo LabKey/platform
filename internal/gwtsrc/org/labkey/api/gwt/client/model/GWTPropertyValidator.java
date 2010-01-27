@@ -31,6 +31,7 @@ public class GWTPropertyValidator implements Serializable
 {
     public static final String TYPE_REGEX = "regex";
     public static final String TYPE_RANGE = "range";
+    public static final String TYPE_LOOKUP = "lookup";
 
     private int _rowId;
     private String _name;

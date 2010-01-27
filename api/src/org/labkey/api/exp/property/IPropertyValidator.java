@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationError;
@@ -52,5 +53,5 @@ public interface IPropertyValidator
     IPropertyValidator save(User user, Container container) throws ValidationException, SQLException;
     void delete(User user) throws SQLException;
 
-    boolean validate(String field, Object value, List<ValidationError> errors);
+    boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
 }

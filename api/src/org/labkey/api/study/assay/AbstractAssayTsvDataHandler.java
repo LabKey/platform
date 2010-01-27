@@ -195,7 +195,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             throws SQLException, ValidationException
     {
         Integer id = OntologyManager.ensureObject(container, data.getLSID());
-        OntologyManager.insertTabDelimited(container, id,
+        OntologyManager.insertTabDelimited(container, user, id,
                 new SimpleAssayDataImportHelper(data.getLSID()), dataProperties, fileData, false);
     }
 

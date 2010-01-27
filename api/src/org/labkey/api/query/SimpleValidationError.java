@@ -35,4 +35,23 @@ public class SimpleValidationError implements ValidationError
     {
         return _message;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SimpleValidationError that = (SimpleValidationError) o;
+
+        if (_message != null ? !_message.equals(that._message) : that._message != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _message != null ? _message.hashCode() : 0;
+    }
 }

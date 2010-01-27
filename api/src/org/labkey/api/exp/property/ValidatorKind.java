@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ValidationError;
 
 import java.util.List;
@@ -34,5 +35,5 @@ public interface ValidatorKind
 
     IPropertyValidator createInstance();
     boolean isValid(IPropertyValidator validator, List<ValidationError> errors);
-    boolean validate(IPropertyValidator validator, String field, Object value, List<ValidationError> errors);
+    boolean validate(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
 }
