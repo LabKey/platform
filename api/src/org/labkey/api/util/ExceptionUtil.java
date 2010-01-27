@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
@@ -145,7 +146,7 @@ public class ExceptionUtil
     }
 
     /** request may be null if this is coming from a background thread */
-    public static void logExceptionToMothership(HttpServletRequest request, Throwable ex)
+    public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
         ex = unwrapException(ex);
 
