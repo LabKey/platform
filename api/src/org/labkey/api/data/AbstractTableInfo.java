@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SimpleNamedObject;
@@ -376,7 +377,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         throw new UnsupportedOperationException();
     }
 
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         return false;
     }

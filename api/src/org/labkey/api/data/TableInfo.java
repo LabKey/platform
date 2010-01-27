@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
@@ -135,7 +136,7 @@ public interface TableInfo
      */
     StringExpression getDetailsURL(Set<FieldKey> columns, Container container);
 
-    boolean hasPermission(User user, int perm);
+    boolean hasPermission(User user, Class<? extends Permission> perm);
 
     ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception;
 

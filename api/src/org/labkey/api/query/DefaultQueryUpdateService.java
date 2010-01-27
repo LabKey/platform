@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.UnauthorizedException;
 import org.apache.commons.beanutils.ConvertUtils;
 
@@ -56,7 +57,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
         return _dbTable;
     }
 
-    protected boolean hasPermission(User user, int acl)
+    protected boolean hasPermission(User user, Class<? extends Permission> acl)
     {
         return getQueryTable().hasPermission(user, acl);
     }
@@ -64,7 +65,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
     @SuppressWarnings("unchecked")
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, ACL.PERM_READ))
+        if (!hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException("You do not have permission to read data from this table.");
         Map<String,Object> row = ((Map<String,Object>)Table.selectObject(getDbTable(), getKeys(keys), Map.class));
 
@@ -78,7 +79,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, ACL.PERM_INSERT))
+        if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
         convertTypes(row);
         setSpecialColumns(user, container, getDbTable(), row);
@@ -87,7 +88,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, ACL.PERM_UPDATE))
+        if (!hasPermission(user, UpdatePermission.class))
             throw new UnauthorizedException("You do not have permission to update data in this table.");
         //when updating a row, we should strip the following fields, as they are
         //automagically maintained by the table layer, and should not be allowed
@@ -131,7 +132,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
 
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        if (!hasPermission(user, ACL.PERM_DELETE))
+        if (!hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
         if (container != null && getDbTable().getColumn("container") != null)

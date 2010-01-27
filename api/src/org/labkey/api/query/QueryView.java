@@ -31,6 +31,9 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -494,19 +497,19 @@ public class QueryView extends WebPartView<Object>
     protected boolean canDelete()
     {
         TableInfo table = getTable();
-        return table != null && table.hasPermission(getUser(), ACL.PERM_DELETE);
+        return table != null && table.hasPermission(getUser(), DeletePermission.class);
     }
 
     protected boolean canInsert()
     {
         TableInfo table = getTable();
-        return table != null && table.hasPermission(getUser(), ACL.PERM_INSERT) && table.getUpdateService() != null;
+        return table != null && table.hasPermission(getUser(), InsertPermission.class) && table.getUpdateService() != null;
     }
 
     protected boolean canUpdate()
     {
         TableInfo table = getTable();
-        return table != null && table.hasPermission(getUser(), ACL.PERM_UPDATE) && table.getUpdateService() != null;
+        return table != null && table.hasPermission(getUser(), UpdatePermission.class) && table.getUpdateService() != null;
     }
 
     public boolean showInsertNewButton()

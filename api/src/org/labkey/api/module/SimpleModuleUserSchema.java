@@ -19,6 +19,7 @@ package org.labkey.api.module;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -125,7 +126,7 @@ public class SimpleModuleUserSchema extends UserSchema
         }
 
         @Override
-        public boolean hasPermission(User user, int perm)
+        public boolean hasPermission(User user, Class<? extends Permission> perm)
         {
             return _userSchema.getContainer().hasPermission(user, perm);
         }

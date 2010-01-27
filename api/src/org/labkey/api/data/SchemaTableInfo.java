@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -707,7 +708,7 @@ public class SchemaTableInfo implements TableInfo
         throw new UnsupportedOperationException();
     }
 
-    public boolean hasPermission(User user, int perm)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         return false;
     }
