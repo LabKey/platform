@@ -1816,7 +1816,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.2)
-    public class exportSqlAction extends ExportAction<ExportSqlForm>
+    public class ExportSqlAction extends ExportAction<ExportSqlForm>
     {
         public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws Exception
         {
