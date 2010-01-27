@@ -318,18 +318,20 @@ public class SqlParser
                 }
                 else if (name.equals("age"))
                 {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
+                    if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getColumn()));
+                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getColumn()));
                         break;
                     }
-                    assert exprList.childList().size() == 3;
+                    assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
                     LinkedList<QNode> args = new LinkedList<QNode>();
-                    args.add(constantToStringNode(exprList.childList().get(0)));
+                    args.add(exprList.childList().get(0));
                     args.add(exprList.childList().get(1));
-                    args.add(exprList.childList().get(2));
+                    if (exprList.childList().size() == 3)
+                        args.add(constantToStringNode(exprList.childList().get(2)));
                     exprList._replaceChildren(args);
-                    validateTimestampConstant(args.get(0));
+                    if (args.size() == 3)
+                        validateTimestampConstant(args.get(2));
                 }
 
                 try

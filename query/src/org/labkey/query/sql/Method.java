@@ -122,7 +122,7 @@ public enum Method
                     return new AgeInMonthsMethodInfo();
                 }
             },
-    age(Types.INTEGER, 3, 3)
+    age(Types.INTEGER, 2, 3)
             {
                 @Override
                 public MethodInfo getMethodInfo()
@@ -414,7 +414,9 @@ public enum Method
 
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
         {
-            String unit = arguments[2].getSQL().toUpperCase();
+            if (arguments.length == 2)
+                return new AgeInYearsMethodInfo().getSQL(schema, arguments);
+            String unit = StringUtils.strip(arguments[2].getSQL().toUpperCase(),"'");
             if (unit.equals("YEAR") || unit.equals("SQL_TSI_YEAR"))
                 return new AgeInYearsMethodInfo().getSQL(schema, arguments);
             if (unit.equals("MONTH") || unit.equals("SQL_TSI_MONTH"))
