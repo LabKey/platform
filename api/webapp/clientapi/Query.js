@@ -725,6 +725,85 @@ LABKEY.Query = new function()
         },
 
         /**
+         * Returns details about a given query including detailed information about result columns
+         * @param {Object} config An object that contains the following configuration parameters
+         * @param {String} config.schemaName The name of the schema.
+         * @param {String} config.queryName the name of the query.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>queryInfo:</b> An object with the following properties
+         *  <ul>
+         *      <li><b>schemaName:</b> the name of the requested schema</li>
+         *      <li><b>name:</b> the name of the requested query</li>
+         *      <li><b>isUserDefined:</b> true if this is a user-defined query</li>
+         *      <li><b>canEdit:</b> true if the current user can edit this query</li>
+         *      <li><b>isMetadataOverrideable:</b> true if the current user may override the query's metadata</li>
+         *      <li><b>viewDataUrl:</b> The URL to navigate to for viewing the data returned from this query</li>
+         *      <li><b>description:</b> A description for this query (if provided)</li>
+         *      <li><b>columns:</b> Information about all columns in this query. This is an array of objects, each of which
+         *      has the following properties:
+         *          <ul>
+         *              <li><b>name:</b> The name of the column</li>
+         *              <li><b>description:</b> An optonal description of the column</li>
+         *              <li><b>type:</b> The column's data type</li>
+         *              <li><b>fieldKey:</b> The field key for the column. If this column comes from a foreign table, the key is a full path from the source
+         *              query to this column.</li>
+         *              <li><b>isAutoIncrement:</b> true if this column is auto-increment</li>
+         *              <li><b>isHidden:</b> true if this column should be hidden</li>
+         *              <li><b>isKeyField:</b> true if this is part of the primary key</li>
+         *              <li><b>isMvEnabled:</b> true if this column is missing-value enabled</li>
+         *              <li><b>isNullable:</b> true if this column can accept nulls</li>
+         *              <li><b>isReadOnly:</b> true if this column is read-only</li>
+         *              <li><b>isUserEditable:</b> true if this column may be edited by the current user</li>
+         *              <li><b>isVersionField:</b> true if this column is a version column</li>
+         *              <li><b>isSelectable:</b> true if this column may be selected</li>
+         *              <li><b>caption:</b> The user-friendly caption for this column (may differ from name)</li>
+         *              <li><b>lookup:</b> If this column is a lookup (foreign key) to another table, this will contain an object with the following properties:
+         *                  <ul>
+         *                      <li><b>schemaName:</b> The schema in which the lookup query exists</li>
+         *                      <li><b>queryName:</b> The name of the lookup query in that schema</li>
+         *                      <li><b>containerPath:</b> The container path if the lookup is defined in a different container</li>
+         *                      <li><b>displayColumn:</b> The column that is normally displayed form the lookup table</li>
+         *                      <li><b>keyColumn:</b> The primary key column of the lookup table</li>
+         *                      <li><b>isPublic:</b> true if the lookup table is public (i.e., may be accessed via the API)</li>
+         *                  </ul>
+         *               </li>
+         *          </ul>
+         *      </li>
+         *      <li><b>defaultView:</b> An array of column information for the columns in the current user's default view of this query.
+         *      The shape of each column info is the same as in the columns array.</li>
+         *  </ul>
+         * </li>
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
+         * the current container will be used.
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         */
+        getQueryDetails : function(config)
+        {
+            var params = {};
+            if(config.schemaName)
+                params.schemaName = config.schemaName;
+            if(config.queryName)
+                params.queryName = config.queryName;
+            if(config.fk)
+                params.fk = config.fk;
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),
+                method : 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                params: params
+            });
+        },
+
+        /**
          * Validates the specified query by ensuring that it parses and executes without an exception.
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
