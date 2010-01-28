@@ -21,6 +21,7 @@ import junit.framework.TestSuite;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -1067,18 +1068,18 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private class AttachmentResource extends AbstractDocumentResource
     {
-        Resource _folder = null;
-        AttachmentParent _parent = null;
-        String _name = null;
+        Resource _folder;
+        final AttachmentParent _parent;
+        final String _name;
         long _created = Long.MIN_VALUE;
         User _createdBy = null;
         ActionURL _downloadUrl = null;
         Attachment _cached = null;
 
-
         AttachmentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
         {
             super(path);
+
             Container c = ContainerManager.getForId(parent.getContainerId());
             _containerId = parent.getContainerId();
             _policy = null == c ? null : c.getPolicy();
@@ -1086,21 +1087,27 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _parent = parent;
             _name = name;
 
-            String searchTitle = name + " " + replaceSymbols(name);
-
-            String category = cat == null ?
-                    SearchService.fileCategory.toString() :
-                    SearchService.fileCategory.toString() + " " + cat.toString();
-            setProperty(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
-            setProperty(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
-            setProperty(SearchService.PROPERTY.categories.toString(), category);
+            initSearch(name, displayTitle, cat);
         }
 
+
+        private void initSearch(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
+        {
+            String searchTitle = name + " " + replaceSymbols(name);
+
+            setSearchProperty(SearchService.PROPERTY.searchTitle, searchTitle);
+            setSearchProperty(SearchService.PROPERTY.displayTitle, null != displayTitle ? displayTitle : name);
+
+            if (null == cat)
+                setSearchCategory(SearchService.fileCategory);
+            else
+                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + " " + cat.toString());
+        }
 
         AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
         {
             this(folder, parent, attachment.getName());
-            _containerId = parent.getContainerId();
+
             _created = attachment.getCreated().getTime();
             _createdBy = UserManager.getUser(attachment.getCreatedBy());
             _cached = attachment;
@@ -1116,6 +1123,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _policy = c == null ? null : c.getPolicy();
             _name = name;
             _parent = parent;
+
+            initSearch(name, null, null);
         }
 
         Attachment getAttachment()
