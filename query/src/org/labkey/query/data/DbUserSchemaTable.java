@@ -53,17 +53,8 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
 
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        if (!super.hasPermission(user, perm))
-            return false;
-        if (!getUserSchema().areTablesEditable())
-            return false;
         List<ColumnInfo> columns = getPkColumns();
-        // Consider: allow multi-column keys
-        if (columns.size() != 1)
-        {
-            return false;
-        }
-        return true;
+        return (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0);
     }
 
     public void setContainer(String containerId)

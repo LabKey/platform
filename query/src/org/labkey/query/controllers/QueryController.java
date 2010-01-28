@@ -1936,6 +1936,9 @@ public class QueryController extends SpringActionController
             if (table == null)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
 
+            if (table.getPkColumns().size() == 0)
+                throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." + table.getPublicName() + "' cannot be updated because it has no primary key defined!");
+
             checkTablePermission(user, table);
             QueryUpdateService qus = table.getUpdateService();
             if (null == qus)
