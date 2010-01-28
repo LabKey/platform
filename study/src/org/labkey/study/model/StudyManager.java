@@ -41,7 +41,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.reader.AbstractTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.*;
@@ -3355,7 +3354,7 @@ public class StudyManager
                 Map<String,Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.participantId.toString(), id);
-                props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- " +
+                props.put(SearchService.PROPERTY.displayTitle.toString(), "Study " + study.getLabel() + " -- " +
                         StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id);
 
                 // need to figure out if all study users can see demographic data or not

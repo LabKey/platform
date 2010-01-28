@@ -85,7 +85,7 @@ public class ServiceImpl implements WikiService
         if (renderType == null)
             renderType = getDefaultWikiRendererType();
 
-        wikiversion.setRendererType(renderType.name());
+        wikiversion.setRendererTypeEnum(renderType);
 
         try
         {

@@ -63,13 +63,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Category _log = Category.getInstance(LuceneSearchServiceImpl.class);
 
-    private static int _count = 0;
     private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexWriter()
     private final Analyzer _analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
     private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
-    static enum FIELD_NAMES { body, title, summary, url, container, uniqueId }
+    static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary, url, container, uniqueId }
 
     public LuceneSearchServiceImpl()
     {
@@ -117,7 +116,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(PROPERTY.categories.toString(), PROPERTY.title.toString());
+    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(PROPERTY.categories.toString(), PROPERTY.displayTitle.toString());
 
     @Override
     Map<?, ?> preprocess(String id, Resource r)
@@ -128,19 +127,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert null != r.getContainerId();
 
             Map<String, ?> props = r.getProperties();
+            assert null != props;
+
             String categories = (String)props.get(PROPERTY.categories.toString());
+            assert null != categories;
+
             String body = null;
-            String title = (String)props.get(PROPERTY.title.toString());
+            String displayTitle = (String)props.get(PROPERTY.displayTitle.toString());
+            String searchTitle = (String)props.get(PROPERTY.searchTitle.toString());
             String type = r.getContentType();
 
-            // Skip XML for now
+            // Skip images for now
             if (type.startsWith("image/"))
             {
                 return null;
             }
             else if ("text/html".equals(type))
             {
-                String html="";
+                String html = "";
                 InputStream in = r.getInputStream(User.getSearchUser());
                 if (null != in)
                     html = PageFlowUtil.getStreamContentsAsString(in);
@@ -150,7 +154,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 {
                     HTMLContentExtractor extractor = new HTMLContentExtractor.LabKeyPageHTMLExtractor(html);
                     body = extractor.extract();
-                    title = extractor.getTitle();
+                    displayTitle = extractor.getTitle();
                 }
 
                 if (StringUtils.isEmpty(body))
@@ -180,8 +184,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     parser.parse(is, handler, metadata);
                     is.close();
                     body = handler.toString();
-                    if (StringUtils.isBlank(title))
-                        title = metadata.get(Metadata.TITLE);
+                    if (StringUtils.isBlank(displayTitle))
+                        displayTitle = metadata.get(Metadata.TITLE);
                     _log.debug("Parsed " + id);
                 }
                 finally
@@ -192,35 +196,36 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             String url = r.getExecuteHref(null);
             assert null != url;
-            if (StringUtils.isBlank(title))
-                title = r.getName();
 
-            String summary = extractSummary(body, title);
+            // TODO: Delete this and assert null != displayTitle and null != searchTitle
+            if (StringUtils.isBlank(displayTitle))
+                displayTitle = r.getName();
 
-            _count++;
+            if (StringUtils.isBlank(searchTitle))
+                searchTitle = displayTitle;
 
-            if (0 == _count % 100)
-                _log.debug("Indexing: " + _count);
+            String summary = extractSummary(body, displayTitle);
+            // Split the category string by whitespace, index each without stemming
+            String[] categoryArray = categories.split("\\s+");
 
             Document doc = new Document();
 
+            // Index and store the unique document ID
             doc.add(new Field(FIELD_NAMES.uniqueId.toString(), r.getDocumentId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+
+            // Index, but don't store
             doc.add(new Field(FIELD_NAMES.body.toString(), body, Field.Store.NO, Field.Index.ANALYZED));
-            doc.add(new Field(FIELD_NAMES.title.toString(), title, Field.Store.YES, Field.Index.ANALYZED));
+            doc.add(new Field(FIELD_NAMES.title.toString(), searchTitle, Field.Store.NO, Field.Index.ANALYZED));
+            for (String category : categoryArray)
+                doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+
+            // Store, but don't index
+            doc.add(new Field(FIELD_NAMES.displayTitle.toString(), displayTitle, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
 
-            // TODO: all docs should have a category -- assert
-            // Split the category string by whitespace, index each without stemming
-            if (null != categories)
-            {
-                String[] array = categories.split("\\s+");
-
-                for (String category : array)
-                    doc.add(new Field(PROPERTY.categories.toString(), category.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-            }
-
+            // Index the remaining properties, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
             {
                 Object value = entry.getValue();
@@ -522,7 +527,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String url = doc.get(FIELD_NAMES.url.toString());
             String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
             hit.url = url + (-1==url.indexOf("?") ? "?" : "&") + docid;
-            hit.title = doc.get(FIELD_NAMES.title.toString());
+            hit.displayTitle = doc.get(FIELD_NAMES.displayTitle.toString());
             ret.add(hit);
         }
 

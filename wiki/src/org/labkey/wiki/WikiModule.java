@@ -183,7 +183,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         if (renderAs == null)
             renderAs = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
 
-        wikiversion.setRendererType(renderAs.name());
+        wikiversion.setRendererTypeEnum(renderAs);
 
         try
         {

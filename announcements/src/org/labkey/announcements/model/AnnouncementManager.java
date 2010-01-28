@@ -925,11 +925,11 @@ public class AnnouncementManager
                             .replaceParameter("entityId", entityId)
                             .replaceParameter("name", documentName);
                     attachmentUrl.setExtraPath(ann.getContainerId());
-                    // UNDONE: set title to make LuceneSearchServiceImpl work
-                    String title = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
+
+                    String displayTitle = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId, documentName),
-                            attachmentUrl, title,
+                            attachmentUrl, displayTitle,
                             ann,
                             documentName, searchCategory);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);

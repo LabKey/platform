@@ -145,7 +145,7 @@ public class WikiEditModel
         if(null == _wikiVersion)
             return ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE == type;
         else
-            return type.name().equalsIgnoreCase(_wikiVersion.getRendererType());
+            return type == _wikiVersion.getRendererTypeEnum();
     }
 
     public List<Wiki> getPossibleParents()

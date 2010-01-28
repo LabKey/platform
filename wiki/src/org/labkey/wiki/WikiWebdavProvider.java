@@ -290,7 +290,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         WikiRendererType r = WikiRendererType.HTML;
         try
         {
-            r = WikiRendererType.valueOf(v.getRendererType());
+            r = v.getRendererTypeEnum();
         }
         catch (IllegalArgumentException x)
         {
@@ -309,7 +309,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         String _entityId;
         String _name;
         String _body = null;
-        String _type = WikiRendererType.HTML.name();
+        WikiRendererType _type = WikiRendererType.HTML;
 
         
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
@@ -325,21 +325,21 @@ class WikiWebdavProvider implements WebdavService.Provider
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
 
-            _properties = new HashMap<String,Object>();
+            _properties = new HashMap<String, Object>();
             _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
             _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
             if (null != v)
             {
                 _body = getWikiVersion().getBody();
-                _type = getWikiVersion().getRendererType();
-                _properties.put(SearchService.PROPERTY.title.toString(), v.getTitle().getSource());
+                _type = getWikiVersion().getRendererTypeEnum();
+                _properties.put(SearchService.PROPERTY.displayTitle.toString(), v.getTitle().getSource());
             }
         }
 
 
-        WikiPageResource(Container c, String name, String entityId, Map<String,Object> m)
+        WikiPageResource(Container c, String name, String entityId, String body, WikiRendererType rendererType, Map<String, Object> m)
         {
-            super(new Path("wiki",c.getId(),name));
+            super(new Path("wiki", c.getId(), name));
 
             _c = c;
             _containerId = _c.getId();
@@ -347,11 +347,8 @@ class WikiWebdavProvider implements WebdavService.Provider
             _entityId = entityId;
             _folder = null;
             _policy = c.getPolicy();
-            if (null != m.get("renderertype"))
-                _type = String.valueOf(m.get("renderertype"));
-            _body = String.valueOf(m.get("body"));
-            m.put("body",null);
-            m.put("renderertype",null);
+            _type = rendererType;
+            _body = body;
             _properties = m;
             _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
             _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
@@ -502,9 +499,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public String getContentType()
         {
-            if ("HTML".equals(_type))
-                return "text/html";
-            return "text/plain";
+            return _type.getContentType();
         }
 
         public long getContentLength()
@@ -532,7 +527,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         public String getIconHref()
         {
             WikiVersion v = getWikiVersion();
-            if (WikiRendererType.RADEOX.toString().equals(v.getRendererType()))
+            if (WikiRendererType.RADEOX == v.getRendererTypeEnum())
                 return AppProps.getInstance().getContextPath() + "/_icons/wiki.png";
             return super.getIconHref();
         }

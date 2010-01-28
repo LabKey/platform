@@ -159,6 +159,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
         _body = body;
     }
 
+    @Deprecated
     //returns string corresponding to name of enum entry
     public String getRendererType()
     {
@@ -168,9 +169,22 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
         return _rendererType.name();
     }
 
-    public void setRendererType(String rendererType)
+    public WikiRendererType getRendererTypeEnum()
     {
-        _rendererType = WikiRendererType.valueOf(rendererType);
+        if (_rendererType == null)
+            _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
+
+        return _rendererType;
+    }
+
+    public void setRendererType(String rendererTypeName)
+    {
+        _rendererType = WikiRendererType.valueOf(rendererTypeName);
+    }
+
+    public void setRendererTypeEnum(WikiRendererType rendererType)
+    {
+        _rendererType = rendererType;
     }
 
     //we're not currently calling this one....

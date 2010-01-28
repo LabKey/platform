@@ -74,7 +74,7 @@
                 //
             }
 
-%><a href="<%=h(hit.url)%>"><%=h(hit.title)%>
+%><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%>
 </a><br><%
             String summary = StringUtils.trimToNull(hit.summary);
             if (null != summary)

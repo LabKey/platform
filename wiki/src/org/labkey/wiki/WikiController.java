@@ -871,7 +871,7 @@ public class WikiController extends SpringActionController
         WikiVersion newWikiVersion = new WikiVersion(destName);
         newWikiVersion.setTitle(srcLatestVersion.getTitle());
         newWikiVersion.setBody(srcLatestVersion.getBody());
-        newWikiVersion.setRendererType(srcLatestVersion.getRendererType());
+        newWikiVersion.setRendererTypeEnum(srcLatestVersion.getRendererTypeEnum());
 
         //get attachments
         Wiki wikiWithAttachments = WikiManager.getWiki(cSrc, srcName);

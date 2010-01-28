@@ -39,6 +39,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -872,24 +873,35 @@ public class WikiManager
             
             while (rs.next())
             {
-                Map<String,Object> m = factory.getRowMap(rs);
-                if (null == m.get("body"))
-                    m.put("body","");
-                if (null == m.get("title"))
-                    m.put(SearchService.PROPERTY.title.toString(), m.get("name"));
-                name = (String)m.get("name");
-                String entityid = (String)m.get("entityid");
-                WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, name, entityid, m);
+                String entityId = rs.getString("entityid");
+                assert null != entityId;
+                name = rs.getString("name");
+                assert null != name;
+                String wikiTitle = rs.getString("title");
+                String searchTitle;
+                if (null == wikiTitle)
+                    searchTitle = wikiTitle = name;
+                else
+                    searchTitle = wikiTitle + " " + name;   // Always search on wiki title or name
+                String body = rs.getString("body");
+                if (null == body)
+                    body = "";
+                WikiRendererType rendererType = WikiRendererType.valueOf(rs.getString("renderertype"));
+
+                Map<String, Object> props = new HashMap<String, Object>();
+                props.put(SearchService.PROPERTY.displayTitle.toString(), wikiTitle);
+                props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+
+                WikiWebdavProvider.WikiPageResource r = new WikiWebdavProvider.WikiPageResource(c, name, entityId, body, rendererType, props);
                 task.addResource(r, SearchService.PRIORITY.item);
                 if (Thread.interrupted())
                     return;
-                assert null != entityid;
                 Wiki parent = new Wiki();
                 parent.setContainer(c.getId());
-                parent.setEntityId(entityid);
-                parent.setName(new HString(name,false));
-                ids.put(entityid, parent);
-                titles.put(entityid,(String)m.get("title"));
+                parent.setEntityId(entityId);
+                parent.setName(new HString(name, false));
+                ids.put(entityId, parent);
+                titles.put(entityId, wikiTitle);
             }
 
             // now attachments
@@ -906,10 +918,10 @@ public class WikiManager
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
                     Wiki parent = (Wiki)ids.get(entityId);
-                    String title = documentName + " attached to page " + titles.get(entityId);
+                    String displayTitle = documentName + " attached to page " + titles.get(entityId);
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
-                            attachmentUrl, title,
+                            attachmentUrl, displayTitle,
                             parent,
                             documentName, searchCategory);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);

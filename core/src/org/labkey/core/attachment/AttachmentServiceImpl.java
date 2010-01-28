@@ -585,9 +585,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Resource getDocumentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name, SearchService.SearchCategory cat)
+    public Resource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
     {
-        return new AttachmentResource(path, downloadURL, title, parent, name, cat);
+        return new AttachmentResource(path, downloadURL, displayTitle, parent, name, cat);
     }
 
 
@@ -1076,19 +1076,23 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         Attachment _cached = null;
 
 
-        AttachmentResource(Path path, ActionURL downloadURL, String title, AttachmentParent parent, String name, SearchService.SearchCategory cat)
+        AttachmentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
         {
             super(path);
             Container c = ContainerManager.getForId(parent.getContainerId());
             _containerId = parent.getContainerId();
-            _policy = null==c ? null : c.getPolicy();
+            _policy = null == c ? null : c.getPolicy();
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
+
+            String searchTitle = name + " " + replaceSymbols(name);
+
             String category = cat == null ?
                     SearchService.fileCategory.toString() :
                     SearchService.fileCategory.toString() + " " + cat.toString();
-            setProperty("title", title);
+            setProperty(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+            setProperty(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
             setProperty(SearchService.PROPERTY.categories.toString(), category);
         }
 
@@ -1121,6 +1125,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return AttachmentService.get().getAttachment(_parent, _name);
         }
 
+
+        private String replaceSymbols(String documentName)
+        {
+            // Replace some common symbols with spaces.  Lucene analyzers tokenize on whitespace; this allows
+            // a search on "labkey" to hit a document called "labkey.txt"
+            return documentName.replaceAll("[._-]", " ");
+        }
 
         @Override
         public String getContentType()
