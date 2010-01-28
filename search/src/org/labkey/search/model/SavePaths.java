@@ -371,22 +371,25 @@ public class SavePaths implements DavCrawler.SavePaths
         }
     }
 
+    String datetime = null;
 
     public boolean updateFile(Path path, Date lastIndexed, Date modified)
     {
         try
         {
+            if (null == datetime)
+                datetime = getSearchSchema().getSqlDialect().getDefaultDateTimeDatatype();
             if (modified.getTime() == Long.MIN_VALUE)
                 modified = null;
             int id = _getParentId(path);
             SQLFragment upd = new SQLFragment(
-                    "UPDATE search.CrawlResources SET LastIndexed=?, Modified=? WHERE Parent=? AND Name=?",
+                    "UPDATE search.CrawlResources SET LastIndexed=?, Modified=CAST(? AS " + datetime + ") WHERE Parent=? AND Name=?",
                     lastIndexed, modified, id, path.getName());
             int count = Table.execute(getSearchSchema(), upd);
             if (count > 0)
                 return true;
             SQLFragment ins = new SQLFragment(
-                    "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed, Modified) VALUES (?,?,?,?)",
+                    "INSERT INTO search.CrawlResources(Parent,Name,LastIndexed, Modified) VALUES (?,?,?,CAST(? AS " + datetime + "))",
                     id, path.getName(), lastIndexed, modified);
             count = Table.execute(getSearchSchema(), ins);
             return count > 0;
