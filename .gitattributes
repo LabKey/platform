@@ -511,6 +511,7 @@ api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
 api/src/org/labkey/api/query/SimpleValidationError.java -text
 api/src/org/labkey/api/query/TitleForeignKey.java -text
 api/src/org/labkey/api/query/UserIdForeignKey.java -text
+api/src/org/labkey/api/query/UserIdQueryForeignKey.java -text
 api/src/org/labkey/api/query/UserIdRenderer.java -text
 api/src/org/labkey/api/query/UserSchema.java -text
 api/src/org/labkey/api/query/ValidationError.java -text
@@ -1898,7 +1899,6 @@ internal/src/org/labkey/api/module/DefaultFolderType.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text
-internal/src/org/labkey/api/query/UserIdQueryForeignKey.java -text
 internal/src/org/labkey/api/security/UserComparator.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text
 internal/src/org/labkey/api/util/ContainerTreeSelected.java -text

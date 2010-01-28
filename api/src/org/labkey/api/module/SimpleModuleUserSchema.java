@@ -97,12 +97,7 @@ public class SimpleModuleUserSchema extends UserSchema
                         colName.equalsIgnoreCase("createdby") ||
                         colName.equalsIgnoreCase("modifiedby"))
                 {
-                    wrap.setDisplayColumnFactory(new DisplayColumnFactory() {
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new UserIdRenderer(colInfo);
-                        }
-                    });
+                    wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
                 }
 
                 if (col.getFk() != null)
