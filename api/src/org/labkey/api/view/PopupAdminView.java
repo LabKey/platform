@@ -88,7 +88,7 @@ public class PopupAdminView extends PopupMenuView
 
         if (!c.isRoot())
         {
-            if (isAdmin)
+            if (isAdmin && !c.isWorkbook())
             {
                 NavTree projectAdmin = new NavTree("Manage Project");
                 projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
