@@ -103,7 +103,7 @@ public class PipelineServiceImpl extends PipelineService
         }
 
         // if we haven't found a 'real' root, default to a root off the site wide default
-        return getDefaultPipelineRoot(container);
+        return getDefaultPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
     }
 
     /**
@@ -113,21 +113,24 @@ public class PipelineServiceImpl extends PipelineService
      * @param container
      * @return
      */
-    private PipeRoot getDefaultPipelineRoot(Container container)
+    private PipeRoot getDefaultPipelineRoot(Container container, String type)
     {
         try {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            File root = svc.getFileRoot(container.getProject());
-            if (root != null)
+            if (PipelineRoot.PRIMARY_ROOT.equals(type))
             {
-                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                PipelineRoot p = new PipelineRoot();
+                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                File root = svc.getFileRoot(container.getProject());
+                if (root != null)
+                {
+                    AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
+                    PipelineRoot p = new PipelineRoot();
 
-                p.setContainer(container.getId());
-                p.setPath(dir.getFileSystemDirectory().toURI().toString());
-                //p.setType("Default");
+                    p.setContainer(container.getId());
+                    p.setPath(dir.getFileSystemDirectory().toURI().toString());
+                    //p.setType("Default");
 
-                return new PipeRootImpl(p);
+                    return new PipeRootImpl(p);
+                }
             }
         }
         catch (MissingRootDirectoryException e)
@@ -146,7 +149,7 @@ public class PipelineServiceImpl extends PipelineService
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
 
         if (pipelineRoot == null)
-            return getDefaultPipelineRoot(container) != null;
+            return getDefaultPipelineRoot(container, PipelineRoot.PRIMARY_ROOT) != null;
         return false;
     }
 
@@ -210,7 +213,7 @@ public class PipelineServiceImpl extends PipelineService
             if (null == r)
             {
                 if (container != null)
-                    return getDefaultPipelineRoot(container);
+                    return getDefaultPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
                 return null;
             }
             return new PipeRootImpl(r);
@@ -232,7 +235,7 @@ public class PipelineServiceImpl extends PipelineService
         {
             if (container != null)
             {
-                PipeRoot pipeRoot = getDefaultPipelineRoot(container);
+                PipeRoot pipeRoot = getDefaultPipelineRoot(container, type);
                 if (pipeRoot != null)
                     return pipeRoot.getUri();
             }
