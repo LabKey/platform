@@ -56,6 +56,18 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
     private ExpProtocol _protocol;
 
+    public AssayRunsAction()
+    {
+        super();
+    }
+
+    public AssayRunsAction(ViewContext context, ExpProtocol protocol)
+    {
+        super();
+        setViewContext(context);
+        _protocol = protocol;
+    }
+
     public ModelAndView getView(AssayRunsForm summaryForm, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();

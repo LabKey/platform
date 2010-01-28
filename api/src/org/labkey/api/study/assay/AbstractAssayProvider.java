@@ -1377,6 +1377,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return false;
     }
 
+    public ModelAndView createBeginView(ViewContext context, ExpProtocol protocol)
+    {
+        return null;
+    }
+
     public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
     {
         return null;

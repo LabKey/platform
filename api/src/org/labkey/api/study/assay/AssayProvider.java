@@ -123,6 +123,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     boolean hasCustomView(IAssayDomainType domainType, boolean details);
 
+    ModelAndView createBeginView(ViewContext context, ExpProtocol protocol);
+
     ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol);
 
     ModelAndView createBatchDetailsView(ViewContext context, ExpProtocol protocol, ExpExperiment batch);
