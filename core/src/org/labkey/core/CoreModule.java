@@ -194,7 +194,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         return v;
                     }
                 },
-                new AlwaysAvailableWebPartFactory("Workbooks")
+                new BaseWebPartFactory("Workbooks")
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
@@ -204,8 +204,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         box.setTitle("Workbooks");
                         return box;
                     }
+
+                    @Override
+                    public boolean isAvailable(Container c, String location)
+                    {
+                        return !c.isWorkbook() && location.equalsIgnoreCase(HttpView.BODY);
+                    }
                 },
-                new WorkbookWebPartFactory("Workbook Description")
+                new BaseWebPartFactory("Workbook Description")
                 {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
@@ -213,6 +219,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         view.setTitle("Workbook Description");
                         view.setFrame(WebPartView.FrameType.NONE);
                         return view;
+                    }
+
+                    @Override
+                    public boolean isAvailable(Container c, String location)
+                    {
+                        return false;
                     }
                 });
     }

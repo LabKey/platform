@@ -1,6 +1,7 @@
 .labkey-edit-in-place
 {
-    padding-right: 30px
+    padding-right: 30px;
+    border: 1px transparent solid;
 }
 .labkey-edit-in-place-hover
 {

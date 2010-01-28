@@ -36,7 +36,7 @@
     Ext.onReady(function(){
         new Ext.form.TextField({
             applyTo: 'wbsearch-id',
-            emptyText: 'Jump to ID or Name'
+            emptyText: 'Jump to ID'
         });
     });
 </script>

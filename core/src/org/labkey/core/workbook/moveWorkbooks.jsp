@@ -36,7 +36,8 @@
 to the selected folder:</div>
 
 <div id="mwb-container-tree" class="extContainer"></div>
-<div style="width:600px;text-align:right;"><%=PageFlowUtil.generateButton(buttonCaption, "#", "onMoveWorkbooks();")%></div>
+<div style="width:600px;text-align:right;"><%=PageFlowUtil.generateButton("Cancel", "#", "window.history.back();")%>
+<%=PageFlowUtil.generateButton(buttonCaption, "#", "onMoveWorkbooks();")%></div>
 <div id="mwb-status"></div>
 
 <script type="text/javascript">
