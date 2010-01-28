@@ -395,10 +395,13 @@ public abstract class AbstractResource implements Resource
         _properties.put(key,value);
     }
 
-    protected void setProperty(SearchService.SearchCategory category)
+    protected void setSearchProperty(SearchService.PROPERTY searchProperty, String value)
     {
-        if (_properties == null)
-            _properties = new HashMap<String, Object>();
-        _properties.put(SearchService.PROPERTY.categories.toString(),category.toString());
+        setProperty(searchProperty.toString(), value);
+    }
+
+    protected void setSearchCategory(SearchService.SearchCategory category)
+    {
+        setSearchProperty(SearchService.PROPERTY.categories,category.toString());
     }
 }

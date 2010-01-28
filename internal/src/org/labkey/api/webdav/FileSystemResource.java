@@ -71,7 +71,9 @@ public class FileSystemResource extends AbstractResource
     protected FileSystemResource(Path path)
     {
         super(path);
-        setProperty(SearchService.fileCategory);
+        setSearchCategory(SearchService.fileCategory);
+        setSearchProperty(SearchService.PROPERTY.displayTitle, path.getName());
+        setSearchProperty(SearchService.PROPERTY.searchTitle, path.getName());   // TODO: Add stripped version
     }
 
     protected FileSystemResource(Path folder, String name)
@@ -86,8 +88,7 @@ public class FileSystemResource extends AbstractResource
 
     public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
     {
-        super(folder.getPath(), name);
-        setProperty(SearchService.fileCategory);
+        this(folder.getPath(), name);
         _folder = folder;
         _name = name;
         _policy = policy;
@@ -97,8 +98,7 @@ public class FileSystemResource extends AbstractResource
 
     public FileSystemResource(FileSystemResource folder, String relativePath)
     {
-        super(folder, relativePath);
-        setProperty(SearchService.fileCategory);
+        this(folder.getPath(), relativePath);
         _folder = folder;
         _policy = folder._policy;
         _file = new File(folder._file, relativePath);
@@ -106,7 +106,7 @@ public class FileSystemResource extends AbstractResource
 
     public FileSystemResource(Path path, File file, SecurityPolicy policy)
     {
-        super(path);
+        this(path);
         _file = file;
         _policy = policy;
     }
