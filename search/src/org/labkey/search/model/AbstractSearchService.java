@@ -581,7 +581,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     // us to use single-threaded pre-processing.
     protected boolean isPreprocessThreadSafe()
     {
-        return true;
+        return false;
     }
 
 
