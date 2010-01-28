@@ -39,6 +39,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Portal
@@ -643,7 +644,7 @@ public class Portal
         return false;
     }
 
-    private static void initMaps()
+    private synchronized static void initMaps()
     {
         _viewMap = new HashMap<String, WebPartFactory>(20);
         _regionMap = new MultiHashMap<String, String>();
