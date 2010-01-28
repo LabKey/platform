@@ -76,6 +76,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     private static final String UPLOAD_VIEW_FILENAME = "upload.html";
+    private static final String BEGIN_VIEW_FILENAME = "begin.html";
 
     private File baseDir;
     private File viewsDir;
@@ -352,6 +353,22 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
         JspView<AssayPageBean> view = new JspView<AssayPageBean>("/org/labkey/study/assay/view/moduleAssayListView.jsp", bean);
         view.setView("nested", nestedView);
+        return view;
+    }
+
+    @Override
+    public ModelAndView createBeginView(ViewContext context, ExpProtocol protocol)
+    {
+        ModelAndView beginView = getCustomView(BEGIN_VIEW_FILENAME);
+        if (beginView == null)
+            return super.createBeginView(context, protocol);
+
+        BatchDetailsBean bean = new BatchDetailsBean();
+        bean.provider = this;
+        bean.expProtocol = protocol;
+
+        JspView<BatchDetailsBean> view = new JspView<BatchDetailsBean>("/org/labkey/study/assay/view/begin.jsp", bean);
+        view.setView("nested", beginView);
         return view;
     }
 

@@ -374,6 +374,31 @@ public class AssayController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AssayBeginAction extends BaseAssayAction<ProtocolIdForm>
+    {
+        ExpProtocol _protocol;
+        boolean _hasCustomView = false;
+
+        @Override
+        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        {
+            _protocol = form.getProtocol();
+            AssayProvider provider = form.getProvider();
+            if (null == provider)
+                throw new NotFoundException("No assay was found with id " + form.getRowId());
+            ModelAndView view = provider.createBeginView(getViewContext(), form.getProtocol());
+            _hasCustomView = (null != view);
+            return (null == view ? new AssayRunsView(_protocol, false) : view);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return _hasCustomView ? root.addChild(_protocol.getName() + " Overview") : new AssayRunsAction(getViewContext(), _protocol).appendNavTrail(root);
+        }
+    }
+
     public static class CreateAssayForm extends ProtocolIdForm
     {
         private boolean createInProject;

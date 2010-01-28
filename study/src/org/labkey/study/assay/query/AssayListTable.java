@@ -86,7 +86,7 @@ public class AssayListTable extends FilteredTable
     {
         if (!columns.contains(FieldKey.fromParts("RowId")))
             return null;
-        ActionURL url = new ActionURL(AssayController.SummaryRedirectAction.class, _schema.getContainer());
+        ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _schema.getContainer());
         return new DetailsURL(url, "rowId", new FieldKey(null,"RowId"));
     }
 }

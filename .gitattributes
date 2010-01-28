@@ -2200,6 +2200,7 @@ study/src/org/labkey/study/assay/query/AssaySchemaImpl.java -text
 study/src/org/labkey/study/assay/query/TypeDisplayColumn.java -text
 study/src/org/labkey/study/assay/view/assaySetup.jsp -text
 study/src/org/labkey/study/assay/view/batchDetails.jsp -text
+study/src/org/labkey/study/assay/view/begin.jsp -text
 study/src/org/labkey/study/assay/view/chooseAssayType.jsp -text
 study/src/org/labkey/study/assay/view/dataUpload.jsp -text
 study/src/org/labkey/study/assay/view/moduleAssayListView.jsp -text
