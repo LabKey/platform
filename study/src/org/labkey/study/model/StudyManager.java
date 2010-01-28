@@ -3353,12 +3353,13 @@ public class StudyManager
                 String docid = "participant:" + p.toString();
 
                 Map<String,Object> props = new HashMap<String,Object>();
-                props.put(SearchService.PROPERTY.categories.toString(), subjectCategory);
+                props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.participantId.toString(), id);
                 props.put(SearchService.PROPERTY.title.toString(), "Study " + study.getLabel() + " -- " +
                         StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id);
 
-                if (0==1)
+                // need to figure out if all study users can see demographic data or not
+                if (1==1)
                 {
                     // SimpleDocument
                     SimpleDocumentResource r = new SimpleDocumentResource(

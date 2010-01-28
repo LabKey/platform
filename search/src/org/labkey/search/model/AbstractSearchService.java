@@ -347,7 +347,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public final void clear()
     {
         clearIndex();
-        _savePaths.updatePrefix(Path.rootPath, null, true);
+        DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
         DocumentProvider[] documentProviders = _documentProviders.get();
         for (DocumentProvider p : documentProviders)
         {

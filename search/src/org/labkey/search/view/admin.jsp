@@ -25,10 +25,12 @@
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.search.model.DavCrawler" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<SearchController.AdminForm> me = (JspView<SearchController.AdminForm>) HttpView.currentView();
+User user = me.getViewContext().getUser();
 SearchController.AdminForm form = me.getModelBean();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
@@ -42,23 +44,26 @@ if (null == ss)
 }
 else
 {
-    WebPartView.startTitleFrame(out,"Admin Actions");
-    %><p><form method="POST" action="admin.view"><%
-    if (ss.isRunning())
+    if (user.isAdministrator())
     {
-        %>The document crawler is running.<br>
-        <input type="hidden" name="pause" value="1">
-        <%=PageFlowUtil.generateSubmitButton("Pause")%><%
+        WebPartView.startTitleFrame(out,"Admin Actions");
+        %><p><form method="POST" action="admin.view"><%
+        if (ss.isRunning())
+        {
+            %>The document crawler is running.<br>
+            <input type="hidden" name="pause" value="1">
+            <%=PageFlowUtil.generateSubmitButton("Pause")%><%
+        }
+        else
+        {
+            %>The document crawler is paused.<br>
+            <input type="hidden" name="start" value="1">
+            <%=PageFlowUtil.generateSubmitButton("Start")%><%
+        }
+        %></form></p><%
     }
-    else
-    {
-        %>The document crawler is paused.<br>
-        <input type="hidden" name="start" value="1">
-        <%=PageFlowUtil.generateSubmitButton("Start")%><%
-    }
-    %></form></p>
 
-    <p><form method="POST" action="admin.view">
+    %><p><form method="POST" action="admin.view">
         Delete the search index<br>
         You shouldn't need to do this, but if something goes wrong, you can give it a try.  Note that re-indexing can be very expensive.<br>
         <input type="hidden" name="delete" value="1">

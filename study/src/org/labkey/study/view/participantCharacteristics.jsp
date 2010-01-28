@@ -101,8 +101,10 @@
             // sort the properties so they appear in the same order as the grid view
             PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(HttpView.getRootContext(), typeURI), dataSet, HttpView.getRootContext());
             if (!dataSet.canRead(user))
-            {
-                %><tr class="labkey-header"><th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataSet.getDisplayString())%></th><td nowrap align="left" class="labkey-expandable-row-header">(no access)</td></tr><%
+            {   if (user != User.getSearchUser())
+                {
+                    %><tr class="labkey-header"><th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataSet.getDisplayString())%></th><td nowrap align="left" class="labkey-expandable-row-header">(no access)</td></tr><%
+                }
                 continue;
             }
 

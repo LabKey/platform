@@ -163,7 +163,7 @@ public class DavCrawler implements ShutdownListener
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
 
-        _paths.updatePrefix(path, null, force);
+        _paths.updatePrefix(path, new Date(SavePaths.oldDate.getTime() + 24*60*60*1000), force);
 
         addPathToCrawl(path, null);
     }
@@ -313,7 +313,7 @@ public class DavCrawler implements ShutdownListener
                 else
                 {
                     long childCrawl = SavePaths.oldDate.getTime();
-                    if (!(r instanceof WebdavResolver.WebFolder))
+                    if (!(child instanceof WebdavResolver.WebFolder))
                         childCrawl += child.getPath().size()*1000; // bias toward breadth first
                     if (_full)
                     {
@@ -610,7 +610,7 @@ public class DavCrawler implements ShutdownListener
             long time = p.second.getTime();
             if (time < cutoff) continue;
             long dur = Math.max(0,now - (time-(time%1000)));
-            String ago = DateUtil.formatDuration(dur) + " ago";
+            String ago = DateUtil.formatDuration(dur) + "&nbsp;ago";
             activity.append("<tr><td align=right color=#c0c0c0>" + (ago.equals(last)?"":ago) + "&nbsp;</td><td>" + PageFlowUtil.filter(text) + "</td></tr>\n");
             last = ago;
         }

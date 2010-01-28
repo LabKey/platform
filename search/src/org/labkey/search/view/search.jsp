@@ -83,11 +83,9 @@
 
     if (form.isAdvanced())
     {
-%>
-    <input type="hidden" name="guest" value=0><%
+        %><input type="hidden" name="guest" value=0><%
     }
-    %>
-    <input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q," ")))%>">&nbsp;
+    %><input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q," ")))%>">&nbsp;
     <%=generateSubmitButton("Search")%><%
 
     if (form.isAdvanced())
@@ -104,20 +102,18 @@
             %><input type=radio name=q value="+searchCategory:<%=h(cat.toString())%>" <%=cat==selected?"checked":""%>><%=h(cat.getDescription())%><br><%
         }
     }
-%>
-</form><%
+%><input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>"></form><%
     if (form.isAdvanced())
     {
-%><script type="text/javascript">
-function google()
-{
-    var query = document.getElementById('query').value;
-    window.location = 'http://www.google.com/search?q=' + encodeURIComponent(query);
-    return false;
-}
-
-</script>
-<%
+        %><script type="text/javascript">
+        function google()
+        {
+            var query = document.getElementById('query').value;
+            window.location = 'http://www.google.com/search?q=' + encodeURIComponent(query);
+            return false;
+        }
+        </script>
+        <%
     }
 
     String category = form.getCategory();
