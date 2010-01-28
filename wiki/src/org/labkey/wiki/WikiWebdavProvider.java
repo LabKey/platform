@@ -497,7 +497,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         public long getLastModified()
         {
             WikiVersion v = getWikiVersion();
-            return v.getCreated().getTime();
+            return null != v && null != v.getCreated() ? v.getCreated().getTime() : Long.MIN_VALUE;
         }
 
         public String getContentType()
