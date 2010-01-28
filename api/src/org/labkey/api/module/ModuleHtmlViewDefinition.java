@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.ACL;
@@ -91,7 +92,9 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
             catch(Exception e)
             {
                 log.error("Error trying to read and parse the metadata XML content from " + _metadataFile.getAbsolutePath(), e);
-                throw new RuntimeException(e);
+                _html = "<p class='labkey-error'>The following exception occurred while attempting to load view metadata from "
+                         + PageFlowUtil.filter(_metadataFile.getAbsolutePath()) + ": "
+                         + e.getMessage() + "</p>";
             }
         }
     }
