@@ -34,6 +34,8 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -181,20 +183,17 @@
                 String summary = StringUtils.trimToNull(hit.summary);
                 if (null != summary)
                 {
-            %>
-                <div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%>
-                </div>
-                <%
+                    %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                 }
-
                 if (form.isAdvanced())
                 {
-                %>
-                <div style='margin-left:10px; color:green;'><%=h(href)%>
-                </div><%
+                    %><div style='margin-left:10px; color:green;'><%=h(href)%></div> <%
                 }
-                %>
-                <br><%
+                if (!StringUtils.isEmpty(hit.navtrail))
+                {
+                    %><div style='margin-left:10px;'><%=formatNavTrail(hit.navtrail)%></div><%
+                }
+                %><br><%
             }
             %></div></td><%
 
@@ -219,7 +218,7 @@
                                 Container cc = ContainerManager.getForId(url.getExtraPath());
                                 url.setExtraPath(cc.getPath());
                                 href = url.getLocalURIString();
-                            }
+                            } 
                         }                                                        
                         catch (Exception x)
                         {
@@ -232,7 +231,7 @@
                         {
                             %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                         }
-                        // %><div style='margin-left:10px; color:green;'><%=h(href)%></div><br><%
+                        %><%--<div style='margin-left:10px; color:green;'><%=h(href)%></div><br>--%><%
                     }
                     %></div><%
                     WebPartView.endTitleFrame(out);
@@ -250,4 +249,43 @@
         </tr></table><%
     }
 %>
-
+<%!
+String formatNavTrail(String s)
+{
+    try
+    {
+        JSONArray a;
+        if (s.startsWith("["))
+        {
+            a = new JSONArray(s);
+        }
+        else if (s.startsWith("{"))
+        {
+            JSONObject o = new JSONObject(s);
+            a = new JSONArray(new Object[]{o});
+        }
+        else
+            return "";
+        int length = a.length();
+        StringBuilder sb = new StringBuilder();
+        String connector = "";
+        for (int i=0 ; i<length ; i++)
+        {
+            JSONObject o = a.getJSONObject(i);
+            String text = o.getString("text");
+            String href = o.getString("href");
+            if (!StringUtils.isEmpty(text) && !StringUtils.isEmpty(href))
+            {
+                sb.append(connector);
+                sb.append("<a style='text-decoration:underline; color:#808080;' href='" + PageFlowUtil.filter(href) + "'>" + PageFlowUtil.filter(text) + "</a>");
+                connector = " - ";
+            }
+        }
+        return sb.toString();
+    }
+    catch (Throwable t)
+    {
+        return "";
+    }
+}
+%>

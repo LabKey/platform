@@ -35,6 +35,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchTermProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.wiki.FormattedHtml;
@@ -905,25 +906,33 @@ public class WikiManager
             }
 
             // now attachments
+            ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, c);
+            ActionURL downloadUrl = new ActionURL(WikiController.DownloadAction.class, c);
+            
             if (!ids.isEmpty())
             {
                 List<Pair<String,String>> list = AttachmentService.get().listAttachments(ids.keySet(), modifiedSince);
-                ActionURL url = new ActionURL(WikiController.DownloadAction.class, c);
                 for (Pair<String,String> pair : list)
                 {
                     String entityId = pair.first;
                     String documentName = pair.second;
-                    ActionURL attachmentUrl = url.clone()
+                    Wiki parent = (Wiki)ids.get(entityId);
+
+                    ActionURL wikiUrl = pageUrl.clone().addParameter("page", parent.getName());
+                    ActionURL attachmentUrl = downloadUrl.clone()
                             .replaceParameter("entityId",entityId)
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
-                    Wiki parent = (Wiki)ids.get(entityId);
                     String displayTitle = documentName + " attached to page " + titles.get(entityId);
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
                             attachmentUrl, displayTitle,
                             parent,
                             documentName, searchCategory);
+
+                    NavTree t = new NavTree("wiki page", wikiUrl);
+                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
             }

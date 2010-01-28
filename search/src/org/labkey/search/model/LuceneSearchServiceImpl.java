@@ -68,7 +68,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
-    static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary, url, container, uniqueId }
+    static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary, url, container, uniqueId, navtrail }
 
     public LuceneSearchServiceImpl()
     {
@@ -116,7 +116,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(PROPERTY.categories.toString(), PROPERTY.displayTitle.toString());
+    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(PROPERTY.categories.toString(), PROPERTY.displayTitle.toString(), PROPERTY.navtrail.toString());
 
     @Override
     Map<?, ?> preprocess(String id, Resource r)
@@ -224,6 +224,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
+            if (null != r.getProperties().get(PROPERTY.navtrail.toString()))
+                doc.add(new Field(FIELD_NAMES.navtrail.toString(), (String)r.getProperties().get(PROPERTY.navtrail.toString()), Field.Store.YES, Field.Index.NO));
 
             // Index the remaining properties, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
@@ -528,6 +530,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
             hit.url = url + (-1==url.indexOf("?") ? "?" : "&") + docid;
             hit.displayTitle = doc.get(FIELD_NAMES.displayTitle.toString());
+            // UNDONE FIELD_NAMES.navtree
+            hit.navtrail = doc.get(PROPERTY.navtrail.toString());
             ret.add(hit);
         }
 

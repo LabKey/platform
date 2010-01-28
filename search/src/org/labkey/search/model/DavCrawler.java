@@ -581,6 +581,7 @@ public class DavCrawler implements ShutdownListener
         return m;
     }
 
+
     String getActivityHtml()
     {
         SearchService ss = getSearchService();
