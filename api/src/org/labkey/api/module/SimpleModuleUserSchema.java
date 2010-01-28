@@ -129,25 +129,53 @@ public class SimpleModuleUserSchema extends UserSchema
         @Override
         public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
         {
+            //ids will be comma-delimited in the case of compound PKs
             Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
-            List<ColumnInfo> pk = getPkColumns();
-            if (pk.size() != 1)
-                throw new IllegalStateException("Primary key must have 1 column in it, found: " + pk.size());
-            ColumnInfo pkColumn = pk.get(0);
-            Collection pkValues = ids;
-            if (pkColumn.getJavaClass() != String.class)
-            {
-                pkValues = new LinkedList();
-                for (String id : ids)
-                {
-                    Object value = ConvertUtils.convert(id, pkColumn.getJavaClass());
-                    pkValues.add(value);
-                }
-            }
 
             SimpleFilter filter = new SimpleFilter();
-            filter.addInClause(pk.get(0).getName(), pkValues);
+            List<ColumnInfo> pks = getPkColumns();
+            int numPks = pks.size();
 
+            //normalize the pks to arrays of correctly-typed objects
+            List<Object[]> pkValues = new ArrayList<Object[]>();
+            for (String id : ids)
+            {
+                String[] stringValues;
+                if (numPks > 1)
+                {
+                    stringValues = id.split(",");
+                    if (stringValues.length != numPks)
+                        throw new IllegalStateException("This table has " + numPks + " primary-key columns, but " + stringValues.length + " primary-key values were provided!");
+                }
+                else
+                    stringValues = new String[]{id};
+
+                Object[] values = new Object[numPks];
+                for (int idx = 0; idx < numPks; ++idx)
+                {
+                    ColumnInfo pk = pks.get(idx);
+                    values[idx] = pk.getJavaClass() == String.class ? stringValues[idx] : ConvertUtils.convert(stringValues[idx], pk.getJavaClass());
+                }
+                pkValues.add(values);
+            }
+
+            //build the pk clause
+            //OR together each AND'd set of pk values
+            SimpleFilter.OrClause pkClause = new SimpleFilter.OrClause();
+            for (Object[] pkset : pkValues)
+            {
+                SimpleFilter.AndClause pksetClause = new SimpleFilter.AndClause();
+                for (int idx = 0; idx < numPks; ++idx)
+                {
+                    pksetClause.addClause(new CompareType.CompareClause(pks.get(idx).getColumnName(), CompareType.EQUAL, pkset[idx]));
+                }
+                pkClause.addClause(pksetClause);
+            }
+
+            //add the pk caluse to the overall filter
+            filter.addClause(pkClause);
+
+            //check that all rows identified by those pks exist in the current container
             ColumnInfo containerCol = getRealTable().getColumn("container");
             if (containerCol != null)
             {
