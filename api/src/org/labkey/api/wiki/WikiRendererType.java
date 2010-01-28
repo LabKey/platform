@@ -48,6 +48,11 @@ public enum WikiRendererType
                 view.addObject("useVisualEditor", false);
                 return view;
             }
+
+            public String getContentType()
+            {
+                return "text/html";
+            }
         },
     TEXT_WITH_LINKS
         {
@@ -55,6 +60,12 @@ public enum WikiRendererType
         };
 
     public abstract String getDisplayName();
+
+    public String getContentType()
+    {
+        return "text/plain";
+    }
+
     public HttpView getSyntaxHelpView()
     {
         return new HtmlView("");  // No syntax help by default

@@ -66,7 +66,8 @@ public interface SearchService
 
     enum PROPERTY
     {
-        title("title"),
+        displayTitle("displayTitle"),
+        searchTitle("searchTitle"),
         categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
         participantId("org.labkey.study#StudySubject"),
@@ -186,7 +187,7 @@ public interface SearchService
     {
         public String docid;
         public String container;
-        public String title;
+        public String displayTitle;
         public String summary;
         public String url;
     }

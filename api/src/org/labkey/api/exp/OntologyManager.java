@@ -3230,7 +3230,7 @@ public class OntologyManager
             findMap.put(SearchService.PROPERTY.container.toString(), findMap.size());
 
             findMap.put(SearchService.PROPERTY.categories.toString(), findMap.size());
-            findMap.put(SearchService.PROPERTY.title.toString(), findMap.size());
+            findMap.put(SearchService.PROPERTY.displayTitle.toString(), findMap.size());
             findMap.put(SearchService.PROPERTY.securableResourceId.toString(), findMap.size());
         }
 
@@ -3267,7 +3267,7 @@ public class OntologyManager
             {
                 Map<String,Object> m = f.getRowMap(rs);
                 String propertyURI = (String)m.get("propertyUri");
-                m.put(PROPERTY.title.toString(), propertyURI);
+                m.put(PROPERTY.displayTitle.toString(), propertyURI);
 
                 String desc = (String)m.get("description");
                 String label = (String)m.get("label");
