@@ -75,6 +75,9 @@ public interface Resource
 
     Map<String,?> getProperties();
 
+    /** should only be called by creator of Resource (may not be thread-safe) */
+    Map<String,Object> getMutableProperties();
+
     FileStream getFileStream(User user) throws IOException;
 
     InputStream getInputStream(User user) throws IOException;

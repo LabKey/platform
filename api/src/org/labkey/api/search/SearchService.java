@@ -72,7 +72,7 @@ public interface SearchService
         securableResourceId(SecurableResource.class.getName()),
         participantId("org.labkey.study#StudySubject"),
         container(Container.class.getName()),
-        navtrail(NavTree.class.getName());  // only handle one link for now
+        navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
         final String _propName;
         PROPERTY(String name)
@@ -190,6 +190,7 @@ public interface SearchService
         public String displayTitle;
         public String summary;
         public String url;
+        public String navtrail;
     }
 
     public SearchResult search(String queryString, SearchCategory category, User user, Container root, int offset, int limit) throws IOException;

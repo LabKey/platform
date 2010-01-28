@@ -458,8 +458,10 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return sb;
     }
 
-    static StringBuilder toJS(Collection<NavTree> list, StringBuilder sb, boolean asMenu)
+    public static StringBuilder toJS(Collection<NavTree> list, StringBuilder sb, boolean asMenu)
     {
+        if (null == sb)
+            sb = new StringBuilder();
         String sep = "";
         sb.append("[");
         for (NavTree tree : list)

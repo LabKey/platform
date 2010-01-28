@@ -199,6 +199,13 @@ public abstract class AbstractResource implements Resource
         return ret;
     }
 
+    public Map<String, Object> getMutableProperties()
+    {
+        if (null == _properties)
+            _properties = new HashMap<String,Object>();
+        return _properties;
+    }
+    
     /** provides one place to completely block access to the resource */
     protected boolean hasAccess(User user)
     {
