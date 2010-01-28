@@ -132,9 +132,16 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                              ViewContext context, PrintWriter out, boolean indentForExpansionGifs) throws URISyntaxException
     {
         Container c = context.getContainer();
+        ActionURL currentUrl = context.getActionURL();
+        if (c.isWorkbook())
+        {
+            currentUrl = currentUrl.clone();
+            currentUrl.setPath(currentUrl.getParsedPath().getParent());
+        }
+        if (c.isWorkbook())
+            c = c.getParent();
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         String pattern = startURL.getLocalURIString();
-        ActionURL currentUrl = context.getActionURL();
 
         String link = nav.getValue() == null ? null : nav.getValue();
         String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript()) : null;

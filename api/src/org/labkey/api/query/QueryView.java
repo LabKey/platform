@@ -534,7 +534,7 @@ public class QueryView extends WebPartView<Object>
 
     public boolean showRecordSelectors()
     {
-        return _showRecordSelectors || (showDeleteButton() && canDelete());
+        return _showRecordSelectors || (_buttonBarPosition != DataRegion.ButtonBarPosition.NONE && showDeleteButton() && canDelete());
     }
 
     public void setShowRecordSelectors(boolean showRecordSelectors)
