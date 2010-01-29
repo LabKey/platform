@@ -265,6 +265,8 @@ public class DavCrawler implements ShutdownListener
             {
                 if (_shuttingDown)
                     return;
+                if (!child.exists()) // happens when pipeline is defined but directory doesn't exist
+                    continue;
 
                 if (child.isFile())
                 {
@@ -293,14 +295,14 @@ public class DavCrawler implements ShutdownListener
 
                     File f = child.getFile();
                     if (null != f)
+                    {
+                        if (!f.isFile())
+                            continue;
                         _fileIORateLimiter.add(f.length(), isCrawlerThread);
+                    }
 
                     _task.addResource(child, SearchService.PRIORITY.background);
                     addRecent(child);
-                }
-                else if (!child.exists()) // happens when pipeline is defined but directory doesn't exist
-                {
-                    continue;
                 }
                 else if (!child.shouldIndex())
                 {
