@@ -193,12 +193,11 @@ public interface SearchService
         public String navtrail;
     }
 
-    public SearchResult search(String queryString, SearchCategory category, User user, Container root, int offset, int limit) throws IOException;
+    public SearchResult search(String queryString, @Nullable SearchCategory category, boolean recursive, User user, Container root, int offset, int limit) throws IOException;
 
     // Search using no offset and default page size.
     public SearchResult search(String queryString, SearchCategory category, User user, Container root) throws IOException;
 
-//    public String searchFormatted(String queryString, User user, Container root, int page);
     public String escapeTerm(String term);
     
     public List<SearchCategory> getSearchCategories();
