@@ -2865,9 +2865,10 @@ public class StudyManager
             _lastModified = lastModified;
             if (null != conn)
             {
+                String concatOperator = StudyManager.getSchema().getSqlDialect().getConcatenationOperator();
                 _stmt = conn.prepareStatement(
                         "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState, ParticipantSequenceKey) " +
-                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,? || '|' || CAST(? AS VARCHAR))");
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,? " + concatOperator + " '|' " + concatOperator + " CAST(? AS VARCHAR))");
                 _stmt.setString(1, _containerId);
                 _stmt.setInt(2, _datasetId);
             }
@@ -2974,7 +2975,7 @@ public class StudyManager
             else
                 _stmt.setNull(11, Types.INTEGER);
 
-            // ParticipantSequenceKey (concatination of "ptid|SequenceNum")
+            // ParticipantSequenceKey (concatenation of "ptid|SequenceNum")
             _stmt.setString(12, ptid);
             _stmt.setDouble(13, visit);
 
