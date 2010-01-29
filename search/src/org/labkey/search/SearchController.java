@@ -358,8 +358,8 @@ public class SearchController extends SpringActionController
             {
                 //UNDONE: paging, rowlimit etc
                 int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), true,
-                        form.getOffset(), form.getLimit());
+                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), form.getIncludeSubFolders(),
+                        form.getOffset(), limit);
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
 
