@@ -30,10 +30,8 @@
 <%@ page import="java.text.ParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.util.*" %>
+<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -163,7 +161,6 @@
             {
                 String href = hit.url;
                 String summary = StringUtils.trimToNull(hit.summary);
-                Container container = ContainerManager.getForId(hit.container);
                 try
                 {
                     if (href.startsWith("/"))
@@ -190,7 +187,8 @@
                 }
                 else
                 {
-                    %><a style='color:green;' href="<%=container.getStartURL(getViewContext())%>"><%=h(container.getPath())%></a><%
+                    NavTree nav = getDocumentContext(hit);
+                    %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
                 }
                 if (!StringUtils.isEmpty(hit.navtrail))
                 {
@@ -291,5 +289,41 @@ String formatNavTrail(String s)
     {
         return "";
     }
+}
+
+Path files = new Path("@files");
+Path pipeline = new Path("@pipeline");
+Path dav = new Path("_webdav");
+    
+NavTree getDocumentContext(org.labkey.api.search.SearchService.SearchHit hit)
+{
+    Container c = ContainerManager.getForId(hit.container);
+    String text = c.getPath();
+    ActionURL url = c.getStartURL(getViewContext());
+
+    try
+    {
+        if (hit.docid.startsWith("dav:"))
+        {
+            Path containerPath = c.getParsedPath();
+            Path path = Path.parse(hit.docid.substring(4));
+            if (path.startsWith(dav))
+                path = dav.relativize(path);
+            if (path.startsWith(containerPath))
+            {
+                Path rel = containerPath.relativize(path);
+                if (rel.startsWith(files) || rel.startsWith(pipeline))
+                {
+                    text = path.getParent().toString("/","");
+                    url = new ActionURL("project","fileBrowser",c).addParameter("path",rel.encode());
+                }
+            }
+        }
+    }
+    catch (Exception x)
+    {
+    }
+    NavTree ret = new NavTree(text, url);
+    return ret;
 }
 %>

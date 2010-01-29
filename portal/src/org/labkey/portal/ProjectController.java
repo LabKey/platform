@@ -25,6 +25,7 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.Search.SearchResultsView;
@@ -230,6 +231,52 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    static final Path pipeline = new Path("@pipeline");
+    static final Path files = new Path("@files");
+
+    @RequiresNoPermission
+    public class FileBrowserAction extends RedirectAction
+    {
+        ActionURL _redirect;
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return _redirect;
+        }
+
+        @Override
+        public boolean doAction(Object o, BindException errors) throws Exception
+        {
+            String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
+            Path path = Path.decode(p);
+            Container c = getViewContext().getContainer();
+            Path containerPath = c.getParsedPath();
+            
+            if (path.startsWith(containerPath))
+                path = containerPath.relativize(path);
+
+            if (path.startsWith(pipeline))
+            {
+                _redirect = new ActionURL("pipeline", "browse", c);
+            }
+            else if (path.startsWith(files))
+            {
+                _redirect = new ActionURL("filecontent", "begin", c);
+            }
+            else
+            {
+                HttpView.throwNotFound();
+            }
+            return true;
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+    }
+    
 
     @RequiresPermissionClass(AdminPermission.class)
     public class MoveWebPartAction extends FormViewAction<MovePortletForm>
