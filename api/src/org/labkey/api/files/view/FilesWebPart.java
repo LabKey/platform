@@ -33,6 +33,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 
@@ -244,6 +245,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _autoResize;
         private actions[] _buttonConfig;
         private String _rootPath;
+        private Path _directory;
 
         public enum actions {
             download,
@@ -347,6 +349,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 rootPath += "/";
             
             _rootPath = rootPath;
+        }
+
+        public void setDirectory(Path path)
+        {
+            _directory = path;
+        }
+
+        public Path getDirectory()
+        {
+            return _directory;
         }
     }
 }

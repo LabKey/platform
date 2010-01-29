@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.util.Path" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -49,8 +50,6 @@
 
     AttachmentDirectory root = bean.getRoot();
     Container c = context.getContainer();
-
-    String startDir = "/";
 %>
 
 
@@ -221,6 +220,13 @@ function renderBrowser(rootPath, dir)
     ];
 
     var selectedValue = <%=q(selectedValue)%>;
-
-    Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir)%>);});
+<%
+    Path startDir = bean.getDirectory();
+    if (null == startDir)
+    {
+        // UNDONE: pipeline used to remember last open directory state
+        startDir = Path.rootPath;
+    }
+%>
+    Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>);});
 </script>
