@@ -2866,8 +2866,8 @@ public class StudyManager
             if (null != conn)
             {
                 _stmt = conn.prepareStatement(
-                        "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState) " +
-                        "VALUES (?,?,?,?,?,?,?,?,?,?, ?)");
+                        "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState, ParticipantSequenceKey) " +
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,? || '|' || CAST(? AS VARCHAR))");
                 _stmt.setString(1, _containerId);
                 _stmt.setInt(2, _datasetId);
             }
@@ -2962,7 +2962,7 @@ public class StudyManager
             Integer qcState = (Integer) map.get(qcStateURI);
 
             _stmt.setString(3, ptid);
-            _stmt.setDouble(4, visit);
+            _stmt.setDouble(4, visit); // SequenceNum
             _stmt.setString(5, uri); // LSID
             _stmt.setTimestamp(6, null == visitDate ? null : new Timestamp(visitDate));
             _stmt.setTimestamp(7, null == timeCreated ? null : new Timestamp(timeCreated));
@@ -2973,6 +2973,11 @@ public class StudyManager
                 _stmt.setInt(11, qcState.intValue());
             else
                 _stmt.setNull(11, Types.INTEGER);
+
+            // ParticipantSequenceKey (concatination of "ptid|SequenceNum")
+            _stmt.setString(12, ptid);
+            _stmt.setDouble(13, visit);
+
             _stmt.execute();
             return uri;
         }

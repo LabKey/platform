@@ -1,6 +1,7 @@
 package org.labkey.study.visitmanager;
 
 import org.labkey.api.data.*;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ResultSetUtil;
@@ -80,9 +81,10 @@ public abstract class VisitManager
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
 
-            String sqlStudyData= "UPDATE " + StudySchema.getInstance().getTableInfoStudyData() + " SET ParticipantSequenceKey = " +
-                    getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
-            Table.execute(schema, sqlStudyData, new Object[] {_study.getContainer()});
+            // XXX: study.studydata.ParticipantSequenceKey should have been created on insert
+//            String sqlStudyData= "UPDATE " + StudySchema.getInstance().getTableInfoStudyData() + " SET ParticipantSequenceKey = " +
+//                    getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
+//            Table.execute(schema, sqlStudyData, new Object[] {_study.getContainer()});
 
             String sqlSpecimen= "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() + " SET ParticipantSequenceKey = " +
                     getParticipantSequenceKeyExpr(schema, "PTID", "VisitValue") + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
