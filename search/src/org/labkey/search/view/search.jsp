@@ -124,14 +124,13 @@
 
     if (null != StringUtils.trimToNull(queryString))
     {
-        %><br>
-        <table>
-            <tr><td><font size="2">
-                <% if (null == category) { %>All<% } else { %><a href="<%=h(researchURL)%>">All</a><% } %>
-                <% if ("File".equals(category)) { %>Files<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>
-                <% if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>
-                <% if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% } %>
-            </font></td></tr>
+        %><table>
+            <tr><td><font size="-1"><%
+                if (null == category) { %>All<% } else { %><a href="<%=h(researchURL)%>">All</a><% } %>&nbsp;<%
+                if ("File".equals(category)) { %>Files <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
+                if ("Subject".equals(category)) { %>Subjects <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
+                if ("Dataset".equals(category)) { %>Datasets <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
+             %></font></td></tr>
             <tr><td valign="top" align="left" width=500><%
         int hitsPerPage = 20;  // UNDONE
         int offset = 0;
@@ -147,7 +146,7 @@
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
 
-            %><p /><p />Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
+            %><br>Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
 
             if (hitsPerPage < totalHits)
             {
