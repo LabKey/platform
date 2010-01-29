@@ -72,20 +72,13 @@
                 //
             }
 
-%><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%>
-</a><br><%
-            String summary = StringUtils.trimToNull(hit.summary);
-            if (null != summary)
+            %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><br><%
+            if (!StringUtils.isEmpty(hit.summary))
             {
-%>
-    <div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%>
-    </div>
-    <%
+                %><div style="margin-left:10px;"><%=PageFlowUtil.filter(StringUtils.trimToEmpty(hit.summary), false)%></div><%
             }
-    %>
-    <div style='margin-left:10px; color:green;'><%=h(href)%>
-    </div>
-    <br><%
+            %><%-- <div style='margin-left:10px; color:green;'><%=h(href)%></div> --%>
+            <br><%
         }
         %></div><%
     }
