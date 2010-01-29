@@ -124,9 +124,9 @@
         %><table>
             <tr><td><font size="-1"><%
                 if (null == category) { %>All<% } else { %><a href="<%=h(researchURL)%>">All</a><% } %>&nbsp;<%
-                if ("File".equals(category)) { %>Files <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
-                if ("Subject".equals(category)) { %>Subjects <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
-                if ("Dataset".equals(category)) { %>Datasets <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
+                if ("File".equals(category)) { %>Files<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
+                if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
+                if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
              %></font></td></tr>
             <tr><td valign="top" align="left" width=700><%
         int hitsPerPage = 20;  // UNDONE
@@ -313,8 +313,11 @@ NavTree getDocumentContext(org.labkey.api.search.SearchService.SearchHit hit)
                 Path rel = containerPath.relativize(path);
                 if (rel.startsWith(files) || rel.startsWith(pipeline))
                 {
-                    text = path.getParent().toString("/","");
-                    url = new ActionURL("project","fileBrowser",c).addParameter("path",rel.encode());
+                    if (path.size() > 0) path = path.getParent();
+                    text = path.toString("/","");
+
+                    if (rel.size() > 0) rel = rel.getParent();
+                    url = new ActionURL("project","fileBrowser",c).addParameter("path",rel.toString("/",""));
                 }
             }
         }

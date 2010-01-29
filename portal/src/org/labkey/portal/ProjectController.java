@@ -34,6 +34,7 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -252,17 +253,20 @@ public class ProjectController extends SpringActionController
             Path path = Path.decode(p);
             Container c = getViewContext().getContainer();
             Path containerPath = c.getParsedPath();
-            
-            if (path.startsWith(containerPath))
-                path = containerPath.relativize(path);
+            Path webdavPath = WebdavService.getPath().append(containerPath);
+
+            if (path.startsWith(webdavPath))
+                path = webdavPath.relativize(path);
 
             if (path.startsWith(pipeline))
             {
-                _redirect = new ActionURL("pipeline", "browse", c);
+                path = pipeline.relativize(path);
+                _redirect = new ActionURL("pipeline", "browse", c).addParameter("path",path.encode());
             }
             else if (path.startsWith(files))
             {
-                _redirect = new ActionURL("filecontent", "begin", c);
+                path = files.relativize(path);
+                _redirect = new ActionURL("filecontent", "begin", c).addParameter("path",path.encode());
             }
             else
             {

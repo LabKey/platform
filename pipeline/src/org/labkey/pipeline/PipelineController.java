@@ -372,7 +372,10 @@ public class PipelineController extends SpringActionController
 
         public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
         {
-            BrowseWebPart wp = new BrowseWebPart();
+            Path path = null;
+            if (pathForm.getPath() != null)
+            try { path = Path.parse(pathForm.getPath()); } catch (Exception x) { }
+            BrowseWebPart wp = new BrowseWebPart(path);
             wp.setFrame(WebPartView.FrameType.NONE);
             return wp;
         }
@@ -386,12 +389,13 @@ public class PipelineController extends SpringActionController
 
     public static class BrowseWebPart extends FilesWebPart
     {
-        public BrowseWebPart()
+        public BrowseWebPart(Path startPath)
         {
             super(getContextContainer());
 
             FilesForm bean = getModelBean();
 
+            bean.setDirectory(startPath);
             //bean.setShowAddressBar(true);
             bean.setShowFolderTree(true);
             bean.setShowDetails(true);

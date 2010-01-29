@@ -924,7 +924,7 @@ public class WikiManager
                             .replaceParameter("entityId",entityId)
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
-                    String displayTitle = documentName + " attached to page '" + titles.get(entityId) + "'";
+                    String displayTitle = documentName + " attached to page \"" + titles.get(entityId) + "\"";
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
                             attachmentUrl, displayTitle,
