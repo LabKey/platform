@@ -32,39 +32,56 @@
     SecurityPolicy policy = getViewContext().getContainer().getPolicy();
 %>
 
-<% if (map.isEmpty()) { %>
-<p>There are no user-defined lists in this folder.</p>
-<% } else {%>
+<% if (map.isEmpty())
+    { %>
+<p>There are no user-defined lists in this folder.</p><%
+    }
+    else
+    {%>
     <table>
         <tr>
             <th colspan="4">User defined lists in this folder.</th>
-        </tr>
-   <% for (ListDefinition def : new TreeSet<ListDefinition>(map.values())) { %>
+        </tr><%
+
+        for (ListDefinition def : new TreeSet<ListDefinition>(map.values()))
+        { %>
         <tr>
-        <td>
-            <%=h(def.getName())%>
-        </td>
-        <td>
-            <labkey:link href="<%=def.urlShowData()%>" text="view data" />
-        </td>
-<% if (policy.hasPermission(user, DesignListPermission.class)) { %>
-        <td>
-            <labkey:link href="<%=def.urlShowDefinition()%>" text="view design" />
-        </td>
-<% } %>
-<% if (AuditLogService.get().isViewable()) { %>
-        <td>
-            <labkey:link href="<%=def.urlShowHistory()%>" text="view history" />
-        </td>
-<% } %>            
-        <td>
-            <%=h(def.getDescription())%>
-        </td>
-        </tr>
-<% }%>
-    </table>
-    <%} %>
-<%  if (policy.hasPermission(user, DesignListPermission.class))
+            <td>
+                <%=h(def.getName())%>
+            </td>
+            <td>
+                <labkey:link href="<%=def.urlShowData()%>" text="view data" />
+            </td><%
+
+        if (policy.hasPermission(user, DesignListPermission.class))
+        { %>
+            <td>
+                <labkey:link href="<%=def.urlShowDefinition()%>" text="view design" />
+            </td><%
+        }
+
+        if (AuditLogService.get().isViewable())
+        { %>
+            <td>
+                <labkey:link href="<%=def.urlShowHistory()%>" text="view history" />
+            </td><%
+        }
+
+        if (policy.hasPermission(user, DesignListPermission.class))
+        { %>
+            <td>
+                <labkey:link href="<%=def.urlFor(ListController.Action.deleteListDefinition)%>" text="delete list" />
+            </td><%
+        } %>
+            <td>
+                <%=h(def.getDescription())%>
+            </td>
+        </tr><%
+    }%>
+    </table><%
+    }
+
+    if (policy.hasPermission(user, DesignListPermission.class))
     { %>
         <labkey:button text="Create New List" href="<%=h(urlFor(ListController.NewListDefinitionAction.class))%>" />
         <labkey:button text="Import List Archive" href="<%=h(urlFor(ListController.ImportListsAction.class))%>" /><%
