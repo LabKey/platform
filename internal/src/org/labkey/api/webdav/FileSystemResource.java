@@ -177,12 +177,12 @@ public class FileSystemResource extends AbstractResource
         return _type;
     }
 
-
     public boolean isCollection()
     {
-        if (null != _file && getType() == FileType.directory)
-            return true;
-        return getPath().isDirectory();
+        FileType type = getType();
+        if (null != type)
+            return type == FileType.directory;
+        return exists() && getPath().isDirectory();
     }
 
     public boolean isFile()

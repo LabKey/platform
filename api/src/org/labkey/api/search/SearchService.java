@@ -363,16 +363,10 @@ public interface SearchService
 
 //
 // TODO Index Users
-// TODO Index Study descriptions
-// TODO lastIndexed field
-// TODO consider Files table (Attachments?) and attached properties
-// TODO participantid and sampleid
-// TODO Resource.shouldCrawl()
-// TODO resource.shouldIndex()
+// TODO sampleid
 // TODO fcs keywords
-// TODO issues attachments
-// TODO index in response to dav methods
-// TODO delete documents
-// TODO admin controls
+// TODO delete attachments (delete by ownerEntityId field?)
 // TODO perf/profiling
+// TODO index Lists/Assays
+// TODO index cohorts
 //
