@@ -194,6 +194,10 @@ public class FileContentController extends SpringActionController
                             {
                                 IOUtils.copy(new InputStreamReader(fis), out);
                             }
+                            catch (FileNotFoundException x)
+                            {
+                                out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(file.getName()) + "</span>");
+                            }
                             finally
                             {
                                 IOUtils.closeQuietly(fis);
@@ -220,7 +224,7 @@ public class FileContentController extends SpringActionController
                             }
                             catch (OutOfMemoryError x)
                             {
-                                out.write("<span class='labkey-error'>file is too long</span>");
+                                out.write("<span class='labkey-error'>file is too long: " + PageFlowUtil.filter(file.getName()) + "</span>");
                             }
                         }
                     };
@@ -289,6 +293,17 @@ public class FileContentController extends SpringActionController
                 part = new ManageWebPart(getContainer());
             else
                 part = new ManageWebPart(getContainer(), form.getFileSetName());
+            if (null != form.getPath())
+            {
+                try
+                {
+                    Path path = Path.decode(form.getPath());
+                    part.getModelBean().setDirectory(path);
+                }
+                catch (Throwable t)
+                {
+                }
+            }
             part.setFrame(WebPartView.FrameType.NONE);
             part.setWide(true);
             return part;

@@ -1215,6 +1215,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (n)
         {
             n.record = record;
+            record.treeNode = n;
             if (record.data.iconHref)
                 n.attributes.icon = record.data.iconHref;
         }
@@ -1325,6 +1326,30 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 //          this.handleFailure(response);
             window.alert(path + " " + e);
         }
+    },
+
+    ancestry : function(id, root)
+    {
+        var path = id;
+        var a = [path];
+        while (true)
+        {
+            var parent = this.fileSystem.parentPath(path);
+            if (!parent || parent == path)
+                break;
+            a.push(parent);
+            if (root && parent == root)
+                break;
+            path = parent;
+        }
+        a.reverse();
+        return a;
+    },
+
+    treePathFromPath : function(path, root)
+    {
+        var a = this.ancestry(path, root);
+        return ";" + a.join(";");
     }
 });
 
@@ -1797,6 +1822,16 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     },
 
 
+    getZipFolderAction : function()
+    {
+        return new Ext.Action({text: 'Zip Folder', tooltip: 'Download folder as a .zip file', iconCls:'iconZip', scope: this, handler: function()
+        {
+            var uri = this.currentDirectory.data.uri;
+            window.location = uri + "?method=zip";
+        }});
+    },
+
+
     // UNDONE: use uri or path as id
     _deleteOnCallback : function(fs, success, path, response, record)
     {
@@ -2096,19 +2131,42 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     changeDirectory : function(record, force)
     {
+        if (!this.fileSystem.ready)
+        {
+            this.fileSystem.onReady(function(){this.changeDirectory(record,force);},this);
+            return;
+        }
+
         if (typeof record == "string")
         {
-            var path = record;
-            record = this.fileSystem.recordFromCache(path);
+            var fullPath = record;
+            record = this.fileSystem.recordFromCache(fullPath);
             if (!record)
             {
-                var parent = this.fileSystem.parentPath(path);
-                this.fileSystem.listFiles(parent, function(filesystem, success, parentPath, records)
+                var parents = [];
+                var parent, currPath = fullPath;
+                do
                 {
-                    record = this.fileSystem.recordFromCache(path);
-                    if (record)
-                        this.changeDirectory(record);
-                }, this);
+                    parent = this.fileSystem.parentPath(currPath);
+                    if (parent && currPath && !this.fileSystem.recordFromCache(currPath))
+                        parents.push(parent);
+                    currPath = parent;
+                } while (currPath && currPath != '/');
+                var cb = function(filesystem,success,parentPath,records)
+                {
+                    if (parents.length)
+                        this.fileSystem.listFiles(parents.pop(), cb, this);
+                    else
+                    {
+                       record = this.fileSystem.recordFromCache(fullPath);
+                       if (record)
+                           this.changeDirectory(record);
+                        return;
+                    }
+                };
+                if (parents.length)
+                    this.fileSystem.listFiles(parents.pop(), cb, this);
+                return;
             }
         }
 
@@ -2270,30 +2328,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var el = $('addressBar');
         var menu = new FileListMenu(this.fileSystem, path, this.changeDirectory.createDelegate(this));
         menu.show(el);
-    },
-
-    ancestry : function(id, root)
-    {
-        var path = id;
-        var a = [path];
-        while (true)
-        {
-            var parent = this.fileSystem.parentPath(path);
-            if (!parent || parent == path)
-                break;
-            a.push(parent);
-            if (root && parent == root)
-                break;
-            path = parent;
-        }
-        a.reverse();
-        return a;
-    },
-
-    treePathFromPath : function(path, root)
-    {
-        var a = this.ancestry(path, root);
-        return ";" + a.join(";");
     },
 
     updateFileDetails : function(record)
@@ -2642,13 +2676,15 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             // expand tree
             if (this.tree)
             {
-                var treePath = this.treePathFromPath(record.data.path, this.tree.getRootNode().id);
+                var treePath = this.tree.loader.treePathFromPath(record.data.path, this.tree.getRootNode().id);
                 this.tree.expandPath(treePath, undefined, (function(success,node)
                 {
                     if (node)
                     {
                         if (node != this.tree.root)
-                            node.ensureVisible();
+                        {
+                            try { node.ensureVisible(); } catch (x) { }
+                        }
                         if (node.id == record.data.path)
                             node.select();
                     }
