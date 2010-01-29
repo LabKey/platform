@@ -21,10 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentForm;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.attachments.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
@@ -727,6 +724,92 @@ public class FileContentController extends SpringActionController
                 node.put("uiProvider", "col");
             }
             return node;
+        }
+    }
+
+    public static class ShowFileForm
+    {
+        private String _name;
+        private String _baseUrl;
+
+        public String getBaseUrl()
+        {
+            return _baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl)
+        {
+            _baseUrl = baseUrl;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RenderFileAction extends RedirectAction<ShowFileForm>
+    {
+        URLHelper _url;
+
+        @Override
+        public URLHelper getSuccessURL(ShowFileForm showFileForm)
+        {
+            return _url;
+        }
+
+        @Override
+        public boolean doAction(ShowFileForm form, BindException errors) throws Exception
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            AttachmentDirectory dir = null;
+
+            String baseUrl = PageFlowUtil.decode(form.getBaseUrl());
+            if (baseUrl.contains(FileContentService.FILE_SETS_LINK))
+            {
+                if (baseUrl.endsWith("/"));
+                    baseUrl = baseUrl.substring(0, baseUrl.length()-1);
+
+                int idx = baseUrl.lastIndexOf("/");
+                if (idx != -1)
+                {
+                    String fileSet = baseUrl.substring(idx+1, baseUrl.length());
+                    dir = svc.getRegisteredDirectory(getContainer(), fileSet);
+                }
+            }
+            else
+                dir = svc.getMappedAttachmentDirectory(getContainer(), false);
+
+            if (dir != null)
+            {
+                Attachment a = AttachmentService.get().getAttachment(dir, form.getName());
+                if (a != null)
+                {
+                    _url = new URLHelper(new ActionURL("files", "", getContainer()).toString());
+
+                    _url.setFile(a.getName());
+                    FileContentController.RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
+                    _url.replaceParameter("renderAs", render.name());
+
+                    return true;
+                }
+                errors.reject(SpringActionController.ERROR_MSG, "Unable to render the selected attachment.");
+            }
+            else
+                errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the attachment directory.");
+            
+            return false;
+        }
+
+        @Override
+        public void validateCommand(ShowFileForm target, Errors errors)
+        {
         }
     }
 

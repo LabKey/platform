@@ -98,6 +98,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         });
         // hack to get the file input field to size correctly
         grid.on('render', function(c){this.fileUploadField.setSize(350);}, this);
+        grid.on('dblclick', function(e){this.renderFile(e);}, this);
+
         return grid;
     },
 
@@ -470,5 +472,25 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 return true;
         }
         return false;
+    },
+
+    renderFile : function(e)
+    {
+        var selections = this.grid.selModel.getSelections();
+
+        if (selections.length == 1)
+        {
+            var item = selections[0].data;
+
+            if (item.file)
+            {
+                var params = [];
+
+                params.push('name=' + encodeURIComponent(selections[0].data.name));
+                params.push('baseUrl=' + encodeURIComponent(this.fileSystem.baseUrl));
+                var renderFileURL = LABKEY.ActionURL.buildURL('filecontent', 'renderFile') + '?' + params.join('&');
+                window.location = renderFileURL;
+            }
+        }
     }
 });

@@ -60,6 +60,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         DELETE
     }
 
+    public FileContentServiceImpl()
+    {
+        ContainerManager.addContainerListener(this);
+    }
+
     public File getFileRoot(Container c)
     {
         if (c == null)
