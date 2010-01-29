@@ -616,7 +616,7 @@ public class Portal
         return viewMap.get(name);
     }
 
-    private static HashMap<String, WebPartFactory> getViewMap()
+    private static synchronized HashMap<String, WebPartFactory> getViewMap()
     {
         if (null == _viewMap || areWebPartMapsStale())
             initMaps();
@@ -625,7 +625,7 @@ public class Portal
     }
 
 
-    private static MultiHashMap<String, String> getRegionMap()
+    private static synchronized MultiHashMap<String, String> getRegionMap()
     {
         if (null == _regionMap || areWebPartMapsStale())
             initMaps();
