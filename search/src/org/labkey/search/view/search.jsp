@@ -131,7 +131,7 @@
                 if ("Subject".equals(category)) { %>Subjects <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
                 if ("Dataset".equals(category)) { %>Datasets <% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
              %></font></td></tr>
-            <tr><td valign="top" align="left" width=500><%
+            <tr><td valign="top" align="left" width=700><%
         int hitsPerPage = 20;  // UNDONE
         int offset = 0;
 
@@ -162,6 +162,8 @@
             for (SearchService.SearchHit hit : result.hits)
             {
                 String href = hit.url;
+                String summary = StringUtils.trimToNull(hit.summary);
+                Container container = ContainerManager.getForId(hit.container);
                 try
                 {
                     if (href.startsWith("/"))
@@ -177,22 +179,24 @@
                     //
                 }
 
-            %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%>
-            </a><br><%
-                String summary = StringUtils.trimToNull(hit.summary);
-                if (null != summary)
+            %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:690px;'><%
+            if (null != summary)
                 {
-                    %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
+                    %><%=PageFlowUtil.filter(summary, false)%><br><%
                 }
                 if (form.isAdvanced())
                 {
-                    %><div style='margin-left:10px; color:green;'><%=h(href)%></div> <%
+                    %><span style='color:green;'><%=h(href)%></span><%
+                }
+                else
+                {
+                    %><a style='color:green;' href="<%=container.getStartURL(getViewContext())%>"><%=h(container.getPath())%></a><%
                 }
                 if (!StringUtils.isEmpty(hit.navtrail))
                 {
-                    %><div style='margin-left:10px;'><%=formatNavTrail(hit.navtrail)%></div><%
+                    %>&nbsp;<%=formatNavTrail(hit.navtrail)%><br><%
                 }
-                %><br><%
+                %></div><br><%
             }
             %></div></td><%
 
@@ -266,8 +270,8 @@ String formatNavTrail(String s)
         else
             return "";
         int length = a.length();
-        StringBuilder sb = new StringBuilder();
-        String connector = "";
+        StringBuilder sb = new StringBuilder("<span style='color:#808080;'>");
+        String connector = " - ";
         for (int i=0 ; i<length ; i++)
         {
             JSONObject o = a.getJSONObject(i);
@@ -280,6 +284,7 @@ String formatNavTrail(String s)
                 connector = " - ";
             }
         }
+        sb.append("</span>");
         return sb.toString();
     }
     catch (Throwable t)

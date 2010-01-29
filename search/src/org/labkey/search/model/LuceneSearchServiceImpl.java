@@ -531,7 +531,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.url = url + (-1==url.indexOf("?") ? "?" : "&") + docid;
             hit.displayTitle = doc.get(FIELD_NAMES.displayTitle.toString());
             // UNDONE FIELD_NAMES.navtree
-            hit.navtrail = doc.get(PROPERTY.navtrail.toString());
+            hit.navtrail = doc.get(FIELD_NAMES.navtrail.toString());
             ret.add(hit);
         }
 

@@ -77,7 +77,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     }
 
 
-    private class PipelineFolderResource extends FileSystemResource implements WebdavResolver.WebFolder
+    private class PipelineFolderResource extends FileSystemResource
     {
         Container c;
 
@@ -95,21 +95,6 @@ public class PipelineWebdavProvider implements WebdavService.Provider
                 _policy = org.labkey.api.security.SecurityManager.getPolicy(root);
                 _file = FileUtil.canonicalFile(uriRoot);
             }
-        }
-
-        public List<String> getWebFoldersNames(User user)
-        {
-            return Collections.emptyList();
-        }
-
-        public int getIntPermissions(User user)
-        {
-            int result = hasAccess(user) ? _policy.getPermsAsOldBitMask(user) : 0;
-            if ((result & ACL.PERM_DELETE) != 0)
-            {
-                result -= ACL.PERM_DELETE;
-            }
-            return result;
         }
 
         @Override

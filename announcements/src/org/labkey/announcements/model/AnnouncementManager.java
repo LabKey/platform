@@ -19,7 +19,9 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -33,6 +35,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
@@ -832,6 +835,15 @@ public class AnnouncementManager
 
     public static void indexMessages(SearchService.IndexTask task, Container c, Date modifiedSince)
     {
+        indexMessages(task,c.getId(),modifiedSince,null);
+    }
+
+
+    public static void indexMessages(SearchService.IndexTask task, @NotNull String c, Date modifiedSince, String threadId)
+    {
+        if (null != modifiedSince && null != threadId)
+            throw new IllegalArgumentException();
+        
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
             return;
@@ -851,9 +863,19 @@ public class AnnouncementManager
                 sql.add(c);
                 and = " AND ";
             }
-            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null,null);
-            if (!modified.isEmpty())
-                sql.append(and).append(modified);
+            if (null != threadId)
+            {
+                sql.append(and).append(" entityid = ?");
+                sql.add(threadId);
+                and = " AND ";
+            }
+            else
+            {
+                SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null,null);
+                if (!modified.isEmpty())
+                    sql.append(and).append(modified);
+                and = " AND ";
+            }
 
             rs = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
 
@@ -866,15 +888,15 @@ public class AnnouncementManager
                     continue;
 
                 String entityId = rs.getString(2);
-                indexThread(task, containerId, entityId);
+                _indexThread(task, containerId, entityId);
                 if (Thread.interrupted())
                     return;
             }
 
             // Get the attachments... unfortunately, they're attached to individual announcements, not to the thread,
             // so we need a different query.
-            sql = new SQLFragment("SELECT a.Container, EntityId, Title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent\n");
-
+            // find all messages that have attachments
+            sql = new SQLFragment("SELECT a.Container, a.EntityId, MIN(a.Parent) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent\n");
             and = " WHERE ";
             if (null != c)
             {
@@ -882,11 +904,19 @@ public class AnnouncementManager
                 sql.add(c);
                 and = " AND ";
             }
-            modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
-            if (!modified.isEmpty())
-                sql.append(and).append(modified);
-
-            sql.append(" GROUP BY a.container, entityid, title");
+            if (null != threadId)
+            {
+                sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
+                sql.add(threadId);
+                sql.add(threadId);
+            }
+            else
+            {
+                SQLFragment modified = new SearchService.LastIndexedClause(CoreSchema.getInstance().getTableInfoDocuments(), modifiedSince, "d").toSQLFragment(null, null);
+                if (!modified.isEmpty())
+                    sql.append(and).append(modified);
+            }
+            sql.append(" GROUP BY a.Container, a.EntityId");
 
             Collection<String> annIds = new HashSet<String>();
             Map<String, Announcement> map = new HashMap<String, Announcement>();
@@ -896,16 +926,18 @@ public class AnnouncementManager
             while (rs2.next())
             {
                 String containerId = rs2.getString(1);
+                String entityId = rs2.getString(2);
+                String parent = rs2.getString(3);
+                String title = rs2.getString(4);
 
                 // Don't index attachments in secure message boards.
                 if (isSecure(containerId))
                     continue;
 
-                String entityId = rs2.getString(2);
-                String title = rs2.getString(3);
                 annIds.add(entityId);
                 Announcement ann = new Announcement();
                 ann.setEntityId(entityId);
+                ann.setParent(parent);
                 ann.setContainer(containerId);
                 ann.setTitle(title);
                 map.put(entityId, ann);
@@ -914,7 +946,10 @@ public class AnnouncementManager
             if (!annIds.isEmpty())
             {
                 List<Pair<String, String>> list = AttachmentService.get().listAttachments(annIds, modifiedSince);
-                ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, c);
+                ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
+                url.setExtraPath(c);
+                ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
+                urlThread.setExtraPath(c);
 
                 for (Pair<String, String> pair : list)
                 {
@@ -926,12 +961,17 @@ public class AnnouncementManager
                             .replaceParameter("name", documentName);
                     attachmentUrl.setExtraPath(ann.getContainerId());
 
+                    String e = StringUtils.isEmpty(ann.getParent()) ? ann.getEntityId() : ann.getParent();
+                    NavTree t = new NavTree("message", urlThread.clone().addParameter("entityId", e));
+                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+
                     String displayTitle = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId, documentName),
                             attachmentUrl, displayTitle,
                             ann,
                             documentName, searchCategory);
+                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
 
@@ -1002,10 +1042,11 @@ public class AnnouncementManager
         {
             ss.deleteResource(docid);
         }
+        // UNDONE attachments!
     }
 
 
-    public static void indexThread(SearchService.IndexTask task, String c, final String entityId)
+    public static void _indexThread(SearchService.IndexTask task, String c, final String entityId)
     {
         String docid = "thread:" + entityId;
         ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, null);
@@ -1029,7 +1070,8 @@ public class AnnouncementManager
         String parent = null == ann.getParent() ? ann.getEntityId() : ann.getParent();
         String container = ann.getContainerId();
         SearchService.IndexTask task = ServiceRegistry.get().getService(SearchService.class).defaultTask();
-        indexThread(task, container, parent);
+        // indexMessages is overkill, but I don't want to duplicate the code
+        indexMessages(task, container, null, parent);
     }
 
     

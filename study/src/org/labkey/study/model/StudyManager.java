@@ -54,6 +54,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -3333,6 +3334,7 @@ public class StudyManager
             Study study = StudyManager.getInstance().getStudy(c);
             if (null == study)
                 return;
+            String nav = NavTree.toJS(Collections.singleton(new NavTree("Study", new ActionURL("project","begin",c.getId()))), null, false).toString();
 
             SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
             if (null != c)
@@ -3356,6 +3358,7 @@ public class StudyManager
                 props.put(SearchService.PROPERTY.participantId.toString(), id);
                 props.put(SearchService.PROPERTY.displayTitle.toString(), "Study " + study.getLabel() + " -- " +
                         StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id);
+                props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 // need to figure out if all study users can see demographic data or not
                 if (1==1)
