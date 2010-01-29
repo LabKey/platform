@@ -40,38 +40,72 @@
     <ns:columns>
       <ns:column columnName="_ts">
           <ns:isHidden>true</ns:isHidden>
+          <ns:description>Contains system-managed version information</ns:description>
       </ns:column>
-      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="CreatedBy">
+          <ns:description>Contains the user who originally created this job record</ns:description>
+      </ns:column>
       <ns:column columnName="Created">
         <ns:formatString>DateTime</ns:formatString>
         <ns:displayWidth>120</ns:displayWidth>
+        <ns:description>Contains the time at which this job was created</ns:description>
       </ns:column>
-      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="ModifiedBy">
+          <ns:description>Contains the user who last modified this job record</ns:description>
+      </ns:column>
       <ns:column columnName="Modified">
         <ns:formatString>DateTime</ns:formatString>
+        <ns:description>Contains the time at which this job record was modified</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="EntityId"/>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container">
+        <ns:description>Contains this job's project or folder</ns:description>
+      </ns:column>
+      <ns:column columnName="EntityId">
+        <ns:description>Contains a unique entity id</ns:description>
+      </ns:column>
+      <ns:column columnName="RowId">
+        <ns:description>Contains an auto-incrementing id</ns:description>
+      </ns:column>
       <ns:column columnName="Status">
         <ns:displayWidth>120</ns:displayWidth>
         <ns:url>/pipeline-status/details.view?rowId=${RowId}</ns:url>
+        <ns:description>Contains the short status of this job, such as WAITING, ERROR, or COMPLETE</ns:description>
       </ns:column>
-      <ns:column columnName="Info"/>
+      <ns:column columnName="Info">
+        <ns:description>Contains status information about this job, most frequently an error message if the job failed</ns:description>
+      </ns:column>
       <ns:column columnName="FilePath">
         <ns:displayWidth>500</ns:displayWidth>
+        <ns:description>Contains the path to the log file for this job</ns:description>
       </ns:column>
-      <ns:column columnName="Email"/>
-      <ns:column columnName="DataUrl"/>
+      <ns:column columnName="Email">
+        <ns:description>Contains email addresses for notification on job success or failure</ns:description>
+      </ns:column>
+      <ns:column columnName="DataUrl">
+        <ns:description>Contains a URL where the results of this job are available for display</ns:description>
+      </ns:column>
       <ns:column columnName="Description">
           <ns:displayWidth>500</ns:displayWidth>
+          <ns:description>Contains a short description of this job, often including file and/or analysis protocol names</ns:description>
       </ns:column>
-      <ns:column columnName="HadError"/>
-      <ns:column columnName="Job"/>
-      <ns:column columnName="Provider"/>
-      <ns:column columnName="JobParent"/>
-      <ns:column columnName="JobStore"/>
-      <ns:column columnName="ActiveTaskId"/>
+      <ns:column columnName="HadError">
+        <ns:description>Indicates if this job has failed at some point in the past</ns:description>
+      </ns:column>
+      <ns:column columnName="Job">
+        <ns:description>Contains an internal entity id reference to the job, used to manage communication within the system and with external systems</ns:description>
+      </ns:column>
+      <ns:column columnName="Provider">
+        <ns:description>Contains the name of the PipelineProvider that created this job</ns:description>
+      </ns:column>
+      <ns:column columnName="JobParent">
+        <ns:description>Contains the entityId for the parent of this job, if any</ns:description>
+      </ns:column>
+      <ns:column columnName="JobStore">
+        <ns:description>Contains a serialized XML description of this job</ns:description>
+      </ns:column>
+      <ns:column columnName="ActiveTaskId">
+        <ns:description>Contains a pipeline-configuration identifier for the active task in the sequence of tasks</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
 </ns:tables>

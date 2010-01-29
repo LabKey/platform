@@ -969,10 +969,10 @@ public class XarReader extends AbstractXarImporter
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
 
-        ExpDataImpl databaseData = ExperimentServiceImpl.get().getExpData(dataLSID);
-        if (databaseData != null)
+        ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
+        if (expData != null)
         {
-            File existingFile = databaseData.getFile();
+            File existingFile = expData.getFile();
             String uri = _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
             if (uri != null && existingFile != null && existingFile.isFile())
             {
@@ -997,14 +997,14 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            if (!databaseData.getContainer().equals(getContainer()))
+            if (!expData.getContainer().equals(getContainer()))
             {
-                Container otherContainer = databaseData.getContainer();
-                String containerDesc = otherContainer == null ? databaseData.getContainer().getPath() : otherContainer.getPath();
-                throw new XarFormatException("Cannot reference a data file (" + databaseData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
+                Container otherContainer = expData.getContainer();
+                String containerDesc = otherContainer == null ? expData.getContainer().getPath() : otherContainer.getPath();
+                throw new XarFormatException("Cannot reference a data file (" + expData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
             Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(databaseData.getDataObject(), sourceApplicationId, runId, context, tiData);
+            updateSourceInfo(expData.getDataObject(), sourceApplicationId, runId, context, tiData);
         }
         else
         {
@@ -1023,14 +1023,12 @@ public class XarReader extends AbstractXarImporter
             if (null != trimString(xbData.getDataFileUrl()))
             {
                 data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl())));
-
-                _deferredDataLoads.add(new DeferredDataLoad(new ExpDataImpl(data), new ExpRunImpl(experimentRun)));
             }
 
             Data insertedData = Table.insert(getUser(), tiData, data);
             // Pull from the database so we get the magically filled-in fields,
             // like Created, populated correctly
-            databaseData = new ExpDataImpl(Table.selectObject(tiData, insertedData.getRowId(), Data.class));
+            expData = new ExpDataImpl(Table.selectObject(tiData, insertedData.getRowId(), Data.class));
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)
@@ -1044,7 +1042,7 @@ public class XarReader extends AbstractXarImporter
                 {
                     if (ORIGINAL_URL_PROPERTY.equals(simpleValue.getOntologyEntryURI()) && ORIGINAL_URL_PROPERTY_NAME.equals(simpleValue.getName()))
                     {
-                        File f = databaseData.getFile();
+                        File f = expData.getFile();
                         if (f != null)
                         {
                             getRootContext().addData(new ExpDataImpl(data), simpleValue.getStringValue());
@@ -1057,9 +1055,15 @@ public class XarReader extends AbstractXarImporter
             loadExtendedDataType(xbData, dataLSID, experimentRun);
         }
 
-        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), databaseData);
+        if (expData.isFileOnDisk())
+        {
+            _deferredDataLoads.add(new DeferredDataLoad(expData, new ExpRunImpl(experimentRun)));
+        }
+
+
+        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);
         getLog().info("Finished loading Data with LSID '" + dataLSID + "'");
-        return databaseData.getDataObject();
+        return expData.getDataObject();
     }
 
     private byte[] hashFile(File existingFile) throws ExperimentException

@@ -62,7 +62,10 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="LSID"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="Name">
+          <ns:description>Name for this run group.</ns:description>
+          <ns:nullable>false</ns:nullable>
+      </ns:column>
       <ns:column columnName="Hypothesis">
           <ns:description>An optional hypothesis for this run group if it represents an experiment.</ns:description>
       </ns:column>

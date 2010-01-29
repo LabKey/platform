@@ -1449,6 +1449,10 @@ public class ExperimentController extends SpringActionController
         {
             try
             {
+                if (form.getJson() == null)
+                {
+                    throw new NotFoundException("Unable to convert to Excel - no spreadsheet data given");
+                }
                 JSONObject rootObject = new JSONObject(form.getJson());
                 JSONArray sheetsArray = rootObject.getJSONArray("sheets");
 

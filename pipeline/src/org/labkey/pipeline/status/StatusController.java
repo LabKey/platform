@@ -755,18 +755,13 @@ public class StatusController extends SpringActionController
         rgn.addDisplayColumn(new FileDisplayColumn());
         rgn.addDisplayColumn(new JobDisplayColumn(false));
         rgn.addDisplayColumn(new JobDisplayColumn(true));
-        DisplayColumn col = rgn.getDisplayColumn("Job");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("JobParent");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("JobStore");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("Provider");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("Container");
-        col.setVisible(false);
-        col = rgn.getDisplayColumn("DataUrl");
-        col.setVisible(false);
+        rgn.getDisplayColumn("Job").setVisible(false);
+        rgn.getDisplayColumn("JobParent").setVisible(false);
+        rgn.getDisplayColumn("JobStore").setVisible(false);
+        rgn.getDisplayColumn("Provider").setVisible(false);
+        rgn.getDisplayColumn("Status").setURL(null);
+        rgn.getDisplayColumn("Container").setVisible(false);
+        rgn.getDisplayColumn("DataUrl").setVisible(false);
 
         PipelineStatusFile sf = getStatusFile(rowId);
         if (sf == null)

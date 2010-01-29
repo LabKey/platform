@@ -92,11 +92,6 @@ public class PipelineQueryView extends QueryView
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-        if (!_minimal)
-        {
-            super.populateButtonBar(view, bar, exportAsWebPage);
-        }
-
         if (getContainer().hasPermission(getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getContainer()))
         {
             ActionButton button = new ActionButton("browse.view", "Process and Import Data");
@@ -142,6 +137,9 @@ public class PipelineQueryView extends QueryView
                 showQueue.setURL(PipelineController.urlStatus(getContainer(), true));
                 bar.add(showQueue);
             }
+
+            // Add the view, export, etc buttons
+            super.populateButtonBar(view, bar, exportAsWebPage);
         }
     }
 }

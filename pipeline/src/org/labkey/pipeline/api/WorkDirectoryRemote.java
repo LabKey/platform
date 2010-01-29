@@ -97,8 +97,10 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 }
                 catch (IOException e)
                 {
-                    IOException ioException = new IOException("Failed to create local working directory in " + dirParent);
+                    IOException ioException = new IOException("Failed to create local working directory in the tempDirectory "
+                            + dirParent + ", specified in the tempDirectory property in the pipeline configuration");
                     ioException.initCause(e);
+                    _systemLog.error(ioException.getMessage(), e);
                     throw ioException;
                 }
                 attempt++;

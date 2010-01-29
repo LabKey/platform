@@ -29,7 +29,7 @@ public class PipelineQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "pipeline";
 
-    public static final String JOB_TABLE_NAME = "job";
+    public static final String JOB_TABLE_NAME = "Job";
 
     private static final Set<String> TABLE_NAMES;
 
@@ -62,6 +62,11 @@ public class PipelineQuerySchema extends UserSchema
         {
             FilteredTable table = new FilteredTable(PipelineSchema.getInstance().getTableInfoStatusFiles(), getContainer());
             table.wrapAllColumns(true);
+            table.removeColumn(table.getColumn("Container"));
+            ColumnInfo folderColumn = table.wrapColumn("Folder", table.getRealTable().getColumn("Container"));
+            folderColumn.setFk(new ContainerForeignKey());
+            table.addColumn(folderColumn);
+            table.setDescription("Contains one row per pipeline job");
 
             if (getContainer().isRoot())
             {
@@ -78,6 +83,15 @@ public class PipelineQuerySchema extends UserSchema
                 }
             });
 
+            table.getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
+            table.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
+            table.getColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
+            {
+                public TableInfo getLookupTableInfo()
+                {
+                    return getTable(JOB_TABLE_NAME);
+                }
+            });
 
             List<FieldKey> defaultCols = new ArrayList<FieldKey>();
             defaultCols.add(FieldKey.fromParts("Status"));

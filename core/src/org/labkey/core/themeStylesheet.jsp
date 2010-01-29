@@ -135,12 +135,12 @@ fieldset
     font-size: <%= themeFont.getNormalSize() %>;
 }
 
-.labkey-form-label
+.labkey-form-label, tr td.labkey-form-label-nowrap
 {
     background-color: #<%= formLabel %>;
 }
 
-.labkey-form-label-nowrap
+.labkey-form-label-nowrap, tr td.labkey-form-label-nowrap
 {
 	background-color: #<%= formLabel %>;
 }
