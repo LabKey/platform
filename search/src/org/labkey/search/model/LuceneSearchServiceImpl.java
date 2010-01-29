@@ -482,7 +482,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             boosts.put(standardFields[i], standardBoosts[i]);
     }
 
-    public SearchResult search(String queryString, @Nullable SearchCategory searchCategory, boolean recursive, User user, Container root, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable SearchCategory searchCategory, User user, Container root, boolean recursive, int offset, int limit) throws IOException
     {
         String category = null == searchCategory ? null : searchCategory.toString();
 
@@ -531,7 +531,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         IndexSearcher searcher = getIndexSearcher();
-        Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, true);
+        Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, recursive);
 
         TopDocs topDocs;
         if (null == sort)

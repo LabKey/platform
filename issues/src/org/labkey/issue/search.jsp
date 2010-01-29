@@ -48,8 +48,7 @@
 </form><%
     if (0 < q.length())
     {
-        //String qs = "+(" + q + ") +container:" + c.getId();   //UNDONE: non-recursive search
-        SearchService.SearchResult result = ss.search(q, IssueManager.searchCategory, user, ContainerManager.getRoot());
+        SearchService.SearchResult result = ss.search(q, IssueManager.searchCategory, user, c, false, 0, SearchService.DEFAULT_PAGE_SIZE);
         List<SearchService.SearchHit> hits = result.hits;
 
         %><div id="searchResults"><%
