@@ -40,6 +40,10 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
 {
     public static final String FILENAME = "schema.tsv";
 
+    private static final String TYPE_NAME_COLUMN = "platename";
+    private static final String LABEL_COLUMN = "platelabel";
+    private static final String TYPE_ID_COLUMN = "plateno";
+
     public String getSelectionText()
     {
         return "Dataset Schema Description";
@@ -51,9 +55,9 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();
         String schemaFilename = vf.makeLegalName(FILENAME);
         schemaXml.setFile(schemaFilename);
-        schemaXml.setTypeNameColumn("platename");
-        schemaXml.setLabelColumn("platelabel");
-        schemaXml.setTypeIdColumn("plateno");
+        schemaXml.setTypeNameColumn(TYPE_NAME_COLUMN);
+        schemaXml.setLabelColumn(LABEL_COLUMN);
+        schemaXml.setTypeIdColumn(TYPE_ID_COLUMN);
 
         PrintWriter writer = vf.getPrintWriter(schemaFilename);
         writeDatasetSchema(ctx.getUser(), definitions, writer);
@@ -62,7 +66,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
 
     public void writeDatasetSchema(User user, List<DataSetDefinition> definitions, PrintWriter writer)
     {
-        writer.println("platename\tplatelabel\tplateno\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tkey\tautokey");
+        writer.println(TYPE_NAME_COLUMN + "\t" + LABEL_COLUMN + "\t" + TYPE_ID_COLUMN + "\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tkey\tautokey");
 
         for (DataSetDefinition def : definitions)
         {
