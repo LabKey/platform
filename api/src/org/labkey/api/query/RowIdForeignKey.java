@@ -40,12 +40,9 @@ public class RowIdForeignKey extends AbstractForeignKey
     }
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
-        TableInfo lookupTable = getLookupTableInfo();
-        if (displayField == null)
-            displayField = lookupTable.getTitleColumn();
         if (displayField == null)
             return null;
-        return LookupColumn.create(parent, _rowidColumn, lookupTable.getColumn(displayField), true);
+        return LookupColumn.create(parent, _rowidColumn, getLookupTableInfo().getColumn(displayField), true);
     }
 
     public TableInfo getLookupTableInfo()

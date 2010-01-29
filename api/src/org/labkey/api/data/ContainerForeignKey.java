@@ -86,6 +86,8 @@ public class ContainerForeignKey extends LookupForeignKey
         ret.addColumn(pathColumn);
         ret.addWrapColumn(containersTable.getColumn("EntityId")).setHidden(true);
         ret.addWrapColumn(containersTable.getColumn("RowId")).setHidden(true);
+        ret.addWrapColumn(containersTable.getColumn("Workbook"));
+        ret.addWrapColumn(containersTable.getColumn("Description"));
         ret.setTitleColumn("Name");
         ret.setPublic(false);
         return ret;

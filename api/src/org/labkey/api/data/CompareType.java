@@ -36,7 +36,13 @@ import java.util.*;
  */
 public enum CompareType
 {
-    EQUAL("Equals", "eq", true, " = ?", "EQUAL"),
+    EQUAL("Equals", "eq", true, " = ?", "EQUAL")
+        {
+            @Override
+            FilterClause createFilterClause(String colName, Object value)
+            {
+                return new EqualsCompareClause(colName, this, value);
+            }},
     DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL")
         {
             public CompareClause createFilterClause(String colName, Object value)
@@ -58,7 +64,13 @@ public enum CompareType
                 return new NotEqualOrNullClause(colName, value);
             }
         },
-    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL"),
+    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL")
+        {
+            @Override
+            FilterClause createFilterClause(String colName, Object value)
+            {
+                return new NotEqualsCompareClause(colName, this, value);
+            }},
     ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING")
         {
             public FilterClause createFilterClause(String colName, Object value)
@@ -156,6 +168,21 @@ public enum CompareType
         try
         {
             Date dt = (Date) ConvertUtils.convert((String)value, Date.class);
+            if (dt == null)
+            {
+                if (this == CompareType.DATE_EQUAL)
+                {
+                    return new CompareClause(colName, CompareType.ISBLANK, null);
+                }
+                else if (this == CompareType.DATE_NOT_EQUAL)
+                {
+                    return new CompareClause(colName, CompareType.NONBLANK, null);
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Could not determine null version of comparison type " + this);
+                }
+            }
 
             return new DateEqCompareClause(colName, this, dt);
         }
@@ -336,6 +363,11 @@ public enum CompareType
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
     public static Object convertParamValue(ColumnInfo colInfo, Object paramVal)
     {
+        if (colInfo == null)
+        {
+            // No way to know what to convert it into
+            return paramVal;
+        }
         if (!(paramVal instanceof String))
             return paramVal;
 
@@ -544,6 +576,50 @@ public enum CompareType
         {
             appendColumnName(sb, formatter);
             sb.append(" DOES NOT START WITH ?");
+        }
+    }
+
+    public static class EqualsCompareClause extends CompareClause
+    {
+        public EqualsCompareClause(String colName, CompareType comparison, Object value)
+        {
+            super(colName, comparison, value);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            ColumnInfo colInfo = columnMap.get(_colName);
+            assert getParamVals().length == 1;
+            if (isUrlClause() && convertParamValue(colInfo, getParamVals()[0]) == null)
+            {
+                // Flip to treat this as an IS NULL comparison request
+                return ISBLANK.createFilterClause(_colName, null).toSQLFragment(columnMap, dialect);
+            }
+
+            return super.toSQLFragment(columnMap, dialect);
+        }
+    }
+
+    public static class NotEqualsCompareClause extends CompareClause
+    {
+        public NotEqualsCompareClause(String colName, CompareType comparison, Object value)
+        {
+            super(colName, comparison, value);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            ColumnInfo colInfo = columnMap.get(_colName);
+            assert getParamVals().length == 1;
+            if (isUrlClause() && convertParamValue(colInfo, getParamVals()[0]) == null)
+            {
+                // Flip to treat this as an IS NOT NULL comparison request
+                return NONBLANK.createFilterClause(_colName, null).toSQLFragment(columnMap, dialect);
+            }
+
+            return super.toSQLFragment(columnMap, dialect);
         }
     }
 

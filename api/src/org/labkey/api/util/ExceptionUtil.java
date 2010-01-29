@@ -150,7 +150,7 @@ public class ExceptionUtil
     {
         ex = unwrapException(ex);
 
-        if (ex instanceof SkipMothershipLogging || isClientAbortException(ex))
+        if (ex == null || ex instanceof SkipMothershipLogging || isClientAbortException(ex))
         {
             // Don't log these
             return;

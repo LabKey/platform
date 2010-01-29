@@ -128,6 +128,7 @@ public class ExperimentRunListView extends QueryView
         if (_showAddToExperimentButton && c.hasPermission(context.getUser(), InsertPermission.class))
         {
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
+            addToExperimentButton.setRequiresSelection(true);
 
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), true);
             String javascript = "javascript: " + view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +

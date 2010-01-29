@@ -29,7 +29,6 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -119,8 +118,7 @@ public class QueryView extends WebPartView<Object>
             if (RReport.TYPE.equals(type)) return true;
             if (QuerySnapshotService.TYPE.equals(type)) return true;
             if (CrosstabReport.TYPE.equals(type)) return true;
-            if (ChartQueryReport.TYPE.equals(type)) return true;
-            return false;
+            return ChartQueryReport.TYPE.equals(type);
         }
     };
 
@@ -234,8 +232,6 @@ public class QueryView extends WebPartView<Object>
             }
         }
     }
-
-    public static final String REPORTID_PARAM = "reportID=";
 
     public MenuButton createQueryPickerButton(String label)
     {
@@ -1061,11 +1057,6 @@ public class QueryView extends WebPartView<Object>
     protected String h(Object o)
     {
         return PageFlowUtil.filter(o);
-    }
-
-    protected String hiddenField(Object name, Object value)
-    {
-        return "<input type=\"hidden\" name=\"" + h(name) + "\" value=\"" + h(value) + "\">";
     }
 
     @Override

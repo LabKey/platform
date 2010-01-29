@@ -17,7 +17,9 @@ package org.labkey.api.module;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
+import org.apache.log4j.RollingFileAppender;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
@@ -188,6 +190,8 @@ public class ModuleLoader implements Filter
 
         verifyJavaVersion();
 
+        rollErrorLogFile(_log);
+
         // Register BeanUtils converters
         ConvertHelper.registerHelpers();
 
@@ -302,6 +306,30 @@ public class ModuleLoader implements Filter
         }
 
         _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+    }
+
+    /** We want to roll the file every time the server starts, which isn't directly supported by Log4J so we do it manually */
+    private void rollErrorLogFile(Logger logger)
+    {
+        while (logger != null && !logger.getAllAppenders().hasMoreElements())
+        {
+            logger = (Logger)logger.getParent();
+        }
+
+        if (logger == null)
+        {
+            return;
+        }
+
+        for (Enumeration e2 = logger.getAllAppenders(); e2.hasMoreElements();)
+        {
+            final Appender appender = (Appender)e2.nextElement();
+            if (appender instanceof RollingFileAppender && "ERRORS".equals(appender.getName()))
+            {
+                RollingFileAppender rfa = (RollingFileAppender)appender;
+                rfa.rollOver();
+            }
+        }
     }
 
     public static List<Module> loadModules(List<File> explodedModuleDirs)
