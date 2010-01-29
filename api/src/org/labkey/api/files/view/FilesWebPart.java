@@ -79,7 +79,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
             //this.fileSet = fileSet;
             getModelBean().setRoot(dir);
-            getModelBean().setRootPath(c, FileContentService.FILE_SETS_LINK + "/" + fileSet);
+            getModelBean().setRootPath(c, FileContentService.FILE_SETS_LINK, fileSet);
             setTitle(fileSet);
             setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
         }
@@ -325,11 +325,21 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public void setRootPath(Container c, String davName)
         {
+            setRootPath(c, davName, null);
+        }
+
+        public void setRootPath(Container c, String davName, String fileset)
+        {
             String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
             String rootPath;
 
             if (davName != null)
-                rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName);
+            {
+                if (fileset != null)
+                    rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName) + "/" + fileset;
+                else
+                    rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName);
+            }
             else
                 rootPath = webdavPrefix + c.getEncodedPath();
 

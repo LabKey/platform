@@ -208,7 +208,7 @@ function renderBrowser(rootPath, dir)
         {
             String name = attDir.getLabel();
             url.replaceParameter("fileSetName",name);
-            String value = navigate ? url.getLocalURIString() : "/@files/" + name;
+            String value = navigate ? url.getLocalURIString() : "/@filesets/" + name;
             out.write(",[" + q(value) + "," + q(name) + "]");
             if (StringUtils.equals(me.getFileSet(),name))
                 selectedValue = value;
