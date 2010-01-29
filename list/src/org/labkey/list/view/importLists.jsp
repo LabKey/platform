@@ -30,7 +30,7 @@ list templates.
 </td></tr>
 <tr><td><input type="file" name="listZip" size="50"></td></tr>
 <tr>
-    <td><%=generateSubmitButton("Import Lists")%></td>
+    <td><%=generateSubmitButton("Import List Archive")%></td>
 </tr>
 
 </table>

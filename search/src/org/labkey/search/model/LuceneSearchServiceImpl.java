@@ -154,7 +154,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 {
                     HTMLContentExtractor extractor = new HTMLContentExtractor.LabKeyPageHTMLExtractor(html);
                     body = extractor.extract();
-                    displayTitle = extractor.getTitle();
+                    String extractedTitle = extractor.getTitle();
+
+                    if (StringUtils.isBlank(displayTitle))
+                        displayTitle = extractedTitle;
+
+                    searchTitle = searchTitle + " " + extractedTitle;
                 }
 
                 if (StringUtils.isEmpty(body))
@@ -184,8 +189,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     parser.parse(is, handler, metadata);
                     is.close();
                     body = handler.toString();
+                    String extractedTitle = metadata.get(Metadata.TITLE);
                     if (StringUtils.isBlank(displayTitle))
-                        displayTitle = metadata.get(Metadata.TITLE);
+                        displayTitle = extractedTitle;
+                    searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
                     _log.debug("Parsed " + id);
                 }
                 finally
@@ -197,9 +204,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String url = r.getExecuteHref(null);
             assert null != url;
 
-            // TODO: Delete this and assert null != displayTitle and null != searchTitle
-            if (StringUtils.isBlank(displayTitle))
-                displayTitle = r.getName();
+            assert null != displayTitle;
 
             if (StringUtils.isBlank(searchTitle))
                 searchTitle = displayTitle;
@@ -294,6 +299,34 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             super(name, cause);
         }
+    }
+
+    private static final String[] INTERESTING_PROP_NAMES = new String[] {
+        Metadata.TITLE,
+        Metadata.AUTHOR,
+        Metadata.KEYWORDS,
+        Metadata.COMMENTS,
+        Metadata.NOTES,
+        Metadata.COMPANY,
+        Metadata.PUBLISHER
+    };
+
+    public String getInterestingMetadataProperties(Metadata metadata)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (String key : INTERESTING_PROP_NAMES)
+        {
+            String value = metadata.get(key);
+
+            if (null != value)
+            {
+                sb.append(" ");
+                sb.append(value);
+            }
+        }
+
+        return sb.toString();
     }
 
     private static final int SUMMARY_LENGTH = 400;
@@ -450,7 +483,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public SearchResult search(String queryString, SearchCategory searchCategory, User user, Container root, int offset, int limit) throws IOException
     {
-        String category = null==searchCategory ? null : searchCategory.toString();
+        String category = null == searchCategory ? null : searchCategory.toString();
 
         String sort = null;  // TODO: add sort parameter
         int hitsToRetrieve = offset + limit;

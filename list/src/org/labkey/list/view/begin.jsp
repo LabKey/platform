@@ -67,7 +67,7 @@
 <%  if (policy.hasPermission(user, DesignListPermission.class))
     { %>
         <labkey:button text="Create New List" href="<%=h(urlFor(ListController.NewListDefinitionAction.class))%>" />
-        <labkey:button text="Import Lists" href="<%=h(urlFor(ListController.ImportListsAction.class))%>" /><%
+        <labkey:button text="Import List Archive" href="<%=h(urlFor(ListController.ImportListsAction.class))%>" /><%
         if (!map.isEmpty())
         { %>
         <labkey:button text="Export Lists" href="<%=h(urlFor(ListController.ExportAllListsAction.class))%>" /><%

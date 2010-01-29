@@ -1149,21 +1149,17 @@ public class ListController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Import Lists");
+            return appendRootNavTrail(root).addChild("Import List Archive");
         }
     }
 
 
     public enum Action
     {
-        begin,
-        newListDefinition,
         defineAndImportList,
         deleteListDefinition,
         showListDefinition,
         editListDefinition,
-        setDefaultValues,
-        clearDefaultValues,
         grid,
         details,
         insert,

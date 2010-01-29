@@ -85,7 +85,7 @@
     {
         %><input type="hidden" name="guest" value=0><%
     }
-    %><input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q," ")))%>">&nbsp;
+    %><input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
     <%=generateSubmitButton("Search")%><%
 
     if (form.isAdvanced())
