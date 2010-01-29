@@ -16,24 +16,23 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.search.SearchController" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="java.util.List" %>
+<%@ page import="java.text.ParseException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.text.ParseException" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.*" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.json.JSONArray" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -137,10 +136,9 @@
 
         try
         {
-            String qs = queryString;
             long start = System.nanoTime();
             Container searchContainer = null == form.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(form.getContainer());
-            SearchService.SearchResult result = ss.search(qs, ss.getCategory(category), user, searchContainer, offset, hitsPerPage);
+            SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), true, user, searchContainer, offset, hitsPerPage);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
 
@@ -161,6 +159,7 @@
             {
                 String href = hit.url;
                 String summary = StringUtils.trimToNull(hit.summary);
+
                 try
                 {
                     if (href.startsWith("/"))
@@ -176,8 +175,8 @@
                     //
                 }
 
-            %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:690px;'><%
-            if (null != summary)
+                %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:690px;'><%
+                if (null != summary)
                 {
                     %><%=PageFlowUtil.filter(summary, false)%><br><%
                 }
@@ -200,7 +199,7 @@
 
             if (-1 == queryString.indexOf("searchCategory") && wideView)
             {
-                result = ss.search(queryString, SearchService.navigationCategory, user, ContainerManager.getRoot(), offset, hitsPerPage);
+                result = ss.search(queryString, SearchService.navigationCategory, true, user, ContainerManager.getRoot(), offset, hitsPerPage);
 
                 if (result.hits.size() > 0)
                 {

@@ -36,6 +36,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -481,7 +482,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             boosts.put(standardFields[i], standardBoosts[i]);
     }
 
-    public SearchResult search(String queryString, SearchCategory searchCategory, User user, Container root, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable SearchCategory searchCategory, boolean recursive, User user, Container root, int offset, int limit) throws IOException
     {
         String category = null == searchCategory ? null : searchCategory.toString();
 
@@ -530,7 +531,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         IndexSearcher searcher = getIndexSearcher();
-        Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root);
+        Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, true);
 
         TopDocs topDocs;
         if (null == sort)
@@ -574,60 +575,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return result;
     }
 
-
-/*    public String searchFormatted(String queryString, User user, Container root, int page)
-    {
-        int hitsPerPage = 20;
-        
-        try
-        {
-            long start = System.nanoTime();
-            List<SearchHit> hits = search(queryString, user, root, page);
-            long time = (System.nanoTime() - start)/1000000;
-
-            StringBuilder html = new StringBuilder("<table><tr><td colspan=2>Found ");
-
-            int totalHits = hits.isEmpty() ? 0 : hits.get(0).totalHits;
-            html.append(Formats.commaf0.format(totalHits)).append(" result");
-            if (totalHits != 1)
-                html.append("s");
-
-            html.append(" in ").append(Formats.commaf0.format(time)).append(" millisecond").append(1 != time ? "s" : "").append(".  Displaying ");
-
-            if (hitsPerPage < totalHits)
-            {
-                html.append("page ").append(Formats.commaf0.format(page + 1)).append(" of ");
-                html.append(Formats.commaf0.format((int)Math.ceil((double)totalHits / hitsPerPage)));
-            }
-            else
-            {
-                html.append("all results");
-            }
-
-            html.append(".</td></tr>\n");
-
-            for (int i = page * hitsPerPage; i < Math.min((page + 1) * hitsPerPage, hits.size()); i++)
-            {
-                SearchHit hit = hits.get(i);
-
-                html.append("<tr><td colspan=2>&nbsp;</td></tr>\n");
-                html.append("<tr><td colspan=2><a href=\"").append(PageFlowUtil.filter(hit.url)).append("\">").append(PageFlowUtil.filter(hit.title)).append("</a>").append("</td></tr>\n");
-                html.append("<tr><td width=25>&nbsp;</td><td>").append(PageFlowUtil.filter(hit.summary)).append("</td></tr>\n");
-            }
-
-            html.append("</table>\n");
-
-            return html.toString();
-        }
-        catch (IOException e)
-        {
-            Throwable t = e;
-            if (e.getCause() instanceof ParseException)
-                t = e.getCause();
-            return "Error: " + t.getMessage();
-        }
-    }
-*/
 
     protected void shutDown()
     {

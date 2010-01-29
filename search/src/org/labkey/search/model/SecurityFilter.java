@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,13 +41,24 @@ import java.util.Set;
 class SecurityFilter extends Filter
 {
     private static final ContainerFieldSelector CONTAINER_FIELD_SELECTOR = new ContainerFieldSelector();
-    private final User _user;
-    private final Container _root;
 
-    SecurityFilter(User user, Container root)
+    private final Set<String> containerIds;
+
+    SecurityFilter(User user, Container root, boolean recursive)
     {
-        _user = user;
-        _root = root;
+        Set<Container> containers = ContainerManager.getAllChildren(root, user);
+
+        if (recursive)
+        {
+            containerIds = new HashSet<String>(containers.size());
+
+            for (Container c : containers)
+                containerIds.add(c.getId());
+        }
+        else
+        {
+            containerIds = Collections.singleton(root.getId());
+        }
     }
 
     @Override
@@ -54,14 +66,6 @@ class SecurityFilter extends Filter
     {
         int max = reader.maxDoc();
         BitSet bits = new BitSet(max);
-
-        // TODO: Could short-circuit for administrators: bits.set(0, reader.maxDoc() - 1); -- but we want to test perf for now
-
-        Set<Container> containers = ContainerManager.getAllChildren(_root, _user);
-        Set<String> containerIds = new HashSet<String>(containers.size());
-
-        for (Container c : containers)
-            containerIds.add(c.getId());
 
         for (int i = 0; i < max; i++)
         {
