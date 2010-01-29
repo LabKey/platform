@@ -61,6 +61,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         resp.put("canEdit", canEdit);
         resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 
+        QueryDefinition querydef = (null == queryDefs ? null : queryDefs.get(form.getQueryName()));
+        boolean isInherited = (null != querydef && querydef.canInherit() && !container.equals(querydef.getContainer()));
+        resp.put("isInherited", isInherited);
+        if (isInherited)
+            resp.put("containerPath", querydef.getContainer().getPath());
+
         TableInfo tinfo;
         try
         {

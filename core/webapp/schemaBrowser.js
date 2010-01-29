@@ -270,6 +270,9 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     formatQueryLinks : function(queryDetails) {
         var container = {tag: 'div', cls: 'lk-qd-links', children:[]};
 
+        if (queryDetails.isInherited)
+            container.children.push(this.formatJumpToDefinitionLink(queryDetails));
+
         var params = {schemaName: queryDetails.schemaName};
         params["query.queryName"] = queryDetails.name;
 
@@ -277,7 +280,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
         if (queryDetails.isUserDefined)
         {
-            if (queryDetails.canEdit)
+            if (queryDetails.canEdit && !queryDetails.isInherited)
             {
                 if (LABKEY.Security.currentUser.isAdmin)
                 {
@@ -295,6 +298,31 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
         
         return container;
+    },
+
+    formatJumpToDefinitionLink : function(queryDetails) {
+        var url = LABKEY.ActionURL.buildURL("query", "begin", queryDetails.containerPath, {
+            schemaName: queryDetails.schemaName,
+            queryName: queryDetails.name
+        });
+        return {
+            tag: 'span',
+            children: [
+                {
+                    tag: 'span',
+                    html: '['
+                },
+                {
+                    tag: 'a',
+                    href: url,
+                    html: 'Inherited: Jump to Definition'
+                },
+                {
+                    tag: 'span',
+                    html: ']'
+                }
+            ]
+        };
     },
 
     formatQueryLink : function(action, params, caption, target, url) {
