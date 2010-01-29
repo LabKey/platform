@@ -739,6 +739,7 @@ public class WikiManager
         String docid = "wiki:" + entityId;
         if (null != ss)
             ss.deleteResource(docid);
+        // UNDONE attachment
     }
     
 
@@ -918,12 +919,12 @@ public class WikiManager
                     String documentName = pair.second;
                     Wiki parent = (Wiki)ids.get(entityId);
 
-                    ActionURL wikiUrl = pageUrl.clone().addParameter("page", parent.getName());
+                    ActionURL wikiUrl = pageUrl.clone().addParameter("name", parent.getName());
                     ActionURL attachmentUrl = downloadUrl.clone()
                             .replaceParameter("entityId",entityId)
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
-                    String displayTitle = documentName + " attached to page " + titles.get(entityId);
+                    String displayTitle = documentName + " attached to page '" + titles.get(entityId) + "'";
                     Resource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
                             attachmentUrl, displayTitle,
