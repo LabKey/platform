@@ -2359,7 +2359,6 @@ public class DavController extends SpringActionController
                 }
             }
 
-
             // File based
             if (src.getFile() != null && dest.getFile() != null)
             {
@@ -2373,7 +2372,9 @@ public class DavController extends SpringActionController
                         if (!dest.getFile().renameTo(tmp))
                             throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
                     }
-
+                    // NOTE: destFile get's marked temp even if renameTo fails, this is OK for our uses or Temporary=T (always uniquified names)
+                    if (getTemporary())
+                        markTempFile(dest);
                     if (!src.getFile().renameTo(dest.getFile()))
                     {
                         if (null != tmp)
@@ -2393,6 +2394,8 @@ public class DavController extends SpringActionController
             // Stream based
             else
             {
+                if (getTemporary())
+                    markTempFile(dest);
                 dest.moveFrom(getUser(),src);
             }
 
