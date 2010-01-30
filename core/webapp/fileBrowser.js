@@ -1775,7 +1775,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     var url = fileBrowser.currentDirectory.data.uri + "?method=zip&depth=-1";
                     for (var i = 0; i < selections.length; i++)
                     {
-                        url = url + "&file=" + selections[i].data.name;
+                        url = url + "&file=" + encodeURIComponent(selections[i].data.name);
                     }
 
                     window.location = url;
