@@ -57,24 +57,23 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.*;
-import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.ZipUtil;
-import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.ZipFile;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -97,7 +96,9 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.writer.*;
+import org.labkey.study.writer.SchemaTsvWriter;
+import org.labkey.study.writer.StudyExportContext;
+import org.labkey.study.writer.StudyWriter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -112,11 +113,12 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
+
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
  * User: Karl Lum
@@ -734,8 +736,15 @@ public class StudyController extends BaseStudyController
 
             if (!isSnapshot)
             {
-                if (!isAssayDataset && (user.isAdministrator() || canWrite)) // admins always get the import and delete buttons
+                if (!isAssayDataset && (user.isAdministrator() || canWrite)) // admins always get the import, manage and delete buttons
                 {
+                    // manage dataset
+                    ActionButton manageButton = new ActionButton(new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _datasetId), "Manage Dataset");
+                    manageButton.setDisplayModes(DataRegion.MODE_GRID);
+                    manageButton.setActionType(ActionButton.Action.LINK);
+                    manageButton.setDisplayPermission(InsertPermission.class);
+                    buttonBar.add(manageButton);
+
                     // bulk import
                     ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                     uploadButton.setDisplayPermission(InsertPermission.class);

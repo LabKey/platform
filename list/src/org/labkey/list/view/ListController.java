@@ -99,7 +99,13 @@ public class ListController extends SpringActionController
 
     private NavTree appendRootNavTrail(NavTree root)
     {
-        root.addChild("Lists", getBeginURL(getContainer()));
+        return appendRootNavTrail(root, getContainer());
+    }
+
+
+    public static NavTree appendRootNavTrail(NavTree root, Container c)
+    {
+        root.addChild("Lists", getBeginURL(c));
         return root;
     }
 

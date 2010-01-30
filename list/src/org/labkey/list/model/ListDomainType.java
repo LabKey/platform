@@ -31,6 +31,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.view.NavTree;
+import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;
@@ -57,6 +59,12 @@ public class ListDomainType extends DomainKind
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignListPermission.class);
+    }
+
+    @Override
+    public void appendNavTrail(NavTree root, Container c)
+    {
+        ListController.appendRootNavTrail(root, c);
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
