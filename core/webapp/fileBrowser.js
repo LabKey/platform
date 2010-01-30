@@ -83,6 +83,16 @@ var URI = function(u)
 URI.prototype = {parse: parseUri};
 
 
+// we want to encode everything save / so this is not like encodeURI() or encodeURIComponent()
+function encodePath(s)
+{
+    var a = s.split('/');
+    for (var i=0 ; i<a.length ; i++)
+        a[i] = encodeURIComponent(a[i]);
+    return a.join('/');
+}
+
+
 var TREESELECTION_EVENTS =
 {
     selectionchange:"selectionchange",
@@ -807,7 +817,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     {
         try
         {
-            var resourcePath = this.concatPaths(this.prefixUrl, path);
+            var resourcePath = this.concatPaths(this.prefixUrl, encodePath(path));
             var fileSystem = this;
             var connection = new Ext.data.Connection();
             connection.handleResponse = function(response)
@@ -866,7 +876,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 
     reloadFile : function(path, callback)
     {
-        var url = this.concatPaths(this.prefixUrl, encodeURI(path));
+        var url = this.concatPaths(this.prefixUrl, encodePath(path));
         this.connection.url = url;
         var args = {url: url, path: path, callback:callback};
         this.proxy.load({method:"PROPFIND",depth:"0"}, this.transferReader, this.processFile, this, args);
@@ -937,7 +947,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             return;
         }
 
-        var url = this.concatPaths(this.prefixUrl, encodeURI(path));
+        var url = this.concatPaths(this.prefixUrl, encodePath(path));
         this.connection.url = url;
         console.debug("requesting " + url);
         this.pendingPropfind[path] = args = {url: url, path: path, callbacks:[cb]};
