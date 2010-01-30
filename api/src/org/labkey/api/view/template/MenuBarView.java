@@ -40,7 +40,7 @@ public class MenuBarView extends JspView<List<Portal.WebPart>>
 
     public MenuBarView(Container container)
     {
-        super(MenuBarView.class,  "menuBar.jsp", null);
+        super(MenuBarView.class, "menuBar.jsp", null);
         Container project = container.getProject();
 
         //Probably not right for site-level admin pages...

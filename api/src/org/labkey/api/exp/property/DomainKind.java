@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +44,11 @@ abstract public class DomainKind
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+    // Override to customize the nav trail on shared pages like edit domain
+    public void appendNavTrail(NavTree root, Container c)
+    {
     }
 
     // Do any special handling before a PropertyDescriptor is deleted -- do nothing by default
