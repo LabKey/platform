@@ -222,7 +222,7 @@ public class QueryProfiler
             }
         }
 
-        return new HtmlView("<font class=\"labkey-error\">Error: Query statistic \"" + statName + "\" does not exist</font>");
+        return new HtmlView("<font class=\"labkey-error\">Error: Query statistic \"" + PageFlowUtil.filter(statName) + "\" does not exist</font>");
     }
 
     public static class QueryStatTsvWriter extends TSVWriter
