@@ -928,7 +928,7 @@ public class StudyController extends BaseStudyController
             Study study = getStudy();
             _bean = form;
             String previousParticipantURL = null;
-            String nextParticiapantURL = null;
+            String nextParticipantURL = null;
 
             String viewName = (String) getViewContext().get("Dataset.viewName");
 
@@ -956,13 +956,13 @@ public class StudyController extends BaseStudyController
                         final String ptid = participants.get(idx+1);
                         ActionURL nextUrl = getViewContext().cloneActionURL();
                         nextUrl.replaceParameter("participantId", ptid);
-                        nextParticiapantURL = nextUrl.getEncodedLocalURIString();
+                        nextParticipantURL = nextUrl.getEncodedLocalURIString();
                     }
                 }
             }
 
             VBox vbox = new VBox();
-            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticiapantURL, form.getParticipantId(), form.getQCState());
+            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticipantURL, form.getParticipantId(), form.getQCState());
             vbox.addView(navView);
 
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);

@@ -1830,7 +1830,6 @@ search/src/org/labkey/search/model/AbstractSearchService.java -text
 search/src/org/labkey/search/model/CrawlerTest.java -text
 search/src/org/labkey/search/model/DavCrawler.java -text
 search/src/org/labkey/search/model/HTMLContentExtractor.java -text
-search/src/org/labkey/search/model/LuceneSearch.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
 search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SecurityFilter.java -text

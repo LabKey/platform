@@ -25,7 +25,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.Resource;

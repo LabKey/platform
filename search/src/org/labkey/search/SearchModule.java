@@ -27,22 +27,21 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.DataView;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.view.SearchWebPartFactory;
 
-import java.util.*;
-import java.io.FilenameFilter;
 import java.io.File;
+import java.io.FilenameFilter;
+import java.util.*;
 
 
 public class SearchModule extends DefaultModule

@@ -34,7 +34,6 @@ import org.apache.lucene.util.Version;
 import org.apache.pdfbox.exceptions.WrappedIOException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
@@ -187,12 +186,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     ContentHandler handler = new BodyContentHandler();
                     is = r.getInputStream(User.getSearchUser());
 
-                    // Temporary workaround for http://issues.apache.org/jira/browse/TIKA-374.
-                    // TODO: Switch to single, static AutoDetectParser shared across all threads at upgrade to Tika 0.7 
+                    // TODO: Switch to single, static AutoDetectParser shared across all threads on upgrade to Tika 0.7 
                     AutoDetectParser parser = new AutoDetectParser();
-                    parser.setDetector(new MimeTypes());
 
-                    _log.info(id + ": " + parser.getDetector());
                     parser.parse(is, handler, metadata);
                     is.close();
                     body = handler.toString();
