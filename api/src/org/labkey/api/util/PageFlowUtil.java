@@ -1689,7 +1689,17 @@ public class PageFlowUtil
 
         sb.append(",container:{id:'").append(container.getId()).append("'");
         sb.append(",path:").append(jsString(container.getPath()));
+        sb.append(",name:").append(jsString(container.getName()));
         sb.append("}"); //end container object
+
+        Container project = container.isRoot() ? null : container.getProject();
+        if (null != project)
+        {
+            sb.append(",project:{id:'").append(project.getId()).append("'");
+            sb.append(",path:").append(jsString(project.getPath()));
+            sb.append(",name:").append(jsString(project.getName()));
+            sb.append("}"); //end project object
+        }
 
         sb.append(",serverName:(").append(PageFlowUtil.jsString(props.getServerName())).append(" || 'LabKey Server')");
         sb.append(",versionString:").append(PageFlowUtil.jsString(props.getLabkeyVersionString()));

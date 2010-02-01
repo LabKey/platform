@@ -121,6 +121,11 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         return _warningMessages;
     }
 
+    // for testing only
+    public void addTestMessage()
+    {
+        _warningMessages.add("TESTING");
+    }
 
     public static class TemplateHeaderBean
     {
