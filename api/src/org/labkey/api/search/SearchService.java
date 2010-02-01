@@ -358,14 +358,3 @@ public interface SearchService
         }
     }
 }
-
-
-//
-// TODO Index Users
-// TODO sampleid
-// TODO fcs keywords
-// TODO delete attachments (delete by ownerEntityId field?)
-// TODO perf/profiling
-// TODO index Lists/Assays
-// TODO index cohorts
-//
