@@ -85,12 +85,16 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library>
+      <library name="Tika">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tika-app-0.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/tika-app-0.6.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/apache-tika-0.6-src.zip!/tika-0.6/tika-app/src/main/java" />
+          <root url="jar://$MODULE_DIR$/lib/apache-tika-0.6-src.zip!/tika-0.6/tika-parsers/src/main/java" />
+          <root url="jar://$MODULE_DIR$/lib/apache-tika-0.6-src.zip!/tika-0.6/tika-core/src/main/java" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>

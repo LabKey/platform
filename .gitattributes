@@ -1808,11 +1808,12 @@ query/webapp/reports/r.gif -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text
 search/build.xml -text
+search/lib/apache-tika-0.6-src.zip -text
 search/lib/lucene-3.0.0-src.zip -text
 search/lib/lucene-3.0.0.zip -text
 search/lib/lucene-core-3.0.0.jar -text
 search/lib/lucene-snowball-3.0.0.jar -text
-search/lib/tika-app-0.5.jar -text
+search/lib/tika-app-0.6.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.02-0.03.sql -text
