@@ -18,8 +18,10 @@ package org.labkey.api.files;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.pipeline.PipelineActionConfig;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -37,7 +39,18 @@ public interface FileContentService
     void disableFileRoot(Container container);
     boolean isFileRootDisabled(Container container);
 
-    boolean hasSiteDefaultRoot(Container container);
+    /**
+     * A file root can use a default root based on a single site wide root that mirrors the folder structure of
+     * a project.
+     */
+    boolean isUseDefaultRoot(Container container);
+    void setIsUseDefaultRoot(Container container, boolean useDefaultRoot);
+
+
+    /**
+     * Returns
+     * @return
+     */
     File getSiteDefaultRoot();
     void setSiteDefaultRoot(File root);
 
@@ -95,4 +108,8 @@ public interface FileContentService
     }
 
     public String getFolderName(ContentType type);
+
+    public List<PipelineActionConfig> getActionsConfig(Container c);
+
+    public void setActionsConfig(Container c, List<PipelineActionConfig> configs);
 }
