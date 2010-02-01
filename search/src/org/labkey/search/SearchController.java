@@ -288,31 +288,14 @@ public class SearchController extends SpringActionController
 
             SearchService.IndexTask task = null;
 
-            SearchService.IndexTask lastFullTask = _lastFullTask;
-            boolean fullInProgress = false;
-            for (SearchService.IndexTask t : ss.getTasks())
+            if (full)
             {
-                if (lastFullTask == t)
-                    fullInProgress = true;
+                ss.indexFull(true);
             }
-
-            if (!fullInProgress)
+            else
             {
-                if (full)
-                {
-                    if (!fullInProgress)
-                    {
-                        task = ss.indexFull(true);
-                        _lastFullTask = task;
-                    }
-                    else
-                        task = lastFullTask;
-                }
-                else
-                {
-                    task = ss.indexContainer(null, getViewContext().getContainer(), null);
-                    _lastIncrementalTask = task;
-                }
+                task = ss.indexContainer(null, getViewContext().getContainer(), null);
+                _lastIncrementalTask = task;
             }
 
             if (wait && null != task)
@@ -410,7 +393,6 @@ public class SearchController extends SpringActionController
     }
     
 
-    static SearchService.IndexTask _lastFullTask = null;
     static SearchService.IndexTask _lastIncrementalTask = null;
 
     

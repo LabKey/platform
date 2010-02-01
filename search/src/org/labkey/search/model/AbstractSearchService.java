@@ -1151,49 +1151,39 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     // use clear() and indexFull() for full forced reindex
     //
     
-    public IndexTask indexFull(final boolean force)
+    public void indexFull(final boolean force)
     {
-        final IndexTask task = createTask("Full reindex");
-        Runnable r = new Runnable()
-        {
-            public void run()
-            {
-                DocumentProvider[] documentProviders = _documentProviders.get();
+//        final IndexTask task = createTask("Full reindex");
+//        Runnable r = new Runnable()
+//        {
+//            public void run()
+//            {
+//                DocumentProvider[] documentProviders = _documentProviders.get();
+//
+//                if (force)
+//                {
+//                    for (DocumentProvider p : documentProviders)
+//                    {
+//                        try
+//                        {
+//                            p.indexDeleted();
+//                        }
+//                        catch (SQLException x)
+//                        {
+//                            _log.error("Unexpected exception", x);
+//                        }
+//                    }
+//                }
+//
+//                for (DocumentProvider p : documentProviders)
+//                {
+//                    p.enumerateDocuments(task, null, null);
+//                }
+//            }
+//        };
 
-                if (force)
-                {
-                    for (DocumentProvider p : documentProviders)
-                    {
-                        try
-                        {
-                            p.indexDeleted();
-                        }
-                        catch (SQLException x)
-                        {
-                            _log.error("Unexpected exception", x);
-                        }
-                    }
-                }
-
-                for (DocumentProvider p : documentProviders)
-                {
-                    p.enumerateDocuments(task, null, null);
-                }
-            }
-        };
-
-        task.addRunnable(r, PRIORITY.bulk);
-        task.setReady();
-        task.onSuccess(new Runnable(){
-            public void run()
-            {
-                commit();
-            }
-        });
-
-        // also crank crawler into high gear!
+        // crank crawler into high gear!
         DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
-        return task;
     }
 
 
