@@ -16,28 +16,39 @@
 
 package org.labkey.filecontent;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.HttpView;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.data.xml.ActionOptions;
+import org.labkey.data.xml.PipelineOptionsDocument;
 
 import java.beans.PropertyChangeEvent;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -74,49 +85,54 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (null == project)
             return null;
 
-        Map<String,String> m = PropertyManager.getProperties(project.getId(), "staticFile", false);
-        if (m == null || !m.containsKey(Props.root.name()))
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+        if (root.isEnabled())
         {
-            // check for file sharing disabled at the project level
-            if (m != null && m.containsKey(Props.rootDisabled.name()))
-                return null;
-
             // check if there is a site wide file root
-            File siteRoot = getSiteDefaultRoot();
-            if (siteRoot != null)
+            if (root.getPath() == null)
             {
-                File projRoot = new File(siteRoot, c.getProject().getName());
+                File siteRoot = getSiteDefaultRoot();
+                if (siteRoot != null)
+                {
+                    File projRoot = new File(siteRoot, c.getProject().getName());
 
-                // automatically create project roots if a site wide root is specified
-                if (!projRoot.exists())
-                    projRoot.mkdirs();
+                    // automatically create project roots if a site wide root is specified
+                    if (!projRoot.exists())
+                        projRoot.mkdirs();
 
-                return projRoot;
+                    return projRoot;
+                }
             }
-            return null;
+            else
+                return new File(root.getPath());
         }
-        return null == m.get(Props.root.name()) ? null : new File(m.get(Props.root.name()));
+        return null;
     }
 
-    public void setFileRoot(Container c, File root)
+    public void setFileRoot(Container c, File path)
     {
-        Map<String,String> m = PropertyManager.getWritableProperties(0, c.getProject().getId(), "staticFile", true);
-        String oldValue = m.get(Props.root.name());
-        try
-        {
-            m.remove(Props.rootDisabled.name());
-            if (null == root)
-                m.remove(Props.root.name());
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+        root.setEnabled(true);
+
+        String oldValue = root.getPath();
+        String newValue = null;
+
+        try {
+            // clear out the root
+            if (path == null)
+                root.setPath(null);
             else
-                m.put(Props.root.name(), root.getCanonicalPath());
+            {
+                root.setPath(path.getCanonicalPath());
+                newValue = root.getPath();
+            }
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-        String newValue = m.get(Props.root.name());
-        PropertyManager.saveProperties(m);
 
+        FileRootManager.get().saveFileRoot(null, root);
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                 c, ContainerManager.Property.WebRoot, oldValue, newValue);
         ContainerManager.firePropertyChangeEvent(evt);
@@ -127,12 +143,10 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (container == null || container.isRoot())
             throw new IllegalArgumentException("Disabling either a null project or the root project is not allowed.");
 
-        Map<String,String> m = PropertyManager.getWritableProperties(0, container.getProject().getId(), "staticFile", true);
-        String oldValue = m.get(Props.root.name());
-        m.remove(Props.root.name());
-        m.put(Props.rootDisabled.name(), Boolean.toString(true));
-
-        PropertyManager.saveProperties(m);
+        FileRoot root = FileRootManager.get().getFileRoot(container);
+        String oldValue = root.getPath();
+        root.setEnabled(false);
+        FileRootManager.get().saveFileRoot(null, root);
 
         ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                 container, ContainerManager.Property.WebRoot, oldValue, null);
@@ -148,18 +162,30 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (null == project)
             return false;
 
-        Map<String,String> m = PropertyManager.getProperties(project.getId(), "staticFile", false);
-        return m != null && m.containsKey(Props.rootDisabled.name());
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+        return !root.isEnabled();
     }
 
-    public boolean hasSiteDefaultRoot(Container c)
+    public boolean isUseDefaultRoot(Container c)
     {
         Container project = c.getProject();
         if (null == project)
             return true;
 
-        Map<String,String> m = PropertyManager.getProperties(project.getId(), "staticFile", false);
-        return m == null || !m.containsKey(Props.root.name());
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+        return root.isUseDefault() || StringUtils.isEmpty(root.getPath());
+    }
+
+    public void setIsUseDefaultRoot(Container c, boolean useDefaultRoot)
+    {
+        Container project = c.getProject();
+        if (project != null)
+        {
+            FileRoot root = FileRootManager.get().getFileRoot(c);
+            root.setEnabled(true);
+            root.setUseDefault(useDefaultRoot);
+            FileRootManager.get().saveFileRoot(null, root);
+        }
     }
 
     public File getSiteDefaultRoot()
@@ -507,4 +533,80 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
+    public List<PipelineActionConfig> getActionsConfig(Container c)
+    {
+        try {
+            FileRoot root = FileRootManager.get().getFileRoot(c);
+            List<PipelineActionConfig> configs = new ArrayList<PipelineActionConfig>();
+
+            if (!StringUtils.isBlank(root.getProperties()))
+            {
+                String xml = root.getProperties();
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+
+                PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.parse(xml, options);
+                XmlBeansUtil.validateXmlDocument(doc);
+
+                PipelineOptionsDocument.PipelineOptions pipeOptions = doc.getPipelineOptions();
+                if (pipeOptions != null)
+                {
+                    ActionOptions actionOptions = pipeOptions.getActionConfig();
+                    if (actionOptions != null)
+                    {
+                        for (ActionOptions.DisplayOption o : actionOptions.getDisplayOptionArray())
+                        {
+                            configs.add(new PipelineActionConfig(o.getId(), o.getState()));
+                        }
+                    }
+                }
+            }
+            return configs;
+        }
+        catch (XmlValidationException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (XmlException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setActionsConfig(Container c, List<PipelineActionConfig> configs)
+    {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try
+        {
+            FileRoot root = FileRootManager.get().getFileRoot(c);
+            PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
+            PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
+
+            if (!configs.isEmpty())
+            {
+                ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
+
+                for (PipelineActionConfig ac : configs)
+                {
+                    ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
+
+                    displayOption.setId(ac.getId());
+                    displayOption.setState(ac.getState().name());
+                }
+            }
+            XmlBeansUtil.validateXmlDocument(doc);
+            doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
+
+            root.setProperties(output.toString());
+            FileRootManager.get().saveFileRoot(null, root);
+        }
+        catch (Exception e)
+        {
+            // This is likely a code problem -- propagate it up so we log to mothership
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(output);
+        }
+    }
 }

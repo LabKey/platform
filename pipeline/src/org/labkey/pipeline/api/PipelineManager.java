@@ -15,12 +15,10 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.*;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJob;
@@ -28,13 +26,14 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.data.xml.ActionOptions;
-import org.labkey.data.xml.PipelineOptionsDocument;
 import org.labkey.pipeline.PipelineWebdavProvider;
 import org.labkey.pipeline.status.StatusController;
 
@@ -43,7 +42,6 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -186,85 +184,16 @@ public class PipelineManager
                 container, ContainerManager.Property.PipelineRoot, oldValue, newValue));
     }
 
-    private static final String ACTION_CONFIG_CATEGORY = "ActionConfig";
-    private static final String ACTION_CONFIG = "pipelineActionConfig";
     public static List<PipelineActionConfig> getPipelineActionsConfig(Container c)
     {
-        try {
-            List<PipelineActionConfig> configs = new ArrayList<PipelineActionConfig>();
-
-            Map<String,String> m = PropertyManager.getProperties(c.getId(), ACTION_CONFIG_CATEGORY, false);
-            if (m != null && m.containsKey(ACTION_CONFIG))
-            {
-                String xml = m.get(ACTION_CONFIG);
-                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-
-                PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.parse(xml, options);
-                XmlBeansUtil.validateXmlDocument(doc);
-
-                PipelineOptionsDocument.PipelineOptions pipeOptions = doc.getPipelineOptions();
-                if (pipeOptions != null)
-                {
-                    ActionOptions actionOptions = pipeOptions.getActionConfig();
-                    if (actionOptions != null)
-                    {
-                        for (ActionOptions.DisplayOption o : actionOptions.getDisplayOptionArray())
-                        {
-                            configs.add(new PipelineActionConfig(o.getId(), o.getState()));
-                        }
-                    }
-                }
-            }
-            return configs;
-        }
-        catch (XmlValidationException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (XmlException e)
-        {
-            throw new RuntimeException(e);
-        }
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        return svc.getActionsConfig(c);
     }
 
     public static void setPipelineActionConfig(Container c, List<PipelineActionConfig> actionConfig)
     {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try
-        {
-            PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
-            PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
-
-            if (!actionConfig.isEmpty())
-            {
-                ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
-
-                for (PipelineActionConfig ac : actionConfig)
-                {
-                    ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
-
-                    displayOption.setId(ac.getId());
-                    displayOption.setState(ac.getState().name());
-                }
-            }
-            XmlBeansUtil.validateXmlDocument(doc);
-            doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
-
-            String xml = output.toString();
-
-            Map<String,String> m = PropertyManager.getWritableProperties(0, c.getId(), ACTION_CONFIG_CATEGORY, true);
-            m.put(ACTION_CONFIG, xml);
-            PropertyManager.saveProperties(m);
-        }
-        catch (Exception e)
-        {
-            // This is likely a code problem -- propagate it up so we log to mothership
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(output);
-        }
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        svc.setActionsConfig(c, actionConfig);
     }
 
     static public void purge(Container container)

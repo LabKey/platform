@@ -682,7 +682,7 @@ public class FileContentController extends SpringActionController
                 {
                     ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
                     Map<String, Object> node = createFileSetNode("@files", root.getFileSystemDirectory());
-                    node.put("default", svc.hasSiteDefaultRoot(c));
+                    node.put("default", svc.isUseDefaultRoot(c));
                     node.put("configureURL", config.getEncodedLocalURIString());
                     node.put("browseURL", browse.getEncodedLocalURIString());
 

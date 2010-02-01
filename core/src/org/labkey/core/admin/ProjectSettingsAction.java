@@ -265,13 +265,16 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 if (form.isDisableFileSharing())
                     service.disableFileRoot(c);
                 else if (form.hasSiteDefaultRoot())
-                    service.setFileRoot(c.getProject(), null);
+                    service.setIsUseDefaultRoot(c.getProject(), true);
                 else
                 {
                     String root = StringUtils.trimToNull(form.getProjectRootPath());
 
                     if (root != null)
+                    {
+                        service.setIsUseDefaultRoot(c.getProject(), false);
                         service.setFileRoot(c.getProject(), new File(root));
+                    }
                     else
                         service.setFileRoot(c.getProject(), null);
                 }
@@ -427,7 +430,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         {
                             if (service.isFileRootDisabled(c))
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.disable.name());
-                            else if (service.hasSiteDefaultRoot(c))
+                            else if (service.isUseDefaultRoot(c))
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
                             else
                             {

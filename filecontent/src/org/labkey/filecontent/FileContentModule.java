@@ -18,11 +18,14 @@ package org.labkey.filecontent;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
@@ -30,6 +33,7 @@ import org.labkey.api.webdav.WebdavService;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 
 
 public class FileContentModule extends DefaultModule
@@ -43,7 +47,7 @@ public class FileContentModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.31;
+        return 9.32;
     }
 
     protected void init()
@@ -58,7 +62,7 @@ public class FileContentModule extends DefaultModule
 
     public boolean hasScripts()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -71,5 +75,15 @@ public class FileContentModule extends DefaultModule
     {
         WebdavService.get().addProvider(new FileWebdavProvider());
         ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
+    }
+
+    public Set<DbSchema> getSchemasToTest()
+    {
+        return PageFlowUtil.set(FileRootManager.getFileContentSchema());
+    }
+
+    public Set<String> getSchemaNames()
+    {
+        return PageFlowUtil.set(FileRootManager.FILECONTENT_SCHEMA_NAME);
     }
 }
