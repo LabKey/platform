@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -51,11 +52,14 @@
             ptidDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
     }
 
-    if (participantVisitCommentDataSetId != null && participantVisitCommentDataSetId.intValue() >= 0)
+    if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
     {
-        DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantVisitCommentDataSetId.intValue());
-        if (dataset != null)
-            ptidVisitDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
+        if (participantVisitCommentDataSetId != null && participantVisitCommentDataSetId.intValue() >= 0)
+        {
+            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantVisitCommentDataSetId.intValue());
+            if (dataset != null)
+                ptidVisitDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
+        }
     }
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
@@ -127,6 +131,15 @@
     <%
         WebPartView.endTitleFrame(out);
         WebPartView.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
+
+        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+        {
+    %>
+    <span class="labkey-disabled">Not available in absolute date-based studies.</span>
+    <%
+        }
+        else
+        {
     %>
     <table>
         <tr>
@@ -180,6 +193,7 @@
         </tr>
         </table>
     <%
-        WebPartView.endTitleFrame(out);
+            WebPartView.endTitleFrame(out);
+        }
     %>
 </form>

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.visitmanager;
 
+import org.labkey.api.security.User;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
@@ -64,6 +65,15 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
         throw new UnsupportedOperationException("Study has no timepoints");
     }
 
+    @Override
+    protected void updateParticipantVisitTable(User user)
+    {
+        // no-op
+    }
 
-    
+    @Override
+    protected void updateVisitTable(User user)
+    {
+        // no-op
+    }
 }

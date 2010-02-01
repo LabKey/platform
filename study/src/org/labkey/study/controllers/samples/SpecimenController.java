@@ -31,10 +31,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Site;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.Visit;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.study.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.study.CohortFilter;
@@ -4436,16 +4433,19 @@ public class SpecimenController extends BaseStudyController
                     errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
             }
 
-            if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
+            if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
-                if (def != null && def.isDemographicData())
+                if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
                 {
-                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
-                }
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
+                    if (def != null && def.isDemographicData())
+                    {
+                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
+                    }
 
-                if (form.getParticipantVisitCommentProperty() == null)
-                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
+                    if (form.getParticipantVisitCommentProperty() == null)
+                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
+                }
             }
         }
 
@@ -4462,8 +4462,11 @@ public class SpecimenController extends BaseStudyController
                 form.setParticipantCommentDataSetId(study.getParticipantCommentDataSetId());
                 form.setParticipantCommentProperty(study.getParticipantCommentProperty());
 
-                form.setParticipantVisitCommentDataSetId(study.getParticipantVisitCommentDataSetId());
-                form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
+                if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+                {
+                    form.setParticipantVisitCommentDataSetId(study.getParticipantVisitCommentDataSetId());
+                    form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
+                }
             }
             StudyJspView<Object> view = new StudyJspView<Object>(study, "manageComments.jsp", form, errors);
             view.setTitle("Comment Configuration");
@@ -4480,8 +4483,11 @@ public class SpecimenController extends BaseStudyController
             study.setParticipantCommentProperty(form.getParticipantCommentProperty());
 
             // participant/visit comment dataset
-            study.setParticipantVisitCommentDataSetId(form.getParticipantVisitCommentDataSetId());
-            study.setParticipantVisitCommentProperty(form.getParticipantVisitCommentProperty());
+            if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+            {
+                study.setParticipantVisitCommentDataSetId(form.getParticipantVisitCommentDataSetId());
+                study.setParticipantVisitCommentProperty(form.getParticipantVisitCommentProperty());
+            }
 
             StudyManager.getInstance().updateStudy(getUser(), study);
             return true;

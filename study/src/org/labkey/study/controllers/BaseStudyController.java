@@ -23,6 +23,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 import org.labkey.api.view.*;
@@ -264,7 +265,7 @@ public abstract class BaseStudyController extends SpringActionController
 
                 if (visit != null)
                     label.append(", ").append(visit.getDisplayString());
-                else
+                else if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
                     label.append(", All Visits");
 
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).

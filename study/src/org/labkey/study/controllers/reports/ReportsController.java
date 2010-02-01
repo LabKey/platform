@@ -40,10 +40,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.Visit;
-import org.labkey.api.study.StudyService;
+import org.labkey.api.study.*;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
@@ -2115,7 +2112,7 @@ public class ReportsController extends BaseStudyController
                 if (dataSet != null)
                 {
                     String label = dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId();
-                    if (0 == visitRowId)
+                    if (0 == visitRowId && study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
                         label += " (All Visits)";
                     ActionURL datasetUrl = url.clone();
                     datasetUrl.deleteParameter(VisitImpl.VISITKEY);
