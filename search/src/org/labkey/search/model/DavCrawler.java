@@ -165,7 +165,7 @@ public class DavCrawler implements ShutdownListener
         // note use oldDate++ so that the crawler can schedule tasks ahead of these bulk updated colletions
         _paths.updatePrefix(path, new Date(SavePaths.oldDate.getTime() + 24*60*60*1000), force);
 
-        addPathToCrawl(path, null);
+        addPathToCrawl(path, SavePaths.oldDate);
     }
 
 

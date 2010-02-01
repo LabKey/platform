@@ -437,7 +437,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
-            _searcher = null;
+            resetIndexSearcher();
             _iw = null;
         }
     }
@@ -452,6 +452,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return _iw;
     }
 
+
+    private synchronized void resetIndexSearcher()
+    {
+        try
+        {
+            _searcher = null;
+            getIndexSearcher();
+        }
+        catch (IOException x)
+        {
+            
+        }
+    }
+    
 
     private synchronized IndexSearcher getIndexSearcher() throws IOException
     {

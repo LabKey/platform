@@ -379,6 +379,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public void deleteAttachments(AttachmentParent parent) throws SQLException
     {
+        Attachment[] atts = getAttachments(parent);
+        if (atts != null && atts.length > 0)
+        {
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            for (Attachment att : atts)
+                ss.deleteResource(makeDocId(parent,att.getName()));
+        }
+
         Table.execute(coreTables().getSchema(), sqlCascadeDelete(), new Object[]{parent.getEntityId()});
         if (parent instanceof AttachmentDirectory)
             ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
@@ -389,6 +397,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         try
         {
+            Attachment att = getAttachment(parent,name);
+            if (null != att)
+            {
+                SearchService ss = ServiceRegistry.get(SearchService.class);
+                ss.deleteResource(makeDocId(parent,att.getName()));
+            }
+
             Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), name);
@@ -1066,6 +1081,12 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
+    private static String makeDocId(AttachmentParent parent, String name)
+    {
+        return "attachment:/" + parent.getEntityId() + "/" + PageFlowUtil.encode(name);
+    }
+    
+
     private class AttachmentResource extends AbstractDocumentResource
     {
         Resource _folder;
@@ -1075,6 +1096,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         User _createdBy = null;
         ActionURL _downloadUrl = null;
         Attachment _cached = null;
+        final String _docid;
 
         AttachmentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
         {
@@ -1086,7 +1108,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
-
+            _docid = makeDocId(parent,name);
             initSearch(name, displayTitle, cat);
         }
 
@@ -1123,8 +1145,16 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _policy = c == null ? null : c.getPolicy();
             _name = name;
             _parent = parent;
+            _docid = makeDocId(parent,name);
 
             initSearch(name, null, null);
+        }
+
+
+        @Override
+        public String getDocumentId()
+        {
+            return "attachment:/" + _parent.getEntityId() + "/" + PageFlowUtil.encode(_name);
         }
 
         Attachment getAttachment()

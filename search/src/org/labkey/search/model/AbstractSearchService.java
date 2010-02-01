@@ -170,7 +170,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void addResource(@NotNull SearchCategory category, ActionURL url, PRIORITY pri)
         {
-            addResource(new ActionResource(category, url.getLocalURIString(false), url), pri);
+            addResource(new ActionResource(category, "action:" + url.getLocalURIString(false), url), pri);
         }
 
 
@@ -347,7 +347,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public final void clear()
     {
         clearIndex();
-        DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
         DocumentProvider[] documentProviders = _documentProviders.get();
         for (DocumentProvider p : documentProviders)
         {
@@ -360,6 +359,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _log.error("Unexpected error", t);
             }
         }
+        DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
     }
 
     

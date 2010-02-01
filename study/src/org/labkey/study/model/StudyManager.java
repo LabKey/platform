@@ -3355,6 +3355,8 @@ public class StudyManager
             while (rs.next())
             {
                 String id = rs.getString(2);
+                String displayTitle = "Study " + study.getLabel() + " -- " +
+                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id;
                 ActionURL execute = executeURL.clone().addParameter("participantId",String.valueOf(id));
                 Path p = new Path(c.getId(),id);
                 String docid = "participant:" + p.toString();
@@ -3362,8 +3364,8 @@ public class StudyManager
                 Map<String,Object> props = new HashMap<String,Object>();
                 props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
                 props.put(SearchService.PROPERTY.participantId.toString(), id);
-                props.put(SearchService.PROPERTY.displayTitle.toString(), "Study " + study.getLabel() + " -- " +
-                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + id);
+                props.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
+                props.put(SearchService.PROPERTY.searchTitle.toString(), id);
                 props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 // need to figure out if all study users can see demographic data or not
@@ -3374,7 +3376,7 @@ public class StudyManager
                             p, docid,
                             c.getId(),
                             "text/plain",
-                            id.getBytes(),
+                            displayTitle.getBytes(),
                             execute, props
                     );
                     task.addResource(r, SearchService.PRIORITY.item);

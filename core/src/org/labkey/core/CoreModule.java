@@ -500,7 +500,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // UNDONE: generalize to other folder types
         Study study = StudyService.get().getStudy(c);
-        if (c.isProject())
+        if (null != study)
+        {
+            title = "Study -- " + study.getLabel();
+            body = "Study Folder " + c.getName() + " in Project " + p.getName();
+        }
+        else if (c.isProject())
         {
             title = "Project -- " + c.getName();
             body = "";
@@ -510,11 +515,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             title = "Workbook -- " + c.getName();
             body = "Workbook " + c.getName() + " in Project " + p.getName();
-        }
-        else if (null != study)
-        {
-            title = "Study -- " + study.getLabel();
-            body = "Study Folder " + c.getName() + " in Project " + p.getName();
         }
         else
         {
