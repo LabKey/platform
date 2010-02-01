@@ -162,6 +162,7 @@ public class DavCrawler implements ShutdownListener
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
 
+        // note use oldDate++ so that the crawler can schedule tasks ahead of these bulk updated colletions
         _paths.updatePrefix(path, new Date(SavePaths.oldDate.getTime() + 24*60*60*1000), force);
 
         addPathToCrawl(path, null);
@@ -403,7 +404,7 @@ public class DavCrawler implements ShutdownListener
         ((AbstractSearchService)ss).waitForRunning();
 
         // wait for indexer to have nothing else to do
-        while (ss.isBusy())
+        while (!_shuttingDown && ss.isBusy())
         {
             ss.waitForIdle();
         }
@@ -604,13 +605,15 @@ public class DavCrawler implements ShutdownListener
         StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
         String last = "";
         long now = System.currentTimeMillis();
-        long cutoff = now - 5*60000;
+        long cutoff = now - (paused ? 5*60000 : 60000);
         now = now - (now % 1000);
+        long newest = 0;
         for (Pair<String,Date> p : recent)
         {
             String text  = p.first;
             long time = p.second.getTime();
             if (time < cutoff) continue;
+            newest = Math.max(newest,time);
             long dur = Math.max(0,now - (time-(time%1000)));
             String ago = DateUtil.formatDuration(dur) + "&nbsp;ago";
             activity.append("<tr><td align=right color=#c0c0c0>" + (ago.equals(last)?"":ago) + "&nbsp;</td><td>" + PageFlowUtil.filter(text) + "</td></tr>\n");
@@ -619,7 +622,7 @@ public class DavCrawler implements ShutdownListener
         if (paused)
         {
             activity.append("<tr><td colspan=2>PAUSED");
-            if (recent.length > 0)
+            if (newest+60000>now)
                 activity.append (" (queue may take a while to clear)");
             activity.append("</td></tr>");
         }

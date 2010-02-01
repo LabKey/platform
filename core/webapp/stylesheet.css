@@ -999,9 +999,25 @@ a.labkey-main-title:hover {
 /* The right side links and username on the header panel */
 td.labkey-main-nav
 {
-    vertical-align: bottom;
     white-space: nowrap;
-    padding:8px 5px;
+    padding:5px 5px 5px;
+}
+
+table.labkey-main-search
+{
+    height:16px; font-size:8pt;
+    border:solid 1px #a0a0a0;
+}
+.labkey-main-search td
+{
+    height:16px; vertical-align:bottom;
+}
+
+.labkey-main-search input
+{
+    height:16px; font-size:8pt;
+/*    border:solid 1px #a0a0a0; */
+    border:0;
 }
 
 /* The strip at the top of the left side panel that is used to set its minimum width */
