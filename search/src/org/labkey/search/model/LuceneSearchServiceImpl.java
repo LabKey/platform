@@ -63,9 +63,10 @@ import java.util.regex.Pattern;
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Category _log = Category.getInstance(LuceneSearchServiceImpl.class);
+    private static final Version LUCENE_VERSION = Version.LUCENE_30;
 
     private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexWriter()
-    private final Analyzer _analyzer = new SnowballAnalyzer(Version.LUCENE_CURRENT, "English");
+    private final Analyzer _analyzer = new SnowballAnalyzer(LUCENE_VERSION, "English");
     private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
@@ -265,7 +266,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (cause != null && cause instanceof ClassNotFoundException && cause.getMessage().equals("org.bouncycastle.cms.CMSException"))
                 _log.warn("Can't read encrypted document \"" + id + "\".  You must install the Bouncy Castle encryption libraries to index this document.  Refer to the LabKey Software documentation for instructions.");
             else
-                logAsIndexingError(r, err);
+                logAsPreProcessingException(r, err);
         }
         catch (TikaException e)
         {
@@ -275,17 +276,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (cause instanceof WrappedIOException && cause.getCause() instanceof NoSuchElementException)
                 return null;
 
-            logAsIndexingError(r, e);
+            logAsPreProcessingException(r, e);
         }
         catch (Throwable e)
         {
-            logAsIndexingError(r, e);
+            logAsPreProcessingException(r, e);
         }
 
         return null;
     }
 
-    private void logAsIndexingError(Resource r, Throwable e)
+    private void logAsPreProcessingException(Resource r, Throwable e)
     {
         String name = r.getPath().toString();
         File f = r.getFile();
@@ -293,12 +294,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             name = f.getPath();
 
         //noinspection ThrowableInstanceNeverThrown
-        ExceptionUtil.logExceptionToMothership(null, new IndexingException(name, e));
+        ExceptionUtil.logExceptionToMothership(null, new PreProcessingException(name, e));
     }
 
-    private static class IndexingException extends Exception
+    private static class PreProcessingException extends Exception
     {
-        private IndexingException(String name, Throwable cause)
+        private PreProcessingException(String name, Throwable cause)
         {
             super(name, cause);
         }
@@ -395,7 +396,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             try
             {
                 s = "+" + SearchService.PROPERTY.container.toString() + ":" + id;
-                query = new QueryParser(Version.LUCENE_30, SearchService.PROPERTY.container.toString(), _analyzer).parse(s);
+                query = new QueryParser(LUCENE_VERSION, SearchService.PROPERTY.container.toString(), _analyzer).parse(s);
             }
             catch (ParseException x)
             {
