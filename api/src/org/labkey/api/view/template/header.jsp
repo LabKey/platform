@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.*" %>
-<%@ page import="org.labkey.api.view.PopupMenu" %>
+<%@ page import = "org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -113,6 +113,7 @@ function labkeyShowWarningMessages(show)
     });
 }
 <% } %>
+var serverDescription = <%=PageFlowUtil.jsString(LookAndFeelProperties.getInstance(c).getShortName())%> || LABKEY.serverName;
 var headerSearchField=null;
 function submit_onClick()
 {
@@ -141,10 +142,11 @@ Ext.onReady(function()
         headerSearchField.emptyText = item.emptyText;
     };
     var items = [];
-    items.push({text:LABKEY.serverName, emptyText:'Search ' + LABKEY.serverName, containerId:'', action:LABKEY.ActionURL.buildURL("search", "search"), target:'', handler:handler});
+    items.push({text:serverDescription, emptyText:'Search ' + serverDescription, containerId:'', action:LABKEY.ActionURL.buildURL("search", "search"), target:'', handler:handler});
     if (LABKEY.project)
         items.push({text:LABKEY.project.name, emptyText:('Search ' + LABKEY.project.name), containerId:LABKEY.project.id, action:LABKEY.ActionURL.buildURL("search", "search", LABKEY.project.path), target:'', handler:handler});
-    items.push({text:'labkey.org', emptyText:'Search labkey.org', containerId:'', action:'http://www.labkey.org/search/home/search.view', target:'_blank', handler:handler});
+    if (window.location.hostname.toLowerCase() != 'labkey.org')
+        items.push({text:'labkey.org', emptyText:'Search labkey.org', containerId:'', action:'http://www.labkey.org/search/home/search.view', target:'_blank', handler:handler});
     items.push({text:'Google', emptyText:'Search google.com', containerId:'', action:'http://www.google.com/search', target:'_blank', handler:handler});
     new Ext.menu.Menu({cls:'extContainer',id:'headerSearchMenu',items:items});
     handler(items[0]);
