@@ -2055,6 +2055,8 @@ internal/webapp/_images/public.gif -text
 internal/webapp/_images/reload.png -text
 internal/webapp/_images/restricted.gif -text
 internal/webapp/_images/rss.gif -text
+internal/webapp/_images/search.png -text
+internal/webapp/_images/search_menu.png -text
 internal/webapp/_images/select_arrow.gif -text
 internal/webapp/_images/select_arrow_down.gif -text
 internal/webapp/_images/select_arrow_over.gif -text
