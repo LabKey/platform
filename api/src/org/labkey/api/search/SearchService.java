@@ -232,7 +232,7 @@ public interface SearchService
 
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
-    IndexTask indexFull(boolean force);
+    void indexFull(boolean force);
 
     // container, ptid pairs
     void addParticipantIds(Collection<Pair<String,String>> ptids);
@@ -270,7 +270,7 @@ public interface SearchService
          * modifiedSince == null -> full reindex
          * else incremental (either modified > modifiedSince, or modified > lastIndexed)
          */
-        void enumerateDocuments(IndexTask task, Container c, Date since);
+        void enumerateDocuments(IndexTask task, @NotNull Container c, Date since);
 
         /**
          *if the full-text search is deleted, providers may need to clear
