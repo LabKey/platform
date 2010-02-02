@@ -95,6 +95,7 @@ public class DavCrawler implements ShutdownListener
     // to make testing easier, break out the interface for persisting crawl state
     public interface SavePaths
     {
+        final static java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-30"));
         final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-31"));
         final static java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
 
@@ -115,6 +116,8 @@ public class DavCrawler implements ShutdownListener
         // files
         public Map<String,ResourceInfo> getFiles(Path path);
         public boolean updateFile(@NotNull Path path, @NotNull Date lastIndexed, @Nullable Date modified);
+
+        public void clearFailedDocuments();
     }
     
 
@@ -275,6 +278,8 @@ public class DavCrawler implements ShutdownListener
                     Date savedModified = (null==info || null==info.modified) ? SavePaths.nullDate : info.modified;
                     long lastModified = child.getLastModified();
 
+                    if (lastIndexed.getTime() == SavePaths.failDate.getTime())
+                        continue;
                     if (lastModified == savedModified.getTime() && lastModified <= lastIndexed.getTime())
                         continue;
 
@@ -283,7 +288,7 @@ public class DavCrawler implements ShutdownListener
                         // just index the name and that's all
                         final Resource wrap = child;
                         ActionURL url = new ActionURL(r.getExecuteHref(null));
-                        child = new SimpleDocumentResource(r.getPath(), r.getDocumentId(), r.getContainerId(), r.getContentType(),
+                        child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), wrap.getContentType(),
                                 new byte[0], url, null){
                             @Override
                             public void setLastIndexed(long ms, long modified)
@@ -605,7 +610,7 @@ public class DavCrawler implements ShutdownListener
         StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
         String last = "";
         long now = System.currentTimeMillis();
-        long cutoff = now - (paused ? 5*60000 : 60000);
+        long cutoff = now - (paused ? 60000 : 5*60000);
         now = now - (now % 1000);
         long newest = 0;
         for (Pair<String,Date> p : recent)
@@ -628,5 +633,11 @@ public class DavCrawler implements ShutdownListener
         }
         activity.append("</table>");
         return activity.toString();
+    }
+
+
+    public void clearFailedDocuments()
+    {
+        _paths.clearFailedDocuments();
     }
 }

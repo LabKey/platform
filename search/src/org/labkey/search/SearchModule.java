@@ -36,6 +36,7 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.view.SearchWebPartFactory;
 
@@ -146,6 +147,14 @@ public class SearchModule extends DefaultModule
         };
     }
 
+    @Override
+    public void afterUpdate(ModuleContext moduleContext)
+    {
+        super.afterUpdate(moduleContext);
+        DavCrawler.getInstance().clearFailedDocuments();
+    }
+
+    
 
     public static final String EVENT_TYPE = "SearchAuditEvent";
 
@@ -198,5 +207,5 @@ public class SearchModule extends DefaultModule
 
             return view;
         }
-    }    
+    }
 }

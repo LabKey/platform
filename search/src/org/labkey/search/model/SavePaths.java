@@ -238,6 +238,22 @@ public class SavePaths implements DavCrawler.SavePaths
         }
     }
 
+    
+    public void clearFailedDocuments()
+    {
+        try
+        {
+            assert failDate.getTime() < oldDate.getTime();
+            Table.execute(getSearchSchema(),
+                    "UPDATE search.CrawlResources SET LastIndexed=NULL WHERE LastIndexed<?",
+                    new Object[]{oldDate});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 
     public void deletePath(Path path)
     {

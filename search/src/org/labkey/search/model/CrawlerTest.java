@@ -237,5 +237,9 @@ public class CrawlerTest extends junit.framework.TestCase
             files.put(path, new DavCrawler.ResourceInfo(lastIndexed,modified));
             return true;
         }
+
+        public void clearFailedDocuments()
+        {
+        }
     }
 }

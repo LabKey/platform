@@ -263,6 +263,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             {
                 ((_IndexTask)_task).completeItem(this, success);
             }
+            if (!success)
+            {
+                Resource r = getResource();
+                if (null != r)
+                    r.setLastIndexed(SavePaths.failDate.getTime(), _modified);
+            }
         }
     }
 
