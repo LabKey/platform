@@ -415,7 +415,7 @@ public class LoginController extends SpringActionController
         page.setFocusId(null != form.getEmail() ? "password" : "email");
         page.setTitle("Sign In");
 
-        return view;
+        return vBox;
     }
 
 

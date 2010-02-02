@@ -42,11 +42,21 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         switch (column)
         {
             case RowId:
-                return wrapColumn(alias, _rootTable.getColumn("RowId"));
+                ColumnInfo rowIdColumnInfo = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                rowIdColumnInfo.setHidden(true);
+                return rowIdColumnInfo;
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case Run:
+                ColumnInfo runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                runColumnInfo.setFk(getExpSchema().getRunIdForeignKey());
+                return runColumnInfo;
+            case ActionSequence:
+                return wrapColumn(alias, _rootTable.getColumn("ActionSequence"));
+            case Type:
+                return wrapColumn(alias, _rootTable.getColumn("CpasType"));
             case Protocol:
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
@@ -117,7 +127,10 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addColumn(Column.RowId);
         addColumn(Column.Name);
         setTitleColumn(Column.Name.toString());
+        addColumn(Column.Run);
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol);
+        addColumn(Column.Type);
+        addColumn(Column.ActionSequence).setHidden(true);
     }
 }

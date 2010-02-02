@@ -21,13 +21,24 @@
     <ns:columns>
       <ns:column columnName="RowId">
         <ns:isKeyField>true</ns:isKeyField>
+        <ns:description>Contains a unique id for this data object</ns:description>
       </ns:column>
-      <ns:column columnName="LSID"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="LSID">
+          <ns:description>Contains the life sciences identifier for this data object</ns:description>
+      </ns:column>
+      <ns:column columnName="Name">
+          <ns:description>Contains a short name for this data object</ns:description>
+      </ns:column>
       <ns:column columnName="CpasType"/>
-      <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="DataFileUrl"/>
-      <ns:column columnName="RunId"/>
+      <ns:column columnName="SourceApplicationId">
+          <ns:description>Contains a reference to the ProtocolApplication that created this data object, if available</ns:description>
+      </ns:column>
+      <ns:column columnName="DataFileUrl">
+          <ns:description>Contains the full path to this file on the server's file system</ns:description>
+      </ns:column>
+      <ns:column columnName="RunId">
+          <ns:description>Contains a reference to the run that created this data object, if available</ns:description>
+      </ns:column>
         <ns:column columnName="Created">
             <ns:description>Contains the date and time that this data was added to the system</ns:description>
         </ns:column>
@@ -60,8 +71,12 @@
   </ns:table>
   <ns:table tableName="Experiment" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="LSID"/>
+      <ns:column columnName="RowId">
+          <ns:description>Contains a unique id for this run group</ns:description>
+      </ns:column>
+      <ns:column columnName="LSID">
+          <ns:description>Contains the life sciences identifier for this run</ns:description>
+      </ns:column>
       <ns:column columnName="Name">
           <ns:description>Name for this run group.</ns:description>
           <ns:nullable>false</ns:nullable>
@@ -81,44 +96,63 @@
           <ns:description>Optional extra information about this run group.</ns:description>
       </ns:column>
       <ns:column columnName="EntityId"/>
-      <ns:column columnName="Created"/>
+      <ns:column columnName="Created">
+        <ns:description>Contains the time at which this run group was created</ns:description>
+      </ns:column>
       <ns:column columnName="CreatedBy">
         <ns:fk>
           <ns:fkColumnName>UserId</ns:fkColumnName>
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user who created this run group</ns:description>
       </ns:column>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+        <ns:description>Contains the time at which this run group was last modified</ns:description>
+      </ns:column>
       <ns:column columnName="ModifiedBy">
         <ns:fk>
           <ns:fkColumnName>UserId</ns:fkColumnName>
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user who created this run group</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
+      <ns:column columnName="Container">
+          <ns:description>Contains the folder or project in which this run group is stored</ns:description>
+      </ns:column>
       <ns:column columnName="Hidden"/>
-      <ns:column columnName="BatchProtocolId"/>
+      <ns:column columnName="BatchProtocolId">
+          <ns:description>Contains the protocol for which this group is a batch, or empty if this group is not a batch</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains one row per run group, which consist of a collection of experiment runs.</ns:description>
   </ns:table>
   <ns:table tableName="ExperimentRun" tableDbType="TABLE">
       <ns:titleColumn>Name</ns:titleColumn>
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="RowId">
+          <ns:description>Contains a unique id for this run</ns:description>
+      </ns:column>
+      <ns:column columnName="Name">
+          <ns:description>Contains a short name for this run</ns:description>
+      </ns:column>
       <ns:column columnName="LSID">
         <ns:displayWidth>200</ns:displayWidth>
+        <ns:description>Contains the life sciences identifier for this run</ns:description>
       </ns:column>
-      <ns:column columnName="ProtocolLSID"/>
+      <ns:column columnName="ProtocolLSID">
+          <ns:description>Contains the protocol that this run follows</ns:description>
+      </ns:column>
       <ns:column columnName="Comments">
           <ns:inputRows>2</ns:inputRows>
+          <ns:description>Contains comments about this run</ns:description>
       </ns:column>
       <ns:column columnName="EntityId"/>
       <ns:column columnName="Created">
         <ns:formatString>DateTime</ns:formatString>
         <ns:displayWidth>0</ns:displayWidth>
+        <ns:description>Contains the time at which this protocol was last modified</ns:description>
       </ns:column>
       <ns:column columnName="CreatedBy">
         <ns:fk>
@@ -126,17 +160,25 @@
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user who created this run</ns:description>
       </ns:column>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+        <ns:description>Contains the time at which this protocol was last modified</ns:description>
+      </ns:column>
       <ns:column columnName="ModifiedBy">
         <ns:fk>
           <ns:fkColumnName>UserId</ns:fkColumnName>
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user who last modified this run</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="FilePathRoot"/>
+      <ns:column columnName="Container">
+        <ns:description>Contains the folder or project in which this run is stored</ns:description>
+      </ns:column>
+      <ns:column columnName="FilePathRoot">
+        <ns:description>Contains the directory on the server's file system where this run's data files come from</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per experiment run in this folder.</ns:description>
   </ns:table>
@@ -232,16 +274,26 @@
   </ns:table>
   <ns:table tableName="MaterialSource" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="RowId">
+          <ns:description>Contains a unique id for this sample set</ns:description>
+      </ns:column>
+      <ns:column columnName="Name">
+          <ns:description>Contains a short name for this sample set</ns:description>
+      </ns:column>
       <ns:column columnName="LSID">
           <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:description>Contains a life sciences identifier for this protocol</ns:description>
       </ns:column>
       <ns:column columnName="MaterialLSIDPrefix">
           <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:description>Contains the LSID prefix for all materials that are part of this sample set</ns:description>
       </ns:column>
-      <ns:column columnName="Description"/>
-      <ns:column columnName="Created"/>
+      <ns:column columnName="Description">
+          <ns:description>Contains an optional description about the contents or purpose of this sample set</ns:description>
+      </ns:column>
+      <ns:column columnName="Created">
+          <ns:description>Contains the time at which this sample set was created</ns:description>
+      </ns:column>
       <ns:column columnName="IdCol1"/>
       <ns:column columnName="IdCol2"/>
       <ns:column columnName="IdCol3"/>
@@ -252,16 +304,22 @@
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user that created this sample set</ns:description>
       </ns:column>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+          <ns:description>Contains the time at which this sample set was last modified</ns:description>
+      </ns:column>
       <ns:column columnName="ModifiedBy">
         <ns:fk>
           <ns:fkColumnName>UserId</ns:fkColumnName>
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user that last modified this sample set</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
+      <ns:column columnName="Container">
+          <ns:description>Contains the folder or project in which this sample set is stored</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per sample set, a collection of samples.</ns:description>
   </ns:table>
@@ -369,9 +427,15 @@
   </ns:table>
   <ns:table tableName="Protocol" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="LSID"/>
-      <ns:column columnName="Name"/>
+      <ns:column columnName="RowId">
+          <ns:description>Contains the unique id for this protocol</ns:description>
+      </ns:column>
+      <ns:column columnName="LSID">
+          <ns:description>Contains a life sciences identifier for this protocol</ns:description>
+      </ns:column>
+      <ns:column columnName="Name">
+          <ns:description>Contains a short name for this protocol</ns:description>
+      </ns:column>
       <ns:column columnName="ProtocolDescription"/>
       <ns:column columnName="ApplicationType"/>
       <ns:column columnName="MaxInputMaterialPerInstance"/>
@@ -383,7 +447,9 @@
       <ns:column columnName="Instrument"/>
       <ns:column columnName="Software"/>
       <ns:column columnName="ContactId"/>
-      <ns:column columnName="Created"/>
+      <ns:column columnName="Created">
+        <ns:description>Contains the time at which this protocol was created</ns:description>
+      </ns:column>
       <ns:column columnName="EntityId"/>
       <ns:column columnName="CreatedBy">
         <ns:fk>
@@ -391,16 +457,22 @@
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user that created this protocol</ns:description>
       </ns:column>
-      <ns:column columnName="Modified"/>
+      <ns:column columnName="Modified">
+        <ns:description>Contains the time at which this protocol was last modified</ns:description>
+      </ns:column>
       <ns:column columnName="ModifiedBy">
         <ns:fk>
           <ns:fkColumnName>UserId</ns:fkColumnName>
           <ns:fkTable>Users</ns:fkTable>
           <ns:fkDbSchema>core</ns:fkDbSchema>
         </ns:fk>
+        <ns:description>Contains the user that last modified this protocol</ns:description>
       </ns:column>
-      <ns:column columnName="Container"/>
+      <ns:column columnName="Container">
+          <ns:description>Contains the folder or project where this protocol is stored</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per experiment protocol, a series of steps that may be performed when doing an experiment run.</ns:description>
   </ns:table>
@@ -420,15 +492,33 @@
   </ns:table>
   <ns:table tableName="ProtocolApplication" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="LSID"/>
-      <ns:column columnName="Name"/>
-      <ns:column columnName="CpasType"/>
-      <ns:column columnName="ProtocolLSID"/>
-      <ns:column columnName="ActivityDate"/>
-      <ns:column columnName="Comments"/>
-      <ns:column columnName="RunId"/>
-      <ns:column columnName="ActionSequence"/>
+      <ns:column columnName="RowId">
+          <ns:description>Contains the unique id for this protocol application</ns:description>
+      </ns:column>
+      <ns:column columnName="LSID">
+          <ns:description>Contains a life sciences identifier for this protocol application</ns:description>
+      </ns:column>
+      <ns:column columnName="Name">
+          <ns:description>Contains the short name for this protocol application</ns:description>
+      </ns:column>
+      <ns:column columnName="CpasType">
+          <ns:description>Contains the type of step - ExperimentRun (for inputs), ProtocolApplication (for a processing step), or ExperimentRunOutput (for outputs)</ns:description>
+      </ns:column>
+      <ns:column columnName="ProtocolLSID">
+          <ns:description>Contains the protocol step that was performed</ns:description>
+      </ns:column>
+      <ns:column columnName="ActivityDate">
+          <ns:description>Contains the date this step was performed</ns:description>
+      </ns:column>
+      <ns:column columnName="Comments">
+          <ns:description>Contains an optional comment about what was done</ns:description>
+      </ns:column>
+      <ns:column columnName="RunId">
+          <ns:description>Contains a reference to the run this step was a part of</ns:description>
+      </ns:column>
+      <ns:column columnName="ActionSequence">
+          <ns:description>Contains an index of when this step was performed within the run</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per step taken when performing an experiment run.</ns:description>
   </ns:table>

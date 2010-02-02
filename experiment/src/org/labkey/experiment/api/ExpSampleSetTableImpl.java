@@ -48,14 +48,20 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 columnInfo.setFk(new ContainerForeignKey(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer())));
                 return columnInfo;
-            case Created:
-            case Modified:
             case Description:
             case LSID:
             case MaterialLSIDPrefix:
             case Name:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
+            case Created:
+                return wrapColumn(alias, _rootTable.getColumn("Created"));
+            case CreatedBy:
+                return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
+            case Modified:
+                return wrapColumn(alias, _rootTable.getColumn("Modified"));
+            case ModifiedBy:
+                return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case Active:
             {
                 SQLFragment sql = new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".LSID IN (SELECT MaterialSourceLSID FROM " +
@@ -65,6 +71,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 sql.add(Boolean.FALSE);
                 ExprColumn result = new ExprColumn(this, "Active", sql, Types.BOOLEAN);
                 result.setFormat("Yes;No");
+                result.setDescription("Indicates if this sample set is current the active, or default, for this folder or project");
                 return result;
             }
             case SampleCount:
@@ -72,7 +79,9 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +
                     ExperimentServiceImpl.get().getTinfoMaterial() +
                     " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID)");
-                return new ExprColumn(this, "SampleCount", sql, Types.INTEGER);
+                ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, Types.INTEGER);
+                sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
+                return sampleCountColumnInfo;
             }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -87,6 +96,9 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);
+        addColumn(ExpSampleSetTable.Column.CreatedBy);
+        addColumn(ExpSampleSetTable.Column.Modified);
+        addColumn(ExpSampleSetTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
         addColumn(ExpSampleSetTable.Column.Active);
         addColumn(ExpSampleSetTable.Column.SampleCount);

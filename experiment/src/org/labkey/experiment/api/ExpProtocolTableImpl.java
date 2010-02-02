@@ -45,6 +45,14 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Folder:
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
+            case Created:
+                return wrapColumn(alias, _rootTable.getColumn("Created"));
+            case CreatedBy:
+                return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
+            case Modified:
+                return wrapColumn(alias, _rootTable.getColumn("Modified"));
+            case ModifiedBy:
+                return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -60,6 +68,10 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         ColumnInfo colLSID = addColumn(Column.LSID);
         colLSID.setHidden(true);
         addContainerColumn(Column.Folder, null);
+        addColumn(Column.Created);
+        addColumn(Column.CreatedBy);
+        addColumn(Column.Modified);
+        addColumn(Column.ModifiedBy);
         ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));

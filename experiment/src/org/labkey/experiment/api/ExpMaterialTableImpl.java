@@ -234,19 +234,15 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleSet(ss, filter);
             addSampleSetColumns(ss, defaultCols);
+            setName(_ss.getName());
         }
         else
         {
             ExpSampleSet activeSource = ExperimentService.get().lookupActiveSampleSet(getContainer());
             if (activeSource != null)
             {
-                setSampleSet(activeSource, false);
-                addSampleSetColumns(_ss, defaultCols);
+                addSampleSetColumns(activeSource, defaultCols);
             }
-        }
-        if (_ss != null)
-        {
-            setName(_ss.getName());
         }
 
         ActionURL url = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());

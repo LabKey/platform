@@ -49,20 +49,22 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
                 return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
-            case Hypothesis:
-                return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
-            case LSID:
-                return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Modified:
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
+            case Hypothesis:
+                return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
+            case LSID:
+                return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn("RowId"));
             case RunCount:
-                return new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), Types.INTEGER);
+                ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), Types.INTEGER);
+                runCountColumnInfo.setDescription("Contains the number of runs associated with this run group");
+                return runCountColumnInfo;
             case BatchProtocolId:
             {
                 ColumnInfo batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));

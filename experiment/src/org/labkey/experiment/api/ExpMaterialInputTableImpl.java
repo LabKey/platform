@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.query.ExpMaterialInputTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.FieldKey;
@@ -65,6 +64,8 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Material));
         defaultCols.add(FieldKey.fromParts(Column.Role));
+        defaultCols.add(FieldKey.fromParts(Column.TargetProtocolApplication, ExpProtocolApplicationTableImpl.Column.Run));
+        defaultCols.add(FieldKey.fromParts(Column.TargetProtocolApplication, ExpProtocolApplicationTableImpl.Column.Type));
         setDefaultVisibleColumns(defaultCols);
     }
 

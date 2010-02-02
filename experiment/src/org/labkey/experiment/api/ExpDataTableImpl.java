@@ -141,6 +141,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                         return new DownloadFileDataLinkColumn(colInfo);
                     }
                 });
+                result.setDescription("A link to download the file");
                 return result;
             }
             case ViewFileLink:
@@ -153,6 +154,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                         return new ViewFileDataLinkColumn(colInfo);
                     }
                 });
+                result.setDescription("A link to view the file directly on the web site");
                 return result;
             }
             case ContentLink:
@@ -165,6 +167,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                         return new ViewContentDataLinkColumn(colInfo);
                     }
                 });
+                result.setDescription("A link to view the imported contents of the file on the web site");
                 return result;
             }
             case Thumbnail:
@@ -177,8 +180,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                         return new ThumbnailDataLinkColumn(colInfo);
                     }
                 });
+                result.setDescription("A popup thumbnail of the file if it is an image");
                 return result;
-
             }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
