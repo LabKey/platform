@@ -20,6 +20,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -45,7 +46,17 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
         if (null == qdef)
                 throw new NotFoundException("Could not find a custom query named '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "'!");
 
-        return new HtmlView("<div class='labkey-query-source'><pre>" + qdef.getSql() + "</pre></div>");
+        StringBuilder html = new StringBuilder("<div class='labkey-query-source'><pre>");
+        html.append(qdef.getSql());
+        html.append("</pre></div>");
+        if (null != qdef.getMetadataXml())
+        {
+            html.append("<div>Metadata:<pre>");
+            html.append(PageFlowUtil.filter(qdef.getMetadataXml()));
+            html.append("</pre></div>");
+        }
+
+        return new HtmlView(html.toString());
     }
 
     public NavTree appendNavTrail(NavTree root)
