@@ -24,5 +24,9 @@ public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
         Name,
         LSID,
         Folder,
+        Created,
+        CreatedBy,
+        Modified,
+        ModifiedBy,
     }
 }

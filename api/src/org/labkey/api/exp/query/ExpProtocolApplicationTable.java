@@ -27,6 +27,9 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
         Name,
         LSID,
         Protocol,
+        Run,
+        ActionSequence,
+        Type
     }
 
     public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);

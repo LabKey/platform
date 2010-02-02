@@ -31,6 +31,8 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         MaterialLSIDPrefix,
         Created,
         Modified,
+        CreatedBy,
+        ModifiedBy,
         Folder,
         Active,
         SampleCount,

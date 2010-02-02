@@ -450,7 +450,7 @@ public class ExceptionUtil
 
         if (response.isCommitted())
         {
-            // This is fine, just can't clear the existing reponse as its
+            // This is fine, just can't clear the existing response as it has
             // been at least partially written back to the client
 
             if (ex != null)
