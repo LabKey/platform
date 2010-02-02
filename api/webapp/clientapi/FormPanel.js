@@ -258,6 +258,8 @@ Ext.applyIf(Date.patterns,{
 
 LABKEY.ext.FormHelper =
 {
+    _textMeasure : null,
+    
     /**
      * Uses the given meta-data to generate a field config object.
      *
@@ -349,6 +351,40 @@ LABKEY.ext.FormHelper =
                                 'j M Y G:i:s O'; // 10 Sep 2009 11:24:12 -0700
                 break;
             case "string":
+                if (config.inputType=='textarea')
+                {
+                    field.xtype = 'textarea';
+                    field.width = 500;
+                    field.height = 60;
+                    if (!this._textMeasure)
+                    {
+                        this._textMeasure = {};
+                        var ta = Ext.DomHelper.append(document.body,{tag:'textarea', rows:10, cols:80, id:'_hiddenTextArea', style:{display:'none'}});
+                        this._textMeasure.height = Math.ceil(Ext.util.TextMetrics.measure(ta,"GgYyJjZ==").height * 1.2);
+                        this._textMeasure.width  = Math.ceil(Ext.util.TextMetrics.measure(ta,"ABCXYZ").width / 6.0);
+                    }
+                    if (config.rows)
+                    {
+                        if (config.rows == 1)
+                            field.height = undefined;
+                        else
+                        {
+                            // estimate at best!
+                            var textHeight =  this._textMeasure.height * config.rows;
+                            if (textHeight)
+                                field.height = textHeight;
+                        }
+                    }
+                    if (config.cols)
+                    {
+                        var textWidth = this._textMeasure.width * config.cols;
+                        if (textWidth)
+                            field.width = textWidth;
+                    }
+
+                    if (config.ext)
+                        Ext.apply(field,config.ext);
+                }
                 break;
             default:
         }

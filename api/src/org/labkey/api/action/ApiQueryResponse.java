@@ -229,17 +229,36 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     protected Map<String, Object> getMetaData(DisplayColumn dc, boolean includeLookupInfo)
     {
         HashMap<String,Object> fmdata = new HashMap<String,Object>();
-        fmdata.put("name", dc.getColumnInfo().getName());
+        HashMap<String,Object> ext = new HashMap<String, Object>();
+        
+        ColumnInfo col = dc.getColumnInfo();
+        fmdata.put("name", col.getName());
         fmdata.put("type", dc.getJsonTypeName());
-        fmdata.put("mvEnabled", dc.getColumnInfo().isMvEnabled());
-        fmdata.put("shownInInsertView", dc.getColumnInfo().isShownInInsertView());
-        fmdata.put("shownInUpdateView", dc.getColumnInfo().isShownInUpdateView());
-        fmdata.put("shownInDetailsView", dc.getColumnInfo().isShownInDetailsView());
-        fmdata.put("hidden", dc.getColumnInfo().isHidden());
-
-        if(includeLookupInfo && isLookup(dc))
+        fmdata.put("mvEnabled", col.isMvEnabled());
+        fmdata.put("shownInInsertView", col.isShownInInsertView());
+        fmdata.put("shownInUpdateView", col.isShownInUpdateView());
+        fmdata.put("shownInDetailsView", col.isShownInDetailsView());
+        fmdata.put("hidden", col.isHidden());
+        fmdata.put("inputType", col.getInputType());
+        // UNDONE ext info for other field typesxtype: checkbox, combo, datefield, field, hidden, htmleditor, numberfield, radio, textarea, textfield, timefield
+        //fmdata.put("xtype","");
+        if ("textarea".equals(col.getInputType()))
         {
-            ForeignKey fk = dc.getColumnInfo().getFk();
+            if (dc instanceof DataColumn)
+            {
+                int cols = ((DataColumn)dc).getInputLength();
+                if (cols > 0)
+                    fmdata.put("cols", Math.min(1000,cols));
+                int rows = ((DataColumn)dc).getInputRows();
+                if (rows > 0)
+                    fmdata.put("rows", Math.min(1000,rows));
+            }
+            ext.put("xtype","textarea");
+        }
+
+        if (includeLookupInfo && isLookup(dc))
+        {
+            ForeignKey fk = col.getFk();
             TableInfo lookupTable = fk.getLookupTableInfo();
 
             if (null != lookupTable && lookupTable.getPkColumns().size() == 1)
@@ -264,6 +283,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             }
         }
 
+        fmdata.put("ext",ext);
         return fmdata;
     }
 
