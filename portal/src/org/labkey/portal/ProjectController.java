@@ -950,6 +950,9 @@ public class ProjectController extends SpringActionController
             containerProps.put("effectivePermissions", container.getPolicy().getPermissionNames(user));
             if (null != container.getDescription())
                 containerProps.put("description", container.getDescription());
+            containerProps.put("isWorkbook", container.isWorkbook());
+            if (null != container.getTitle())
+                containerProps.put("title", container.getTitle());
 
             //recurse into children if requested
             if (recurse && depth < _requestedDepth)
