@@ -430,7 +430,7 @@ public class DataColumn extends DisplayColumn
         {
             out.write("<textarea cols='");
             out.write(String.valueOf(_inputLength));
-            out.write("' rows ='");
+            out.write("' rows='");
             out.write(String.valueOf(_inputRows));
             out.write("'");
             outputName(ctx, out, formFieldName);
