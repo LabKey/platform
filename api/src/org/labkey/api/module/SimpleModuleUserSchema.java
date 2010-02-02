@@ -215,6 +215,12 @@ public class SimpleModuleUserSchema extends UserSchema
                 return new DefaultQueryUpdateService(this, table);
             return null;
         }
+
+        @Override
+        public String getPublicSchemaName()
+        {
+            return _userSchema.getName();
+        }
     }
 
     public static class SimpleModuleForeignKey extends ColumnInfo.SchemaForeignKey
@@ -237,7 +243,7 @@ public class SimpleModuleUserSchema extends UserSchema
             // getUserSchema() needs to take a scope so it knows where to look for that schema.
             if (_userSchema.getDbSchema().getScope() == DbScope.getLabkeyScope())
             {
-                schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), getLookupSchemaName());
+                schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), _userSchema.getName());
             }
             else
             {
