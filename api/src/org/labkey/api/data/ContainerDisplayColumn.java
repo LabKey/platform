@@ -40,6 +40,8 @@ public class ContainerDisplayColumn extends DataColumn
     private final boolean _showPath;
     private ColumnInfo _entityIdColumn;
 
+    private String _errorMessage;
+
     /**
      * @param showPath if true, show the container's full path. If false, show just its name
      */
@@ -80,16 +82,25 @@ public class ContainerDisplayColumn extends DataColumn
             FieldKey entityKey = new FieldKey(key.getParent(), "EntityId");
             Map<FieldKey,ColumnInfo> cols = QueryService.get().getColumns(getBoundColumn().getParentTable(), Collections.singleton(entityKey));
             _entityIdColumn = cols.get(entityKey);
-            assert _entityIdColumn != null : "Couldn't find entityId column";
-            columns.add(_entityIdColumn);
+            if (_entityIdColumn == null)
+            {
+                _errorMessage = "ERROR: Unable to resolve container column " + entityKey.toString();
+            }
+            else
+            {
+                columns.add(_entityIdColumn);
+            }
         }
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         // Get the container for this row; stash the path in the context so urls can use it
-        String id = (String)_entityIdColumn.getValue(ctx);
-        _c = ContainerManager.getForId(id);
+        if (_entityIdColumn != null)
+        {
+            String id = (String)_entityIdColumn.getValue(ctx);
+            _c = ContainerManager.getForId(id);
+        }
 
         // Don't render link if container is deleted
         if (null == _c)
@@ -108,6 +119,10 @@ public class ContainerDisplayColumn extends DataColumn
 
     public String getFormattedValue(RenderContext ctx)
     {
+        if (_errorMessage != null)
+        {
+            return PageFlowUtil.filter(_errorMessage);
+        }
         StringBuilder sb = new StringBuilder();
         if (_url != null)
         {

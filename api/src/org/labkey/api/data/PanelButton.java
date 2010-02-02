@@ -89,10 +89,10 @@ public class PanelButton extends ActionButton
             }
         }
         config.append("]}");
-        out.write("<script language=\"javascript\">\n" +
+        out.write("<script language=\"javascript\">Ext.onReady(function() {\n" +
                 "LABKEY.requiresCss(\"verticalTabPanel/VerticalTabPanel.css\");\n" +
-                "LABKEY.requiresScript(\"verticalTabPanel/VerticalTabPanel.js\", false);\n" +
-                "</script>");
+                "LABKEY.requiresScript(\"verticalTabPanel/VerticalTabPanel.js\", true);\n" +
+                "});</script>");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
                 (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
                 "LABKEY.DataRegions[" + PageFlowUtil.filterQuote(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
