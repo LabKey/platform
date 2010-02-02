@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.search.SearchController" %>
+<%@ page import="org.labkey.search.SearchController.*" %>
+<%@ page import="org.labkey.search.SearchController.SearchForm.SearchScope" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.text.ParseException" %>
 <%@ page import="java.util.ArrayList" %>
@@ -36,8 +38,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SearchController.SearchForm> me = (JspView<SearchController.SearchForm>) HttpView.currentView();
-    SearchController.SearchForm form = me.getModelBean();
+    JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
+    SearchForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainer();
     User user = ctx.getUser();
@@ -65,8 +67,8 @@
             out.println(h(form.getStatusMessage())+ "<br><br>");
         }
 %>
-[<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
-[<a href="<%=h(new ActionURL(SearchController.IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
+[<a href="<%=h(new ActionURL(IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
+[<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
 %>
 <form id=searchForm name="search" action="<%=SearchController.getSearchURL(c)%>"><%
@@ -116,18 +118,29 @@
     }
 
     String category = form.getCategory();
-    ActionURL researchURL = ctx.cloneActionURL().deleteParameter("category");
+    ActionURL categoryResearchURL = ctx.cloneActionURL().deleteParameter("category");
+    ActionURL scopeResearchURL = ctx.cloneActionURL().deleteParameter("includeSubfolders").deleteParameter("container");
     String queryString = form.getQueryString();
 
     if (null != StringUtils.trimToNull(queryString))
     {
         %><table>
-            <tr><td><font size="-1"><%
-                if (null == category) { %>All<% } else { %><a href="<%=h(researchURL)%>">All</a><% } %>&nbsp;<%
-                if ("File".equals(category)) { %>Files<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
-                if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
-                if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(researchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
-             %></font></td></tr>
+            <tr><td>
+                <table cellpadding="0" cellspacing="0"><tr>
+                    <td class="labkey-main-title-area"><span class="labkey-main-title"></span> <%
+                        if (null == category)           { %>All<%      } else { %><a href="<%=h(categoryResearchURL)%>">All</a><% } %>&nbsp;<%
+                        if ("File".equals(category))    { %>Files<%    } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
+                        if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
+                        if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
+                    %></span></td>
+                    <td align="right" style="width:100%"><%
+                        SearchScope scope = form.getSearchScope(c);
+                        if (scope == SearchScope.All) { %>Site<% } else { %><a href="<%=h(scopeResearchURL)%>">Site</a><% } %>&nbsp;<%
+                        if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %>&nbsp;<%
+                        if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% }
+                    %></td>
+                </tr></table>
+            </td></tr>
             <tr><td valign="top" align="left" width=700><%
         int hitsPerPage = 20;  // UNDONE
         int offset = 0;
@@ -137,8 +150,7 @@
         try
         {
             long start = System.nanoTime();
-            Container searchContainer = null == form.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(form.getContainer());
-            SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), user, searchContainer, true, offset, hitsPerPage);
+            SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), user, form.getSearchContainer(), true, offset, hitsPerPage);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
 
@@ -203,7 +215,7 @@
 
                 if (result.hits.size() > 0)
                 {
-                    %><td valign="top" align="left" width="350>"><%
+                    %><td valign="top" align="left" width="350"><%
                     WebPartView.startTitleFrame(out, "Quick Links");
                     %><div id="navigationResults"><%
 

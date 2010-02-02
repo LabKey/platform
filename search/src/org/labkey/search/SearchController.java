@@ -341,7 +341,7 @@ public class SearchController extends SpringActionController
             {
                 //UNDONE: paging, rowlimit etc
                 int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), form.getIncludeSubFolders(),
+                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), form.getIncludeSubfolders(),
                         form.getOffset(), limit);
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
@@ -526,6 +526,8 @@ public class SearchController extends SpringActionController
         private boolean _includeSubfolders = true;
         private String _comment = null;
 
+        public static enum SearchScope {All, Project, Folder}
+
         public String[] getQ()
         {
             return null == _query ? new String[0] : _query;
@@ -619,17 +621,35 @@ public class SearchController extends SpringActionController
             return _container;
         }
 
+        public Container getSearchContainer()
+        {
+            return null == getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(getContainer());
+        }
+
+        public SearchScope getSearchScope(Container currentContainer)
+        {
+            Container searchContainer = getSearchContainer();
+
+            if (ContainerManager.getRoot().equals(searchContainer) && getIncludeSubfolders())
+                return SearchScope.All;
+
+            if (searchContainer.isProject() && getIncludeSubfolders())
+                return SearchScope.Project;
+
+            return SearchScope.Folder;
+        }
+
         public void setContainer(String container)
         {
             _container = container;
         }
 
-        public void setIncludeSubFolders(boolean b)
+        public void setIncludeSubfolders(boolean b)
         {
             _includeSubfolders = b;
         }
 
-        public boolean getIncludeSubFolders()
+        public boolean getIncludeSubfolders()
         {
             return null == _container || _includeSubfolders;
         }

@@ -20,10 +20,8 @@
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-
 
 /* NOTE - The ONLY styles that should be set in this file are ones pulled from the look and feel settings.
    That means colors and font sizes only. All other properties should be set in stylesheet.css. This file represents
@@ -44,8 +42,6 @@
     String navBorder           = theme.getHeaderLineColor();
     String navBackground       = theme.getNavBarColor();
     String linkAndHeaderText   = theme.getTitleColorString();
-
-    String contextPath = AppProps.getInstance().getContextPath();
 
     /*
 
