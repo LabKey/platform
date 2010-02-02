@@ -12,6 +12,32 @@
  * runSelected : run the selected action, the data record is passed as a parameter
  *
  */
+LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
+
+    constructor : function(config)
+    {
+        Ext.grid.CheckColumn.prototype.constructor.call(this, config);
+    },
+
+    onMouseDown : function(e, t)
+    {
+        LABKEY.ActionsCheckColumn.superclass.onMouseDown.call(this, e, t);
+
+        if(t.className && t.className.indexOf('x-grid3-cc-'+this.id) != -1)
+        {
+            if (this.listeners && this.listeners.mousedown)
+            {
+                var index = this.grid.getView().findRowIndex(t);
+                var record = this.grid.store.getAt(index);
+
+                var scope = this.listeners.mousedown.scope || this;
+                this.listeners.mousedown.apply(scope, [record, this.dataIndex]);
+            }
+        }
+    }
+}),
+
+
 LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true}),
@@ -19,6 +45,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     // run selected action
     runAction : undefined,
+
+    importDataEnabled : true,
 
     events : {},
 
@@ -56,6 +84,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         var o = eval('var $=' + response.responseText + ';$;');
         var actions = o.success ? o.actions : [];
 
+        // check whether the import data button is enabled
+        this.importDataEnabled = o.success ? o.importDataEnabled : false;
+
         // parse the reponse and create the data object
         var data = {actions: []};
         if (actions && actions.length)
@@ -79,7 +110,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                             display: link.display,
                             action: link.text,
                             href: link.href,
-                            enabled: link.display == 'enabled' || 'toolbar',
+                            enabled: (link.display == 'enabled') || (link.display == 'toolbar'),
                             showOnToolbar: link.display == 'toolbar'
                         });
                     }
@@ -117,8 +148,22 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             groupField:'type',
             autoLoad: true});
 
-        var enabledColumn = new Ext.grid.CheckColumn({header: 'Enabled', dataIndex: 'enabled'});
-        var onToolbarColumn = new Ext.grid.CheckColumn({header: 'Show on Toolbar', dataIndex: 'showOnToolbar', width: 175});
+        var enabledColumn = new LABKEY.ActionsCheckColumn({
+            header: 'Enabled', dataIndex: 'enabled',
+            listeners: {mousedown:function(record, index)
+            {
+                if (!record.data['enabled'])
+                    record.set('showOnToolbar', false);
+            }, scope:this}
+        });
+        var onToolbarColumn = new LABKEY.ActionsCheckColumn({
+            header: 'Show on Toolbar', dataIndex: 'showOnToolbar', width: 175,
+            listeners: {mousedown:function(record, index)
+            {
+                if (!record.data['enabled'])
+                    record.set('enabled', true);
+            }, scope:this}
+        });
 
          var cm = new Ext.grid.ColumnModel({
                 // specify any defaults for each column
@@ -187,7 +232,21 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         var actionPanel = new Ext.Panel({
             bodyStyle : 'padding:10px;',
-            items: [grid]
+            items: [
+                new Ext.Panel({
+                    border: false,
+                    bodyStyle : 'padding:10 10 10 0px;',
+                    items:{
+                        xtype: 'checkbox',
+                        checked: this.importDataEnabled,
+                        labelSeparator: '',
+                        boxLabel: 'Show Import Data<br/><i>Administrators will always see this button</i>)',
+                        name: 'importAction',
+                        listeners: {check: function(button, checked) {this.importDataEnabled = checked;}, scope:this}
+                    }
+                }),
+                grid
+            ]
         });
 
         var win = new Ext.Window({
@@ -237,6 +296,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 else
                     params.push('disabled=' + encodeURIComponent(record.id));
             }
+            params.push('importDataEnabled=' + encodeURIComponent(this.importDataEnabled));
+
             Ext.Ajax.request({
 
                 url: this.actionsUpdateURL + '?' + params.join('&'),

@@ -28,6 +28,9 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     toolbarButtons : [],
     toolbar : undefined,
 
+    importDataEnabled : true,
+    adminUser : false,
+
     constructor : function(config)
     {
         LABKEY.FilesWebPartPanel.superclass.constructor.call(this, config);
@@ -123,6 +126,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var o = eval('var $=' + response.responseText + ';$;');
         var actions = o.success ? o.actions : [];
 
+        // check whether the import data button is enabled
+        this.importDataEnabled = o.success ? o.importDataEnabled : false;
+        this.adminUser = o.success ? o.adminUser : false;
+
         var toolbarActions = [];
         var importActions = [];
 
@@ -143,8 +150,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     {
                         link.handler = this.executePipelineAction;
                         link.scope = this;
+
+                        // toolbar actions are always available in import data
                         if (link.display == 'toolbar')
+                        {
                             this.addActionLink(toolbarActions, pUtil, link);
+                            this.addActionLink(importActions, pUtil, link);
+                        }
                         else
                             this.addActionLink(importActions, pUtil, link);
                     }
@@ -223,12 +235,12 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 if (typeof item == "string" && typeof this.actions[item] == "object")
                 {
                     // don't add the import data button if there are no import data actions
-                    if (this.importActions.length || item != 'importData')
+                    if (item == 'importData' && !this.showImportData())
                     {
-                        tbarButtons.push(new Ext.Button(this.actions[item]));
-                        toolbar.addButton(this.actions[item]);
-
+                        continue;
                     }
+                    tbarButtons.push(new Ext.Button(this.actions[item]));
+                    toolbar.addButton(this.actions[item]);
                 }
                 else
                     tbarButtons.push(item);
@@ -248,6 +260,17 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 this.pipelineActions.push(tbarAction);
             }
         }
+    },
+
+    showImportData : function()
+    {
+        if (this.adminUser)
+            return true;
+
+        if (this.importDataEnabled && this.importActions.length)
+            return true;
+
+        return false;
     },
 
     // selection change handler
@@ -421,10 +444,19 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (hasAdmin)
         {
             items.push({
-                html: 'Actions marked with an asterisk <span class="labkey-error">*</span> are only visible to Administrators',
+                html: 'Actions marked with an asterisk <span class="labkey-error">*</span> are only visible to Administrators.',
                 bodyStyle: 'padding:10px;',
                 border: false});
         }
+
+        if (!this.importDataEnabled)
+        {
+            items.push({
+                html: 'This button has been disabled from the admin panel and is only visible to Administrators.',
+                bodyStyle: 'padding:10px;',
+                border: false});
+        }
+
         var win = new Ext.Window({
             title: 'Import Data',
             width: 400,

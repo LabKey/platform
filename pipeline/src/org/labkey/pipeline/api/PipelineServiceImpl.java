@@ -566,14 +566,4 @@ public class PipelineServiceImpl extends PipelineService
             }
         }
     }
-
-    public List<PipelineActionConfig> getPipelineActionConfig(Container c)
-    {
-        return PipelineManager.getPipelineActionsConfig(c);
-    }
-
-    public void setPipelineActionConfig(Container c, List<PipelineActionConfig> config)
-    {
-        PipelineManager.setPipelineActionConfig(c, config);
-    }
 }

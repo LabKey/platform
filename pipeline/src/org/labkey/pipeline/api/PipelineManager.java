@@ -184,18 +184,6 @@ public class PipelineManager
                 container, ContainerManager.Property.PipelineRoot, oldValue, newValue));
     }
 
-    public static List<PipelineActionConfig> getPipelineActionsConfig(Container c)
-    {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        return svc.getActionsConfig(c);
-    }
-
-    public static void setPipelineActionConfig(Container c, List<PipelineActionConfig> actionConfig)
-    {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        svc.setActionsConfig(c, actionConfig);
-    }
-
     static public void purge(Container container)
     {
         try

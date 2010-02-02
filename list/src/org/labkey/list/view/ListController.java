@@ -858,7 +858,10 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
         {
             _list = form.getList();
-            return ListAuditViewFactory.getInstance().createListHistoryView(getViewContext(), _list);
+            if (_list != null)
+                return ListAuditViewFactory.getInstance().createListHistoryView(getViewContext(), _list);
+            else
+                return new HtmlView("Unable to find the specified List");
         }
 
         public NavTree appendNavTrail(NavTree root)

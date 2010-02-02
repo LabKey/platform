@@ -26,6 +26,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
@@ -628,6 +629,29 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         finally
         {
             IOUtils.closeQuietly(output);
+        }
+    }
+
+    public FilesAdminOptions getAdminOptions(Container c)
+    {
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+        String xml = null;
+
+        if (!StringUtils.isBlank(root.getProperties()))
+        {
+            xml = root.getProperties();
+        }
+        return new FilesAdminOptions(c, xml);
+    }
+
+    public void setAdminOptions(Container c, FilesAdminOptions options)
+    {
+        if (options != null)
+        {
+            FileRoot root = FileRootManager.get().getFileRoot(c);
+
+            root.setProperties(options.serialize());
+            FileRootManager.get().saveFileRoot(null, root);
         }
     }
 }

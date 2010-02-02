@@ -20,6 +20,8 @@ import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
@@ -32,6 +34,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -486,7 +489,10 @@ public class PipelineController extends SpringActionController
 
             // keep actions in consistent order for display
             entry.orderActions();
-            mergeActionConfiguration(pr, entry, c);
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FilesAdminOptions options = svc.getAdminOptions(c);
+
+            mergeActionConfiguration(pr, entry, c, options);
 
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())
@@ -496,14 +502,16 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("actions", actions);
+            resp.put("importDataEnabled", options.isImportDataEnabled());
+            resp.put("adminUser", getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class));
             return resp;
         }
 
-        private void mergeActionConfiguration(PipeRoot pr, PipelineProvider.PipelineDirectory entry, Container c)
+        private void mergeActionConfiguration(PipeRoot pr, PipelineProvider.PipelineDirectory entry, Container c, FilesAdminOptions options)
         {
             // get and merge configuration information
             Map<String, PipelineActionConfig> configMap = new HashMap<String, PipelineActionConfig>();
-            for (PipelineActionConfig config : PipelineService.get().getPipelineActionConfig(c))
+            for (PipelineActionConfig config : options.getPipelineConfig())
                 configMap.put(config.getId(), config);
 
             // administrators always see all import actions (disabled or not), but we want to be able
@@ -546,6 +554,17 @@ public class PipelineController extends SpringActionController
 
         String _displayState;
         String _id;
+        boolean _importDataEnabled;
+
+        public boolean isImportDataEnabled()
+        {
+            return _importDataEnabled;
+        }
+
+        public void setImportDataEnabled(boolean importDataEnabled)
+        {
+            _importDataEnabled = importDataEnabled;
+        }
 
         public String[] getEnabled()
         {
@@ -614,7 +633,13 @@ public class PipelineController extends SpringActionController
             for (String id : form.getToolbar())
                 actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.toolbar.name()));
 
-            PipelineService.get().setPipelineActionConfig(getContainer(), actionConfig);
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FilesAdminOptions options = svc.getAdminOptions(getContainer());
+
+            options.setImportDataEnabled(form.isImportDataEnabled());
+            options.setPipelineConfig(actionConfig);
+
+            svc.setAdminOptions(getContainer(), options);
 
             return new ApiSimpleResponse("success", true);
         }

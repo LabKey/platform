@@ -2056,11 +2056,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (pct != this.lastSummary.pct || file != this.lastSummary.file)
             this.progressBar.updateProgress(pct, file);
 
-        if (summary.success != this.lastSummary.success)
-        {
-            // limit with timer?
-            this.refreshDirectory();
-        }
         // UNDONE: failed transfers
         this.lastSummary = summary;
         this.lastSummary.pct = pct;
@@ -2707,9 +2702,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.on(BROWSER_EVENTS.directorychange, this.updateAppletState, this);
 
         this.on(BROWSER_EVENTS.transfercomplete, function(result) {
+            if (this.progressBar)
+                this.progressBar.reset();
             if (this.appletStatusBar)
                 this.appletStatusBar.setVisible(false);
+            this.refreshDirectory();
         }, this);
+
         this.on(BROWSER_EVENTS.transferstarted, function(result) {
             if (this.appletStatusBar)
                 this.appletStatusBar.setVisible(true);
