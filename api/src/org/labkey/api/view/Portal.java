@@ -403,7 +403,8 @@ public class Portal
         }
         catch (SQLException x)
         {
-            throw new RuntimeSQLException(x);
+            if (!SqlDialect.isConstraintException(x))
+                throw new RuntimeSQLException(x);
         }
         finally
         {
