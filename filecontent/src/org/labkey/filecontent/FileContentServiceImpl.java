@@ -28,6 +28,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -192,10 +193,30 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     {
         File root = AppProps.getInstance().getFileSystemRoot();
 
+        if (root == null || !root.exists())
+            root = getDefaultRoot();
+
         if (root != null && !root.exists())
             root.mkdirs();
 
         return root;
+    }
+
+    private File getDefaultRoot()
+    {
+        File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
+
+        File root = explodedPath.getParentFile();
+        if (root != null)
+        {
+            if (root.getParentFile() != null)
+                root = root.getParentFile();
+        }
+        File defaultRoot = new File(root, "files");
+        if (!defaultRoot.exists())
+            defaultRoot.mkdirs();
+
+        return defaultRoot;
     }
 
     public void setSiteDefaultRoot(File root)

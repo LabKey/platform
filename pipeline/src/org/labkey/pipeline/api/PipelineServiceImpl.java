@@ -119,17 +119,20 @@ public class PipelineServiceImpl extends PipelineService
             if (PipelineRoot.PRIMARY_ROOT.equals(type))
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                File root = svc.getFileRoot(container.getProject());
-                if (root != null)
+                if (svc != null && container != null)
                 {
-                    AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                    PipelineRoot p = new PipelineRoot();
+                    File root = svc.getFileRoot(container.getProject());
+                    if (root != null)
+                    {
+                        AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
+                        PipelineRoot p = new PipelineRoot();
 
-                    p.setContainer(container.getId());
-                    p.setPath(dir.getFileSystemDirectory().toURI().toString());
-                    //p.setType("Default");
+                        p.setContainer(container.getId());
+                        p.setPath(dir.getFileSystemDirectory().toURI().toString());
+                        //p.setType("Default");
 
-                    return new PipeRootImpl(p);
+                        return new PipeRootImpl(p);
+                    }
                 }
             }
         }

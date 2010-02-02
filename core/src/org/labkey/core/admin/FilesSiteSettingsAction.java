@@ -80,9 +80,6 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
         {
             File root = _svc.getSiteDefaultRoot();
 
-            if (root == null || !root.exists())
-                root = getDefaultRoot();
-
             if (root != null && root.exists())
                 form.setRootPath(root.getCanonicalPath());
         }
@@ -229,23 +226,6 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
     public NavTree appendNavTrail(NavTree root)
     {
         return root.addChild("Configure File System Access");
-    }
-
-    private File getDefaultRoot()
-    {
-        File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
-
-        File root = explodedPath.getParentFile();
-        if (root != null)
-        {
-            if (root.getParentFile() != null)
-                root = root.getParentFile();
-        }
-        File defaultRoot = new File(root, "files");
-        if (!defaultRoot.exists())
-            defaultRoot.mkdirs();
-
-        return defaultRoot;
     }
 
     public static class FileSettingsForm
