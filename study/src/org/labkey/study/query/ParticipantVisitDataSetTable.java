@@ -217,7 +217,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                     }
                     else
                     {
-                        // XXX: non-timepoint based studies?
+                        // XXX: absolute date based studies?
                     }
                     return dsTable;
                 }

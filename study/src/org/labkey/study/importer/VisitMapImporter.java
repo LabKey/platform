@@ -82,8 +82,8 @@ public class VisitMapImporter
     {
         if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
         {
-            errors.add("Can't import visits for non-timepoint based study.");
-            return false;
+            logger.warn("Can't import visits for an absolute date based study.");
+            return true;
         }
         if (content == null)
         {

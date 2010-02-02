@@ -52,7 +52,10 @@ public class VisitCohortAssigner implements InternalStudyImporter
         if (null != visitsXml)
         {
             if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                throw new StudyImportException("Can't import visits for a non-timepoint based study.");
+            {
+                ctx.getLogger().warn("Can't import visits for an absolute date based study.");
+                return;
+            }
             
             File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());
 

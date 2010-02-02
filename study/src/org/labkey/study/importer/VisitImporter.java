@@ -44,8 +44,8 @@ class VisitImporter
         {
             if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
             {
-                errors.reject("uploadVisitMap", "Can't import visits for a non-timepoint based study.");
-                return false;
+                ctx.getLogger().warn("Can't import visits for an absolute date based study.");
+                return true;
             }
 
             File visitMap = ctx.getStudyFile(root, root, visitsXml.getFile());

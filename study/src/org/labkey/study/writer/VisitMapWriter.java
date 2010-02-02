@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.study.StudyImportException;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
@@ -36,6 +37,9 @@ class VisitMapWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
     {
+        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+            return;
+
         if (ctx.useOldFormats())
         {
             DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
