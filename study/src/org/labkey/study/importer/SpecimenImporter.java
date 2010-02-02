@@ -1677,7 +1677,7 @@ public class SpecimenImporter
         String sep = "";
         SQLFragment innerTableSelectSql = new SQLFragment("SELECT " + tempTable + ".RowId AS RowId");
         SQLFragment innerTableJoinSql = new SQLFragment();
-        SQLFragment remapExternalIdsSql = new SQLFragment("UPDATE ").append(tempTable).append(" AS OuterTable SET ");
+        SQLFragment remapExternalIdsSql = new SQLFragment("UPDATE ").append(tempTable).append(" SET ");
         for (SpecimenColumn col : loadedColumns)
         {
             if (col.getFkTable() != null)
@@ -1696,7 +1696,7 @@ public class SpecimenImporter
             }
         }
         remapExternalIdsSql.append(" FROM (").append(innerTableSelectSql).append(" FROM ").append(tempTable);
-        remapExternalIdsSql.append(innerTableJoinSql).append(") InnerTable WHERE InnerTable.RowId = OuterTable.RowId;");
+        remapExternalIdsSql.append(innerTableJoinSql).append(") InnerTable\nWHERE InnerTable.RowId = ").append(tempTable).append(".RowId;");
 
         info("Remapping lookup indexes in temp table...");
         if (DEBUG)
@@ -1740,7 +1740,7 @@ public class SpecimenImporter
 
 
         SQLFragment updateHashSql = new SQLFragment();
-        updateHashSql.append("UPDATE ").append(tempTable).append(" AS OuterTable SET SpecimenHash = 'Fld-").append(container.getRowId()).append("'");
+        updateHashSql.append("UPDATE ").append(tempTable).append(" SET SpecimenHash = 'Fld-").append(container.getRowId()).append("'");
         String concatOp = schema.getSqlDialect().getConcatenationOperator();
         for (SpecimenColumn col : loadedColumns)
         {
@@ -1752,7 +1752,8 @@ public class SpecimenImporter
                 updateHashSql.append(columnName).append(" AS ").append(schema.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append(") ELSE '' END");
             }
         }
-        updateHashSql.append("\nFROM (").append(conflictResolvingSubselect).append(") InnerTable WHERE OuterTable.GlobalUniqueId = InnerTable.GlobalUniqueId");
+        updateHashSql.append("\nFROM (").append(conflictResolvingSubselect).append(") InnerTable WHERE ");
+        updateHashSql.append(tempTable).append(".GlobalUniqueId = InnerTable.GlobalUniqueId");
 
 
         info("Updating specimen hash values in temp table...");
