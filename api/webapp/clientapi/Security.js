@@ -375,6 +375,9 @@ LABKEY.Security = new function()
          *      <li>name: the name of the requested container</li>
          *      <li>path: the path of the requested container</li>
          *      <li>sortOrder: the relative sort order of the requested container</li>
+         *      <li>description: an optional description for the container (may be null or missing)</li>
+         *      <li>title: an optional non-unique title for the container (may be null or missing)</li>
+         *      <li>isWorkbook: true if this container is a workbook. Workbooks do not appear in the left-hand project tree.</li>
          *      <li>userPermissions: (DEPRECATED) the permissions the current user has in the requested container.
          *          Use this value with the hasPermission() method to test for specific permissions.</li>
          *      <li>effectivePermissions: An array of effective permission unique names the group has.</li>
