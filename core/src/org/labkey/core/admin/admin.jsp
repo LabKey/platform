@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -105,17 +106,22 @@
                 <img src="<%= contextPath %>/_images/plus.gif">
             </a>
         </td>
-        <td colspan="3"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></td>
-    </tr><%
-        for (Map.Entry<String, String> entry : module.getProperties().entrySet())
-        {%>
+        <td><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></td>
+    </tr>
     <tr style="display:none">
-        <td />
-        <td>&nbsp;&nbsp;</td>
-        <td><%=h(entry.getKey())%></td>
-        <td><%=h(entry.getValue())%></td>
+        <td></td>
+        <td style="padding-left: 2em">
+            <table cellpadding="0" cellspacing="0"><%
+                for (Map.Entry<String, String> entry : new TreeMap<String, String>(module.getProperties()).entrySet())
+                {%>
+                <tr>
+                    <td nowrap="true"><%=h(entry.getKey())%></td>
+                    <td nowrap="true"><%=h(entry.getValue())%></td>
+                </tr>
+                <% } %>
+            </table>
+        </td>
     </tr><%
-        }
     }%>
 </table>
 
