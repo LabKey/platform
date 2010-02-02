@@ -519,7 +519,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
-            query = queryParser.parse(queryString);
+            query = queryParser.parse(queryString.toUpperCase());  // Upper case to force all-caps OR & AND
 
             if (null != category)
             {
