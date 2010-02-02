@@ -37,6 +37,14 @@
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<script type="text/javascript">
+function loginStatusChanged()
+{
+    return LABKEY.user.sessionid != LABKEY.Utils.getCookie("JSESSIONID");
+}
+if (loginStatusChanged())
+    window.location.reload(true);
+</script>
 <%
     JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
     SearchForm form = me.getModelBean();
