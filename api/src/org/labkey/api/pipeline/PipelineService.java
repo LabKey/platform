@@ -122,8 +122,4 @@ abstract public class PipelineService
                                                             User user, List<String> sequenceDbPaths);
 
     abstract public boolean hasSiteDefaultRoot(Container container);
-
-    abstract public List<PipelineActionConfig> getPipelineActionConfig(Container c);
-
-    abstract public void setPipelineActionConfig(Container c, List<PipelineActionConfig> config);
 }
