@@ -16,3 +16,4 @@
 .x-form-check-down .x-form-check-checked,.x-form-check-down .x-form-radio-checked{background-position:-26px -13px;}
 .x-item-disabled .x-form-check-checked,.x-item-disabled .x-form-radio-checked{background-position:-39px -13px;}
 .x-form-check-wrap-inner input,.x-form-radio-wrap-inner input{position:absolute;-ms-filter:"alpha(opacity=0)";filter:alpha(opacity=0);-moz-opacity:0;opacity:0;}
+.ext-gecko .x-window-body .x-form-item{-moz-outline:none;overflow:hidden;}
