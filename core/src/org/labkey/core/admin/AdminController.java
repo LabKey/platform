@@ -301,9 +301,13 @@ public class AdminController extends SpringActionController
             return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
         }
 
-        public NavTree appendAdminNavTrail(NavTree root, String childTitle, ActionURL childURL)
+        public NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
-            root.addChild("Admin Console", getAdminConsoleURL()).addChild(childTitle, childURL);
+            root.addChild("Admin Console", getAdminConsoleURL());
+
+            if (null != childURL)
+                root.addChild(childTitle, childURL);
+
             return root;
         }
 

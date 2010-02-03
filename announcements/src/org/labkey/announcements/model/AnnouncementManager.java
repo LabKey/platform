@@ -857,24 +857,24 @@ public class AnnouncementManager
         {
             SQLFragment sql = new SQLFragment("SELECT container, entityId FROM " + _comm.getTableInfoThreads());
             String and = " WHERE ";
+
             if (null != c)
             {
                 sql.append(and).append("container = ?");
                 sql.add(c);
                 and = " AND ";
             }
+
             if (null != threadId)
             {
                 sql.append(and).append(" entityid = ?");
                 sql.add(threadId);
-                and = " AND ";
             }
             else
             {
-                SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null,null);
+                SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null, null);
                 if (!modified.isEmpty())
                     sql.append(and).append(modified);
-                and = " AND ";
             }
 
             rs = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());

@@ -289,7 +289,7 @@ public class DavCrawler implements ShutdownListener
                         final Resource wrap = child;
                         ActionURL url = new ActionURL(r.getExecuteHref(null));
                         child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), wrap.getContentType(),
-                                new byte[0], url, null){
+                                new byte[0], url, Collections.singletonMap(SearchService.PROPERTY.categories.toString(), (Object)SearchService.fileCategory.toString())){
                             @Override
                             public void setLastIndexed(long ms, long modified)
                             {

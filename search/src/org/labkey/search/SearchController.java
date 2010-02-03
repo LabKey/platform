@@ -19,6 +19,7 @@ package org.labkey.search;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -30,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
@@ -160,15 +162,13 @@ public class SearchController extends SpringActionController
         {
             ActionURL success = new ActionURL(AdminAction.class, getContainer());
             if (0 != _msgid)
-                success.addParameter("msg",String.valueOf(_msgid));
+                success.addParameter("msg", String.valueOf(_msgid));
             return success;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", new ActionURL("admin","showAdmin","/"));
-            root.addChild("Indexing Configuration");
-            return root;
+            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Indexing Configuration", null);
         }
 
         public ActionURL getRedirectURL(Object o) throws Exception
@@ -414,58 +414,14 @@ public class SearchController extends SpringActionController
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
             if (null == ss)
             {
-                HttpView.throwNotFound();
+                HttpView.throwNotFound("Search service is not registered");
                 return null;
             }
 
-            String statusMessage = "";
-
-            for (String q : form.getQ())
-            {
-                q = StringUtils.strip(q," +-");
-                if (StringUtils.isEmpty(q))
-                    continue;
-                if (ss.isParticipantId(getUser(), q))
-                    statusMessage = q + " is a participantid\n";
-            }
-
-            if (ss.isRunning())
-                statusMessage += "indexing is running\n";
-            else
-                statusMessage += "indexing is paused\n";
-
-/*
-            List<SearchService.IndexTask> tasks = ss.getTasks();
-
-            if (tasks.isEmpty())
-            {
-                tasks = new ArrayList<SearchService.IndexTask>();
-                if (null != _lastFullTask)
-                    tasks.add(_lastFullTask);
-                if (null != _lastIncrementalTask)
-                    tasks.add(_lastIncrementalTask);
-            }
-
-            for (SearchService.IndexTask task : tasks)
-            {
-                int count = task.getIndexedCount();
-                long start = task.getStartTime();
-                long end = task.getCompleteTime();
-                if (0 == end)
-                    end = System.currentTimeMillis();
-                int skipped = task.getFailedCount();
-                if (task.getCompleteTime() != 0)
-                    statusMessage += "Indexing complete: ";
-                else
-                    statusMessage += "Indexing in progress: ";
-                statusMessage += Formats.commaf0.format(count) + " documents (" + DateUtil.formatDuration(end-start) + ") "; // Remove for demo: Formats.commaf0.format(skipped) + " skipped or failed <br>";
-            }
-*/
-
             form.setPrint(isPrint());
-            form.setStatusMessage(statusMessage);
             _category = form.getCategory();
 
             audit(form);
@@ -515,9 +471,6 @@ public class SearchController extends SpringActionController
         private String[] _query;
         private String _sort;
         private boolean _print = false;
-        private boolean _guest = false;       // TODO: Just for testing
-        private String _statusMessage;
-        private int _page = 0;
         private String _container = null;
         private boolean _advanced = false;
         private int _offset = 0;
@@ -564,36 +517,6 @@ public class SearchController extends SpringActionController
         public void setPrint(boolean print)
         {
             _print = print;
-        }
-
-        public String getStatusMessage()
-        {
-            return _statusMessage;
-        }
-
-        public void setStatusMessage(String statusMessage)
-        {
-            _statusMessage = statusMessage;
-        }
-
-        public boolean isGuest()
-        {
-            return _guest;
-        }
-
-        public void setGuest(boolean guest)
-        {
-            _guest = guest;
-        }
-
-        public int getPage()
-        {
-            return _page;
-        }
-
-        public void setPage(int page)
-        {
-            _page = page;
         }
 
         public int getOffset()

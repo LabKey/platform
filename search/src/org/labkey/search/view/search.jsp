@@ -53,27 +53,10 @@ if (loginStatusChanged())
     User user = ctx.getUser();
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
-
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
-
-    List<SearchService.SearchCategory> categories = ss.getSearchCategories();
-    SearchService.SearchCategory selected = null;
-    for (SearchService.SearchCategory cat : categories)
-    {
-        String s = "+searchCategory:" + cat.toString();
-        if (q.remove(s))
-        {
-            selected = cat;
-            break;
-        }
-    }
 
     if (form.isAdvanced())
     {
-        if (!StringUtils.isEmpty(form.getStatusMessage()))
-        {
-            out.println(h(form.getStatusMessage())+ "<br><br>");
-        }
 %>
 [<a href="<%=h(new ActionURL(IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
@@ -90,40 +73,10 @@ if (loginStatusChanged())
         %><input type=hidden name=category value="<%=h(form.getCategory())%>"><%
     }
 
-    if (form.isAdvanced())
-    {
-        %><input type="hidden" name="guest" value=0><%
-    }
     %><input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
-    <%=generateSubmitButton("Search")%><%
+    <%=generateSubmitButton("Search")%>
 
-    if (form.isAdvanced())
-    {
-    %>
-    <%=buttonImg("Search As Guest", "document.search.guest.value=1; return true;")%>
-    <%=buttonImg("Google", "return google();")%><br>
-    <input type=checkbox name="container" value="<%=c.getId()%>" <%=null==form.getContainer()?"":"checked"%>>this folder and children<br>
-    <input type=radio name=q value="" <%=null==selected?"checked":""%>>all<br><%
-        for (SearchService.SearchCategory cat : categories)
-        {
-            String s = "+searchCategory:cat.toString()";
-            boolean checked = form.getQueryString().contains(s);
-            %><input type=radio name=q value="+searchCategory:<%=h(cat.toString())%>" <%=cat==selected?"checked":""%>><%=h(cat.getDescription())%><br><%
-        }
-    }
-%><input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>"></form><%
-    if (form.isAdvanced())
-    {
-        %><script type="text/javascript">
-        function google()
-        {
-            var query = document.getElementById('query').value;
-            window.location = 'http://www.google.com/search?q=' + encodeURIComponent(query);
-            return false;
-        }
-        </script>
-        <%
-    }
+    <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>"></form><%
 
     String category = form.getCategory();
     ActionURL categoryResearchURL = ctx.cloneActionURL().deleteParameter("category");
@@ -135,12 +88,12 @@ if (loginStatusChanged())
         %><table>
             <tr><td>
                 <table cellpadding="0" cellspacing="0"><tr>
-                    <td class="labkey-main-title-area"><span class="labkey-main-title"></span> <%
+                    <td class="labkey-main-title-area"><%
                         if (null == category)           { %>All<%      } else { %><a href="<%=h(categoryResearchURL)%>">All</a><% } %>&nbsp;<%
                         if ("File".equals(category))    { %>Files<%    } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
                         if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
                         if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
-                    %></span></td>
+                    %></td>
                     <td align="right" style="width:100%"><%
                         SearchScope scope = form.getSearchScope(c);
                         if (scope == SearchScope.All) { %>Site<% } else { %><a href="<%=h(scopeResearchURL)%>">Site</a><% } %>&nbsp;<%
@@ -150,8 +103,9 @@ if (loginStatusChanged())
                 </tr></table>
             </td></tr>
             <tr><td valign="top" align="left" width=700><%
-        int hitsPerPage = 20;  // UNDONE
-        int offset = 0;
+
+        int hitsPerPage = 20;
+        int offset = form.getOffset();
 
         int pageNo = (offset / hitsPerPage) + 1;
 
@@ -161,12 +115,13 @@ if (loginStatusChanged())
             SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), user, form.getSearchContainer(), true, offset, hitsPerPage);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
+            int pageCount = (int)Math.ceil((double)totalHits / hitsPerPage);
 
             %><br>Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
 
             if (hitsPerPage < totalHits)
             {
-                %>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format((int)Math.ceil((double)totalHits / hitsPerPage))%><br><%
+                %>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format(pageCount)%><br><%
             }
             else
             {
@@ -215,9 +170,39 @@ if (loginStatusChanged())
                 }
                 %></div><br><%
             }
+
+            if (pageCount > 1)
+            { %>
+                <table width="100%"><tr><td align="center"><%
+
+                ActionURL currentURL = ctx.getActionURL();
+
+                if (pageNo > 1)
+                {
+                    ActionURL previousURL = currentURL.clone();
+
+                    int newOffset = offset - hitsPerPage;
+
+                    if (newOffset > 0)
+                        previousURL.replaceParameter("offset", String.valueOf(newOffset));
+                    else
+                        previousURL.deleteParameter("offset");
+                %>
+                    <a href="<%=h(previousURL)%>">&lt; Previous</a><%
+
+                    if (pageNo < pageCount)
+                        out.print("&nbsp;|&nbsp;");
+                }
+
+                if (pageNo < pageCount)
+                { %><a href="<%=h(currentURL.clone().replaceParameter("offset", String.valueOf(offset + hitsPerPage)))%>">Next &gt;</a><%
+                } %>
+                </td></tr></table><%
+            }
+            
             %></div></td><%
 
-            if (-1 == queryString.indexOf("searchCategory") && wideView)
+            if (null == category && wideView)
             {
                 result = ss.search(queryString, SearchService.navigationCategory, user, ContainerManager.getRoot(), true, offset, hitsPerPage);
 
@@ -229,29 +214,12 @@ if (loginStatusChanged())
 
                     for (SearchService.SearchHit hit : result.hits)
                     {
-                        String href = hit.url;
-                        try
-                        {
-                            if (href.startsWith("/"))
-                            {
-                                ActionURL url = new ActionURL(href);
-                                Container cc = ContainerManager.getForId(url.getExtraPath());
-                                url.setExtraPath(cc.getPath());
-                                href = url.getLocalURIString();
-                            } 
-                        }                                                        
-                        catch (Exception x)
-                        {
-                            //
-                        }
-
                         %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><br><%
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
                             %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                         }
-                        %><%--<div style='margin-left:10px; color:green;'><%=h(href)%></div><br>--%><%
                     }
                     %></div><%
                     WebPartView.endTitleFrame(out);
@@ -297,7 +265,7 @@ String formatNavTrail(String s)
             if (!StringUtils.isEmpty(text) && !StringUtils.isEmpty(href))
             {
                 sb.append(connector);
-                sb.append("<a style='text-decoration:underline; color:#808080;' href='" + PageFlowUtil.filter(href) + "'>" + PageFlowUtil.filter(text) + "</a>");
+                sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(PageFlowUtil.filter(href)).append("'>").append(PageFlowUtil.filter(text)).append("</a>");
                 connector = " - ";
             }
         }
@@ -345,6 +313,7 @@ NavTree getDocumentContext(org.labkey.api.search.SearchService.SearchHit hit)
     catch (Exception x)
     {
     }
+
     NavTree ret = new NavTree(text, url);
     return ret;
 }
