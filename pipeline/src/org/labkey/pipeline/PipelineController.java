@@ -404,6 +404,9 @@ public class PipelineController extends SpringActionController
             bean.setShowDetails(true);
             bean.setAutoResize(true);
 
+            // pipeline is always enabled
+            bean.setEnabled(true);
+
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
             if (root != null)
                 bean.setRootPath(root.getContainer(), PipelineWebdavProvider.PIPELINE_LINK);

@@ -1758,6 +1758,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     tbarItems : undefined,
 
+    fileFilter : undefined,
+
     //
     // actions
     //
@@ -2416,13 +2418,19 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var i, len;
         if (success && this.currentDirectory.data.path == path)
         {
-            if (!this.allowChangeDirectory)
+            var t = records;
+            records = [];
+            for (i=0 ; i < t.length ; i++)
             {
-                var t = records;
-                records = [];
-                for (i=0 ; i<t.length ; i++)
-                    if (t[i].data.file) records.push(t[i]);
+                if (!this.allowChangeDirectory && !t[i].data.file)
+                    continue;
+
+                if (this.fileFilter && !this.fileFilter.test(t[i].data))
+                    continue;
+
+                records.push(t[i]);
             }
+
             this.store.modified = [];
             for (i = 0, len = records.length; i < len; i++)
                 records[i].join(this.store);

@@ -91,7 +91,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (root.isEnabled())
         {
             // check if there is a site wide file root
-            if (root.getPath() == null)
+            if (root.getPath() == null || root.isUseDefault())
             {
                 File siteRoot = getSiteDefaultRoot();
                 if (siteRoot != null)

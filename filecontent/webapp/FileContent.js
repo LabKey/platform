@@ -33,6 +33,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     constructor : function(config)
     {
+        config.fileFilter = {test: function(record){
+            if (!record.file)
+                return record.name.indexOf('.') != 0;
+            return true;
+        }};
         LABKEY.FilesWebPartPanel.superclass.constructor.call(this, config);
     },
 
@@ -435,6 +440,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
         var actionPanel = new Ext.form.FormPanel({
             bodyStyle : 'padding:10px;',
+            labelWidth: 150,
             defaultType: 'radio',
             items: actions
         });
@@ -459,7 +465,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         var win = new Ext.Window({
             title: 'Import Data',
-            width: 400,
+            width: 450,
             height: 300,
             cls: 'extContainer',
             autoScroll: true,
