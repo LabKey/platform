@@ -490,17 +490,19 @@ public class QueryProfiler
             }
         }
 
+        // stupid tomcat won't let me construct one of these at shutdown, so stash one statically
+        private static final QueryProfiler.QueryStatTsvWriter shutdownWriter = new QueryProfiler.QueryStatTsvWriter();
+
         public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
             interrupt();
 
             // Export query statistics at every graceful shutdown
             File file = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "QueryStats_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".tsv");
-            QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter();
 
             try
             {
-                writer.write(file);
+                shutdownWriter.write(file);
             }
             catch (ServletException e)
             {

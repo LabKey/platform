@@ -177,7 +177,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     }
 
 
-    public NavTree addChild(String display, URLHelper urlhelp)
+    public NavTree addChild(String display, @NotNull URLHelper urlhelp)
     {
         addChild(display, urlhelp.getLocalURIString());
         return this;
