@@ -319,6 +319,7 @@ LABKEY.Exp.ExpObject = function (config) {
  *
  * @param {Object} [config] The configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
  * @param {Object[]} config.dataInputs Array of {@link LABKEY.Exp.Data} config objects.
+ * @param {Object[]} config.dataOutputs Array of {@link LABKEY.Exp.Data} config objects.
  * @param {Object[]} config.dataRows Array of Objects where each Object corresponds to a row in the results domain.
  * @param {Object[]} config.materialInputs Array of {@link LABKEY.Exp.Material} config objects.
  *
