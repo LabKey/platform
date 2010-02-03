@@ -1190,6 +1190,8 @@ var FileSystemTreeLoader = function (config)
 
 Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 {
+    debugTree : null,
+
     fileFilter : null,
     displayFiles: true,
     url: true, // hack for Ext.tree.TreeLoader.load()
@@ -1225,7 +1227,6 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (n)
         {
             n.record = record;
-            record.treeNode = n;
             if (record.data.iconHref)
                 n.attributes.icon = record.data.iconHref;
         }
@@ -1239,31 +1240,36 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         var dir = this.fileSystem.recordFromCache(path);
 
         // just return for nodes we haven't loaded yet
-        if (!dir || !dir.treeNode)
+        if (!dir || !dir.treeNode || !dir.treeNode.loaded)
             return;
-        this.mergeRecords(dir.treeNode, records);
-    },
 
+        if (this.debugTree)
+        {
+            var n = this.debugTree.getNodeById(path);
+            if (n && n !== dir.treeNode)
+                console.warn("node is not in tree: " + path);
+        }
+
+        var reload = this.mergeRecords(dir.treeNode, records);
+        // UNDONE: I don't know why removeChild() is not working!
+        if (reload)
+            dir.treeNode.reload();
+    },
+    
 
     mergeRecords : function(node, records)
     {
-        records = records.sort(function(a,b)
-        {
-            var A = a.data.name.toUpperCase(), B = b.data.name.toUpperCase();
-            return A < B ? -1 : 1;
-        });
-
-        var i, p, n;
+        var i, p, n, r;
         var nodesMap = {}, recordsMap = {};
         node.eachChild(function(child){nodesMap[child.record.data.path]=child;});
         for (i=0 ; i<records.length ; i++)
         {
+            var record = records[i];
             n = this.createNodeFromRecord(records[i]);
-            if (n)
-                recordsMap[records[i].data.path] = n;
+            if (!n) continue;
+            recordsMap[record.data.path] = {r:record, n:n};
         }
 
-        var wasExpanded = node.isExpanded();
         var changed = false;
         var removes = false;
         var inserts = false;
@@ -1289,22 +1295,24 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             if (!(p in nodesMap))
             {
                 change();
-                n = recordsMap[p];
-                n.record.treeNode = node.insertBefore(recordsMap[p], null);
+                r = recordsMap[p].r;
+                n = recordsMap[p].n;
+                var newNode = node.insertBefore(n, null);
+                r.treeNode = newNode;
                 inserts = true;
             }
         }
 
-        if (inserts)
+        if (changed)
         {
             node.sort(function(a,b)
             {
                 var A = a.record.data.name.toUpperCase(), B = b.record.data.name.toUpperCase();
                 return A < B ? -1 : 1;
             });
+            node.expand(false,false);
         }
-        if (wasExpanded)
-            node.expand(false, false);
+        return removes;
     },
 
 
@@ -3109,8 +3117,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             border:false,
             pathSeparator:';'
         });
+        treeloader.debugTree = tree;
         tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
-
+window.DEBUGTREE = tree;
         return tree;
     },
 
