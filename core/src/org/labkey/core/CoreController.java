@@ -60,9 +60,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -677,6 +675,10 @@ public class CoreController extends SpringActionController
             //user must be allowed to create workbooks in the new parent folder
             if (!newParent.hasPermission(getViewContext().getUser(), InsertPermission.class))
                 throw new UnauthorizedException("You do not have permission to move workbooks to the folder '" + newParent.getName() + "'.");
+
+            //workbook name must be unique within parent
+            if (newParent.hasChild(wb.getName()))
+                throw new RuntimeException("Can't move workbook '" + wb.getTitle() + "' because another workbook or subfolder in the target folder has the same name.");
 
             ContainerManager.move(wb, newParent);
 
