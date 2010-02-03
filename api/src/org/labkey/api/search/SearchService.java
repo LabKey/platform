@@ -45,10 +45,15 @@ public interface SearchService
 {
     static Category _log = Category.getInstance(SearchService.class);
 
-    public static final SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
     public static final int DEFAULT_PAGE_SIZE = 20;
+
+    public static final SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
     public static final SearchCategory fileCategory = new SearchCategory("file", "Files and Attachments", false);
 
+    // marker value for documents with indexing errors
+    public static final java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-30"));
+
+    
     enum PRIORITY
     {
         commit,
@@ -251,7 +256,8 @@ public interface SearchService
 
     void deleteContainer(String id);
 
-    public void clear();
+    public void clear();                // delete index and reset lastIndexed values
+    public void clearLastIndexed();     // just reset lastIndexed values
 
 
     //

@@ -346,6 +346,13 @@ public class TempTableTracker extends WeakReference<Object>
             }
         }
 
+
+        public void shutdownPre(ServletContextEvent servletContextEvent)
+        {
+            _shutdown.set(true);
+            interrupt();
+        }
+
         public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
             synchronized(createdTableNames)
@@ -357,8 +364,6 @@ public class TempTableTracker extends WeakReference<Object>
                 }
             }
 
-            _shutdown.set(true);
-            interrupt();
             try
             {
                 join(5000);

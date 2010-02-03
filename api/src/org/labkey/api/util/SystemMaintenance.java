@@ -153,6 +153,12 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener
         }
     }
 
+
+    public void shutdownPre(ServletContextEvent servletContextEvent)
+    {
+        
+    }
+
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
         synchronized(_timerLock)

@@ -47,6 +47,17 @@ public class ContextListener implements ServletContextListener
         {
             try
             {
+                listener.shutdownPre(servletContextEvent);
+            }
+            catch (Exception e)
+            {
+                _log.error(e);
+            }
+        }
+        for (ShutdownListener listener : shutdownListeners)
+        {
+            try
+            {
                 listener.shutdownStarted(servletContextEvent);
             }
             catch (Exception e)

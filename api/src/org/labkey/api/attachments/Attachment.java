@@ -85,7 +85,7 @@ public class Attachment implements Serializable
     private int createdBy;
     private long created;
     private File file;
-
+    private Date lastIndexed;
 
     public Attachment()
     {
@@ -254,6 +254,18 @@ public class Attachment implements Serializable
     public void setCreatedBy(int createdBy)
     {
         this.createdBy = createdBy;
+    }
+
+
+    public Date getLastIndexed()
+    {
+        return lastIndexed;
+    }
+
+
+    public void setLastIndexed(Date lastIndexed)
+    {
+        lastIndexed = lastIndexed;
     }
 
 

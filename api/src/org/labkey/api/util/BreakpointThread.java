@@ -156,10 +156,15 @@ public class BreakpointThread extends Thread implements ShutdownListener
         }
     }
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+
+    public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shutdown = true;
         interrupt();
+    }
+
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
         try
         {
             join(2000);
