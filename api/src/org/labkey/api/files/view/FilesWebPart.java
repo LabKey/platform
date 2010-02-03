@@ -116,10 +116,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         // Actions not based on the current selection
         SecurityPolicy policy = org.labkey.api.security.SecurityManager.getPolicy(getSecurableResource());
         if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
-        {
-            actions.add(FilesForm.actions.upload);
             actions.add(FilesForm.actions.createDirectory);
-        }
 
         // Actions based on the current selection
         actions.add(FilesForm.actions.download);
@@ -127,6 +124,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             actions.add(FilesForm.actions.deletePath);
         }
+
+        if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+            actions.add(FilesForm.actions.upload);
+
 
         if (canDisplayPipelineActions())
         {

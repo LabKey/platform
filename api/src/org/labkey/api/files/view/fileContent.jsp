@@ -55,6 +55,12 @@
     ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
 %>
 
+<style type="text/css">
+    .x-layout-mini
+    {
+        display: none;
+    }
+</style>
 
 <div class="extContainer">
     <table>
