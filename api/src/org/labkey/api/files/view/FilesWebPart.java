@@ -75,25 +75,37 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         if (fileSet != null)
         {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            AttachmentDirectory dir = svc.getRegisteredDirectory(c, fileSet);
+            if (fileSet.equals(FileContentService.PIPELINE_LINK))
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+                if (root != null)
+                    getModelBean().setRootPath(root.getContainer(), FileContentService.PIPELINE_LINK);
+                setTitle("Pipeline Files");
+            }
+            else
+            {
+                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                AttachmentDirectory dir = svc.getRegisteredDirectory(c, fileSet);
 
-            //this.fileSet = fileSet;
-            getModelBean().setRoot(dir);
-            getModelBean().setRootPath(c, FileContentService.FILE_SETS_LINK, fileSet);
-            setTitle(fileSet);
-            setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
+                //this.fileSet = fileSet;
+                getModelBean().setRoot(dir);
+                getModelBean().setRootPath(c, FileContentService.FILE_SETS_LINK, fileSet);
+                setTitle(fileSet);
+                setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
+            }
         }
     }
 
     protected FilesForm createConfig()
     {
         FilesForm form = new FilesForm();
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
         form.setShowAddressBar(false);
         form.setShowDetails(false);
         form.setShowFolderTree(false);
         form.setRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK);
+        form.setEnabled(!svc.isFileRootDisabled(getRootContext().getContainer()));
 
         List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
 
@@ -243,6 +255,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _showFolderTree;
         private boolean _showDetails;
         private boolean _autoResize;
+        private boolean _enabled;
         private actions[] _buttonConfig;
         private String _rootPath;
         private Path _directory;
@@ -359,6 +372,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public Path getDirectory()
         {
             return _directory;
+        }
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
         }
     }
 }

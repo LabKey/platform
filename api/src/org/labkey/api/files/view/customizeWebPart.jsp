@@ -41,6 +41,7 @@
     from a directory configured by a site administrator.  <br>
     Directory: <select name="fileSet">
         <option value="" <%=null == form.getFileSet() ? "SELECTED" : ""%>>&lt;Default&gt;</option>
+        <option value="<%=h(FileContentService.PIPELINE_LINK)%>" <%=FileContentService.PIPELINE_LINK.equals(form.getFileSet()) ? "SELECTED" : ""%>>Pipeline files</option>
 <% for (AttachmentDirectory attDir : attDirs)
 {   %>
         <option value="<%=h(attDir.getLabel())%>" <%=attDir.getLabel().equals(form.getFileSet()) ? "SELECTED" : ""%>><%=h(attDir.getLabel())%></option>

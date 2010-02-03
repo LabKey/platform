@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -50,6 +51,8 @@
 
     AttachmentDirectory root = bean.getRoot();
     Container c = context.getContainer();
+
+    ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
 %>
 
 
@@ -58,6 +61,12 @@
         <tr><td><div id="files"></div></td></tr>
     </table>
 </div>
+
+<%  if (!bean.isEnabled()) { %>
+
+    File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=projConfig%>">project settings</a> view.    
+
+<%  } %>
 
 <script type="text/javascript">
 Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
@@ -228,5 +237,8 @@ function renderBrowser(rootPath, dir)
         startDir = Path.rootPath;
     }
 %>
-    Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>);});
+
+<%  if (bean.isEnabled()) { %>
+        Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>);});
+<%  } %>
 </script>
