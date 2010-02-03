@@ -64,10 +64,14 @@ public class StudyReload
         RELOAD_THREAD.start();
 
         ContextListener.addShutdownListener(new ShutdownListener() {
-            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            public void shutdownPre(ServletContextEvent servletContextEvent)
             {
                 SCHEDULER.shutdown();
                 RELOAD_THREAD.interrupt();
+            }
+
+            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            {
             }
         });
     }

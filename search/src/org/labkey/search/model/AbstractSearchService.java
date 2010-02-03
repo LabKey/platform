@@ -353,6 +353,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public final void clear()
     {
         clearIndex();
+        clearLastIndexed();
+    }
+
+    
+    public final void clearLastIndexed()
+    {
         DocumentProvider[] documentProviders = _documentProviders.get();
         for (DocumentProvider p : documentProviders)
         {
@@ -365,6 +371,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _log.error("Unexpected error", t);
             }
         }
+        // CONSIDER: have DavCrowler implement DocumentProvider and listen for indexDeleted()
+        DavCrawler.getInstance().clearFailedDocuments();
+
         DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
     }
 
@@ -634,13 +643,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;
 
         for (Thread t : _threads)
             t.interrupt();
+    }
 
+
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
         try
         {
             for (Thread t : _threads)
@@ -1045,19 +1058,27 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             new ColumnDescriptor("ParticipantID", String.class)
         });
         DbSchema search = DbSchema.get("search");
-        Table.TempTableInfo tinfo = ld.loadTempTable(search);
-        Date now = new Date(System.currentTimeMillis());
-        Table.execute(search,
-                "UPDATE search.ParticipantIndex SET LastIndexed=? " +
-                "WHERE EXISTS (SELECT ParticipantId FROM " + tinfo.getTempTableName() + " F WHERE F.Container = search.ParticipantIndex.Container AND F.ParticipantID = search.ParticipantIndex.ParticipantID)",
-                new Object[] {now});
-        Table.execute(search,
-                "INSERT INTO search.ParticipantIndex (Container, ParticipantID, LastIndexed) " +
-                "SELECT F.Container, F.ParticipantID, ? " +
-                "FROM " + tinfo.getTempTableName() + " F " +
-                "WHERE NOT EXISTS (SELECT ParticipantID FROM search.ParticipantIndex T WHERE F.Container = T.Container AND F.ParticipantID = T.ParticipantID)",
-                new Object[] {now});
-        tinfo.delete();
+        Table.TempTableInfo tinfo = null;
+        try
+        {
+            tinfo = ld.loadTempTable(search);
+            Date now = new Date(System.currentTimeMillis());
+            Table.execute(search,
+                    "UPDATE search.ParticipantIndex SET LastIndexed=? " +
+                    "WHERE EXISTS (SELECT ParticipantId FROM " + tinfo.getTempTableName() + " F WHERE F.Container = search.ParticipantIndex.Container AND F.ParticipantID = search.ParticipantIndex.ParticipantID)",
+                    new Object[] {now});
+            Table.execute(search,
+                    "INSERT INTO search.ParticipantIndex (Container, ParticipantID, LastIndexed) " +
+                    "SELECT F.Container, F.ParticipantID, ? " +
+                    "FROM " + tinfo.getTempTableName() + " F " +
+                    "WHERE NOT EXISTS (SELECT ParticipantID FROM search.ParticipantIndex T WHERE F.Container = T.Container AND F.ParticipantID = T.ParticipantID)",
+                    new Object[] {now});
+        }
+        finally
+        {
+            if (null != tinfo)
+                tinfo.delete();
+        }
     }
 
 

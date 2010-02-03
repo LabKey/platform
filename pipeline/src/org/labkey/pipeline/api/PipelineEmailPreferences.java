@@ -440,10 +440,14 @@ public class PipelineEmailPreferences
             }
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownPre(ServletContextEvent servletContextEvent)
         {
             ContextListener.removeShutdownListener(this);
             _timer.cancel();
+        }
+
+        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        {
         }
     }
 }

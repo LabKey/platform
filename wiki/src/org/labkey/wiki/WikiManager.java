@@ -17,6 +17,7 @@ package org.labkey.wiki;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -912,7 +913,7 @@ public class WikiManager
             
             if (!ids.isEmpty())
             {
-                List<Pair<String,String>> list = AttachmentService.get().listAttachments(ids.keySet(), modifiedSince);
+                List<Pair<String,String>> list = AttachmentService.get().listAttachmentsForIndexing(ids.keySet(), modifiedSince);
                 for (Pair<String,String> pair : list)
                 {
                     String entityId = pair.first;

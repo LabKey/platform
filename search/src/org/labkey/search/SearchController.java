@@ -431,6 +431,7 @@ public class SearchController extends SpringActionController
             response.setDateHeader("Expires", System.currentTimeMillis() + (5 * 60 * 1000));
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
+            response.addHeader("Vary", "Cookie");
 
             HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
             return search;

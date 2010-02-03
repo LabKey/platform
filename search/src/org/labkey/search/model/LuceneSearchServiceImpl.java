@@ -123,6 +123,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     Map<?, ?> preprocess(String id, Resource r)
     {
+        InputStream is = null;
+                
         try
         {
             assert null != r.getDocumentId();
@@ -147,9 +149,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             else if ("text/html".equals(type))
             {
                 String html = "";
-                InputStream in = r.getInputStream(User.getSearchUser());
-                if (null != in)
-                    html = PageFlowUtil.getStreamContentsAsString(in);
+                is = r.getInputStream(User.getSearchUser());
+                if (null != is)
+                    html = PageFlowUtil.getStreamContentsAsString(is);
 
                 // TODO: Need better check for issue HTML vs. rendered page HTML
                 if (r instanceof ActionResource)
@@ -171,38 +173,30 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             else if (type.startsWith("text/") && !type.contains("xml"))
             {
-                InputStream in = r.getInputStream(User.getSearchUser());
-                if (null != in)
-                    body = PageFlowUtil.getStreamContentsAsString(in);
+                is = r.getInputStream(User.getSearchUser());
+                if (null != is)
+                    body = PageFlowUtil.getStreamContentsAsString(is);
             }
             else
             {
-                InputStream is = null;
+                Metadata metadata = new Metadata();
+                metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
+                ContentHandler handler = new BodyContentHandler();
+                is = r.getInputStream(User.getSearchUser());
 
-                try
-                {
-                    Metadata metadata = new Metadata();
-                    metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
-                    metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                    ContentHandler handler = new BodyContentHandler();
-                    is = r.getInputStream(User.getSearchUser());
+                // TODO: Switch to single, static AutoDetectParser shared across all threads on upgrade to Tika 0.7
+                AutoDetectParser parser = new AutoDetectParser();
 
-                    // TODO: Switch to single, static AutoDetectParser shared across all threads on upgrade to Tika 0.7 
-                    AutoDetectParser parser = new AutoDetectParser();
-
-                    parser.parse(is, handler, metadata);
-                    is.close();
-                    body = handler.toString();
-                    String extractedTitle = metadata.get(Metadata.TITLE);
-                    if (StringUtils.isBlank(displayTitle))
-                        displayTitle = extractedTitle;
-                    searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
-                    _log.debug("Parsed " + id);
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(is);
-                }
+                parser.parse(is, handler, metadata);
+                is.close();
+                is = null;
+                body = handler.toString();
+                String extractedTitle = metadata.get(Metadata.TITLE);
+                if (StringUtils.isBlank(displayTitle))
+                    displayTitle = extractedTitle;
+                searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
+                _log.debug("Parsed " + id);
             }
 
             String url = r.getExecuteHref(null);
@@ -281,6 +275,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         catch (Throwable e)
         {
             logAsPreProcessingException(r, e);
+        }
+        finally
+        {
+            IOUtils.closeQuietly(is);
         }
 
         return null;

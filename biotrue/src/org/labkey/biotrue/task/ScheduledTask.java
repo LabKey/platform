@@ -149,12 +149,16 @@ public class ScheduledTask extends TimerTask implements ShutdownListener
         }
     }
 
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         ContextListener.removeShutdownListener(this);
         _timer.cancel();
 
         for (TimerTask timer : _timerTasks.values())
             timer.cancel();
+    }
+
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
     }
 }

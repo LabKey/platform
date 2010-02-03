@@ -77,6 +77,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         _attachmentColumns.add("DocumentType");
         _attachmentColumns.add("Created");
         _attachmentColumns.add("CreatedBy");
+        _attachmentColumns.add("LastIndexed");
     }
 
     public AttachmentServiceImpl()
@@ -557,7 +558,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
     /** Does not work for file system parents */
-    public List<Pair<String,String>> listAttachments(Collection<String> parents, Date modifiedSince)
+    public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince)
     {
         ResultSet rs = null;
 
@@ -566,15 +567,24 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             SimpleFilter filter = new SimpleFilter("Parent", parents, CompareType.IN);
             if (null != modifiedSince)
                 filter.addCondition("Modified", modifiedSince, CompareType.GTE);
+            SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
+            filter.addClause(since);
             
             rs = Table.select(coreTables().getTableInfoDocuments(),
-                    PageFlowUtil.set("Parent","DocumentName"),
+                    PageFlowUtil.set("Parent","DocumentName","LastIndexed"),
                     filter,
                     new Sort("+Created"));
 
             ArrayList<Pair<String,String>> ret = new ArrayList<Pair<String, String>>();
             while (rs.next())
-                ret.add(new Pair<String,String>(rs.getString(1), rs.getString(2)));
+            {
+                String parent = rs.getString(1);
+                String name = rs.getString(2);
+                java.util.Date last = rs.getTimestamp(3);
+                if (last != null && last.getTime() == SearchService.failDate.getTime())
+                    continue;
+                ret.add(new Pair<String,String>(parent, name));
+            }
             return ret;
         }
         catch (SQLException x)

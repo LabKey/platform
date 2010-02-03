@@ -95,7 +95,7 @@ public class DavCrawler implements ShutdownListener
     // to make testing easier, break out the interface for persisting crawl state
     public interface SavePaths
     {
-        final static java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-30"));
+        final static java.util.Date failDate = SearchService.failDate;
         final static java.util.Date nullDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-31"));
         final static java.util.Date oldDate =  new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
 
@@ -141,12 +141,25 @@ public class DavCrawler implements ShutdownListener
         return _instance;
     }
 
-    
-    public void shutdownStarted(ServletContextEvent servletContextEvent)
+
+    public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;
         if (null != _crawlerThread)
             _crawlerThread.interrupt();
+    }
+
+
+    public void shutdownStarted(ServletContextEvent servletContextEvent)
+    {
+        if (null != _crawlerThread)
+        try
+        {
+            _crawlerThread.join(1000);
+        }
+        catch (InterruptedException x)
+        {
+        }
     }
 
     
@@ -278,9 +291,7 @@ public class DavCrawler implements ShutdownListener
                     Date savedModified = (null==info || null==info.modified) ? SavePaths.nullDate : info.modified;
                     long lastModified = child.getLastModified();
 
-                    if (lastIndexed.getTime() == SavePaths.failDate.getTime())
-                        continue;
-                    if (lastModified == savedModified.getTime() && lastModified <= lastIndexed.getTime())
+                    if (lastModified == savedModified.getTime() && (lastModified <= lastIndexed.getTime() || lastIndexed.getTime() == SavePaths.failDate.getTime()))
                         continue;
 
                     if (skipFile(child))

@@ -207,6 +207,10 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    public void clearLastIndexed()
+    {
+    }
+
     public List<SearchCategory> getSearchCategories()
     {
         return null;

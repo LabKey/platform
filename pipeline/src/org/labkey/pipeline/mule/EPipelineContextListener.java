@@ -42,6 +42,10 @@ public class EPipelineContextListener implements StartupListener, ShutdownListen
         }
     }
 
+    public void shutdownPre(ServletContextEvent servletContextEvent)
+    {
+    }
+
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
         if (_muleListenerHelper != null)

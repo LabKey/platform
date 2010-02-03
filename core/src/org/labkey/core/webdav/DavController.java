@@ -4341,6 +4341,10 @@ public class DavController extends SpringActionController
     {
         return new ShutdownListener()
         {
+            public void shutdownPre(ServletContextEvent servletContextEvent)
+            {
+            }
+
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
                 for (Object path : _tempFiles.toArray())

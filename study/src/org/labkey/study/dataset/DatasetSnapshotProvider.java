@@ -533,9 +533,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
         }
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownPre(ServletContextEvent servletContextEvent)
         {
             interrupt();
+        }
+
+        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        {
         }
     }
 

@@ -245,10 +245,14 @@ public class DailyDigest
         }
 
 
-        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        public void shutdownPre(ServletContextEvent servletContextEvent)
         {
             ContextListener.removeShutdownListener(_timerTask);
             _timer.cancel();
+        }
+
+        public void shutdownStarted(ServletContextEvent servletContextEvent)
+        {
         }
     }
 }

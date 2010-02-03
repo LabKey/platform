@@ -24,7 +24,7 @@ import javax.servlet.ServletContextEvent;
 public class BtThreadPool implements ShutdownListener
 {
     static private BtThreadPool instance = null;
-    Thread _defaultThread;
+    final Thread _defaultThread;
     static public BtThreadPool get()
     {
         if (instance != null)
@@ -39,7 +39,13 @@ public class BtThreadPool implements ShutdownListener
         _defaultThread = new Thread(new BtBackgroundTask(null), "Default BT Thread");
         _defaultThread.start();
     }
-    
+
+    public void shutdownPre(ServletContextEvent servletContextEvent)
+    {
+        ContextListener.removeShutdownListener(this);
+        _defaultThread.interrupt();
+    }
+
     public void shutdownStarted(ServletContextEvent servletContextEvent)
     {
         ContextListener.removeShutdownListener(this);

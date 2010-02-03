@@ -945,7 +945,7 @@ public class AnnouncementManager
 
             if (!annIds.isEmpty())
             {
-                List<Pair<String, String>> list = AttachmentService.get().listAttachments(annIds, modifiedSince);
+                List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
                 ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
                 url.setExtraPath(c);
                 ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);

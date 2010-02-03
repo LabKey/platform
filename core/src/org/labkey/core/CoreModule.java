@@ -334,6 +334,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Export action stats on graceful shutdown
         ContextListener.addShutdownListener(new ShutdownListener() {
+            public void shutdownPre(ServletContextEvent servletContextEvent)
+            {
+            }
+
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
                 File file = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "ActionStats_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".tsv");
@@ -573,7 +577,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public void indexDeleted() throws SQLException
     {
-        Table.execute(IssuesSchema.getInstance().getSchema(), new SQLFragment(
+        Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(
             "UPDATE core.Documents SET lastIndexed=NULL"
         ));
     }

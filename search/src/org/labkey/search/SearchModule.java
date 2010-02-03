@@ -147,13 +147,14 @@ public class SearchModule extends DefaultModule
         };
     }
 
+
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
         super.afterUpdate(moduleContext);
-        DavCrawler.getInstance().clearFailedDocuments();
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        ss.clearLastIndexed();
     }
-
     
 
     public static final String EVENT_TYPE = "SearchAuditEvent";
