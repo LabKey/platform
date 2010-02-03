@@ -80,7 +80,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         {
             super(parent.getPath(), VIEW_NAME);
             _c = c;
-            _policy = c.getPolicy();
+            setPolicy(c.getPolicy());
         }
 
         @Override
@@ -147,7 +147,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             super(folder.getPath(), report.getDescriptor().getReportName() + ".xml");
             _report = report;
             _c = folder._c;
-            _policy = folder._c.getPolicy();
+            setPolicy(folder._c.getPolicy());
             _folder = folder;
         }
 

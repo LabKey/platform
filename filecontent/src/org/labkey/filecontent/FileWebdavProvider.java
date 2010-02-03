@@ -123,7 +123,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         {
             super(folder, FileContentService.FILE_SETS_LINK);
             _c = c;
-            _policy = _c.getPolicy();
+            setPolicy(_c.getPolicy());
             
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             AttachmentDirectory[] dirs = svc.getRegisteredDirectories(_c);

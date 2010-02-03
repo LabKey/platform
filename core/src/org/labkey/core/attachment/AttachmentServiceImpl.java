@@ -1010,7 +1010,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             super(path);
             _parent = parent;
-            _policy = policy;
+            setPolicy(policy);
         }
 
 
@@ -1114,7 +1114,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             Container c = ContainerManager.getForId(parent.getContainerId());
             _containerId = parent.getContainerId();
-            _policy = null == c ? null : c.getPolicy();
+            if (null != c)
+                setPolicy(c.getPolicy());
             _downloadUrl = downloadURL;
             _parent = parent;
             _name = name;
@@ -1152,7 +1153,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _containerId = parent.getContainerId();
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
-            _policy = c == null ? null : c.getPolicy();
+            if (c != null)
+                setPolicy(c.getPolicy());
             _name = name;
             _parent = parent;
             _docid = makeDocId(parent,name);

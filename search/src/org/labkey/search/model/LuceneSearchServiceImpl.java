@@ -70,7 +70,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
-    static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary, url, container, uniqueId, navtrail }
+    static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
+        url, container, resourceId, uniqueId, navtrail }
 
     public LuceneSearchServiceImpl()
     {
@@ -118,7 +119,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(PROPERTY.categories.toString(), PROPERTY.displayTitle.toString(), PROPERTY.navtrail.toString());
+    private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(
+            PROPERTY.categories.toString(), PROPERTY.displayTitle.toString(),
+            PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
     Map<?, ?> preprocess(String id, Resource r)
@@ -229,7 +232,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
             if (null != r.getProperties().get(PROPERTY.navtrail.toString()))
                 doc.add(new Field(FIELD_NAMES.navtrail.toString(), (String)r.getProperties().get(PROPERTY.navtrail.toString()), Field.Store.YES, Field.Index.NO));
-
+            String resourceId = (String)r.getProperties().get(PROPERTY.securableResourceId.toString());
+            if (null != resourceId && !resourceId.equals(r.getContainerId()))
+                doc.add(new Field(FIELD_NAMES.resourceId.toString(), resourceId, Field.Store.YES, Field.Index.NO));
             // Index the remaining properties, but don't store
             for (Map.Entry<String, ?> entry : props.entrySet())
             {

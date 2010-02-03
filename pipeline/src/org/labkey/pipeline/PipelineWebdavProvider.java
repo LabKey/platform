@@ -15,6 +15,8 @@
  */
 package org.labkey.pipeline;
 
+import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.webdav.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -88,13 +90,14 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             this.c = c;
             _containerId = c.getId();
             _shouldIndex = root.isSearchable();
+            setPolicy(org.labkey.api.security.SecurityManager.getPolicy(root));
 
             URI uriRoot = root.getUri();
             if (uriRoot != null)
             {
-                _policy = org.labkey.api.security.SecurityManager.getPolicy(root);
                 _file = FileUtil.canonicalFile(uriRoot);
             }
+            this.setSearchProperty(SearchService.PROPERTY.securableResourceId, root.getResourceId());
         }
 
         @Override

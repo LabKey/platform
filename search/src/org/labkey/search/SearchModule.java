@@ -29,6 +29,8 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -40,6 +42,7 @@ import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.view.SearchWebPartFactory;
 
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.*;
@@ -152,8 +155,18 @@ public class SearchModule extends DefaultModule
     public void afterUpdate(ModuleContext moduleContext)
     {
         super.afterUpdate(moduleContext);
-        SearchService ss = ServiceRegistry.get(SearchService.class);
-        ss.clearLastIndexed();
+
+        // we want to clear the last indexed time on all documents so that failed attempts can be tried again
+        final StartupListener l = new StartupListener()
+        {
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                SearchService ss = ServiceRegistry.get(SearchService.class);
+                ss.clearLastIndexed();
+                ContextListener.removeStartupListener(this);
+            }
+        };
+        ContextListener.addStartupListener(l);
     }
     
 

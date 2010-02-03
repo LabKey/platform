@@ -93,7 +93,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             super(parent.getPath(), WIKI_NAME);
             _c = c;
             _containerId = _c.getId();
-            _policy = c.getPolicy();
+            setPolicy(c.getPolicy());
         }
 
         @Override
@@ -186,7 +186,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             super(folder.getPath(), name);
             _c = folder._c;
             _containerId = _c.getId();
-            _policy = _c.getPolicy();
+            setPolicy(_c.getPolicy());
             _wiki = WikiManager.getWiki(_c, new HString(name));
             _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);
         }
@@ -316,7 +316,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             super(folder.getPath(), docName);
             _folder = folder;
-            _policy = _folder._c.getPolicy();
+            setPolicy(_folder._c.getPolicy());
 
             _c = _folder._c;
             _containerId = _c.getId();
@@ -326,7 +326,6 @@ class WikiWebdavProvider implements WebdavService.Provider
             WikiVersion v = getWikiVersion();
 
             _properties = new HashMap<String, Object>();
-            _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
             _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
             if (null != v)
             {
@@ -346,11 +345,10 @@ class WikiWebdavProvider implements WebdavService.Provider
             _name = name;
             _entityId = entityId;
             _folder = null;
-            _policy = c.getPolicy();
+            setPolicy(c.getPolicy());
             _type = rendererType;
             _body = body;
             _properties = m;
-            _properties.put(SearchService.PROPERTY.securableResourceId.toString(), _c.getId());
             _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
         }
 

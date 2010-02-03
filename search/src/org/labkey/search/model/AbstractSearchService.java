@@ -1130,9 +1130,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             public void run()
             {
                 DocumentProvider[] documentProviders = _documentProviders.get();
-                for (DocumentProvider p : documentProviders)
+                if (null != documentProviders)
                 {
-                    p.enumerateDocuments(task, c, since);
+                    for (DocumentProvider p : documentProviders)
+                    {
+                        p.enumerateDocuments(task, c, since);
+                    }
                 }
             }
         };

@@ -328,7 +328,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuditLogService.get().addAuditViewFactory(ContainerAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(FileSystemAuditViewFactory.getInstance());
 
-        ContextListener.addStartupListener(TempTableTracker.getStartupListener());
+        TempTableTracker.init();
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
 
