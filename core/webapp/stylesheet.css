@@ -2768,3 +2768,6 @@ body {
 
 .x-combo-list .x-combo-selected { border:none !important;}
 .x-combo-list-item { border:none; }
+.x-check-group {
+    border-bottom: 1px dashed #C0C0C0;
+}

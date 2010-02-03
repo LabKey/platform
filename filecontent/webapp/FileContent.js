@@ -411,6 +411,15 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             {
                 var links = pa.getLinks();
                 var fieldLabel = pa.getText();
+
+                var radioGroup = {
+                    xtype: 'radiogroup',
+                    fieldLabel: fieldLabel,
+                    itemCls: 'x-check-group',
+                    columns: 1,
+                    items: []
+                };
+
                 for (var j=0; j < links.length; j++)
                 {
                     var link = links[j];
@@ -423,9 +432,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     }
 
                     actionMap[link.id] = link;
-                    actions.push({
-                        //xtype: 'radio',
-                        fieldLabel: fieldLabel,
+                    radioGroup.items.push({
+                        xtype: 'radio',
                         checked: checked,
                         labelSeparator: '',
                         boxLabel: label,
@@ -436,6 +444,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     fieldLabel = '';
                     checked = false;
                 }
+
+                actions.push(radioGroup);
             }
         }
         var actionPanel = new Ext.form.FormPanel({
@@ -472,6 +482,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             closeAction:'close',
             modal: true,
             items: items,
+            layout: 'fit',
             buttons: [{
                 text: 'Import',
                 id: 'btn_submit',
