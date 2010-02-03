@@ -47,7 +47,7 @@ public abstract class AbstractResource implements Resource
 {
     protected long _ts = System.currentTimeMillis();                   
     private Path _path;
-    protected SecurityPolicy _policy;
+    private SecurityPolicy _policy;
     protected String _containerId;
     
     protected String _etag = null;
@@ -213,7 +213,21 @@ public abstract class AbstractResource implements Resource
     }
 
 
+    protected SecurityPolicy getPolicy()
+    {
+        return _policy;
+    }
+
+
+    protected void setPolicy(SecurityPolicy policy)
+    {
+        _policy = policy;
+    }
+
     /** permissions */
+
+
+
     public boolean canList(User user)
     {
         return canRead(user);
@@ -263,7 +277,7 @@ public abstract class AbstractResource implements Resource
 
     public Set<Class<? extends Permission>> getPermissions(User user)
     {
-        return _policy.getPermissions(user);
+        return getPolicy().getPermissions(user);
     }
 
 

@@ -1586,16 +1586,16 @@ public class Table
         String tempTableName = tinfoTempTable.getTempTableName();
 
         //
-        // create table
-        //
-
-        snapshot(tinfo, tempTableName);
-
-        //
         // Track the table, it will be deleted when tinfoTempTable is GC'd
         //
 
         tinfoTempTable.track();
+
+        //
+        // create table
+        //
+
+        snapshot(tinfo, tempTableName);
 
         return tinfoTempTable;
     }

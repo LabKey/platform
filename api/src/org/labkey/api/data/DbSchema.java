@@ -763,8 +763,8 @@ public class DbSchema
                     lastRowId = checkContainerColumns(schema.getName(), sbCheck, tempTableName, module.getName(), lastRowId);
             }
 
-            Table.execute(coreSchema, createTempTableSql, new Object[]{});
             tTemplate.track();
+            Table.execute(coreSchema, createTempTableSql, new Object[]{});
             Table.execute(coreSchema, sbCheck);
 
             if (bfix)

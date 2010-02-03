@@ -116,8 +116,8 @@ public class TempTableLoader extends TabLoader
         // Track the table, it will be deleted when tinfoTempTable is GC'd
         //
 
-        Table.execute(schema, sql.toString(), null);
         tinfoTempTable.track();
+        Table.execute(schema, sql.toString(), null);
 
         //
         // Populate

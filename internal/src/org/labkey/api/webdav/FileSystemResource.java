@@ -91,7 +91,7 @@ public class FileSystemResource extends AbstractResource
         this(folder.getPath(), name);
         _folder = folder;
         _name = name;
-        _policy = policy;
+        setPolicy(policy);
         _file = FileUtil.canonicalFile(file);
         _mergeFromParent = mergeFromParent;
     }
@@ -100,7 +100,7 @@ public class FileSystemResource extends AbstractResource
     {
         this(folder.getPath(), relativePath);
         _folder = folder;
-        _policy = folder._policy;
+        setPolicy(folder.getPolicy());
         _file = new File(folder._file, relativePath);
     }
 
@@ -108,7 +108,7 @@ public class FileSystemResource extends AbstractResource
     {
         this(path);
         _file = file;
-        _policy = policy;
+        setPolicy(policy);
     }
 
     public String getName()
@@ -122,6 +122,14 @@ public class FileSystemResource extends AbstractResource
         if (null != _containerId)
             return _containerId;
         return null==_folder ? null : _folder.getContainerId();
+    }
+
+
+    @Override
+    protected void setPolicy(SecurityPolicy policy)
+    {
+        super.setPolicy(policy);
+        setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResource().getResourceId());
     }
 
 

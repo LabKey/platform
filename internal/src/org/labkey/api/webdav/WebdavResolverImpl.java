@@ -337,7 +337,7 @@ public class WebdavResolverImpl implements WebdavResolver
             _resolver = resolver;
             _c = c;
             _containerId = c.getId();
-            _policy = c.getPolicy();
+            setPolicy(c.getPolicy());
 //            _attachmentDirectory = root;
 //            if (null != _attachmentDirectory)
 //                _attachmentResource = AttachmentService.get().getAttachmentResource(getPath(), _attachmentDirectory);
@@ -347,7 +347,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public int getIntPermissions(User user)
         {
-            return _policy.getPermsAsOldBitMask(user);
+            return getPolicy().getPermsAsOldBitMask(user);
         }
 
         public Container getContainer()

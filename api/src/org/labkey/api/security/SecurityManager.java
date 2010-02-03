@@ -1931,6 +1931,41 @@ public class SecurityManager
         return policy;
     }
 
+
+    /** This version does not support findNearest, and does not add to cache */
+    @NotNull
+    public static SecurityPolicy getPolicy(@NotNull String resourceId)
+    {
+        String cacheName = cacheNameForResourceId(resourceId);
+        SecurityPolicy policy = (SecurityPolicy) DbCache.get(core.getTableInfoRoleAssignments(), cacheName);
+        if(null == policy)
+        {
+            try
+            {
+                SimpleFilter filter = new SimpleFilter("ResourceId", resourceId);
+
+                SecurityPolicyBean policyBean = Table.selectObject(core.getTableInfoPolicies(), resourceId,
+                        SecurityPolicyBean.class);
+
+                TableInfo table = core.getTableInfoRoleAssignments();
+
+                RoleAssignment[] assignments = Table.select(table, Table.ALL_COLUMNS, filter,
+                        new Sort("UserId"), RoleAssignment.class);
+
+                policy = new SecurityPolicy(null, assignments, null != policyBean ? policyBean.getModified() : new Date());
+                // don't cache this one
+                //DbCache.put(table, cacheName, policy);
+            }
+            catch(SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
+        return policy;
+    }
+
+
     public static void savePolicy(@NotNull MutableSecurityPolicy policy)
     {
         DbScope scope = core.getSchema().getScope();

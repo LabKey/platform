@@ -374,17 +374,6 @@ public class TempTableTracker extends WeakReference<Object>
     }
 
 
-    public static StartupListener getStartupListener()
-    {
-        return new StartupListener()
-        {
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                init();
-            }
-        };
-    }
-
     public static ShutdownListener getShutdownListener()
     {
         return tempTableThread;

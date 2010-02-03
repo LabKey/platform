@@ -92,11 +92,13 @@ public class ContextListener implements ServletContextListener
 
     public static void moduleStartupComplete(ServletContext servletContext)
     {
+        StartupListener[] a;
         synchronized (_startupListeners)
         {
-            for (StartupListener listener : _startupListeners)
-                listener.moduleStartupComplete(servletContext);
+            a = _startupListeners.toArray(new StartupListener[_startupListeners.size()]);
         }
+        for (StartupListener listener : a)
+            listener.moduleStartupComplete(servletContext);
     }
 
     public static void addStartupListener(StartupListener listener)
