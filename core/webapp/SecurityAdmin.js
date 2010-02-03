@@ -861,15 +861,6 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
     {
         if (!email)
             return;
-        if (!LABKEY.Security.currentUser.isSystemAdmin)
-        {
-            this.addPrincipalComboBox.suspendEvents();
-            Ext.Msg.alert("Unauthorized", "You do not have permission to create new user accounts. Please choose an existing user.");
-            this.addPrincipalComboBox.clearValue();
-            this.addPrincipalComboBox.resumeEvents();
-            return;
-        }
-
         this.cache.createNewUser(email, true, function(user)
         {
             var groupid = this.user.UserId;
