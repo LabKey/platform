@@ -1705,11 +1705,11 @@ LABKEY.TinyTabPanel = Ext.extend(Ext.TabPanel, {
     adjustBodyWidth : function(w){
         if(this.header){
             this.header.setWidth(w);
-            this.header.setHeight(1);
+            this.header.setDisplayed(false);
         }
         if(this.footer){
             this.footer.setWidth(w);
-            this.header.setHeight(1);
+            this.footer.setDisplayed(false);
         }
         return w;
     }
@@ -1769,7 +1769,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDownloadAction : function()
     {
-        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'iconDownload', scope: this, handler: function()
+        return new Ext.Action({tooltip: 'Download the selected files or folders', iconCls:'iconDownload', scope: this, handler: function()
             {
                 var selections = this.grid.selModel.getSelections();
 
@@ -1796,7 +1796,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getCreateDirectoryAction : function()
     {
-        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, handler: function()
+        return new Ext.Action({iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, handler: function()
         {
             var p = this.currentDirectory.data.path;
             var folder = prompt( "Folder Name", "New Folder");
@@ -1826,7 +1826,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getParentFolderAction : function()
     {
-        return new Ext.Action({text: 'Up', tooltip: 'Navigate to parent folder', iconCls:'iconUp', scope: this, handler: function()
+        return new Ext.Action({tooltip: 'Navigate to parent folder', iconCls:'iconUp', scope: this, handler: function()
         {
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory.data.path;
@@ -1838,7 +1838,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getRefreshAction : function()
     {
-        return new Ext.Action({text: 'Refresh', tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload', scope:this, handler: this.refreshDirectory});
+        return new Ext.Action({tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload', scope:this, handler: this.refreshDirectory});
     },
 
 
@@ -1864,7 +1864,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({text: 'Delete', tooltip: 'Delete the selected files or folders', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
+        return new Ext.Action({tooltip: 'Delete the selected files or folders', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
         {
             if (!this.currentDirectory || !this.selectedRecord)
                 return;
@@ -2556,14 +2556,14 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         Ext.apply(this, config);
         this.actions = Ext.apply({}, this.actions,
         {
-            download: this.getDownloadAction(),
             parentFolder: this.getParentFolderAction(),
             refresh: this.getRefreshAction(),
-            help: this.getHelpAction(),
             createDirectory: this.getCreateDirectoryAction(),
+            download: this.getDownloadAction(),
+            deletePath: this.getDeleteAction(),
+            help: this.getHelpAction(),
             //drop : this.getOldDropAction(),
             showHistory : this.getShowHistoryAction(),
-            deletePath: this.getDeleteAction(),
             uploadTool: this.getUploadToolAction()
         });
         delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
@@ -2766,7 +2766,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     initializeActions : function()
     {
         this.actions.upload = new Ext.Action({
-            text: 'Upload',
+            text: 'Upload Files',
             iconCls: 'iconUpload',
             tooltip: 'Upload files or folders from your local machine to the server',
             listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
@@ -2803,18 +2803,19 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var layoutItems = [];
 
         // currently the address bar and the file upload panel occupy the same region, need to address this for 10.1
-        if (this.showAddressBar)
-        {
-            layoutItems.push(
-            {
-                region: 'north',
-                height: 24,
-                margins: '5 5 0 5',
-                layout: 'fit',
-                border: true,
-                items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
-            });
-        }
+        // we don't need the address bar--the file tree is more than adequate
+//        if (this.showAddressBar)
+//        {
+//            layoutItems.push(
+//            {
+//                region: 'north',
+//                height: 24,
+//                margins: '5 5 0 5',
+//                layout: 'fit',
+//                border: true,
+//                items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
+//            });
+//        }
 
         if (this.showFileUpload)
         {
@@ -2926,9 +2927,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 collapseMode: 'mini',
                 height: 130,
                 header: false,
-                margins:'1 1 1 1',
+                margins:'0 0 0 0',
+                border: false,
                 bodyStyle: 'background-color:#f0f0f0;',
-                cmargins:'1 1 1 1',
+                cmargins:'0 0 0 0',
                 collapsible: true,
                 collapsed: true,
                 hideCollapseTool: true,
@@ -2970,7 +2972,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         layoutItems.push(
             {
                 region:'center',
-                margins: '5 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '5') + ' 0',
+                margins: '0 ' + (this.propertiesPanel ? '0' : '0') + ' ' + (this.showDetails ? '0' : '0') + ' 0',
                 minSize: 200,
                 layout:'border',
                 items: centerItems
@@ -3148,8 +3150,8 @@ window.DEBUGTREE = tree;
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
-                {header: "Usages", width: 150, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
-                {header: "Created By", width: 150, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
+                {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
+                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
             ]
         });
         // hack to get the file input field to size correctly

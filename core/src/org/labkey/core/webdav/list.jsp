@@ -230,7 +230,7 @@ Ext.onReady(function()
         ,showDetails:true
         ,allowChangeDirectory:true
         ,actions:{html:htmlAction, login:loginAction}
-        ,tbarItems:['parentFolder','refresh','upload','download','createDirectory','deletePath','->','html'<%=user.isGuest()?",'login'":""%>]
+        ,tbarItems:['parentFolder','refresh','createDirectory','download','deletePath','upload','->','html'<%=user.isGuest()?",'login'":""%>]
     });
 
     new Ext.Viewport({
