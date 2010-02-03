@@ -71,10 +71,10 @@
                 %><a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
             }
         %></td></tr>
-        <tr><td valign="bottom" align="right" nowrap class="labkey-main-nav">&nbsp;<form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>"><table cellspacing=0 cellpadding=0 class="labkey-main-search"><tr>
-            <td width="100%" align="right"><input id="headerSearchInput" name="q" type="text"></td>
+        <tr><td valign="bottom" align="right" nowrap class="labkey-main-nav"><form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>"><table cellspacing=0 cellpadding=0 style="width:216px;" class="labkey-main-search"><tr>
+            <td style="width:200px;" align="right"><input style="width:200px" id="headerSearchInput" name="q" type="text"></td>
             <%--<td width="16"><input type="image" width="16" height="16" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>--%>
-            <td nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td></tr></table><input id="headerSearchContainer" name="container" type="hidden" value=""></form></td>
+            <td style="width:16px;" nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td></tr></table><input id="headerSearchContainer" name="container" type="hidden" value=""></form></td>
         </tr></table>
     </td>
 </tr>
@@ -131,7 +131,7 @@ Ext.onReady(function()
     var inputEl = Ext.get('headerSearchInput');
     var parentEl = inputEl.parent();
     inputEl.remove();
-    headerSearchField = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', height:16, focusClass:'labkey-main-search'});
+    headerSearchField = new Ext.form.TextField({id:'headerSearchInput',name:'q',emptyText:'Search',cls:'labkey-main-search', height:16, width:200, focusClass:'labkey-main-search'});
     headerSearchField.render(parentEl);
     var handler = function(item)
     {
