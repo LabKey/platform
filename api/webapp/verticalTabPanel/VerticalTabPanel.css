@@ -22,7 +22,7 @@
 
 .ux-vertical-tabs, .ux-vertical-tabs .x-tab-panel-bwrap, .ux-vertical-tabs .x-tab-panel-body {
     height: 100%;
-    background-color: #eee;
+    background-color: #F2F2F2;
 }
 
 .ux-vertical-tabs ul.x-tab-strip li {
@@ -86,7 +86,7 @@
 }
 
 .ux-vertical-tabs li.x-tab-strip-active {
-    background-color: #eee;
+    background-color: #F2F2F2;
 }
 
 .ux-vertical-tabs .x-tab-strip-top .x-tab-strip-active .x-tab-right {
