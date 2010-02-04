@@ -223,7 +223,7 @@ textarea{resize:none;}
 .x-editor .x-form-checkbox{height:13px;}
 .x-form-grow-sizer{font:normal 12px tahoma,arial,helvetica,sans-serif;left:-10000px;padding:8px 3px;position:absolute;visibility:hidden;top:-10000px;white-space:pre-wrap;white-space:-moz-pre-wrap;white-space:-pre-wrap;white-space:-o-pre-wrap;word-wrap:break-word;zoom:1;}
 .x-form-grow-sizer p{margin:0!important;border:0 none!important;padding:0!important;}
-.x-form-item{font:normal 12px tahoma,arial,helvetica,sans-serif;display:block;margin-bottom:4px;zoom:1;}
+.extContainer .x-form-item{font:normal 12px tahoma,arial,helvetica,sans-serif;display:block;margin-bottom:4px;zoom:1;}
 .x-form-item label{display:block;float:left;width:100px;padding:3px;padding-left:0;clear:left;z-index:2;position:relative;}
 .x-form-element{padding-left:105px;position:relative;}
 .x-form-invalid-msg{color:#e00;padding:2px;padding-left:18px;font:normal 11px tahoma,arial,helvetica,sans-serif;background:transparent url(../images/default/shared/warning.gif) no-repeat 0 2px;line-height:16px;width:200px;}
