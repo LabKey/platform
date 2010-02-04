@@ -31,7 +31,7 @@ list templates.<%
 
     if (!ListService.get().getLists(c).isEmpty())
     {
-%><p>Warning: An existing list will be replaced by a list in the archive with the same name; this could result in data loss and cannot be undone.</p>
+%><p>Warning: Existing lists will be replaced by lists in the archive with the same name; this could result in data loss and cannot be undone.</p>
 <%
     }
 %>
