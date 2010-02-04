@@ -2871,6 +2871,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     {
                     xtype: 'radiogroup',
                     fieldLabel: 'File Upload Type',
+                    groupCls: 'labkey-transparent-panel',
                     items: [
                         uploadPanel_rb1,
                         uploadPanel_rb2
@@ -2880,7 +2881,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 ],
                 buttons:[
                     {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
-                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
+                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
                 ],
                 listeners: {
                     "actioncomplete" : {fn: this.uploadSuccess, scope: this},
@@ -2926,6 +2927,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [{
                     xtype: 'radiogroup',
+                    groupCls: 'labkey-transparent-panel',
                     fieldLabel: 'File Upload Type',
                     items: [
                         uploadMultiPanel_rb1,
@@ -2936,7 +2938,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 buttons:[
                     new Ext.Button(this.actions.appletFileAction),
                     new Ext.Button(this.actions.appletDirAction),
-                    {text: 'Cancel', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
+                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
                         this.appletStatusBar
                 ]
             });

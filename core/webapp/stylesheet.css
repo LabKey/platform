@@ -2791,3 +2791,5 @@ body {
 .x-check-group {
     border-bottom: 1px dashed #C0C0C0;
 }
+
+.labkey-transparent-panel .x-panel-body {background-color: transparent;}
