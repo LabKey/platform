@@ -82,10 +82,13 @@ public interface Resource
 
     InputStream getInputStream(User user) throws IOException;
 
+    /** Caller needs to check permissions */
     long copyFrom(User user, FileStream in) throws IOException;
 
+    /** Caller needs to check permissions */
     long copyFrom(User user, Resource r) throws IOException;
 
+    /** Caller needs to check permissions */
     void moveFrom(User user, Resource r) throws IOException;
 
     long getContentLength() throws IOException;

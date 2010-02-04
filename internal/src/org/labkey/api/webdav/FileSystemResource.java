@@ -225,9 +225,6 @@ public class FileSystemResource extends AbstractResource
 
     public long copyFrom(User user, FileStream is) throws IOException
     {
-        if (!canWrite(user) || null == _file)
-            return -1;
-
         if (!_file.exists())
         {
             _file.createNewFile();
