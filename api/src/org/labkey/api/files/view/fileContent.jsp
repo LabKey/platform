@@ -129,6 +129,7 @@ function renderBrowser(rootPath, dir, renderTo)
     fileBrowser = new LABKEY.FilesWebPartPanel({
         fileSystem: fileSystem,
         helpEl:null,
+        resizable: true,
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         folderTreeCollapsed: <%=bean.isFolderTreeCollapsed()%>,
@@ -159,9 +160,6 @@ function renderBrowser(rootPath, dir, renderTo)
             window.location = location;
         });
 */
-
-//    var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
-//    resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
 
     fileBrowser.render(renderTo);
 
