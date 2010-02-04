@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
@@ -475,6 +476,17 @@ public class CoreController extends SpringActionController
 
             _newWorkbook = ContainerManager.createWorkbook(container, name, StringUtils.trimToNull(form.getDescription()), getUser());
             _newWorkbook.setFolderType(new WorkbookFolderType());
+
+            Portal.WebPart[] parts = Portal.getParts(_newWorkbook.getId());
+            assert null != parts;
+            for (Portal.WebPart part : parts)
+            {
+                if (part.getName().equalsIgnoreCase("Files"))
+                {
+                    part.setProperty("fileSet", FileContentService.PIPELINE_LINK);
+                    Portal.updatePart(getUser(), part);
+                }
+            }
 
             return true;
         }
