@@ -316,14 +316,11 @@ public class UserManager
         if (userId == null)
             return null;
 
-        if(User.guest.getUserId() == userId)
+        if(User.guest.getUserId() == userId.intValue())
             return "Guest";
 
-        Map<Integer, UserName> userList = getUserEmailDisplayNameMap();
-
-        UserName userName = userList.get(userId);
-
-        if (userName == null)
+        User user = getUser(userId.intValue());
+        if (user == null)
         {
             if (userIdIfDeleted)
                 return "<" + userId + ">";
@@ -331,7 +328,7 @@ public class UserManager
                 return null;
         }
 
-        return userName.getDisplayName(context);
+        return user.getDisplayName(context);
     }
 
 
