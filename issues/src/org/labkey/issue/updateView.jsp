@@ -58,7 +58,7 @@
         out.print("<tr><td>Fields marked with an asterisk <span class=\"labkey-error\">*</span> are required.</td></tr>");
     %>
     </table>
-    <table class="labkey-button-bar"><tr>
+    <table><tr>
         <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"", true, true)%></td>
         <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>

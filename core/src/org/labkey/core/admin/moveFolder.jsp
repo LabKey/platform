@@ -58,7 +58,7 @@
     <tr><td>&nbsp;</td></tr>
     </table>
 
-    <table class="labkey-button-bar"><tr>
+    <table><tr>
     <td><%=PageFlowUtil.generateButton("Cancel", AdminController.getManageFoldersURL(c))%></td><%
     if (form.isShowAll())
     {

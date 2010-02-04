@@ -123,7 +123,7 @@ if (settings.hasExpires())
   </tr>
   <tr>
     <td colspan=3 align=left>
-      <table class="labkey-button-bar">
+      <table>
         <tr>
           <td><%=PageFlowUtil.generateSubmitButton("Submit", "this.form.action='update.post';this.form.method='post';", "name=\"update.post\"")%>
              &nbsp;<%=PageFlowUtil.generateButton("Cancel", bean.returnURL)%></td>

@@ -37,7 +37,7 @@ Note that only the latest version of each wiki page is copied.
 <%=bean.folderList%>
 </table><br>
 
-<table class="labkey-button-bar">
+<table>
     <tr>
         <td><%=PageFlowUtil.generateSubmitButton("Copy Pages")%></td>
         <td><%=PageFlowUtil.generateButton("Cancel", bean.cancelURL)%></td>

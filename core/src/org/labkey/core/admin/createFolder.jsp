@@ -82,7 +82,7 @@
         </tr>
     </table>
 
-    <table class="labkey-button-bar">
+    <table>
         <tr>
             <td><%=PageFlowUtil.generateSubmitButton("Next")%></td>
             <td><%

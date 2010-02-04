@@ -209,8 +209,8 @@ table.labkey-no-spacing
 .labkey-dataregion-msgbox
 {
     margin-bottom: 2px;
-    background-color: whitesmoke;
-    border: 1px solid rgb(107, 107, 168);
+    background-color: #F4F4F4;
+    border: 1px solid #E4E4E4;
     padding: 2px;
 }
 
@@ -253,7 +253,7 @@ div.labkey-button-bar, table.labkey-button-bar
 {
     white-space: nowrap;
     margin-top: 0.4em;
-    margin-bottom: 0.2em;
+    background-color: #F4F4F4;
 }
 
 /* Used for the new css buttons, which consist of a link (<a>)
@@ -261,7 +261,7 @@ div.labkey-button-bar, table.labkey-button-bar
 .labkey-button, .labkey-button:visited, .labkey-menu-button, .labkey-menu-button:visited
 {
     color: #000000;
-    background-color: #E9E9E9;
+    background-color: #F4F4F4;
     white-space: nowrap;
     border: 1px solid black;
     margin: 0.1em 0.4em 0.5em 0.0em;
@@ -273,6 +273,11 @@ div.labkey-button-bar, table.labkey-button-bar
     *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
                     is required for IE to recognize its position attribute, which in
                     turn enables relative positioning of our menu button arrow gif. */
+}
+
+.labkey-button-bar .labkey-button, .labkey-button-bar .labkey-menu-button, .labkey-button-bar .labkey-button:visited, .labkey-button-bar .labkey-menu-button:visited
+{
+    border: 1px solid #F4F4F4;
 }
 
 /* special span modifiers for IE: */
@@ -305,26 +310,30 @@ a.labkey-menu-button span, a.labkey-disabled-menu-button span
 
 span.labkey-button:active
 {
+    border: 1px solid black;
     position: relative;
     background-color: #BEBEBE;
 }
 
-span.labkey-button:hover
+span.labkey-button:hover, .labkey-button-bar .labkey-button:hover, .labkey-button-bar .labkey-menu-button:hover
 {
-    background-color: #F2F2F2;
+    border: 1px solid black;
+    background-color: #F9F9F9;
     cursor: pointer; /* hand-shaped cursor */
     cursor: hand; /* for IE 5.x and older browsers */
 }
 
 a.labkey-button:hover, a.labkey-menu-button:hover
 {
-    background-color: #F2F2F2;
+    border: 1px solid black;
+    background-color: #F9F9F9;
     cursor: pointer; /* hand-shaped cursor */
     cursor: hand; /* for IE 5.x and older browsers */
 }
 
 a.labkey-button:active, a.labkey-menu-button:active
 {
+    border: 1px solid black;
     position: relative;
     background-color: #BEBEBE;
 }
@@ -357,8 +366,8 @@ img.labkey-mv-indicator
 .labkey-disabled-button, .labkey-disabled-button:visited, .labkey-disabled-menu-button, .labkey-disabled-menu-button:visited
 {
     color: #808080;
-    background-color: #F0F0F0;
-    border: 1px solid #808080;
+    background-color: #F4F4F4;
+    border: 1px solid #F4F4F4;
     margin: 0.1em 0.4em 0.5em 0.0em;
     cursor: default; /* cursor to indicate non-linked item */
     vertical-align: middle;
@@ -760,7 +769,7 @@ in the table tag.  They are necessary so that the borders take precedence correc
 /* Used for the shaded alternate rows */
 .labkey-alternate-row td, .labkey-alternate-row th, tr.labkey-alternate-row, td.labkey-alternate-row, th.labkey-alternate-row
 {
-    background: #EEEEEE;
+    background: #F4F4F4;
 }
 
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
@@ -811,6 +820,17 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
     border-top: hidden;
     border-left: hidden;
     font-weight: bold;
+}
+
+.labkey-data-region-header
+{
+    border-collapse: collapse;
+}
+
+.labkey-data-region-header td
+{
+    background-color: #F2F2F2;
+    padding: 1px;
 }
 
 /* Used to highlight cells with a darker color, limited use right now */
