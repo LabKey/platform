@@ -23,7 +23,8 @@ CREATE VIEW core.Contacts AS
     SELECT DISTINCT Users.FirstName || ' ' || Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container
     FROM core.Principals Principals
         INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
-        INNER JOIN core.Users Users ON Members.UserId = Users.UserId;
+        INNER JOIN core.Users Users ON Members.UserId = Users.UserId
+    WHERE Principals.Active = true;
 
 CREATE OR REPLACE RULE Users_Update AS
 	ON UPDATE TO core.Users DO INSTEAD

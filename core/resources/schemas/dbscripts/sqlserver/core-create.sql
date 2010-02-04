@@ -25,6 +25,7 @@ CREATE VIEW core.Contacts AS
 	FROM core.Principals Principals
 	    INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
 	    INNER JOIN core.Users Users ON Members.UserId = Users.UserId
+	WHERE Principals.Active = 1
 GO
 
 CREATE VIEW core.ActiveUsers AS
