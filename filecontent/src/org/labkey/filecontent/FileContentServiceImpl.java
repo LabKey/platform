@@ -87,7 +87,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (null == project)
             return null;
 
-        FileRoot root = FileRootManager.get().getFileRoot(c);
+        FileRoot root = FileRootManager.get().getFileRoot(project);
         if (root.isEnabled())
         {
             // check if there is a site wide file root
@@ -113,6 +113,9 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public void setFileRoot(Container c, File path)
     {
+        if (!c.isProject())
+            throw new IllegalArgumentException("File roots are only currently supported at the project level");
+        
         FileRoot root = FileRootManager.get().getFileRoot(c);
         root.setEnabled(true);
 
@@ -145,14 +148,18 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (container == null || container.isRoot())
             throw new IllegalArgumentException("Disabling either a null project or the root project is not allowed.");
 
-        FileRoot root = FileRootManager.get().getFileRoot(container);
-        String oldValue = root.getPath();
-        root.setEnabled(false);
-        FileRootManager.get().saveFileRoot(null, root);
+        Container project = container.getProject();
+        if (project != null)
+        {
+            FileRoot root = FileRootManager.get().getFileRoot(project);
+            String oldValue = root.getPath();
+            root.setEnabled(false);
+            FileRootManager.get().saveFileRoot(null, root);
 
-        ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
-                container, ContainerManager.Property.WebRoot, oldValue, null);
-        ContainerManager.firePropertyChangeEvent(evt);
+            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                    container, ContainerManager.Property.WebRoot, oldValue, null);
+            ContainerManager.firePropertyChangeEvent(evt);
+        }
     }
 
     public boolean isFileRootDisabled(Container c)
@@ -164,7 +171,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (null == project)
             return false;
 
-        FileRoot root = FileRootManager.get().getFileRoot(c);
+        FileRoot root = FileRootManager.get().getFileRoot(project);
         return !root.isEnabled();
     }
 
@@ -174,7 +181,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (null == project)
             return true;
 
-        FileRoot root = FileRootManager.get().getFileRoot(c);
+        FileRoot root = FileRootManager.get().getFileRoot(project);
         return root.isUseDefault() || StringUtils.isEmpty(root.getPath());
     }
 
@@ -183,7 +190,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         Container project = c.getProject();
         if (project != null)
         {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
+            FileRoot root = FileRootManager.get().getFileRoot(project);
             root.setEnabled(true);
             root.setUseDefault(useDefaultRoot);
             FileRootManager.get().saveFileRoot(null, root);
@@ -552,83 +559,6 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
                 }
             }
-        }
-    }
-
-    public List<PipelineActionConfig> getActionsConfig(Container c)
-    {
-        try {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
-            List<PipelineActionConfig> configs = new ArrayList<PipelineActionConfig>();
-
-            if (!StringUtils.isBlank(root.getProperties()))
-            {
-                String xml = root.getProperties();
-                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-
-                PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.parse(xml, options);
-                XmlBeansUtil.validateXmlDocument(doc);
-
-                PipelineOptionsDocument.PipelineOptions pipeOptions = doc.getPipelineOptions();
-                if (pipeOptions != null)
-                {
-                    ActionOptions actionOptions = pipeOptions.getActionConfig();
-                    if (actionOptions != null)
-                    {
-                        for (ActionOptions.DisplayOption o : actionOptions.getDisplayOptionArray())
-                        {
-                            configs.add(new PipelineActionConfig(o.getId(), o.getState()));
-                        }
-                    }
-                }
-            }
-            return configs;
-        }
-        catch (XmlValidationException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (XmlException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void setActionsConfig(Container c, List<PipelineActionConfig> configs)
-    {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try
-        {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
-            PipelineOptionsDocument doc = PipelineOptionsDocument.Factory.newInstance();
-            PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
-
-            if (!configs.isEmpty())
-            {
-                ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
-
-                for (PipelineActionConfig ac : configs)
-                {
-                    ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
-
-                    displayOption.setId(ac.getId());
-                    displayOption.setState(ac.getState().name());
-                }
-            }
-            XmlBeansUtil.validateXmlDocument(doc);
-            doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
-
-            root.setProperties(output.toString());
-            FileRootManager.get().saveFileRoot(null, root);
-        }
-        catch (Exception e)
-        {
-            // This is likely a code problem -- propagate it up so we log to mothership
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(output);
         }
     }
 

@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -59,7 +60,7 @@
                 },
                 filterDiv: 'filterMsg',
             <% } %>
-            container: '<%=context.getContainer().getPath()%>'
+            container: <%=PageFlowUtil.jsString(context.getContainer().getPath())%>
             <% if (RReport.isEnabled()) { %>
             ,createMenu :[{
                 id: 'create_rView',

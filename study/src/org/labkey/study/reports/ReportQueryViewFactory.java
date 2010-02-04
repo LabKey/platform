@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
@@ -75,6 +76,7 @@ public class ReportQueryViewFactory
             settings.setViewName(viewName);
             // need to reset the report id since we want to render the data grid, not the report
             settings.setReportId(null);
+            settings.setMaxRows(Table.ALL_ROWS);
 
             ReportQueryView view = new StudyReportQueryView(schema, settings);
             final String filterParam = descriptor.getProperty("filterParam");

@@ -30,6 +30,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     importDataEnabled : true,
     adminUser : false,
+    isPipelineRoot : false,
 
     constructor : function(config)
     {
@@ -388,7 +389,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     onAdmin : function(btn)
     {
-        var configDlg = new LABKEY.ActionsAdminPanel({path: this.currentDirectory.data.path});
+        var configDlg = new LABKEY.ActionsAdminPanel({path: this.currentDirectory.data.path, isPipelineRoot : this.isPipelineRoot});
 
         configDlg.on('success', function(c){this.onDirectoryChange(this.currentDirectory);}, this);
         configDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
@@ -482,7 +483,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             closeAction:'close',
             modal: true,
             items: items,
-            layout: 'fit',
             buttons: [{
                 text: 'Import',
                 id: 'btn_submit',

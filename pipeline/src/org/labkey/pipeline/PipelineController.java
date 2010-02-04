@@ -405,7 +405,8 @@ public class PipelineController extends SpringActionController
 
             bean.setDirectory(startPath);
             //bean.setShowAddressBar(true);
-            bean.setShowFolderTree(true);
+            //bean.setShowFolderTree(true);
+            bean.setFolderTreeCollapsed(false);
             bean.setShowDetails(true);
             bean.setAutoResize(true);
 

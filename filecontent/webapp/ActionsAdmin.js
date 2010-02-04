@@ -48,10 +48,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     importDataEnabled : true,
 
+    isPipelineRoot : false,
+    
     events : {},
 
     constructor : function(config)
     {
+        Ext.apply(this, config);
         Ext.util.Observable.prototype.constructor.call(this, config);
 
         if (config.path)
@@ -66,15 +69,45 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     show : function(btn)
     {
-        var connection = new Ext.data.Connection({autoAbort:true});
-        connection.request({
-            autoAbort:true,
-            url:this.actionsConfigURL,
-            method:'GET',
-            disableCaching:false,
-            success : this.getPipelineActions,
-            scope: this
-        });
+        if (this.isPipelineRoot)
+        {
+            var connection = new Ext.data.Connection({autoAbort:true});
+            connection.request({
+                autoAbort:true,
+                url:this.actionsConfigURL,
+                method:'GET',
+                disableCaching:false,
+                success : this.getPipelineActions,
+                scope: this
+            });
+        }
+        else
+        {
+            var win = new Ext.Window({
+                title: 'Manage Pipeline Actions',
+                border: false,
+                width: 400,
+                height: 250,
+                cls: 'extContainer',
+                autoScroll: true,
+                closeAction:'close',
+                modal: true,
+                items: [{
+                    xtype: 'panel',
+                    bodyStyle : 'padding: 30 10px;',
+                    html: 'There is a Pipeline Override for this folder and actions are not available for the ' +
+                          'default file location.<br/><br/>Customize this web part to use the pipeline location using the ' +
+                          'customize web part button <img src="' + LABKEY.contextPath + '/_images/partedit.gif"/>'
+                }],
+                buttons: [{
+                    text: 'Okay',
+                    id: 'btn_cancel',
+                    handler: function(){win.close();}
+                }]
+            });
+            win.show();
+
+        }
     },
 
     // parse the response and create the data object

@@ -1193,6 +1193,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
     debugTree : null,
 
     fileFilter : null,
+    folderFilter : null,
     displayFiles: true,
     url: true, // hack for Ext.tree.TreeLoader.load()
 
@@ -1217,6 +1218,9 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             if (this.fileFilter)
                 data.disabled = !this.fileFilter.test(data.text);
         }
+        else if (this.folderFilter && !this.folderFilter.test(data))
+            return null;
+        
         var n = Ext.apply({},{id:data.id || data.path, leaf:data.file, text:data.name, href:null}, data);
         return FileSystemTreeLoader.superclass.createNode.call(this, n);
     },
@@ -1737,6 +1741,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     resizable : true,
     allowChangeDirectory : true,
     showFolderTree: true,
+    folderTreeCollapsed: false,
     showAddressBar: true,
     showDetails: true,
     showProperties: true,
@@ -2793,6 +2798,21 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }
             }
         });
+
+        this.actions.folderTreeToggle = new Ext.Action({
+            iconCls: 'iconFileOpen',
+            tooltip: 'Show or hide the folder tree',
+            listeners: {click:function(button, event) {
+                
+                if (this.tree)
+                {
+                    if (this.tree.isVisible())
+                        this.tree.collapse();
+                    else
+                        this.tree.expand();
+                }
+            }, scope:this}
+        })
     },
 
     /**
@@ -3110,26 +3130,30 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     createTreePanel : function()
     {
-        var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
+        var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false, folderFilter:this.fileFilter});
         var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
         var tree = new Ext.tree.TreePanel(
         {
             loader:treeloader,
             root:root,
             rootVisible:true,
-            title: 'Folders',
+            //title: 'Folders',
             useArrows:true,
             margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
             autoScroll:true,
             animate:true,
             enableDD:false,
             containerScroll:true,
+            collapsible: true,
+            collapseMode: 'mini',
+            collapsed: this.folderTreeCollapsed,
+            cmargins:'0 0 0 0',
             border:false,
             pathSeparator:';'
         });
         treeloader.debugTree = tree;
         tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
-window.DEBUGTREE = tree;
+        window.DEBUGTREE = tree;
         return tree;
     },
 

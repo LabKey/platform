@@ -96,11 +96,11 @@
              */
             getButtons : function() {
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
-                buttons.push('-', {
+                buttons.push({
                     text:'Customize <%= StudyService.get().getSubjectNounSingular(study.getContainer()) %> View',
                     disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                     listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
-                }, '-');
+                });
                 return buttons;
             },
 

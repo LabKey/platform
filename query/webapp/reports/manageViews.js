@@ -299,9 +299,9 @@ LABKEY.ViewsPanel.prototype = {
         });
 
         var buttons = [
-            {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},'-',
-            {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {this.grid.view.collapseAllGroups();}, scope:this}},'-',
-            {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelections(this.grid);}, scope:this}},'-',
+            {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},
+            {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {this.grid.view.collapseAllGroups();}, scope:this}},
+            {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelections(this.grid);}, scope:this}},
             {text:'Rename', id: 'btn_editView', tooltip: {text:'Rename or edit the description of an existing view', title:'Rename View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
         ];
 
@@ -323,7 +323,7 @@ LABKEY.ViewsPanel.prototype = {
                 text:'Configure available View types...'});
 
 */
-            buttons.splice(0,0,item,'-');
+            buttons.splice(0,0,item);
         }
 
         // options button
