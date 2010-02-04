@@ -110,10 +110,6 @@ public interface FileContentService
 
     public String getFolderName(ContentType type);
 
-    public List<PipelineActionConfig> getActionsConfig(Container c);
-
-    public void setActionsConfig(Container c, List<PipelineActionConfig> configs);
-
     public FilesAdminOptions getAdminOptions(Container c);
 
     public void setAdminOptions(Container c, FilesAdminOptions options);

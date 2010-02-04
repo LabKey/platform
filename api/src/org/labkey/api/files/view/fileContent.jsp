@@ -62,11 +62,7 @@
     }
 </style>
 
-<div class="extContainer">
-    <table>
-        <tr><td><div id="files"></div></td></tr>
-    </table>
-</div>
+<div class="extContainer" id="<%=bean.getContentId()%>"></div>
 
 <%  if (!bean.isEnabled()) { %>
 
@@ -92,7 +88,7 @@ var buttonActions = [];
 <%
     }
 %>
-function renderBrowser(rootPath, dir)
+function renderBrowser(rootPath, dir, renderTo)
 {
     var configureAction = new Ext.Action({text: 'Configure', handler: function()
     {
@@ -135,11 +131,13 @@ function renderBrowser(rootPath, dir)
         helpEl:null,
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
+        folderTreeCollapsed: <%=bean.isFolderTreeCollapsed()%>,
         showProperties: false,
         showDetails: <%=bean.isShowDetails()%>,
         allowChangeDirectory: true,
         //actions: {drop:dropAction, configure:configureAction},
-        tbarItems: buttonActions
+        tbarItems: buttonActions,
+        isPipelineRoot: <%=bean.isPipelineRoot()%>
 /*
         buttonCfg:['download','deletePath','refresh'
         <%=c.hasPermission(context.getUser(), InsertPermission.class)?",'uploadTool'":""%>
@@ -165,7 +163,7 @@ function renderBrowser(rootPath, dir)
 //    var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
 //    resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
 
-    fileBrowser.render('files');
+    fileBrowser.render(renderTo);
 
     var _resize = function(w,h)
     {
@@ -245,6 +243,6 @@ function renderBrowser(rootPath, dir)
 %>
 
 <%  if (bean.isEnabled()) { %>
-        Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>);});
+        Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>, <%=q(bean.getContentId())%>);});
 <%  } %>
 </script>

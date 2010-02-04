@@ -87,6 +87,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
             settings.setSchemaName(schemaName);
             settings.setQueryName(queryName);
             settings.setViewName(viewName);
+            settings.setMaxRows(Table.ALL_ROWS);
             // need to reset the report id since we want to render the data grid, not the report
             settings.setReportId(null);
 

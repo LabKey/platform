@@ -54,6 +54,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private boolean showAdmin = false;
     private String fileSet;
     private Container container;
+    private boolean _isPipelineFiles;       // viewing @pipeline files
 
     private static final String JSP = "/org/labkey/api/files/view/fileContent.jsp";
     private static final String JSP_RIGHT = "/org/labkey/filecontent/view/files.jsp";
@@ -62,11 +63,18 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     public FilesWebPart(Container c)
     {
         super(JSP);
-        setModelBean(createConfig());
-        container = c;
+        setModelBean(new FilesForm());
         setFileSet(null);
         setTitle("Files");
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
+
+        init(c);
+    }
+
+    protected void init(Container c)
+    {
+        container = c;
+        createConfig();
     }
 
     protected FilesWebPart(Container c, String fileSet)
@@ -77,6 +85,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             if (fileSet.equals(FileContentService.PIPELINE_LINK))
             {
+                _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
                 if (root != null)
                     getModelBean().setRootPath(root.getContainer(), FileContentService.PIPELINE_LINK);
@@ -94,23 +103,35 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
             }
         }
+        init(c);
     }
 
     protected FilesForm createConfig()
     {
-        FilesForm form = new FilesForm();
+        FilesForm form = getModelBean();
+
+        if (form == null)
+        {
+            form = new FilesForm();
+            setModelBean(form);
+        }
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
         form.setShowAddressBar(false);
         form.setShowDetails(false);
-        form.setShowFolderTree(false);
-        form.setRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK);
+        form.setShowFolderTree(true);
+        form.setFolderTreeCollapsed(true);
+
+        if (form.getRootPath() == null)
+            form.setRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK);
+
         form.setEnabled(!svc.isFileRootDisabled(getRootContext().getContainer()));
+        form.setContentId("fileContent" + System.identityHashCode(this));
 
         List<FilesForm.actions> actions = new ArrayList<FilesForm.actions>();
 
         // Navigation actions
-        actions.add(FilesForm.actions.parentFolder);
+        actions.add(FilesForm.actions.folderTreeToggle);
         actions.add(FilesForm.actions.refresh);
 
         // Actions not based on the current selection
@@ -131,6 +152,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         if (canDisplayPipelineActions())
         {
+            form.setPipelineRoot(true);
             if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
             {
                 actions.add(FilesForm.actions.importData);
@@ -162,6 +184,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     protected boolean canDisplayPipelineActions()
     {
         try {
+            if (_isPipelineFiles)
+                return true;
+            
             // since pipeline actions operate on the pipeline root, if the file content and pipeline roots do not
             // reference the same location, then import and customize actions should be disabled
 
@@ -254,12 +279,15 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private AttachmentDirectory _root;
         private boolean _showAddressBar;
         private boolean _showFolderTree;
+        private boolean _folderTreeCollapsed;
         private boolean _showDetails;
         private boolean _autoResize;
         private boolean _enabled;
         private actions[] _buttonConfig;
         private String _rootPath;
         private Path _directory;
+        private String _contentId;
+        private boolean _isPipelineRoot;
 
         public enum actions {
             download,
@@ -272,6 +300,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             upload,
             importData,
             customize,
+            folderTreeToggle,
         }
 
         public boolean isAutoResize()
@@ -383,6 +412,36 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public void setEnabled(boolean enabled)
         {
             _enabled = enabled;
+        }
+
+        public String getContentId()
+        {
+            return _contentId;
+        }
+
+        public void setContentId(String contentId)
+        {
+            _contentId = contentId;
+        }
+
+        public boolean isPipelineRoot()
+        {
+            return _isPipelineRoot;
+        }
+
+        public void setPipelineRoot(boolean pipelineRoot)
+        {
+            _isPipelineRoot = pipelineRoot;
+        }
+
+        public boolean isFolderTreeCollapsed()
+        {
+            return _folderTreeCollapsed;
+        }
+
+        public void setFolderTreeCollapsed(boolean folderTreeCollapsed)
+        {
+            _folderTreeCollapsed = folderTreeCollapsed;
         }
     }
 }
