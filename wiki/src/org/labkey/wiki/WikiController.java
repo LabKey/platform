@@ -27,7 +27,6 @@ import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
@@ -35,10 +34,10 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -115,7 +114,6 @@ public class WikiController extends SpringActionController
     public static class CustomizeWikiPartView extends JspView<Portal.WebPart>
     {
         private List<Container> _containerList;
-        private Container _currentContainer;
         private Map<Container, List<Wiki>> _mapEntries;
         private List<Wiki> _containerWikiList;
 
@@ -135,6 +133,8 @@ public class WikiController extends SpringActionController
             {
                 //get all containers that include wiki pages
                 _containerList = populateWikiContainerList(context);
+                if (!_containerList.contains(context.getContainer()))
+                    _containerList.add(0, context.getContainer());
 
                 //build map of containers and their associated sets of wiki pages
                 Map<Container, List<Wiki>> containerMap = new LinkedHashMap<Container, List<Wiki>>();
@@ -143,10 +143,6 @@ public class WikiController extends SpringActionController
                     //get list of wiki pages for this container
                     List<Wiki> containerPageList = WikiManager.getPageList(c);
                     containerMap.put(c, containerPageList);
-
-                    //track current container to fill list easily.
-                    if (c.getId().equals(context.getContainer().getId()))
-                        _currentContainer = c;
                 }
 
                 _mapEntries = containerMap;
@@ -183,11 +179,6 @@ public class WikiController extends SpringActionController
         public List<Container> getContainerList()
         {
             return _containerList;
-        }
-
-        public Container getCurrentContainer()
-        {
-            return _currentContainer;
         }
 
         public Map<Container, List<Wiki>> getMapEntries()
@@ -816,90 +807,9 @@ public class WikiController extends SpringActionController
                           Map<HString, Wiki> destPageMap, Map<Integer, Integer> pageIdMap)
             throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
-        return copyPage(cSrc, srcPage, cDest, destPageMap, pageIdMap, false);
+        return WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageMap, pageIdMap, false);
     }
 
-
-    //copies a single wiki page
-    private Wiki copyPage(Container cSrc, Wiki srcPage, Container cDest, Map<HString, Wiki> destPageMap,
-                          Map<Integer, Integer> pageIdMap, boolean fOverwrite)
-            throws SQLException, IOException, AttachmentService.DuplicateFilenameException
-    {
-        //get latest version
-        WikiVersion srcLatestVersion = WikiManager.getLatestVersion(srcPage);
-
-        //create new wiki page
-        HString srcName = srcPage.getName();
-        HString destName = srcName;
-        Wiki destPage = WikiManager.getWiki(cDest, destName);
-
-        //check whether name exists in destination wiki
-        //if not overwriting, generate new name
-        int i = 1;
-        if (fOverwrite)
-        {
-            //can't overwrite if page does not exist
-            if (!destPageMap.containsKey(destName))
-                fOverwrite = false;
-        }
-        else
-        {
-            while (destPageMap.containsKey(destName))
-                destName = srcName.concat("" + i++);
-        }
-
-        //new wiki page
-        Wiki newWikiPage = null;
-
-        if (!fOverwrite)
-        {
-            newWikiPage = new Wiki(cDest, destName);
-            newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
-
-            //look up parent page via map
-            if (pageIdMap != null)
-            {
-                Integer destParentId = pageIdMap.get(srcPage.getParent());
-                if (destParentId != null)
-                    newWikiPage.setParent(destParentId);
-                else
-                    newWikiPage.setParent(-1);
-            }
-        }
-
-        //new wiki version
-        WikiVersion newWikiVersion = new WikiVersion(destName);
-        newWikiVersion.setTitle(srcLatestVersion.getTitle());
-        newWikiVersion.setBody(srcLatestVersion.getBody());
-        newWikiVersion.setRendererTypeEnum(srcLatestVersion.getRendererTypeEnum());
-
-        //get attachments
-        Wiki wikiWithAttachments = WikiManager.getWiki(cSrc, srcName);
-        Collection<Attachment> attachments = wikiWithAttachments.getAttachments();
-        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(wikiWithAttachments, attachments);
-
-        if (fOverwrite)
-        {
-            WikiManager.updateWiki(getUser(), destPage, newWikiVersion);
-            AttachmentService.get().deleteAttachments(destPage);
-            AttachmentService.get().addAttachments(getUser(), destPage, files);
-        }
-        else
-        {
-            //insert new wiki page in destination container
-            WikiManager.insertWiki(getUser(), cDest, newWikiPage, newWikiVersion, files);
-
-            //update destination page map
-            destPageMap.put(destName, newWikiPage);
-
-            //map source row id to dest row id
-            if (pageIdMap != null)
-            {
-                pageIdMap.put(srcPage.getRowId(), newWikiPage.getRowId());
-            }
-        }
-        return newWikiPage;
-    }
 
 
     private Container getSourceContainer(String source)
@@ -1061,7 +971,7 @@ public class WikiController extends SpringActionController
             Map<HString, Wiki> destPageMap = WikiManager.getPageMap(cDest);
 
             //copy single page
-            Wiki newWikiPage = copyPage(cSrc, srcPage, cDest, destPageMap, null, form.isOverwrite());
+            Wiki newWikiPage = WikiManager.copyPage(getUser(), cSrc, srcPage, cDest, destPageMap, null, form.isOverwrite());
 
             displayWikiModuleInDestContainer(cDest);
 
@@ -3106,33 +3016,19 @@ public class WikiController extends SpringActionController
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new IllegalArgumentException("You must use the 'multipart/form-data' mimetype when posting to attachFiles.api");
 
-            AttachmentService.Service attsvc = AttachmentService.get();
+            Map<String, Object> warnings = new HashMap<String,Object>();
 
-            //delete the attachments requested
-            if (null != form.getToDelete() && form.getToDelete().length > 0)
+            String[] deleteNames = form.getToDelete();
+            List<String> names;
+            if (null == deleteNames || 0 == deleteNames.length)
+                names = Collections.emptyList();
+            else
+                names = Arrays.asList(deleteNames);
+
+            String message = WikiManager.updateAttachments(getUser(), wiki, names, getAttachmentFileList());
+            if (null != message)
             {
-                for(String name : form.getToDelete())
-                {
-                    attsvc.deleteAttachment(wiki, name);
-                }
-            }
-
-            Map<String, Object> warnings = new HashMap<String, Object>();
-            List<AttachmentFile> files = getAttachmentFileList();
-
-            //add any files as attachments
-            if (null != files && files.size() > 0)
-            {
-                try
-                {
-                    attsvc.addAttachments(getUser(), wiki, files);
-                }
-                catch(AttachmentService.DuplicateFilenameException e)
-                {
-                    //since this is now being called ajax style with just the files, we don't
-                    //really need to generate an error in this case. Just add a warning
-                    warnings.put("files", e.getMessage());
-                }
+                warnings.put("files",message);
             }
 
             //uncache the wikis in the current container so that
@@ -3164,6 +3060,8 @@ public class WikiController extends SpringActionController
             return resp;
         }
     }
+
+
 
     public static class TransformWikiForm
     {

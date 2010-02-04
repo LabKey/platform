@@ -21,46 +21,40 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
-    Container currentContainer = me.getCurrentContainer();
-
-    //build array of containers/wiki lists
-    String construct = "var m = new Object();\n";
-    for (Map.Entry<Container, List<Wiki>> entry : me.getMapEntries().entrySet())
-    {
-       construct += "m[\"" + entry.getKey().getId() + "\"] = ";
-       construct += "null;\n";
-    }
+    Container currentContainer = me.getViewContext().getContainer(); //me.getCurrentContainer();
 %>
 <script type="text/javascript">
 LABKEY.requiresClientAPI(); //for Ext AJAX object
-
-//output variable definition for array of containers/pages
-<%=construct%>
-
 //store current container id on client
-var currentContainerId = "<%=currentContainer != null ? currentContainer.getId() : null%>";
+var currentContainerId = <%=currentContainer==null ? "null" : PageFlowUtil.jsString(currentContainer.getId())%>;
+var m = {};
 
+function getForm()
+{
+    return document.forms[1];
+}
 function updatePageList()
 {
     //get selection value
-    var containerId = document.forms[0].webPartContainer.value;
-    var wikiPageList = m[containerId];
+    var containerId = getForm().webPartContainer.value;
+    var wikiPageList = containerId in m ? m[containerId] : null;
 
-    if(null != wikiPageList)
+    if (null != wikiPageList)
+    {
         loadPages(wikiPageList);
+    }
     else
     {
         //disable the submit button while we're fetching the list of pages
         disableSubmit();
 
         //show a "loading..." option while AJAX request is happening
-        var select = document.forms[0].name;
+        var select = getForm().name;
         select.options.length = 0;
         o = new Option("loading...", "", true, true);
         select.options[select.options.length] = o;
@@ -76,10 +70,11 @@ function updatePageList()
     return true;
 }
 
+
 function loadPages(wikiPageList)
 {
-    var select = document.forms[0].name;
-    if(null == select)
+    var select = getForm().name;
+    if (null == select)
         return;
 
     select.options.length = 0;
@@ -87,7 +82,7 @@ function loadPages(wikiPageList)
     var fDefaultSelected;
     var o;
 
-    if(wikiPageList != null)
+    if (wikiPageList != null)
     {
         for(var i = 0; i < wikiPageList.length; i++)
         {
@@ -155,7 +150,7 @@ function onError(response, config)
     else
         window.alert("Problem communicating with the server: " + response.statusText + " (" + response.status + ")");
 
-    var select = document.forms[0].name;
+    var select = getForm().name;
     select.options.length = 0;
     o = new Option("<error getting pages>", "", true, true);
     select.options[select.options.length] = o;
@@ -166,9 +161,9 @@ function restoreDefaultPage()
 {
     if(!currentContainerId)
         return;
-    
+
     //set webPartContainer select value to current container
-    document.forms[0].webPartContainer.value = currentContainerId;
+    getForm().webPartContainer.value = currentContainerId;
     updatePageList();
 }
 </script>
@@ -187,22 +182,25 @@ function restoreDefaultPage()
         Folder containing the page to display:
         </td>
         <td width="80%">
-        <select name="webPartContainer" onkeyup="updatePageList();" onchange="updatePageList();">
-            <%
+        <select name="webPartContainer" onkeyup="updatePageList();" onchange="updatePageList();"><%
+            String webPartContainer = StringUtils.trimToNull(webPart.getPropertyMap().get("webPartContainer"));
             for (Container c : me.getContainerList())
             {
+                String selected = "";
                 //if there's no property setting for container, select the current container.
-                if (null != currentContainer && c.getId().equals(currentContainer.getId()) && webPart.getPropertyMap().get("webPartContainer") == null)
-                {%>
-                    <option selected value="<%=c.getId()%>"><%=h(c.getPath())%></option>
-                <%}
-                else
-                {%>
-                    <option <%=c.getId().equals(webPart.getPropertyMap().get("webPartContainer")) ? "selected" : "" %> value="<%=c.getId()%>"><%=h(c.getPath())%></option>
-                <%}
+                if (webPartContainer == null)
+                {
+                    if (null != currentContainer && c.getId().equals(currentContainer.getId()))
+                        selected = "selected";
+                }
+                else if (c.getId().equals(webPartContainer))
+                {
+                    selected = "selected";
+                }
+                out.write("\n");
+                %><option <%=selected%> value="<%=c.getId()%>"><%=h(c.getPath())%></option><%
             }
-            %>
-        </select>
+        %></select>
         [<a href="javascript:restoreDefaultPage();">Reset to Folder Default Page</a>]
         </td>
      </tr>

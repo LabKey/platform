@@ -428,6 +428,7 @@ public class SearchController extends SpringActionController
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.addHeader("Vary", "Cookie");
+            getPageConfig().setMetaTag("robots", "noindex");
 
             HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
             return search;

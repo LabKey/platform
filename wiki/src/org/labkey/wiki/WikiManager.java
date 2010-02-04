@@ -733,6 +733,140 @@ public class WikiManager
     }
 
 
+
+    //copies a single wiki page
+    public static Wiki copyPage(User user, Container cSrc, Wiki srcPage, Container cDest, Map<HString, Wiki> destPageMap,
+                          Map<Integer, Integer> pageIdMap, boolean fOverwrite)
+            throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+    {
+        //get latest version
+        WikiVersion srcLatestVersion = WikiManager.getLatestVersion(srcPage);
+
+        //create new wiki page
+        HString srcName = srcPage.getName();
+        HString destName = srcName;
+        Wiki destPage = WikiManager.getWiki(cDest, destName);
+
+        //check whether name exists in destination wiki
+        //if not overwriting, generate new name
+        int i = 1;
+        if (fOverwrite)
+        {
+            //can't overwrite if page does not exist
+            if (!destPageMap.containsKey(destName))
+                fOverwrite = false;
+        }
+        else
+        {
+            while (destPageMap.containsKey(destName))
+                destName = srcName.concat("" + i++);
+        }
+
+        //new wiki page
+        Wiki newWikiPage = null;
+
+        if (!fOverwrite)
+        {
+            newWikiPage = new Wiki(cDest, destName);
+            newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
+
+            //look up parent page via map
+            if (pageIdMap != null)
+            {
+                Integer destParentId = pageIdMap.get(srcPage.getParent());
+                if (destParentId != null)
+                    newWikiPage.setParent(destParentId);
+                else
+                    newWikiPage.setParent(-1);
+            }
+        }
+
+        //new wiki version
+        WikiVersion newWikiVersion = new WikiVersion(destName);
+        newWikiVersion.setTitle(srcLatestVersion.getTitle());
+        newWikiVersion.setBody(srcLatestVersion.getBody());
+        newWikiVersion.setRendererTypeEnum(srcLatestVersion.getRendererTypeEnum());
+
+        //get attachments
+        Wiki wikiWithAttachments = WikiManager.getWiki(cSrc, srcName);
+        Collection<Attachment> attachments = wikiWithAttachments.getAttachments();
+        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(wikiWithAttachments, attachments);
+
+        if (fOverwrite)
+        {
+            WikiManager.updateWiki(user, destPage, newWikiVersion);
+            AttachmentService.get().deleteAttachments(destPage);
+            AttachmentService.get().addAttachments(user, destPage, files);
+            // NOTE indexWiki() gets called twice in this case
+            touch(destPage);
+            indexWiki(destPage);
+        }
+        else
+        {
+            //insert new wiki page in destination container
+            WikiManager.insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
+
+            //update destination page map
+            destPageMap.put(destName, newWikiPage);
+
+            //map source row id to dest row id
+            if (pageIdMap != null)
+            {
+                pageIdMap.put(srcPage.getRowId(), newWikiPage.getRowId());
+            }
+        }
+        return newWikiPage;
+    }
+
+
+    public static String updateAttachments(User user, Wiki wiki, List<String> deleteNames, List<AttachmentFile> files)
+            throws IOException
+    {
+        AttachmentService.Service attsvc = AttachmentService.get();
+        boolean changes = false;
+        String message = null;
+
+        //delete the attachments requested
+        if (null != deleteNames && !deleteNames.isEmpty())
+        {
+            for (String name : deleteNames)
+            {
+                attsvc.deleteAttachment(wiki, name);
+            }
+            changes = true;
+        }
+
+        //add any files as attachments
+        if (null != files && files.size() > 0)
+        {
+            try
+            {
+                attsvc.addAttachments(user, wiki, files);
+            }
+            catch (AttachmentService.DuplicateFilenameException e)
+            {
+                //since this is now being called ajax style with just the files, we don't
+                //really need to generate an error in this case. Just add a warning
+                message = e.getMessage();
+            }
+            changes = true;
+        }
+
+        if (changes)
+        {
+            touch(wiki);
+            indexWiki(wiki);
+        }
+
+        return message;
+    }
+
+
+    //
+    // Search
+    //
+
+
     static void unindexWiki(String entityId)
     {
         SearchService ss = ServiceRegistry.get(SearchService.class);
@@ -749,6 +883,21 @@ public class WikiManager
         Container c = ContainerManager.getForId(page.getContainerId());
         if (null != ss && null != c)
             indexWikiContainerFast(ss.defaultTask(), c, null, page.getName().getSource());
+    }
+
+
+    private static void touch(Wiki wiki)
+    {
+        try
+        {
+            // CONSIDER: Table.touch()?
+            Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET lastIndexed=null, modified=? WHERE container=? AND name=?",
+                    new Object[]{new Date(), wiki.getContainerId(), wiki.getName()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
 
