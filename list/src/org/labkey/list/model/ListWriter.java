@@ -82,7 +82,7 @@ public class ListWriter
 
                     ResultSet rs = QueryService.get().select(ti, columns, null, null);
                     TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
-                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
+                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
 
