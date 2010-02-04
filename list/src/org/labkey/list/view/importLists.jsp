@@ -16,6 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
@@ -24,8 +26,15 @@
 You can import a list archive to create and populate lists in this folder.  A list archive is a .list.zip file that
 comforms to the LabKey list export format.  A list archive is typically created using the list export feature.  Using
 export and import, lists can be moved from one server to another or a folder can be initialized with standard lists or
-list templates.
+list templates.<%
+    Container c = getViewContext().getContainer();
 
+    if (!ListService.get().getLists(c).isEmpty())
+    {
+%><p>Warning: An existing list will be replaced by a list in the archive with the same name; this could result in data loss and cannot be undone.</p>
+<%
+    }
+%>
 <p>For more information about exporting and importing lists, see <a href="<%=new HelpTopic("importExportLists", HelpTopic.Area.DEFAULT)%>">the list documentation</a>.</p>
 </td></tr>
 <tr><td><input type="file" name="listZip" size="50"></td></tr>
