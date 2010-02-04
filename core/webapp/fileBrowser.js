@@ -2736,6 +2736,20 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }, this);
     },
 
+    onRender : function()
+    {
+        LABKEY.FileBrowser.superclass.onRender.apply(this, arguments);
+
+        if (this.resizable)
+        {
+            this.resizer = new Ext.Resizable(this.el, {pinned: false});
+            this.resizer.on("resize", function(o, width, height){
+                this.setWidth(width);
+                this.setHeight(height)
+            }, this);
+        }
+    },
+
     getTbarConfig : function()
     {
         var tbarConfig = [];
