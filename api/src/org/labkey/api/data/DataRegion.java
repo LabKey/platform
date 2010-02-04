@@ -40,6 +40,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.text.Format;
+import java.text.NumberFormat;
 import java.util.*;
 
 
@@ -616,7 +617,7 @@ public class DataRegion extends DisplayElement
         LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
         return ctx.getResultSet(selectKeyMap, getTable(), _maxRows, _offset, getName(), async);
     }
-    
+
 
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
@@ -923,6 +924,8 @@ public class DataRegion extends DisplayElement
         if (isSmallResultSet())
             return;
 
+        NumberFormat fmt = NumberFormat.getInstance();
+
         out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
 
         if (_maxRows > 0 && _offset >= 2*_maxRows)
@@ -932,12 +935,12 @@ public class DataRegion extends DisplayElement
             paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", _offset - _maxRows);
 
         if (_rowCount != null)
-            out.write("<em>" + (_offset + 1) + "</em> - <em>" + (_offset + _rowCount.intValue()) + "</em> ");
+            out.write("<em>" + fmt.format(_offset + 1) + "</em> - <em>" + fmt.format(_offset + _rowCount.intValue()) + "</em> ");
 
         if (_totalRows != null)
         {
             if (_rowCount != null)
-                out.write("of <em>" + _totalRows + "</em> ");
+                out.write("of <em>" + fmt.format( _totalRows) + "</em> ");
 
             if (_maxRows > 0)
             {
