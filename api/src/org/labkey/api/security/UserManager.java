@@ -739,11 +739,11 @@ public class UserManager
     // Get completions from list of all site users
     public static List<AjaxCompletion> getAjaxCompletions(String prefix, ViewContext context) throws SQLException
     {
-        return UserManager.getAjaxCompletions(prefix, UserManager.getActiveUsers(), context);
+        return UserManager.getAjaxCompletions(prefix, Arrays.asList(UserManager.getActiveUsers()), context);
     }
 
     // Get completions from specified list of users
-    public static List<AjaxCompletion> getAjaxCompletions(String prefix, User[] users, ViewContext context)
+    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Collection<User> users, ViewContext context)
     {
         List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
 

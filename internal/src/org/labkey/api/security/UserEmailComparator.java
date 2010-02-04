@@ -22,7 +22,7 @@ import java.util.Comparator;
  * User: jeckels
  * Date: Apr 24, 2006
  */
-public class UserComparator implements Comparator<User>
+public class UserEmailComparator implements Comparator<User>
 {
     public int compare(User a, User b)
     {
