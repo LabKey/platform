@@ -40,8 +40,6 @@ public class ListSchema extends UserSchema
         DefaultSchema.registerProvider(NAME, new DefaultSchema.SchemaProvider() {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                if (ListService.get().getLists(schema.getContainer()).isEmpty())
-                    return null;
                 return new ListSchema(schema.getUser(), schema.getContainer());
             }
         });
