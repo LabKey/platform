@@ -819,7 +819,7 @@ public class DataRegion extends DisplayElement
         if (renderButtons)
             renderFormHeader(out, MODE_GRID);
 
-        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
+        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
