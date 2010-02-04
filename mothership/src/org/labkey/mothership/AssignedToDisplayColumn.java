@@ -22,7 +22,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserComparator;
+import org.labkey.api.security.UserDisplayNameComparator;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -49,7 +49,7 @@ public class AssignedToDisplayColumn extends DataColumn
     {
         List<User> projectMembers = SecurityManager.getProjectMembers(_container.getProject());
         List<User> list = new ArrayList<User>(projectMembers);
-        Collections.sort(list, new UserComparator());
+        Collections.sort(list, new UserDisplayNameComparator());
 
         out.write("<select name='");
         out.write(getInputPrefix());

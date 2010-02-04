@@ -29,12 +29,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -46,7 +44,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.query.IssuesQueryView;
 import org.labkey.issue.query.IssuesTable;
@@ -179,7 +176,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(IssuePreferenceForm form, BindException errors) throws Exception
         {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             if (form.getRequiredFields().length > 0)
             {
                 String sep = "";
@@ -1019,7 +1016,7 @@ public class IssuesController extends SpringActionController
         List<String> invalidEmails = new ArrayList<String>();
         List<ValidEmail> emails = org.labkey.api.security.SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
-        StringBuffer message = new StringBuffer();
+        StringBuilder message = new StringBuilder();
 
         for (String rawEmail : invalidEmails)
         {
@@ -1060,7 +1057,7 @@ public class IssuesController extends SpringActionController
                 issue = new Issue();
                 issue.Open(c, getUser());
             }
-            User[] users = IssueManager.getAssignedToList(c, issue);
+            Collection<User> users = IssueManager.getAssignedToList(c, issue);
             return UserManager.getAjaxCompletions(form.getPrefix(), users, getViewContext());
         }
     }
@@ -1168,7 +1165,7 @@ public class IssuesController extends SpringActionController
         }
 
         final String current = getUser().getEmail();
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
 
         boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
         if (selfSpam)
@@ -1400,6 +1397,72 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetAssignedToGroupAction extends FormHandlerAction<AssignedToGroupForm>
+    {
+        private Group _group = null;
+
+        public void validateCommand(AssignedToGroupForm form, Errors errors)
+        {
+            if (form.getAssignedToMethod().equals("ProjectMembers"))
+            {
+                if (form.getAssignedToGroup() != 0)
+                    errors.reject("assignedToGroup", "Project members setting shouldn't include a group!");
+            }
+            else if (form.getAssignedToMethod().equals("Group"))
+            {
+                int groupId = form.getAssignedToGroup();
+                _group = SecurityManager.getGroup(groupId);
+
+                if (null == _group)
+                    errors.reject("assignedToGroup", "Group does not exist!");
+            }
+            else
+            {
+                errors.reject("assignedToGroup", "Invalid assigned to setting!");
+            }
+        }
+
+        public boolean handlePost(AssignedToGroupForm form, BindException errors) throws Exception
+        {
+            IssueManager.saveAssignedToGroup(getContainer(), _group);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(AssignedToGroupForm form)
+        {
+            return issueURL("admin");
+        }
+    }
+
+
+    public static class AssignedToGroupForm
+    {
+        private String _assignedToMethod = null;
+        private int _assignedToGroup = 0;
+
+        public String getAssignedToMethod()
+        {
+            return _assignedToMethod;
+        }
+
+        public void setAssignedToMethod(String assignedToMethod)
+        {
+            _assignedToMethod = assignedToMethod;
+        }
+
+        public int getAssignedToGroup()
+        {
+            return _assignedToGroup;
+        }
+
+        public void setAssignedToGroup(int assignedToGroup)
+        {
+            _assignedToGroup = assignedToGroup;
+        }
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {
@@ -1580,7 +1643,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void _appendChange(StringBuffer sb, String field, HString from, HString to)
+    static void _appendChange(StringBuilder sb, String field, HString from, HString to)
     {
         from = from == null ? HString.EMPTY : from;
         to = to == null ? HString.EMPTY : to;
@@ -1595,7 +1658,7 @@ public class IssuesController extends SpringActionController
 
     static Issue.Comment addComment(Issue issue, Issue previous, User user, String action, String comment, Map<String, String> customColumns, ViewContext context)
     {
-        StringBuffer sbChanges = new StringBuffer();
+        StringBuilder sbChanges = new StringBuilder();
         if (!action.equals("insert") && !action.equals("update"))
         {
             sbChanges.append("<b>").append(action);
@@ -1609,7 +1672,6 @@ public class IssuesController extends SpringActionController
             sbChanges.append("</b><br>\n");
         }
         
-
         // CONSIDER: write changes in wiki
         // CONSIDER: and postpone formatting until render
         if (null != previous)
@@ -1652,7 +1714,7 @@ public class IssuesController extends SpringActionController
         return issue.addComment(user, formattedComment.toHString());
     }
 
-    private static void _appendCustomColumnChange(StringBuffer sb, String field, HString from, HString to, Map<String, String> columnCaptions)
+    private static void _appendCustomColumnChange(StringBuilder sb, String field, HString from, HString to, Map<String, String> columnCaptions)
     {
         String caption = columnCaptions.get(field);
 
@@ -1692,6 +1754,7 @@ public class IssuesController extends SpringActionController
             bean.keywordView = keywordView;
             bean.requiredFieldsView = new JspView<IssuesPreference>("/org/labkey/issue/requiredFields.jsp", ipb);
             bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
+            bean.assignedToGroup = IssueManager.getAssignedToGroup(c);
             setModelBean(bean);
         }
     }
@@ -1703,6 +1766,7 @@ public class IssuesController extends SpringActionController
         public KeywordAdminView keywordView;
         public JspView<IssuesPreference> requiredFieldsView;
         public IssueManager.EntryTypeNames entryTypeNames;
+        public Group assignedToGroup;
     }
 
 

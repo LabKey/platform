@@ -20,11 +20,11 @@ import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Category;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Cache;
@@ -73,6 +73,9 @@ public class IssueManager
     private static final String CAT_ENTRY_TYPE_NAMES = "issueEntryTypeNames";
     private static final String PROP_ENTRY_TYPE_NAME_SINGULAR = "issueEntryTypeNameSingular";
     private static final String PROP_ENTRY_TYPE_NAME_PLURAL = "issueEntryTypeNamePlural";
+
+    private static final String CAT_ASSIGNED_TO_LIST = "issueAssignedToList";
+    private static final String PROP_ASSIGNED_TO_GROUP = "issueAssignedToGroup";
 
 
     private IssueManager()
@@ -379,39 +382,81 @@ public class IssueManager
                 Map.class);
     }
 
-    public static User[] getAssignedToList(Container c, Issue issue)
+
+    private static final Comparator<User> USER_COMPARATOR = new UserDisplayNameComparator();
+
+    public static Collection<User> getAssignedToList(Container c, Issue issue)
+    {
+        Collection<User> initialAssignedTo = getInitialAssignedToList(c);
+
+        // If this is an existing issue, add the user who opened the issue, unless they are a guest, or already in the list.
+        if (issue != null && 0 != issue.getIssueId())
+        {
+            User createdByUser = UserManager.getUser(issue.getCreatedBy());
+
+            if (createdByUser != null && !createdByUser.isGuest() && !initialAssignedTo.contains(createdByUser))
+            {
+                Set<User> modifiedAssignedTo = new TreeSet<User>(USER_COMPARATOR);
+                modifiedAssignedTo.addAll(initialAssignedTo);
+                modifiedAssignedTo.add(createdByUser);
+                return Collections.unmodifiableSet(modifiedAssignedTo);
+            }
+        }
+
+        return initialAssignedTo;
+    }
+
+
+    private static final Object ASSIGNED_TO_CACHE_LOCK = new Object();
+
+    // Returns the assigned to list that is used for every new issue.  We can cache it and share it
+    // across requests.  The collection is unmodifiable.
+    private static Collection<User> getInitialAssignedToList(Container c)
     {
         final TableInfo table = CoreSchema.getInstance().getTableInfoActiveUsers();
         final String cacheKey = getCacheKey(c);
+        Set<User> initialAssignedTo;
 
-        Map<String, User> assignedToMap = (Map<String, User>) DbCache.get(table, cacheKey);
-        if (assignedToMap == null)
+        synchronized (ASSIGNED_TO_CACHE_LOCK)
         {
-            assignedToMap = new TreeMap<String, User>();
-            for (User user : SecurityManager.getProjectMembers(c.getProject()))
+            initialAssignedTo = (Set<User>) DbCache.get(table, cacheKey);
+
+            if (initialAssignedTo == null)
             {
-                assignedToMap.put(user.getEmail(), user);
+                initialAssignedTo = new TreeSet<User>(USER_COMPARATOR);
+                Group group = getAssignedToGroup(c);
+
+                if (null != group)
+                {
+                    try
+                    {
+                        initialAssignedTo.addAll(SecurityManager.getGroupMembers(group));
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+                else
+                {
+                    initialAssignedTo.addAll(SecurityManager.getProjectMembers(c.getProject()));
+                }
+
+                // Cache an unmodifiable version
+                initialAssignedTo = Collections.unmodifiableSet(initialAssignedTo);
+
+                DbCache.put(table, cacheKey, initialAssignedTo, Cache.HOUR);
             }
-            DbCache.put(table, cacheKey, assignedToMap, Cache.HOUR);
         }
 
-        //add the user who opened this issue, unless they are a guest, or already in the list.
-        if (issue != null)
-        {
-            User createdByUser = UserManager.getUser(issue.getCreatedBy());
-            if (createdByUser != null && !createdByUser.isGuest() && !assignedToMap.containsKey(createdByUser.getEmail()))
-            {
-                assignedToMap.put(createdByUser.getEmail(), createdByUser);
-                DbCache.put(table, cacheKey, assignedToMap, Cache.HOUR);
-            }
-        }
-        return assignedToMap.values().toArray(new User[assignedToMap.size()]);
+        return initialAssignedTo;
     }
+
 
     public static String getCacheKey(Container c)
     {
         String key = "AssignedTo";
-        return null != c ? key + c.getProject().getName() : key;
+        return null != c ? key + c.getId() : key;
     }
 
     public static int getUserEmailPreferences(Container c, int userId)
@@ -481,6 +526,28 @@ public class IssueManager
         props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName.getSource());
         PropertyManager.saveProperties(props);
     }
+
+
+    public static @Nullable Group getAssignedToGroup(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c.getId(), CAT_ASSIGNED_TO_LIST, true);
+        String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
+
+        if (null == groupId)
+            return null;
+
+        return SecurityManager.getGroup(Integer.valueOf(groupId).intValue());
+    }
+
+
+    public static void saveAssignedToGroup(Container c, @Nullable Group group)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c.getId(), CAT_ASSIGNED_TO_LIST, true);
+        props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
+        PropertyManager.saveProperties(props);
+        uncache(c);  // uncache the assigned to list
+    }
+
 
     public static void setUserEmailPreferences(Container c, int userId, int emailPrefs, int currentUser)
     {

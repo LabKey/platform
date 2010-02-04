@@ -72,7 +72,7 @@
     for (KeywordPicker kwp : keywordPickers)
     {
 %>
-<td>
+<td align="center">
     <form method="POST" name="add<%=kwp.name%>" action="addKeyword.post">
     <input name="keyword" value=""><br>
         <%=PageFlowUtil.generateSubmitButton("Add " + kwp.name)%><br>

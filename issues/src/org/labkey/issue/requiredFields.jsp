@@ -33,6 +33,7 @@
     <table>
         <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields for <%=bean.getEntryTypeNames().pluralName%></b></div></td></tr>
         <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=bean.getEntryTypeNames().singularName%>:</td></tr>
+        <tr><td colspan=2>&nbsp;</td></tr>
     <%
         List<ColumnInfo> columns = bean.getColumns();
         for (int i = 0; i < columns.size(); i++)
@@ -58,7 +59,7 @@
     %>
         <tr><td></td></tr>
         <tr>
-            <td colspan="2"><%=PageFlowUtil.generateSubmitButton("Update Required Fields")%></td>
+            <td colspan="2" align="center"><%=PageFlowUtil.generateSubmitButton("Update Required Fields")%></td>
         </tr>
     </table><br>
 </form>

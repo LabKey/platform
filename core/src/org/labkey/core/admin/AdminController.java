@@ -307,6 +307,8 @@ public class AdminController extends SpringActionController
 
             if (null != childURL)
                 root.addChild(childTitle, childURL);
+            else
+                root.addChild(childTitle);
 
             return root;
         }

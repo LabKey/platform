@@ -361,10 +361,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public HString getUserOptions(Container c, Issue issue, ViewContext context)
     {
-        User[] members = IssueManager.getAssignedToList(c, issue);
-
+        Collection<User> members = IssueManager.getAssignedToList(c, issue);
         HStringBuilder select = new HStringBuilder();
         select.append("<option value=\"\"></option>");
+
         for (User member : members)
         {
             select.append("<option value=").append(member.getUserId()).append(">");

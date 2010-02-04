@@ -153,7 +153,7 @@ if (null != bean.ldapDomain)
 {
     %>, non-<%= bean.ldapDomain %><%
 }
-%>users.<br><br>
+%> users.<br><br>
 Include the following message with the new user mail (optional):<br>
     <textarea rows="8" cols="30" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= bean.groupName %>">

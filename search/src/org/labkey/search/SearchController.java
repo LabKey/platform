@@ -168,12 +168,8 @@ public class SearchController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Indexing Configuration", null);
-        }
-
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            return null;
+            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Indexing Configuration", null);
+            return root;
         }
     }
 

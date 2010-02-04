@@ -1260,7 +1260,7 @@ public class AnnouncementsController extends SpringActionController
             Set<Class<? extends Permission>> perms = new TreeSet<Class<? extends Permission>>();
             perms.add(ReadPermission.class);
             List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
-            return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers.toArray(new User[completionUsers.size()]), getViewContext());
+            return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers, getViewContext());
         }
     }
 

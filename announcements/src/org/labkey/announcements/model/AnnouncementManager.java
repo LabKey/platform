@@ -975,7 +975,8 @@ public class AnnouncementManager
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
 
-                Logger.getLogger(AnnouncementManager.class).info("Indexed " + list.size() + " message attachments");
+                if (!list.isEmpty())
+                    Logger.getLogger(AnnouncementManager.class).info("Indexed " + list.size() + " message attachments");
             }
         }
         catch (SQLException x)
