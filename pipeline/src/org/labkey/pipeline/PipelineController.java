@@ -392,6 +392,11 @@ public class PipelineController extends SpringActionController
 
     public static class BrowseWebPart extends FilesWebPart
     {
+        public BrowseWebPart()
+        {
+            this(Path.rootPath);
+        }
+
         public BrowseWebPart(Path startPath)
         {
             super(getContextContainer());
