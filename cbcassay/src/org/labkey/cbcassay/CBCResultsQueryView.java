@@ -16,6 +16,7 @@
 
 package org.labkey.cbcassay;
 
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -47,6 +48,8 @@ public final class CBCResultsQueryView extends ResultsQueryView
     public CBCResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(protocol, context, settings);
+        setShowInsertNewButton(false);
+        setShowUpdateColumn(true);
     }
 
     public DataView createDataView()
@@ -92,7 +95,9 @@ public final class CBCResultsQueryView extends ResultsQueryView
     static void wrapDisplayColumns(ExpProtocol protocol, ViewContext context, List<DisplayColumn> columns, boolean editable)
     {
         CBCAssayProvider provider = CBCAssayManager.get().getProvider();
-        FieldKey sampleIdKey = provider.getTableMetadata().getParticipantIDFieldKey();
+        AssayTableMetadata assayTableMeta = provider.getTableMetadata();
+        FieldKey sampleIdKey = assayTableMeta.getParticipantIDFieldKey();
+        FieldKey propertiesKey = FieldKey.fromString("Properties");
         Container container = context.getContainer();
         String dataDomainURI = AbstractAssayProvider.getDomainURIForPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
 
@@ -100,30 +105,24 @@ public final class CBCResultsQueryView extends ResultsQueryView
         while (iter.hasNext())
         {
             DisplayColumn column = iter.next();
-            if (column instanceof DetailsColumn)
-            {
-//                    // insert the [Edit] column
-//                    if (canEdit())
-//                    {
-//                        ActionURL url = CBCAssayProvider.getResultUpdateUrl(getViewContext());
-//                        DetailsURL updateURL = new DetailsURL(url, Collections.singletonMap("objectId", "ObjectId"));
-//                        UrlColumn updateColumn = new UrlColumn(updateURL.getURL(Table.createColumnMap(getTable(), null)), "edit");
-//                        iter.add(updateColumn);
-//                    }
-            }
+
+            // remove [edit] and [details] links
+            if (editable && (column instanceof DetailsColumn || column instanceof UrlColumn))
+                iter.remove();
 
             ColumnInfo info = column.getColumnInfo();
-            if (info != null && info.getName() != null && info.getName().startsWith("Properties/"))
+            if (info != null && info.getFieldKey() != null)
             {
-                if (editable && FieldKey.fromString(info.getName()).equals(sampleIdKey))
+                FieldKey fieldKey = info.getFieldKey();
+                if (editable && fieldKey.equals(sampleIdKey))
                 {
                     iter.set(new SampleIdInputColumn(provider, info));
                 }
-                else
+                else if (propertiesKey.equals(fieldKey.getParent()))
                 {
                     // XXX: this is nasty, but I couldn't find a better way to get the ColumnInfo's name
                     // XXX: ColumnInfo.getPropertyURI() doesn't contain the domainURI#name as I expected.
-                    String name = FieldKey.fromString(info.getName()).getName();
+                    String name = fieldKey.getName();
                     String propertyUri = dataDomainURI + "#" + name;
 
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyUri, container);

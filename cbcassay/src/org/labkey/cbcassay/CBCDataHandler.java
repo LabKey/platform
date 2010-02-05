@@ -69,7 +69,7 @@ public class CBCDataHandler extends AbstractAssayTsvDataHandler
 
     protected Map<String, PropertyDescriptor> getPropertyMap(Map<String, DomainProperty> importMap)
     {
-        Map<String, PropertyDescriptor> map = new HashMap<String, PropertyDescriptor>(importMap.size());
+        Map<String, PropertyDescriptor> map = new CaseInsensitiveHashMap<PropertyDescriptor>(importMap.size());
         Set<PropertyDescriptor> seen = new HashSet<PropertyDescriptor>(importMap.size());
         for (Map.Entry<String, DomainProperty> entry : importMap.entrySet())
         {

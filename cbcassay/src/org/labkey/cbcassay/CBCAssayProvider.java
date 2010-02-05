@@ -120,10 +120,25 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     public CBCAssayProvider()
     {
-        super("CBCAssayProtocol", "CBCAssayRun", CBCDataHandler.DATA_TYPE, new AssayTableMetadata(
-            FieldKey.fromParts("Properties"),
-            FieldKey.fromParts("Run"),
-            FieldKey.fromParts("ObjectId")));
+        super("CBCAssayProtocol", "CBCAssayRun", CBCDataHandler.DATA_TYPE,
+            new CBCAssayTableMetadata(
+                FieldKey.fromParts("Properties"),
+                FieldKey.fromParts("Run"),
+                FieldKey.fromParts("ObjectId")));
+    }
+
+    private final static class CBCAssayTableMetadata extends AssayTableMetadata
+    {
+        public CBCAssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
+        {
+            super(specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey);
+        }
+
+        @Override
+        public FieldKey getParticipantIDFieldKey()
+        {
+            return new FieldKey(getSpecimenDetailParentFieldKey(), SAMPLE_ID_NAME);
+        }
     }
 
     public String getName()
@@ -150,7 +165,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             @Override
             public boolean hasPermission(User user, Class<? extends Permission> perm)
             {
-                return (DeletePermission.class.isAssignableFrom(perm)) && schema.getContainer().hasPermission(user, perm);
+                return schema.getContainer().hasPermission(user, perm);
             }
 
             @Override
@@ -193,12 +208,23 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
                 }
                 return srcURL;
             }
+
+            @Override
+            public QueryUpdateService getUpdateService()
+            {
+                return new DummyUpdateService();
+            }
         };
+
         ActionURL showDetailsUrl = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
         showDetailsUrl.addParameter("rowId", protocol.getRowId());
         Map<String, String> params = new HashMap<String, String>();
         params.put("dataRowId", "ObjectId");
         table.addDetailsURL(new DetailsURL(showDetailsUrl, params));
+
+        ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
+        table.setUpdateURL(new DetailsURL(updateUrl, "objectId", FieldKey.fromString("ObjectId")));
+
         return table;
     }
 

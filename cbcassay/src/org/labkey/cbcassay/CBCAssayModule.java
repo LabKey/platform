@@ -34,7 +34,7 @@ import java.util.Set;
 public class CBCAssayModule extends DefaultModule
 {
     public static final String NAME = "CBCAssay";
-    private static final double VERSION = 9.3;
+    private static final double VERSION = 9.302;
 
     @Override
     public String getName()

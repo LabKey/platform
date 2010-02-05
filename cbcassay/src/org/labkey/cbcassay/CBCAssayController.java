@@ -280,6 +280,11 @@ public class CBCAssayController extends SpringActionController
             _returnURL = returnURL;
         }
 
+        public void setSrcURL(String srcURL)
+        {
+            _returnURL = srcURL;
+        }
+
         public ActionURL getReturnActionURL()
         {
             if (_returnURL == null)
@@ -309,7 +314,7 @@ public class CBCAssayController extends SpringActionController
         {
             if (_data == null)
             {
-                _data = _provider.getDataForDataRow(form.getObjectId());
+                _data = getProvider().getDataForDataRow(form.getObjectId());
                 if (_data == null)
                     HttpView.throwNotFound("Data '" + form.getObjectId() + "' not found");
                 _run = _data.getRun();
@@ -320,13 +325,18 @@ public class CBCAssayController extends SpringActionController
             }
         }
 
-        QueryView getResultsView()
+        CBCAssayProvider getProvider()
         {
             if (_provider == null)
                 _provider = CBCAssayManager.get().getProvider();
+            return _provider;
+        }
+
+        QueryView getResultsView()
+        {
             // XXX: need to debug why I can't use the provider's queryView in the UpdateView
 //            QueryView queryView = provider.createRunDataView(getViewContext(), _protocol);
-            QuerySettings settings = _provider.getResultsQuerySettings(getViewContext(), _protocol);
+            QuerySettings settings = getProvider().getResultsQuerySettings(getViewContext(), _protocol);
             QueryView queryView = new ResultsQueryView(_protocol, getViewContext(), settings);
             return queryView;
         }
@@ -340,6 +350,8 @@ public class CBCAssayController extends SpringActionController
             while (iter.hasNext())
             {
                 DisplayColumn column = iter.next();
+                if (column.getCaption().equals("Target Study"))
+                    iter.remove();
                 if (!column.isEditable() || column.getColumnInfo() instanceof LookupColumn)
                     iter.remove();
             }
@@ -348,8 +360,6 @@ public class CBCAssayController extends SpringActionController
 
         public ModelAndView getView(DetailsForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (_provider == null)
-                _provider = (CBCAssayProvider) AssayService.get().getProvider(CBCAssayProvider.NAME);
             validateCommand(form, errors);
 
             QueryView queryView = getResultsView();
@@ -370,9 +380,7 @@ public class CBCAssayController extends SpringActionController
 
         public boolean handlePost(DetailsForm form, BindException errors) throws Exception
         {
-            if (_provider == null)
-                _provider = CBCAssayManager.get().getProvider();
-            Domain resultsDomain = _provider.getResultsDomain(_protocol);
+            Domain resultsDomain = getProvider().getResultsDomain(_protocol);
             Map<String, DomainProperty> propMap = resultsDomain.createImportMap(false);
 
             QueryView queryView = getResultsView();
@@ -422,7 +430,11 @@ public class CBCAssayController extends SpringActionController
                     ColumnInfo col = columns.get(key);
                     Object oldValue = oldValues.get(col.getSelectName());
                     Object newValue = formValues.get(key);
-                    assert newValue != null;
+
+                    // don't allow deleting of values
+                    if (newValue == null)
+                        continue;
+
                     if (newValue.equals(oldValue))
                         continue;
 
@@ -437,7 +449,7 @@ public class CBCAssayController extends SpringActionController
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
                     if (pd == null)
                         throw new RuntimeException("expected Property for " + key.getName());
-                    
+
                     if (oldValue != null)
                     {
                         OntologyManager.deleteProperty(objectURI, pd.getPropertyURI(), getContainer(), getContainer());
