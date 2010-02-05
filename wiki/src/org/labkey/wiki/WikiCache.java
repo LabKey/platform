@@ -117,7 +117,7 @@ public class WikiCache
      * @return An array of NavTree nodes.
      */
     @NotNull
-    static synchronized NavTree[] getCachedNavTree(Container c)
+    static synchronized NavTree[] getNavTree(Container c)
     {
         //need to make a deep copy of the NavTree so that
         //the caller can apply per-session expand state

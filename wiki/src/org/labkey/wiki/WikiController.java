@@ -1970,19 +1970,6 @@ public class WikiController extends SpringActionController
             return cToc;
         }
 
-        static private boolean isAllExpanded(NavTree[] nodes)
-        {
-            for ( NavTree node : nodes )
-            {
-                if (node.getChildCount() != 0)
-                {
-                    if (node.isCollapsed()) return false;
-                    if (!isAllExpanded(node.getChildren())) return false;
-                }
-            }
-            return true;
-        }
-
         static public String getNavTreeId(ViewContext context)
         {
             Container cToc = getTocContainer(context);
@@ -1992,21 +1979,7 @@ public class WikiController extends SpringActionController
         static public NavTree[] getNavTree(ViewContext context)
         {
             Container cToc = getTocContainer(context);
-            return WikiCache.getCachedNavTree(cToc);
-        }
-
-        static private NavTree[] createNavTree(List<Wiki> pageList, String rootId)
-        {
-            ArrayList<NavTree> elements = new ArrayList<NavTree>();
-            //add all pages to the nav tree
-            for (Wiki page : pageList)
-            {
-                NavTree node = new NavTree(page.latestVersion().getTitle().getSource(), page.getPageLink(), true);
-                node.addChildren(createNavTree(page.getChildren(), rootId));
-                node.setId(rootId);
-                elements.add(node);
-            }
-            return elements.toArray(new NavTree[elements.size()]);
+            return WikiCache.getNavTree(cToc);
         }
 
         public WikiTOC(ViewContext context)
@@ -3155,7 +3128,7 @@ public class WikiController extends SpringActionController
 
             Container container = getViewContext().getContainer();
 
-            NavTree[] toc = WikiCache.getCachedNavTree(container);
+            NavTree[] toc = WikiCache.getNavTree(container);
 
             List<Map<String,Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);
