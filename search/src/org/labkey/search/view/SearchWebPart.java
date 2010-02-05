@@ -29,7 +29,7 @@ public class SearchWebPart extends JspView<SearchController.SearchForm>
     public SearchWebPart(boolean includeSubfolders, int textBoxWidth)
     {
         super("/org/labkey/search/view/search.jsp", getForm(includeSubfolders, textBoxWidth));
-        setTitle("New Search");
+        setTitle("Search");
     }
 
     private static SearchController.SearchForm getForm(boolean includeSubfolders, int textBoxWidth)

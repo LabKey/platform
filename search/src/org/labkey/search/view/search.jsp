@@ -85,7 +85,7 @@ if (loginStatusChanged())
         %><input type=hidden name=container value="<%=form.getContainer()%>"><%
     }
 
-    %><input type="text" size=<%=form.getTextBoxWidth()%> id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
+    %><input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
     <%=generateSubmitButton("Search")%>
 
     <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>"></form><%
