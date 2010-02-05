@@ -581,7 +581,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     
     protected int getCountPreprocessorThreads()
     {
-        return 0;
+        return isPreprocessThreadSafe() ? 1 : 0;
     }
 
     
@@ -592,11 +592,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    // See https://issues.apache.org/jira/browse/TIKA-374 for status of a Tika concurrency problem that forces
-    // us to use single-threaded pre-processing.
     protected boolean isPreprocessThreadSafe()
     {
-        return false;
+        return true;
     }
 
 

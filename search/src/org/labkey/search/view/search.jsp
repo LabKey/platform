@@ -174,7 +174,10 @@ if (loginStatusChanged())
                 else
                 {
                     NavTree nav = getDocumentContext(hit);
-                    %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
+                    if (null != nav)
+                    {
+                        %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
+                    }
                 }
                 if (!StringUtils.isEmpty(hit.navtrail))
                 {
@@ -339,6 +342,8 @@ Path dav = new Path("_webdav");
 NavTree getDocumentContext(org.labkey.api.search.SearchService.SearchHit hit)
 {
     Container c = ContainerManager.getForId(hit.container);
+    if (null == c)
+        return null;
     String text = c.getPath();
     ActionURL url = c.getStartURL(getViewContext());
 

@@ -143,16 +143,19 @@ public class SearchController extends SpringActionController
             {
                 ss.start();
                 m.put(SearchModule.searchRunningState,"true");
+                audit(getViewContext().getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
                 ss.pause();
                 m.put(SearchModule.searchRunningState,"false");
+                audit(getViewContext().getUser(), null, "(admin action)", "Crawler Paused");
             }
             else if (form.isDelete())
             {
                 ss.clear();
                 _msgid = 1;
+                audit(getViewContext().getUser(), null, "(admin action)", "Index Deleted");
             }
             PropertyManager.saveProperties(m);
             return true;

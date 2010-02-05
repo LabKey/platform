@@ -38,6 +38,7 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.view.SearchWebPartFactory;
 
@@ -106,26 +107,31 @@ public class SearchModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName(), true);
+        boolean running = !AppProps.getInstance().isDevMode();
+        if (m.containsKey(searchRunningState))
+            running = "true".equals(m.get(searchRunningState));
+
         if (null != ss)
         {
-            Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName(), true);
-            boolean running = !AppProps.getInstance().isDevMode();
-            if (m.containsKey(searchRunningState))
-                running = "true".equals(m.get(searchRunningState));
-
-            // UNDONE: start the service AFTER all the other modules have had a chance to register DocumentProviders
-            if (running)
-                ss.start();
-
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "indexer", new ActionURL(SearchController.AdminAction.class, null));
-        }
 
+            // don't start the crawler until all the modules are done startuping
+            final boolean start = running;
+            ContextListener.addStartupListener(new StartupListener(){
+                public void moduleStartupComplete(ServletContext servletContext)
+                {
+                    if (start)
+                        ss.start();
+                    DavCrawler.getInstance().start();
+                }
+            });
+        }
 
         AuditLogService.get().addAuditViewFactory(new SearchAuditViewFactory());
 
-
-        // add a container listener so we'll know when our container is deleted:
+        // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
     }
 

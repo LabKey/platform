@@ -35,6 +35,7 @@ import org.apache.pdfbox.exceptions.WrappedIOException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -191,7 +192,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 is = r.getInputStream(User.getSearchUser());
 
                 // TODO: Switch to single, static AutoDetectParser shared across all threads on upgrade to Tika 0.7
-                AutoDetectParser parser = new AutoDetectParser();
+                Parser parser = getParser();
 
                 parser.parse(is, handler, metadata);
                 is.close();
@@ -290,6 +291,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         return null;
     }
+
+
+
+    static final AutoDetectParser _parser = new AutoDetectParser(); 
+
+    private Parser getParser()
+    {
+        return _parser;
+    }
+
+    
+    // See https://issues.apache.org/jira/browse/TIKA-374 for status of a Tika concurrency problem that forces
+    // us to use single-threaded pre-processing.
+    @Override
+    protected boolean isPreprocessThreadSafe()
+    {
+        return false;
+    }
+    
 
     private void logAsPreProcessingException(Resource r, Throwable e)
     {

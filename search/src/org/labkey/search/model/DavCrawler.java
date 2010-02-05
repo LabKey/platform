@@ -128,7 +128,6 @@ public class DavCrawler implements ShutdownListener
     {
         ContextListener.addShutdownListener(this);
         _crawlerThread.setDaemon(true);
-        _crawlerThread.start();
     }
 
 
@@ -139,6 +138,13 @@ public class DavCrawler implements ShutdownListener
     public static DavCrawler getInstance()
     {
         return _instance;
+    }
+
+
+    public void start()
+    {
+        if (!_shuttingDown && !_crawlerThread.isAlive())
+            _crawlerThread.start();
     }
 
 
