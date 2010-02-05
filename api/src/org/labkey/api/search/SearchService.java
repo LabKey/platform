@@ -29,8 +29,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.Resource;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -289,8 +292,19 @@ public interface SearchService
         void indexDeleted() throws SQLException;
     }
 
+
+    public interface DocumentParser
+    {
+        public String getMediaType();
+        public boolean detect(byte[] buf) throws IOException;
+        public void parse(InputStream stream, ContentHandler handler) throws IOException, SAXException;
+    }
+    
+
     // an interface that enumerates documents in a container (not recursive)
     public void addDocumentProvider(DocumentProvider provider);
+
+//    public void addDocumentParser(DocumentParser parser);
 
     
     //
