@@ -256,6 +256,7 @@ cbcassay/src/org/labkey/cbcassay/CBCAssaySchema.java -text
 cbcassay/src/org/labkey/cbcassay/CBCDataHandler.java -text
 cbcassay/src/org/labkey/cbcassay/CBCResultsQueryView.java -text
 cbcassay/src/org/labkey/cbcassay/CBCRunUploadForm.java -text
+cbcassay/src/org/labkey/cbcassay/DummyUpdateService.java -text
 cbcassay/src/org/labkey/cbcassay/EditResultsQueryView.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCData.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
