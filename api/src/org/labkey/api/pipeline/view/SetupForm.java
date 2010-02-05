@@ -43,6 +43,7 @@ public class SetupForm
     private boolean _pipelineRootForm;
     private String _pipelineRootOption;
     private boolean _searchable;
+    private boolean _showAdditionalOptionsLink;
 
     public String getConfirmMessage()
     {
@@ -189,5 +190,15 @@ public class SetupForm
             return p;
 
         return null;
+    }
+
+    public boolean isShowAdditionalOptionsLink()
+    {
+        return _showAdditionalOptionsLink;
+    }
+
+    public void setShowAdditionalOptionsLink(boolean showAdditionalOptionsLink)
+    {
+        _showAdditionalOptionsLink = showAdditionalOptionsLink;
     }
 }

@@ -2022,6 +2022,7 @@ internal/webapp/_images/filter_on.gif -text
 internal/webapp/_images/filter_on.png -text
 internal/webapp/_images/folder_new.png -text
 internal/webapp/_images/folder_open.gif -text svneol=unset#unset
+internal/webapp/_images/folder_tree.png -text
 internal/webapp/_images/go-first-disabled.png -text
 internal/webapp/_images/go-first.png -text
 internal/webapp/_images/go-last-disabled.png -text
@@ -2077,6 +2078,7 @@ internal/webapp/_images/up.png -text
 internal/webapp/_images/uparrow.gif -text
 internal/webapp/_images/uparrow_disabled.gif -text
 internal/webapp/_images/upload.png -text
+internal/webapp/_images/warning-icon-alt.png -text
 internal/webapp/_images/warning-icon.png -text
 internal/webapp/_images/warning-small.png -text
 internal/webapp/_yui/README -text
