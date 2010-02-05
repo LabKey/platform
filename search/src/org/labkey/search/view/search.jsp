@@ -109,8 +109,15 @@ if (loginStatusChanged())
                     <td align="right" style="width:100%"><%
                         SearchScope scope = form.getSearchScope(c);
                         if (scope == SearchScope.All) { %>Site<% } else { %><a href="<%=h(scopeResearchURL)%>">Site</a><% } %>&nbsp;<%
-                        if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %>&nbsp;<%
-                        if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% }
+
+                        Container project = c.getProject();
+
+                        // Skip the "Project" and "Folder" links if we're at the root
+                        if (null != project)
+                        {
+                            if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %>&nbsp;<%
+                            if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% }
+                        }
                     %></td>
                 </tr></table>
             </td></tr>
@@ -118,7 +125,6 @@ if (loginStatusChanged())
 
         int hitsPerPage = 20;
         int offset = form.getOffset();
-
         int pageNo = (offset / hitsPerPage) + 1;
 
         try
@@ -332,7 +338,6 @@ List<NavTree> getActions(SearchService.SearchHit hit)
     List<NavTree> nav = r.getActions();
     return nav.isEmpty() ? null : nav;
 }
-
 
 
 Path files = new Path("@files");
