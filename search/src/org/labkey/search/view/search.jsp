@@ -35,6 +35,8 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.api.webdav.Resource" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -176,7 +178,12 @@ if (loginStatusChanged())
                 }
                 if (!StringUtils.isEmpty(hit.navtrail))
                 {
-                    %>&nbsp;<%=formatNavTrail(hit.navtrail)%><br><%
+                    %>&nbsp;<%=formatNavTrail(parseNavTrail(hit.navtrail))%><%
+                }
+                List<NavTree> actions = getActions(hit);
+                if (null != actions && !actions.isEmpty())
+                {
+                    %>&nbsp;<%=formatNavTrail(getActions(hit))%><%
                 }
                 %></div><br><%
             }
@@ -248,7 +255,32 @@ if (loginStatusChanged())
     }
 %>
 <%!
-String formatNavTrail(String s)
+String formatNavTrail(List<NavTree> list)
+{
+    if (null == list || list.isEmpty())
+        return "";
+    
+    try
+    {
+        StringBuilder sb = new StringBuilder("<span style='color:#808080;'>");
+        String connector = " - ";
+        for (NavTree n : list)
+        {
+            sb.append(connector);
+            sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(PageFlowUtil.filter(n.getValue())).append("'>").append(PageFlowUtil.filter(n.getKey())).append("</a>");
+            connector = " - ";
+        }
+        sb.append("</span>");
+        return sb.toString();
+    }
+    catch (Throwable t)
+    {
+        return "";
+    }
+}
+
+
+List<NavTree> parseNavTrail(String s)
 {
     try
     {
@@ -263,30 +295,42 @@ String formatNavTrail(String s)
             a = new JSONArray(new Object[]{o});
         }
         else
-            return "";
+            return null;
+        
         int length = a.length();
-        StringBuilder sb = new StringBuilder("<span style='color:#808080;'>");
-        String connector = " - ";
+        ArrayList<NavTree> list = new ArrayList<NavTree>(length);
         for (int i=0 ; i<length ; i++)
         {
             JSONObject o = a.getJSONObject(i);
             String text = o.getString("text");
             String href = o.getString("href");
+
             if (!StringUtils.isEmpty(text) && !StringUtils.isEmpty(href))
-            {
-                sb.append(connector);
-                sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(PageFlowUtil.filter(href)).append("'>").append(PageFlowUtil.filter(text)).append("</a>");
-                connector = " - ";
-            }
+                list.add(new NavTree(text, href));
         }
-        sb.append("</span>");
-        return sb.toString();
+        return list;
     }
     catch (Throwable t)
     {
-        return "";
+        return null;
     }
 }
+
+
+List<NavTree> getActions(SearchService.SearchHit hit)
+{
+    String docid = hit.docid;
+    if (!docid.startsWith("dav:"))
+        return null;
+    Path p = Path.parse(docid.substring(4));
+    Resource r = WebdavService.get().getResolver().lookup(p);
+    if (null == r || !r.exists())
+        return null;
+    List<NavTree> nav = r.getActions();
+    return nav.isEmpty() ? null : nav;
+}
+
+
 
 Path files = new Path("@files");
 Path pipeline = new Path("@pipeline");
