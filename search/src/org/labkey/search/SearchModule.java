@@ -38,7 +38,6 @@ import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.view.SearchWebPartFactory;
 
@@ -78,8 +77,8 @@ public class SearchModule extends DefaultModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new SearchWebPartFactory("New Search", null),
-            new SearchWebPartFactory("New Search", "right"));
+        return Arrays.asList(new SearchWebPartFactory("Search", null),
+            new SearchWebPartFactory("Search", "right"));
     }
 
     

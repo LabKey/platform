@@ -606,7 +606,7 @@ public class ProjectController extends SpringActionController
             while (params.hasMoreElements())
             {
                 String s = (String) params.nextElement();
-                if (!"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s))
+                if (!"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s) && !ReturnUrlForm.Params.returnUrl.name().equals(s))
                 {
                     String value = request.getParameter(s);
                     if (value != null && !"".equals(value.trim()))

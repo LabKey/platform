@@ -73,7 +73,17 @@ if (loginStatusChanged())
         %><input type=hidden name=category value="<%=h(form.getCategory())%>"><%
     }
 
-    %><input type="text" size=50 id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
+    if (!form.getIncludeSubfolders())
+    {
+        %><input type=hidden name=includeSubfolders value="0"><%
+    }
+
+    if (null != form.getContainer())
+    {
+        %><input type=hidden name=container value="<%=form.getContainer()%>"><%
+    }
+
+    %><input type="text" size=<%=form.getTextBoxWidth()%> id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
     <%=generateSubmitButton("Search")%>
 
     <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>"></form><%
@@ -112,7 +122,7 @@ if (loginStatusChanged())
         try
         {
             long start = System.nanoTime();
-            SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), user, form.getSearchContainer(), true, offset, hitsPerPage);
+            SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
             long time = (System.nanoTime() - start)/1000000;
             int totalHits = result.totalHits;
             int pageCount = (int)Math.ceil((double)totalHits / hitsPerPage);

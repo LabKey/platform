@@ -476,6 +476,7 @@ public class SearchController extends SpringActionController
         private String _category = null;
         private boolean _includeSubfolders = true;
         private String _comment = null;
+        private int _textBoxWidth = 50; // default size
 
         public static enum SearchScope {All, Project, Folder}
 
@@ -603,6 +604,16 @@ public class SearchController extends SpringActionController
         public void setComment(String comment)
         {
             _comment = comment;
+        }
+
+        public int getTextBoxWidth()
+        {
+            return _textBoxWidth;
+        }
+
+        public void setTextBoxWidth(int textBoxWidth)
+        {
+            _textBoxWidth = textBoxWidth;
         }
     }
 

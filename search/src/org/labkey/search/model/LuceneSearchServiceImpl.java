@@ -44,8 +44,10 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
+import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
 
 import java.io.File;
@@ -500,6 +502,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         for (int i = 0; i < standardFields.length; i++)
             boosts.put(standardFields[i], standardBoosts[i]);
+    }
+
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth)
+    {
+        return new SearchWebPart(includeSubfolders, textBoxWidth);
     }
 
     public SearchResult search(String queryString, @Nullable SearchCategory searchCategory, User user, Container root, boolean recursive, int offset, int limit) throws IOException

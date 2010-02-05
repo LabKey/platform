@@ -18,6 +18,7 @@ package org.labkey.search.model;
 import org.apache.log4j.Category;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.Resource;
 
 import java.io.IOException;
@@ -82,5 +83,10 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     protected void deleteDocument(String id)
     {
         
+    }
+
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth)
+    {
+        return null;
     }
 }

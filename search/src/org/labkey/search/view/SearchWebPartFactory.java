@@ -17,7 +17,6 @@ package org.labkey.search.view;
 
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
-import org.labkey.search.SearchController;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -31,6 +30,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     public SearchWebPartFactory(String name, String location)
     {
         super(name, location, true, false);
+        addLegacyNames("Narrow Search");
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -41,7 +41,14 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
             width = 0;
         }
         boolean includeSubfolders = Search.includeSubfolders(webPart);
-        return new SearchWebPart("", SearchController.getSearchURL(portalCtx.getContainer()), includeSubfolders, false, width, false);
+        return new SearchWebPart(includeSubfolders, width);
+    }
+
+
+    @Override
+    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    {
+        return new JspView<Portal.WebPart>("/org/labkey/search/view/customizeSearchWebPart.jsp", webPart);
     }
 }
 

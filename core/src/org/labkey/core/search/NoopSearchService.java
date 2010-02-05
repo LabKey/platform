@@ -24,6 +24,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.Resource;
 import org.labkey.api.data.Container;
 
@@ -156,6 +157,11 @@ public class NoopSearchService implements SearchService
     {
     }
 
+
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth)
+    {
+        return null;
+    }
 
     public IndexTask defaultTask()
     {

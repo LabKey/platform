@@ -32,6 +32,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -39,6 +40,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.*;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -91,22 +93,24 @@ public class WikiController extends SpringActionController
     protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
     {
         ModelAndView template = super.getTemplate(context, mv, action, page);
+
         if (template instanceof HomeTemplate && !(action instanceof EditWikiAction))
         {
             WebPartView toc = new WikiTOC(context);
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
-            if(mv instanceof Search.SearchResultsView)
+            if (null == ss || mv instanceof Search.SearchResultsView)
             {
                 ((HomeTemplate)template).setView("right", toc);
             }
             else
             {
-                JspView<SearchViewContext> searchView = new JspView<SearchViewContext>("/org/labkey/wiki/view/wikiSearch.jsp",
-                                                                                    new SearchViewContext(getViewContext()));
-                searchView.setTitle("Search");
+                WebPartView searchView = ss.getSearchView(false, 0);
+
                 ((HomeTemplate)template).setView("right", new VBox(searchView, toc));
             }
         }
+
         return template;
     }
 

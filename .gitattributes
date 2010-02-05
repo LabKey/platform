@@ -1844,6 +1844,7 @@ search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/view/SearchWebPart.java -text
 search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/admin.jsp -text
+search/src/org/labkey/search/view/customizeSearchWebPart.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
 search/src/schemas/search.xml -text

@@ -21,15 +21,15 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Search;
 import org.labkey.api.util.Search.SearchWebPart;
 import org.labkey.api.view.*;
-import org.labkey.api.security.User;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * User: migra
@@ -59,8 +59,7 @@ public class PortalModule extends DefaultModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new SearchWebPartFactory("Search", null),
-            new SearchWebPartFactory("Search", "right"));
+        return Collections.emptyList();
     }
 
     public boolean hasScripts()
