@@ -125,6 +125,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             success : this.updatePipelineActions,
             scope: this
         });
+        this.actions.importData.disable();
     },
 
     updatePipelineActions : function(response)
@@ -266,6 +267,9 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 this.pipelineActions.push(tbarAction);
             }
         }
+
+        if (this.pipelineActions.length > 0)
+            this.actions.importData.enable();
     },
 
     showImportData : function()
@@ -403,6 +407,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var actions = [];
         var checked = true;
         var hasAdmin = false;
+        var selections = this.grid.selModel.getSelections();
 
         for (var i=0; i < this.importActions.length; i++)
         {
@@ -418,6 +423,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     fieldLabel: fieldLabel,
                     itemCls: 'x-check-group',
                     columns: 1,
+                    //disabled: !pa.initialConfig.multiSelect,
                     items: []
                 };
 
@@ -446,6 +452,14 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     checked = false;
                 }
 
+                if (selections.length > 1 && !pa.initialConfig.multiSelect)
+                {
+                    radioGroup.disabled = true;
+                    radioGroup.tooltip = 'Only one file at a time can be selected for this action';
+
+                    radioGroup = new Ext.form.RadioGroup(radioGroup);
+                    radioGroup.on('render', function(c){this.setFormFieldTooltip(c);}, this);
+                }
                 actions.push(radioGroup);
             }
         }
@@ -540,6 +554,29 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 var renderFileURL = LABKEY.ActionURL.buildURL('filecontent', 'renderFile') + '?' + params.join('&');
                 window.location = renderFileURL;
             }
+        }
+    },
+
+    setFormFieldTooltip : function(component)
+    {
+        
+        var label = Ext.get('x-form-el-' + component.id).prev('label');
+
+        if (label)
+        {
+            var helpImage = label.createChild({
+                tag: 'img',
+                src: LABKEY.contextPath + '/_images/warning-icon-alt.png',
+                style: 'margin-bottom: 0px; margin-left: 5px; padding: 0px;',
+                width: 12,
+                height: 12
+            });
+            //label = label.up('div.x-form-item x-check-group');
+            Ext.QuickTips.register({
+                target: helpImage,
+                text: component.tooltip,
+                title: ''
+            });
         }
     }
 });

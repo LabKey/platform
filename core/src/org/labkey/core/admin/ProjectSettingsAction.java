@@ -451,18 +451,13 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     {
                         box.addView(new HttpView() {
                             protected void renderInternal(Object model, PrintWriter out) throws Exception {
-                                WebPartView.startTitleFrame(out, "Configure Pipeline Root");
+                                WebPartView.startTitleFrame(out, "Configure Data Processing Pipeline");
                             }
                         });
 
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("<tr><td colspan='10'>");
-                        sb.append("The root for the data pipeline can be set here for the project and all child folders. For additional pipeline options ");
-                        sb.append("<a href='").append(PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getLocalURIString()).append("'>click here</a>");
-                        sb.append("</td></tr>");
-                        box.addView(new HtmlView(sb.toString()));
-
                         SetupForm form = SetupForm.init(c);
+                        form.setShowAdditionalOptionsLink(true);
+
                         box.addView(PipelineService.get().getSetupView(form));
                         box.addView(new HttpView() {
                             protected void renderInternal(Object model, PrintWriter out) throws Exception {

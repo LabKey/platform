@@ -37,6 +37,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -76,6 +77,9 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
 
     public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors) throws Exception
     {
+        if (form.isUpgrade())
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+
         if (!reshow)
         {
             File root = _svc.getSiteDefaultRoot();

@@ -28,6 +28,8 @@
 <%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -36,9 +38,11 @@
 
     // the default project pipeline root based on the site default root
     String projectDefaultRoot = "";
-    String folderRadioBtnLabel = "Use a project specific pipeline root";
+    String folderRadioBtnLabel = "Set a pipeline override";
+/*
     if (!getViewContext().getContainer().isProject())
         folderRadioBtnLabel = "Use a folder specific pipeline root";
+*/
 
     File siteRoot = ServiceRegistry.get().getService(FileContentService.class).getSiteDefaultRoot();
     if (siteRoot != null)
@@ -68,12 +72,18 @@
     {
         if (document.getElementById('pipeOptionSiteDefault').checked)
         {
+            var permDiv = document.getElementById('pipelineFilesPermissions');
+            if (permDiv) permDiv.style.display = 'none';
+
             document.getElementById('pipeProjectRootPath').style.display = 'none';
             document.getElementById('pipeRootPath').style.display = '';
             document.getElementById('pipeIndexTd').style.display = 'none';
         }
         if (document.getElementById('pipeOptionProjectSpecified').checked)
         {
+            var permDiv = document.getElementById('pipelineFilesPermissions');
+            if (permDiv) permDiv.style.display = '';
+
             document.getElementById('pipeProjectRootPath').style.display = '';
             document.getElementById('pipeRootPath').style.display = 'none';
             document.getElementById('pipeIndexTd').style.display = '';
@@ -99,15 +109,29 @@
 
 <form enctype="multipart/form-data" method="POST" action="">
     <table>
-        <tr><td class="labkey-form-label">Pipeline root <%=PageFlowUtil.helpPopup("Pipeline root", "Set a project level pipeline root. " +
+        <tr><td></td></tr>
+        <tr><td>
+            The LabKey Data Processing Pipeline allows you to process and import data files with tools we supply, or
+            with tools you build on your own. If you have a pre-existing directory that contain the files you want
+            to process, you can set a pipeline override to allow the data processing pipeline to operate on the
+            files in your preferred directory instead of the one that LabKey creates for each folder.
+<%      if (bean.isShowAdditionalOptionsLink()) { %>
+            For additional pipeline options, <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getViewContext().getContainer()).getLocalURIString()%>">click here</a>
+<%      } %>
+        </td></tr>
+        <tr><td></td></tr>
+        <tr>
+<%--
+            <td class="labkey-form-label">Pipeline root <%=PageFlowUtil.helpPopup("Pipeline root", "Set a project level pipeline root. " +
                 "When a project level pipeline root is set, each folder for that project can share the same root or can override with a folder specific location.")%></td>
+--%>
             <td>
                 <table>
                     <tr>
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault"
                             <%="siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
                                    onclick="updatePipelineSelection();">
-                            Use a default based on the site wide root</td>
+                            Use a default based on the site-level root</td>
                         <td><input type="text" id="pipeRootPath" size="50" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
                     </tr>
                     <tr>
@@ -118,8 +142,9 @@
                         <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getStrValue())%>"></td>
                     </tr>
                     <tr>
+                        <td></td>
                         <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable" <%=bean.isSearchable() ? " checked" : ""%>>
-                            Allow files in the pipeline root to be searched.
+                            Allow these files to be searched.
                         </td>
                     </tr>
                 </table>

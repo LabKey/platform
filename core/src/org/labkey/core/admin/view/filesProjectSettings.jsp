@@ -46,12 +46,21 @@
 
 <form action="" method="post">
     <%
-        WebPartView.startTitleFrame(out, "Configure Web File Root");
+        WebPartView.startTitleFrame(out, "Configure File Root ");
     %>
-    
+
     <table>
-        <tr><td class="labkey-form-label">File root <%=PageFlowUtil.helpPopup("File root", "Set a project level file root. " +
-                "When a project level file root is set, each folder for that project has a corresponding subdirectory in the file system.")%></td>
+        <tr><td></td></tr>
+        <tr><td colspan="10">LabKey Server allows you to upload and process your data files, including flow, proteomics and study-related
+            files. By default, LabKey stores your files in a standard directory structure. You can override this location for each
+            project if you wish.
+        </td></tr>
+        <tr><td></td></tr>
+        <tr>
+<%--
+            <td class="labkey-form-label">File&nbsp;root&nbsp;<%=PageFlowUtil.helpPopup("File root", "Set a project-level file root. " +
+                "When a project-level file root is set, each folder for that project has a corresponding subdirectory in the file system.")%></td>
+--%>
             <td>
                 <table>
                     <tr><td><input type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
@@ -62,7 +71,7 @@
                         <td><input type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
                                    <%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? " checked" : ""%>
                                    onclick="updateSelection();">
-                            Use a default based on the site wide root</td>
+                            Use a default based on the site-level root</td>
                         <td><input type="text" id="rootPath" size="64" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
                     </tr>
                     <tr>

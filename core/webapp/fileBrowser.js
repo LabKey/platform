@@ -2068,8 +2068,15 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
         }
 
-        if (pct != this.lastSummary.pct || file != this.lastSummary.file)
-            this.progressBar.updateProgress(pct, file);
+        if (record)
+        {
+            if (!this.progressBar.isVisible())
+                this.progressBar.show();
+            if (pct != this.lastSummary.pct || file != this.lastSummary.file)
+                this.progressBar.updateProgress(pct, file);
+        }
+        else
+            this.progressBar.hide();
 
         // UNDONE: failed transfers
         this.lastSummary = summary;
@@ -2541,7 +2548,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 this.applet.setEnabled(true);
                 this.applet.setAllowDirectoryUpload(canMkdir);
-                this.applet.setText( (canMkdir ? "Drop files and folders here" : "Drop files here") + "\nFolder: " +record.data.name);
+                this.applet.setText( (canMkdir ? "Drop files and folders here" : "Drop files here")); // + "\nFolder: " +record.data.name);
             }
             else
             {
@@ -2723,17 +2730,25 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.on(BROWSER_EVENTS.directorychange, this.updateAppletState, this);
 
         this.on(BROWSER_EVENTS.transfercomplete, function(result) {
-            if (this.progressBar)
-                this.progressBar.reset();
-            if (this.appletStatusBar)
-                this.appletStatusBar.setVisible(false);
+            this.hideProgressBar();
             this.refreshDirectory();
         }, this);
 
-        this.on(BROWSER_EVENTS.transferstarted, function(result) {
-            if (this.appletStatusBar)
-                this.appletStatusBar.setVisible(true);
-        }, this);
+        this.on(BROWSER_EVENTS.transferstarted, function(result) {this.showProgressBar();}, this);
+    },
+
+    showProgressBar : function()
+    {
+        if (this.appletStatusBar)
+            this.appletStatusBar.setVisible(true);
+    },
+
+    hideProgressBar : function()
+    {
+        if (this.progressBar)
+            this.progressBar.reset();
+        if (this.appletStatusBar)
+            this.appletStatusBar.setVisible(false);
     },
 
     onRender : function()
@@ -2814,16 +2829,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         });
 
         this.actions.folderTreeToggle = new Ext.Action({
-            iconCls: 'iconFileOpen',
+            iconCls: 'iconFolderTree',
             tooltip: 'Show or hide the folder tree',
             listeners: {click:function(button, event) {
-                
-                if (this.tree)
-                {
-                    if (this.tree.isVisible())
-                        this.tree.collapse();
-                    else
-                        this.tree.expand();
+                if (this.tree) {
+                    if (this.tree.isVisible()) this.tree.collapse();
+                    else                       this.tree.expand();
                 }
             }, scope:this}
         })
@@ -3106,6 +3117,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     onMultipleFileUpload : function()
     {
+        this.hideProgressBar();
         this.toggleTabPanel('uploadMultiFileTab');
         if (!this.applet)
         {
@@ -3130,12 +3142,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             var task = {
                 interval:100,
-                applet:this.applet,
+                scope: this,
                 run : function()
                 {
                     if (this.applet.isActive())
                     {
-                        this.applet.setText("Drop files and folders here");
+                        this.updateAppletState(this.currentDirectory);
                         Ext.TaskMgr.stop(this);
                     }
                 }

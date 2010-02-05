@@ -155,17 +155,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     renderPipelineActions : function(data)
     {
-        var comboStore = new Ext.data.SimpleStore({
-            fields: [{name: 'displayLabel'}, {name: 'displayState'}],
-            data: [['Enabled', 'enabled'],['Disabled', 'disabled'],['Show on toolbar', 'toolbar']]
-        });
-
-        var dataConnection = new Ext.data.Connection({
-            url: this.actionsConfigURL,
-            method: 'GET',
-            timeout: 300000
-        });
-
         var store = new Ext.data.GroupingStore({
             reader: new Ext.data.JsonReader({root:'actions',id:'id'},
                     [
@@ -206,20 +195,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     //{header:'Category', dataIndex:'category', width:200},
                     //{header:'Description', dataIndex:'description', width:300},
                     enabledColumn,
-                    onToolbarColumn,
-/*
-                        {header:'Display State', dataIndex: 'displayState',
-                            editor: new Ext.form.ComboBox({
-                            editable: false,
-                            valueField: 'displayState',
-                            displayField: 'displayLabel',
-                            mode: 'local',
-                            forceSelection: true,
-                            triggerAction: 'all',
-                            store: comboStore,
-                            listClass: 'x-combo-list-small'
-                        })}
-*/
+                    onToolbarColumn
                 ]
             });
 
@@ -284,9 +260,10 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         var win = new Ext.Window({
             title: 'Manage Pipeline Actions',
-            border: false,
+//            border: false,
             width: 500,
             height: 400,
+            layout: 'fit',
             cls: 'extContainer',
             autoScroll: true,
             closeAction:'close',

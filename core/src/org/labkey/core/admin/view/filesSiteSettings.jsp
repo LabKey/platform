@@ -37,23 +37,26 @@
 <form action="filesSiteSettings.view" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table width="80%">
-        <tr><td colspan="2" class="labkey-announcement-title"><span>Site File Content Root</span></td></tr>
+        <tr><td colspan="2" class="labkey-announcement-title"><span>Site-Level File Root</span></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
 
         <% if (bean.isUpgrade()) { %>
-        <tr><td colspan="2">Set the file content root for this site, or use the default provided. The site root is used for
-            serving file content through the website and allowing user upload of files. Additionally, it will establish defaults
-            for pipeline roots (where needed). View the <a target="_blank" href="<%=new HelpTopic("files", HelpTopic.Area.SERVER).getHelpTopicLink()%>">help page</a> for more information.
+        <tr><td colspan="2">Set the site-level root for this server installation, or use the default provided. If the
+            root does not exist, LabKey server will create it for you.<br/><br/>
+            When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
+            LabKey Server allows you to upload and process your data files, including flow, proteomics and
+            study-related files. By default, LabKey stores your files in a standard directory structure. You can
+            override this location for each project if you wish.
             </td></tr>
         <% } else { %>
-        <tr><td colspan="2">When a site level file root is set, each folder for every project has a corresponding subdirectory in the file system.
+        <tr><td colspan="2">When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
             A default root is provided or one can be specified.</td></tr>
         <% } %>
         <tr><td>&nbsp;</td></tr>
         
-        <tr><td class="labkey-form-label">File root <%=PageFlowUtil.helpPopup("File root", "Set a site level file root. " +
-                "When a site level file root is set, each folder for every project has a corresponding subdirectory in the file system." +
-                " A site level file root may be overridden at the project level from 'Project Settings'.")%></td>
+        <tr><td class="labkey-form-label">Site-Level&nbsp;File&nbsp;root&nbsp;<%=PageFlowUtil.helpPopup("File root", "Set a site-level file root. " +
+                "When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system." +
+                " A site-level file root may be overridden at the project level from 'Project Settings'.")%></td>
             <td><input type="text" name="rootPath" size="64" value="<%=h(bean.getRootPath())%>"></td>
         </tr>
 
@@ -141,12 +144,12 @@
 
 <% if (!bean.isUpgrade()) { %>
     <table width="80%">
-        <tr><td colspan="2" class="labkey-announcement-title"><span>Summary view for File Roots</span></td></tr>
+        <tr><td colspan="2" class="labkey-announcement-title"><span>Summary View for File Roots</span></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
-        <tr><td>File roots, named file sets and pipeline roots can be viewed on a project/folder basis. The 'Default' column
-            indicates whether the root is derived from the site default root (set above) or has been overriden. To view or
-            manage files, double click on a row or click on the 'Browse Selected' button. To configure the root, select a root and click on the 'Configure Selected'
-            button in the toolbar.
+        <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column
+            indicates whether the directory is derived from the site-level file root (set above) or has been overriden. To view or
+            manage files in a directory, double click on a row or click on the 'Browse Selected' button. To configure an
+            @file or an @pipeline directory, select the directory and click on the 'Configure Selected' button in the toolbar.
         </td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td><div id="viewsGrid" class="extContainer"></div></td></tr>

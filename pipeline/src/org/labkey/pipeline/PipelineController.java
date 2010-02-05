@@ -337,7 +337,7 @@ public class PipelineController extends SpringActionController
                 {
                     main.addView(new PermissionView(SecurityManager.getPolicy(pipeRoot)));
                 }
-                main.setTitle("Data Pipeline Setup");
+                main.setTitle("Data Processing Pipeline Setup");
                 main.setFrame(WebPartView.FrameType.PORTAL);
 
                 view.addView(main);
@@ -362,7 +362,7 @@ public class PipelineController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Data Pipeline Setup");
+            return root.addChild("Data Processing Pipeline Setup");
         }        
     }
 
