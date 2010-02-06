@@ -386,7 +386,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         title = TITLE_STRIPPING_PATTERN.matcher(title).replaceAll("");
 
         if (body.startsWith(title))
+        {
             body = body.substring(title.length());
+            body = StringUtils.stripStart(body,"/. \n\r\t");
+        }
 
         if (body.length() <= SUMMARY_LENGTH)
             return body;
