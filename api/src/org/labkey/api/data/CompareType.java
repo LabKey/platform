@@ -228,6 +228,7 @@ public enum CompareType
         {
             types.add(info.isDateTimeType() ? DATE_EQUAL : EQUAL);
             types.add(info.isDateTimeType() ? DATE_NOT_EQUAL : NEQ);
+            types.add(IN);
         }
         if (info.isNullable())
         {
