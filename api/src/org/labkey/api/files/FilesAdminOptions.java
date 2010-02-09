@@ -29,10 +29,7 @@ import org.labkey.data.xml.ActionOptions;
 import org.labkey.data.xml.PipelineOptionsDocument;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,6 +42,7 @@ public class FilesAdminOptions
     private boolean _importDataEnabled = true;
     private List<PipelineActionConfig> _pipelineConfig = new ArrayList<PipelineActionConfig>();
     private Container _container;
+    private Map<String, PipelineActionConfig> _configMap = new HashMap<String, PipelineActionConfig>();
 
     public FilesAdminOptions(Container c, String xml)
     {
@@ -120,6 +118,24 @@ public class FilesAdminOptions
     public void setPipelineConfig(List<PipelineActionConfig> pipelineConfig)
     {
         _pipelineConfig = pipelineConfig;
+    }
+
+    public void addDefaultPipelineConfig(PipelineActionConfig config)
+    {
+        Map<String, PipelineActionConfig> configMap = getConfigMap();
+
+        if (!configMap.containsKey(config.getId()))
+            _pipelineConfig.add(config);
+    }
+
+    private Map<String, PipelineActionConfig> getConfigMap()
+    {
+        if (_configMap.isEmpty())
+        {
+            for (PipelineActionConfig config : getPipelineConfig())
+                _configMap.put(config.getId(), config);
+        }
+        return _configMap;
     }
 
     public Container getContainer()

@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ */         
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang.StringUtils;
@@ -46,9 +46,32 @@ public class PipelineActionConfig
 
     public PipelineActionConfig(String id, String state, String label)
     {
+        this(id, displayState.valueOf(state), label, false);
+    }
+
+    public PipelineActionConfig(String id, displayState state, String label)
+    {
+        this(id, state, label, false);
+    }
+
+    /**
+     *
+     * @param id
+     * @param state
+     * @param label
+     * @param isSingleAction - true if this action does not handle multiple subactions, will
+     * usually result in a button without a menu
+     */
+    public PipelineActionConfig(String id, displayState state, String label, boolean isSingleAction)
+    {
         _id = id;
-        _state = displayState.valueOf(state);
+        _state = state;
         _label = label;
+
+        if (isSingleAction)
+        {
+            setLinks(Collections.singletonList(new PipelineActionConfig(id, state, label, false)));
+        }
     }
 
     public String getId()

@@ -540,4 +540,9 @@ abstract public class PipelineProvider
     {
         return false;
     }
+
+    public List<PipelineActionConfig> getDefaultActionConfig()
+    {
+        return Collections.emptyList();
+    }
 }
