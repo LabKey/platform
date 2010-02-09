@@ -81,8 +81,8 @@ public class StudyPipeline extends PipelineProvider
                 }
             });
 
-            String actionId = createActionId(SpecimenController.ImportSpecimenData.class, "Import specimen data");
-            addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import specimen data", directory, files, false, false, includeAll);
+            String actionId = createActionId(SpecimenController.ImportSpecimenData.class, "Import Specimen Data");
+            addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import Specimen Data", directory, files, false, false, includeAll);
         }
         catch (IOException e)
         {
@@ -172,7 +172,7 @@ public class StudyPipeline extends PipelineProvider
         if (!datasetFiles.isEmpty())
             files = datasetFiles.toArray(new File[datasetFiles.size()]);
 
-        String actionId = createActionId(StudyController.ImportStudyBatchAction.class, "Import datasets");
-        addAction(actionId, StudyController.ImportStudyBatchAction.class, "Import datasets", directory, files, false, false, includeAll);
+        String actionId = createActionId(StudyController.ImportStudyBatchAction.class, "Import Datasets");
+        addAction(actionId, StudyController.ImportStudyBatchAction.class, "Import Datasets", directory, files, false, false, includeAll);
     }
 }

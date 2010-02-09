@@ -82,7 +82,7 @@
                         <td><input type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.projectSpecified%>"
                                    <%=AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name().equals(bean.getFileRootOption()) ? " checked" : ""%>
                                    onclick="updateSelection();">
-                            Use a project specific file root</td>
+                            Use a project-level file root</td>
                         <td><input type="text" id="projectRootPath" name="projectRootPath" size="64" value="<%=h(bean.getProjectRootPath())%>"></td>
                     </tr>
                 </table>

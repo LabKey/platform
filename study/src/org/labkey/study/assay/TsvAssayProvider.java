@@ -137,6 +137,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         return new AssayPipelineProvider(StudyModule.class,
                 new PipelineProvider.FileTypesEntryFilter(getDataType().getFileType()), 
-                this, "Import Text and XLS");
+                this, "Import Text or Excel Assay");
     }
 }

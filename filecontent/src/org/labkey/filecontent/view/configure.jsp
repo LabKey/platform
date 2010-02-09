@@ -55,12 +55,12 @@
         ActionURL configureHelper = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(ctx.getContainer()).addParameter("tabId", "files");
         if (null == rootFile)
         { %>
-            There is no web root for this project.
+            There is no file root for this project.
      <% }
         else
         { %>
-            The web root for this project is <br><blockquote><%=h(rootFile.getCanonicalPath())%></blockquote>
-            The directory containing web files for this folder is
+            The file root for this project is <br><blockquote><%=h(rootFile.getCanonicalPath())%></blockquote>
+            The directory containing files for this folder is
         <%
             String path = "<unset>";
             AttachmentDirectory attachDir = service.getMappedAttachmentDirectory(ctx.getContainer(), false);
@@ -77,7 +77,7 @@
                 <%=h(path)%>
             </blockquote>
      <% } %>
-        <a href="<%=h(configureHelper)%>">Configure web root for Project.</a><br><br>
+        <a href="<%=h(configureHelper)%>">Configure file root for Project.</a><br><br>
 <%  } //site administrator %>
 
 
@@ -123,7 +123,7 @@ if (ctx.getUser().isAdministrator())
 {
 %>
 <br><b>Additional Information</b><br>
-When you set a web root for a project, you can use your LabKey Server installation as a secure web content server.<br>
+When you set a file root for a project, you can use your LabKey Server installation as a secure web content server.<br>
 For each project you can define a parallel file-system tree containing files you would like LabKey Server to return<br>
 You can then use LabKey URLs to download those files.
 If, for example, you set the content root for the Home project to<br>

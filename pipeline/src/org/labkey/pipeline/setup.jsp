@@ -112,11 +112,11 @@
         <tr><td></td></tr>
         <tr><td>
             The LabKey Data Processing Pipeline allows you to process and import data files with tools we supply, or
-            with tools you build on your own. If you have a pre-existing directory that contain the files you want
+            with tools you build on your own. If you have a pre-existing directory that contains the files you want
             to process, you can set a pipeline override to allow the data processing pipeline to operate on the
             files in your preferred directory instead of the one that LabKey creates for each folder.
 <%      if (bean.isShowAdditionalOptionsLink()) { %>
-            For additional pipeline options, <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getViewContext().getContainer()).getLocalURIString()%>">click here</a>
+            For additional pipeline options, <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getViewContext().getContainer()).getLocalURIString()%>">click here</a>.
 <%      } %>
         </td></tr>
         <tr><td></td></tr>

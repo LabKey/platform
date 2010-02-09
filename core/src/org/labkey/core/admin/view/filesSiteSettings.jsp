@@ -54,7 +54,7 @@
         <% } %>
         <tr><td>&nbsp;</td></tr>
         
-        <tr><td class="labkey-form-label">Site-Level&nbsp;File&nbsp;root&nbsp;<%=PageFlowUtil.helpPopup("File root", "Set a site-level file root. " +
+        <tr><td class="labkey-form-label">Site-Level&nbsp;File&nbsp;Root&nbsp;<%=PageFlowUtil.helpPopup("File Root", "Set a site-level file root. " +
                 "When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system." +
                 " A site-level file root may be overridden at the project level from 'Project Settings'.")%></td>
             <td><input type="text" name="rootPath" size="64" value="<%=h(bean.getRootPath())%>"></td>
@@ -144,7 +144,7 @@
 
 <% if (!bean.isUpgrade()) { %>
     <table width="80%">
-        <tr><td colspan="2" class="labkey-announcement-title"><span>Summary View for File Roots</span></td></tr>
+        <tr><td colspan="2" class="labkey-announcement-title"><span>Summary View for File Directories</span></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
         <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column
             indicates whether the directory is derived from the site-level file root (set above) or has been overriden. To view or
