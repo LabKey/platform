@@ -554,9 +554,24 @@ public class PipelineController extends SpringActionController
             Container container = getViewContext().getContainer();
             User user = getViewContext().getUser();
 
+            PipeRoot pr = PipelineService.get().findPipelineRoot(container);
+            if (pr == null || !URIUtil.exists(pr.getUri()))
+            {
+                HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
+                return null;
+            }
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             FilesAdminOptions options = svc.getAdminOptions(container);
 
+            Set<Module> activeModules = container.getActiveModules();
+            for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
+            {
+                if (provider.isShowActionsIfModuleInactive() || activeModules.contains(provider.getOwningModule()))
+                {
+                    for (PipelineActionConfig config : provider.getDefaultActionConfig())
+                        options.addDefaultPipelineConfig(config);
+                }
+            }
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("config", options.toJSON());
             resp.put("success", true);
