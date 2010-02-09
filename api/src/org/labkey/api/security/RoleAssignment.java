@@ -39,9 +39,9 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     {
     }
 
-    public RoleAssignment(SecurableResource resource, UserPrincipal user, Role role)
+    public RoleAssignment(String resourceId, UserPrincipal user, Role role)
     {
-        _resourceId = resource.getResourceId();
+        _resourceId = resourceId;
         _role = role;
         _userId = user.getUserId();
     }

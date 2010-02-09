@@ -44,11 +44,6 @@ public class MutableSecurityPolicy extends SecurityPolicy
         super(resource);
     }
 
-    public MutableSecurityPolicy(@NotNull SecurityPolicy sourcePolicy)
-    {
-        super(sourcePolicy.getResource(), sourcePolicy);
-    }
-
     public MutableSecurityPolicy(@NotNull SecurableResource resource, @NotNull SecurityPolicy sourcePolicy)
     {
         super(resource, sourcePolicy);
@@ -64,7 +59,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
         if(role.getExcludedPrincipals().contains(principal))
             throw new IllegalArgumentException("The principal " + principal.getName() + " may not be assigned the role " + role.getName() + "!");
         
-        RoleAssignment assignment = new RoleAssignment(getResource(), principal, role);
+        RoleAssignment assignment = new RoleAssignment(getResourceId(), principal, role);
         assignment.setUserId(principal.getUserId());
         assignment.setRole(role);
         addAssignment(assignment);

@@ -129,7 +129,7 @@ public class FileSystemResource extends AbstractResource
     protected void setPolicy(SecurityPolicy policy)
     {
         super.setPolicy(policy);
-        setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResource().getResourceId());
+        setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
     }
 
 

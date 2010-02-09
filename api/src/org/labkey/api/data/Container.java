@@ -118,7 +118,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean isInheritedAcl()
     {
-        return !(getPolicy().getResource().getResourceId().equals(getId()));
+        return !(getPolicy().getResourceId().equals(getId()));
     }
 
     /** If someone holds onto a container too long (e.g. in a cache, or across requests), it may become invalidated */

@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.Role;
@@ -39,24 +40,27 @@ import java.util.*;
 public class SecurityPolicy
 {
     protected final SortedSet<RoleAssignment> _assignments = new TreeSet<RoleAssignment>();
-    protected SecurableResource _resource;
+    protected String _resourceId;
+    protected String _containerId;
+    protected String _resourceClass;
     protected Date _modified;
 
     public SecurityPolicy(@NotNull SecurableResource resource)
     {
-        _resource = resource;
+        _resourceId = resource.getResourceId();
+        _resourceClass = resource.getClass().getName();
+        _containerId = resource.getResourceContainer().getId();
     }
 
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull RoleAssignment[] assignments)
     {
+        this(resource);
         _assignments.addAll(Arrays.asList(assignments));
-        _resource = resource;
     }
 
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull RoleAssignment[] assignments, Date lastModified)
     {
-        _assignments.addAll(Arrays.asList(assignments));
-        _resource = resource;
+        this(resource, assignments);
         _modified = lastModified;
     }
 
@@ -68,8 +72,7 @@ public class SecurityPolicy
      */
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull SecurityPolicy otherPolicy)
     {
-        super();
-        _resource = resource;
+        this(resource);
         for(RoleAssignment assignment : otherPolicy.getAssignments())
         {
             RoleAssignment newAssignment = new RoleAssignment();
@@ -81,9 +84,19 @@ public class SecurityPolicy
     }
 
     @NotNull
-    public SecurableResource getResource()
+    public String getResourceId()
     {
-        return _resource;
+        return _resourceId;
+    }
+
+    public String getContainerId()
+    {
+        return _containerId;
+    }
+
+    public String getResourceClass()
+    {
+        return _resourceClass;
     }
 
     @NotNull
@@ -314,7 +327,7 @@ public class SecurityPolicy
     @NotNull
     public SecurityPolicyBean getBean()
     {
-        return new SecurityPolicyBean(_resource, _modified);
+        return new SecurityPolicyBean(_resourceId, _resourceClass, ContainerManager.getForId(_containerId), _modified);
     }
 
     /**
@@ -330,7 +343,7 @@ public class SecurityPolicy
         props.put("modified", getModified());
 
         //resource id
-        props.put("resourceId", getResource().getResourceId());
+        props.put("resourceId", getResourceId());
 
         //role assignments
         List<Map<String,Object>> assignments = new ArrayList<Map<String,Object>>();

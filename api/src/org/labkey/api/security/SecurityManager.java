@@ -1540,7 +1540,7 @@ public class SecurityManager
             Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
             if (policy.getAssignedRoles(allSiteUsers).size() == 0)
             {
-                String resId = c.getPolicy().getResource().getResourceId();
+                String resId = c.getPolicy().getResourceId();
 
                 sql.append(" AND (");
 
@@ -1982,7 +1982,7 @@ public class SecurityManager
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
             SecurityPolicyBean currentPolicyBean = Table.selectObject(core.getTableInfoPolicies(),
-                    policy.getResource().getResourceId(), SecurityPolicyBean.class);
+                    policy.getResourceId(), SecurityPolicyBean.class);
 
             if(null != currentPolicyBean && null != policy.getModified() &&
                     0 != policy.getModified().compareTo(currentPolicyBean.getModified()))
@@ -1996,19 +1996,14 @@ public class SecurityManager
 
             //save to policies table
             if(null == currentPolicyBean)
-            {
-                SecurityPolicyBean newPolicyBean = new SecurityPolicyBean(policy.getResource(), policy.getModified()); 
-                Table.insert(null, core.getTableInfoPolicies(), newPolicyBean);
-            }
+                Table.insert(null, core.getTableInfoPolicies(), policy.getBean());
             else
-            {
-                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResource().getResourceId());
-            }
+                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResourceId());
 
             TableInfo table = core.getTableInfoRoleAssignments();
 
             //delete all rows where resourceid = resource.getId()
-            Table.delete(table, new SimpleFilter("ResourceId", policy.getResource().getResourceId()));
+            Table.delete(table, new SimpleFilter("ResourceId", policy.getResourceId()));
 
             //insert rows for the policy entries
             for(RoleAssignment assignment : policy.getAssignments())
@@ -2021,8 +2016,8 @@ public class SecurityManager
                 scope.commitTransaction();
 
             //remove the resource-oriented policy from cache
-            DbCache.remove(table, cacheName(policy.getResource()));
-            notifyPolicyChange(policy.getResource().getResourceId());
+            DbCache.remove(table, cacheNameForResourceId(policy.getResourceId()));
+            notifyPolicyChange(policy.getResourceId());
         }
         catch(SQLException e)
         {

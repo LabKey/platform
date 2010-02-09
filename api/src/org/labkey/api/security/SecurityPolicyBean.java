@@ -37,18 +37,16 @@ public class SecurityPolicyBean
     {
     }
 
-    public SecurityPolicyBean(SecurableResource resource)
+    public SecurityPolicyBean(String resourceId, String resourceClass, Container container)
     {
-        _resourceId = resource.getResourceId();
-        _resourceClass = resource.getClass().getName();
-        _container = resource.getResourceContainer();
+        _resourceId = resourceId;
+        _resourceClass = resourceClass;
+        _container = container;
     }
 
-    public SecurityPolicyBean(SecurableResource resource, Date modified)
+    public SecurityPolicyBean(String resourceId, String resourceClass, Container container, Date modified)
     {
-        _resourceId = resource.getResourceId();
-        _resourceClass = resource.getClass().getName();
-        _container = resource.getResourceContainer();
+        this(resourceId, resourceClass, container);
         _modified = modified;
     }
 
