@@ -75,6 +75,7 @@ public class ButtonBar extends DisplayElement
     public ButtonBar(ButtonBar original)
     {
         _elementList = new ArrayList<DisplayElement>(original.getList());
+        _style = original.getStyle();
     }
 
     public List<DisplayElement> getList()
