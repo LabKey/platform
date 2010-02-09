@@ -1091,7 +1091,7 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(DesignListPermission.class)
-    public class ExportAllListsAction extends ExportAction
+    public class ExportListArchiveAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
@@ -1105,7 +1105,7 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(DesignListPermission.class)
-    public class ImportListsAction extends FormViewAction<Object>
+    public class ImportListArchiveAction extends FormViewAction<Object>
     {
         public void validateCommand(Object target, Errors errors)
         {

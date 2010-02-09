@@ -100,13 +100,13 @@ if (loginStatusChanged())
         %><table>
             <tr><td>
                 <table cellpadding="0" cellspacing="0"><tr>
-                    <td class="labkey-main-title-area"><%
+                    <td class="labkey-main-title"><%
                         if (null == category)           { %>All<%      } else { %><a href="<%=h(categoryResearchURL)%>">All</a><% } %>&nbsp;<%
                         if ("File".equals(category))    { %>Files<%    } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
                         if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
                         if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
                     %></td>
-                    <td align="right" style="width:100%"><%
+                    <td class="labkey-main-title" align="right" style="width:100%"><%
                         SearchScope scope = form.getSearchScope(c);
                         if (scope == SearchScope.All) { %>Site<% } else { %><a href="<%=h(scopeResearchURL)%>">Site</a><% } %>&nbsp;<%
 

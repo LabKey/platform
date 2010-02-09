@@ -198,7 +198,7 @@ th.labkey-expand-collapse-area
 
 /* home template */
 
-a.labkey-main-title
+.labkey-main-title
 {
     font-size:<%= themeFont.getPageTitleSize() %>;
 }

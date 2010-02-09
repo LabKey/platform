@@ -1012,7 +1012,7 @@ a.labkey-main-title
     text-decoration: none;
 }
 
-a.labkey-main-title:hover {
+.labkey-main-title:hover {
     text-decoration: underline;
 }
 

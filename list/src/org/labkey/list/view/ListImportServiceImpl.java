@@ -16,6 +16,7 @@
 
 package org.labkey.list.view;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.list.ListService;
@@ -272,26 +273,36 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
     public String cancelImport(String jobId) throws ImportException
     {
         ImportContext context = getContext(jobId);
-        Future<List<String>> future = context.getFuture();
-        future.cancel(true);
+        Container c;
 
-        // CONSIDER: wait for canceled thread to finish?
-
-        ListDefinition def = context.getListDef();
-
-        try
+        if (null == context)
         {
-            def.delete(getUser());
+            c = getContainer();
         }
-        catch (Exception e)
+        else
         {
-            throw new ImportException(e.getMessage());
-        }
-        finally
-        {
-            clearContext(jobId);
+            Future<List<String>> future = context.getFuture();
+            future.cancel(true);
+
+            // CONSIDER: wait for canceled thread to finish?
+
+            ListDefinition def = context.getListDef();
+
+            try
+            {
+                def.delete(getUser());
+                c = def.getContainer();
+            }
+            catch (Exception e)
+            {
+                throw new ImportException(e.getMessage());
+            }
+            finally
+            {
+                clearContext(jobId);
+            }
         }
 
-        return ListController.getBeginURL(def.getContainer()).getLocalURIString();
+        return ListController.getBeginURL(c).getLocalURIString();
     }
 }

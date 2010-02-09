@@ -262,10 +262,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         StudyReload.initializeAllTimers();
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
         if (null != ss)
         {
             ss.addSearchCategory(StudyManager.subjectCategory);
             ss.addSearchCategory(StudyManager.datasetCategory);
+            ss.addSearchCategory(StudyManager.assayCategory);
             ss.addDocumentProvider(this);
         }
     }

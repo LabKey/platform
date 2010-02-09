@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MenuButton;
@@ -32,8 +33,10 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
@@ -299,4 +302,22 @@ public class AssayManager implements AssayService.Interface
         }
         return null;
     }
+
+    public void indexAssays(Container c)
+    {
+        Logger log = Logger.getLogger(AssayManager.class);
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+        if (null == ss)
+            return;
+
+        List<ExpProtocol> protocols = getAssayProtocols(c);
+
+        for (ExpProtocol protocol : protocols)
+        {
+            // TODO: Finish this stuff
+            String keywords = protocol.getDescription() + "\n" + protocol.getComment() + "\n" + protocol.getApplicationType().name() + "\n" + protocol.getInstrument() + "\n" + protocol.getName();
+        }
+    }
 }
+
