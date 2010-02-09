@@ -83,7 +83,7 @@ public class MothershipModule extends DefaultModule
         {
             Container c = ContainerManager.ensureContainer("/_mothership");
             Group mothershipGroup = SecurityManager.createGroup(c, "Mothership");
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityManager.getPolicy(c));
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityManager.getPolicy(c));
             Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
             Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);

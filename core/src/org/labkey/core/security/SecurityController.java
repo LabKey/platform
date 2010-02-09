@@ -1124,7 +1124,7 @@ public class SecurityController extends SpringActionController
 
                 //if resource id is not the same as the current container
                 //set chagne type to indicate we're moving from inhereted
-                if(!oldPolicy.getResource().getResourceId().equals(c.getResourceId()))
+                if(!oldPolicy.getResourceId().equals(c.getResourceId()))
                     changeType = AuditChangeType.fromInherited;
 
                 HttpServletRequest request = getViewContext().getRequest();
@@ -1529,7 +1529,7 @@ public class SecurityController extends SpringActionController
             SecurityManager.addMember(usersGroup, admin);
             SecurityManager.addMember(guestsGroup, admin);
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
             policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));
             policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
             policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));

@@ -323,7 +323,7 @@ public class SecurityController extends SpringActionController
                 return false;
             }
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityManager.getPolicy(report.getDescriptor()));
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityManager.getPolicy(report.getDescriptor()));
             Integer owner = null;
 
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))

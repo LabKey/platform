@@ -571,12 +571,12 @@ public class SecurityApiActions
 
             //FIX: 8077 - if this is a subfolder and the policy is inherited from the project
             // assign all principals in the project admin role to the folder admin role
-            if (!container.isRoot() && policy.getResource().getResourceId().equals(container.getProject().getResourceId()))
+            if (!container.isRoot() && policy.getResourceId().equals(container.getProject().getResourceId()))
             {
                 Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
                 Role fldrAdminRole = RoleManager.getRole(FolderAdminRole.class);
 
-                MutableSecurityPolicy mpolicy = new MutableSecurityPolicy(policy);
+                MutableSecurityPolicy mpolicy = new MutableSecurityPolicy(resource, policy);
                 for (RoleAssignment ra : policy.getAssignments())
                 {
                     if (ra.getRole().equals(projAdminRole))
@@ -694,17 +694,15 @@ public class SecurityApiActions
             SecurityManager.savePolicy(policy);
 
             //audit log
-            writeToAuditLog(oldPolicy, policy);
+            writeToAuditLog(resource, oldPolicy, policy);
 
             return new ApiSimpleResponse("success", true);
         }
 
-        protected void writeToAuditLog(SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
+        protected void writeToAuditLog(SecurableResource resource, SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
         {
-            SecurableResource resource = newPolicy.getResource();
-
             //if moving from inherted to not-inherited, just log the new role assignments
-            if (!(oldPolicy.getResource().getResourceId().equals(newPolicy.getResource().getResourceId())))
+            if (!(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
             {
                 SecurableResource parent = resource.getParentResource();
                 String parentName = parent != null ? parent.getResourceName() : "root";
