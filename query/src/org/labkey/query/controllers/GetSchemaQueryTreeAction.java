@@ -29,10 +29,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -89,7 +86,13 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                     //get built-in queries
                     List<String> queryNames = new ArrayList<String>(uschema.getVisibleTableNames());
-                    Collections.sort(queryNames);
+                    Collections.sort(queryNames, new Comparator<String>(){
+                        public int compare(String name1, String name2)
+                        {
+                            return name1.compareToIgnoreCase(name2);
+                        }
+                    });
+
                     for (String qname : queryNames)
                     {
                         TableInfo tinfo = uschema.getTable(qname);
@@ -101,7 +104,12 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     //get user-defined queries
                     Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(container, uschema.getSchemaName());
                     queryNames = new ArrayList<String>(queryDefMap.keySet());
-                    Collections.sort(queryNames);
+                    Collections.sort(queryNames, new Comparator<String>(){
+                        public int compare(String name1, String name2)
+                        {
+                            return name1.compareToIgnoreCase(name2);
+                        }
+                    });
                     for (String qname : queryNames)
                     {
                         QueryDefinition qdef = queryDefMap.get(qname);
