@@ -23,7 +23,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -94,5 +93,7 @@ public class AssayService
          */
         @Nullable
         public ExpExperiment findBatch(ExpRun run);
+
+        public void indexAssays(Container c);
     }
 }

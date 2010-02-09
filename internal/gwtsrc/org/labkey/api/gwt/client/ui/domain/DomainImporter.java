@@ -333,12 +333,18 @@ public class DomainImporter
         {
             sb.append(error).append("\n");
         }
-        Window.alert(sb.toString());
+        handleFailure(sb.toString());
     }
 
     private void handleServerFailure(Throwable caught)
     {
-        Window.alert(caught.getMessage());
+        handleFailure(caught.getMessage());
+    }
+
+    private void handleFailure(String message)
+    {
+        Window.alert(message);
+        navigate(cancelURL);      // This deletes the domain.  Calling cancel() will leave it in place.
     }
 
     private void cancel()

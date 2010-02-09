@@ -188,7 +188,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
         private JspCompilationException(String jspFilename, String errors)
         {
-            super("Error trying to compile " + jspFilename);
+            super("Error compiling " + jspFilename);
             _errors = errors;
         }
 
