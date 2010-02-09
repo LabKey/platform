@@ -252,7 +252,6 @@ table.labkey-no-spacing
 div.labkey-button-bar, table.labkey-button-bar
 {
     white-space: nowrap;
-    margin-top: 0.4em;
     background-color: #F4F4F4;
 }
 
@@ -275,9 +274,10 @@ div.labkey-button-bar, table.labkey-button-bar
                     turn enables relative positioning of our menu button arrow gif. */
 }
 
-.labkey-button-bar .labkey-button, .labkey-button-bar .labkey-menu-button, .labkey-button-bar .labkey-button:visited, .labkey-button-bar .labkey-menu-button:visited
+.labkey-button-bar .labkey-button, .labkey-button-bar .labkey-menu-button, .labkey-button-bar .labkey-button:visited, .labkey-button-bar .labkey-menu-button:visited, .labkey-button-bar .labkey-disabled-button
 {
     border: 1px solid #F4F4F4;
+    margin-right: 1.5em;
 }
 
 /* special span modifiers for IE: */
@@ -330,6 +330,13 @@ a.labkey-button:hover, a.labkey-menu-button:hover
     cursor: pointer; /* hand-shaped cursor */
     cursor: hand; /* for IE 5.x and older browsers */
 }
+
+.labkey-button-bar .labkey-disabled-button:hover
+{
+    border: 1px solid #F2F2F2;
+    background-color: #F2F2F2;
+}
+
 
 a.labkey-button:active, a.labkey-menu-button:active
 {
@@ -663,7 +670,6 @@ table.labkey-data-region
     background-color: #FFFFFF;
     border-collapse: collapse;
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-    margin-bottom: 5px;
 }
 
 .labkey-data-region A

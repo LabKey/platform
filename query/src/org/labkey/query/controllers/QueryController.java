@@ -1426,6 +1426,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
         {
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
             ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
             bb.add(btnSubmit);
@@ -1455,6 +1456,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
         {
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionButton btnSubmit = new ActionButton(getViewContext().getActionURL(), "Submit");
             ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
             bb.add(btnSubmit);

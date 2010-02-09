@@ -564,6 +564,7 @@ public class ListController extends SpringActionController
             ActionButton btnCancel = new ActionButton("Cancel", returnURL);
             bb.add(btnSubmit);
             bb.add(btnCancel);
+            bb.setStyle(ButtonBar.Style.separateButtons);
 
             return bb;
         }
@@ -692,6 +693,7 @@ public class ListController extends SpringActionController
             DetailsView details = new DetailsView(tableForm);
 
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
 
             if (getViewContext().hasPermission(ACL.PERM_UPDATE))
             {
