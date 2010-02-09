@@ -15,10 +15,14 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,7 +33,9 @@ import java.io.File;
 public class PipelineActionConfig
 {
     private String _id;
+    private String _label;
     private displayState _state;
+    private List<PipelineActionConfig> _links = Collections.emptyList();
 
     public enum displayState {
         enabled,
@@ -38,10 +44,11 @@ public class PipelineActionConfig
         admin,
     }
 
-    public PipelineActionConfig(String id, String state)
+    public PipelineActionConfig(String id, String state, String label)
     {
         _id = id;
         _state = displayState.valueOf(state);
+        _label = label;
     }
 
     public String getId()
@@ -64,13 +71,91 @@ public class PipelineActionConfig
         _state = state;
     }
 
+    public String getLabel()
+    {
+        return _label;
+    }
+
+    public void setLabel(String label)
+    {
+        _label = label;
+    }
+
+    public List<PipelineActionConfig> getLinks()
+    {
+        return _links;
+    }
+
+    public void setLinks(List<PipelineActionConfig> links)
+    {
+        _links = links;
+    }
+
     public JSONObject toJSON()
     {
-        JSONObject o = new JSONObject();
+        JSONObject o = createObject(_id, _state.name(), _label);
 
         o.put("id", _id == null ? "" : _id);
         o.put("display", _state == null ? "" : _state);
+        o.put("label", _label == null ? "" : _label);
+
+        if (!_links.isEmpty())
+        {
+            JSONArray links = new JSONArray();
+
+            for (PipelineActionConfig link : _links)
+            {
+                links.put(createObject(link.getId(), link.getState().name(), link.getLabel()));
+            }
+            o.put("links", links);
+        }
+        return o;
+    }
+
+    private JSONObject createObject(String id, String state, String label)
+    {
+        JSONObject o = new JSONObject();
+
+        o.put("id", id == null ? "" : id);
+        o.put("display", state == null ? "" : state);
+        o.put("label", label == null ? "" : label);
 
         return o;
+    }
+
+    public static PipelineActionConfig fromJSON(JSONObject o)
+    {
+        PipelineActionConfig action = createConfig(o);
+
+        if (action != null)
+        {
+            JSONArray links = o.getJSONArray("links");
+            if (links != null)
+            {
+                List<PipelineActionConfig> subLinks = new ArrayList<PipelineActionConfig>();
+                for (int i=0; i < links.length(); i++)
+                {
+                    JSONObject link = links.getJSONObject(i);
+                    PipelineActionConfig subAction = createConfig(link);
+
+                    if (subAction != null)
+                        subLinks.add(subAction);
+                }
+                action.setLinks(subLinks);
+            }
+        }
+        return action;
+    }
+
+    private static PipelineActionConfig createConfig(JSONObject o)
+    {
+        if (o != null)
+        {
+            String id = o.getString("id");
+
+            if (!StringUtils.isEmpty(id))
+                return new PipelineActionConfig(id, o.getString("display"), o.getString("label"));
+        }
+        return null;
     }
 }

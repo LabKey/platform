@@ -2032,6 +2032,7 @@ internal/webapp/_images/go-next.png -text
 internal/webapp/_images/go-previous-disabled.png -text
 internal/webapp/_images/go-previous.png -text
 internal/webapp/_images/icons.css -text
+internal/webapp/_images/info.png -text
 internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
 internal/webapp/_images/lockoverlay.png -text

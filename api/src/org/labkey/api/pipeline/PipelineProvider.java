@@ -486,24 +486,32 @@ abstract public class PipelineProvider
         }
     }
 
-    protected void addAction(URLHelper actionURL, String description, PipelineDirectory entry, File[] files,
-                             boolean allowMultiSelect, boolean includeAll)
+    protected String createActionId(Class action, String description)
+    {
+        if (description != null)
+            return action.getName() + ':' + description;
+        else
+            return action.getName();
+    }
+
+    protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, File[] files,
+                             boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
         if (!includeAll && (files == null || files.length == 0))
             return;
 
-        entry.addAction(new PipelineAction(description, actionURL, files, allowMultiSelect));
+        entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
     }
 
-    protected void addAction(Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files,
-                             boolean allowMultiSelect, boolean includeAll)
+    protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files,
+                             boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
         if (!includeAll && (files == null || files.length == 0))
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
-        directory.addAction(new PipelineAction(description, actionURL, files, allowMultiSelect));
-    }
+        directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
+      }
 
     /**
      * Returns true if a provider wants to show file actions even if the provider module is not active

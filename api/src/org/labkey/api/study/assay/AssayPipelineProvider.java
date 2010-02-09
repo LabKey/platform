@@ -68,14 +68,16 @@ public class AssayPipelineProvider extends PipelineProvider
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());
             Collections.sort(assays);
+            String id = _assayProvider.getClass().getName();
             NavTree navTree = new NavTree(_actionDescription);
+            navTree.setId(id);
             for (ExpProtocol protocol : assays)
             {
                 if (AssayService.get().getProvider(protocol) == _assayProvider)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), protocol, pr.relativePath(new File(directory.getURI())), new File[0]); 
                     NavTree child = new NavTree("Use " + protocol.getName(), url);
-                    child.setId(_actionDescription + ":Use " + protocol.getName());
+                    child.setId(id + ":Use " + protocol.getName());
                     navTree.addChild(child);
                 }
             }
@@ -89,13 +91,13 @@ public class AssayPipelineProvider extends PipelineProvider
 
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(context.getContainer(), _assayProvider.getName(), context.getActionURL());
                 NavTree child = new NavTree("Create New Assay Design", url);
-                child.setId(_actionDescription + ":Create Assay Definition");
+                child.setId(id + ":Create Assay Definition");
                 navTree.addChild(child);
             }
 
             if (navTree.getChildCount() > 0)
             {
-                directory.addAction(new PipelineAction(navTree, files, true));
+                directory.addAction(new PipelineAction(navTree, files, true, false));
             }
         }
     }

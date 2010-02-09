@@ -19,16 +19,20 @@ package org.labkey.api.files;
 import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.json.JSONArray;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.data.xml.ActionLink;
 import org.labkey.data.xml.ActionOptions;
 import org.labkey.data.xml.PipelineOptionsDocument;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,6 +53,11 @@ public class FilesAdminOptions
             _init(xml);
     }
 
+    public FilesAdminOptions(Container c)
+    {
+        this(c, null);
+    }
+
     private void _init(String xml)
     {
         try {
@@ -66,7 +75,19 @@ public class FilesAdminOptions
                 {
                     for (ActionOptions.DisplayOption o : actionOptions.getDisplayOptionArray())
                     {
-                        _pipelineConfig.add(new PipelineActionConfig(o.getId(), o.getState()));
+                        PipelineActionConfig pa = new PipelineActionConfig(o.getId(), o.getState(), o.getLabel());
+
+                        ActionLink links = o.getLinks();
+                        if (links != null)
+                        {
+                            List<PipelineActionConfig> actionLinks = new ArrayList<PipelineActionConfig>();
+
+                            for (ActionLink.DisplayOption lo : links.getDisplayOptionArray())
+                                actionLinks.add(new PipelineActionConfig(lo.getId(), lo.getState(), lo.getLabel()));
+
+                            pa.setLinks(actionLinks);
+                        }
+                        _pipelineConfig.add(pa);
                     }
                 }
             }
@@ -130,6 +151,17 @@ public class FilesAdminOptions
 
                     displayOption.setId(ac.getId());
                     displayOption.setState(ac.getState().name());
+                    displayOption.setLabel(ac.getLabel());
+
+                    ActionLink link = displayOption.addNewLinks();
+                    for (PipelineActionConfig lac : ac.getLinks())
+                    {
+                        ActionLink.DisplayOption linkOption = link.addNewDisplayOption();
+
+                        linkOption.setId(lac.getId());
+                        linkOption.setState(lac.getState().name());
+                        linkOption.setLabel(lac.getLabel());
+                    }
                 }
             }
             XmlBeansUtil.validateXmlDocument(doc);
@@ -146,5 +178,51 @@ public class FilesAdminOptions
         {
             IOUtils.closeQuietly(output);
         }
+    }
+
+    public static FilesAdminOptions fromJSON(Container c, Map<String,Object> props)
+    {
+        FilesAdminOptions options = new FilesAdminOptions(c);
+
+        if (props.containsKey("actions"))
+        {
+            Object actions = props.get("actions");
+            if (actions instanceof JSONArray)
+            {
+                List<PipelineActionConfig> configs = new ArrayList<PipelineActionConfig>();
+                JSONArray jarray = (JSONArray)actions;
+
+                for (int i=0; i < jarray.length(); i++)
+                {
+                    PipelineActionConfig config = PipelineActionConfig.fromJSON(jarray.getJSONObject(i));
+                    if (config != null)
+                        configs.add(config);
+                }
+                options.setPipelineConfig(configs);
+            }
+        }
+        if (props.containsKey("importDataEnabled"))
+            options.setImportDataEnabled((Boolean)props.get("importDataEnabled"));
+
+        return options;
+    }
+
+    public Map<String, Object> toJSON()
+    {
+        Map<String, Object> props = new HashMap<String, Object>();
+
+        if (!_pipelineConfig.isEmpty())
+        {
+            JSONArray actions = new JSONArray();
+
+            for (PipelineActionConfig config : _pipelineConfig)
+            {
+                actions.put(config.toJSON());
+            }
+            props.put("actions", actions);
+        }
+        props.put("importDataEnabled", isImportDataEnabled());
+        
+        return props;
     }
 }

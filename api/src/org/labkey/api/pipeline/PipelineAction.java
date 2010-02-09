@@ -33,19 +33,29 @@ public class PipelineAction
     NavTree _links;
     File[] _files;
     boolean _allowMultiSelect;
+    boolean _allowEmptySelect;
 
     /** Use NavTree to create a drop-down menu with submenus for the specified files */
-    public PipelineAction(NavTree links, File[] files, boolean allowMultiSelect)
+    public PipelineAction(NavTree links, File[] files, boolean allowMultiSelect, boolean allowEmptySelect)
     {
         _links = links;
         _files = files;
         _allowMultiSelect = allowMultiSelect;
+        _allowEmptySelect = allowEmptySelect;
     }
 
     /** Use a simple button for the specified files */
-    public PipelineAction(String label, URLHelper href, File[] files, boolean allowMultiSelect)
+    public PipelineAction(String id, String label, URLHelper href, File[] files, boolean allowMultiSelect)
     {
-        this(new NavTree(label, href), files, allowMultiSelect);
+        this(new NavTree(label, href), files, allowMultiSelect, false);
+        _links.setId(id);
+    }
+
+    /** Use a simple button for the specified files */
+    public PipelineAction(String id, String label, URLHelper href, File[] files, boolean allowMultiSelect, boolean allowEmptySelect)
+    {
+        this(new NavTree(label, href), files, allowMultiSelect, allowEmptySelect);
+        _links.setId(id);
     }
 
     public String getLabel()
@@ -68,6 +78,11 @@ public class PipelineAction
         return _links;
     }
 
+    public void setId(String id)
+    {
+        _links.setId(id);
+    }
+    
     public JSONObject toJSON()
     {
         JSONObject o = new JSONObject();
@@ -77,6 +92,7 @@ public class PipelineAction
         JSONObject links = _links.toJSON();
         o.put("links", links);
         o.put("multiSelect", _allowMultiSelect);
+        o.put("emptySelect", _allowEmptySelect);
 
         JSONArray files = new JSONArray();
         if (null != _files)

@@ -138,7 +138,8 @@ function renderBrowser(rootPath, dir, renderTo)
         allowChangeDirectory: true,
         //actions: {drop:dropAction, configure:configureAction},
         tbarItems: buttonActions,
-        isPipelineRoot: <%=bean.isPipelineRoot()%>
+        isPipelineRoot: <%=bean.isPipelineRoot()%>,
+        adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>
 /*
         buttonCfg:['download','deletePath','refresh'
         <%=c.hasPermission(context.getUser(), InsertPermission.class)?",'uploadTool'":""%>
