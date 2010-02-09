@@ -227,7 +227,7 @@ public class SpecimenUtils
                             commentsMenuButton.addSeparator();
                             addSep = false;
                         }
-                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + subjectNoun + " Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + PageFlowUtil.filter(subjectNoun) + " Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
                                 addParameter("datasetId", study.getParticipantCommentDataSetId()));
                         ptidComments.setId("Comments:SetParticipant");
                     }
@@ -243,7 +243,7 @@ public class SpecimenUtils
                             commentsMenuButton.addSeparator();
                             addSep = false;
                         }
-                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + subjectNoun + "/Visit Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                        NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + PageFlowUtil.filter(subjectNoun) + "/Visit Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
                                 addParameter("datasetId", study.getParticipantVisitCommentDataSetId()));
                         ptidComments.setId("Comments:SetParticipantVisit");
                     }

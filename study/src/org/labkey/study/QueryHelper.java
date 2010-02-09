@@ -22,7 +22,9 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.study.model.StudyCachable;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,7 +35,7 @@ import java.util.Set;
 public class QueryHelper<K extends StudyCachable>
 {
     private Class<K> _objectClass;
-    private Set<String> _cachedFilters = new HashSet<String>();
+    private final Set<String> _cachedFilters = new HashSet<String>();
     private final TableInfoGetter _tableInfoGetter;
     private final K _missMarker;
 
@@ -86,8 +88,12 @@ public class QueryHelper<K extends StudyCachable>
                 sort = new Sort(sortString);
             objs = Table.select(getTableInfo(), Table.ALL_COLUMNS,
                     filter, sort, _objectClass);
-            StudyCache.cache(getTableInfo(), c.getId(), cacheId, objs);
-            _cachedFilters.add(cacheId);
+            // synchronize just the caching logic that requires _cachedFilters to be in sync with StudyCache
+            synchronized (_cachedFilters)
+            {
+                StudyCache.cache(getTableInfo(), c.getId(), cacheId, objs);
+                _cachedFilters.add(cacheId);
+            }
         }
         return objs;
     }
@@ -168,9 +174,13 @@ public class QueryHelper<K extends StudyCachable>
 
     public void clearCache(K obj)
     {
-        for (String filter : _cachedFilters)
-            StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), filter);
-        _cachedFilters.clear();
+        // synchronize just the caching logic that requires _cachedFilters to be in sync with StudyCache
+        synchronized (_cachedFilters)
+        {
+            for (String filter : _cachedFilters)
+                StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), filter);
+            _cachedFilters.clear();
+        }
         StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), obj.getPrimaryKey().toString());
     }
 

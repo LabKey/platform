@@ -50,6 +50,16 @@ public abstract class VisitManager
         updateParticipantVisitTable(user);
         updateParticipantSequenceKeys();
         updateVisitTable(user);
+
+        try
+        {
+            CohortManager.getInstance().updateParticipantCohorts(user, _study);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
         StudyManager.getInstance().clearVisitCache(_study);
         if (requiresUncache)
             StudyManager.getInstance().clearCaches(_study.getContainer(), true);
@@ -70,7 +80,8 @@ public abstract class VisitManager
         participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
         participantSequenceKey.append("'|'");
         participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
-        participantSequenceKey.append("CAST(").append(sequenceNumColumnName).append(" AS VARCHAR))");
+        participantSequenceKey.append("CAST(").append(sequenceNumColumnName).append(" AS ");
+        participantSequenceKey.append(schema.getSqlDialect().sqlTypeNameFromSqlTypeInt(Types.VARCHAR)).append("))");
         return participantSequenceKey.toString();
     }
 
@@ -260,10 +271,12 @@ public abstract class VisitManager
                 if (null != col)
                 {
                     String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo + " WHERE " + tInfo + "." +
-                       StudyService.get().getSubjectColumnName(dataset.getContainer()) + " = " + tableParticipant + ".ParticipantId)";
-                    String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE " +
-                            tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect;
-                    count = Table.execute(StudyManager.getSchema(), sql, null);
+                       StudyService.get().getSubjectColumnName(dataset.getContainer()) + " = " + tableParticipant + ".ParticipantId" +
+                            " AND " + tableParticipant + ".Container = ?)";
+                    String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
+                            tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
+                            ") AND Container = ?";
+                    count = Table.execute(StudyManager.getSchema(), sql, new Object[] { dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId() });
                     break;
                 }
 

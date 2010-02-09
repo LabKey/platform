@@ -222,9 +222,9 @@
                     {
                 %>
                             <input type="checkbox" name="viewParticipantCount" <%= factory.isViewParticipantCount() ? "CHECKED" : "" %>>
-                            <%= StudyService.get().getSubjectNounSingular(container) %> Counts<br>
+                            <%= h(StudyService.get().getSubjectNounSingular(container)) %> Counts<br>
                             <input type="checkbox" name="viewPtidList" <%= factory.isViewPtidList() ? "CHECKED" : "" %>>
-                            <%= StudyService.get().getSubjectColumnName(container) %>  List
+                            <%= h(StudyService.get().getSubjectColumnName(container)) %>  List
                 <%
                     }
                 %>

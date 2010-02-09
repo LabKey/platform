@@ -358,7 +358,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             Study study = StudyManager.getInstance().getStudy(getContainer());
             StringBuilder builder = new StringBuilder();
             builder.append("<select name=\"").append(inputName).append("\">\n");
-            builder.append("<option value=\"\">All ").append(StudyService.get().getSubjectNounPlural(getContainer())).append(" (Large Report)</option>\n");
+            builder.append("<option value=\"\">All ").append(PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer()))).append(" (Large Report)</option>\n");
             boolean first = true;
             for (Participant participant : StudyManager.getInstance().getParticipants(study))
             {

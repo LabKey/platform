@@ -42,7 +42,7 @@
         <td><%= h(sample.getGlobalUniqueId()) %></td>
     </tr>
     <tr>
-        <th align="right"><%= StudyService.get().getSubjectNounSingular(sample.getContainer()) %></th>
+        <th align="right"><%= h(StudyService.get().getSubjectNounSingular(sample.getContainer())) %></th>
         <td><%= h(sample.getPtid()) %></td>
     </tr>
     <tr>

@@ -126,12 +126,12 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 pj.info("Finish batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
 
                 pj.setStatus("UPDATE participants");
-                pj.info("Updating particpant visits");
+                pj.info("Updating participant visits");
                 getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser());
 
                 try
                 {
-                    pj.info("Updating particpant cohorts");
+                    pj.info("Updating participant cohorts");
                     getCohortManager().updateParticipantCohorts(pj.getUser(), getStudy());
                 }
                 catch (SQLException e)

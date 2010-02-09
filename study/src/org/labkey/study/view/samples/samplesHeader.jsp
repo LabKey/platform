@@ -63,7 +63,7 @@
         filterString.append("This view is displaying specimens only from ");
         if (bean.isSingleVisitFilter())
         {
-            filterString.append("particpant(s) ");
+            filterString.append("participant(s) ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 String ptid = it.next().getKey();
@@ -75,7 +75,7 @@
         }
         else
         {
-            filterString.append(" the following ").append(subjectNounSingle.toLowerCase()).append("/visit pairs: ");
+            filterString.append(" the following ").append(h(subjectNounSingle.toLowerCase())).append("/visit pairs: ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 Pair<String, String> ptidVisit = it.next();
@@ -87,7 +87,7 @@
         }
         ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction("samples");
 %>
-    <b><%= filterString %></b><br><%= textLink("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl )%><br>
+    <b><%= filterString %></b><br><%= textLink("Remove " + h(subjectNounSingle) + "/Visit Filter", noFitlerUrl )%><br>
 <%
     }
 %>

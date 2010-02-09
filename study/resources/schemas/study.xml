@@ -534,6 +534,9 @@
         <ns:column columnName="ProcessingLocation">
           <ns:description>The ID of the processing location of each vial.</ns:description>
         </ns:column>
+        <ns:column columnName="FirstProcessedByInitials">
+          <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
+        </ns:column>
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
@@ -619,6 +622,9 @@
       </ns:column>
       <ns:column columnName="ProcessingLocation">
         <ns:description>The ID of the processing location of each vial.</ns:description>
+      </ns:column>
+      <ns:column columnName="FirstProcessedByInitials">
+          <ns:description>The common FirstProcessedByInitials value for all vials in this specimen.  Will be null if all vials do not share a common FirstProcessedByInitials values.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -776,6 +782,10 @@
           <ns:description>The ID of the processing location of each vial.</ns:description>
           <ns:datatype>int</ns:datatype>
       </ns:column>
+      <ns:column columnName="FirstProcessedByInitials">
+          <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
+          <ns:datatype>String</ns:datatype>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
@@ -907,6 +917,10 @@
       <ns:column columnName="ProcessingLocation">
         <ns:description>The ID of the processing location of each vial.</ns:description>
         <ns:datatype>int</ns:datatype>
+      </ns:column>
+      <ns:column columnName="FirstProcessedByInitials">
+          <ns:description>The common FirstProcessedByInitials value for all vials in this specimen.  Will be null if all vials do not share a common FirstProcessedByInitials values.</ns:description>
+          <ns:datatype>String</ns:datatype>
       </ns:column>
     </ns:columns>
   </ns:table>

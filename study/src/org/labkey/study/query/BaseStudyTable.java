@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -415,7 +416,7 @@ public abstract class BaseStudyTable extends FilteredTable
         if (vialComment instanceof String)
         {
             sb.append("<i>Vial:&nbsp;</i>");
-            sb.append(vialComment);
+            sb.append(PageFlowUtil.filter(vialComment));
             sb.append(lineSeparator);
         }
         String subjectNoun = StudyService.get().getSubjectNounSingular(ctx.getContainer());
@@ -423,16 +424,16 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append("<i>").append(subjectNoun).append(":&nbsp;</i>");
-            sb.append(participantComment);
+            sb.append("<i>").append(PageFlowUtil.filter(subjectNoun)).append(":&nbsp;</i>");
+            sb.append(PageFlowUtil.filter(participantComment));
             sb.append(lineSeparator);
         }
         if (participantVisitComment instanceof String)
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append("<i>").append(subjectNoun).append("/Visit:&nbsp;</i>");
-            sb.append(participantVisitComment);
+            sb.append("<i>").append(PageFlowUtil.filter(subjectNoun)).append("/Visit:&nbsp;</i>");
+            sb.append(PageFlowUtil.filter(participantVisitComment));
             sb.append(lineSeparator);
         }
         return sb.toString();

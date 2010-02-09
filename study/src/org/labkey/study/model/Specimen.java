@@ -58,6 +58,7 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private boolean _available = false;
     private boolean _lockedInRequest = false;
     private Boolean _requestable;
+    private String _firstProcessedByInitials;
 
     public Integer getAdditiveTypeId()
     {
@@ -387,5 +388,15 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public void setRequestable(Boolean requestable)
     {
         _requestable = requestable;
+    }
+
+    public String getFirstProcessedByInitials()
+    {
+        return _firstProcessedByInitials;
+    }
+
+    public void setFirstProcessedByInitials(String firstProcessedByInitials)
+    {
+        _firstProcessedByInitials = firstProcessedByInitials;
     }
 }

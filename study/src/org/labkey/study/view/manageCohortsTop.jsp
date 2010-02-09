@@ -58,7 +58,7 @@
                 }
             }
             else if (confirm('Changing between simple and advanced modes requires updating cohort ' +
-                               'assignments for all <%= subjectNounPlural.toLowerCase() %>.  Update cohort assignments now?'))
+                               'assignments for all <%= h(subjectNounPlural.toLowerCase()) %>.  Update cohort assignments now?'))
             {
                 document.manageCohorts.submit();
                 return true;
@@ -67,9 +67,9 @@
         }
     </script>
     <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport"
-           value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: <%= subjectNounPlural %> are assigned to a single cohort throughout the study.<br>
+           value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: <%= h(subjectNounPlural) %> are assigned to a single cohort throughout the study.<br>
     <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport"
-           value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: <%= subjectNounPlural %> may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
+           value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: <%= h(subjectNounPlural) %> may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
 <%
     WebPartView.endTitleFrame(out);
 
@@ -92,7 +92,7 @@
     <b>Note:</b> Only users with read access to the selected dataset will be able to view Cohort information.
 <table>
         <tr>
-            <th align="right"><%= subjectNounSingle %>/Cohort Dataset<%= helpPopup(subjectNounSingle + "/Cohort Dataset",
+            <th align="right"><%= h(subjectNounSingle) %>/Cohort Dataset<%= helpPopup(subjectNounSingle + "/Cohort Dataset",
                     subjectNounPlural + " can be assigned to cohorts based on the data in a field of a single dataset.  " +
                     "If set, cohort assignments will be reloaded for all " + subjectNounPlural + " every time this dataset is re-imported.")%></th>
             <td>
@@ -146,7 +146,7 @@
             <td>&nbsp;</td>
             <td>
                 <%= buttonImg("Update Assignments", "document.manageCohorts.updateParticipants.value='true'; return true;")%>
-                <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all " + subjectNounPlural + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
+                <%= buttonImg("Clear Assignments", "if (confirm('Are you sure you want to clear cohort information for all " + h(subjectNounPlural) + "?')) { document.manageCohorts.clearParticipants.value='true'; return true; } else return false;")%>
             </td>
         </tr>
         </table>

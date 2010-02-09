@@ -82,7 +82,7 @@
             visits.add(visit);
     }
 
-    // UNDONE Move this code into StudyManager.getAllParticpantData()
+    // UNDONE Move this code into StudyManager.getAllParticipantData()
     Map<Double, Date> visitDates = new TreeMap<Double, Date>();
     TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
     SimpleFilter f = new SimpleFilter();

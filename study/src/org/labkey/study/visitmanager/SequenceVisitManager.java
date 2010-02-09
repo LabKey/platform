@@ -185,7 +185,7 @@ public class SequenceVisitManager extends VisitManager
             // upate VisitDate
             //
 
-            // update ParticpantVisit.VisitDate based on declared Visit.visitDateDatasetId
+            // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
             String sqlUpdateVisitDates = "UPDATE " + tableParticipantVisit + "\n" +
                     "SET VisitDate = \n" +
                     " (\n" +
@@ -201,7 +201,7 @@ public class SequenceVisitManager extends VisitManager
             Table.execute(schema, sqlUpdateVisitDates,
                     new Object[]{_study.getContainer(), _study.getContainer(), _study.getContainer()});
 
-            /* infer ParticpantVisit.VisitDate if it seems unambiguous
+            /* infer ParticipantVisit.VisitDate if it seems unambiguous
             String sqlCopyVisitDates = "UPDATE " + tableParticipantVisit + "\n" +
                     "SET VisitDate = \n" +
                     " (\n" +

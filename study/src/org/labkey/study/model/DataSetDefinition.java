@@ -98,7 +98,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "QCState",
         "visitRowId",
         "lsid",
-        "Dataset"
+        "Dataset",
+        "ParticipantSequenceKey"
     };
 
     private static final String[] DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY = new String[]
@@ -124,7 +125,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "QCState",
         "visitRowId",
         "lsid",
-        "Dataset"
+        "Dataset",
+        "ParticipantSequenceKey"
     };
 
     private static final CaseInsensitiveHashSet DEFAULT_ABSOLUTE_DATE_FIELDS;

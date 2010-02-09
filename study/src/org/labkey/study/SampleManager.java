@@ -27,23 +27,18 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.samples.report.SpecimenCountSummary;
 import org.labkey.study.samples.settings.DisplaySettings;
@@ -382,6 +377,12 @@ public class SampleManager
     {
         SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
         return firstEvent != null ? firstEvent.getLabId() : null;
+    }
+
+    public String getFirstProcessedByInitials(List<SpecimenEvent> dateOrderedEvents) throws SQLException
+    {
+        SpecimenEvent firstEvent = getFirstEvent(dateOrderedEvents);
+        return firstEvent != null ? firstEvent.getProcessedByInitials() : null;
     }
 
     public SiteImpl getOriginatingSite(Specimen specimen) throws SQLException
@@ -1416,7 +1417,8 @@ public class SampleManager
         TableInfo tinfo = forcedTable;
         if (tinfo == null)
             tinfo = isLookup ? col.getFk().getLookupTableInfo() : col.getParentTable();
-        DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(tinfo, container.getId(), cacheKey);
+        TableInfo cachedTinfo = tinfo instanceof FilteredTable ? ((FilteredTable) tinfo).getRealTable() : tinfo;
+        DistinctValueList distinctValues = (DistinctValueList) StudyCache.getCached(cachedTinfo, container.getId(), cacheKey);
         if (distinctValues == null)
         {
             distinctValues = new DistinctValueList(container, cacheKey);
@@ -1461,7 +1463,7 @@ public class SampleManager
                     if (rs != null) try { rs.close(); } catch (SQLException e) {}
                 }
             }
-            StudyCache.cache(tinfo, container.getId(), cacheKey, distinctValues);
+            StudyCache.cache(cachedTinfo, container.getId(), cacheKey, distinctValues);
         }
         return distinctValues;
     }
@@ -2060,7 +2062,7 @@ public class SampleManager
         SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[ret.size()]);
 
         if (includeParticipantLists)
-            setSummaryParticpantLists(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
+            setSummaryParticipantLists(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
                     viewSqlHelper.getAliasToTypePropertyMap(), summaries, StudyService.get().getSubjectColumnName(container), "Visit");
         return summaries;
     }
@@ -2312,7 +2314,7 @@ public class SampleManager
         RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
 
         if (includeParticipantLists)
-            setSummaryParticpantLists(sql, params, null, summaries, "ParticipantId", "SequenceNum");
+            setSummaryParticipantLists(sql, params, null, summaries, "ParticipantId", "SequenceNum");
         return summaries;
     }
 
@@ -2476,7 +2478,7 @@ public class SampleManager
         }
     }
 
-    private void setSummaryParticpantLists(String sql, Object[] paramArray, Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
+    private void setSummaryParticipantLists(String sql, Object[] paramArray, Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
                                            SummaryByVisitType[] summaries, String ptidColumnName, String visitValueColumnName) throws SQLException
     {
         Table.TableResultSet rs = null;

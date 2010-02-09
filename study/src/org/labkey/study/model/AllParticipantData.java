@@ -21,15 +21,16 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.PropertyUtil;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 
 import java.sql.SQLException;
-import java.util.*;/*
+import java.util.*;
+
+/*
  * User: brittp
  * Date: Jul 28, 2008
  * Time: 2:57:36 PM
@@ -42,7 +43,8 @@ public class AllParticipantData
     private Map<ParticipantDataMapKey, RowSet> _valueMap;
 
     static final String allParticipantDataSql = "SELECT SD.DatasetId, PV.VisitRowId, SD.SequenceNum, SD._key, SD.SourceLsid, " +
-            "exp.ObjectProperty.*, exp.PropertyDescriptor.PropertyURI, QC.RowId AS QCState\n" +
+            "exp.ObjectProperty.*, exp.PropertyDescriptor.PropertyURI, exp.PropertyDescriptor.RangeURI, " +
+            "exp.PropertyDescriptor.ConceptURI, exp.PropertyDescriptor.Format, QC.RowId AS QCState\n" +
             "FROM study.studydata SD JOIN study.participantvisit PV ON SD.participantid=PV.participantid AND SD.sequencenum=PV.sequencenum\n" +
             "LEFT OUTER JOIN exp.Object ON SD.lsid = exp.Object.objecturi\n" +
             "LEFT OUTER JOIN exp.ObjectProperty ON exp.Object.ObjectId = exp.ObjectProperty.ObjectId\n" +
@@ -104,11 +106,13 @@ public class AllParticipantData
             int colQCStateIndex = rs.findColumn("QCState");
             int colSourceLsidIndex = rs.findColumn("SourceLsid");
             int colPropertyId = rs.findColumn("propertyId");
+            int colConceptURI = rs.findColumn("conceptURI");
+            int colRangeURI = rs.findColumn("rangeURI");
+            int colFormat = rs.findColumn("format");
 
             final String defaultDateFormat = StudyManager.getInstance().getDefaultDateFormatString(study.getContainer());
             final String defaultNumberFormat = StudyManager.getInstance().getDefaultNumberFormatString(study.getContainer());
 
-            Map<Integer, PropertyDescriptor> propertyDescriptors = new HashMap<Integer, PropertyDescriptor>();
             while (rs.next())
             {
                 ArrayListMap row = (ArrayListMap)rs.getRowMap();
@@ -119,18 +123,15 @@ public class AllParticipantData
                 String sourceLsid = (String)row.get(colSourceLsidIndex);
                 Integer propertyId = (Integer)row.get(colPropertyId);
                 String key = (String)row.get(colKey);
+                String rangeURI = (String)row.get(colRangeURI);
+                String conceptURI = (String)row.get(colConceptURI);
+                String formatString = (String)row.get(colFormat);
 
-                PropertyDescriptor pd = propertyDescriptors.get(propertyId);
-                if (pd == null)
-                {
-                    pd = OntologyManager.getPropertyDescriptor(propertyId);
-                    propertyDescriptors.put(propertyId, pd);
-                }
-                
                 Object val;
                 String defaultFormat = null;
 
-                switch (pd.getPropertyType())
+                PropertyType type = PropertyType.getFromURI(conceptURI, rangeURI);
+                switch (type)
                 {
                     default:
                     case STRING:
@@ -143,7 +144,7 @@ public class AllParticipantData
                         defaultFormat = defaultNumberFormat;
                         if (val != null)
                         {
-                            switch (pd.getPropertyType())
+                            switch (type)
                             {
                                 case INTEGER:
                                     val = ((Double) val).intValue();
@@ -187,7 +188,7 @@ public class AllParticipantData
                     else
                         keyMap.set(propMap);
                 }
-                propMap.put(propertyId, val != null ? PropertyUtil.formatValue(pd, val, defaultFormat) : null);
+                propMap.put(propertyId, val != null ? PropertyUtil.formatValue(type, formatString, val, defaultFormat) : null);
             }
 
             return new AllParticipantData(datasetIds, visitSeqMap, allData);

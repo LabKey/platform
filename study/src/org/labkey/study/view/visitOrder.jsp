@@ -78,7 +78,7 @@ function orderModule(listName, hiddenElName, down)
                     "order for date-based studies.")%></th>
             <td></td>
             <th>Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
-                    "or after others.  Visits are chronologically ordered when all particpants move only downward through the visit list.  Any given " +
+                    "or after others.  Visits are chronologically ordered when all participants move only downward through the visit list.  Any given " +
                     StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + " may skip some visits, depending on " +
                     "cohort assignment or other factors.  It is generally not useful to set a chronological order for date-based studies.")%></th>
             <td></td>

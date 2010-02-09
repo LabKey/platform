@@ -52,7 +52,6 @@
     String intervalLabel;
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    String subjectNounPlural = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";
@@ -141,7 +140,7 @@
     </tr>
     <tr>
         <th align="left">Comments</th>
-        <td>Manage <%= subjectNounSingle.toLowerCase() %> and  <%= subjectNounSingle.toLowerCase() %>/visit comments</td>
+        <td>Manage <%= h(subjectNounSingle.toLowerCase()) %> and  <%= h(subjectNounSingle.toLowerCase()) %>/visit comments</td>
         <td><%= textLink("Manage Comments",
                 new ActionURL(SpecimenController.ManageSpecimenCommentsAction.class, c)) %></td>
     </tr>

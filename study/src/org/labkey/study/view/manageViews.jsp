@@ -97,7 +97,7 @@
             getButtons : function() {
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
                 buttons.push({
-                    text:'Customize <%= StudyService.get().getSubjectNounSingular(study.getContainer()) %> View',
+                    text:'Customize <%= h(StudyService.get().getSubjectNounSingular(study.getContainer())) %> View',
                     disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                     listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
                 });

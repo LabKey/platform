@@ -1,5 +1,6 @@
 package org.labkey.study.samples.report;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
@@ -141,12 +142,12 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         if (isViewParticipantCount())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? "/" : " (");
-            suffixBuilder.append("Participant Count");
+            suffixBuilder.append(PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getContainer()))).append(" Count");
         }
         if (isViewPtidList())
         {
             suffixBuilder.append(suffixBuilder.length() > 0 ? ", " : " (");
-            suffixBuilder.append("Ptid List");
+            suffixBuilder.append(PageFlowUtil.filter(StudyService.get().getSubjectColumnName(getContainer()))).append(" List");
         }
         suffixBuilder.append(")");
         return suffixBuilder.toString();

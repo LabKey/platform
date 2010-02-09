@@ -57,10 +57,20 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 {
     protected abstract boolean isInsert();
     protected abstract NavTree appendExtraNavTrail(NavTree root);
+    private QueryUpdateForm _updateForm;
 
     protected InsertUpdateAction(Class<? extends Form> formClass)
     {
         super(formClass);
+    }
+
+    private QueryUpdateForm getUpdateForm(TableInfo datasetTable, BindException errors)
+    {
+        if (_updateForm == null)
+        {
+            _updateForm = new QueryUpdateForm(datasetTable, getViewContext(), errors);
+        }
+        return _updateForm;
     }
 
     public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
@@ -116,46 +126,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             }
         }
 
-        /*
-This TableInfo is used only when a dataset has been identified as the 'cohort' dataset
-for a given study.  In this case, the specified cohort field (which must be of type 'text')
-is displayed as an editable drop-down of available cohorts, instead of a text field.
-private static class CohortDatasetTableInfo extends StudyDataTableInfo
-{
-    CohortDatasetTableInfo(DataSetDefinition def, final User user)
-    {
-        super(def, user);
-        StudyImpl study = def.getStudy();
-        String cohortProperty = study.getParticipantCohortProperty();
-        ColumnInfo cohortCol = getColumn(cohortProperty);
-        if (cohortCol != null)
-        {
-            final Container container = study.getContainer();
-            // make the cohort column behave as a drop-down by specifying an FK:
-            cohortCol.setFk(new LookupForeignKey("Label")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    // make the value of the FK be the label, so the correct text is stored in the DB
-                    StudyImpl study = StudyManager.getInstance().getStudy(container);
-                    return new CohortTable(new StudyQuerySchema(study, user, true))
-                    {
-                        @Override
-                        public List<ColumnInfo> getPkColumns()
-                        {
-                            ColumnInfo labelCol = getColumn("Label");
-                            return Collections.singletonList(labelCol);
-                        }
-                    };
-                }
-            });
-        }
-    }
-}
-         */
-
-
-        QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext(), errors);
+        QueryUpdateForm updateForm = getUpdateForm(datasetTable, errors);
 
         DataView view = createNewView(form, updateForm, errors);
         if (isInsert())
@@ -235,7 +206,8 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
     public boolean handlePost(Form form, BindException errors) throws Exception
     {
         int datasetId = form.getDatasetId();
-        DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+        StudyImpl study = getStudy();
+        DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
         if (null == ds)
         {
             redirectTypeNotFound(form.getDatasetId());
@@ -251,9 +223,7 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
         }
 
         TableInfo datasetTable = ds.getTableInfo(getViewContext().getUser());
-        QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext(), errors);
-        //noinspection ThrowableResultOfMethodCallIgnored
-        updateForm.populateValues(errors);
+        QueryUpdateForm updateForm = getUpdateForm(datasetTable, errors);
 
         if (errors.hasErrors())
             return false;
@@ -302,11 +272,15 @@ private static class CohortDatasetTableInfo extends StudyDataTableInfo
             }
             return false;
         }
-        // If this results in a change to participant ID or the visit itself,
-        // we need to recompute the participant-visit map
-        if (isInsert() || !newLsid.equals(form.getLsid()))
+
+        boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
+                BaseStudyController.safeEquals(datasetId, study.getParticipantCohortDataSetId()));
+
+        // If this results in a change to cohort assignments, the participant ID, or the visit,
+        // we need to recompute the participant-visit map:
+        if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
         {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study);
             StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getViewContext().getUser());
         }
 

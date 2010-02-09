@@ -40,7 +40,7 @@ Spreadheet Export allows you to export data from one site exclusively, or to exp
 Before you export, you can select the source site or sites using the "Site" drop-down menu.
 <ul>
 <li><b>All Sites</b>. If you select "All Sites" from the dropdown "Site" menu, you will export all data for all
-    <%= StudyService.get().getSubjectNounPlural(getViewContext().getContainer())%> across all sites.</li>
+    <%= h(StudyService.get().getSubjectNounPlural(getViewContext().getContainer())) %> across all sites.</li>
 <li ><b>Single Site</b>. If you select a particular site from the "Site" menu, you will export only data associated with the chosen site.</li>
 </ul>
 </div>

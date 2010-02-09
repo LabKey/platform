@@ -46,14 +46,14 @@
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
     <table>
         <tr class="labkey-wp-header">
-            <th><%= subjectNoun %> View Contents</th>
+            <th><%= h(subjectNoun) %> View Contents</th>
         </tr>
         <tr>
             <td>
                 <input type="radio" name="useCustomView"
                        value="false"
                        onclick="return setCustomScriptState(!this.selected)"
-                       <%= useCustomView ? "" : "CHECKED"%>>Use standard <%= subjectNoun.toLowerCase() %> view<br>
+                       <%= useCustomView ? "" : "CHECKED"%>>Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
@@ -61,7 +61,7 @@
                 <input type="radio" name="useCustomView"
                        value="true"
                        onclick="return setCustomScriptState(this.selected)"
-                       <%= useCustomView ? "CHECKED" : ""%>>Use customized <%= subjectNoun.toLowerCase() %> view<br>
+                       <%= useCustomView ? "CHECKED" : ""%>>Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
@@ -89,7 +89,7 @@
 %>
 <table width="100%">
     <tr class="labkey-wp-header">
-        <th><%= subjectNoun %> View Preview (Save to refresh)</th>
+        <th><%= h(subjectNoun) %> View Preview (Save to refresh)</th>
     </tr>
     <tr>
         <td>

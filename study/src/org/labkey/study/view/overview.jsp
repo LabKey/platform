@@ -96,7 +96,7 @@
 %>
 <br><br>
     <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
-    <%= StudyService.get().getSubjectNounSingular(container) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
+    <%= h(StudyService.get().getSubjectNounSingular(container)) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)

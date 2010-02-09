@@ -49,6 +49,7 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
 
         addWrapLocationColumn("Clinic", "OriginatingLocationId");
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
+        addWrapColumn(_rootTable.getColumn("FirstProcessedByInitials"));
         
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));

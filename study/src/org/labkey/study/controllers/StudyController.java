@@ -5842,15 +5842,15 @@ public class StudyController extends BaseStudyController
 
             out.print("<table><tr><td align=\"left\">");
             if (_prevURL == null)
-                out.print("[< Previous " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "]");
+                out.print("[< Previous " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer())) + "]");
             else
-                out.print("[<a href=\"" + _prevURL + "\">< Previous " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + "</a>]");
+                out.print("[<a href=\"" + _prevURL + "\">< Previous " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer())) + "</a>]");
             out.print("&nbsp;");
 
             if (_nextURL == null)
-                out.print("[Next " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + " >]");
+                out.print("[Next " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + " >]"));
             else
-                out.print("[<a href=\"" + _nextURL + "\">Next " + StudyService.get().getSubjectNounSingular(getViewContext().getContainer()) + " ></a>]");
+                out.print("[<a href=\"" + _nextURL + "\">Next " + PageFlowUtil.filter(StudyService.get().getSubjectNounSingular(getViewContext().getContainer())) + " ></a>]");
             out.print("&nbsp;");
 
             if (null != _currentParticipantId && null != ss)

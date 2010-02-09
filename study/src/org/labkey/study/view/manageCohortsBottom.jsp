@@ -89,7 +89,7 @@
     %>
     <table>
         <tr>
-            <th><%= StudyService.get().getSubjectColumnName(getViewContext().getContainer()) %></th>
+            <th><%= h(StudyService.get().getSubjectColumnName(getViewContext().getContainer())) %></th>
             <th>Current Cohort</th>
         </tr>
     <%

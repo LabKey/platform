@@ -20,6 +20,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.data.*;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -284,10 +285,14 @@ public class CohortManager
                         StudyManager.getInstance().createCohort(study, user, cohort);
                     }
 
-                    updateCohorts(user, study, tableParticipant, cohortDatasetTinfo, cohortLabelCol);
+                    updateCohorts(user, study, tableParticipant, dataset, cohortLabelCol);
 
                     if (transactionOwner)
                         scope.commitTransaction();
+
+                    // aggressively uncache study data (including cached participants) whenever
+                    // cohorts may have changed:
+                    StudyManager.getInstance().clearCaches(study.getContainer(), false);
                 }
             }
         }
@@ -301,9 +306,11 @@ public class CohortManager
         }
     }
 
-    private void updateCohorts(User user, StudyImpl study, TableInfo tableParticipant, TableInfo cohortDatasetTinfo, ColumnInfo cohortLabelCol)
+    private void updateCohorts(User user, StudyImpl study, TableInfo tableParticipant, DataSetDefinition dsd, ColumnInfo cohortLabelCol)
     {
-        // The following SQL will return a list of all particpant/visit combinations, ordered by particpant and sub-ordered by chronological
+        TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
+
+        // The following SQL will return a list of all participant/visit combinations, ordered by participant and sub-ordered by chronological
         // visit order.  There will be a column for cohort assignment, if available in the cohort dataset.  For example:
         //
         // ParticipantId;Visit;Cohort
@@ -325,10 +332,10 @@ public class CohortManager
                 "LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " V ON\n" +
                 "\tPV.VisitRowId = V.RowId\n" +
                 "LEFT OUTER JOIN " + cohortDatasetTinfo + " D ON\n" +
-                "\tPV.VisitRowId = D.VisitRowId AND\n" +
+                (!dsd.isDemographicData() ? "\tPV.VisitRowId = D.VisitRowId AND\n" : "") +
                 "\tPV.ParticipantId = D." + StudyService.get().getSubjectColumnName(study.getContainer()) + "\n" +
-                "WHERE PV.Container = ?\n" +
-                "ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
+                "WHERE PV.Container = ? " + (study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "") +
+                "\nORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
 
         pvCohortSql.add(study.getContainer());
 

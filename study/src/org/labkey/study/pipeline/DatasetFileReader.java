@@ -102,9 +102,19 @@ public class DatasetFileReader
         // UNDONE: duplicate labels? dataset named participant?
         for (DataSetDefinition ds : dsArray)
         {
+            // When mapping a dataset identifier to an acutal dataset object,
+            // we first check to see if the identifier is a dataset ID, then a
+            // dataset name, then a dataset label.  We add these values to our
+            // lookup map in reverse order, so duplicates (i.e., if a dataset's
+            // name is the same as another dataset's label) are overwritten by the
+            // more important value.  This leaves us with a single map that handles
+            // our lookup hierarchy.
             String label = StringUtils.trimToNull(ds.getLabel());
             if (null != label)
                 dsMap.put(label.toLowerCase(), ds);
+            String name = StringUtils.trimToNull(ds.getName());
+            if (null != name)
+                dsMap.put(name.toLowerCase(), ds);
             dsMap.put(String.valueOf(ds.getDataSetId()), ds);
         }
 

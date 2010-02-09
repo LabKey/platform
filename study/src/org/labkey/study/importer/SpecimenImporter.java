@@ -862,7 +862,7 @@ public class SpecimenImporter
         logger.info("Complete.");
     }
 
-    private static void updateSpecimenProcessingLocations(Container container, Logger logger) throws SQLException
+    private static void updateSpecimenProcessingInfo(Container container, Logger logger) throws SQLException
     {
         SQLFragment sql = new SQLFragment("UPDATE study.Specimen SET ProcessingLocation = (\n" +
                 "\tSELECT MAX(ProcessingLocation) AS ProcessingLocation FROM \n" +
@@ -872,9 +872,22 @@ public class SpecimenImporter
                 ") WHERE Container = ?");
         sql.add(container.getId());
         sql.add(container.getId());
-        logger.info("Updating providing locations on the specimen table...");
+        logger.info("Updating processing locations on the specimen table...");
         Table.execute(StudySchema.getInstance().getSchema(), sql);
         logger.info("Complete.");
+
+        sql = new SQLFragment("UPDATE study.Specimen SET FirstProcessedByInitials = (\n" +
+                "\tSELECT MAX(FirstProcessedByInitials) AS FirstProcessedByInitials FROM \n" +
+                "\t\t(SELECT DISTINCT SpecimenId, FirstProcessedByInitials FROM study.Vial WHERE SpecimenId = study.Specimen.RowId AND Container = ?) Locations\n" +
+                "\tGROUP BY SpecimenId\n" +
+                "\tHAVING COUNT(FirstProcessedByInitials) = 1\n" +
+                ") WHERE Container = ?");
+        sql.add(container.getId());
+        sql.add(container.getId());
+        logger.info("Updating first processed by initials on the specimen table...");
+        Table.execute(StudySchema.getInstance().getSchema(), sql);
+        logger.info("Complete.");
+
     }
 
     private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
@@ -895,7 +908,7 @@ public class SpecimenImporter
         Map<Integer, SiteImpl> siteMap = new HashMap<Integer, SiteImpl>();
         String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoVial() +
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
-                "AtRepository = ?, Available = ? WHERE RowId = ?";
+                "FirstProcessedByInitials = ?, AtRepository = ?, Available = ? WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
         do
@@ -915,6 +928,7 @@ public class SpecimenImporter
                 Specimen specimen = entry.getKey();
                 List<SpecimenEvent> dateOrderedEvents = entry.getValue();
                 Integer processingLocation = SampleManager.getInstance().getProcessingSiteId(dateOrderedEvents);
+                String firstProcessedByInitials = SampleManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
                 Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(dateOrderedEvents);
                 boolean atRepository = false;
                 if (currentLocation != null)
@@ -940,11 +954,18 @@ public class SpecimenImporter
 
                 if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
                     !safeIntegerEqual(processingLocation, specimen.getProcessingLocation()) ||
+                    !safeObjectEquals(firstProcessedByInitials, specimen.getFirstProcessedByInitials()) ||
                     atRepository != specimen.isAtRepository() ||
                     available != specimen.isAvailable())
                 {
-                    vialPropertiesParams.add(Arrays.asList(currentLocation, processingLocation,
-                            atRepository, available, specimen.getRowId()));
+                    List<Object> params = new ArrayList<Object>();
+                    params.add(currentLocation);
+                    params.add(processingLocation);
+                    params.add(firstProcessedByInitials);
+                    params.add(atRepository);
+                    params.add(available);
+                    params.add(specimen.getRowId());
+                    vialPropertiesParams.add(params);
                 }
 
                 SpecimenComment comment = specimenComments.get(specimen);
@@ -980,7 +1001,7 @@ public class SpecimenImporter
         while (specimens.length > 0);
 
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
-        updateSpecimenProcessingLocations(container, logger);
+        updateSpecimenProcessingInfo(container, logger);
 
         if (logger != null)
             logger.info("Updating cached vial counts...");
@@ -1672,6 +1693,12 @@ public class SpecimenImporter
                 if (firstRow.containsKey(column.getTsvColumnName()))
                     loadedColumns.add(column);
             }
+        }
+
+        if (loadedColumns.isEmpty())
+        {
+            info("Found no specimen columns to import. Temp table will not be loaded.");
+            return loadedColumns;
         }
 
         String sep = "";

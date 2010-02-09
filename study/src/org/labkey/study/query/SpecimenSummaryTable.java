@@ -61,6 +61,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
         addWrapLocationColumn("Clinic", "OriginatingLocationId");
         addWrapLocationColumn("ProcessingLocation", "ProcessingLocation");
+        addWrapColumn(_rootTable.getColumn("FirstProcessedByInitials"));
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
         addWrapColumn(_rootTable.getColumn("VialCount"));
         addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
