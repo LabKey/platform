@@ -74,8 +74,9 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         for (final FileAnalysisTaskPipeline tp : pipelines)
         {            
             String path = directory.cloneHref().getParameter(Params.path.toString());
-            addAction(tp.getAnalyzeURL(c, path), tp.getDescription(),
-                    directory, directory.listFiles(tp.getInitialFileTypeFilter()), true, includeAll);
+            String actionId = createActionId(this.getClass(), tp.getDescription());
+            addAction(actionId, tp.getAnalyzeURL(c, path), tp.getDescription(),
+                    directory, directory.listFiles(tp.getInitialFileTypeFilter()), true, false, includeAll);
         }
     }
 }

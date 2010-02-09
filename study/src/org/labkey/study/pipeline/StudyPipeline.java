@@ -81,7 +81,8 @@ public class StudyPipeline extends PipelineProvider
                 }
             });
 
-            addAction(SpecimenController.ImportSpecimenData.class, "Import specimen data", directory, files, false, includeAll);
+            String actionId = createActionId(SpecimenController.ImportSpecimenData.class, "Import specimen data");
+            addAction(actionId, SpecimenController.ImportSpecimenData.class, "Import specimen data", directory, files, false, false, includeAll);
         }
         catch (IOException e)
         {
@@ -162,13 +163,16 @@ public class StudyPipeline extends PipelineProvider
             urlReset.setAction(StudyController.ResetPipelineAction.class);
             urlReset.replaceParameter("redirect", context.getActionURL().getLocalURIString());
             urlReset.replaceParameter("path", directory.getPathParameter());
-            directory.addAction(new PipelineAction("Delete lock", urlReset, lockFiles.toArray(new File[lockFiles.size()]), true));
+
+            String actionId = StudyController.ResetPipelineAction.class.getName() + ":Delete lock";
+            directory.addAction(new PipelineAction(actionId, "Delete lock", urlReset, lockFiles.toArray(new File[lockFiles.size()]), true));
         }
 
         files = new File[0];
         if (!datasetFiles.isEmpty())
             files = datasetFiles.toArray(new File[datasetFiles.size()]);
 
-        addAction(StudyController.ImportStudyBatchAction.class, "Import datasets", directory, files, false, includeAll);
+        String actionId = createActionId(StudyController.ImportStudyBatchAction.class, "Import datasets");
+        addAction(actionId, StudyController.ImportStudyBatchAction.class, "Import datasets", directory, files, false, false, includeAll);
     }
 }

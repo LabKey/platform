@@ -501,8 +501,6 @@ public class PipelineController extends SpringActionController
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             FilesAdminOptions options = svc.getAdminOptions(c);
 
-            mergeActionConfiguration(pr, entry, c, options);
-
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())
             {
@@ -511,146 +509,59 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("actions", actions);
-            resp.put("importDataEnabled", options.isImportDataEnabled());
-            resp.put("adminUser", getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class));
+
             return resp;
-        }
-
-        private void mergeActionConfiguration(PipeRoot pr, PipelineProvider.PipelineDirectory entry, Container c, FilesAdminOptions options)
-        {
-            // get and merge configuration information
-            Map<String, PipelineActionConfig> configMap = new HashMap<String, PipelineActionConfig>();
-            for (PipelineActionConfig config : options.getPipelineConfig())
-                configMap.put(config.getId(), config);
-
-            // administrators always see all import actions (disabled or not), but we want to be able
-            // to distinguish in the UI without having to impersonate a user.
-            boolean isAdmin = getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class);
-
-            for (PipelineAction action : entry.getActions())
-            {
-                NavTree links = action.getLinks();
-                if (links != null)
-                    setActionConfiguration(links, configMap, isAdmin);
-            }
-        }
-
-        private void setActionConfiguration(NavTree tree, Map<String, PipelineActionConfig> configMap, boolean isAdmin)
-        {
-            if (StringUtils.isEmpty(tree.getId()))
-                tree.setId(tree.getKey());
-            if (configMap.containsKey(tree.getId()))
-            {
-                PipelineActionConfig config = configMap.get(tree.getId());
-                if (config.getState() == PipelineActionConfig.displayState.disabled && isAdmin)
-                    tree.setDisplay(PipelineActionConfig.displayState.admin.name());
-                else
-                    tree.setDisplay(config.getState().name());
-            }
-            else
-                tree.setDisplay(PipelineActionConfig.displayState.enabled.name());
-
-            for (NavTree child : tree.getChildren())
-                setActionConfiguration(child, configMap, isAdmin);
         }
     }
 
-    public static class PipelineConfigForm
+    public static class SaveOptionsForm implements CustomApiForm
     {
-        String[] _enabled = new String[0];
-        String[] _disabled = new String[0];
-        String[] _toolbar = new String[0];
+        private Map<String,Object> _props;
 
-        String _displayState;
-        String _id;
-        boolean _importDataEnabled;
-
-        public boolean isImportDataEnabled()
+        public void bindProperties(Map<String, Object> props)
         {
-            return _importDataEnabled;
+            _props = props;
         }
 
-        public void setImportDataEnabled(boolean importDataEnabled)
+        public Map<String,Object> getProps()
         {
-            _importDataEnabled = importDataEnabled;
+            return _props;
         }
+    }
 
-        public String[] getEnabled()
+    @RequiresPermissionClass(AdminPermission.class)
+    public class UpdatePipelineActionConfigAction extends MutatingApiAction<SaveOptionsForm>
+    {
+        public ApiResponse execute(SaveOptionsForm form, BindException errors) throws Exception
         {
-            return _enabled;
-        }
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
 
-        public void setEnabled(String[] enabled)
-        {
-            _enabled = enabled;
-        }
+            FilesAdminOptions options = FilesAdminOptions.fromJSON(container, form.getProps());
 
-        public String[] getDisabled()
-        {
-            return _disabled;
-        }
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            svc.setAdminOptions(getContainer(), options);
 
-        public void setDisabled(String[] disabled)
-        {
-            _disabled = disabled;
-        }
-
-        public String[] getToolbar()
-        {
-            return _toolbar;
-        }
-
-        public void setToolbar(String[] toolbar)
-        {
-            _toolbar = toolbar;
-        }
-
-        public String getDisplayState()
-        {
-            return _displayState;
-        }
-
-        public void setDisplayState(String displayState)
-        {
-            _displayState = displayState;
-        }
-
-        public String getId()
-        {
-            return _id;
-        }
-
-        public void setId(String id)
-        {
-            _id = id;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class UpdatePipelineActionConfigAction extends ApiAction<PipelineConfigForm>
+    public class GetPipelineActionConfigAction extends ApiAction
     {
-        public ApiResponse execute(PipelineConfigForm form, BindException errors) throws Exception
+        public ApiResponse execute(Object form, BindException errors) throws Exception
         {
-            List<PipelineActionConfig> actionConfig = new ArrayList<PipelineActionConfig>();
-
-            for (String id : form.getDisabled())
-                actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.disabled.name()));
-
-            for (String id : form.getEnabled())
-                actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.enabled.name()));
-
-            for (String id : form.getToolbar())
-                actionConfig.add(new PipelineActionConfig(id, PipelineActionConfig.displayState.toolbar.name()));
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
 
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            FilesAdminOptions options = svc.getAdminOptions(getContainer());
+            FilesAdminOptions options = svc.getAdminOptions(container);
 
-            options.setImportDataEnabled(form.isImportDataEnabled());
-            options.setPipelineConfig(actionConfig);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("config", options.toJSON());
+            resp.put("success", true);
 
-            svc.setAdminOptions(getContainer(), options);
-
-            return new ApiSimpleResponse("success", true);
+            return resp;
         }
     }
 

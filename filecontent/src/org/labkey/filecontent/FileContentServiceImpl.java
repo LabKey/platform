@@ -393,7 +393,9 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         File dir = null;
         try
         {
-            dir = getMappedDirectory(c, false);
+            // don't delete the file contents if they have a project override
+            if (isUseDefaultRoot(c))
+                dir = getMappedDirectory(c, false);
         }
         catch (Exception e)
         {

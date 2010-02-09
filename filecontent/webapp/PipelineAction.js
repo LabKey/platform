@@ -35,6 +35,14 @@
 };
 
 LABKEY.PipelineActionUtil = function(config){
+/*
+    multiSelect     // does this action support handling more than one file
+    emptySelect     // if this action can operate on an empty directory
+    description
+
+    links : {},
+    files : [],
+*/
 
     Ext.apply(this, config);
 
@@ -47,16 +55,14 @@ LABKEY.PipelineActionUtil = function(config){
 
 LABKEY.PipelineActionUtil.prototype = {
 
-    multiSelect : undefined,
-    description : undefined,
-
-    links : {},
-    files : [],
-
     getText : function() {
         return this.links.text;
     },
 
+    getId : function() {
+        return this.links.id;
+    },
+    
     getLinks : function() {
         return this.links.items;
     },
@@ -71,97 +77,128 @@ LABKEY.PipelineActionUtil.prototype = {
 
     addLink : function(link)
     {
-        if (!this.links.items)
-            this.links.items = [];
+        if (!this.links)
+            this.links = {items:[]};
 
         link.files = this.files;
         this.links.items.push(link);
     },
 
+    getShortMessage : function() {
+        return this.msgShort ? this.msgShort : '';
+    },
+
+    getLongMessage : function() {
+        return this.msgLong ? this.msgLong : '';
+    },
+
+    setMessage : function(short, long) {
+        this.msgShort = short;
+        this.msgLong = long;
+    },
+
+    setEnabled : function(enabled) {
+        this.enabled = enabled;
+    },
+
+    getEnabled : function() {
+        return this.enabled;
+    },
+
+    getLink : function(id) {
+
+        var links = this.getLinks();
+        if (links && links.length)
+        {
+            for (var i=0; i < links.length; i++)
+            {
+                var link = links[i];
+
+                if (link && link.id == id)
+                    return link;
+            }
+        }
+    },
+    
     clone : function()
     {
         var config = Ext.ux.clone(this);
         return new LABKEY.PipelineActionUtil(config);
-    },
-
-    getActionConfig : function()
-    {
-        // an action with a menu button
-        if (this.links.items && this.links.items.length > 1)
-        {
-            return {
-                text: this.getText(),
-                multiSelect: this.multiSelect,
-                description: this.description,
-                files: this.files,
-                links: this.links,
-                menu: {
-                    cls: 'extContainer',
-                    items: this.links.items
-                }
-            }
-        }
-        else if (this.links.items && this.links.items.length == 1)
-        {
-            var item = this.links.items[0];
-            return {
-                text: this.getText(),
-                multiSelect: this.multiSelect,
-                description: this.description,
-                files: this.files,
-                links: this.links,
-                href: item.href,
-                listeners: item.listeners,
-                handler: item.handler,
-                scope: item.scope
-            }
-        }
     }
 };
 
-LABKEY.PipelineAction = Ext.extend(Ext.Action, {
-
-    constructor : function(config)
-    {
-        Ext.Action.prototype.constructor.call(this, config);
-
+LABKEY.PipelineActionConfig = function(config){
 /*
-        if (config.multiSelect)
-            this.multiSelect = config.multiSelect;
-        if (config.description)
-            this.description = config.description;
+    id : undefined,
+    display : undefined,
+    label : undefined,
 
-        this.text = this.initialConfig.links.text;
+    links : [],
 */
-    },
+    Ext.apply(this, config);
+};
 
-    getFiles : function(){
-        return this.initialConfig.files;
-    },
+LABKEY.PipelineActionConfig.prototype = {
 
-    // returns an array of executable sub-actions
-    getLinks : function()
-    {
-        var actions = [];
-        if (this.initialConfig.links.items != undefined)
+    getLink : function(id) {
+
+        if (this.links && this.links.length)
         {
-            for (var i=0; i < this.initialConfig.links.items.length; i++)
+            for (var i=0; i < this.links.length; i++)
             {
-                var item = this.initialConfig.links.items[i];
-                if (item.href)
-                {
-                    //item.handler = this.initialConfig.handler;
-                    //item.scope = this.initialConfig.scope;
-                    actions.push(item);
-                }
+                var link = this.links[i];
+
+                if (link && link.id == id)
+                    return link;
             }
         }
-        else if (this.initialConfig.links.text && this.initialConfig.links.href)
-        {
-            var item = this.initialConfig.links;
-            actions.push({text: item.text, id: item.id, display: item.display, href: item.href});
-        }
-        return actions;
-    }
-});
+    },
 
+    addLink : function(id, display, label) {
+
+        if (!this.links)
+            this.links = [];
+        
+        this.links.push({id: id, display: display, label: label});
+    },
+
+    isDisplayOnToolbar : function() {
+
+        if (this.links && this.links.length)
+        {
+            for (var i=0; i < this.links.length; i++)
+            {
+                if (this.links[i].display == 'toolbar')
+                    return true;
+            }
+        }
+        return false;
+    },
+
+    createButtonAction : function(handler, scope)
+    {
+        if (!this.links && !this.links.length) return null;
+
+        var items = [];
+        for (var i=0; i < this.links.length; i++)
+        {
+            var link = this.links[i];
+            if (link.display == 'toolbar')
+                items.push({id: link.id,  actionId: this.id, text: link.label, handler: handler, scope: scope, tooltip: link.label});
+        }
+
+        // an action with a menu button
+        if (items.length > 1)
+        {
+            return new Ext.Action({text: this.label, tooltip: this.label, menu: {
+                    cls: 'extContainer',
+                    items: items
+                }
+            });
+        }
+        else if (items.length == 1)
+            return new Ext.Action(items[0]);
+
+        return null;
+    }
+};

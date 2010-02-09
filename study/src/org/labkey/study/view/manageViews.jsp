@@ -170,7 +170,7 @@
                     Ext.Msg.alert("Rename Views", "Only views can be renamed. To convert a custom query to a view, expand the row and click on the [convert to view] link");
                     return;
                 }
-                doEditRecord(button, this.grid, selections[0]);
+                doEditRecord(button, this.grid, selections[0].data);
             }
         });
 

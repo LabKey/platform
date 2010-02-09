@@ -291,7 +291,10 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         else if (form.isMenuTab())
             return new AdminController.AdminUrlsImpl().getProjectSettingsMenuURL(c);
         else if (form.isFilesTab())
-            return new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(c);
+        {
+            String param = form.isPipelineRootForm() ? "piperootSet" : "rootSet";
+            return new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(c).addParameter(param, true);
+        }
         else
             return new AdminController.AdminUrlsImpl().getProjectSettingsURL(c);
     }
@@ -425,13 +428,22 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                     if (!_reshow || _form.isPipelineRootForm())
                     {
                         FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+                        String confirmMessage = null;
 
                         if (service != null)
                         {
                             if (service.isFileRootDisabled(c))
+                            {
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.disable.name());
+                                confirmMessage = "File sharing has been disabled for this project";
+                            }
                             else if (service.isUseDefaultRoot(c))
+                            {
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
+                                File root = service.getFileRoot(getViewContext().getContainer());
+                                if (root != null && root.exists())
+                                    confirmMessage = "The file root is set to a default of: " + root.getCanonicalPath();
+                            }
                             else
                             {
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
@@ -439,9 +451,13 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                                 if (root != null && root.exists())
                                 {
                                     _form.setProjectRootPath(root.getCanonicalPath());
+                                    confirmMessage = "The file root is set to: " + root.getCanonicalPath();
                                 }
                             }
                         }
+
+                        if (getViewContext().getActionURL().getParameter("rootSet") != null && confirmMessage != null)
+                            _form.setConfirmMessage(confirmMessage);
                     }
                     VBox box = new VBox();
                     box.addView(new JspView<AdminController.ProjectSettingsForm>("/org/labkey/core/admin/view/filesProjectSettings.jsp", _form, _errors));
@@ -464,7 +480,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                                 WebPartView.endTitleFrame(out);
                             }
                         });
-
                     }
                     return box;
                 }

@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-// subclass the filebrowser panel
-
+/**
+ * This class extends the filebrowser widget to provide management and execution
+ * of pipeline actions.
+ */
 LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
-    actionsConnection : new Ext.data.Connection({autoAbort:true}),
+    actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {path:''}),
+    actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
 
-    // pipeline actions
-    pipelineActions : undefined,
-    importActions : undefined,
+    path : undefined,
 
-    // toolbar buttons
-    toolbarButtons : [],
-    toolbar : undefined,
+    actionConfig : undefined,               // map of actionId to action configurations
+    toolbarActions : undefined,             // map of actionId to Ext.Action
+    hasToolbarButtons : false,              // true if there are any pipeline actions on the toolbar
+
+    pipelineActions : undefined,            // array of labkey pipeline actions
+    actionMap : undefined,                  // map of actionId to labkey pipeline actions
 
     importDataEnabled : true,
     adminUser : false,
     isPipelineRoot : false,
+    selectionProcessed : false,
 
     constructor : function(config)
     {
@@ -48,6 +53,28 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
         this.grid.getSelectionModel().on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
+
+        // message templates
+        var typeTemplate = new Ext.XTemplate('<tpl if="icon == undefined">{type}</tpl><tpl if="icon != undefined"><img src="{icon}" alt="{type}"></tpl>').compile();
+
+
+        this.shortMsg = new Ext.XTemplate('<span style="margin-left:5px;" class="labkey-mv">{msg}</span>').compile();
+        this.shortMsgEnabled = new Ext.XTemplate('<span style="margin-left:5px;" class="labkey-mv">using {count} out of {total} file(s)</span>').compile();
+
+        var fileListTemplate =
+                '<tpl for="files">' +
+                    '<tpl if="xindex &lt; 11">' +
+                        '<span style="margin-left:8px;">{.}</span><br>' +
+                    '</tpl>' +
+                    '<tpl if="xindex == 11">' +
+                        '<span style="margin-left:8px;">... too many files to display</span><br>' +
+                    '</tpl>' +
+                '</tpl>';
+
+        this.longMsgEnabled = new Ext.XTemplate('This action will use the selected file(s):<br>', fileListTemplate).compile();
+        this.longMsgNoMultiSelect = new Ext.XTemplate('This action can only operate on one file at a time from the selected list:<br>', fileListTemplate).compile();
+        this.longMsgNoMatch = new Ext.XTemplate('This action can only operate on this list of file(s):<br>', fileListTemplate).compile();
+        this.longMsgNoSelection = new Ext.XTemplate('This action requires selection from this list of file(s):<br>', fileListTemplate).compile();
     },
 
     /**
@@ -114,31 +141,87 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     onDirectoryChange : function(record)
     {
-        var path = record.data.path;
-        if (startsWith(path,"/"))
-            path = path.substring(1);
-        var requestid = this.actionsConnection.request({
-            autoAbort:true,
-            url:actionsURL + encodeURIComponent(path),
-            method:'GET',
-            disableCaching:false,
-            success : this.updatePipelineActions,
-            scope: this
-        });
-        this.actions.importData.disable();
+        this.path = record.data.path;
+        if (startsWith(this.path,"/"))
+            this.path = this.path.substring(1);
+
+        //this.actions.importData.disable();
+
+        if (!this.actionConfig)
+        {
+            this.updateActionConfiguration(true, true);
+        }
+        else
+        {
+            this.grid.store.on('datachanged', function(record){
+                Ext.Ajax.request({
+                    autoAbort:true,
+                    url:this.actionsURL + encodeURIComponent(this.path),
+                    method:'GET',
+                    disableCaching:false,
+                    success : this.updatePipelineActions,
+                    updateSelection: true,
+                    scope: this
+                });
+            }, this, {single: true});
+        }
     },
 
-    updatePipelineActions : function(response)
+    updateActionConfiguration : function(updatePipelineActions, updateSelection) {
+
+        Ext.Ajax.request({
+            autoAbort:true,
+            url:this.actionsConfigURL,
+            method:'GET',
+            disableCaching:false,
+            success : this.getActionConfiguration,
+            scope: this,
+            updatePipelineActions: updatePipelineActions,
+            updateSelection: updateSelection
+        });
+    },
+
+    // parse the configuration information
+    getActionConfiguration : function(response, e)
+    {
+        var o = eval('var $=' + response.responseText + ';$;');
+        var config = o.success ? o.config : {};
+
+        // check whether the import data button is enabled
+        this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
+        this.actionConfig = {};
+
+        if ('object' == typeof config.actions)
+        {
+            for (var i=0; i < config.actions.length; i++)
+            {
+                var action = config.actions[i];
+                this.actionConfig[action.id] = new LABKEY.PipelineActionConfig(action);
+            }
+        }
+        this.updateToolbarButtons();
+
+        if (e.updatePipelineActions)
+        {
+            Ext.Ajax.request({
+                autoAbort:true,
+                url:this.actionsURL + encodeURIComponent(this.path),
+                method:'GET',
+                disableCaching:false,
+                success : this.updatePipelineActions,
+                scope: this,
+                updateSelection: e.updateSelection
+            });
+        }
+    },
+
+    updatePipelineActions : function(response, e)
     {
         var o = eval('var $=' + response.responseText + ';$;');
         var actions = o.success ? o.actions : [];
 
-        // check whether the import data button is enabled
-        this.importDataEnabled = o.success ? o.importDataEnabled : false;
-        this.adminUser = o.success ? o.adminUser : false;
-
-        var toolbarActions = [];
-        var importActions = [];
+        this.pipelineActions = [];
+        this.actionMap = {};
 
         if (actions && actions.length && this.canImportData())
         {
@@ -146,61 +229,52 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             {
                 var pUtil = new LABKEY.PipelineActionUtil(actions[i]);
                 var links = pUtil.getLinks();
+                var isEnabled = false;
 
                 if (!links) continue;
 
+                var config = this.actionConfig[pUtil.getId()];
                 for (var j=0; j < links.length; j++)
                 {
                     var link = links[j];
 
-                    if (link.display != 'disabled' && link.href)
+                    if (link.href)
                     {
-                        link.handler = this.executePipelineAction;
-                        link.scope = this;
-
-                        // toolbar actions are always available in import data
-                        if (link.display == 'toolbar')
+                        var display = 'enabled';
+                        if (config)
                         {
-                            this.addActionLink(toolbarActions, pUtil, link);
-                            this.addActionLink(importActions, pUtil, link);
+                            var linkConfig = config.getLink(link.id);
+                            if (linkConfig)
+                                display = linkConfig.display;
                         }
-                        else
-                            this.addActionLink(importActions, pUtil, link);
+
+                        link.enabled = (display != 'disabled');
+                        if (link.enabled)
+                            isEnabled = true;
                     }
+                }
+
+                if (this.adminUser || isEnabled)
+                {
+                    this.pipelineActions.push(pUtil);
+                    this.actionMap[pUtil.getId()] = pUtil;
                 }
             }
         }
 
-        this.displayPipelineActions(toolbarActions, importActions)
-    },
-
-    /**
-     * Helper to add pipeline action items to an object array
-     */
-    addActionLink : function(list, parent, link)
-    {
-        var action= list[parent.getText()];
-
-        if (!action)
+        if (e.updateSelection)
         {
-            // create a new data object to hold this link
-            action = new LABKEY.PipelineActionUtil({
-                multiSelect: parent.multiSelect,
-                description: parent.description,
-                files: parent.getFiles(),
-                links: {
-                    id: parent.links.id,
-                    text: parent.links.text,
-                    href: parent.links.href
-                }
-            });
-            action.clearLinks();
-            list[parent.getText()] = action;
+            // if there are toolbar buttons showing, refresh the current selection state, else
+            // handle it lazily if/when the import data dialog is shown.
+            
+            if (this.hasToolbarButtons)
+                this.onSelectionChange();
+            else
+                this.selectionProcessed = false;
         }
-        action.addLink(link);
     },
 
-    displayPipelineActions : function(toolbarActions, importActions)
+    updateToolbarButtons : function()
     {
         var toolbar = this.getTopToolbar();
         if (toolbar && toolbar.items)
@@ -211,26 +285,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 o.destroy();
             }
             toolbar.items.clear();
-        }
-
-        var tbarButtons = [];
-        var importDataButtons = [];
-
-        this.pipelineActions = [];
-        this.importActions = [];
-
-        // add any import data actions
-        for (action in importActions)
-        {
-            var a = importActions[action];
-            if ('object' == typeof a )
-            {
-                var importAction = new LABKEY.PipelineAction(a.getActionConfig());
-                importDataButtons.push(importAction);
-
-                this.importActions.push(importAction);
-                this.pipelineActions.push(importAction);
-            }
         }
 
         // add the standard buttons to the toolbar
@@ -246,30 +300,32 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     {
                         continue;
                     }
-                    tbarButtons.push(new Ext.Button(this.actions[item]));
                     toolbar.addButton(this.actions[item]);
                 }
-                else
-                    tbarButtons.push(item);
             }
         }
 
-        // now add the configurable pipleline actions
-        for (action in toolbarActions)
+        // now add the configurable pipeline actions
+        this.toolbarActions = {};
+        this.hasToolbarButtons = false;
+
+        for (var action in this.actionConfig)
         {
-            var a = toolbarActions[action];
+            var a = this.actionConfig[action];
             if ('object' == typeof a )
             {
-                var tbarAction = new LABKEY.PipelineAction(a.getActionConfig());
-                tbarButtons.push(new Ext.Button(tbarAction));
-
-                toolbar.addButton(tbarAction);
-                this.pipelineActions.push(tbarAction);
+                if (a.isDisplayOnToolbar())
+                {
+                    var action = a.createButtonAction(this.executeToolbarAction, this);
+                    if (action)
+                    {
+                        this.toolbarActions[a.id] = action;
+                        this.hasToolbarButtons = true;
+                        toolbar.addButton(action);
+                    }
+                }
             }
         }
-
-        if (this.pipelineActions.length > 0)
-            this.actions.importData.enable();
     },
 
     showImportData : function()
@@ -277,7 +333,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (this.adminUser)
             return true;
 
-        if (this.importDataEnabled && this.importActions.length)
+        if (this.importDataEnabled)// && this.importActions.length)
             return true;
 
         return false;
@@ -286,11 +342,16 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     // selection change handler
     onSelectionChange : function(record)
     {
+        this.actions.importData.disable();
+
         if (this.pipelineActions)
         {
             var selections = this.grid.selModel.getSelections();
+            var emptySelection = false;
+
             if (!selections.length && this.grid.store.data)
             {
+                emptySelection = true;
                 selections = this.grid.store.data.items;
             }
 
@@ -304,98 +365,184 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 for (var i=0; i <this.pipelineActions.length; i++)
                 {
                     var action = this.pipelineActions[i];
-                    if (action.initialConfig.files && action.initialConfig.files.length)
+                    var files = action.getFiles();
+                    var selectionCount = 0;
+                    var selectedFiles = [];
+
+                    if (emptySelection && !action.emptySelect)
                     {
-                        var selectionCount = 0;
-                        for (var j=0; j <action.initialConfig.files.length; j++)
+                        action.setEnabled(false);
+                        action.setMessage(
+                                this.shortMsg.apply({msg: 'a file must be selected first'}),
+                                this.longMsgNoSelection.apply({files: files}));
+                    }
+                    else if (files && files.length)
+                    {
+                        for (var j=0; j < files.length; j++)
                         {
-                            if (action.initialConfig.files[j] in selectionMap)
+                            if (files[j] in selectionMap)
                             {
                                 selectionCount++;
+                                selectedFiles.push(files[j]);
+                            }
+                            // special case for flow actions, TODO: get the flow guys to buy into the
+                            // idea of either sending down all files in the folder or running the action
+                            // from the parent folder (with the child folder selected)
+                            else if (emptySelection && action.emptySelect)
+                            {
+                                if (files[j] == this.currentDirectory.data.name)
+                                {
+                                    selectionCount++;
+                                    selectedFiles.push(files[j]);
+                                }
                             }
                         }
-                        if (action.initialConfig.multiSelect)
+
+                        if (selectionCount >= 1)
                         {
-                            selectionCount > 0 ? action.enable() : action.disable();
+                            if (selectionCount == 1 || action.multiSelect)
+                            {
+                                action.setEnabled(true);
+                                action.setMessage(
+                                        this.shortMsgEnabled.apply({count: selectionCount, total: selections.length}),
+                                        this.longMsgEnabled.apply({files: selectedFiles}));
+                            }
+                            else
+                            {
+                                action.setEnabled(false);
+                                action.setMessage(
+                                        this.shortMsg.apply({msg: 'only one file can be selected at a time'}),
+                                        this.longMsgNoMultiSelect.apply({files: selectedFiles}));
+                            }
                         }
                         else
                         {
-                            selectionCount == 1 ? action.enable() : action.disable();
+                            action.setEnabled(false);
+                            action.setMessage(
+                                    this.shortMsg.apply({msg: 'none of the selected files can be used'}),
+                                    this.longMsgNoMatch.apply({files: files}));
                         }
                     }
                 }
             }
         }
 
-        this.actions.importData.disable();
-        if (this.importActions && this.importActions.length)
+        // disable or enable all toolbar actions
+        for (var a in this.toolbarActions)
         {
-            for (var i=0; i < this.importActions.length; i++)
+            var action = this.actionMap[a];
+            var tbarAction = this.toolbarActions[a];
+
+            if ('object' == typeof tbarAction)
             {
-                var action = this.importActions[i];
-                if (!action.isDisabled())
-                    this.actions.importData.enable();
+                var msg = tbarAction.getText();
+                if ('object' == typeof action)
+                {
+                    action.getEnabled() ? tbarAction.enable() : tbarAction.disable();
+                    msg = action.getLongMessage();
+                }
+                else
+                    tbarAction.disable();
+
+                // update the button tooltip
+                if (msg) {
+                    tbarAction.each(function(c) {
+                        if (c.buttonSelector) {
+                            var btnEl = c.el.child(c.buttonSelector);
+
+                            if (btnEl) {
+                                Ext.QuickTips.unregister(btnEl.id);
+                                Ext.QuickTips.register({
+                                    target: btnEl.id,
+                                    text: msg,
+                                    title: ''
+                                });
+                            }
+                        }
+                    }, this);
+                }
+            }
+        }
+
+        if (this.pipelineActions.length)
+            this.actions.importData.enable();
+
+        this.selectionProcessed = true;
+    },
+
+    ensureSelection : function() {
+      
+        if (!this.selectionProcessed)
+            this.onSelectionChange();
+    },
+
+    executeImportAction : function(action, id)
+    {
+        if (action)
+        {
+            var selections = this.grid.selModel.getSelections();
+
+            // if there are no selections, treat as if all are selected
+            if (selections.length == 0)
+            {
+                var selections = [];
+                var store = this.grid.getStore();
+
+                for (var i=0; i <store.getCount(); i++)
+                {
+                    var record = store.getAt(i);
+                    if (record.data.file)
+                        selections.push(record);
+                }
+            }
+
+            var link = action.getLink(id);
+            if (link && link.href)
+            {
+                if (selections.length == 0)
+                {
+                    Ext.Msg.alert("Rename Views", "There are no views selected");
+                    return false;
+                }
+
+                var form = document.createElement("form");
+                form.setAttribute("method", "post");
+                form.setAttribute("action", link.href);
+
+                for (var i=0; i < selections.length; i++)
+                {
+                    var files = action.getFiles();
+                    for (var j = 0; j < files.length; j++)
+                    {
+                        if (files[j] == selections[i].data.name)
+                        {
+                            var fileField = document.createElement("input");
+                            fileField.setAttribute("name", "file");
+                            fileField.setAttribute("value", selections[i].data.name);
+                            form.appendChild(fileField);
+                            break;
+                        }
+                    }
+                }
+                document.body.appendChild(form);    // Not entirely sure if this is necessary
+                form.submit();
             }
         }
     },
 
-    executePipelineAction : function(item, e)
+    executeToolbarAction : function(item, e)
     {
-        var selections = this.grid.selModel.getSelections();
-        var action = item.isAction ? item : new LABKEY.PipelineAction(item);
+        var action = this.actionMap[item.actionId];
 
-        // if there are no selections, treat as if all are selected
-        if (selections.length == 0)
-        {
-            var selections = [];
-            var store = this.grid.getStore();
-
-            for (var i=0; i <store.getCount(); i++)
-            {
-                var record = store.getAt(i);
-                if (record.data.file)
-                    selections.push(record);
-            }
-        }
-
-        if (action && action.initialConfig.href)
-        {
-            if (selections.length == 0)
-            {
-                Ext.Msg.alert("Rename Views", "There are no views selected");
-                return false;
-            }
-
-            var form = document.createElement("form");
-            form.setAttribute("method", "post");
-            form.setAttribute("action", item.initialConfig.href);
-
-            for (var i=0; i < selections.length; i++)
-            {
-                var files = action.getFiles();
-                for (var j = 0; j < files.length; j++)
-                {
-                    if (files[j] == selections[i].data.name)
-                    {
-                        var fileField = document.createElement("input");
-                        fileField.setAttribute("name", "file");
-                        fileField.setAttribute("value", selections[i].data.name);
-                        form.appendChild(fileField);
-                        break;
-                    }
-                }
-            }
-
-            document.body.appendChild(form);    // Not entirely sure if this is necessary
-            form.submit();
-        }
+        if (action && item.id)
+            this.executeImportAction(action, item.id);
     },
 
     onAdmin : function(btn)
     {
         var configDlg = new LABKEY.ActionsAdminPanel({path: this.currentDirectory.data.path, isPipelineRoot : this.isPipelineRoot});
 
-        configDlg.on('success', function(c){this.onDirectoryChange(this.currentDirectory);}, this);
+        configDlg.on('success', function(c){this.updateActionConfiguration(true, true);}, this, {single:true});
         configDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
 
         configDlg.show();
@@ -407,65 +554,77 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var actions = [];
         var checked = true;
         var hasAdmin = false;
-        var selections = this.grid.selModel.getSelections();
 
-        for (var i=0; i < this.importActions.length; i++)
+        // make sure we have processed the current selection
+        this.ensureSelection();
+
+        for (var i=0; i < this.pipelineActions.length; i++)
         {
-            var pa = this.importActions[i];
+            var pa = this.pipelineActions[i];
 
-            if (!pa.isDisabled())
+            //if (pa.getEnabled() || (pa.getEnabledMsg() != ''))
             {
                 var links = pa.getLinks();
-                var fieldLabel = pa.getText();
+                var imgId = Ext.id();
+                var fieldLabel = pa.getText() + '<br>' + pa.getShortMessage();
 
-                var radioGroup = {
+                var radioGroup = new Ext.form.RadioGroup({
                     xtype: 'radiogroup',
                     fieldLabel: fieldLabel,
                     itemCls: 'x-check-group',
                     columns: 1,
+                    labelSeparator: '',
                     //disabled: !pa.initialConfig.multiSelect,
                     items: []
-                };
+                });
 
                 for (var j=0; j < links.length; j++)
                 {
                     var link = links[j];
-                    var label = link.text;
 
-                    if (link.display == 'admin')
+                    if (link.href && (link.enabled || this.adminUser))
                     {
-                        label = label.concat(' <span class="labkey-error">*</span>');
-                        hasAdmin = true;
+                        var label = link.text;
+
+                        // administrators always see all actions
+                        if (!link.enabled && this.adminUser)
+                        {
+                            label = label.concat(' <span class="labkey-error">*</span>');
+                            hasAdmin = true;
+                        }
+
+                        actionMap[link.id] = pa;
+                        radioGroup.items.push({
+                            xtype: 'radio',
+                            checked: checked,
+                            labelSeparator: '',
+                            boxLabel: label,
+                            name: 'importAction',
+                            inputValue: link.id
+                            //width: 250
+                        });
+                        fieldLabel = '';
+                        checked = false;
                     }
-
-                    actionMap[link.id] = link;
-                    radioGroup.items.push({
-                        xtype: 'radio',
-                        checked: checked,
-                        labelSeparator: '',
-                        boxLabel: label,
-                        name: 'importAction',
-                        inputValue: link.id
-                        //width: 250
-                    });
-                    fieldLabel = '';
-                    checked = false;
                 }
-
-                if (selections.length > 1 && !pa.initialConfig.multiSelect)
+                if (!pa.getEnabled())
                 {
                     radioGroup.disabled = true;
-                    radioGroup.tooltip = 'Only one file at a time can be selected for this action';
+                    radioGroup.tooltip = pa.getLongMessage();
 
-                    radioGroup = new Ext.form.RadioGroup(radioGroup);
-                    radioGroup.on('render', function(c){this.setFormFieldTooltip(c);}, this);
+                    radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'warning-icon-alt.png');}, this);
+                }
+                else
+                {
+                    radioGroup.tooltip = pa.getLongMessage();
+                    radioGroup.on('render', function(c){this.setFormFieldTooltip(c, 'info.png');}, this);
                 }
                 actions.push(radioGroup);
             }
         }
         var actionPanel = new Ext.form.FormPanel({
             bodyStyle : 'padding:10px;',
-            labelWidth: 150,
+            labelWidth: 250,
             defaultType: 'radio',
             items: actions
         });
@@ -490,8 +649,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         var win = new Ext.Window({
             title: 'Import Data',
-            width: 450,
-            height: 300,
+            width: 525,
+            height: 400,
             cls: 'extContainer',
             autoScroll: true,
             closeAction:'close',
@@ -521,10 +680,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var action = actionMap[selection.importAction];
 
         if ('object' == typeof action)
-        {
-            var a = new LABKEY.PipelineAction(action);
-            a.execute(a);
-        }
+            this.executeImportAction(action, selection.importAction);
     },
 
     canImportData : function()
@@ -557,21 +713,17 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
     },
 
-    setFormFieldTooltip : function(component)
+    setFormFieldTooltip : function(component, icon)
     {
-        
         var label = Ext.get('x-form-el-' + component.id).prev('label');
-
-        if (label)
-        {
+        if (label) {
             var helpImage = label.createChild({
                 tag: 'img',
-                src: LABKEY.contextPath + '/_images/warning-icon-alt.png',
-                style: 'margin-bottom: 0px; margin-left: 5px; padding: 0px;',
+                src: LABKEY.contextPath + '/_images/' + icon,
+                style: 'margin-bottom: 0px; margin-left: 8px; padding: 0px;',
                 width: 12,
                 height: 12
             });
-            //label = label.up('div.x-form-item x-check-group');
             Ext.QuickTips.register({
                 target: helpImage,
                 text: component.tooltip,

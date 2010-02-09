@@ -30,8 +30,11 @@ LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
                 var index = this.grid.getView().findRowIndex(t);
                 var record = this.grid.store.getAt(index);
 
-                var scope = this.listeners.mousedown.scope || this;
-                this.listeners.mousedown.apply(scope, [record, this.dataIndex]);
+                if (record)
+                {
+                    var scope = this.listeners.mousedown.scope || this;
+                    this.listeners.mousedown.apply(scope, [record, this.dataIndex]);
+                }
             }
         }
     }
@@ -40,17 +43,17 @@ LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
 
 LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
-    actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true}),
+    actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true}),
     actionsUpdateURL : LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig'),
-
-    // run selected action
-    runAction : undefined,
+    actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
 
     importDataEnabled : true,
 
     isPipelineRoot : false,
     
     events : {},
+
+    actionConfig : {},
 
     constructor : function(config)
     {
@@ -63,7 +66,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             if (startsWith(config.path,"/"))
                 config.path = config.path.substring(1);
 
-            this.actionsConfigURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});
+            this.actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});
         }
     },
 
@@ -71,13 +74,12 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     {
         if (this.isPipelineRoot)
         {
-            var connection = new Ext.data.Connection({autoAbort:true});
-            connection.request({
+            Ext.Ajax.request({
                 autoAbort:true,
                 url:this.actionsConfigURL,
                 method:'GET',
                 disableCaching:false,
-                success : this.getPipelineActions,
+                success : this.getActionConfiguration,
                 scope: this
             });
         }
@@ -110,15 +112,40 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         }
     },
 
+    // parse the configuration information
+    getActionConfiguration : function(response)
+    {
+        var o = eval('var $=' + response.responseText + ';$;');
+        var config = o.success ? o.config : {};
+
+        // check whether the import data button is enabled
+        this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
+
+        if ('object' == typeof config.actions)
+        {
+            for (var i=0; i < config.actions.length; i++)
+            {
+                var action = config.actions[i];
+                this.actionConfig[action.id] = new LABKEY.PipelineActionConfig(action);
+            }
+        }
+
+        Ext.Ajax.request({
+            autoAbort:true,
+            url:this.actionsURL,
+            method:'GET',
+            disableCaching:false,
+            success : this.getPipelineActions,
+            scope: this
+        });
+    },
+
     // parse the response and create the data object
 
     getPipelineActions : function(response)
     {
         var o = eval('var $=' + response.responseText + ';$;');
         var actions = o.success ? o.actions : [];
-
-        // check whether the import data button is enabled
-        this.importDataEnabled = o.success ? o.importDataEnabled : false;
 
         // parse the reponse and create the data object
         var data = {actions: []};
@@ -131,20 +158,30 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
                 if (!links) continue;
 
+                var config = this.actionConfig[pUtil.getId()];
                 for (var j=0; j < links.length; j++)
                 {
                     var link = links[j];
 
                     if (link.href)
                     {
+                        var display = 'enabled';
+                        if (config)
+                        {
+                            var linkConfig = config.getLink(link.id);
+                            if (linkConfig)
+                                display = linkConfig.display;
+                        }
+
                         data.actions.push({
                             type: pUtil.getText(),
                             id: link.id,
-                            display: link.display,
+                            actionId : pUtil.getId(),
+                            display: display,
                             action: link.text,
                             href: link.href,
-                            enabled: (link.display == 'enabled') || (link.display == 'toolbar'),
-                            showOnToolbar: link.display == 'toolbar'
+                            enabled: (display == 'enabled') || (display == 'toolbar'),
+                            showOnToolbar: display == 'toolbar'
                         });
                     }
                 }
@@ -160,6 +197,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     [
                         {name: 'type'},
                         {name: 'action'},
+                        {name: 'actionId'},
                         {name: 'description'},
                         {name: 'display'},
                         {name: 'enabled', type: 'boolean'},
@@ -199,23 +237,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 ]
             });
 
-        this.runAction = new Ext.Action({
-            text: 'Run Selected Action',
-            disabled: true,
-            id: 'btn_runAction',
-            listeners: {click:function(button, event) {
-                win.close();
-                this.runSelectedAction(grid, button, event);}, scope:this}
-        });
-
         var selModel = new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false});
-        selModel.on('selectionchange', function(sel){
-            if (sel.hasSelection())
-                this.runAction.enable();
-            else
-                this.runAction.disable();
-        }, this);
-
         var grid = new Ext.grid.EditorGridPanel({
             loadMask:{msg:"Loading, please wait..."},
             store: store,
@@ -232,6 +254,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 groupTextTpl: '{values.group}'
             })
         });
+
+        if (Ext.isIE)
+            grid.setSize(455, 225);
 
         grid.on('render', function()
         {
@@ -260,10 +285,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         var win = new Ext.Window({
             title: 'Manage Pipeline Actions',
-//            border: false,
             width: 500,
             height: 400,
-            layout: 'fit',
             cls: 'extContainer',
             autoScroll: true,
             closeAction:'close',
@@ -293,48 +316,57 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         if (records && records.length)
         {
-            var params = [];
+            var adminOptions = {actions: []};
+            var actionConfig = {};
 
             for (var i=0; i <records.length; i++)
             {
                 var record = records[i];
+                var display;
 
                 if (record.data.showOnToolbar)
-                    params.push('toolbar=' + encodeURIComponent(record.id));
+                    display = 'toolbar';
                 else if (record.data.enabled)
-                    params.push('enabled=' + encodeURIComponent(record.id));
+                    display = 'enabled';
                 else
-                    params.push('disabled=' + encodeURIComponent(record.id));
+                    display = 'disabled';
+
+                var config = actionConfig[record.data.actionId];
+                if (!config)
+                {
+                    config = new LABKEY.PipelineActionConfig({id: record.data.actionId, display: 'enabled', label: record.data.type});
+                    actionConfig[record.data.actionId] = config;
+                }
+                config.addLink(record.id, display, record.data.action);
             }
-            params.push('importDataEnabled=' + encodeURIComponent(this.importDataEnabled));
+
+            for (config in actionConfig)
+            {
+                var a = actionConfig[config];
+                if ('object' == typeof a )
+                {
+                    adminOptions.actions.push({
+                        id: a.id,
+                        display: a.display,
+                        label: a.label,
+                        links: a.links
+                    });
+                }
+            }
+
+            adminOptions.importDataEnabled = this.importDataEnabled;
 
             Ext.Ajax.request({
-
-                url: this.actionsUpdateURL + '?' + params.join('&'),
-                method: "POST",
+                url: this.actionsUpdateURL,
+                method : 'POST',
                 scope: this,
                 success: function(){this.fireEvent('success');},
-                failure: function(){this.fireEvent('failure');}
+                failure: function(){this.fireEvent('failure');},
+                jsonData : adminOptions,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
-        }
-    },
-
-    runSelectedAction : function(grid, button, event)
-    {
-        var selModel = grid.getSelectionModel();
-        var record = selModel.getSelected();
-
-        if (record)
-        {
-            var action = this.actionMap[record.id];
-
-            if ('object' == typeof action)
-            {
-                var a = new LABKEY.PipelineAction(action);
-                a.execute(a);
-            }
-
-            this.fireEvent('runSelected', record);
         }
     }
 });

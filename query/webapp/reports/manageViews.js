@@ -434,10 +434,10 @@ LABKEY.ViewsPanel.prototype = {
 
         if (selections[0].data.queryView)
         {
-            Ext.Msg.alert("Rename Views", "Only views can be renamed.");
+            Ext.Msg.alert("Rename Views", "Custom query views cannot be renamed.");
             return;
         }
-        doEditRecord(button, this.grid, selections[0]);
+        doEditRecord(button, this.grid, selections[0].data);
     },
     
     /**

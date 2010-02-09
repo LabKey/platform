@@ -42,6 +42,10 @@
     }
 %>
 
+<%  if (bean.getConfirmMessage() != null) { %>
+        <p class="labkey-message"><%= PageFlowUtil.filter(bean.getConfirmMessage()) %></p>
+<%  } %>
+
 <labkey:errors/>
 
 <form action="" method="post">
