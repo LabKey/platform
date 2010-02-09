@@ -195,16 +195,11 @@ public class TSVGridWriter extends TSVWriter
     public void writeResultSet(RenderContext ctx, ResultSet rs) throws SQLException
     {
         // Output all the data cells
-        boolean first = true;
         ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
         while (rs.next())
         {
             ctx.setRow(factory.getRowMap(rs));
-            if (!first)
-                _pw.print(_rowSeparator);
-            else
-                first = false;
             writeRow(_pw, ctx, _displayColumns);
         }
     }
@@ -220,6 +215,7 @@ public class TSVGridWriter extends TSVWriter
     protected void writeRow(PrintWriter out, RenderContext ctx, List<DisplayColumn> displayColumns)
     {
         out.print(getRow(ctx, displayColumns).toString());
+        out.write(_rowSeparator);
     }
 
 
