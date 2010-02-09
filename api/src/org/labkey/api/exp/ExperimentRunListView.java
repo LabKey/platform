@@ -40,7 +40,7 @@ public class ExperimentRunListView extends QueryView
     public ExperimentRunListView(UserSchema schema, QuerySettings settings, ExperimentRunType selectedType)
     {
         super(schema, settings);
-        _buttonBarPosition = DataRegion.ButtonBarPosition.BOTTOM;
+        _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
         _selectedType = selectedType;
         setShowDetailsColumn(false);
         setShowExportButtons(true);
