@@ -577,13 +577,10 @@ public class QueryView extends WebPartView<Object>
         {
             if (canInsert())
             {
-                ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
-                if (urlInsert != null)
+                ActionButton insertButton = createInsertButton();
+                if (insertButton != null)
                 {
-                    ActionButton btnInsert = new ActionButton("", "Insert New");
-                    btnInsert.setURL(urlInsert);
-                    btnInsert.setActionType(ActionButton.Action.LINK);
-                    bar.add(btnInsert);
+                    bar.add(insertButton);
                 }
             }
         }
@@ -592,14 +589,10 @@ public class QueryView extends WebPartView<Object>
         {
             if (canDelete())
             {
-                ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
-                if (urlDelete != null)
+                ActionButton deleteButton = createDeleteButton(bar);
+                if (deleteButton != null)
                 {
-                    ActionButton btnDelete = new ActionButton("", "Delete");
-                    btnDelete.setURL(urlDelete);
-                    btnDelete.setActionType(ActionButton.Action.POST);
-                    btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
-                    bar.add(btnDelete);
+                    bar.add(deleteButton);
                 }
             }
         }
@@ -615,6 +608,33 @@ public class QueryView extends WebPartView<Object>
         {
             addButton(bar, createPageSizeMenuButton());
         }
+    }
+
+    public ActionButton createDeleteButton(ButtonBar bar)
+    {
+        ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
+        if (urlDelete != null)
+        {
+            ActionButton btnDelete = new ActionButton("", "Delete");
+            btnDelete.setURL(urlDelete);
+            btnDelete.setActionType(ActionButton.Action.POST);
+            btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
+            return btnDelete;
+        }
+        return null;
+    }
+
+    public ActionButton createInsertButton()
+    {
+        ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
+        if (urlInsert != null)
+        {
+            ActionButton btnInsert = new ActionButton("", "Insert New");
+            btnInsert.setURL(urlInsert);
+            btnInsert.setActionType(ActionButton.Action.LINK);
+            return btnInsert;
+        }
+        return null;
     }
 
     protected ActionButton createPrintButton()

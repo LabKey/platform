@@ -42,26 +42,41 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
         OutputStreamWriter writer = new OutputStreamWriter(out);
 
         HttpServletRequest basicRequest = getViewContext().getRequest();
-        if (! (basicRequest instanceof MultipartHttpServletRequest))
+        String filename;
+        InputStream input = null;
+
+        if (basicRequest instanceof MultipartHttpServletRequest)
         {
-            error(writer, "No file uploaded", HttpServletResponse.SC_BAD_REQUEST);
-            return;
+            MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
+
+            //noinspection unchecked
+            Iterator<String> nameIterator = request.getFileNames();
+            String formElementName = nameIterator.next();
+            MultipartFile file = request.getFile(formElementName);
+            filename = file.getOriginalFilename();
+            input = file.getInputStream();
+        }
+        else
+        {
+            filename = basicRequest.getParameter("fileName");
+            String content = basicRequest.getParameter("fileContent");
+            if (content != null)
+            {
+                input = new ByteArrayInputStream(content.getBytes());
+            }
         }
 
-        MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
-
-        //noinspection unchecked
-        Iterator<String> nameIterator = request.getFileNames();
-        String formElementName = nameIterator.next();
-        MultipartFile file = request.getFile(formElementName);
-        String filename = file.getOriginalFilename();
+        if (filename == null || input == null)
+        {
+            error(writer, "No file uploaded, or no filename specified", HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
 
         File targetFile;
         try
         {
             targetFile = getTargetFile(filename);
 
-            InputStream input = file.getInputStream();
             OutputStream output = new FileOutputStream(targetFile);
             try
             {
@@ -77,7 +92,7 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
             }
             catch (IOException ioe)
             {
-                ExceptionUtil.logExceptionToMothership(request, ioe);
+                ExceptionUtil.logExceptionToMothership(basicRequest, ioe);
                 error(writer, ioe.getMessage(), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;
             }

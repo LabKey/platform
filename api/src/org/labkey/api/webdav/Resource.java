@@ -62,6 +62,8 @@ public interface Resource
 
     User getCreatedBy();
 
+    String getDescription();
+
     long getLastModified();
 
     User getModifiedBy();

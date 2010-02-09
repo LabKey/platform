@@ -138,7 +138,7 @@ public class DomainDescriptor implements Cloneable
     @Override
     public String toString()
     {
-        return domainURI + " name=" + name + " project="+  project.getPath() + " container="+  container.getPath() ;
+        return domainURI + " name=" + name + " project=" + (project == null ? "null" : project.getPath()) + " container=" + (container == null ? "null" : container.getPath());
     }
 
     public DomainDescriptor clone()

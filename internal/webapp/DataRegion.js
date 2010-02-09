@@ -207,11 +207,14 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.selectionModified = true;
         var url = LABKEY.ActionURL.buildURL("query", "setCheck.api", LABKEY.ActionURL.getContainer(),
             { 'key' : this.selectionKey, 'checked' : checked });
-        for (var i = 0; i < ids.length; i++)
-            url += "&id=" + ids[i];
+        var params = { id: ids };
+//        for (var i = 0; i < ids.length; i++)
+//            url += "&id=" + ids[i];
 
         Ext.Ajax.request({
             url: url,
+            method: "POST",
+            params: params,
             scope: this,
             success: success,
             failure: function (response, options) { this.showMessage("Error sending selection."); }
@@ -460,6 +463,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.msgbox.setVisible(true);
     },
 
+    isMessageShowing : function()
+    {
+        return this.msgbox.isVisible();
+    },
+
     hideMessage : function ()
     {
         this.msgbox.setVisible(false, false);
@@ -529,7 +537,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         {
                             // Otherwise, be sure that it's parented correctly - it might have been shown
                             // in a different button bar position
-                            this.panelButtonContents[panelButton.id].getEl().remove();
                             this.panelButtonContents[panelButton.id].getEl().appendTo(Ext.get(panelDiv));
                         }
 
@@ -538,6 +545,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         // Slide it into place
                         this.panelButtonContents[panelButton.id].setVisible(true);
                         this.panelButtonContents[panelButton.id].getEl().slideIn();
+
+                        this.panelButtonContents[panelButton.id].syncSize();
                     }
                     else
                     {

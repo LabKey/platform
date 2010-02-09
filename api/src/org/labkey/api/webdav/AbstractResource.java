@@ -106,6 +106,11 @@ public abstract class AbstractResource implements Resource
         return null;
     }
 
+    public String getDescription()
+    {
+        return null;
+    }
+
 
     public long getLastModified()
     {

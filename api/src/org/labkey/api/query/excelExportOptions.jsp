@@ -31,7 +31,7 @@ if (model.getIqyURL() != null)
 }
 %>
 
-<table cellspacing="4">
+<table cellspacing="4" class="labkey-no-spacing">
     <tr>
         <td valign="center">Export to Excel as:</td>
         <td valign="center"><input type="radio" id="<%= guid %>" name="excelExportType" value="<%= PageFlowUtil.filter(model.getXlsURL()) %>" checked="true" /></td>

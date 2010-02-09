@@ -619,6 +619,7 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  * @param {String} config.dataFileURL The local file url of the uploaded file.
  *
  * @example
+ * // To perform a file upload over HTTP:
  * &lt;form id="upload-run-form" enctype="multipart/form-data" method="POST">
  *   &lt;div id="upload-run-button">&lt;/div>
  * &lt;/form>
@@ -663,6 +664,24 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  *   }
  *  });
  * &lt;/script>
+ *
+ * // To upload the contents of a JavaScript string as a file:
+ * &lt;script type="text/javascript">
+ * Ext.Ajax.request({
+ *   url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
+ *   params: { fileName: 'test.txt', fileContent: 'Some text!' },
+ *   success: function(response, options)
+ *   {
+ *      var data = Ext.util.JSON.decode(response.responseText)
+ *
+ *      // now add the data as a dataInput to a LABKEY.Exp.Run
+ *      var run = new LABKEY.Exp.Run();
+ *      run.name = data.name;
+ *      run.dataInputs = [ data ];
+ *
+ *      // add the new run to a LABKEY.Exp.Batch object here
+ *   } });
+ * &lt;/script>
  */
 LABKEY.Exp.Data = function (config) {
     LABKEY.Exp.Data.superclass.constructor.call(this, config);
@@ -694,7 +713,7 @@ LABKEY.Exp.Data = function (config) {
             if(fn)
                 fn.call(scope || this, content, format, response);
         };
-    };
+    }
 
     function getErrorCallbackWrapper(fn, scope)
     {
@@ -711,7 +730,7 @@ LABKEY.Exp.Data = function (config) {
 
             fn.call(scope || this, errorInfo, options, response);
         };
-    };
+    }
 
     /**
      * Retrieves the contents of the data object from the server.

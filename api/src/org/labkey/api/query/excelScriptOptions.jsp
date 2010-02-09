@@ -28,7 +28,7 @@ String guid = GUID.makeGUID();
 boolean first = true;
 %>
 
-<table cellspacing="4">
+<table cellspacing="4" class="labkey-no-spacing">
     <% for (Map.Entry<String, ActionURL> entry : map.entrySet())
     { %>
         <tr>

@@ -443,6 +443,13 @@ public class FileSystemResource extends AbstractResource
     }
 
     @Override
+    public String getDescription()
+    {
+        ExpData data = getExpData();
+        return data == null ? null : data.getComment();
+    }
+
+    @Override
     public User getModifiedBy()
     {
         ExpData data = getExpData();

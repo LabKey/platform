@@ -20,6 +20,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -89,8 +90,8 @@ public class AssayPipelineProvider extends PipelineProvider
                     navTree.addSeparator();
                 }
 
-                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(context.getContainer(), _assayProvider.getName(), context.getActionURL());
-                NavTree child = new NavTree("Create New Assay Design", url);
+                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(context.getContainer(), _assayProvider.getName(), PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(context.getContainer(), null));
+                NavTree child = new NavTree("Create New " + _assayProvider.getName() + " Assay Design", url);
                 child.setId(id + ":Create Assay Definition");
                 navTree.addChild(child);
             }
