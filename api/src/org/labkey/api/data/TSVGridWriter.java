@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.HttpView;
@@ -203,18 +202,13 @@ public class TSVGridWriter extends TSVWriter
         {
             ctx.setRow(factory.getRowMap(rs));
             if (!first)
-                _pw.print(getRowSeparator());
+                _pw.print(_rowSeparator);
             else
                 first = false;
             writeRow(_pw, ctx, _displayColumns);
         }
     }
 
-    protected String getRowSeparator()
-    {
-        return "";
-    }
-    
     @Override
     public void close() throws ServletException
     {
@@ -225,7 +219,7 @@ public class TSVGridWriter extends TSVWriter
 
     protected void writeRow(PrintWriter out, RenderContext ctx, List<DisplayColumn> displayColumns)
     {
-        out.println(getRow(ctx, displayColumns).toString());
+        out.print(getRow(ctx, displayColumns).toString());
     }
 
 
@@ -238,8 +232,8 @@ public class TSVGridWriter extends TSVWriter
             {
                 // Encode all tab and newline characters; see #8435, #8748
                 String value = dc.getTsvFormattedValue(ctx);
-                row.append(StringEscapeUtils.escapeJava(value));
-                row.append('\t');
+                row.append(quoteValue(value));
+                row.append(_chDelimiter);
             }
         }
 
@@ -249,7 +243,6 @@ public class TSVGridWriter extends TSVWriter
 
         return row;
     }
-
 
     public void setFileHeader(List<String> fileHeader)
     {
@@ -277,7 +270,8 @@ public class TSVGridWriter extends TSVWriter
         if (_captionRowVisible)
         {
             StringBuilder header = getHeader(new RenderContext(HttpView.currentContext()), _displayColumns);
-            _pw.println(header.toString());
+            _pw.print(header.toString());
+            _pw.print(_rowSeparator);
         }
     }
 
@@ -315,7 +309,7 @@ public class TSVGridWriter extends TSVWriter
                     }
                     break;
                 }
-                header.append('\t');
+                header.append(_chDelimiter);
             }
         }
 
@@ -325,4 +319,5 @@ public class TSVGridWriter extends TSVWriter
 
         return header;
     }
+
 }

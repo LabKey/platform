@@ -65,8 +65,11 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
     protected char _chDelimiter = '\t';
     protected String _strDelimiter = null;
-    protected boolean _parseQuotes = false;
-    protected boolean _unescapeJava = true;
+    protected char _chQuote = '"';
+    protected String _strQuote = null;
+    protected String _strQuoteQuote = null;
+    protected boolean _parseQuotes = true;
+    protected boolean _unescapeBackslashes = true;
     protected boolean _throwOnErrors = false;
     private Filter<Map<String, Object>> _mapFilter;
 
@@ -152,7 +155,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         value = StringUtils.trimToEmpty(value);
         if ("\\N".equals(value))
             return "";
-        if (_unescapeJava)
+        if (_unescapeBackslashes)
             return StringEscapeUtils.unescapeJava(value);
         return value;
     }
@@ -160,85 +163,125 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     private ArrayList<String> listParse = new ArrayList<String>(30);
 
 
-    /**
-     * Note we don't handle values with embedded newlines
-     *
-     * @param s
-     */
-    Pattern replaceDoubleQuotes = Pattern.compile("\"\"");
-    
-    protected String[] parseLine(String s)
+    private String readLine(BufferedReader r, boolean skipComments)
+    {
+        try
+        {
+            String line = null;
+            do
+            {
+                line = r.readLine();
+                if (line == null)
+                    return null;
+            }
+            while (skipComments && (null == StringUtils.trimToNull(line) || line.charAt(0) == '#'));
+            return line;
+        }
+        catch (Exception e)
+        {
+            _log.error("unexpected io error", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    Pattern _replaceDoubleQuotes = null;
+
+    private String[] readFields(BufferedReader r)
     {
         if (!_parseQuotes)
         {
             if (_strDelimiter == null)
                 _strDelimiter = new String(new char[]{_chDelimiter});
-            String[] fields = s.split(_strDelimiter);
+            String line = readLine(r, true);
+            if (line == null)
+                return null;
+            String[] fields = line.split(_strDelimiter);
             for (int i = 0; i < fields.length; i++)
                 fields[i] = parseValue(fields[i]);
             return fields;
         }
 
-        s = s.trim();
+        String line = readLine(r, true);
+        if (line == null)
+            return null;
+        StringBuffer buf = new StringBuffer(line.length());
+        buf.append(line);
 
         String field;
-        int length = s.length();
         int start = 0;
         listParse.clear();
 
-        while (start < length)
+        while (start < buf.length())
         {
             int end;
-            char ch = s.charAt(start);
+            char ch = buf.charAt(start);
             if (ch == _chDelimiter)
             {
                 end = start;
                 field = "";
             }
-            else if (ch == '"')
+            else if (ch == _chQuote)
             {
+                if (_strQuote == null)
+                {
+                    _strQuote = new String(new char[] { _chQuote });
+                    _strQuoteQuote = new String(new char[] { _chQuote, _chQuote });
+                    _replaceDoubleQuotes = Pattern.compile("\\" + _chQuote + "\\" + _chQuote);
+                }
+
                 end = start;
                 boolean hasQuotes = false;
                 while (true)
                 {
-                    end = s.indexOf('"', end + 1);
+                    end = buf.indexOf(_strQuote, end + 1);
                     if (end == -1)
-                        throw new IllegalArgumentException("CSV can't parse line: " + s);
-                    if (end == s.length() - 1 || s.charAt(end + 1) != '"')
+                    {
+                        // XXX: limit number of lines we read
+                        String nextLine = readLine(r, false);
+                        if (nextLine == null)
+                            throw new IllegalArgumentException("CSV can't parse line: " + buf);
+                        end = buf.length();
+                        buf.append('\n');
+                        buf.append(nextLine);
+                        continue;
+                    }
+                    if (end == buf.length() - 1 || buf.charAt(end + 1) != _chQuote)
                         break;
                     hasQuotes = true;
                     end++; // skip double ""
                 }
-                field = s.substring(start + 1, end);
-                if (hasQuotes && -1 != field.indexOf("\"\""))
-                    field = replaceDoubleQuotes.matcher(field).replaceAll("\"");
+                field = buf.substring(start + 1, end);
+                if (hasQuotes && -1 != field.indexOf(_strQuoteQuote))
+                    field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
                 // eat final " and any trailing white space
                 end++;
-                while (end < length && s.charAt(end) != _chDelimiter && Character.isWhitespace(s.charAt(end)))
+                while (end < buf.length() && buf.charAt(end) != _chDelimiter && Character.isWhitespace(buf.charAt(end)))
                     end++;
             }
             else
             {
-                end = s.indexOf(_chDelimiter, start);
+                if (_strDelimiter == null)
+                    _strDelimiter = new String(new char[]{_chDelimiter});
+                end = buf.indexOf(_strDelimiter, start);
                 if (end == -1)
-                    end = s.length();
-                field = s.substring(start, end);
+                    end = buf.length();
+                field = buf.substring(start, end);
                 field = parseValue(field);
             }
+
             listParse.add(field);
 
             // there should be a comma or an EOL here
-            if (end < length && s.charAt(end) != _chDelimiter)
-                throw new IllegalArgumentException("CSV can't parse line: " + s);
+            if (end < buf.length() && buf.charAt(end) != _chDelimiter)
+                throw new IllegalArgumentException("CSV can't parse line: " + buf);
             end++;
-            while (end < length && s.charAt(end) != _chDelimiter && Character.isWhitespace(s.charAt(end)))
+            while (end < buf.length() && buf.charAt(end) != _chDelimiter && Character.isWhitespace(buf.charAt(end)))
                 end++;
             start = end;
         }
 
         return listParse.toArray(new String[listParse.size()]);
     }
-
 
     public void setMapFilter(Filter<Map<String, Object>> mapFilter)
     {
@@ -281,9 +324,9 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         _parseQuotes = parseQuotes;
     }
 
-    public void setUnescapeJava(boolean unescapeJava)
+    public void setUnescapeBackslashes(boolean unescapeBackslashes)
     {
-        _unescapeJava = unescapeJava;
+        _unescapeBackslashes = unescapeBackslashes;
     }
 
     public boolean isThrowOnErrors()
@@ -356,34 +399,21 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         try
         {
-            String[] lines = new String[n];
+            List<String[]> lineFields = new ArrayList<String[]>(n);
             int i;
 
-            for (i = 0; i < lines.length;)
+            for (i = 0; i < n; i++)
             {
-                String line = reader.readLine();
-                if (null == line)
+                String[] fields = readFields(reader);
+                if (null == fields)
                     break;
-                if (line.length() == 0 || line.charAt(0) == '#')
-                    continue;
-                lines[i++] = line;
+                lineFields.add(fields);
             }
 
-            int nLines = i;
-
-            if (nLines == 0)
-            {
+            if (i == 0)
                 return new String[0][];
-            }
 
-            String[][] lineFields = new String[nLines][];
-
-            for (i = 0; i < nLines; i++)
-            {
-                lineFields[i] = parseLine(lines[i]);
-            }
-
-            return lineFields;
+            return lineFields.toArray(new String[i][]);
         }
         finally
         {
@@ -397,7 +427,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         private final RowMapFactory<Object> factory;
         private final BufferedReader reader;
 
-        private String line = null;
+        private String[] fields = null;
         private int lineNo = 0;
 
         protected TabLoaderIterator() throws IOException
@@ -444,22 +474,18 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         public boolean hasNext()
         {
-            if (line != null)
+            if (fields != null)
                 return true;    // throw illegalstate?
 
             try
             {
-                do
+                fields = readFields(reader);
+                if (fields == null)
                 {
-                    line = reader.readLine();
-                    if (line == null)
-                    {
-                        close();
-                        return false;
-                    }
-                    lineNo++;
+                    close();
+                    return false;
                 }
-                while (null == StringUtils.trimToNull(line) || line.charAt(0) == '#');
+                lineNo++;
             }
             catch (Exception e)
             {
@@ -473,15 +499,13 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         public Map<String, Object> next()
         {
-            if (line == null)
+            if (fields == null)
                 return null;    // consider: throw IllegalState
 
             try
             {
-                String s = line;
-                line = null;
-
-                String[] fields = parseLine(s);
+                String[] fields = this.fields;
+                this.fields = null;
                 Object[] values = new Object[_columns.length];
 
                 for (int i = 0; i < _columns.length; i++)
@@ -819,38 +843,97 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
             assertEquals(firstRow.getDescription(), "description");
         }
 
-        final String data =
-                "a\tmulti-line\tb\n" +
-                "A\tthis\\nis\\tmulti-line\tB\n" +
-                "A\tthis\\nis\\tmulti-line\tB\n";
-
         public void testUnescape() throws Exception
         {
+            final String data =
+                    "A\tMulti-Line\tB\n" +
+                    "a\tthis\\nis\\tmulti-line\tb\n" +
+                    "\tthis\\nis\\tmulti-line\tb\n";
+
             TabLoader loader = new TabLoader(data, true);
+            loader.setUnescapeBackslashes(true);
             List<Map<String, Object>> rows = loader.load();
             assertEquals(2, rows.size());
 
-            for (Map<String, Object> row : rows)
-            {
-                assertEquals("A", row.get("a"));
-                assertEquals("this\nis\tmulti-line", row.get("multi-line"));
-                assertEquals("B", row.get("b"));
-            }
+            Map<String, Object> row = rows.get(0);
+            assertEquals("a", row.get("A"));
+            assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
+            assertEquals("b", row.get("B"));
+
+            row = rows.get(1);
+            assertEquals(null, row.get("A"));
+            assertEquals("this\nis\tmulti-line", row.get("Multi-Line"));
+            assertEquals("b", row.get("B"));
+
+            // now test no-unescaping
+            loader = new TabLoader(data, true);
+            loader.setUnescapeBackslashes(false);
+            rows = loader.load();
+            assertEquals(2, rows.size());
+
+            row = rows.get(0);
+            assertEquals("a", row.get("A"));
+            assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
+            assertEquals("b", row.get("B"));
+
+            row = rows.get(1);
+            assertEquals(null, row.get("A"));
+            assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
+            assertEquals("b", row.get("B"));
+
         }
 
-        public void testNoUnescape() throws Exception
+        public void testParseQuotes() throws Exception
         {
+            final String data =
+                    "Name\tMulti-Line\tAge\n" +
+                    "Bob\t\"apple\norange\tgrape\"\t3\n" +
+                    "Bob\t\"one\n\"\"two\"\"\tthree\"\n" +
+                    "\tred\\nblue\\tgreen\t4\n";
             TabLoader loader = new TabLoader(data, true);
-            loader.setUnescapeJava(false);
-            List<Map<String, Object>> rows = loader.load();
-            assertEquals(2, rows.size());
+            loader.setParseQuotes(true);
+            loader.setUnescapeBackslashes(true);
 
-            for (Map<String, Object> row : rows)
-            {
-                assertEquals("A", row.get("a"));
-                assertEquals("this\\nis\\tmulti-line", row.get("multi-line"));
-                assertEquals("B", row.get("b"));
-            }
+            List<Map<String, Object>> rows = loader.load();
+            assertEquals(3, rows.size());
+
+            Map<String, Object> row = rows.get(0);
+            assertEquals("Bob", row.get("Name"));
+            assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
+            assertEquals(3, row.get("Age"));
+
+            row = rows.get(1);
+            assertEquals("Bob", row.get("Name"));
+            assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
+            assertEquals(null, row.get("Age"));
+
+            row = rows.get(2);
+            assertEquals(null, row.get("Name"));
+            assertEquals("red\nblue\tgreen", row.get("Multi-Line"));
+            assertEquals(4, row.get("Age"));
+
+            // now test no-unescaping
+            loader = new TabLoader(data, true);
+            loader.setParseQuotes(true);
+            loader.setUnescapeBackslashes(false);
+
+            rows = loader.load();
+            assertEquals(3, rows.size());
+
+            row = rows.get(0);
+            assertEquals("Bob", row.get("Name"));
+            assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
+            assertEquals(3, row.get("Age"));
+
+            row = rows.get(1);
+            assertEquals("Bob", row.get("Name"));
+            assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
+            assertEquals(null, row.get("Age"));
+
+            row = rows.get(2);
+            assertEquals(null, row.get("Name"));
+            assertEquals("red\\nblue\\tgreen", row.get("Multi-Line"));
+            assertEquals(4, row.get("Age"));
         }
 
         public void testTransform()

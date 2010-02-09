@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
 
@@ -35,6 +37,9 @@ public abstract class TSVWriter
     // Stashing the OutputStream and the PrintWriter allows multiple writes (e.g., Export Runs to TSV)
     private ServletOutputStream _outputStream = null;
     protected PrintWriter _pw = null;
+    protected char _chDelimiter = '\t';
+    protected char _chQuote = '"';
+    protected String _rowSeparator = "\n";
 
 
     public TSVWriter()
@@ -67,6 +72,76 @@ public abstract class TSVWriter
             _filenamePrefix = _filenamePrefix.substring(0, 30);
     }
 
+    public void setDelimiterCharacter(char delimiter)
+    {
+        _chDelimiter = delimiter;
+    }
+
+    public void setQuoteCharacter(char quote)
+    {
+        _chQuote = quote;
+    }
+
+    public void setRowSeparator(String rowSeparator)
+    {
+        _rowSeparator = rowSeparator;
+    }
+
+    protected Pattern _escapedChars;
+    protected Pattern _leadingWhitespace = Pattern.compile("^\\p{Space}.*");
+    protected Pattern _trailingWhitespace = Pattern.compile(".*\\p{Space}$");
+
+    /**
+     * Quote the value if necessary.  The quoting rules are:
+     * <ul>
+     *   <li>Values containing leading or trailing whitespace, a newline, a carrage return, or the field separator will be quoted.
+     *   <li>Values containing the quoting character will also be quoted with the quote character replaced by two quote characters.
+     * </ul>
+     * <p>
+     * The quoting character is also known as a "text qualifier" in Excel and is usually
+     * the double quote character but may be the single quote character.
+     * <p>
+     * Note: Excel will always quote a field if it includes comma even if it isn't the delimeter, but
+     * this algorithm doesn't to avoid unnecessary quoting.
+     * 
+     * @param value The raw value.
+     * @return The quoted value.
+     */
+    protected String quoteValue(String value)
+    {
+        if (value == null)
+            return "";
+        
+        String escaped = value;
+
+        if (_escapedChars == null)
+        {
+            // NOTE: Excel always includes comma in the list of characters that will be quoted,
+            // but we will only quote comma if it is the delimeter character.
+            _escapedChars = Pattern.compile("[\r\n\\" + _chDelimiter + "\\" + _chQuote + "]");
+        }
+
+        if (_escapedChars.matcher(value).find() ||
+                _leadingWhitespace.matcher(value).matches() ||
+                _trailingWhitespace.matcher(value).matches())
+        {
+            StringBuffer sb = new StringBuffer(value.length() + 10);
+            sb.append(_chQuote);
+            int i = -1, lastMatch = 0;
+            while (-1 != (i = value.indexOf(_chQuote, lastMatch)))
+            {
+                sb.append(value.substring(lastMatch, i));
+                sb.append(_chQuote).append(_chQuote);
+                lastMatch = i+1;
+            }
+            if (lastMatch < value.length())
+                sb.append(value.substring(lastMatch));
+            sb.append(_chQuote);
+            escaped = sb.toString();
+        }
+
+        return escaped;
+    }
 
     // Create a TSV file and stream it to the browser.
     public void write(HttpServletResponse response) throws ServletException
@@ -242,4 +317,76 @@ public abstract class TSVWriter
 
 
     protected abstract void write();
+
+    
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase() { super(); }
+        public TestCase(String name) { super(name); }
+        public static Test suite() { return new TestSuite(TestCase.class); }
+
+        private static class FakeTSVWriter extends TSVWriter
+        {
+            protected void write()
+            {
+                // no-op
+            }
+        }
+
+        public void testBasic()
+        {
+            FakeTSVWriter w = new FakeTSVWriter();
+            assertEquals("", w.quoteValue(""));
+            assertEquals("a", w.quoteValue("a"));
+            assertEquals("", w.quoteValue(null));
+        }
+
+        public void testWhitespace()
+        {
+            FakeTSVWriter w = new FakeTSVWriter();
+            assertEquals("a b", w.quoteValue("a b"));
+            assertEquals("\"  ab\"", w.quoteValue("  ab"));
+            assertEquals("\"ab  \"", w.quoteValue("ab  "));
+            assertEquals("\"a\nb\"", w.quoteValue("a\nb"));
+            assertEquals("\"a\n\rb\"", w.quoteValue("a\n\rb"));
+        }
+
+        public void testDelimiterChar()
+        {
+            FakeTSVWriter w = new FakeTSVWriter();
+            assertEquals("\"one\t two\t three\"", w.quoteValue("one\t two\t three"));
+            //assertEquals("\"one, two, three\"", w.quoteValue("one, two, three")); // commas should always be quoted
+            assertEquals("one; two; three", w.quoteValue("one; two; three"));
+
+            w = new FakeTSVWriter();
+            w.setDelimiterCharacter(';');
+            assertEquals("one\ttwo\tthree", w.quoteValue("one\ttwo\tthree"));
+            //assertEquals("\"one, two, three\"", w.quoteValue("one, two, three")); // commas should always be quoted
+            assertEquals("\"one; two; three\"", w.quoteValue("one; two; three"));
+
+            w = new FakeTSVWriter();
+            w.setDelimiterCharacter('\\');
+            assertEquals("one\ttwo\tthree", w.quoteValue("one\ttwo\tthree"));
+            assertEquals("\"one\\ two\\ three\"", w.quoteValue("one\\ two\\ three"));
+
+            w = new FakeTSVWriter();
+            w.setDelimiterCharacter('(');
+            assertEquals("\"one( two( three\"", w.quoteValue("one( two( three"));
+        }
+
+        public void testQuoteChar()
+        {
+            FakeTSVWriter w = new FakeTSVWriter();
+            assertEquals("hello", w.quoteValue("hello"));
+            assertEquals("\"\"\"\"", w.quoteValue("\""));
+            assertEquals("\"bob says, \"\"hello\"\"\"", w.quoteValue("bob says, \"hello\""));
+            assertEquals("\"bob says; \"\"hello\"\"\"", w.quoteValue("bob says; \"hello\""));
+
+            w = new FakeTSVWriter();
+            w.setQuoteCharacter(':');
+            assertEquals(":bob says:: \"hello\":", w.quoteValue("bob says: \"hello\""));
+            //assertEquals(":bob says, \"hello\":", w.quoteValue("bob says, \"hello\"")); // commas should always be quoted
+            assertEquals("bob says; \"hello\"", w.quoteValue("bob says; \"hello\""));
+        }
+    }
 }
