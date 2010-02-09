@@ -90,7 +90,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setRequired(!columnInfo.isNullable());
             gwtColumnInfo.setLabel(columnInfo.getLabel());
             gwtColumnInfo.setFormat(columnInfo.getFormat());
-            gwtColumnInfo.setDescription(columnInfo.getDescription());
+            gwtColumnInfo.setHidden(columnInfo.isHidden());
+            gwtColumnInfo.setShownInDetailsView(columnInfo.isShownInDetailsView());
+            gwtColumnInfo.setShownInInsertView(columnInfo.isShownInInsertView());
+            gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
             if (columnInfo.getFk() != null)

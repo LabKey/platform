@@ -28,7 +28,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
 String guid = GUID.makeGUID();
 %>
 
-<table cellspacing="4">
+<table cellspacing="4" class="labkey-no-spacing">
     <tr>
         <td valign="middle">Export as a ZIP file:</td>
         <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" /></td>
@@ -38,7 +38,7 @@ String guid = GUID.makeGUID();
         <tr>
             <td/>
             <td valign="middle"><input type="radio" id="<%= PageFlowUtil.filter(guid) %>"name="fileExportType" value="role" /></td>
-            <td valign="middle">Include selected files based on usage in run:</td>
+            <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>
             <td colspan="2" />

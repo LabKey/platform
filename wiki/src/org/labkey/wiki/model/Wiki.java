@@ -62,7 +62,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     private boolean _showAttachments = true;
 
     protected transient ActionURL url = null;
-    protected transient String containerPath = null;
 
 
     public Wiki()
@@ -88,32 +87,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         else
             url.replaceParameter("name", name.getSource());
         return url.clone();
-    }
-
-
-    // UNDONE: getUpdateLink(), getAttachmentLink() and getPageLink()
-    // really belong on PageFlowController, Wiki bean shouldn't need this
-    @Transient
-    public ActionURL getUpdateContentLink()
-    {
-        String action = null == this.getEntityId() ? "insert" : "update";
-        ActionURL updateLink = getWikiLink(action, name);
-        if (0 != rowId)
-            updateLink.replaceParameter("rowId", Integer.toString(rowId));
-        return updateLink.clone();
-    }
-
-    // UNDONE: getUpdateLink(), getAttachmentLink() and getPageLink()
-    // really belong on PageFlowController, Wiki bean shouldn't need this
-    @Transient
-    public String getUpdateAttachmentsLink()
-    {
-        if (this.getEntityId() == null)
-            return null;
-        ActionURL updateLink = getWikiLink("showUpdateAttachments", name);
-        if (0 != rowId)
-            updateLink.replaceParameter("rowId", Integer.toString(rowId));
-        return updateLink.getLocalURIString();
     }
 
     @Transient

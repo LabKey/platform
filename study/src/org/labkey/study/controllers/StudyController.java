@@ -724,14 +724,13 @@ public class StudyController extends BaseStudyController
                     isAssayDataset = false;
             }
 
-            if (!isSnapshot && canWrite && !isAssayDataset)
+            if(!isSnapshot && canWrite && !isAssayDataset)
             {
-                // Insert single entry
-                ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
-                insertURL.addParameter(DataSetDefinition.DATASETKEY, _datasetId);
-                ActionButton insertButton = new ActionButton(insertURL.getLocalURIString(), "Insert New", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                insertButton.setDisplayPermission(InsertPermission.class);
-                buttonBar.add(insertButton);
+                ActionButton insertButton = queryView.createInsertButton();
+                if (insertButton != null)
+                {
+                    buttonBar.add(insertButton);
+                }
             }
 
             if (!isSnapshot)

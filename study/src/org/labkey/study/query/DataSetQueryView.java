@@ -75,8 +75,6 @@ public class DataSetQueryView extends QueryView
         getSettings().setAllowChooseQuery(false);
         getSettings().setAllowChooseView(false);
 
-        // dataset has it's own edit column
-        setShowUpdateColumn(false);
         _dataset = dataset;
         _visit = visit;
         _cohortFilter = cohortFilter;
@@ -158,15 +156,9 @@ public class DataSetQueryView extends QueryView
         Container c = getContainer();
         User user = getUser();
         // Only show link to edit if permission allows it
-        if (_showEditLinks && !_forExport &&
+        setShowUpdateColumn(_showEditLinks && !_forExport &&
                 _dataset.canWrite(user) &&
-                c.getPolicy().hasPermission(user, UpdatePermission.class)
-            )
-        {
-            TableInfo tableInfo = view.getDataRegion().getTable();
-            ColumnInfo lsidColumn = tableInfo.getColumn("lsid");
-            view.getDataRegion().addDisplayColumn(0, new DatasetEditColumn(c, lsidColumn));
-        }
+                c.getPolicy().hasPermission(user, UpdatePermission.class));
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
         view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDataSetId());
@@ -221,36 +213,6 @@ public class DataSetQueryView extends QueryView
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             set.add(_sourceLsidColumn);
-        }
-    }
-
-    private class DatasetEditColumn extends SimpleDisplayColumn
-    {
-        private final Container container;
-        private final ColumnInfo lsidColumn;
-
-        public DatasetEditColumn(Container container, ColumnInfo lsidColumn)
-        {
-            super();
-            setWidth(null);
-            this.container = container;
-            this.lsidColumn = lsidColumn;
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            out.write("[<a href=\"");
-
-            ActionURL actionURL = new ActionURL(DatasetController.UpdateAction.class, container);
-
-            String lsid = lsidColumn.getValue(ctx).toString();
-            actionURL.addParameter("lsid", lsid);
-            actionURL.addParameter("datasetId", _dataset.getDataSetId());
-
-            out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
-            out.write("\">");
-            out.write("edit");
-            out.write("</a>]");
         }
     }
 

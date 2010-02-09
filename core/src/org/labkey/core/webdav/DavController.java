@@ -1155,7 +1155,11 @@ public class DavController extends SpringActionController
                     {
                         User createdby = resource.getCreatedBy();
                         if (null != createdby)
-                            xml.writeProperty(null, "createdby", UserManager.getDisplayName(createdby.getUserId(), getViewContext()));
+                            xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getViewContext())));
+
+                        String description = resource.getDescription();
+                        if (null != description)
+                            xml.writeProperty(null, "description", h(description));
 
                         if (isFile)
                         {

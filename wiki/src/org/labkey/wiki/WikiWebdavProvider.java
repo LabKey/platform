@@ -310,8 +310,8 @@ class WikiWebdavProvider implements WebdavService.Provider
         String _name;
         String _body = null;
         WikiRendererType _type = WikiRendererType.HTML;
+        private HString _title;
 
-        
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
@@ -330,6 +330,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             if (null != v)
             {
                 _body = getWikiVersion().getBody();
+                _title = getWikiVersion().getTitle();
                 _type = getWikiVersion().getRendererTypeEnum();
                 _properties.put(SearchService.PROPERTY.displayTitle.toString(), v.getTitle().getSource());
             }
@@ -389,6 +390,12 @@ class WikiWebdavProvider implements WebdavService.Provider
         public User getCreatedBy()
         {
             return UserManager.getUser(_wiki.getCreatedBy());
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return _title.toString();
         }
 
         @Override

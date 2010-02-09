@@ -31,6 +31,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -60,6 +61,14 @@ public class DataSetTable extends FilteredTable
         HashSet<String> standardURIs = new HashSet<String>();
         for (PropertyDescriptor pd :  DataSetDefinition.getStandardPropertiesSet())
             standardURIs.add(pd.getPropertyURI());
+
+        ActionURL updateURL = new ActionURL(DatasetController.UpdateAction.class, dsd.getContainer());
+        updateURL.addParameter("datasetId", dsd.getDataSetId());
+        setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("lsid", "lsid")));
+
+        ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
+        insertURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
+        setInsertURL(new DetailsURL(insertURL));
 
         String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
@@ -264,7 +273,7 @@ public class DataSetTable extends FilteredTable
     @Override
     public boolean isMetadataOverrideable()
     {
-        return false;
+        return true;
     }
 
     @Override

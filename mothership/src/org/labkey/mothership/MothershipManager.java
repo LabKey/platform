@@ -98,75 +98,81 @@ public class MothershipManager
         }
     }
 
+    private static final Object ENSURE_SOFTWARE_RELEASE_LOCK = new Object();
+
     public SoftwareRelease ensureSoftwareRelease(Container container, Integer svnRevision, String svnURL)
     {
-        try
+        synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
-            SimpleFilter filter = new SimpleFilter();
-            if (svnRevision == null)
+            try
             {
-                filter.addCondition("SVNRevision", null, CompareType.ISBLANK);
-            }
-            else
-            {
-                filter.addCondition("SVNRevision", svnRevision);
-            }
-
-            if (svnURL == null)
-            {
-                filter.addCondition("SVNURL", null, CompareType.ISBLANK);
-            }
-            else
-            {
-                filter.addCondition("SVNURL", svnURL);
-            }
-            filter.addCondition("Container", container.getId());
-            SoftwareRelease result = Table.selectObject(getTableInfoSoftwareRelease(), filter, null, SoftwareRelease.class);
-            if (result == null)
-            {
-                result = new SoftwareRelease();
-                result.setSVNRevision(svnRevision);
-                result.setSVNURL(svnURL);
-                result.setContainer(container.getId());
-                String description;
-                if (svnURL != null)
+                SimpleFilter filter = new SimpleFilter();
+                if (svnRevision == null)
                 {
-                    if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
+                    filter.addCondition("SVNRevision", null, CompareType.ISBLANK);
+                }
+                else
+                {
+                    filter.addCondition("SVNRevision", svnRevision);
+                }
+
+                if (svnURL == null)
+                {
+                    filter.addCondition("SVNURL", null, CompareType.ISBLANK);
+                }
+                else
+                {
+                    filter.addCondition("SVNURL", svnURL);
+                }
+                filter.addCondition("Container", container.getId());
+                SoftwareRelease result = Table.selectObject(getTableInfoSoftwareRelease(), filter, null, SoftwareRelease.class);
+                if (result == null)
+                {
+                    result = new SoftwareRelease();
+                    result.setSVNRevision(svnRevision);
+                    result.setSVNURL(svnURL);
+                    result.setContainer(container.getId());
+                    String description;
+                    if (svnURL != null)
                     {
-                        description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
-                        if (description.endsWith("/server"))
+                        if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
                         {
-                            description = description.substring(0, description.length() - "/server".length());
+                            description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
+                            if (description.endsWith("/server"))
+                            {
+                                description = description.substring(0, description.length() - "/server".length());
+                            }
+                            if (description.startsWith("branches/"))
+                            {
+                                description = description.substring("branches/".length());
+                            }
+                            if (svnRevision != null)
+                            {
+                                description = description + " - " + svnRevision;
+                            }
                         }
-                        if (description.startsWith("branches/"))
+                        else
                         {
-                            description = description.substring("branches/".length());
-                        }
-                        if (svnRevision != null)
-                        {
-                            description = description + " - " + svnRevision;
+                            description = "UnknownSVN";
                         }
                     }
                     else
                     {
-                        description = "UnknownSVN";
+                        description = "NotSVN";
                     }
+                    result.setDescription(description);
+                    result = Table.insert(null, getTableInfoSoftwareRelease(), result);
                 }
-                else
-                {
-                    description = "NotSVN";
-                }
-                result.setDescription(description);
-                result = Table.insert(null, getTableInfoSoftwareRelease(), result);
-            }
-            return result;
+                return result;
 
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
+
 
     public ServerInstallation getServerInstallation(String serverGUID, String containerId) throws SQLException
     {

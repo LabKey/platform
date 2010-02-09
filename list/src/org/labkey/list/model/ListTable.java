@@ -212,7 +212,7 @@ public class ListTable extends FilteredTable
     @Override
     public boolean isMetadataOverrideable()
     {
-        return false;
+        return true;
     }
 
     @Override

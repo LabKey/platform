@@ -37,12 +37,20 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     var _iDelay = 0;
     var _delays = new Array(15, 30, 60, 120);
 
+    var shouldRefresh = function()
+    {
+        // Disable refresh if the user has toggled any checkboxes
+        return LABKEY.DataRegions &&
+               LABKEY.DataRegions["StatusFiles"] &&
+               !LABKEY.DataRegions["StatusFiles"].selectionModified &&
+               !LABKEY.DataRegions["StatusFiles"].isMessageShowing()
+    };
+
     // private methods:
     var nextUpdate = function(iNext)
     {
-        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"] && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        if (!shouldRefresh())
         {
-            // Disable refresh if the user has toggled any checkboxes
             return;
         }
         
@@ -50,7 +58,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
         var sec = _delays[_iDelay];
         setStatusFailure(_iDelay > 0, 'Waiting ' + sec + 's...');
         _dt.delay(sec * 1000);
-    }
+    };
 
     var setStatusFailure = function(b, msg)
     {
@@ -61,13 +69,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
                 el.update('Failed to retrieve updated status. ' + msg);
             el.setDisplayed(b ? "" : "none");
         }
-    }
+    };
 
     var update = function()
     {
-        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        if (!shouldRefresh())
         {
-            // Disable refresh if the user has toggled any checkboxes
             return;
         }
 
@@ -77,13 +84,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
             success: onUpdateSuccess,
             failure: onUpdateFailure
         });
-    }
+    };
 
     var onUpdateSuccess = function (response)
     {
-        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        if (!shouldRefresh())
         {
-            // Disable refresh if the user has toggled any checkboxes
             return;
         }
 
@@ -113,7 +119,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
         {
             onUpdateFailure(response);
         }
-    }
+    };
 
     var onUpdateFailure = function(response)
     {
@@ -123,7 +129,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
         {
             nextUpdate(_iDelay + 1);
         }
-    }
+    };
 
     // public methods:
     /** @scope LABKEY.pipeline.StatusUpdate.prototype */

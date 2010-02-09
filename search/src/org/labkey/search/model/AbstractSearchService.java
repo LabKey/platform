@@ -371,7 +371,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _log.error("Unexpected error", t);
             }
         }
-        // CONSIDER: have DavCrowler implement DocumentProvider and listen for indexDeleted()
+        // CONSIDER: have DavCrawler implement DocumentProvider and listen for indexDeleted()
         DavCrawler.getInstance().clearFailedDocuments();
 
         DavCrawler.getInstance().startFull(WebdavService.getPath(), true);

@@ -715,6 +715,7 @@ LABKEY.WebdavFileSystem = function(config)
             {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
             {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
+            {name: 'description', mapping: 'propstat/prop/description'},
             {name: 'actionHref', mapping: 'propstat/prop/actions',
                 convert : function (v, rec)
                 {
@@ -771,9 +772,9 @@ LABKEY.WebdavFileSystem = function(config)
 
 Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 {
-    getHistory : function(path, callback) // calback(filesystem, success, path, history[])
+    getHistory : function(path, callback) // callback(filesystem, success, path, history[])
     {
-        var body =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<propfind xmlns=\"DAV:\"><prop><history></prop></propfind>";
+        var body =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<propfind xmlns=\"DAV:\"><prop><history/></prop></propfind>";
 
         var proxy = new Ext.data.HttpProxy(
             {
@@ -2902,7 +2903,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                         uploadPanel_rb2
                     ]},
                     this.fileUploadField,
-                    {xtype: 'textfield', fieldLabel: 'Description', width: 350}
+                    {xtype: 'textfield', name: 'description', fieldLabel: 'Description', width: 350}
                 ],
                 buttons:[
                     {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
@@ -3200,10 +3201,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
                 {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
-                {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
+                {header: "Last Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
+                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
+                {header: "Description", width: 100, dataIndex: 'description', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
-                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
             ]
         });
         // hack to get the file input field to size correctly
