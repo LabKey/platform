@@ -28,23 +28,55 @@ ExperimentController.ExportBean bean = me.getModelBean();
 String guid = GUID.makeGUID();
 %>
 
+<script type="text/javascript">
+    function setFileDownloadEnabled(enabled, guid)
+    {
+        var elements = document.getElementsByClassName("file-download-role-checkbox-" + guid);
+        for (var i = 0; i < elements.length; i++)
+        {
+            elements[i].disabled = !enabled;
+        }
+    }
+
+    function validateFileExportOptions(guid, form, submitURL)
+    {
+        if (document.getElementById(guid).checked)
+        {
+            var elements = document.getElementsByClassName("file-download-role-checkbox-" + guid);
+            var roleCount = 0;
+            for (var i = 0; i < elements.length; i++)
+            {
+                if (elements[i].checked)
+                {
+                    roleCount++;
+                }
+            }
+            if (roleCount == 0)
+            {
+                alert("Please select at least one file usage type.");
+                return false;
+            }
+        }
+        return verifySelected(form, submitURL, 'POST', 'runs');
+    }
+</script>
+
 <table cellspacing="4" class="labkey-no-spacing">
     <tr>
-        <td valign="middle">Export as a ZIP file:</td>
-        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" /></td>
+        <td valign="middle" rowspan="2">Export as a ZIP file:</td>
+        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" onclick="setFileDownloadEnabled(document.getElementById('<%= PageFlowUtil.filter(guid) %>').checked, '<%= PageFlowUtil.filter(guid) %>');" /></td>
         <td valign="middle">Include all files</td>
     </tr>
     <% if (!bean.getRoles().isEmpty()) { %>
         <tr>
-            <td/>
-            <td valign="middle"><input type="radio" id="<%= PageFlowUtil.filter(guid) %>"name="fileExportType" value="role" /></td>
+            <td valign="middle"><input type="radio" id="<%= PageFlowUtil.filter(guid) %>"name="fileExportType" value="role" onclick="setFileDownloadEnabled(document.getElementById('<%= PageFlowUtil.filter(guid) %>').checked, '<%= PageFlowUtil.filter(guid) %>');" /></td>
             <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>
             <td colspan="2" />
             <td>
                 <% for (String role : bean.getRoles()) { %>
-                    <input type="checkbox" name="roles" id="role<%= PageFlowUtil.filter(role) %>" value="<%= PageFlowUtil.filter(role) %>" onclick="document.getElementById(<%= PageFlowUtil.jsString(guid) %>).checked='true';" />&nbsp;<%= PageFlowUtil.filter(role) %>
+                    <span style="white-space:nowrap"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= PageFlowUtil.filter(role) %>" value="<%= PageFlowUtil.filter(role) %>" /><%= PageFlowUtil.filter(role) %>&nbsp;</span>
                 <% } %>
             </td>
         </tr>
@@ -56,6 +88,6 @@ String guid = GUID.makeGUID();
 
     <tr>
         <td/>
-        <td colspan="2"><%= PageFlowUtil.generateSubmitButton("Export", "return verifySelected(this.form, '" + bean.getPostURL() + "', 'POST', 'runs');") %></td>
+        <td colspan="2"><%= PageFlowUtil.generateSubmitButton("Export", "return validateFileExportOptions('" + guid + "', this.form, '" + bean.getPostURL() + "');") %></td>
     </tr>
 </table>

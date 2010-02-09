@@ -46,7 +46,7 @@ public class ExtensibleObjectQueryView extends QueryView
         this.allowEditing = allowEditing;
         setShadeAlternatingRows(true);
         setShowBorders(true);
-        QuerySettings settings = getSchema().getSettings(context, null);
+        QuerySettings settings = getSchema().getSettings(context, domainInfo.getDomainName());
         settings.setQueryName(getQueryName(domainInfo));
         settings.setAllowChooseQuery(false);
         setSettings(settings);
