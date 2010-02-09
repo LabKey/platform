@@ -28,7 +28,14 @@ import java.util.Collection;
 
 public class ButtonBar extends DisplayElement
 {
+    public enum Style
+    {
+        toolbar,
+        separateButtons
+    }
+
     private List<DisplayElement> _elementList = new ArrayList<DisplayElement>();
+    private Style _style = Style.toolbar;
 
     public static ButtonBar BUTTON_BAR_GRID = new ButtonBar();
     public static ButtonBar BUTTON_BAR_DETAILS = new ButtonBar();
@@ -44,14 +51,17 @@ public class ButtonBar extends DisplayElement
 
         BUTTON_BAR_DETAILS.getList().add(ActionButton.BUTTON_SHOW_UPDATE);
         BUTTON_BAR_DETAILS.getList().add(ActionButton.BUTTON_SHOW_GRID);
+        BUTTON_BAR_DETAILS.setStyle(Style.separateButtons);
         BUTTON_BAR_DETAILS.lock();
         assert MemTracker.remove(BUTTON_BAR_DETAILS);
 
         BUTTON_BAR_INSERT.getList().add(ActionButton.BUTTON_DO_INSERT);
+        BUTTON_BAR_INSERT.setStyle(Style.separateButtons);
         BUTTON_BAR_INSERT.lock();
         assert MemTracker.remove(BUTTON_BAR_INSERT);
 
         BUTTON_BAR_UPDATE.getList().add(ActionButton.BUTTON_DO_UPDATE);
+        BUTTON_BAR_UPDATE.setStyle(Style.separateButtons);
         BUTTON_BAR_UPDATE.lock();
         assert MemTracker.remove(BUTTON_BAR_UPDATE);
 
@@ -108,7 +118,10 @@ public class ButtonBar extends DisplayElement
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
-        out.write("<div class=\"labkey-button-bar\">");
+        out.write("<div");
+        if (getStyle() == Style.toolbar)
+            out.write(" class=\"labkey-button-bar\"");
+        out.write(">");
         for (DisplayElement el : getList())
         {
             if (ctx.getMode() != 0 && (ctx.getMode() & el.getDisplayModes()) == 0)
@@ -125,4 +138,16 @@ public class ButtonBar extends DisplayElement
         out.write("</div>");
         out.write("<div class=\"extContainer\" />");
     }
-} 
+
+    public Style getStyle()
+    {
+        return _style;
+    }
+
+    public void setStyle(Style style)
+    {
+        if (_locked)
+            throw new IllegalStateException("Button bar is locked.");
+        _style = style;
+    }
+}
