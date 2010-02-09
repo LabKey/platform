@@ -1281,7 +1281,7 @@ function verifySelected(form, url, method, pluralNoun, confirmText)
     for (var i = 0; i < l; i++)
     {
         var e = elems[i];
-        if (e.type == 'checkbox' && e.checked == true && e.name != '.toggle')
+        if (e.type == 'checkbox' && e.checked && e.name == '.select')
         {
             checked = true;
             break;

@@ -319,7 +319,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 getChildren();
                 if (null != _children.get(name))
                     throw new IllegalArgumentException(name + " already exists");
-                // _children is not syncrhonized so don't add put, create a new map
+                // _children is not synchronized so don't add put, create a new map
                 Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
                 children.putAll(_children);
                 children.put(name, new SymbolicLink(getPath().append(name), target));
