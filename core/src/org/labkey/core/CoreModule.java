@@ -23,7 +23,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -414,6 +413,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             org.labkey.api.util.DateUtil.TestCase.class,
             org.labkey.api.data.ContainerManager.TestCase.class,
             TabLoader.TabLoaderTestCase.class,
+            org.labkey.api.data.TSVWriter.TestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
             ModuleDependencySorter.TestCase.class,
             org.labkey.api.security.GroupManager.TestCase.class,
