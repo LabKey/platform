@@ -108,7 +108,7 @@ public class CohortController extends BaseStudyController
 
             CohortQueryView queryView = new CohortQueryView(getUser(), getStudy(), HttpView.currentContext(), true);
             queryView.setTitle("Defined Cohorts");
-            queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             vbox.addView(queryView);
             
             StudyJspView<Object> bottom = new StudyJspView<Object>(getStudy(), "manageCohortsBottom.jsp", null, errors);
