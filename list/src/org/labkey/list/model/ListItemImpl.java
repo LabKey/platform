@@ -32,6 +32,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -359,6 +360,14 @@ public class ListItemImpl implements ListItem
     private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
+
+        //check for isRequired
+        if (prop.isRequired() && (null == value || (value instanceof ObjectProperty && ((ObjectProperty)value).value() == null)))
+        {
+            errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
+            return false;
+        }
+
         for (IPropertyValidator validator : prop.getValidators())
         {
             if (value instanceof ObjectProperty)
