@@ -884,7 +884,9 @@ public class QueryView extends WebPartView<Object>
     {
         if (_customView != null && _customView.hasFilterOrSort())
         {
-            ActionURL url = getSettings().getSortFilterURL();
+            URLHelper url = getSettings().getReturnURL();
+            if (null == url)
+                url = getSettings().getSortFilterURL();
             NavTree item;
             String label = "Apply View Filter";
             if (ignoreUserFilter())
@@ -915,7 +917,9 @@ public class QueryView extends WebPartView<Object>
 
             for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
             {
-                ActionURL url = getViewContext().getActionURL().clone();
+                URLHelper url = getSettings().getReturnURL();
+                if (null == url)
+                    url = getSettings().getSortFilterURL();
                 String propName = getDataRegionName() + ".containerFilterName";
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
