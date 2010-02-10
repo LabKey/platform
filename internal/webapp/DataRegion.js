@@ -148,16 +148,24 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         var viewportWidth = Number.MAX_VALUE;
         //yahoo version seems to handle vertical scrollbar, while Ext does not, so favor that one
         if ('YAHOO' in window && YAHOO && YAHOO.util && YAHOO.util.Dom)
-            viewportWidth = YAHOO.util.Dom.getViewportWidth() - YAHOO.util.Dom.getX(this.table.dom.parentNode);
+            viewportWidth = YAHOO.util.Dom.getViewportWidth();
         else if ('Ext' in window && Ext && Ext.lib && Ext.lib.Dom)
-            viewportWidth = Ext.lib.Dom.getViewWidth() - Ext.lib.Dom.getX(this.table.dom.parentNode);
-        var newWidth = Math.min(this.table.getWidth(true), viewportWidth);
+            viewportWidth = Ext.lib.Dom.getViewWidth() - 20;
 
-        // ensure contents of header and footer fit into width
+        var pagination;
         if (this.header)
-            this.header.setWidth(newWidth);
+        {
+            pagination = this.header.child("div[class='labkey-pagination']");
+            if (pagination)
+                pagination.setWidth(Math.max(0, viewportWidth - pagination.getLeft()));
+        }
+
         if (this.footer)
-            this.footer.setWidth(newWidth);
+        {
+            pagination = this.footer.child("div[class='labkey-pagination']");
+            if (pagination)
+                pagination.setWidth(Math.max(0,viewportWidth - pagination.getLeft()));
+        }
     },
 
     // private

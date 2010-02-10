@@ -351,13 +351,13 @@ public abstract class DisplayColumn extends RenderColumn
         return _gridHeaderClass;
     }
 
-    public void renderColTag(Writer out) throws IOException
+    public void renderColTag(Writer out, boolean isLast) throws IOException
     {
         out.write("<col ");
         if (_width != null)
         {
             out.write("width=\"");
-            out.write(_width);
+            out.write(isLast ? "*" : _width);
             out.write("\"");
         }
         out.write(" style=\"text-align:");

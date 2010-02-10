@@ -769,6 +769,8 @@ public class DataRegion extends DisplayElement
                 headerMessage.append("'].clearAllFilters(); return false;\">Clear all filters</a>");
             }
 
+            renderRegionStart(ctx, out);
+
             renderHeader(ctx, out, renderButtons, headerMessage.length() > 0 ? headerMessage.toString() : null);
 
             if (!_showPagination && rs instanceof Table.TableResultSet)
@@ -805,6 +807,8 @@ public class DataRegion extends DisplayElement
             }
 
             renderFooter(ctx, out, renderButtons);
+
+            renderRegionEnd(ctx, out);
         }
         finally
         {
@@ -812,9 +816,23 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    
+    protected void renderRegionStart(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("<table class=\"labkey-data-region-container\">\n");
+    }
+
+    protected void renderRegionEnd(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write("\n</table>");
+    }
+
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, String headerMessage) throws IOException
     {
+        out.write("<tr><td class=\"labkey-data-region-header-container");
+        if (!isShowBorders())
+            out.write(" labkey-data-region-header-bottom-border");
+        out.write("\">\n");
+
         renderHeaderScript(ctx, out, headerMessage);
 
         if (renderButtons)
@@ -837,7 +855,7 @@ public class DataRegion extends DisplayElement
         out.write("</td></tr>\n");
 
         renderMessageBox(ctx, out);
-        out.write("</table>");
+        out.write("</table>\n</td></tr>");
     }
     
 
@@ -888,7 +906,8 @@ public class DataRegion extends DisplayElement
 
     protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
-        out.write("<table id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
+        out.write("<tr><td>\n");
+        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
         if (renderButtons && _buttonBarPosition.atBottom())
         {
@@ -1058,6 +1077,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderGridStart(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
     {
+        out.write("<tr><td>");
         if (isShowBorders())
         {
             out.write("<table class=\"labkey-data-region labkey-show-borders");
@@ -1083,10 +1103,13 @@ public class DataRegion extends DisplayElement
         out.write("<colgroup>");
         if (_showRecordSelectors)
             out.write("<col class=\"labkey-selectors\" width=\"35\"/>");
-        for (DisplayColumn renderer : renderers)
+        Iterator<DisplayColumn> itr = renderers.iterator();
+        DisplayColumn renderer;
+        while (itr.hasNext())
         {
+            renderer = itr.next();
             if (renderer.isVisible(ctx))
-                renderer.renderColTag(out);
+                renderer.renderColTag(out, !itr.hasNext());
         }
         out.write("</colgroup>");
     }
@@ -1127,7 +1150,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("</table>\n");
+        out.write("</table>\n</td></tr>\n");
     }
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, boolean borderTop, boolean borderBottom) throws IOException
