@@ -146,6 +146,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (startsWith(this.path,"/"))
             this.path = this.path.substring(1);
 
+        this.enableImportData(true);
         //this.actions.importData.disable();
 
         if (!this.actionConfig)
@@ -213,6 +214,26 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 scope: this,
                 updateSelection: e.updateSelection
             });
+        }
+    },
+
+    /**
+     * Helper to enable and disable the import data action, marker classes
+     * are used to help with automated tests.
+     */
+    enableImportData : function(enabled) {
+
+        var el = this.getTopToolbar().getEl();
+
+        if (enabled)
+        {
+            el.addClass('labkey-import-enabled');
+            this.actions.importData.enable();
+        }
+        else
+        {
+            el.removeClass('labkey-import-enabled');
+            this.actions.importData.disable();
         }
     },
 
@@ -343,7 +364,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     // selection change handler
     onSelectionChange : function(record)
     {
-        this.actions.importData.disable();
+        this.enableImportData(false);
 
         if (this.pipelineActions)
         {
@@ -466,7 +487,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
 
         if (this.pipelineActions.length)
-            this.actions.importData.enable();
+            this.enableImportData(true);
 
         this.selectionProcessed = true;
     },
