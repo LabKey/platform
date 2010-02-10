@@ -160,7 +160,7 @@ public class CohortManager
                 MenuButton button = new MenuButton("Cohorts");
                 ActionURL allCohortsURL = CohortFilter.clearURLParameters(context.cloneActionURL());
                 NavTree item = new NavTree("All", allCohortsURL.toString());
-                item.setId("Cohorts:All");
+                item.setId(button.getCaption() + ":" + item.getKey());
                 if (currentCohortFilter == null)
                     item.setSelected(true);
                 button.addMenuItem(item);
@@ -172,13 +172,14 @@ public class CohortManager
                     for (CohortFilter.Type type : CohortFilter.Type.values())
                     {
                         NavTree typeItem = new NavTree(type.getTitle());
+                        typeItem.setId(button.getCaption() + ":" + typeItem.getKey());
 
                         for (CohortImpl cohort : cohorts)
                         {
                             CohortFilter filter = new CohortFilter(type, cohort.getRowId());
                             ActionURL url = filter.addURLParameters(context.cloneActionURL());
                             item = new NavTree(cohort.getLabel(),url.toString());
-                            item.setId("Cohorts:" + type.name() + "_" + cohort.getLabel());
+                            item.setId(typeItem.getId() + ":" + cohort.getLabel());
                             if (filter.equals(currentCohortFilter))
                                 item.setSelected(true);
                             typeItem.addChild(item);
@@ -193,7 +194,7 @@ public class CohortManager
                         CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
                         ActionURL url = filter.addURLParameters(context.cloneActionURL());
                         item = new NavTree(cohort.getLabel(), url.toString());
-                        item.setId("Cohorts:" + CohortFilter.Type.PTID_CURRENT.name() + "_" + cohort.getLabel());
+                        item.setId(button.getCaption() + ":" + item.getKey());
                         if (filter.equals(currentCohortFilter))
                             item.setSelected(true);
                         button.addMenuItem(item);

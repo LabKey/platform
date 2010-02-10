@@ -66,9 +66,9 @@
             return false;
         }
     </script>
-    <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport"
+    <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport" id="simpleCohorts"
            value="false" <%=study.isAdvancedCohorts() ? "" : "checked"%>>Simple: <%= h(subjectNounPlural) %> are assigned to a single cohort throughout the study.<br>
-    <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport"
+    <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts" 
            value="true" <%=study.isAdvancedCohorts() ? "checked" : ""%>>Advanced: <%= h(subjectNounPlural) %> may change cohorts mid-study.  Note that advanced cohort management requires automatic assignment via a study dataset.<br>
 <%
     WebPartView.endTitleFrame(out);
