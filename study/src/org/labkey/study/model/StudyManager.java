@@ -324,7 +324,7 @@ public class StudyManager
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
-        if (oldStudy.getTimepointType() == TimepointType.RELATIVE_DATE && !oldStartDate.equals(study.getStartDate()))
+        if (oldStudy.getTimepointType() == TimepointType.RELATIVE_DATE && !study.getStartDate().equals(oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);
