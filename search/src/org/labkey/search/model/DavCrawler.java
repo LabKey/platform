@@ -93,6 +93,7 @@ public class DavCrawler implements ShutdownListener
     
 
     // to make testing easier, break out the interface for persisting crawl state
+    // This is an awkward factoring.  Break out the "FileQueue" function instead
     public interface SavePaths
     {
         final static java.util.Date failDate = SearchService.failDate;
@@ -132,7 +133,7 @@ public class DavCrawler implements ShutdownListener
 
 
     static DavCrawler _instance = new DavCrawler();
-    boolean _shuttingDown = false;
+    volatile boolean _shuttingDown = false;
 
     
     public static DavCrawler getInstance()
@@ -249,7 +250,8 @@ public class DavCrawler implements ShutdownListener
 
             final Resource r = getResolver().lookup(_path);
 
-            if (null == r || !r.isCollection() || !r.shouldIndex())
+            // CONSIDER: delete previously indexed resources in child containers as well
+            if (null == r || !r.isCollection() || !r.shouldIndex() || skipContainer(r))
             {
                 if (_path.startsWith(getResolver().getRootPath()))
                     _paths.deletePath(_path);
@@ -333,11 +335,7 @@ public class DavCrawler implements ShutdownListener
                 {
                     continue;
                 }
-                else if (skipContainer(child))
-                {
-                    continue;
-                }
-                else
+                else if (!skipContainer(child))
                 {
                     long childCrawl = SavePaths.oldDate.getTime();
                     if (!(child instanceof WebdavResolver.WebFolder))
@@ -396,7 +394,7 @@ public class DavCrawler implements ShutdownListener
 
     void _wait(Object event, long wait)
     {
-        if (wait == 0)
+        if (wait == 0 || _shuttingDown)
             return;
         try
         {
@@ -479,6 +477,8 @@ public class DavCrawler implements ShutdownListener
 
     IndexDirectoryJob findSomeWork()
     {
+        if (_shuttingDown)
+            return null;
         if (crawlQueue.isEmpty())
         {
             _log.debug("findSomeWork()");
@@ -501,7 +501,8 @@ public class DavCrawler implements ShutdownListener
 
     static boolean skipContainer(Resource r)
     {
-        String name = r.getName();
+        Path path = r.getPath();
+        String name = path.getName();
 
         if ("@wiki".equals(name))
             return true;
@@ -517,7 +518,26 @@ public class DavCrawler implements ShutdownListener
         
         if (name.startsWith("."))
             return true;
-        
+
+        // UNDONE: shouldn't be hard-coded
+        if ("labkey_full_text_index".equals(name))
+            return true;
+
+        // google convention
+        if (path.contains("no_crawl"))
+            return true;
+
+        File f = r.getFile();
+        if (null != f)
+        {
+            // labkey convention
+            if (new File(f,".nocrawl").exists())
+                return true;
+            // postgres
+            if (new File(f,"PG_VERSION").exists())
+                return true;
+        }
+
         return false;
     }
 

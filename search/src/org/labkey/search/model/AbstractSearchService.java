@@ -278,7 +278,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isBusy()
     {
-        if (!isRunning() || _shuttingDown)
+        if (!isRunning())
             return true;
         if (_runQueue.size() > 0)
             return true;
@@ -295,8 +295,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void waitForIdle() throws InterruptedException
     {
-        if (_runQueue.size() == 0 && _itemQueue.size() < 4)
-            return;
+//        if (isRunning() && _runQueue.size() == 0 && _itemQueue.size() < 4)
+//            return;
         synchronized (_idleEvent)
         {
             _idleWaiting = true;
@@ -307,13 +307,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private void checkIdle()
     {
-        if (_idleWaiting && _runQueue.isEmpty())
+        if (isRunning() && _runQueue.size() == 0 && _itemQueue.size() == 0)
         {
             synchronized (_idleEvent)
             {
                 if (_idleWaiting)
+                {
                     _idleEvent.notifyAll();
-                _idleWaiting = false;
+                    _idleWaiting = false;
+                }
             }
         }
     }
@@ -510,7 +512,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     final Object _runningLock = new Object();
     boolean _threadsInitialized = false;
-    boolean _shuttingDown = false;
+    volatile boolean _shuttingDown = false;
     boolean _paused = true;
     ArrayList<Thread> _threads = new ArrayList<Thread>(10);
 
@@ -644,7 +646,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;
-
+        _paused = true;
+        _runQueue.clear();
+        _itemQueue.clear();
+        if (null != _indexQueue)
+            _indexQueue.clear();
         for (Thread t : _threads)
             t.interrupt();
     }
@@ -768,11 +774,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         
         i._modified = r.getLastModified();
 
+        if (!_lock(lockPreprocess))
+            return false;
+
         try
         {
-            if (!_lock(lockPreprocess))
-                return false;
-
             _log.debug("preprocess(" + r.getDocumentId() + ")");
             i._preprocessMap = preprocess(i._id, i._res);
             if (null == i._preprocessMap)
