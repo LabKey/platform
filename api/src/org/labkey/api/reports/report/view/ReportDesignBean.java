@@ -224,6 +224,8 @@ public class ReportDesignBean extends ReportForm
             else
                 descriptor.setFlags(descriptor.getFlags() & ~ReportDescriptor.FLAG_INHERITABLE);
             descriptor.setProperty(ReportDescriptor.Prop.cached, _cached);
+            if (null != getContainer())
+                descriptor.setContainer(getContainer().getId());
         }
         return report;
     }
