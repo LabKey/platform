@@ -259,6 +259,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         {
             if (ownsTransaction)
                 scope.beginTransaction();
+            report.getDescriptor().setContainer(context.getContainer().getId());
             report.beforeSave(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
