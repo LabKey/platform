@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 9.3
+ * @version 10.1
  * @license Copyright (c) 2008-2010 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -553,7 +553,7 @@ LABKEY.Query = new function()
 
         /**
         * Build and return an object suitable for passing to the
-        * <a href = "http://extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+        * <a href = "http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
         * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
@@ -566,7 +566,7 @@ LABKEY.Query = new function()
         *       descending order). In the case of a multi-column sort, up to three column names can be
         *       included, separated by commas.
         * @returns {Object} Object suitable for passing to the
-        * <a href = "http://extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+        * <a href = "http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
         */
 
         buildQueryParams: function(schemaName, queryName, filterArray, sort)
@@ -1226,7 +1226,7 @@ LABKEY.Query = new function()
 * @description   Contains information about how one may interact
             with the columns within a user interface. This format is generated
             to match the requirements of the Ext grid component. See
-            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
+            <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.grid.ColumnModel">
             Ext.grid.ColumnModel</a> for further information.
 * @type  String
 */
@@ -1325,7 +1325,7 @@ LABKEY.Query = new function()
 * @description   Contains information about how one may interact
             with the columns within a user interface. This format is generated
             to match the requirements of the Ext grid component. See
-            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
+            <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.grid.ColumnModel">
             Ext.grid.ColumnModel</a> for further information.
 * @type  String
 */

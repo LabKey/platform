@@ -1,8 +1,8 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @version 9.3
- * @license Copyright (c) 2009 LabKey Corporation
+ * @version 10.1
+ * @license Copyright (c) 2008-2010 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
 
 /**
  * Constructs a new LabKey FormPanel using the supplied configuration.
- * @class LabKey extension to the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>.
+ * @class LabKey extension to the <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>.
  * This class understands various LabKey metadata formats and can simplify generating basic forms.
  * When a LABKEY.ext.FormPanel is created with additional metadata, it will try to intelligently construct fields
  * of the appropriate type.
@@ -32,7 +32,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @constructor
  * @augments Ext.form.FormPanel
  * @param config Configuration properties. This may contain any of the configuration properties supported
- * by the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>,
+ * by the <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>,
  * plus those listed here.
  * Also, items may specify a ToolTip config in the helpPopup property to display a LabKey-style "?" help tip.
  * Note that the selectRowsResults object (see {@link LABKEY.Query.SelectRowsResults}) includes both columnModel and metaData, so you don't need to specify all three.
