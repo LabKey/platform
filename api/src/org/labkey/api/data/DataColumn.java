@@ -349,7 +349,12 @@ public class DataColumn extends DisplayColumn
         outputName(ctx, out, formFieldName);
         out.write(" value=\"");
         if (null != value)
-            out.write(PageFlowUtil.filter(value.toString()));
+        {
+            // it's important to use ConvertUtils here, since 'value' might be a string (if populated via
+            // an initial values map), or it might be an array containing a single string (if populated via
+            // request.getParameterMap() during an error reshow).  ConvertUtils normalizes these values. 
+            out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
+        }
         out.write("\">");
     }
 

@@ -106,7 +106,7 @@ public interface DilutionCurve
 
     double fitCurve(double x, Parameters curveParameters);
 
-    double calculateAUC() throws FitFailedException;
+    double calculateAUC(AUCType type) throws FitFailedException;
 
     public static class DoublePoint extends Pair<Double, Double>
     {
@@ -123,6 +123,20 @@ public interface DilutionCurve
         public double getY()
         {
             return getValue();
+        }
+    }
+
+    public enum AUCType
+    {
+        NORMAL("Normal"),
+        POSITIVE("Positive"),
+        NEGATIVE("Negative");
+
+        private String _label;
+
+        private AUCType(String label)
+        {
+            _label = label;
         }
     }
 
