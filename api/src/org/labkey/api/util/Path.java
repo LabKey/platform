@@ -172,6 +172,15 @@ public class Path implements Serializable, Iterable<String>
     }
 
 
+    public boolean contains(String name)
+    {
+        for (String p : this._path)
+            if (p.equals(name))
+                return true;
+        return false;
+    }
+    
+
     public String getName()
     {
         return _length == 0 ? "" : _path[_length-1];
