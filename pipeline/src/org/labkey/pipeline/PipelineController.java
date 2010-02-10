@@ -1260,8 +1260,8 @@ public class PipelineController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            PipelineRoot root = PipelineManager.findPipelineRoot(getViewContext().getContainer());
-            resp.put("containerPath", null != root ? root.getContainerPath() : null);
+            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+            resp.put("containerPath", null != root ? root.getContainer().getPath() : null);
             return resp;
         }
     }
