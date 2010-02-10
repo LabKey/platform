@@ -896,7 +896,7 @@ public class AnnouncementManager
             // Get the attachments... unfortunately, they're attached to individual announcements, not to the thread,
             // so we need a different query.
             // find all messages that have attachments
-            sql = new SQLFragment("SELECT a.Container, a.EntityId, MIN(CAST(a.Parent AS VARCHAR)) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent\n");
+            sql = new SQLFragment("SELECT a.Container, a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent\n");
             and = " WHERE ";
             if (null != c)
             {
