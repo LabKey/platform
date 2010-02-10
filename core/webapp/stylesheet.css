@@ -663,6 +663,18 @@ table.labkey-customize-view
 
 /* Data Region */
 
+.labkey-data-region-container
+{
+    border: 1px solid #999999;
+    border-collapse: collapse;
+}
+
+.labkey-data-region-container > tbody > tr > td
+{
+    padding: 0;
+}
+
+
 /* There are some odd styles that are used so that the data
 regions look the same in IE, Safari, and Firefox */
 table.labkey-data-region
@@ -702,9 +714,10 @@ table.labkey-pad-cells
 /* Use this in the table class tag if you want your data region to have borders */
 table.labkey-show-borders
 {
-    border: solid 1px #DDDDDD;
+    border: 0;
     /* Part of a hack for IE 7 and below since IE gives precedence to table borders over cell borders */
-    *border: 0px none;  
+    *border: 0px none;
+    width: 100%;
 }
 
 .labkey-show-borders td
@@ -741,7 +754,9 @@ in the table tag.  They are necessary so that the borders take precedence correc
     .labkey-show-borders .labkey-col-total td, .labkey-show-borders .labkey-col-header th,
     .labkey-show-borders .labkey-stat-title
 {
-    border: solid 1px #AAAAAA;
+    border-right: solid 1px #AAAAAA;
+    border-top: solid 1px #AAAAAA;
+    border-bottom: solid 1px #AAAAAA;
 }
 
 .labkey-has-row-totals col, .labkey-has-col-totals col
@@ -828,9 +843,19 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
     font-weight: bold;
 }
 
+.labkey-data-region-header-container
+{
+    background-color: #F2F2F2;
+}
+
 .labkey-data-region-header
 {
     border-collapse: collapse;
+}
+
+td.labkey-data-region-header-bottom-border
+{
+   border-bottom: 1px solid #AAAAAA;
 }
 
 .labkey-data-region-header td
