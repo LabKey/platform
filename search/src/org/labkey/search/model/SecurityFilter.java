@@ -47,24 +47,25 @@ class SecurityFilter extends Filter
     private static final ContainerFieldSelector CONTAINER_FIELD_SELECTOR = new ContainerFieldSelector();
 
     private final User user;
-    private final Set<String> containerIds;
+    private final HashMap<String,Container> containerIds;
     private final HashMap<String,Boolean> securableResourceIds = new HashMap<String,Boolean>();
 
     SecurityFilter(User user, Container root, boolean recursive)
     {
-        Set<Container> containers = ContainerManager.getAllChildren(root, user);
         this.user = user;
 
         if (recursive)
         {
-            containerIds = new HashSet<String>(containers.size());
+            Set<Container> containers = ContainerManager.getAllChildren(root, user);
+            containerIds = new HashMap<String,Container>(containers.size());
 
             for (Container c : containers)
-                containerIds.add(c.getId());
+                containerIds.put(c.getId(),c);
         }
         else
         {
-            containerIds = Collections.singleton(root.getId());
+            containerIds = new HashMap<String,Container>();
+            containerIds.put(root.getId(), root);
         }
     }
 
@@ -82,17 +83,17 @@ class SecurityFilter extends Filter
             String id = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.container.name());
             String resourceId = doc.get(LuceneSearchServiceImpl.FIELD_NAMES.resourceId.name());
 
-            if (null == id || !containerIds.contains(id))
+            if (null == id || !containerIds.containsKey(id))
                 continue;
             
             if (null != resourceId && !resourceId.equals(id))
             {
-                if (!containerIds.contains(resourceId))
+                if (!containerIds.containsKey(resourceId))
                 {
                     Boolean canRead = securableResourceIds.get(resourceId);
                     if (null == canRead)
                     {
-                        SecurableResource sr = new _SecurableResource(resourceId);
+                        SecurableResource sr = new _SecurableResource(resourceId, containerIds.get(id));
                         SecurityPolicy p = SecurityManager.getPolicy(sr);
                         canRead = p.hasPermission(user, ReadPermission.class);
                         securableResourceIds.put(resourceId, canRead);
@@ -125,10 +126,12 @@ class SecurityFilter extends Filter
     static class _SecurableResource implements SecurableResource
     {
         final String _id;
+        final Container _container;
         
-        _SecurableResource(String id)
+        _SecurableResource(String resourceId, Container c)
         {
-            _id = id;
+            _id = resourceId;
+            _container = c;
         }
 
         @NotNull
@@ -169,7 +172,7 @@ class SecurityFilter extends Filter
         @NotNull
         public Container getResourceContainer()
         {
-            throw new UnsupportedOperationException();
+            return _container;
         }
 
         @NotNull
