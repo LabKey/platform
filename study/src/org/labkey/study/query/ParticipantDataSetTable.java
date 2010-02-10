@@ -38,6 +38,11 @@ public class ParticipantDataSetTable extends VirtualTable
         _colParticipantId = colParticipantId;
         for (DataSetDefinition dataset : _schema.getStudy().getDataSets())
         {
+            // verify that the current user has permission to read this dataset (they may not if
+            // advanced study security is enabled).
+            if (!dataset.canRead(schema.getUser()))
+                continue;
+
             String name = dataset.getLabel();
             if (name == null)
                 continue;

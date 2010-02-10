@@ -230,7 +230,10 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultDetailCols.put("Visit", visitInfo);
             StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
             TableInfo simpleSpecimenTable = schema.createSimpleSpecimenTable();
-            _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
+
+            DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, simpleSpecimenTable);
+            participantColInfo.setOrderBy("PTID");
+            _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
             _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("SiteLdmsCode", new DisplayColumnInfo(true, true));
             _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
@@ -243,7 +246,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _defaultSummaryCols.put("AdditiveType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("DerivativeType", new DisplayColumnInfo(true, true));
             _defaultSummaryCols.put("Visit", visitInfo);
-            _defaultSummaryCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), new DisplayColumnInfo(true, true, true, simpleSpecimenTable));
+            _defaultSummaryCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
             _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
             _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
             _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));

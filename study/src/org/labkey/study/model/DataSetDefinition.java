@@ -99,7 +99,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "visitRowId",
         "lsid",
         "Dataset",
-        "ParticipantSequenceKey"
+        "ParticipantSequenceKey",
+        // The following columns names don't refer to actual built-in dataset columns, but
+        // they're used by import ('replace') or are commonly used/confused synonyms for built-in column names
+        "replace",
+        "visit",
+        "participant"
     };
 
     private static final String[] DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY = new String[]

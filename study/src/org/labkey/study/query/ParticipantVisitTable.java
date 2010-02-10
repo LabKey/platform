@@ -105,6 +105,11 @@ public class ParticipantVisitTable extends FilteredTable
 //            if (dataset.getDataSetId() == foreignDatasetId)
 //                continue;
 
+            // verify that the current user has permission to read this dataset (they may not if
+            // advanced study security is enabled).
+            if (!dataset.canRead(schema.getUser()))
+                continue;
+
             String name = _schema.decideTableName(dataset);
             if (name == null)
                 continue;

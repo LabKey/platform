@@ -236,7 +236,7 @@ public class DataSetTable extends FilteredTable
         }
     }
 
-    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "Modified", "lsid");
+    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "Modified", "lsid", "SourceLsid");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         if (_dsd.isKeyPropertyManaged() && col.getName().equals(_dsd.getKeyPropertyName()))

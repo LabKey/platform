@@ -154,6 +154,8 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
 
     public WellGroupTemplateImpl getWellGroupTemplate(WellGroup.Type type, String name)
     {
+        if (_groups == null)
+            return null;
         Map<String, WellGroupTemplateImpl> typedGroups = _groups.get(type);
         if (typedGroups == null)
             return null;

@@ -1949,6 +1949,18 @@ public class StudyController extends BaseStudyController
         @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
         {
+            if (form.getLabelColumn() == null)
+                errors.reject(null, "Column containing dataset Label must be identified.");
+            if (form.getTypeNameColumn() == null)
+                errors.reject(null, "Column containing dataset Name must be identified.");
+            if (form.getTypeIdColumn() == null)
+                errors.reject(null, "Column containing dataset ID must be identified.");
+            if (form.getTsv() == null)
+                errors.reject(null, "Type definition is required.");
+
+            if (errors.hasErrors())
+                return false;
+            
             SchemaReader reader = new SchemaTsvReader(getStudy(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
             return StudyManager.getInstance().importDatasetSchemas(getStudy(), getUser(), reader, errors);
         }

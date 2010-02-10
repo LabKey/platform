@@ -20,8 +20,7 @@ import org.labkey.api.study.DilutionCurve;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: brittp
@@ -38,6 +37,8 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     protected Double _fitError;
     protected WellSummary[] _wellSummaries = null;
     protected Double _auc;
+    protected Map<AUCType, Double> _aucMap = new HashMap<AUCType, Double>();
+    protected List<AUCRange> _ranges = new ArrayList<AUCRange>();
 
     public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
@@ -253,16 +254,138 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     /**
      * Calculate the area under the curve
      */
-    public double calculateAUC() throws FitFailedException
+    public double calculateAUC(AUCType type) throws FitFailedException
     {
-        if (_auc == null)
+        if (!_aucMap.containsKey(type))
         {
-            double min = _wellSummaries[0].getDilution();
-            double max = _wellSummaries[_wellSummaries.length-1].getDilution();
+            double min = getMinDilution();
+            double max = getMaxDilution();
+            double auc = 0;
 
-            _auc = (1/(Math.log10(max) - Math.log10(min))) * integrate(min, max, 0.00001, 10) / 100.0;
+            for (AUCRange range : getRanges(min, max, type))
+            {
+                double factor = (1/(Math.log10(max) - Math.log10(min)));
+
+                if (range.getType() == type)
+                {
+                    double start = range.getStart();
+                    double end = range.getEnd();
+
+                    auc += factor * integrate(start, end, 0.00001, 10) / 100.0;
+                }
+            }
+            _aucMap.put(type, auc);
         }
-        return _auc;
+        return _aucMap.get(type);
+    }
+
+    private List<AUCRange> getRanges(double start, double end, AUCType type) throws FitFailedException
+    {
+        if (type == AUCType.NORMAL)
+        {
+            return Collections.singletonList(new AUCRange(start, end, AUCType.NORMAL));
+        }
+        else
+        {
+            if (_ranges.isEmpty())
+            {
+                Parameters parameters = getParameters();
+                AUCRange currentRange = null;
+
+                double step = (end - start) / 200;
+                double y = 0;
+                double yPrev = 0;
+
+                for (double p = start; p < end; p += step)
+                {
+                    y = fitCurve(p, parameters);
+
+                    if (currentRange == null)
+                    {
+                        if (y != 0)
+                            currentRange = new AUCRange(p, y > 0 ? AUCType.POSITIVE : AUCType.NEGATIVE);
+                    }
+                    else if (currentRange.isEnd(y))
+                    {
+                        // compute a more accurate estimate of the root
+                        if (Math.abs(y) > .001)
+                            p = findRoot(p-step, p, yPrev, y, parameters, 10, .001);
+                        currentRange.setEnd(p);
+                        AUCType nextType = currentRange.getType() == AUCType.POSITIVE ? AUCType.NEGATIVE : AUCType.POSITIVE;
+
+                        _ranges.add(currentRange);
+                        currentRange = new AUCRange(p, nextType);
+                    }
+                    yPrev = y;
+                }
+
+                if (currentRange != null)
+                {
+                    currentRange.setEnd(end);
+                    _ranges.add(currentRange);
+                }
+            }
+            return _ranges;
+        }
+    }
+
+    private double findRoot(double x1, double x2, double y1, double y2, Parameters parameters, int maxRecursionDepth, double error)
+    {
+        double mid = x1 + (x2 - x1) / 2;
+        double y = fitCurve(mid, parameters);
+
+        if (Math.abs(y) < error || maxRecursionDepth < 0)
+            return mid;
+
+        if ((y1 > 0 && y < 0) || (y1 < 0 && y > 0))
+            return findRoot(x1, mid, y1, y, parameters, maxRecursionDepth-1, error);
+        else
+            return findRoot(mid, x2, y, y2, parameters, maxRecursionDepth-1, error);
+    }
+
+    private static class AUCRange
+    {
+        private AUCType _type;
+        private double _start;
+        private double _end;
+
+        public AUCRange(double start, double end, AUCType type)
+        {
+            _start = start;
+            _end = end;
+            _type = type;
+        }
+
+        public AUCRange(double start, AUCType type)
+        {
+            this(start, 0, type);
+        }
+
+        public boolean isEnd(double y)
+        {
+            return (_type == AUCType.NEGATIVE && y >= 0) ||
+                   (_type == AUCType.POSITIVE && y < 0);
+        }
+
+        public AUCType getType()
+        {
+            return _type;
+        }
+
+        public double getStart()
+        {
+            return _start;
+        }
+
+        public double getEnd()
+        {
+            return _end;
+        }
+
+        public void setEnd(double end)
+        {
+            _end = end;
+        }
     }
 
     /**

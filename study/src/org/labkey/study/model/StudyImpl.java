@@ -135,28 +135,28 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public synchronized DataSetDefinition getDataSet(int id)
+    public DataSetDefinition getDataSet(int id)
     {
         return StudyManager.getInstance().getDataSetDefinition(this, id);
     }
 
 
-    public synchronized DataSetDefinition[] getDataSets()
+    public DataSetDefinition[] getDataSets()
     {
         return StudyManager.getInstance().getDataSetDefinitions(this);
     }
 
-    public synchronized PropertyDescriptor[] getSharedProperties()
+    public PropertyDescriptor[] getSharedProperties()
     {
         return StudyManager.getInstance().getSharedProperties(this);
     }
 
-    public synchronized SampleRequestActor[] getSampleRequestActors() throws SQLException
+    public SampleRequestActor[] getSampleRequestActors() throws SQLException
     {
         return SampleManager.getInstance().getRequirementsProvider().getActors(getContainer());
     }
 
-    public synchronized Set<Integer> getSampleRequestActorsInUse() throws SQLException
+    public Set<Integer> getSampleRequestActorsInUse() throws SQLException
     {
         Collection<SampleRequestActor> actors = SampleManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
         Set<Integer> ids = new HashSet<Integer>();
@@ -165,27 +165,27 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ids;
     }
 
-    public synchronized SiteImpl[] getSites()
+    public SiteImpl[] getSites()
     {
         return StudyManager.getInstance().getSites(getContainer());
     }
 
-    public synchronized CohortImpl[] getCohorts(User user)
+    public CohortImpl[] getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
     }
 
-    public synchronized SampleRequestStatus[] getSampleRequestStatuses(User user) throws SQLException
+    public SampleRequestStatus[] getSampleRequestStatuses(User user) throws SQLException
     {
         return SampleManager.getInstance().getRequestStatuses(getContainer(), user);
     }
 
-    public synchronized Set<Integer> getSampleRequestStatusesInUse() throws SQLException
+    public Set<Integer> getSampleRequestStatusesInUse() throws SQLException
     {
         return SampleManager.getInstance().getRequestStatusIdsInUse(getContainer());
     }
 
-    public synchronized RepositorySettings getRepositorySettings() throws SQLException
+    public RepositorySettings getRepositorySettings() throws SQLException
     {
         return SampleManager.getInstance().getRepositorySettings(getContainer());
     }
