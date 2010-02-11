@@ -108,7 +108,7 @@ public class SearchModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName(), true);
+        Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName());
         boolean running = !AppProps.getInstance().isDevMode();
         if (m.containsKey(searchRunningState))
             running = "true".equals(m.get(searchRunningState));

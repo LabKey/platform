@@ -138,17 +138,17 @@ public class SearchController extends SpringActionController
                 return false;
             }
 
-            Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName(),true);
+            Map<String, String> m = PropertyManager.getWritableProperties(SearchModule.class.getName(), true);
             if (form.isStart())
             {
                 ss.start();
-                m.put(SearchModule.searchRunningState,"true");
+                m.put(SearchModule.searchRunningState, "true");
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
                 ss.pause();
-                m.put(SearchModule.searchRunningState,"false");
+                m.put(SearchModule.searchRunningState, "false");
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Paused");
             }
             else if (form.isDelete())

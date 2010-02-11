@@ -2020,8 +2020,8 @@ public class StudyManager
 
     private void applySavedSnapshotInfo(Container container, SnapshotBean bean)
     {
-        Map<String,String> props = PropertyManager.getProperties(container.getId(), "snapshot", false);
-        if (null == props)
+        Map<String, String> props = PropertyManager.getProperties(container.getId(), "snapshot");
+        if (props.isEmpty())
             return;
 
         bean.setSchemaName(props.get("schemaName"));
@@ -2052,7 +2052,7 @@ public class StudyManager
 
     private void saveSnapshotInfo(SnapshotBean bean)
     {
-        Map<String,String> props = PropertyManager.getWritableProperties(0, bean.getContainer().getId(), "snapshot", true);
+        Map<String,String> props = PropertyManager.getWritableProperties(bean.getContainer().getId(), "snapshot", true);
         props.clear(); //Don't want to track old tables
         props.put("lastSnapshotDate", ConvertUtils.convert(bean.getLastSnapshotDate()));
         props.put("schemaName", bean.getSchemaName());
@@ -2777,16 +2777,12 @@ public class StudyManager
 
     private  Map<String, String> getFormatStrings(Container c)
     {
-        Map<String, String> formatStrings = PropertyManager.getProperties(c.getId(), STUDY_FORMAT_STRINGS, false);
-        if (formatStrings == null)
-            return Collections.emptyMap();
-
-        return formatStrings;
+        return PropertyManager.getProperties(c.getId(), STUDY_FORMAT_STRINGS);
     }
 
     public void setDefaultDateFormatString(Container c, String format)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(0, c.getId(), STUDY_FORMAT_STRINGS, true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), STUDY_FORMAT_STRINGS, true);
 
         if (!StringUtils.isEmpty(format))
             props.put(DATE_FORMAT_STRING, format);
@@ -2797,7 +2793,7 @@ public class StudyManager
 
     public void setDefaultNumberFormatString(Container c, String format)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(0, c.getId(), STUDY_FORMAT_STRINGS, true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), STUDY_FORMAT_STRINGS, true);
         if (!StringUtils.isEmpty(format))
             props.put(NUMBER_FORMAT_STRING, format);
         else if (props.containsKey(NUMBER_FORMAT_STRING))

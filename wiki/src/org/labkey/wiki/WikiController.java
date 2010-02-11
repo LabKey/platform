@@ -2607,8 +2607,8 @@ public class WikiController extends SpringActionController
             }
 
             //get the user's editor preference
-            Map<String,String> properties = PropertyManager.getProperties(getUser().getUserId(),
-                    getContainer().getId(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+            Map<String, String> properties = PropertyManager.getProperties(getUser().getUserId(),
+                    getContainer().getId(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
             String defFormat = properties.get(SaveWikiAction.PROP_DEFAULT_FORMAT);
             if((null == form.getFormat() || form.getFormat().length() == 0)
@@ -3148,9 +3148,9 @@ public class WikiController extends SpringActionController
             response.put("container", containerProps);
 
             //include the user's TOC displayed preference
-            Map<String,String> properties = PropertyManager.getProperties(
+            Map<String, String> properties = PropertyManager.getProperties(
                     getViewContext().getUser().getUserId(), getViewContext().getContainer().getId(),
-                    SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
+                    SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
 
             response.put("displayToc", "true".equals(properties.get(SetTocPreferenceAction.PROP_TOC_DISPLAYED)));
 

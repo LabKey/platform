@@ -18,9 +18,7 @@ package org.labkey.pipeline.api;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
-import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -206,7 +204,7 @@ public class PipelineManager
 
     static void setPipelineProperty(Container container, String name, String value) throws SQLException
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(0, container.getId(), "pipelineRoots", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container.getId(), "pipelineRoots", true);
         if (value == null)
             props.remove(name);
         else
@@ -216,11 +214,8 @@ public class PipelineManager
 
     static String getPipelineProperty(Container container, String name) throws SQLException
     {
-        Map props = PropertyManager.getProperties(container.getId(), "pipelineRoots", false);
-        if (props != null)
-            return (String) props.get(name);
-        else
-            return null;
+        Map<String, String> props = PropertyManager.getProperties(container.getId(), "pipelineRoots");
+        return props.get(name);
     }
 
     public static void sendNotificationEmail(PipelineStatusFileImpl statusFile, Container c)

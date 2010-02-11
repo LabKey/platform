@@ -15,6 +15,7 @@
  */
 package org.labkey.core.login;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.PasswordExpiration;
 
@@ -56,9 +57,9 @@ public class DbLoginManager
         PropertyManager.saveProperties(map);
     }
 
-    private static Map<String, String> getProperties()
+    private static @NotNull Map<String, String> getProperties()
     {
-        return PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
+        return PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
     }
 
     private static String getProperty(Key key, Enum defaultValue)

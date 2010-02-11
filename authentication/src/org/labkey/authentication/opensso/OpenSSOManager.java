@@ -91,7 +91,7 @@ public class OpenSSOManager
     {
         Properties fileProps = loadProps("clientDefault.properties");
         // dbProps will be null if settings have never been saved
-        Map<String, String> dbProps = PropertyManager.getProperties(OPENSSO_PROPERTIES_KEY, false);
+        Map<String, String> dbProps = PropertyManager.getProperties(OPENSSO_PROPERTIES_KEY);
         // Map we will return -- sort by key
         Map<String, String> map = new TreeMap<String, String>();
         Set<Object> keys = fileProps.keySet();
@@ -99,7 +99,7 @@ public class OpenSSOManager
         for (Object o : keys)
         {
             String key = (String)o;
-            String value = (null != dbProps ? dbProps.get(key) : null);
+            String value = dbProps.get(key);
             if (null != value)
                 map.put(key, value);
             else
@@ -132,10 +132,8 @@ public class OpenSSOManager
 
     private static void loadReferrerPrefix()
     {
-        Map<String, String> map = PropertyManager.getProperties(OPENSSO_SETTINGS, false);
-
-        if (null != map)
-            _referrerPrefix = map.get(REFERRER_PREFIX);
+        Map<String, String> map = PropertyManager.getProperties(OPENSSO_SETTINGS);
+        _referrerPrefix = map.get(REFERRER_PREFIX);
     }
 
     public void saveReferrerPrefix(String prefix)

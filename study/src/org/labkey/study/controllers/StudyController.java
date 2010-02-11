@@ -5530,10 +5530,10 @@ public class StudyController extends BaseStudyController
     public static String getDefaultView(ViewContext context, int datasetId)
     {
         Map<String, String> viewMap = PropertyManager.getProperties(context.getUser().getUserId(),
-                context.getContainer().getId(), DEFAULT_DATASET_VIEW, false);
+                context.getContainer().getId(), DEFAULT_DATASET_VIEW);
 
         final String key = Integer.toString(datasetId);
-        if (viewMap != null && viewMap.containsKey(key))
+        if (viewMap.containsKey(key))
         {
             return viewMap.get(key);
         }

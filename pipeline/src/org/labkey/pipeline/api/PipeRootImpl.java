@@ -148,16 +148,14 @@ public class PipeRootImpl implements PipeRoot
     {
         try
         {
-            String path = null;
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, false);
-            if (props != null)
-            {
-                path = props.get(PipelineServiceImpl.PREF_LASTPATH);
-            }
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES);
+            String path = props.get(PipelineServiceImpl.PREF_LASTPATH);
+
             if (path == null && container.getParent() == _container)
             {
                 path = PageFlowUtil.encode(container.getName());
             }
+
             if (path != null)
             {
                 URI uriCheck = URIUtil.resolve(_uri, _uri, path);

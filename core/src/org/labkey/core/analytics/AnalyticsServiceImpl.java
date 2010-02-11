@@ -58,11 +58,7 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
 
     private String getProperty(AnalyticsProperty property)
     {
-        Map<String, String> properties = PropertyManager.getProperties(PROP_CATEGORY, false);
-        if (properties == null)
-        {
-            return null;
-        }
+        Map<String, String> properties = PropertyManager.getProperties(PROP_CATEGORY);
         return properties.get(property.toString());
     }
 

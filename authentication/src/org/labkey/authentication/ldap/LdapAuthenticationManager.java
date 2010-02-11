@@ -147,7 +147,7 @@ public class LdapAuthenticationManager
 
     private static Map<String, String> getProperties()
     {
-        return PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY, true);
+        return PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
     }
 
     private static String getProperty(Key key, String defaultValue)

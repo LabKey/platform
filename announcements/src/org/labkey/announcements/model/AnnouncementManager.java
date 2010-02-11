@@ -558,14 +558,14 @@ public class AnnouncementManager
 
     public static void saveDefaultEmailOption(Container c, int emailOption) throws SQLException
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(0, c.getId(), "defaultEmailSettings", true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), "defaultEmailSettings", true);
         props.put("defaultEmailOption", Integer.toString(emailOption));
         PropertyManager.saveProperties(props);
     }
 
     public static int getDefaultEmailOption(Container c) throws SQLException
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(0, c.getId(), "defaultEmailSettings", false);
+        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), "defaultEmailSettings", false);
         if (props != null && props.size() > 0)
         {
             String option = props.get("defaultEmailOption");
@@ -612,7 +612,7 @@ public class AnnouncementManager
 
     public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws SQLException, IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(0, c.getId(), MESSAGE_BOARD_SETTINGS, true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), MESSAGE_BOARD_SETTINGS, true);
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());
         props.put("secure", String.valueOf(settings.isSecure()));
@@ -630,7 +630,7 @@ public class AnnouncementManager
 
     public static DiscussionService.Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = PropertyManager.getProperties(0, c.getId(), MESSAGE_BOARD_SETTINGS, false);
+        Map<String, String> props = PropertyManager.getProperties(0, c.getId(), MESSAGE_BOARD_SETTINGS);
         DiscussionService.Settings settings = new DiscussionService.Settings();
         settings.setDefaults();
         BeanUtils.populate(settings, props);
@@ -974,9 +974,6 @@ public class AnnouncementManager
                     attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
                 }
-
-                if (!list.isEmpty())
-                    Logger.getLogger(AnnouncementManager.class).info("Indexed " + list.size() + " message attachments");
             }
         }
         catch (SQLException x)

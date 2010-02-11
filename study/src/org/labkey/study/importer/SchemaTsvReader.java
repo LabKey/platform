@@ -85,10 +85,8 @@ public class SchemaTsvReader implements SchemaReader
                 }
                 else
                 {
-                    isHidden = false;
-                    String hiddenValue = (String)props.get("hidden");
-                    if ("true".equalsIgnoreCase(hiddenValue))
-                        isHidden = true;
+                    Boolean hidden = (Boolean) props.get("hidden");
+                    isHidden = (null != hidden && hidden.booleanValue());
                 }
 
                 DataSetImportInfo info = _datasetInfoMap.get(typeId);

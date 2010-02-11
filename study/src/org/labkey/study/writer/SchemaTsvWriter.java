@@ -66,11 +66,11 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
 
     public void writeDatasetSchema(User user, List<DataSetDefinition> definitions, PrintWriter writer)
     {
-        writer.println(TYPE_NAME_COLUMN + "\t" + LABEL_COLUMN + "\t" + TYPE_ID_COLUMN + "\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tkey\tautokey");
+        writer.println(TYPE_NAME_COLUMN + "\t" + LABEL_COLUMN + "\t" + TYPE_ID_COLUMN + "\thidden\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tmvenabled\tkey\tautokey");
 
         for (DataSetDefinition def : definitions)
         {
-            String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t';
+            String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t' + (def.isShowByDefault() ? "\t" : "true\t");
 
             TableInfo tinfo = def.getTableInfo(user);
             String visitDatePropertyName = def.getVisitDatePropertyName();
@@ -97,6 +97,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
                     writer.print(DataSetDefinition.getVisitDateURI());
 
                 writer.print("\t");
+                writer.print(col.isMvEnabled() ? "true\t" : "\t");
 
                 if (col.getName().equals(def.getKeyPropertyName()))
                 {
@@ -106,7 +107,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
                         writer.print("\ttrue");
                 }
 
-                // TODO: mvEnabled?  category?  hidden?  lookup properties (folder path, schema, query)?
+                // TODO: Category?
 
                 writer.println();
             }

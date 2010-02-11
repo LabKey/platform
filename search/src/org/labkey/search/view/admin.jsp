@@ -44,26 +44,33 @@ if (null == ss)
 }
 else
 {
-    if (user.isAdministrator())
-    {
-        WebPartView.startTitleFrame(out,"Admin Actions");
-        %><p><form method="POST" action="admin.view"><%
-        if (ss.isRunning())
-        {
-            %>The document crawler is running.<br>
-            <input type="hidden" name="pause" value="1">
-            <%=PageFlowUtil.generateSubmitButton("Pause")%><%
-        }
-        else
-        {
-            %>The document crawler is paused.<br>
-            <input type="hidden" name="start" value="1">
-            <%=PageFlowUtil.generateSubmitButton("Start")%><%
-        }
-        %></form></p><%
-    }
+    WebPartView.startTitleFrame(out,"Admin Actions");
 
-    %><p><form method="POST" action="admin.view">
+    %><p><form method="POST" action="admin.view"><%
+    if (ss.isRunning())
+    {
+        %>The document crawler is running.<br><%
+
+        if (user.isAdministrator())
+        {
+        %>
+        <input type="hidden" name="pause" value="1">
+        <%=PageFlowUtil.generateSubmitButton("Pause")%><%
+        }
+    }
+    else
+    {
+        %>The document crawler is paused.<br><%
+
+        if (user.isAdministrator())
+        {
+        %>
+        <input type="hidden" name="start" value="1">
+        <%=PageFlowUtil.generateSubmitButton("Start")%><%
+        }
+    }
+    %></form></p>
+    <p><form method="POST" action="admin.view">
         Delete the search index<br>
         You shouldn't need to do this, but if something goes wrong, you can give it a try.  Note that re-indexing can be very expensive.<br>
         <input type="hidden" name="delete" value="1">

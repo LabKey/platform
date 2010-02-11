@@ -295,7 +295,7 @@ public class IssueManager
 
     public static CustomColumnConfiguration getCustomColumnConfiguration(Container c)
     {
-        Map<String, String> map = PropertyManager.getProperties(c.getId(), CUSTOM_COLUMN_CONFIGURATION, false);
+        Map<String, String> map = PropertyManager.getProperties(c.getId(), CUSTOM_COLUMN_CONFIGURATION);
 
         return new CustomColumnConfiguration(map);
     }
@@ -303,7 +303,7 @@ public class IssueManager
 
     public static void saveCustomColumnConfiguration(Container c, CustomColumnConfiguration ccc) throws SQLException
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(0, c.getId(), CUSTOM_COLUMN_CONFIGURATION, true);
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(c.getId(), CUSTOM_COLUMN_CONFIGURATION, true);
 
         map.clear();
         map.putAll(ccc.getColumnCaptions());
@@ -320,11 +320,8 @@ public class IssueManager
         private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>(5);
         private Set<String> _pickListColumns = new HashSet<String>(2);
 
-        public CustomColumnConfiguration(Map<String, ?> map)
+        public CustomColumnConfiguration(@NotNull Map<String, ?> map)
         {
-            if (null == map)
-                return;
-
             setColumnCaptions(map);
             setPickListColumns(map);
         }
@@ -510,11 +507,11 @@ public class IssueManager
 
     public static EntryTypeNames getEntryTypeNames(Container container)
     {
-        Map<String,String> props = PropertyManager.getProperties(container.getId(), CAT_ENTRY_TYPE_NAMES, false);
+        Map<String,String> props = PropertyManager.getProperties(container.getId(), CAT_ENTRY_TYPE_NAMES);
         EntryTypeNames ret = new EntryTypeNames();
-        if(null != props && props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
+        if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
             ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR));
-        if(null != props && props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
+        if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
             ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL));
         return ret;
     }
@@ -530,7 +527,8 @@ public class IssueManager
 
     public static @Nullable Group getAssignedToGroup(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c.getId(), CAT_ASSIGNED_TO_LIST, true);
+        Map<String, String> props = PropertyManager.getProperties(c.getId(), CAT_ASSIGNED_TO_LIST);
+
         String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
 
         if (null == groupId)
@@ -650,17 +648,15 @@ public class IssueManager
 
     public static HString getRequiredIssueFields(Container container)
     {
-        String requiredFields = IssuesController.DEFAULT_REQUIRED_FIELDS;
-        Map<String, String> map = PropertyManager.getProperties(container.getId(), ISSUES_PREF_MAP, false);
-        if (map != null)
-            requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
-        return new HString(requiredFields,true);
+        Map<String, String> map = PropertyManager.getProperties(container.getId(), ISSUES_PREF_MAP);
+        String requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
+        return new HString(null == requiredFields ? IssuesController.DEFAULT_REQUIRED_FIELDS : requiredFields, true);
     }
 
 
     public static void setRequiredIssueFields(Container container, String requiredFields) throws SQLException
     {
-        Map<String, String> map = PropertyManager.getWritableProperties(0, container.getId(), ISSUES_PREF_MAP, true);
+        Map<String, String> map = PropertyManager.getWritableProperties(container.getId(), ISSUES_PREF_MAP, true);
 
         if (!StringUtils.isEmpty(requiredFields))
             requiredFields = requiredFields.toLowerCase();

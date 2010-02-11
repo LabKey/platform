@@ -44,7 +44,7 @@ public class QueryUpgradeCode implements UpgradeCode
         {
             Map<String, String> map = UserManager.getUserPreferences(false);
 
-            if (map != null && map.containsKey(R_EXE))
+            if (map.containsKey(R_EXE))
             {
                 ExternalScriptEngineDefinition def = LabkeyScriptEngineManager.createDefinition();
 

@@ -838,8 +838,8 @@ public class SampleManager
     public RepositorySettings getRepositorySettings(Container container) throws SQLException
     {
         Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRepositorySettings", false);
-        if (settingsMap == null)
+                container.getId(), "SpecimenRepositorySettings");
+        if (settingsMap.isEmpty())
         {
             RepositorySettings defaults = RepositorySettings.getDefaultSettings(container);
             saveRepositorySettings(container, defaults);
@@ -861,8 +861,8 @@ public class SampleManager
     public RequestNotificationSettings getRequestNotificationSettings(Container container) throws SQLException
     {
         Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestNotifications", false);
-        if (settingsMap == null || settingsMap.get("ReplyTo") == null)
+                container.getId(), "SpecimenRequestNotifications");
+        if (settingsMap.get("ReplyTo") == null)
         {
             RequestNotificationSettings defaults = RequestNotificationSettings.getDefaultSettings(container);
             saveRequestNotificationSettings(container, defaults);
@@ -884,8 +884,8 @@ public class SampleManager
     public DisplaySettings getDisplaySettings(Container container) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestDisplay", false);
-        if (settingsMap == null || settingsMap.get("OneAvailableVial") == null)
+                container.getId(), "SpecimenRequestDisplay");
+        if (settingsMap.get("OneAvailableVial") == null)
         {
             DisplaySettings defaults = DisplaySettings.getDefaultSettings();
             saveDisplaySettings(container, defaults);
@@ -906,8 +906,8 @@ public class SampleManager
     public StatusSettings getStatusSettings(Container container) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestStatus", false);
-        if (settingsMap == null || settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null)
+                container.getId(), "SpecimenRequestStatus");
+        if (settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null)
         {
             StatusSettings defaults = StatusSettings.getDefaultSettings();
             saveStatusSettings(container, defaults);

@@ -64,19 +64,17 @@ public class PipelineEmailPreferences
 
     public void startNotificationTasks()
     {
-        Map<String, String> taskMap = PropertyManager.getProperties(0, ContainerManager.getRoot().getId(), PIPELINE_NOTIFICATION_TASKS, false);
-        if (taskMap != null)
+        Map<String, String> taskMap = PropertyManager.getProperties(0, ContainerManager.getRoot().getId(), PIPELINE_NOTIFICATION_TASKS);
+
+        for (Map.Entry<String, String> entry : taskMap.entrySet())
         {
-            for (Map.Entry<String, String> entry : taskMap.entrySet())
+            Container c = ContainerManager.getForId(entry.getValue());
+            if (c != null)
             {
-                Container c = ContainerManager.getForId(entry.getValue());
-                if (c != null)
-                {
-                    if (isSuccessKey(entry.getKey()))
-                        setNotificationTask(getSuccessNotificationInterval(c), getSuccessNotifyStart(c), c, true);
-                    else
-                        setNotificationTask(getFailureNotificationInterval(c), getFailureNotifyStart(c), c, false);
-                }
+                if (isSuccessKey(entry.getKey()))
+                    setNotificationTask(getSuccessNotificationInterval(c), getSuccessNotifyStart(c), c, true);
+                else
+                    setNotificationTask(getFailureNotificationInterval(c), getFailureNotifyStart(c), c, false);
             }
         }
     }
@@ -316,7 +314,7 @@ public class PipelineEmailPreferences
 
     private synchronized void addNotifyTask(Container c, int intervalInHours, boolean isSuccessNotification, Date nextTime)
     {
-        Map<String, String> taskMap = PropertyManager.getWritableProperties(0, ContainerManager.getRoot().getId(), PIPELINE_NOTIFICATION_TASKS, true);
+        Map<String, String> taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
         final String key = getKey(c, isSuccessNotification);
 
         taskMap.put(key, c.getId());
@@ -347,7 +345,7 @@ public class PipelineEmailPreferences
     
     private synchronized void removeNotifyTask(Container c, boolean isSuccessNotification)
     {
-        Map<String, String> taskMap = PropertyManager.getWritableProperties(0, ContainerManager.getRoot().getId(), PIPELINE_NOTIFICATION_TASKS, true);
+        Map<String, String> taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
         final String key = getKey(c, isSuccessNotification);
 
         if (taskMap.containsKey(key))

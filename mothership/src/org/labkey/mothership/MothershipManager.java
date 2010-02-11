@@ -16,6 +16,7 @@
 
 package org.labkey.mothership;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 
@@ -337,18 +338,18 @@ public class MothershipManager
 
     private PropertyManager.PropertyMap getWritableProperties(Container c)
     {
-        return PropertyManager.getWritableProperties(0, c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
+        return PropertyManager.getWritableProperties(c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
     }
 
-    private Map getProperties(Container c)
+    private @NotNull Map<String, String> getProperties(Container c)
     {
-        return PropertyManager.getProperties(0, c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
+        return PropertyManager.getProperties(c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY);
     }
 
     public int getCurrentRevision(Container c)
     {
-        Map props = getProperties(c);
-        String rev = (String)props.get(CURRENT_REVISION_PROP);
+        Map<String, String> props = getProperties(c);
+        String rev = props.get(CURRENT_REVISION_PROP);
         if (rev == null)
         {
             return 0;
@@ -358,8 +359,8 @@ public class MothershipManager
 
     private String getStringProperty(Container c, String name)
     {
-        Map props = getProperties(c);
-        String message = (String)props.get(name);
+        Map<String, String> props = getProperties(c);
+        String message = props.get(name);
         if (message == null)
         {
             return "";

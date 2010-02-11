@@ -15,23 +15,22 @@
  */
 package org.labkey.pipeline;
 
-import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurableResource;
-import org.labkey.api.webdav.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.data.Container;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.webdav.FileSystemResource;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 
-import java.util.Set;
-import java.util.List;
-import java.util.Collections;
 import java.net.URI;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.

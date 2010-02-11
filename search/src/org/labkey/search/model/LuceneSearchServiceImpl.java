@@ -32,6 +32,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.pdfbox.exceptions.WrappedIOException;
+import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -234,9 +235,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
-            if (null != r.getProperties().get(PROPERTY.navtrail.toString()))
-                doc.add(new Field(FIELD_NAMES.navtrail.toString(), (String)r.getProperties().get(PROPERTY.navtrail.toString()), Field.Store.YES, Field.Index.NO));
-            String resourceId = (String)r.getProperties().get(PROPERTY.securableResourceId.toString());
+            if (null != props.get(PROPERTY.navtrail.toString()))
+                doc.add(new Field(FIELD_NAMES.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString()), Field.Store.YES, Field.Index.NO));
+            String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
             if (null != resourceId && !resourceId.equals(r.getContainerId()))
                 doc.add(new Field(FIELD_NAMES.resourceId.toString(), resourceId, Field.Store.YES, Field.Index.NO));
             // Index the remaining properties, but don't store
@@ -284,10 +285,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // Malformed XML document -- CONSIDER: run XML tidy on the document and retry
                 (e.getMessage().startsWith("TIKA-237: Illegal SAXException")) ||
                 // Malformed zip file
-                (cause instanceof java.util.zip.ZipException)
+                (cause instanceof java.util.zip.ZipException) ||
+                // Encrypted office document
+                (cause instanceof EncryptedDocumentException)
             )
             {
-                _log.warn("Couldn't index file \"" + getNameToLog(r) + "\" due to: " + e.getMessage());                
+                _log.warn("Can't index file \"" + getNameToLog(r) + "\" due to: " + e.getMessage());                
             }
             else
             {

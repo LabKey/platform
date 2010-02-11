@@ -391,9 +391,10 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, false);
-            if (props != null)
-                return props.get(getLastProtocolKey(factory));
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES);
+            String lastProtocolkey = props.get(getLastProtocolKey(factory));
+            if (lastProtocolkey != null)
+                return lastProtocolkey;
         }
         catch (Exception e)
         {
@@ -418,8 +419,9 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, false);
-            if (props != null)
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES);
+            String lastSequenceDbSetting = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
+            if (lastSequenceDbSetting != null)
                 return props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
         }
         catch (Exception e)
@@ -447,12 +449,11 @@ public class PipelineServiceImpl extends PipelineService
     {
         try
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, false);
-            if (props != null)
-            {
-                String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES);
+            String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
+
+            if (null != dbPaths)
                 return parseArray(dbPaths);
-            }
         }
         catch (Exception e)
         {
