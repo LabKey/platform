@@ -504,7 +504,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
+            IndexSearcher s = _searcher;
             _searcher = null;
+            if (null != s)
+                s.close();
             getIndexSearcher();
         }
         catch (IOException x)
