@@ -2824,3 +2824,28 @@ body {
 }
 
 .labkey-transparent-panel .x-panel-body {background-color: transparent;}
+
+.labkey-export-tab-contents
+{
+}
+
+.labkey-export-tab-contents td
+{
+    padding: 1px;
+}
+
+.labkey-export-tab-layout td
+{
+    padding: 1px;
+}
+
+td.labkey-export-tab-options
+{
+    vertical-align: top;
+}
+
+td.labkey-export-tab-buttons
+{
+    vertical-align: bottom;
+    text-align: right;
+}
