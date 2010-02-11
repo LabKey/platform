@@ -2970,7 +2970,7 @@ public class AdminController extends SpringActionController
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
-                if (svc != null && svc.getSiteDefaultRoot() == null)
+                if (AppProps.getInstance().getFileSystemRoot() == null)
                 {
                     ActionURL url = new AdminUrlsImpl().getFilesSiteSettingsURL(true);
                     vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));

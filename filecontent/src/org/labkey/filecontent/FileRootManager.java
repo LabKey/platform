@@ -123,4 +123,9 @@ public class FileRootManager
             throw new RuntimeSQLException(x);
         }
     }
+
+    public void clearCache()
+    {
+        DbCache.clear(getTinfoFileRoots());
+    }
 }

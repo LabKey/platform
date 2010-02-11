@@ -237,6 +237,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
             props.setFileSystemRoot(root.getAbsolutePath());
             props.save();
+
+            FileRootManager.get().clearCache();
         }
         catch (SQLException e)
         {

@@ -66,9 +66,29 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
         if (webRoot != null)
         {
             File f = new File(webRoot);
-            if (!f.exists() || !f.isDirectory())
+
+            try {
+                boolean isNewRoot = isNewRoot(_svc.getSiteDefaultRoot(), f);
+
+                if (!f.exists() && !f.isDirectory())
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "File Root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                }
+                else if (isNewRoot)
+                {
+                    // if this is a new root, make sure it is empty
+                    String[] children = f.list();
+
+                    if (children != null && children.length > 0)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "File Root '" + webRoot + "' is not empty and cannot be used because files under the current site-level root must be moved to this new root. " +
+                                "Either specify a different, non-existing root, or remove the files under the specified directory.");
+                    }
+                }
+            }
+            catch (IOException e)
             {
-                errors.reject(SpringActionController.ERROR_MSG, "Web root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                errors.reject(SpringActionController.ERROR_MSG, "The specified file root is invalid.");
             }
         }
         else
@@ -90,20 +110,59 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
         return new JspView<FileSettingsForm>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);
     }
 
+    private boolean isNewRoot(File prev, File current) throws IOException
+    {
+        String prevRoot = prev != null ? prev.getCanonicalPath() : "";
+        return !current.getCanonicalPath().equals(prevRoot);
+    }
+
     public boolean handlePost(FileSettingsForm form, BindException errors) throws Exception
     {
+        File prev = _svc.getSiteDefaultRoot();
         _svc.setSiteDefaultRoot(new File(form.getRootPath()));
 
         if (form.isUpgrade())
         {
             upgradeExistingFileSets();
         }
+        else if (isNewRoot(prev, _svc.getSiteDefaultRoot()))
+        {
+            moveSiteRoot(prev, _svc.getSiteDefaultRoot());
+        }
         return true;
+    }
+
+    private void moveSiteRoot(File prev, File dest)
+    {
+        try {
+            _log.info("moving " + prev.getPath() + " to " + dest.getPath());
+            boolean doRename = true;
+
+            // attempt to rename, if that fails (try the more expensive copy)
+            if (dest.exists())
+                doRename = dest.delete();
+
+            if (doRename && !prev.renameTo(dest))
+            {
+                File parentDir = dest.getParentFile();
+
+                if (parentDir != null && parentDir.exists())
+                {
+                    FileUtil.copyBranch(prev, parentDir);
+                    FileUtil.deleteDir(prev);
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            _log.error("error occured moving the site-level file root", e);
+        }
+
     }
 
     private void upgradeExistingFileSets()
     {
-        _log.info("Upgrading existing file sets to @files");
+        _log.info("Upgrading existing file roots to @files");
 
         Map<String, Container> fileSets = new HashMap<String, Container>();
         findExistingFileSets(ContainerManager.getRoot(), fileSets);
@@ -123,21 +182,27 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
                             // don't move server managed folders
                             if (allowCopy(child, entry.getValue()))
                             {
-                                if (!dest.exists())
-                                    dest.mkdirs();
-
                                 _log.info("moving " + child.getPath() + " to " + dest.getPath());
-                                FileUtil.copyBranch(child, dest);
-                                if (child.isDirectory())
-                                    FileUtil.deleteDir(child);
-                                else
-                                    child.delete();
+
+                                // attempt a rename, if that fails try the more expensive file by file copy
+                                File newChild = new File(dest, child.getName());
+                                if (!child.renameTo(newChild))
+                                {
+                                    if (!dest.exists())
+                                        dest.mkdirs();
+
+                                    FileUtil.copyBranch(child, dest);
+                                    if (child.isDirectory())
+                                        FileUtil.deleteDir(child);
+                                    else
+                                        child.delete();
+                                }
                             }
                         }
                     }
                     catch (IOException e)
                     {
-                        _log.error("error occured upgrading existing file sets", e);
+                        _log.error("error occured upgrading existing file roots", e);
                     }
                 }
             }
