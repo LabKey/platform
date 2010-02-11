@@ -146,7 +146,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (startsWith(this.path,"/"))
             this.path = this.path.substring(1);
 
-        this.enableImportData(true);
+        this.enableImportData(false);
         //this.actions.importData.disable();
 
         if (!this.actionConfig)
@@ -283,6 +283,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 }
             }
         }
+        if (this.pipelineActions.length)
+            this.enableImportData(true);
 
         if (e.updateSelection)
         {
@@ -579,7 +581,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         // make sure we have processed the current selection
         this.ensureSelection();
-
         for (var i=0; i < this.pipelineActions.length; i++)
         {
             var pa = this.pipelineActions[i];
