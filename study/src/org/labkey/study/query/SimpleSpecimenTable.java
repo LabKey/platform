@@ -31,7 +31,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 
         getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
 
-        addSpecimenVisitColumn(TimepointType.RELATIVE_DATE);
+        addSpecimenVisitColumn(TimepointType.DATE);
 
         addSpecimenTypeColumns();
     }

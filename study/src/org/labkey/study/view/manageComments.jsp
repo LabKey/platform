@@ -52,7 +52,7 @@
             ptidDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
     }
 
-    if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+    if (study.getTimepointType() != TimepointType.CONTINUOUS)
     {
         if (participantVisitCommentDataSetId != null && participantVisitCommentDataSetId.intValue() >= 0)
         {
@@ -131,10 +131,10 @@
         WebPartView.endTitleFrame(out);
         WebPartView.startTitleFrame(out, subjectNounSingle + "/Visit Comment Assignment");
 
-        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+        if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
     %>
-    <span class="labkey-disabled">Not available in absolute date-based studies.</span>
+    <span class="labkey-disabled">Not available in continuous date-based studies.</span>
     <%
         }
         else

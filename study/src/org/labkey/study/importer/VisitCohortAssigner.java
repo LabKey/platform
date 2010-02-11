@@ -51,9 +51,9 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
         if (null != visitsXml)
         {
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
             {
-                ctx.getLogger().warn("Can't import visits for an absolute date based study.");
+                ctx.getLogger().warn("Can't import visits for an continuous date based study.");
                 return;
             }
             

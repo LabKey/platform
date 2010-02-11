@@ -605,7 +605,7 @@ public class StudyController extends BaseStudyController
             VisitImpl visit = null;
             if (_visitId != 0)
             {
-                assert study.getTimepointType() != TimepointType.ABSOLUTE_DATE;
+                assert study.getTimepointType() != TimepointType.CONTINUOUS;
                 visit = StudyManager.getInstance().getVisitForRowId(getStudy(), _visitId);
                 if (null == visit)
                     HttpView.throwNotFound();
@@ -1060,7 +1060,7 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.getTimepointType() == TimepointType.RELATIVE_DATE && null == target.getStartDate())
+            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
 
             target.setLabel(StringUtils.trimToNull(target.getLabel()));
@@ -1181,7 +1181,7 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.getTimepointType() == TimepointType.RELATIVE_DATE && null == target.getStartDate())
+            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
 
             target.setLabel(StringUtils.trimToNull(target.getLabel()));
@@ -1238,7 +1238,7 @@ public class StudyController extends BaseStudyController
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.getTimepointType() == TimepointType.RELATIVE_DATE && null == target.getStartDate())
+            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
         }
 
@@ -1250,8 +1250,8 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
 
             return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
@@ -1278,8 +1278,8 @@ public class StudyController extends BaseStudyController
                 ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
                 return action.getView(form, errors);
             }
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous date study</span>");
 
             return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
@@ -1292,8 +1292,8 @@ public class StudyController extends BaseStudyController
 
         private String _jspName() throws ServletException
         {
-            assert getStudy().getTimepointType() != TimepointType.ABSOLUTE_DATE;
-            return getStudy().getTimepointType() == TimepointType.RELATIVE_DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
+            assert getStudy().getTimepointType() != TimepointType.CONTINUOUS;
+            return getStudy().getTimepointType() == TimepointType.DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
         }
     }
 
@@ -1470,8 +1470,8 @@ public class StudyController extends BaseStudyController
             try
             {
                 StudyImpl study = getStudy();
-                if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                    errors.reject(null, "Unsupported operation for absolute date study");
+                if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                    errors.reject(null, "Unsupported operation for continuous date study");
                 
                 target.validate(errors, study);
                 if(errors.getErrorCount() > 0)
@@ -1499,8 +1499,8 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous date study</span>");
 
             int id = NumberUtils.toInt((String)getViewContext().get("id"));
             _v = StudyManager.getInstance().getVisitForRowId(study, id);
@@ -1610,8 +1610,8 @@ public class StudyController extends BaseStudyController
         {
             int visitId = form.getId();
             Study study = getStudy();
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
 
             VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (visit != null)
@@ -1637,8 +1637,8 @@ public class StudyController extends BaseStudyController
         {
             int visitId = form.getId();
             StudyImpl study = getStudy();
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
 
             _visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (null == _visit)
@@ -1663,8 +1663,8 @@ public class StudyController extends BaseStudyController
             try
             {
                 StudyImpl study = getStudy();
-                if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                    errors.reject(null, "Unsupported operation for absolute date study");
+                if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                    errors.reject(null, "Unsupported operation for continuous date study");
 
                 target.validate(errors, study);
                 if(errors.getErrorCount() > 0)
@@ -1691,8 +1691,8 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
 
             ModelAndView view = new StudyJspView<Object>(study, getVisitJsp("create"), null, errors);
             view.addObject("form", form);
@@ -2689,8 +2689,8 @@ public class StudyController extends BaseStudyController
 
         public void validate(Errors errors, Study study)
         {
-            if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-                errors.reject(null, "Unsupported operation for absolute date study");
+            if (study.getTimepointType() == TimepointType.CONTINUOUS)
+                errors.reject(null, "Unsupported operation for continuous date study");
 
             HttpServletRequest request = getRequest();
 
@@ -4792,7 +4792,7 @@ public class StudyController extends BaseStudyController
             studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME));
 
             StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
-            study.setTimepointType(TimepointType.RELATIVE_DATE);
+            study.setTimepointType(TimepointType.DATE);
             study.setStartDate(startDate);
             study = StudyManager.getInstance().createStudy(getUser(), study);
 
@@ -5576,8 +5576,8 @@ public class StudyController extends BaseStudyController
 
     private String getVisitJsp(String prefix) throws ServletException
     {
-        assert getStudy().getTimepointType() != TimepointType.ABSOLUTE_DATE;
-        return prefix + (getStudy().getTimepointType() == TimepointType.RELATIVE_DATE ? "Timepoint" : "Visit") + ".jsp";
+        assert getStudy().getTimepointType() != TimepointType.CONTINUOUS;
+        return prefix + (getStudy().getTimepointType() == TimepointType.DATE ? "Timepoint" : "Visit") + ".jsp";
     }
 
     public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig

@@ -317,7 +317,7 @@ public class StudyDesignManager
         GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
 
         StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
-        study.setTimepointType(TimepointType.RELATIVE_DATE);
+        study.setTimepointType(TimepointType.DATE);
         study.setStartDate(startDate);
         study.setSubjectNounSingular(def.getAnimalSpecies());
         study.setSubjectNounPlural(def.getAnimalSpecies() + "s");

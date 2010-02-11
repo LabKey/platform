@@ -377,7 +377,7 @@ public class DesignerController extends SpringActionController
                     inputWorkbook = null;
             }
 
-            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.RELATIVE_DATE, "Subject Id");
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.DATE, "Subject Id");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())

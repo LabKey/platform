@@ -108,7 +108,7 @@ public abstract class BaseStudyTable extends FilteredTable
     {
         ColumnInfo visitColumn = null;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-        if (timepointType == TimepointType.RELATIVE_DATE)
+        if (timepointType == TimepointType.DATE || timepointType == TimepointType.CONTINUOUS)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
@@ -121,26 +121,19 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             visitColumn = addColumn(new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue")));
         }
-        else
-        {
-            // No Timepoint or Visit column
-        }
 
-        if (visitColumn != null)
+        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
         {
-            LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+            public TableInfo getLookupTableInfo()
             {
-                public TableInfo getLookupTableInfo()
-                {
-                    VisitTable visitTable = new VisitTable(_schema);
-                    visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                    return visitTable;
-                }
-            };
-            visitFK.setJoinOnContainer(true);
-            visitColumn.setFk(visitFK);
-            visitColumn.setKeyField(true);
-        }
+                VisitTable visitTable = new VisitTable(_schema);
+                visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                return visitTable;
+            }
+        };
+        visitFK.setJoinOnContainer(true);
+        visitColumn.setFk(visitFK);
+        visitColumn.setKeyField(true);
     }
 
     private static class DateVisitColumn extends ExprColumn

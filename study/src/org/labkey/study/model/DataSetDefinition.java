@@ -176,9 +176,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             case VISIT:
                 return DEFAULT_VISIT_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
-            case ABSOLUTE_DATE:
+            case CONTINUOUS:
                 return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
-            case RELATIVE_DATE:
+            case DATE:
             default:
                 return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
         }
@@ -194,7 +194,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         TimepointType timepointType = getStudy().getTimepointType();
         Set<String> fieldNames =
                 timepointType == TimepointType.VISIT ? DEFAULT_VISIT_FIELDS :
-                timepointType == TimepointType.ABSOLUTE_DATE ? DEFAULT_ABSOLUTE_DATE_FIELDS:
+                timepointType == TimepointType.CONTINUOUS ? DEFAULT_ABSOLUTE_DATE_FIELDS:
                 DEFAULT_RELATIVE_DATE_FIELDS;
 
         return Collections.unmodifiableSet(fieldNames);
@@ -749,7 +749,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 columns.add(visitDateCol);
 
                 ColumnInfo dayColumn = null;
-                if (study.getTimepointType() == TimepointType.RELATIVE_DATE)
+                if (study.getTimepointType() == TimepointType.DATE)
                 {
                     dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
                     dayColumn.setUserEditable(false);

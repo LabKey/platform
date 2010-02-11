@@ -334,7 +334,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 lcaseSet.add(key.toLowerCase());
             assert lcaseSet.contains("participantid") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
             assert timepointType != TimepointType.VISIT || lcaseSet.contains("sequencenum") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
-            assert timepointType != TimepointType.RELATIVE_DATE || lcaseSet.contains("date") : "Publishable assay results must include participantid, date, and sourcelsid columns.";
+            assert timepointType != TimepointType.DATE || lcaseSet.contains("date") : "Publishable assay results must include participantid, date, and sourcelsid columns.";
             //assert lcaseSet.contains("sourcelsid") : "Publishable assay results must include participantid, sequencenum, and sourcelsid columns.";
         }
         return true;

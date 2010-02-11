@@ -71,7 +71,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
     public SimpleSpecimenImporter()
     {
-        this(TimepointType.RELATIVE_DATE, "Subject Id");
+        this(TimepointType.DATE, "Subject Id");
     }
 
     public SimpleSpecimenImporter(TimepointType timepointType, String participantIdLabel)

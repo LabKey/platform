@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.*;
+import org.labkey.api.study.StudyImportException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
 import org.labkey.study.controllers.StudyController;
@@ -67,7 +68,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetTimepointType())
                     studyForm.setTimepointType(TimepointType.valueOf(studyXml.getTimepointType().toString()));
                 else if (studyXml.isSetDateBased())
-                    studyForm.setTimepointType(studyXml.getDateBased() ? TimepointType.RELATIVE_DATE : TimepointType.VISIT);
+                    studyForm.setTimepointType(studyXml.getDateBased() ? TimepointType.DATE : TimepointType.VISIT);
 
                 if (studyXml.isSetStartDate())
                     studyForm.setStartDate(studyXml.getStartDate().getTime());
@@ -91,16 +92,20 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 job.info("Reloading study from " + support.getOriginalFilename());
                 job.info("Loading top-level study properties");
 
+                TimepointType timepointType = study.getTimepointType();
+                if (studyXml.isSetTimepointType())
+                    timepointType = TimepointType.valueOf(studyXml.getTimepointType().toString());
+                else if (studyXml.isSetDateBased())
+                    timepointType = studyXml.getDateBased() ? TimepointType.DATE : TimepointType.VISIT;
+
+                if (study.getTimepointType() != timepointType)
+                    throw new StudyImportException("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
+
                 // TODO: Change these props and save only if values have changed
                 study = study.createMutable();
 
                 if (studyXml.isSetLabel())
                     study.setLabel(studyXml.getLabel());
-
-                if (studyXml.isSetTimepointType())
-                    study.setTimepointType(TimepointType.valueOf(studyXml.getTimepointType().toString()));
-                else if (studyXml.isSetDateBased())
-                    study.setTimepointType(studyXml.getDateBased() ? TimepointType.RELATIVE_DATE : TimepointType.VISIT);
 
                 if (studyXml.isSetStartDate())
                     study.setStartDate(studyXml.getStartDate().getTime());

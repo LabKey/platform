@@ -324,7 +324,7 @@ public class StudyManager
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
-        if (oldStudy.getTimepointType() == TimepointType.RELATIVE_DATE && !study.getStartDate().equals(oldStartDate))
+        if (oldStudy.getTimepointType() == TimepointType.DATE && !study.getStartDate().equals(oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);
@@ -587,7 +587,7 @@ public class StudyManager
 
     public VisitImpl[] getVisits(Study study, CohortImpl cohort, User user, Visit.Order order)
     {
-        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+        if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return EMPTY_VISIT_ARRAY;
 
         try
@@ -2414,7 +2414,7 @@ public class StudyManager
 
                 if (!def.isDemographicData())
                 {
-                    error.append(study.getTimepointType() != TimepointType.RELATIVE_DATE ? "/Date" : "/Visit");
+                    error.append(study.getTimepointType() != TimepointType.DATE ? "/Date" : "/Visit");
 
                     if (def.getKeyPropertyName() != null)
                         error.append("/").append(def.getKeyPropertyName()).append(" Triple.  ");
@@ -2753,9 +2753,9 @@ public class StudyManager
         {
             case VISIT:
                 return new SequenceVisitManager(study);
-            case ABSOLUTE_DATE:
+            case CONTINUOUS:
                 return new AbsoluteDateVisitManager(study);
-            case RELATIVE_DATE:
+            case DATE:
             default:
                 return new RelativeDateVisitManager(study);
         }
@@ -3196,8 +3196,8 @@ public class StudyManager
     public WebPartView<ParticipantViewConfig> getParticipantView(Container container, ParticipantViewConfig config, BindException errors)
     {
         StudyImpl study = getStudy(container);
-        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
-            return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "studyData.jsp", config, errors);
+        if (study.getTimepointType() == TimepointType.CONTINUOUS)
+            return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "participantData.jsp", config, errors);
         else
             return new BaseStudyController.StudyJspView<ParticipantViewConfig>(study, "participantAll.jsp", config, errors);
     }

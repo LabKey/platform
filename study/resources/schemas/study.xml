@@ -30,7 +30,7 @@
         <ns:description>A unique string ID for each study.</ns:description>
       </ns:column>
       <ns:column columnName="TimepointType">
-        <ns:description>Whether the study uses visits or relative or absolute dates.  TimepointType may be VISIT, RELATIVE_DATE, or ABSOLUTE_DATE.</ns:description>
+        <ns:description>Whether the study uses visits, relative dates, or continuous dates.  TimepointType may be VISIT, DATE, or CONTINUOUS.</ns:description>
       </ns:column>
       <ns:column columnName="StartDate">
         <ns:description>The start date of each study.  Note that subjects can also have start dates.</ns:description>

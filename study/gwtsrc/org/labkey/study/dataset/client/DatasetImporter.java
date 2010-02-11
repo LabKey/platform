@@ -50,7 +50,7 @@ public class DatasetImporter implements EntryPoint
         columnsToMap.add(PropertyUtil.getServerProperty("subjectColumnName"));
 
         String timepointTypeString = PropertyUtil.getServerProperty("timepointType");
-        if ("RELATIVE_DATE".equals(timepointTypeString))
+        if ("DATE".equals(timepointTypeString))
             columnsToMap.add("Visit Date");
         else if ("VISIT".equals(timepointTypeString))
             columnsToMap.add("Sequence Num");

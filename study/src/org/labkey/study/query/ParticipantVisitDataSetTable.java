@@ -46,7 +46,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         super(StudySchema.getInstance().getSchema());
         StudyManager studyManager = StudyManager.getInstance();
         _study = studyManager.getStudy(schema.getContainer());
-        assert _study.getTimepointType() != TimepointType.ABSOLUTE_DATE;
+        assert _study.getTimepointType() != TimepointType.CONTINUOUS;
         _colParticipantId = colParticipantId;
         _dataset = dsd;
         _schema = schema;
@@ -193,7 +193,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 {
                     DataSetTable dsTable = new DataSetTable(_schema, _dataset);
                     dsTable.hideParticipantLookups();
-                    if (_study.getTimepointType() == TimepointType.RELATIVE_DATE)
+                    if (_study.getTimepointType() == TimepointType.DATE)
                     {
                         SQLFragment sequenceSelector = new SQLFragment("SequenceNum = (select pv.sequencenum\n" +
                             "from \n" +
@@ -217,7 +217,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                     }
                     else
                     {
-                        // XXX: absolute date based studies?
+                        // XXX: continuous date based studies?
                     }
                     return dsTable;
                 }

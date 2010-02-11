@@ -80,9 +80,9 @@ public class VisitMapImporter
 
     public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, StudyImportException
     {
-        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+        if (study.getTimepointType() == TimepointType.CONTINUOUS)
         {
-            logger.warn("Can't import visits for an absolute date based study.");
+            logger.warn("Can't import visits for an continuous date based study.");
             return true;
         }
         if (content == null)

@@ -265,7 +265,7 @@ public abstract class BaseStudyController extends SpringActionController
 
                 if (visit != null)
                     label.append(", ").append(visit.getDisplayString());
-                else if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+                else if (study.getTimepointType() != TimepointType.CONTINUOUS)
                     label.append(", All Visits");
 
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).

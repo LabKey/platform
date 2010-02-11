@@ -15,25 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.query.QueryForm" %>
-<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="org.labkey.api.util.IdentifierString" %>
-<%@ page import="org.labkey.api.view.DataView" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.data.DisplayColumn" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.query.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    ViewContext context = getViewContext();
+    final ViewContext context = getViewContext();
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
@@ -44,20 +41,26 @@
 
     QueryView queryView = new QueryView(form, null)
     {
-        public DataView createDataView()
+        protected void setupDataView(DataView view)
         {
-            DataView result = super.createDataView();
-            result.getRenderContext().setBaseSort(new Sort("-Date"));
+            view.getRenderContext().setBaseSort(new Sort("-Date"));
 
-            SimpleFilter filter = (SimpleFilter)result.getRenderContext().getBaseFilter();
+            SimpleFilter filter = (SimpleFilter)view.getRenderContext().getBaseFilter();
             if (filter == null)
                 filter = new SimpleFilter();
             if (bean.getParticipantId() != null)
                 filter.addCondition("ParticipantID", bean.getParticipantId());
-//            if (bean.getDatasetId() > 0)
-//                filter.addCondition("Dataset", bean.getDatasetId());
-            result.getRenderContext().setBaseFilter(filter);
-            return result;
+            view.getRenderContext().setBaseFilter(filter);
+
+            super.setupDataView(view);
+        }
+
+        protected ActionURL urlFor(QueryAction action)
+        {
+            ActionURL url = super.urlFor(action);
+            if (bean.getParticipantId() != null)
+                url.addFilter("query", FieldKey.fromParts("ParticipantId"), CompareType.EQUAL, bean.getParticipantId());
+            return url;
         }
     };
     queryView.setShadeAlternatingRows(true);
@@ -66,7 +69,7 @@
     queryView.getSettings().setAllowChooseQuery(false);
     queryView.getSettings().setAllowChooseView(true);
     queryView.getSettings().setAllowCustomizeView(false);
-    
+
     include(queryView, out);
 %>
 

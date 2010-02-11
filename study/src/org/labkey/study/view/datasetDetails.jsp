@@ -74,7 +74,7 @@
     exportSchemaURL.addParameter("datasetId", dataset.getDataSetId());
 
     %><br><%=PageFlowUtil.generateButton("View Dataset Data", viewDatasetURL)%><%
-    if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+    if (study.getTimepointType() != TimepointType.CONTINUOUS)
     {
     %>&nbsp;
     <%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL)%><%
@@ -111,7 +111,7 @@ if (!pipelineSet)
     me.include(typeSummary, out);
     %>
 </td>
-<% if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE) { %>
+<% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
 <td><img src="<%=contextPath%>/_.gif" height=1 width=10 alt=""></td>
 <td valign=top>
 <% WebPartView.startTitleFrame(out, "Visit Map", null, null, null); %>

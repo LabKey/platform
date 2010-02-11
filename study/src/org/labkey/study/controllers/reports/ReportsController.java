@@ -2112,7 +2112,7 @@ public class ReportsController extends BaseStudyController
                 if (dataSet != null)
                 {
                     String label = dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId();
-                    if (0 == visitRowId && study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+                    if (0 == visitRowId && study.getTimepointType() != TimepointType.CONTINUOUS)
                         label += " (All Visits)";
                     ActionURL datasetUrl = url.clone();
                     datasetUrl.deleteParameter(VisitImpl.VISITKEY);

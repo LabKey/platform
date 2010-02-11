@@ -4433,7 +4433,7 @@ public class SpecimenController extends BaseStudyController
                     errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
             }
 
-            if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+            if (study.getTimepointType() != TimepointType.CONTINUOUS)
             {
                 if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
                 {
@@ -4462,7 +4462,7 @@ public class SpecimenController extends BaseStudyController
                 form.setParticipantCommentDataSetId(study.getParticipantCommentDataSetId());
                 form.setParticipantCommentProperty(study.getParticipantCommentProperty());
 
-                if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+                if (study.getTimepointType() != TimepointType.CONTINUOUS)
                 {
                     form.setParticipantVisitCommentDataSetId(study.getParticipantVisitCommentDataSetId());
                     form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
@@ -4483,7 +4483,7 @@ public class SpecimenController extends BaseStudyController
             study.setParticipantCommentProperty(form.getParticipantCommentProperty());
 
             // participant/visit comment dataset
-            if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE)
+            if (study.getTimepointType() != TimepointType.CONTINUOUS)
             {
                 study.setParticipantVisitCommentDataSetId(form.getParticipantVisitCommentDataSetId());
                 study.setParticipantVisitCommentProperty(form.getParticipantVisitCommentProperty());

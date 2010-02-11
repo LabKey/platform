@@ -105,7 +105,7 @@
         <td>This study defines <%= getDataSets().length %> Datasets</td>
         <td><%= textLink("Manage Datasets", "manageTypes.view") %></td>
     </tr>
-    <% if (study.getTimepointType() != TimepointType.ABSOLUTE_DATE) { %>
+    <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
     <tr>
         <th align="left"><%= visitLabel %></th>
         <td>This study defines <%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%></td>

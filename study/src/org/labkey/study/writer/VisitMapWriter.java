@@ -37,7 +37,7 @@ class VisitMapWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, StudyImportException
     {
-        if (study.getTimepointType() == TimepointType.ABSOLUTE_DATE)
+        if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return;
 
         if (ctx.useOldFormats())

@@ -72,7 +72,7 @@ if (null == getStudy())
     <tr><td valign="top">This study defines
 <ul>
     <li><%= getDataSets().length %> Datasets (Forms and Assays) &nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
-    <% if (timepointType != TimepointType.ABSOLUTE_DATE) { %>
+    <% if (timepointType != TimepointType.CONTINUOUS) { %>
     <li><%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>&nbsp;<%=timepointType == TimepointType.VISIT && isAdmin && getVisits(Visit.Order.DISPLAY).length < 0 ?
                         textLink("Import Visit Map", url.setAction(StudyController.UploadVisitMapAction.class)) : "" %><%=
                         isAdmin ? textLink("Manage " + visitLabel, url.setAction(StudyController.ManageVisitsAction.class)) : "" %></li>
