@@ -149,7 +149,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String type = r.getContentType();
 
             // Skip images for now
-            if (type.startsWith("image/"))
+            if (isImage(type) || isZip(type))
             {
                 return null;
             }
@@ -666,5 +666,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         map.putAll(super.getStats());
         return map;
+    }
+
+
+    private boolean isImage(String contentType)
+    {
+        return contentType.startsWith("image/");
+    }
+    
+
+    private boolean isZip(String contentType)
+    {
+        if (contentType.startsWith("application/x-"))
+        {
+            String type = contentType.substring("application/x-".length());
+            if (type.contains("zip"))
+                return true;
+            if (type.contains("tar"))
+                return true;
+            if (type.contains("compress"))
+                return true;
+            if (type.contains("archive"))
+                return true;
+        }
+        return false;
     }
 }
