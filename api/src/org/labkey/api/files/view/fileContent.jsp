@@ -150,7 +150,7 @@ function renderBrowser(rootPath, dir, renderTo)
 */
     });
 
-    fileBrowser.height = 300;
+    fileBrowser.height = 350;
 /*
     fileBrowser.on("doubleclick", function(record){
         var contentType = record.data.contentType || "attachment";
