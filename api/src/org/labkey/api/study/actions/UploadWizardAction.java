@@ -234,6 +234,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         insertView.getDataRegion().setFormActionUrl(new ActionURL(UploadWizardAction.class, getContainer()));
 
         ButtonBar bbar = new ButtonBar();
+        bbar.setStyle(ButtonBar.Style.separateButtons);
         addNextButton(bbar);
         addResetButton(runForm, insertView, bbar);
         addCancelButton(bbar);
@@ -327,7 +328,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         ButtonBar bbar = new ButtonBar();
-
+        bbar.setStyle(ButtonBar.Style.separateButtons);
         addRunActionButtons(newRunForm, insertView, bbar);
         addCancelButton(bbar);
 
