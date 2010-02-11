@@ -221,13 +221,13 @@ public class AuthenticationManager
 
     private static Map<String, String> getAuthLogoURLs()
     {
-        return PropertyManager.getProperties(AUTH_LOGO_URL_SET, true);
+        return PropertyManager.getProperties(AUTH_LOGO_URL_SET);
     }
 
 
     private static void loadProperties()
     {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_SET, true);
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_SET);
         String activeProviderProp = props.get(PROVIDERS_KEY);
         List<String> activeNames = Arrays.asList(null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
         List<AuthenticationProvider> activeProviders = new ArrayList<AuthenticationProvider>(_allProviders.size());

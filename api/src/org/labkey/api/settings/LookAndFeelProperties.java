@@ -78,7 +78,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     {
         try
         {
-            return getProperties(_c).size() > 0;
+            return !getProperties(_c).isEmpty();
         }
         catch (SQLException e)
         {

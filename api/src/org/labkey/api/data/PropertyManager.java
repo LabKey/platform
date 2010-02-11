@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -85,7 +86,6 @@ public class PropertyManager
     private static Logger _log = Logger.getLogger(PropertyManager.class);
     private static PropertySchema prop = PropertySchema.getInstance();
 
-    private static final boolean _cacheProperties = true;
     private static final String _cachePrefix = PropertyManager.class.getName() + "/";
 
 
@@ -99,9 +99,42 @@ public class PropertyManager
     }
 
     // For global system properties that get attached to the root container
-    public static Map<String, String> getProperties(String category, boolean create)
+    // Returns an empty map if property set hasn't been created
+    public static @NotNull Map<String, String> getProperties(String category)
     {
-        return getProperties(0, ContainerManager.getRoot().getId(), category, create);
+        return getProperties(0, ContainerManager.getRoot().getId(), category);
+    }
+
+
+    public static @NotNull Map<String, String> getProperties(String objectId, String category)
+    {
+        return getProperties(0, objectId, category);
+    }
+
+
+    public static @NotNull Map<String, String> getProperties(int userId, String objectId, String category)
+    {
+        Object[] parameters = new Object[]{userId, objectId, category};
+        TableInfo tinfo;
+        String cacheKey;
+
+        // Pull property set from the cache
+        tinfo = prop.getTableInfoProperties();
+        cacheKey = _cacheKey(parameters);
+        Object o = DbCache.get(tinfo, cacheKey);
+
+        if (o instanceof PropertyMap)
+            return (PropertyMap) o;
+
+        // Not found in the cache,
+        PropertyMap m = getWritableProperties(userId, objectId, category, false);
+
+        if (null == m)
+            m = NULL_MAP;
+
+        DbCache.put(tinfo, cacheKey, m);
+
+        return NULL_MAP == m ? m : Collections.unmodifiableMap(m);
     }
 
 
@@ -112,21 +145,17 @@ public class PropertyManager
     }
 
 
-    public static Map<String, String> getProperties(String objectId, String category, boolean create)
-    {
-        return getProperties(0, objectId, category, create);
-    }
-
-
     public static PropertyMap getWritableProperties(String objectId, String category, boolean create)
     {
         return getWritableProperties(0, objectId, category, create);
     }
 
+
     public static PropertyMap getWritableProperties(int userId, String objectId, String category, boolean create)
     {
         synchronized (objectId.intern())
         {
+            // TODO: Should transact set/properties
             try
             {
                 String setSelectName = prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
@@ -191,38 +220,6 @@ public class PropertyManager
         }
     };
 
-    public static Map<String, String> getProperties(int userId, String objectId, String category, boolean create)
-    {
-        Object[] parameters = new Object[]{userId, objectId, category};
-        TableInfo tinfo;
-        String cacheKey;
-
-        if (_cacheProperties)
-        {
-            tinfo = prop.getTableInfoProperties();
-            cacheKey = _cacheKey(parameters);
-            Object o = DbCache.get(tinfo, cacheKey);
-            if (o instanceof PropertyMap)
-            {
-                if (o == NULL_MAP && !create)
-                    return null;
-                else return (PropertyMap) o;
-            }
-        }
-
-        PropertyMap m = getWritableProperties(userId, objectId, category, create);
-
-        if (_cacheProperties)
-        {
-            if (m != null)
-                DbCache.put(tinfo, cacheKey, m);
-            else
-                DbCache.put(tinfo, cacheKey, NULL_MAP);
-        }
-
-        return (m != null && !create) ? Collections.unmodifiableMap(m) : m;
-        //return m == null ? null : Collections.unmodifiableMap(m);
-    }
 
     public static void purgeObjectProperties(String objectId) throws SQLException
     {
@@ -500,10 +497,10 @@ public class PropertyManager
                 testProperties(user, child, "junit2");
                 //Properties should get cleaned up when container is deleted.
                 ContainerManager.delete(child, null);
-                Map m = PropertyManager.getProperties(user.getUserId(), objectId, "junit", false);
-                assertNull(m);
-                m = PropertyManager.getProperties(user.getUserId(), objectId, "junit2", false);
-                assertNull(m);
+                Map m = PropertyManager.getProperties(user.getUserId(), objectId, "junit");
+                assertTrue(m == NULL_MAP);
+                m = PropertyManager.getProperties(user.getUserId(), objectId, "junit2");
+                assertTrue(m == NULL_MAP);
             }
             catch (SQLException x)
             {
@@ -548,7 +545,7 @@ public class PropertyManager
 
                 Long count = Table.executeSingleton(getSchema(), sql, new Object[]{}, Long.class);
 
-                assertEquals(0, count.intValue());
+                assertEquals(count.intValue() + " orphaned property sets detected", 0, count.intValue());
             }
             catch (SQLException x)
             {

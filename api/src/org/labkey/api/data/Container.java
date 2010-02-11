@@ -548,10 +548,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             if (_defaultModule == null)
             {
-                Map props = PropertyManager.getProperties(getId(), "defaultModules", false);
-                String defaultModuleName = null;
-                if (props != null)
-                    defaultModuleName = (String) props.get("name");
+                Map props = PropertyManager.getProperties(getId(), "defaultModules");
+                String defaultModuleName = (String) props.get("name");
 
                 boolean initRequired = false;
                 if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
@@ -603,7 +601,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         oldType.unconfigureContainer(this);
         folderType.configureContainer(this);
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(0, getId(), "folderType", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "folderType", true);
         props.put("name", folderType.getName());
         PropertyManager.saveProperties(props);
 
@@ -615,8 +613,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null != _folderType)
             return _folderType;
 
-        Map props = PropertyManager.getProperties(0, getId(), "folderType", true);
-        String name = props == null ? null : (String) props.get("name");
+        Map props = PropertyManager.getProperties(0, getId(), "folderType");
+        String name = (String) props.get("name");
         if (null != name)
         {
             _folderType = ModuleLoader.getInstance().getFolderType(name);
@@ -641,7 +639,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (module == null)
             return;
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(0, getId(), "defaultModules", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "defaultModules", true);
         props.put("name", module.getName());
 
         PropertyManager.saveProperties(props);
@@ -653,7 +651,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public void setActiveModules(Set<Module> modules) throws SQLException
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(0, getId(), "activeModules", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
@@ -712,7 +710,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                return _activeModules;
             }
 
-            Map<String,String> props = PropertyManager.getProperties(getId(), "activeModules", false);
+            Map<String, String> props = PropertyManager.getProperties(getId(), "activeModules");
             //get set of all modules
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             //get active web parts for this container
@@ -721,10 +719,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
             removeForward(activeWebparts);
 
             //store active modules
-            if (props == null && init)
+            if (props.isEmpty() && init)
             {
                 //initialize properties cache
-                PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(0, getId(), "activeModules", true);
+                PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(getId(), "activeModules", true);
                 props = propsWritable;
 
                 if (isProject())

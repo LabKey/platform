@@ -108,25 +108,22 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     public static List<ExternalScriptEngineDefinition> getEngineDefinitions()
     {
         List<ExternalScriptEngineDefinition> engines = new ArrayList<ExternalScriptEngineDefinition>();
-        Map<String, String> map = PropertyManager.getProperties(ContainerManager.getRoot().getId(), SCRIPT_ENGINE_MAP, false);
+        Map<String, String> map = PropertyManager.getProperties(SCRIPT_ENGINE_MAP);
 
-        if (map != null)
+        for (String name : map.values())
         {
-            for (String name : map.values())
+            Map<String, String> def = PropertyManager.getProperties(name);
+
+            try
             {
-                Map<String, String> def = PropertyManager.getProperties(ContainerManager.getRoot().getId(), name, false);
-                if (def != null)
-                {
-                    try {
-                        engines.add(createDefinition(def));
-                    }
-                    catch (Exception e)
-                    {
-                        deleteDefinition(name);
-                    }
-                }
+                engines.add(createDefinition(def));
+            }
+            catch (Exception e)
+            {
+                deleteDefinition(name);
             }
         }
+
         return engines;
     }
 
@@ -149,13 +146,13 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     {
         if (key != null)
         {
-            Map<String, String> engines = PropertyManager.getWritableProperties(0, ContainerManager.getRoot().getId(), SCRIPT_ENGINE_MAP, false);
+            Map<String, String> engines = PropertyManager.getWritableProperties(SCRIPT_ENGINE_MAP, false);
             if (engines != null && engines.containsKey(key))
             {
                 engines.remove(key);
                 PropertyManager.saveProperties(engines);
 
-                Map<String, String> definition = PropertyManager.getWritableProperties(0, ContainerManager.getRoot().getId(), key, false);
+                Map<String, String> definition = PropertyManager.getWritableProperties(key, false);
                 if (definition != null)
                 {
                     definition.clear();
@@ -169,7 +166,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     {
         if (def instanceof EngineDefinition)
         {
-            if (((EngineDefinition)def).isExternal())
+            if (def.isExternal())
             {
                 String key = ((EngineDefinition)def).getKey();
 
@@ -239,7 +236,8 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
         if (key != null && name != null && exePath != null && extensionStr != null)
         {
-            try {
+            try
+            {
                 String[] extensions = StringUtils.split(extensionStr, ',');
                 EngineDefinition def = new EngineDefinition();
 
@@ -259,19 +257,18 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
     private static String getProp(String prop, String mapName)
     {
-        Map<String, String> map = PropertyManager.getProperties(ContainerManager.getRoot().getId(), mapName, false);
-        if (map != null)
-        {
-            String ret = map.get(prop);
-            if (!StringUtils.isEmpty(ret))
-                return ret;
-        }
-        return null;
+        Map<String, String> map = PropertyManager.getProperties(mapName);
+        String ret = map.get(prop);
+
+        if (!StringUtils.isEmpty(ret))
+            return ret;
+        else
+            return null;
     }
 
     private static void setProp(String prop, String value, String mapName)
     {
-        Map<String, String> map = PropertyManager.getWritableProperties(0, ContainerManager.getRoot().getId(), mapName, true);
+        Map<String, String> map = PropertyManager.getWritableProperties(mapName, true);
 
         map.put(prop, value);
         PropertyManager.saveProperties(map);

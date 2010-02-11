@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.collections.Cache;
@@ -713,9 +714,7 @@ public class UserManager
     public static String getRequiredUserFields()
     {
         Map<String, String> map = getUserPreferences(false);
-        if (map != null)
-            return (String)map.get(USER_REQUIRED_FIELDS);
-        return null;
+        return map.get(USER_REQUIRED_FIELDS);
     }
 
     public static void setRequiredUserFields(String requiredFields) throws SQLException
@@ -725,12 +724,12 @@ public class UserManager
         PropertyManager.saveProperties(map);
     }
 
-    public static Map<String, String> getUserPreferences(boolean writable)
+    public static @NotNull Map<String, String> getUserPreferences(boolean writable)
     {
         if (writable)
-            return PropertyManager.getWritableProperties(0, ContainerManager.getRoot().getId(), USER_PREF_MAP, true);
+            return PropertyManager.getWritableProperties(USER_PREF_MAP, true);
         else
-            return PropertyManager.getProperties(ContainerManager.getRoot().getId(), USER_PREF_MAP, false);
+            return PropertyManager.getProperties(USER_PREF_MAP);
     }
 
     // Get completions from list of all site users

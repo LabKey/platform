@@ -89,33 +89,32 @@ public class EmailTemplateService
         Map<String, EmailTemplate> templates = new HashMap<String, EmailTemplate>();
         Map<String, String> map = UserManager.getUserPreferences(false);
 
-        if (map != null)
+        for (Map.Entry<String, String> entry : map.entrySet())
         {
-            for (Map.Entry<String, String> entry : map.entrySet())
+            final String key = entry.getKey();
+
+            if (key.startsWith(EMAIL_TEMPLATE_PROPERTY))
             {
-                final String key = entry.getKey();
-                if (key.startsWith(EMAIL_TEMPLATE_PROPERTY))
+                String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
+
+                if (parts.length == 3)
                 {
-                    String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
-                    if (parts.length == 3)
-                    {
-                        EmailTemplate et = templates.get(parts[1]);
-                        try {
-                            if (et == null)
-                            {
-                                et = createTemplate(parts[1]);
-                                templates.put(parts[1], et);
-                            }
-                            if (MESSAGE_SUBJECT_PART.equals(parts[2]))
-                                et.setSubject(entry.getValue());
-                            else
-                                et.setBody(entry.getValue());
-                        }
-                        // do nothing, we don't necessarily care about stale template properties
-                        catch (Exception e)
+                    EmailTemplate et = templates.get(parts[1]);
+                    try {
+                        if (et == null)
                         {
-                            //_log.error("Unable to create a template for: " + parts[1], e);
+                            et = createTemplate(parts[1]);
+                            templates.put(parts[1], et);
                         }
+                        if (MESSAGE_SUBJECT_PART.equals(parts[2]))
+                            et.setSubject(entry.getValue());
+                        else
+                            et.setBody(entry.getValue());
+                    }
+                    // do nothing, we don't necessarily care about stale template properties
+                    catch (Exception e)
+                    {
+                        //_log.error("Unable to create a template for: " + parts[1], e);
                     }
                 }
             }
@@ -128,6 +127,7 @@ public class EmailTemplateService
                 templates.put(et.getName(), createTemplate(et));
             }
         }
+
         return templates;
     }
 

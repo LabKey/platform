@@ -198,14 +198,13 @@ public class PreferenceService
 
     private Map<String, String> getPreferences(User user)
     {
-        Map<String, String> m = PropertyManager.getProperties(user.getUserId(), ContainerManager.getRoot().getId(), PREFERENCE_SERVICE_MAP_KEY, false);
-        return null == m ? Collections.<String, String>emptyMap() : m;
+        return PropertyManager.getProperties(user.getUserId(), ContainerManager.getRoot().getId(), PREFERENCE_SERVICE_MAP_KEY);
     }
 
     private Map<String, String> getPreferences(String containerId, boolean writable)
     {
         if (writable)
-            return PropertyManager.getWritableProperties(0, containerId, PREFERENCE_SERVICE_MAP_KEY, true);
+            return PropertyManager.getWritableProperties(containerId, PREFERENCE_SERVICE_MAP_KEY, true);
         else
             return getReadOnlyPreferences(containerId);
     }
@@ -225,8 +224,8 @@ public class PreferenceService
             if (_nullPreferenceMap.containsKey(containerId))
                 return null;
         }
-        Map<String, String> prefs = PropertyManager.getProperties(0, containerId, PREFERENCE_SERVICE_MAP_KEY, false);
-        if (prefs == null)
+        Map<String, String> prefs = PropertyManager.getProperties(0, containerId, PREFERENCE_SERVICE_MAP_KEY);
+        if (prefs.isEmpty())
         {
             synchronized (containerId.intern())
             {

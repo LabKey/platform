@@ -2538,9 +2538,8 @@ public class SecurityManager
     
     public static boolean shouldNewSubfoldersInheritPermissions(Container project)
     {
-        Map<String, String> props = PropertyManager.getProperties(project.getId(), SUBFOLDERS_INHERIT_PERMISSIONS_NAME, false);
-        boolean subfoldersInherit = props != null && "true".equals(props.get(SUBFOLDERS_INHERIT_PERMISSIONS_NAME));
-        return subfoldersInherit;
+        Map<String, String> props = PropertyManager.getProperties(project.getId(), SUBFOLDERS_INHERIT_PERMISSIONS_NAME);
+        return "true".equals(props.get(SUBFOLDERS_INHERIT_PERMISSIONS_NAME));
     }
 
     public static void setNewSubfoldersInheritPermissions(Container project, User user, boolean inherit)

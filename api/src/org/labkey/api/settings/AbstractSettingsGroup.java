@@ -94,6 +94,6 @@ public abstract class AbstractSettingsGroup
 
     public Map<String, String> getProperties(Container c) throws SQLException
     {
-        return PropertyManager.getProperties(AppProps.SITE_CONFIG_USER_ID, c.getId(), getGroupName(), true);
+        return PropertyManager.getProperties(AppProps.SITE_CONFIG_USER_ID, c.getId(), getGroupName());
     }
 }
