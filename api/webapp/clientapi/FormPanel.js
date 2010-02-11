@@ -477,13 +477,54 @@ LABKEY.ext.Checkbox = Ext.extend(Ext.form.Checkbox,
 });
 
 
+// Ext.DatePicker does not render properly on WebKit (safari,chrome)
+LABKEY.ext.DatePicker = Ext.extend(Ext.DatePicker,
+{
+    update : function(date, forceRefresh)
+    {
+        Ext.DatePicker.prototype.update.call(this, date, forceRefresh);
+        if (Ext.isSafari || ('isWebKit' in Ext && Ext.isWebKit))
+        {
+            var w = 180;
+            this.el.setWidth(w + this.el.getBorderWidth("lr"));
+            Ext.fly(this.el.dom.firstChild).setWidth(w);
+        }
+    }
+});
+
+
 LABKEY.ext.DateField = Ext.extend(Ext.form.DateField,
 {
     onTriggerClick : function()
     {
-        LABKEY.ext.DateField.superclass.onTriggerClick.call(this);
-        if (this.menu)
-            this.menu.el.addClass('extContainer');
+        if(this.disabled)
+        {
+            return;
+        }
+        if(this.menu == null)
+        {
+            // apply the extContainer class before show
+            this.menu = new Ext.menu.DateMenu({cls:'extContainer'});
+            // 'subclass' the datepicker
+            this.menu.picker.update = LABKEY.ext.DatePicker.prototype.update;
+        }
+        Ext.apply(this.menu.picker,  {
+            minDate : this.minValue,
+            maxDate : this.maxValue,
+            disabledDatesRE : this.ddMatch,
+            disabledDatesText : this.disabledDatesText,
+            disabledDays : this.disabledDays,
+            disabledDaysText : this.disabledDaysText,
+            format : this.format,
+            showToday : this.showToday,
+            minText : String.format(this.minText, this.formatDate(this.minValue)),
+            maxText : String.format(this.maxText, this.formatDate(this.maxValue))
+        });
+        this.menu.on(Ext.apply({}, this.menuListeners, {
+            scope:this
+        }));
+        this.menu.picker.setValue(this.getValue() || new Date());
+        this.menu.show(this.el, "tl-bl?");
     }
 });
 
@@ -520,6 +561,7 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
 
 
 
+Ext.reg('datepicker', LABKEY.ext.DatePicker);
 Ext.reg('checkbox', LABKEY.ext.Checkbox);
 Ext.reg('combo', LABKEY.ext.ComboBox);
 Ext.reg('datefield',  LABKEY.ext.DateField);
