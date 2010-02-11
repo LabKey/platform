@@ -187,9 +187,9 @@ LABKEY.PipelineActionConfig.prototype = {
                 items.push({id: link.id,  actionId: this.id, text: link.label, handler: handler, scope: scope, tooltip: link.label});
         }
 
-        // an action with a menu button
         if (items.length > 1)
         {
+            // an action with a menu button
             return new Ext.Action({text: this.label, tooltip: this.label, menu: {
                     cls: 'extContainer',
                     items: items
@@ -197,7 +197,15 @@ LABKEY.PipelineActionConfig.prototype = {
             });
         }
         else if (items.length == 1)
-            return new Ext.Action(items[0]);
+        {
+            // a single button, use the parent action label with the child action as a tooltip
+            var config = {};
+            
+            Ext.apply(config, items[0]);
+            config.text = this.label;
+
+            return new Ext.Action(config);
+        }
 
         return null;
     }

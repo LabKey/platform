@@ -3064,7 +3064,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 // assume that we've got a WebdavFileSystem
                 form.errorReader = this.fileSystem.transferReader;
                 form.doAction(new Ext.form.Action.Submit(form, options));
-                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:id}]});
+                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:options.url + path}]});
                 Ext.getBody().dom.style.cursor = "wait";
             }
         }

@@ -102,7 +102,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                           'customize web part button <img src="' + LABKEY.contextPath + '/_images/partedit.gif"/>'
                 }],
                 buttons: [{
-                    text: 'Okay',
+                    text: 'Close',
                     id: 'btn_cancel',
                     handler: function(){win.close();}
                 }]

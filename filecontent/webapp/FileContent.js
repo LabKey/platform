@@ -523,7 +523,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             {
                 if (selections.length == 0)
                 {
-                    Ext.Msg.alert("Rename Views", "There are no views selected");
+                    Ext.Msg.alert("Execute Action", "There are no files selected");
                     return false;
                 }
 
@@ -664,7 +664,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (!this.importDataEnabled)
         {
             items.push({
-                html: 'This button has been disabled from the admin panel and is only visible to Administrators.',
+                html: 'This dialog has been disabled from the admin panel and is only visible to Administrators.',
                 bodyStyle: 'padding:10px;',
                 border: false});
         }
