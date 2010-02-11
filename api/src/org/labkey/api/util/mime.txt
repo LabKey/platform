@@ -14,6 +14,9 @@ hta	application/hta
 unv	application/i-deas
 inf	application/inf
 acx	application/internet-property-stream
+jar application/x-java-archive
+ear application/x-java-archive
+war application/x-java-archive
 js	text/javascript
 hqx	application/mac-binhex40
 mrc	application/marc
@@ -400,6 +403,7 @@ jpg	image/jpeg
 jut	image/jutvision
 nap	image/naplps
 naplps	image/naplps
+nef	image/nef
 pic	image/pict
 png	image/png
 x-png	image/png
