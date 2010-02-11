@@ -23,9 +23,13 @@
 JspView<ActionURL> me = (JspView<ActionURL>) HttpView.currentView();
 %>
 
-<table cellspacing="4">
+<table class="labkey-export-tab-contents">
     <tr>
-        <td valign="center">Export as tab-separated values</td>
-        <td><%= PageFlowUtil.generateButton("Export to Text", me.getModelBean()) %></td>
+        <td class="labkey-export-tab-options">
+            <table class="labkey-export-tab-layout"><tr><td>Export as tab-separated values</td></tr></table>
+            </td>
+        <td class="labkey-export-tab-buttons">
+            <%= PageFlowUtil.generateButton("Export to Text", me.getModelBean()) %>
+        </td>
     </tr>
 </table>

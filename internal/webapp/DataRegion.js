@@ -500,7 +500,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             if (!regionHeader || !regionHeader.parent())
                 return;
 
-            this.ribbonContainer = regionHeader.parent().createChild({tag:'div',cls:'extContainer'});
+            this.ribbonContainer = regionHeader.parent().createChild({tag:'div',cls:'extContainer'}, this.msgbox);
         }
 
         var panelDiv = this.ribbonContainer;

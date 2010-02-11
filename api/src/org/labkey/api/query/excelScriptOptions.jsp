@@ -28,18 +28,24 @@ String guid = GUID.makeGUID();
 boolean first = true;
 %>
 
-<table cellspacing="4" class="labkey-no-spacing">
-    <% for (Map.Entry<String, ActionURL> entry : map.entrySet())
-    { %>
-        <tr>
-            <td valign="center"><%= first ? "Scripting language:" : "" %></td>
-            <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%= PageFlowUtil.filter(entry.getValue()) %>"/></td>
-            <td valign="center"><%= PageFlowUtil.filter(entry.getKey())%></td>
-        </tr>
-    <%  first = false;
-    }%>
+<table class="labkey-export-tab-contents">
     <tr>
-        <td colspan="2" />
-        <td><%= PageFlowUtil.generateButton("Create Script", "", "window.location = getRadioButtonValue(document.getElementById(\"" + guid + "\")); return false;") %></td>
+        <td class="labkey-export-tab-options">
+            <table class="labkey-export-tab-layout">
+                <% for (Map.Entry<String, ActionURL> entry : map.entrySet())
+                { %>
+                    <tr>
+                        <td valign="center"><%= first ? "Scripting language:" : "" %></td>
+                        <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%= PageFlowUtil.filter(entry.getValue()) %>"/></td>
+                        <td valign="center"><%= PageFlowUtil.filter(entry.getKey())%></td>
+                    </tr>
+                <%  first = false;
+                }%>
+            </table>
+        </td>
+        <td class="labkey-export-tab-buttons">
+            <%= PageFlowUtil.generateButton("Create Script", "", "window.location = getRadioButtonValue(document.getElementById(\"" + guid + "\")); return false;") %>
+        </td>
     </tr>
 </table>
+

@@ -31,24 +31,28 @@ if (model.getIqyURL() != null)
 }
 %>
 
-<table cellspacing="4" class="labkey-no-spacing">
-    <tr>
-        <td valign="center">Export to Excel as:</td>
-        <td valign="center"><input type="radio" id="<%= guid %>" name="excelExportType" value="<%= PageFlowUtil.filter(model.getXlsURL()) %>" checked="true" /></td>
-        <td valign="center">Standard File (.xls)</td>
-    </tr>
-    <% if (model.getIqyURL() != null) { %>
-    <tr>
-        <td/>
-        <td valign="center"><input type="radio" name="excelExportType" value="<%= PageFlowUtil.filter(model.getIqyURL()) %>" /></td>
-        <td valign="center">Web Query -- Automatically Updates (.iqy)</td>
-    </tr>
-    <% } %>
 
+<table class="labkey-export-tab-contents">
     <tr>
-        <td colspan="2" />
-        <td><%=
-            PageFlowUtil.generateButton("Export to Excel", model.getXlsURL(), onClickScript) %>
+        <td class="labkey-export-tab-options">
+            <table class="labkey-export-tab-layout">
+                <tr>
+                    <td valign="center">Export to Excel as:</td>
+                    <td valign="center"><input type="radio" id="<%= guid %>" name="excelExportType" value="<%= PageFlowUtil.filter(model.getXlsURL()) %>" checked="true" /></td>
+                    <td valign="center">Standard File (.xls)</td>
+                </tr>
+                <% if (model.getIqyURL() != null) { %>
+                <tr>
+                    <td/>
+                    <td valign="center"><input type="radio" name="excelExportType" value="<%= PageFlowUtil.filter(model.getIqyURL()) %>" /></td>
+                    <td valign="center">Refreshable Web Query (.iqy)</td>
+                </tr>
+                <% } %>
+            </table>            
+        </td>
+        <td class="labkey-export-tab-buttons">
+            <%=PageFlowUtil.generateButton("Export to Excel", model.getXlsURL(), onClickScript) %>
         </td>
     </tr>
 </table>
+
