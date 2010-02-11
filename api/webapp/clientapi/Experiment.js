@@ -672,7 +672,7 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  *   params: { fileName: 'test.txt', fileContent: 'Some text!' },
  *   success: function(response, options)
  *   {
- *      var data = Ext.util.JSON.decode(response.responseText)
+ *      var data = new LABKEY.Exp.Data(Ext.util.JSON.decode(response.responseText));
  *
  *      // now add the data as a dataInput to a LABKEY.Exp.Run
  *      var run = new LABKEY.Exp.Run();

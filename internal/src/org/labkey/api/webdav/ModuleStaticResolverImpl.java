@@ -15,6 +15,7 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.collections.CacheMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
@@ -250,13 +251,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
+    private static final CacheMap<Path, Map<String, Resource>> CHILDREN_CACHE = new CacheMap<Path, Map<String, Resource>>(50, "StaticResourceCache");
+
     private class StaticResource extends _PublicResource
     {
         List<File> _files;
         Resource[] _additional; // for _webdav
 
         final Object _lock = new Object();
-        Map<String, Resource> _children = null;
 
         StaticResource(Path path, List<File> files, Resource... addl)
         {
@@ -275,7 +277,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             synchronized (_lock)
             {
-                if (null == _children)
+                Map<String, Resource> children = CHILDREN_CACHE.get(getPath());
+                if (null == children)
                 {
                     Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
                     for (File dir : _files)
@@ -295,7 +298,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                             map.get(name).add(f);
                         }
                     }
-                     Map<String, Resource> children = new CaseInsensitiveTreeMap<Resource>();
+                    children = new CaseInsensitiveTreeMap<Resource>();
                     for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
                     {
                         Path path = getPath().append(e.getKey());
@@ -304,9 +307,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                     for (Resource r : _additional)
                         children.put(r.getName(),r);
 
-                    _children = children;
+                    CHILDREN_CACHE.put(getPath(), children);
                 }
-                return _children;
+                return children;
             }
         }
 
@@ -316,14 +319,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             synchronized (_lock)
             {
-                getChildren();
-                if (null != _children.get(name))
+                Map<String, Resource> originalChildren = getChildren();
+                if (null != originalChildren.get(name))
                     throw new IllegalArgumentException(name + " already exists");
                 // _children is not synchronized so don't add put, create a new map
                 Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
-                children.putAll(_children);
+                children.putAll(originalChildren);
                 children.put(name, new SymbolicLink(getPath().append(name), target));
-                _children = children;
+                CHILDREN_CACHE.put(getPath(), children);
             }
         }
 
@@ -333,17 +336,17 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             synchronized (_lock)
             {
-                getChildren();
-                Resource link = _children.get(name);
+                Map<String, Resource> originalChildren = getChildren();
+                Resource link = originalChildren.get(name);
                 if (null == link)
                     return; // silent?
                 if (!(link instanceof SymbolicLink))
                     throw new IllegalArgumentException(name + " is not a link");
-                // _children is not syncrhonized so don't add put, create a new map
+                // _children is not synchronized so don't add put, create a new map
                 Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
-                children.putAll(_children);
+                children.putAll(originalChildren);
                 children.remove(name);
-                _children = children;
+                CHILDREN_CACHE.put(getPath(), children);
             }
             ModuleStaticResolverImpl.this._allStaticFiles.clear();
         }

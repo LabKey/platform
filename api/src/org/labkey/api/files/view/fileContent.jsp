@@ -122,6 +122,7 @@ function renderBrowser(rootPath, dir, renderTo)
 
     if (!fileSystem)
         fileSystem = new LABKEY.WebdavFileSystem({
+            extraPropNames: ["actions", "description"],
             baseUrl:rootPath,
             rootName:'fileset'
         });

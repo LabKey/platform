@@ -261,5 +261,7 @@ public class ExperimentService
 
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
+
+        ExpRun[] getRunsForPath(File file, Container container);
     }
 }

@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
@@ -30,6 +32,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.apache.commons.io.IOUtils;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -38,6 +41,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpData;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.util.*;
 
 /**
@@ -461,15 +465,28 @@ public class FileSystemResource extends AbstractResource
     {
         if (_file != null)
         {
-            ExpData data = getExpData();
-            if (data != null)
+            if (isFile())
             {
-                ActionURL url = data.findDataHandler().getContentURL(data.getContainer(), data);
-                List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
+                ExpData data = getExpData();
+                if (data != null)
+                {
+                    ActionURL url = data.findDataHandler().getContentURL(data.getContainer(), data);
+                    List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
+                    List<NavTree> result = new ArrayList<NavTree>();
+                    for (ExpRun run : runs)
+                    {
+                        result.add(new NavTree(run.getProtocol().getName(), url));
+                    }
+                    return result;
+                }
+            }
+            else
+            {
+                ExpRun[] runs = ExperimentService.get().getRunsForPath(_file, getContainer());
                 List<NavTree> result = new ArrayList<NavTree>();
                 for (ExpRun run : runs)
                 {
-                    result.add(new NavTree(run.getName(), url));
+                    result.add(new NavTree(run.getName(), LsidManager.get().getDisplayURL(run.getLSID())));
                 }
                 return result;
             }
@@ -481,7 +498,11 @@ public class FileSystemResource extends AbstractResource
     {
         if (!_dataQueried)
         {
-            _data = ExperimentService.get().getExpDataByURL(_file, getContainer());
+            try
+            {
+                _data = ExperimentService.get().getExpDataByURL(_file.toURI().toURL().toString(), getContainer());
+            }
+            catch (MalformedURLException e) {}
             _dataQueried = true;
         }
         return _data;
