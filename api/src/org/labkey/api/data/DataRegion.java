@@ -850,13 +850,13 @@ public class DataRegion extends DisplayElement
         }
         out.write("</td>");
 
-        out.write("<td align=\"right\" valign=\"bottom\" nowrap>\n");
+        out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
         if (_showPagination && _buttonBarPosition.atTop())
             renderPagination(ctx, out);
-        out.write("</td></tr>\n");
+        out.write("</td></tr></table>\n");
 
         renderMessageBox(ctx, out);
-        out.write("</table>\n</td></tr>");
+        out.write("\n</td></tr>");
     }
     
 
@@ -897,12 +897,10 @@ public class DataRegion extends DisplayElement
 
     protected void renderMessageBox(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<tr><td colspan=\"2\">");
         out.write("<div class=\"labkey-dataregion-msgbox\" style=\"display:none;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
         out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
         out.write("<span></span>");
-        out.write("</div>");
-        out.write("</td></tr>\n");
+        out.write("</div>\n");
     }
 
     protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
