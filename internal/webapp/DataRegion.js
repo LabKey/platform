@@ -152,23 +152,23 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         else if ('Ext' in window && Ext && Ext.lib && Ext.lib.Dom)
             viewportWidth = Ext.lib.Dom.getViewWidth() - 20;
 
-        //if table is thinner than the viewport, we don't want to stretch the pagination
-        if (this.table.getWidth() < (viewportWidth - this.table.getLeft()))
-            return;
+        var tableRight = this.table.getWidth(true) + this.table.getLeft();
+        if (tableRight < viewportWidth)
+            viewportWidth = tableRight;
 
         var pagination;
         if (this.header)
         {
             pagination = this.header.child("div[class='labkey-pagination']");
             if (pagination)
-                pagination.setWidth(Math.max(0, viewportWidth - pagination.getLeft()));
+                pagination.parent().setWidth(Math.max(0, viewportWidth - pagination.getLeft()));
         }
 
         if (this.footer)
         {
             pagination = this.footer.child("div[class='labkey-pagination']");
             if (pagination)
-                pagination.setWidth(Math.max(0,viewportWidth - pagination.getLeft()));
+                pagination.parent().setWidth(Math.max(0, viewportWidth - pagination.getLeft()));
         }
     },
 
