@@ -208,9 +208,9 @@ table.labkey-no-spacing
 
 .labkey-dataregion-msgbox
 {
-    margin-bottom: 2px;
+    margin: 2px;
     background-color: #F4F4F4;
-    border: 1px solid #E4E4E4;
+    border: 1px solid #AAAAAA;
     padding: 2px;
 }
 
