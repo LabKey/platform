@@ -769,7 +769,7 @@ public class DataRegion extends DisplayElement
                 headerMessage.append("'].clearAllFilters(); return false;\">Clear all filters</a>");
             }
 
-            renderRegionStart(ctx, out);
+            renderRegionStart(ctx, out, renderButtons);
 
             renderHeader(ctx, out, renderButtons, headerMessage.length() > 0 ? headerMessage.toString() : null);
 
@@ -808,7 +808,7 @@ public class DataRegion extends DisplayElement
 
             renderFooter(ctx, out, renderButtons);
 
-            renderRegionEnd(ctx, out);
+            renderRegionEnd(ctx, out, renderButtons);
         }
         finally
         {
@@ -816,14 +816,18 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    protected void renderRegionStart(RenderContext ctx, Writer out) throws IOException
+    protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
+        if(renderButtons)
+            renderFormHeader(out, MODE_GRID);
         out.write("<table class=\"labkey-data-region-container\">\n");
     }
 
-    protected void renderRegionEnd(RenderContext ctx, Writer out) throws IOException
+    protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
         out.write("\n</table>");
+        if (renderButtons)
+            renderFormEnd(ctx, out);
     }
 
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, String headerMessage) throws IOException
@@ -834,9 +838,6 @@ public class DataRegion extends DisplayElement
         out.write("\">\n");
 
         renderHeaderScript(ctx, out, headerMessage);
-
-        if (renderButtons)
-            renderFormHeader(out, MODE_GRID);
 
         out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
@@ -925,9 +926,6 @@ public class DataRegion extends DisplayElement
                 renderPagination(ctx, out);
             out.write("</td></tr>\n");
             out.write("</table>");
-
-            if (renderButtons)
-                renderFormEnd(ctx, out);
 
             out.write("</td></tr>");
         }
