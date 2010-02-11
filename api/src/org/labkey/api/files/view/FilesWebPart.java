@@ -63,17 +63,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     public FilesWebPart(Container c)
     {
         super(JSP);
+        container = c;
         setModelBean(new FilesForm());
         setFileSet(null);
         setTitle("Files");
         setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c));
 
-        init(c);
+        init();
     }
 
-    protected void init(Container c)
+    protected void init()
     {
-        container = c;
         createConfig();
     }
 
@@ -103,7 +103,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
             }
         }
-        init(c);
+        init();
     }
 
     protected FilesForm createConfig()
