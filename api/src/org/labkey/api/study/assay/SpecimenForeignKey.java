@@ -71,7 +71,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
         FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
-        FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.RELATIVE_DATE);
+        FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
         FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
         AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), studySchema.getContainer());
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK, drawDateFK));
@@ -133,8 +133,8 @@ public class SpecimenForeignKey extends LookupForeignKey
                 }
                 if (dateCol != null)
                 {
-                    // If we're in a date-based or timepoint-less study, check that the dates match or are both NULL
-                    sql.append("((" + studyAlias + ".TimepointType = '" + TimepointType.RELATIVE_DATE + "' OR " + studyAlias + ".TimepointType = '" + TimepointType.ABSOLUTE_DATE + "' OR " + studyAlias + ".TimepointType IS NULL) AND (" +
+                    // If we're in a relative date or continuous date study, check that the dates match or are both NULL
+                    sql.append("((" + studyAlias + ".TimepointType = '" + TimepointType.DATE + "' OR " + studyAlias + ".TimepointType = '" + TimepointType.CONTINUOUS + "' OR " + studyAlias + ".TimepointType IS NULL) AND (" +
                             dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
                             dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL)))");
                 }
@@ -216,7 +216,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
             FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
             FieldKey visitFK = _tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
-            FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.RELATIVE_DATE);
+            FieldKey dateFK = _tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
             // Need to support this other name for dates
             FieldKey drawDateFK = new FieldKey(dateFK.getParent(), DRAW_DT_COLUMN_NAME);
             FieldKey objectIdFK = _tableMetadata.getResultRowIdFieldKey();

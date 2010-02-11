@@ -25,6 +25,6 @@ package org.labkey.api.study;
 public enum TimepointType
 {
     VISIT,
-    RELATIVE_DATE,
-    ABSOLUTE_DATE,
+    DATE,
+    CONTINUOUS,
 }

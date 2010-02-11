@@ -104,7 +104,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     // and either date or visit, depending on the type of study
                     boolean skipProperty = PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
 
-                    if (TimepointType.RELATIVE_DATE == studyType)
+                    if (TimepointType.DATE == studyType)
                             skipProperty = skipProperty || DATE_PROPERTY_NAME.equals(pd.getName());
                     else // it's visit-based
                         skipProperty = skipProperty || VISITID_PROPERTY_NAME.equals(pd.getName());
@@ -119,7 +119,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                 AssayPublishKey publishKey = dataKeys.get(row.getObjectId());
                 dataMap.put("ParticipantID", publishKey.getParticipantId());
                 dataMap.put("SequenceNum", publishKey.getVisitId());
-                if (TimepointType.RELATIVE_DATE == studyType)
+                if (TimepointType.DATE == studyType)
                 {
                     dataMap.put("Date", publishKey.getDate());
                 }
