@@ -28,6 +28,8 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.settings.AppProps;
 
 import javax.servlet.http.HttpSession;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
@@ -120,6 +122,18 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         if (null != user && user.isAdministrator() && System.getProperty("java.version").startsWith("1.5."))
         {
             _warningMessages.add("Support for Java 1.5 has been deprecated. Please upgrade your Java runtime to 1.6 or later.");
+        }
+
+        //FIX: 9683
+        //show admins warning about inadequate heap size (<= 256Mb)
+        MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
+        long maxMem = membean.getHeapMemoryUsage().getMax();
+        if (null != user && user.isAdministrator() && maxMem > 0 && maxMem <= 268435456)
+        {
+            HelpTopic topic = new HelpTopic("configWebappMemory", HelpTopic.Area.SERVER);
+            _warningMessages.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
+                    "LabKey recommends <a href=\"" + topic.getHelpTopicLink()
+                    + "\">setting the maximum to 1024 Megabytes (-Xmx1024M)</a>.");
         }
     }
 
