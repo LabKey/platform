@@ -47,8 +47,14 @@ public class FileType implements Serializable
         // indicated by the env varbl TPP itself uses, else
         // return SUPPORT_GZ, since you still might get those
         // from outside sources
-        String pepXMLext = StringUtils.trimToEmpty(System.getenv("PEPXML_EXT"));
-        return pepXMLext.endsWith(".pep.xml.gz")? gzSupportLevel.PREFER_GZ: gzSupportLevel.SUPPORT_GZ;
+
+        // TODO:
+        // just shutting this down until DRT and BVT are sane again and
+        // I can test my real changes - bpratt
+        return gzSupportLevel.NO_GZ;
+
+        //String pepXMLext = StringUtils.trimToEmpty(System.getenv("PEPXML_EXT"));
+        //return pepXMLext.endsWith(".pep.xml.gz")? gzSupportLevel.PREFER_GZ: gzSupportLevel.SUPPORT_GZ;
     }
 
     /** A list of possible suffixes in priority order. Later suffixes may also match earlier suffixes */

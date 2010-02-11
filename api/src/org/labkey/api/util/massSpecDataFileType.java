@@ -58,6 +58,11 @@ public class massSpecDataFileType extends FileType
     static private boolean _isPwizAvailable;
     public static boolean isMZmlAvailable()
     {
+        // TODO:
+        // just shutting this down until DRT and BVT are sane again and
+        // I can test my real changes - bpratt
+        _triedPwizLoadLib = true;
+
         if (!_triedPwizLoadLib)
         {
             _triedPwizLoadLib = true;
