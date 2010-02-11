@@ -906,26 +906,38 @@ public class DataRegion extends DisplayElement
 
     protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
     {
-        out.write("<tr><td>\n");
-        out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
-        out.write("<tr><td nowrap>\n");
-        if (renderButtons && _buttonBarPosition.atBottom())
+        if (needToRenderFooter(renderButtons))
         {
-            // 7024: don't render bottom buttons if the button bar already
-            // appears at the top and it's a small result set
-            if (!_buttonBarPosition.atTop() || !isSmallResultSet())
-                _gridButtonBar.render(ctx, out);
+            out.write("<tr><td>\n");
+            out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
+            out.write("<tr><td nowrap>\n");
+            if (renderButtons && _buttonBarPosition.atBottom())
+            {
+                // 7024: don't render bottom buttons if the button bar already
+                // appears at the top and it's a small result set
+                if (!_buttonBarPosition.atTop() || !isSmallResultSet())
+                    _gridButtonBar.render(ctx, out);
+            }
+            out.write("</td>");
+
+            out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
+            if (_showPagination && _buttonBarPosition.atBottom())
+                renderPagination(ctx, out);
+            out.write("</td></tr>\n");
+            out.write("</table>");
+
+            if (renderButtons)
+                renderFormEnd(ctx, out);
+
+            out.write("</td></tr>");
         }
-        out.write("</td>");
 
-        out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
-        if (_showPagination && _buttonBarPosition.atBottom())
-            renderPagination(ctx, out);
-        out.write("</td></tr>\n");
-        out.write("</table>");
+    }
 
-        if (renderButtons)
-            renderFormEnd(ctx, out);
+    protected boolean needToRenderFooter(boolean renderButtons)
+    {
+        return (renderButtons && _buttonBarPosition.atBottom() && (!_buttonBarPosition.atTop() || !isSmallResultSet()))
+                || (_showPagination && !isSmallResultSet() && _buttonBarPosition.atBottom());
     }
 
     protected boolean isSmallResultSet()
