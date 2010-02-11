@@ -819,7 +819,7 @@ public class DavController extends SpringActionController
                 return unauthorized(root);
 
             List<String> properties = null;
-            Find type = Find.FIND_ALL_PROP;
+            Find type = null;
             Pair<Integer, Boolean> depthParam = getDepthParameter();
             int depth = depthParam.first;
             boolean noroot = depthParam.second;
@@ -886,7 +886,33 @@ public class DavController extends SpringActionController
                     close(is, "propfind request stream");
                 }
 
-                if (type == Find.FIND_BY_PROPERTY)
+                if (type == null)
+                {
+                    // No XML posted, check for HTTP parameters
+                    String typeParam = getRequest().getParameter("type");
+                    if ("propname".equalsIgnoreCase(typeParam))
+                    {
+                        type = Find.FIND_PROPERTY_NAMES;
+                    }
+                    else
+                    {
+                        String[] propNames = getRequest().getParameterValues("propname");
+                        if ("prop".equalsIgnoreCase(typeParam) || (propNames != null && propNames.length > 0))
+                        {
+                            type = Find.FIND_BY_PROPERTY;
+                            if (propNames != null && propNames.length > 0)
+                            {
+                                properties = new Vector<String>();
+                                properties.addAll(Arrays.asList(getRequest().getParameterValues("propname")));
+                            }
+                        }
+                        else
+                        {
+                            type = Find.FIND_ALL_PROP;
+                        }
+                    }
+                }
+                else if (type == Find.FIND_BY_PROPERTY)
                 {
                     properties = new Vector<String>();
                     NodeList childList = propNode.getChildNodes();
@@ -1157,10 +1183,6 @@ public class DavController extends SpringActionController
                         if (null != createdby)
                             xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getViewContext())));
 
-                        String description = resource.getDescription();
-                        if (null != description)
-                            xml.writeProperty(null, "description", h(description));
-
                         if (isFile)
                         {
                             long modified = resource.getLastModified();
@@ -1177,25 +1199,6 @@ public class DavController extends SpringActionController
                             }
                             xml.writeProperty(null, "getetag", resource.getETag());
                             xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
-                            List<NavTree> actions = resource.getActions();
-                            if (!actions.isEmpty())
-                            {
-                                xml.writeElement(null, "actions", XMLWriter.OPENING);
-                                for (NavTree action : actions)
-                                {
-                                    xml.writeElement(null, "action", XMLWriter.OPENING);
-                                    if (action.getKey() != null)
-                                    {
-                                        xml.writeProperty(null, "message", action.getKey());
-                                    }
-                                    if (action.getValue() != null)
-                                    {
-                                        xml.writeProperty(null, "href", PageFlowUtil.filter(action.getValue()));
-                                    }
-                                    xml.writeElement(null, "action", XMLWriter.CLOSING);
-                                }
-                                xml.writeElement(null, "actions", XMLWriter.CLOSING);
-                            }
                         }
                         else
                         {
@@ -1205,10 +1208,8 @@ public class DavController extends SpringActionController
                         }
                     }
 
-                    {
                     StringBuilder methodsAllowed = determineMethodsAllowed(resource);
                     xml.writeProperty(null, "options", methodsAllowed.toString());
-                    }
                 
                     xml.writeProperty(null, "iconHref", h(resource.getIconHref()));
 
@@ -1240,6 +1241,7 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "propstat", XMLWriter.OPENING);
                     xml.writeElement(null, "prop", XMLWriter.OPENING);
 
+                    xml.writeElement(null, "path", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
                     if (exists)
@@ -1252,6 +1254,11 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
                     }
+					xml.writeElement(null, "actions", XMLWriter.NO_CONTENT);
+					xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
+					xml.writeElement(null, "iconHref", XMLWriter.NO_CONTENT);
+					xml.writeElement(null, "history", XMLWriter.NO_CONTENT);
+					xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
@@ -1279,13 +1286,64 @@ public class DavController extends SpringActionController
 
                     for (String property : propertiesVector)
                     {
-                        if (property.equals("creationdate"))
+                        if (property.equals("path"))
+                        {
+                            Path path = resource.getPath();
+                            String pathStr = path.toString();
+                            if (!isFile && !pathStr.endsWith("/"))
+                                pathStr = pathStr + "/";
+                            xml.writeProperty(null, "path", h(pathStr));
+                        }
+                        if (property.equals("actions"))
+                        {
+                            List<NavTree> actions = resource.getActions();
+                            xml.writeElement(null, "actions", XMLWriter.OPENING);
+                            for (NavTree action : actions)
+                            {
+                                xml.writeElement(null, "action", XMLWriter.OPENING);
+                                if (action.getKey() != null)
+                                {
+                                    xml.writeProperty(null, "message", action.getKey());
+                                }
+                                if (action.getValue() != null)
+                                {
+                                    xml.writeProperty(null, "href", PageFlowUtil.filter(action.getValue()));
+                                }
+                                xml.writeElement(null, "action", XMLWriter.CLOSING);
+                            }
+                            xml.writeElement(null, "actions", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("creationdate"))
                         {
                             long created = resource.getCreated();
                             if (created == Long.MIN_VALUE)
                                 xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
                             else
                                 xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
+                        }
+                        else if (property.equals("createdby"))
+                        {
+                            User createdby = resource.getCreatedBy();
+                            if (null != createdby)
+                                xml.writeProperty(null, "createdby", h(UserManager.getDisplayName(createdby.getUserId(), getViewContext())));
+                            else
+                                xml.writeElement(null, "createdby", XMLWriter.NO_CONTENT);
+                        }
+                        else if (property.equals("modifiedby"))
+                        {
+                            User modifiedBy = resource.getModifiedBy();
+                            if (null != modifiedBy)
+                                xml.writeProperty(null, "modifiedby", h(UserManager.getDisplayName(modifiedBy.getUserId(), getViewContext())));
+                            else
+                                xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
+                        }
+                        else if (property.equals("description"))
+                        {
+                            String description = resource.getDescription();
+                            if (null != description)
+                                xml.writeProperty(null, "description", h(description));
+                            else
+                                xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
                         }
                         else if (property.equals("displayname"))
                         {
@@ -1364,6 +1422,10 @@ public class DavController extends SpringActionController
 							xml.writeElement(null, "href", XMLWriter.OPENING);
 							xml.writeText(h(resource.getLocalHref(getViewContext())));
 							xml.writeElement(null, "href", XMLWriter.CLOSING);
+						}
+						else if (property.equals("iconHref"))
+						{
+                            xml.writeProperty(null, "iconHref", h(resource.getIconHref()));
 						}
 						else if (property.equals("ishidden"))
 						{

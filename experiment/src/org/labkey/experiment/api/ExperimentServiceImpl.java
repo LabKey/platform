@@ -130,6 +130,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
     }
 
+    public ExpRun[] getRunsForPath(File file, Container container)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("FilePathRoot", file.toString());
+            if (container != null)
+            {
+                filter.addCondition("Container", container.getId());
+            }
+            Sort sort = new Sort("Name");
+            ExperimentRun[] runs = Table.select(getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, sort, ExperimentRun.class);
+            return ExpRunImpl.fromRuns(runs);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, String comment)
     {

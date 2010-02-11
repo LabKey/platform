@@ -273,7 +273,6 @@ function formatWithCommas(value)
 function renderUsage(value, metadata, record, rowIndex, colIndex, store)
 {
     if (!value || value.length == 0) return "";
-    if (!record.get('file')) return "";
     var result = "<span title='";
     for (var i = 0; i < value.length; i++)
     {
@@ -681,6 +680,13 @@ LABKEY.WebdavFileSystem = function(config)
     this.HistoryRecord = Ext.data.Record.create(['user', 'date', 'message', 'href']);
     this.historyReader = new Ext.data.XmlReader({record : "entry"}, this.HistoryRecord);
 
+    this.propNames = ["creationdate", "displayname", "createdby", "getlastmodified", "modifiedby", "getcontentlength",
+                 "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref"];
+    if (config.extraPropNames != undefined)
+    {
+        this.propNames = this.propNames.concat(config.extraPropNames);
+    }
+
     this.FileRecord = Ext.data.Record.create(
         [
             {name: 'uri', mapping: 'href',
@@ -750,7 +756,7 @@ LABKEY.WebdavFileSystem = function(config)
             {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
             {name: 'options'}
         ]);
-    this.connection = new Ext.data.Connection({method: "GET", timeout: 600000, headers: {"Method" : "PROPFIND", "Depth" : "1"}});
+    this.connection = new Ext.data.Connection({method: "GET", timeout: 600000, headers: {"Method" : "PROPFIND", "Depth" : "1", propname : this.propNames}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.transferReader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
 
@@ -787,7 +793,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         {
             callback.call(args.filesystem, success, args.path, response.records);
         };
-        proxy.load({method:"PROPFIND", depth:"0"}, this.historyReader, cb, this, {filesystem:this, path:path});
+        proxy.load({method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:path});
     },
 
     canRead : function(record)
@@ -880,7 +886,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         var url = this.concatPaths(this.prefixUrl, encodePath(path));
         this.connection.url = url;
         var args = {url: url, path: path, callback:callback};
-        this.proxy.load({method:"PROPFIND",depth:"0"}, this.transferReader, this.processFile, this, args);
+        this.proxy.load({method:"PROPFIND",depth:"0", propname : this.propNames}, this.transferReader, this.processFile, this, args);
         return true;
     },
 
@@ -930,7 +936,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         {
             this.connection.abort(args.transId);
             this.connection.url = args.url;
-            this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
+            this.proxy.load({method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
             args.transId = this.connection.transId;
         }
     },
@@ -952,7 +958,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         this.connection.url = url;
         console.debug("requesting " + url);
         this.pendingPropfind[path] = args = {url: url, path: path, callbacks:[cb]};
-        this.proxy.load({method:"PROPFIND",depth:"1"}, this.transferReader, this.processFiles, this, args);
+        this.proxy.load({method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
         args.transId = this.connection.transId;
         return true;
     },
@@ -3203,9 +3209,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Last Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
-                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Description", width: 100, dataIndex: 'description', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
+                {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
             ]
         });
         // hack to get the file input field to size correctly

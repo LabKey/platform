@@ -973,7 +973,7 @@ td.labkey-main-icon
     height: 56px;
     margin-left: auto;
     margin-right: auto;
-    padding:8px 0;
+    padding: 8px 4px 8px 0px;
 }
 
 /* The middle of the header panel */
