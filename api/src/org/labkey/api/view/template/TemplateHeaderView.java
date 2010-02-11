@@ -114,6 +114,13 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
                 _warningMessages.add("Support for Microsoft SQL Server 2000 has been deprecated. Please upgrade to version 2005 or later.");
             }
         }
+
+        //FIX: 9666
+        //shown admins warning about Java 1.5 deprecation
+        if (null != user && user.isAdministrator() && System.getProperty("java.version").startsWith("1.5."))
+        {
+            _warningMessages.add("Support for Java 1.5 has been deprecated. Please upgrade your Java runtime to 1.6 or later.");
+        }
     }
 
     public List<String> getWarningMessages()
