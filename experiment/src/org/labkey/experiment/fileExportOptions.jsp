@@ -61,7 +61,7 @@ String guid = GUID.makeGUID();
     }
 </script>
 
-<table cellspacing="4" class="labkey-no-spacing">
+<table cellspacing="4" class="labkey-export-tab-contents">
     <tr>
         <td valign="middle" rowspan="2">Export as a ZIP file:</td>
         <td valign="middle"><input type="radio" name="fileExportType" value="all" checked="true" onclick="setFileDownloadEnabled(document.getElementById('<%= PageFlowUtil.filter(guid) %>').checked, '<%= PageFlowUtil.filter(guid) %>');" /></td>
