@@ -909,7 +909,7 @@ public class DataRegion extends DisplayElement
     {
         if (needToRenderFooter(renderButtons))
         {
-            out.write("<tr><td>\n");
+            out.write("<tr><td class=\"labkey-data-region-header-container\">\n");
             out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_footer_" + getName()) + "\">\n");
             out.write("<tr><td nowrap>\n");
             if (renderButtons && _buttonBarPosition.atBottom())

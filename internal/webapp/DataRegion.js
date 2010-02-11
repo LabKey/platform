@@ -152,6 +152,10 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         else if ('Ext' in window && Ext && Ext.lib && Ext.lib.Dom)
             viewportWidth = Ext.lib.Dom.getViewWidth() - 20;
 
+        //if table is thinner than the viewport, we don't want to stretch the pagination
+        if (this.table.getWidth() < (viewportWidth - this.table.getLeft()))
+            return;
+
         var pagination;
         if (this.header)
         {
