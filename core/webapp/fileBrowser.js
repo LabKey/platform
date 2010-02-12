@@ -384,11 +384,69 @@ var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
             }).createDelegate(this);
             image.src = uri;
         }
+//IFRAME
         else if (contentType == 'text/html')
         {
-            this.html = {tag:'iframe', width:600, height:400, frameborder:'no', src:$h(uri)};
-            this.previewAt(this.showAt_xy);
+            var base = uri.substr(0,uri.lastIndexOf('/')+1)
+            var headers = {};
+            var requestid = this.connection.request({
+                autoAbort:true,
+                url:uri,
+                headers:headers,
+                method:'GET',
+                disableCaching:false,
+                success : (function(response)
+                {
+                    var contentType = response.getResponseHeader["Content-Type"] || "text/html";
+                    if (startsWith(contentType,"text/"))
+                    {
+                        var id = 'iframePreview' + (++Ext.Component.AUTO_ID);
+                        var body = response.responseText;
+                        body = Ext.util.Format.stripScripts(body);
+                        //this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:body};
+                        this.html = {tag:'iframe', id:id, name:id, width:600, height:400, frameborder:'no', src:(Ext.isIE ? Ext.SSL_SECURE_URL : "javascript:;")};
+                        this.previewAt(this.showAt_xy);
+                        var frame = Ext.getDom(id);
+                        if (!frame)
+                        {
+                            this.hide();
+                        }
+                        else
+                        {
+                            var doc = Ext.isIE ? frame.contentWindow.document : frame.contentDocument || window.frames[id].document;
+                            doc.open();
+                            if (base)
+                                body = '<base href="' + $h(base) + '" />' + body;
+                            doc.write(body);
+                            doc.close();
+                        }
+                    }
+                }).createDelegate(this)
+            });
         }
+// DIV
+//        else if (contentType == 'text/html')
+//        {
+//            var headers = {};
+//            var requestid = this.connection.request({
+//                autoAbort:true,
+//                url:uri,
+//                headers:headers,
+//                method:'GET',
+//                disableCaching:false,
+//                success : (function(response)
+//                {
+//                    var contentType = response.getResponseHeader["Content-Type"] || "text/html";
+//                    if (startsWith(contentType,"text/"))
+//                    {
+//                        var body = response.responseText;
+//                        body = Ext.util.Format.stripScripts(body);
+//                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:body};
+//                        this.previewAt(this.showAt_xy);
+//                    }
+//                }).createDelegate(this)
+//            });
+//        }
         else if (startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(name,".log"))
         {
             var headers = {};
