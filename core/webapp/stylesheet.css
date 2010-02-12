@@ -274,7 +274,7 @@ div.labkey-button-bar, table.labkey-button-bar
                     turn enables relative positioning of our menu button arrow gif. */
 }
 
-.labkey-button-bar .labkey-button, .labkey-button-bar .labkey-menu-button, .labkey-button-bar .labkey-button:visited, .labkey-button-bar .labkey-menu-button:visited, .labkey-button-bar .labkey-disabled-button
+.labkey-button-bar .labkey-button, .labkey-button-bar .labkey-menu-button, .labkey-button-bar .labkey-button:visited, .labkey-button-bar .labkey-menu-button:visited, .labkey-button-bar .labkey-disabled-button, .labkey-button-bar .labkey-disabled-button:visited
 {
     border: 1px solid #F4F4F4;
     margin-right: 1.5em;
