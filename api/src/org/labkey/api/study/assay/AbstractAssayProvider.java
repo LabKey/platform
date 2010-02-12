@@ -1438,7 +1438,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
     {
-        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : getDomains(protocol))
+        List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos =  getDomains(protocol);
+        List<Domain> domains = new ArrayList<Domain>();
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
+            domains.add(domainInfo.getKey());
+
+        Set<Container> defaultValueContainers = new HashSet<Container>();
+        defaultValueContainers.add(protocol.getContainer());
+        defaultValueContainers.addAll(protocol.getExpRunContainers());
+        clearDefaultValues(defaultValueContainers, domains);
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
         {
             Domain domain = domainInfo.getKey();
             for (DomainProperty prop : domain.getProperties())
@@ -1455,6 +1464,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
     }
+
+    private void clearDefaultValues(Set<Container> containers, List<Domain> domains)
+    {
+        for (Domain domain : domains)
+        {
+            for (Container container : containers)
+                DefaultValueService.get().clearDefaultValues(container, domain);
+        }
+    }
+
 
     public Class<? extends Controller> getDesignerAction()
     {
