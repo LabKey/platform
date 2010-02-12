@@ -338,4 +338,15 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         description.append(" (").append(protocolName).append(")");
         return description.toString();
     }
+
+    /**
+     * returns support level for .xml.gz handling
+     * we always read .xml.gz, but may also have a
+     * preference for producing it in the pipeline
+     */
+    public FileType.gzSupportLevel getGZPreference()
+    {
+        String doGZ = getParameters().get("pipeline, gzip outputs");
+        return "yes".equalsIgnoreCase(doGZ)?FileType.gzSupportLevel.PREFER_GZ:FileType.gzSupportLevel.SUPPORT_GZ;
+    }
 }

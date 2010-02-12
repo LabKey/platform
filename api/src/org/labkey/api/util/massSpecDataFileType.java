@@ -17,9 +17,8 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.Arrays;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SpringModule;
 import java.util.List;
 
 /**
@@ -38,8 +37,8 @@ public class massSpecDataFileType extends FileType
      */
     public massSpecDataFileType()
     {
-        super(".mzXML",FileType.systemPreferenceGZ());
-        try_mzml(); // shall we add mzml to the list?
+        super(".mzXML",gzSupportLevel.SUPPORT_GZ);
+        addMzmlIfAvailable(); // shall we add mzml to the list?
     }
 
     /**
@@ -48,43 +47,63 @@ public class massSpecDataFileType extends FileType
      */
    public massSpecDataFileType(List<String> suffixes, String defaultSuffix)
     {
-        super(suffixes, defaultSuffix, false, FileType.systemPreferenceGZ());
-        try_mzml(); // shall we add mzml to the list?
+        super(suffixes, defaultSuffix, false, gzSupportLevel.SUPPORT_GZ);
+        addMzmlIfAvailable(); // shall we add mzml to the list?
     }
 
     // use this to investigate availability of DLL that
-    // implements the pwiz interface
+    // implements the pwiz interface - it's declared in 
+    // labkey.xml as parameter "org.labkey.api.ms2.mzmlLibrary"
     static private boolean _triedPwizLoadLib;
     static private boolean _isPwizAvailable;
     public static boolean isMZmlAvailable()
     {
-        // TODO:
-        // just shutting this down until DRT and BVT are sane again and
-        // I can test my real changes - bpratt
-        _triedPwizLoadLib = true;
-
         if (!_triedPwizLoadLib)
         {
             _triedPwizLoadLib = true;
-            String why="";
-            try {
-                System.loadLibrary("pwiz_swigbindings");
-                _isPwizAvailable = true;
-            } catch (UnsatisfiedLinkError e) {
-                why = e.getMessage();
-            } catch (Exception e) {
-                why = e.getMessage();
-            }
-            if (!_isPwizAvailable)
+            String mzMLLibName;
+            try
             {
-                String msg = "Could not load native library for mzML input support (this is not necessarily an error): ";
-                Logger.getLogger(massSpecDataFileType.class).info(msg+why);
+                SpringModule mod = (SpringModule)ModuleLoader.getInstance().getCoreModule();
+                mzMLLibName = mod.getInitParameter("org.labkey.api.ms2.mzmlLibrary");
+            }
+            catch (Exception e)
+            {
+                mzMLLibName = "";
+            }
+            if (""!=mzMLLibName)
+            {
+                String why="";
+                try {
+                    System.loadLibrary(mzMLLibName);
+                    _isPwizAvailable = true;
+                } catch (UnsatisfiedLinkError e) {
+                    why = e.getMessage();
+                } catch (Exception e) {
+                    why = e.getMessage();
+                }
+                if (!_isPwizAvailable)
+                {
+                    String msg = "Could not load native library";
+                    msg += mzMLLibName;
+                    msg += "for mzML input support: ";
+                    msg += why;
+                    msg += " Please refer to https://www.labkey.org/wiki/home/Documentation/page.view?name=WorkingWithmzML for more information.";
+                    Logger.getLogger(massSpecDataFileType.class).warn(msg);
+                }
             }
         }
         return _isPwizAvailable;
     }
 
-    private boolean try_mzml()
+    public static boolean retryIsMZmlAvailable()
+    {
+        // useful for unit test
+        _triedPwizLoadLib = false;
+        return isMZmlAvailable();
+    }
+
+    private boolean addMzmlIfAvailable()
     {
         boolean result = false;
         if (isMZmlAvailable())

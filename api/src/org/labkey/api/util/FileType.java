@@ -42,23 +42,12 @@ public class FileType implements Serializable
         PREFER_GZ   // we support gzip for this filetype, and it's the default for new files
     };
 
-    public static gzSupportLevel systemPreferenceGZ()
-    {   // return PREFER_GZ iff .pep.xml.gz is preferred as
-        // indicated by the env varbl TPP itself uses, else
-        // return SUPPORT_GZ, since you still might get those
-        // from outside sources
-
-        // TODO:
-        // just shutting this down until DRT and BVT are sane again and
-        // I can test my real changes - bpratt
-        return gzSupportLevel.NO_GZ;
-
-        //String pepXMLext = StringUtils.trimToEmpty(System.getenv("PEPXML_EXT"));
-        //return pepXMLext.endsWith(".pep.xml.gz")? gzSupportLevel.PREFER_GZ: gzSupportLevel.SUPPORT_GZ;
-    }
-
     /** A list of possible suffixes in priority order. Later suffixes may also match earlier suffixes */
     private List<String> _suffixes;
+    /** a list of filetypes to reject - handles the scenario where old pepxml files are "foo.xml" and
+     * we have to avoid grabbing "foo.pep-prot.xml"
+     */
+    private List<FileType> _antiTypes;
     /** The canonical suffix, will be used when creating new files from scratch */
     private String _defaultSuffix;
     private Boolean _dir;
@@ -157,6 +146,7 @@ public class FileType implements Serializable
         _suffixes = suffixes;
         supportGZ(doSupportGZ);
         _defaultSuffix = defaultSuffix;
+        _antiTypes = new Vector<FileType>(0);
         if (!suffixes.contains(defaultSuffix))
         {
             throw new IllegalArgumentException("List of suffixes " + _suffixes + " does not contain the preferred suffix:" + _defaultSuffix);
@@ -220,6 +210,34 @@ public class FileType implements Serializable
     }
 
     /**
+     * add a new filetype to reject, return new list length
+     */
+    public int addAntiFileType(FileType anti)
+    {
+        Vector<FileType> s = new Vector<FileType>(_antiTypes.size()+1);
+        for (FileType a : _antiTypes)
+        {
+            s.add(a);
+        }
+        s.add(anti);
+        _antiTypes = s;
+        return _antiTypes.size();
+    }
+
+    // used to avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file 
+    private boolean isAntiFileType(String name)
+    {
+        for (FileType a : _antiTypes)
+        {
+            if (a.isType(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
      * If nothing matches, uses the defaultSuffix to build a file name.
      */
@@ -234,11 +252,21 @@ public class FileType implements Serializable
                 File f = new File(parentDir, name);
                 if (NetworkDrive.exists(f))
                 {
-                    return name;
+                    // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file
+                    if (!isAntiFileType(name))
+                    {
+                        return name;
+                    }
                 }
             }
         }
         return tryName(parentDir, basename + _defaultSuffix);
+    }
+
+    public String getName(String parentDirName, String basename)
+    {
+        File parentDir = new File(parentDirName);
+        return getName(parentDir,basename);
     }
 
     /**
@@ -256,16 +284,20 @@ public class FileType implements Serializable
      */
     public int getIndexMatch(File file)
     {
-        for (int i = 0; i < _suffixes.size(); i++)
+        if (!isAntiFileType(file.getName()))  // avoid, for example, mistaking .pep-prot.xml for .xml
         {
-            if (file.getName().endsWith(_suffixes.get(i)))
+            for (int i = 0; i < _suffixes.size(); i++)
             {
-                return i;
-            }
-            // TPP treats .xml.gz as a native format
-            if (_supportGZ.booleanValue() && file.getName().endsWith(_suffixes.get(i)+".gz"))
-            {
-                return i;
+
+                if (file.getName().endsWith(_suffixes.get(i)))
+                {
+                    return i;
+                }
+                // TPP treats .xml.gz as a native format
+                if (_supportGZ.booleanValue() && file.getName().endsWith(_suffixes.get(i)+".gz"))
+                {
+                    return i;
+                }
             }
         }
 
@@ -278,23 +310,29 @@ public class FileType implements Serializable
      */
     public String getBaseName(File file)
     {
-        if (!isType(file))
+        if (isAntiFileType(file.getName()) || !isType(file))
             return file.getName();
         String suffix = null;
         for (String s : _suffixes)
         {
+            // run the entire list in order to assure strongest match
+            // consider .msprefix.mzxml vs .mzxml for example
             if (file.getName().toLowerCase().endsWith(s.toLowerCase()))
             {
-                suffix = s;
-                break;
+                if ((null==suffix) || (s.length()>suffix.length()))
+                {
+                    suffix = s;
+                }
             }
-            if (_supportGZ.booleanValue()) // TPP treats .xml.gz as a native read format
+            else if (_supportGZ.booleanValue()) // TPP treats .xml.gz as a native read format
             {
                 String sgz = s+".gz";
                 if (file.getName().endsWith(sgz))
                 {
-                    suffix = sgz;
-                    break;
+                    if ((null==suffix) || (sgz.length()>suffix.length()))
+                    {
+                        suffix = sgz;
+                    }
                 }
             }
         }
@@ -309,7 +347,7 @@ public class FileType implements Serializable
 
     public boolean isType(File file)
     {
-        if (_dir != null && _dir.booleanValue() != file.isDirectory())
+        if ((file == null) || (_dir != null && _dir.booleanValue() != file.isDirectory()))
             return false;
         
         return isType(file.getName());
@@ -320,6 +358,11 @@ public class FileType implements Serializable
      */
     public boolean isType(String filePath)
     {
+        // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml"
+        if (isAntiFileType(filePath))
+        {
+            return false;
+        }
         for (String suffix : _suffixes)
         {
             if (filePath.toLowerCase().endsWith(suffix.toLowerCase()))
@@ -327,7 +370,7 @@ public class FileType implements Serializable
                 return true;
             }
             // TPP treats .xml.gz as a native format
-            if (_supportGZ.booleanValue() && filePath.endsWith(suffix+".gz"))
+            if (_supportGZ.booleanValue() && filePath.toLowerCase().endsWith(suffix.toLowerCase()+".gz"))
             {
                 return true;
             }
@@ -364,6 +407,7 @@ public class FileType implements Serializable
         if (_dir != null ? !_dir.equals(fileType._dir) : fileType._dir != null) return false;
         if (_defaultSuffix != null ? !_defaultSuffix.equals(fileType._defaultSuffix) : fileType._defaultSuffix != null)
             return false;
+        if (!(_antiTypes != null ? !_antiTypes.equals(fileType._antiTypes) : fileType._antiTypes != null)) return false;
         return !(_suffixes != null ? !_suffixes.equals(fileType._suffixes) : fileType._suffixes != null);
     }
 
@@ -457,7 +501,15 @@ public class FileType implements Serializable
             assertTrue(ftt.isType("test.bar"));
             assertTrue(ftt.isType("test.foo.gz"));
             assertTrue(ftt.isType("test.bar.gz"));
+            assertTrue(ftt.isType("test.bAr.gZ")); // extensions are case insensitive
             assertEquals("test.foo",ftt.getName("test"));
+            // antitypes - for example avoid mistaking protxml ".pep-prot.xml" for pepxml ".xml"
+            assertTrue(ftt.isType("test.foo.bar"));
+            ftt.addAntiFileType(new FileType(".foo.bar"));
+            assertTrue(!ftt.isType("test.foo.bar"));
+            assertTrue(ftt.isType("test.foo"));
+            assertTrue(ftt.isType("test.bar"));
+
         }
 
         public static Test suite()

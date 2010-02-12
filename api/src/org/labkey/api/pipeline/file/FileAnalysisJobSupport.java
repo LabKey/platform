@@ -16,6 +16,7 @@
 package org.labkey.api.pipeline.file;
 
 import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.util.Map;
@@ -92,4 +93,13 @@ public interface FileAnalysisJobSupport
      * @return an array of all input files analyzed.
      */
     File[] getInputFiles();
+
+    /**
+     * returns support level for .xml.gz handling:
+     * SUPPORT_GZ or PREFER_GZ
+     * we always read .xml.gz, but may also have a
+     * preference for producing it in the pipeline
+     */
+    FileType.gzSupportLevel getGZPreference();
+
 }
