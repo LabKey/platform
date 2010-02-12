@@ -1616,7 +1616,7 @@ public class StudyController extends BaseStudyController
             VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
             if (visit != null)
             {
-                StudyManager.getInstance().deleteVisit(getStudy(), visit);
+                StudyManager.getInstance().deleteVisit(getStudy(), visit, getUser());
                 return true;
             }
             HttpView.throwNotFound();

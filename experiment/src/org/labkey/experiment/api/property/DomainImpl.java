@@ -21,6 +21,7 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.*;
@@ -200,6 +201,7 @@ public class DomainImpl implements Domain
 
     public void delete(User user) throws DomainNotFoundException
     {
+        DefaultValueService.get().clearDefaultValues(getContainer(), this);
         OntologyManager.deleteDomain(getTypeURI(), getContainer());
         addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
     }

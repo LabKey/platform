@@ -17,11 +17,13 @@ package org.labkey.experiment.defaults;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -55,6 +57,18 @@ public class DefaultValueServiceImpl extends DefaultValueService
     {
         String suffix = "Folder-" + container.getRowId() + ".User-" + user.getUserId();
         return (new Lsid(USER_DEFAULT_VALUE_DOMAIN_PARENT, suffix, domain.getName())).toString();
+    }
+
+    private static final String WILD_CARD_PLACEHOLDER = "WILDCARD";
+
+    private String getUserDefaultsWildcardLSID(Container container, Domain domain, boolean parentObject)
+    {
+        String suffix = "Folder-" + container.getRowId() + ".User-" + WILD_CARD_PLACEHOLDER + (!parentObject ? "." + WILD_CARD_PLACEHOLDER : "");
+        String objectId = domain.getName();
+        String lsid = (new Lsid(USER_DEFAULT_VALUE_LSID_PREFIX, suffix, objectId)).toString();
+        // this hack is to include '%' characters in an LSID-like string.  The '%' character can't be part of the
+        // lsid components passed to the Lsid constructor, or it will be encoded as '%25'.
+        return lsid.replaceAll(WILD_CARD_PLACEHOLDER, "%");
     }
 
     private String getUserDefaultsLSID(Container container, User user, Domain domain, String scope)
@@ -246,6 +260,19 @@ public class DefaultValueServiceImpl extends DefaultValueService
     public void clearDefaultValues(Container container, Domain domain)
     {
         clearDefaultValues(container, getContainerDefaultsLSID(container, domain));
+        // get two expressions to delete all user-based defaults in this container:
+        String userParentLsid = getUserDefaultsWildcardLSID(container, domain, true);
+        String userScopesLsid = getUserDefaultsWildcardLSID(container, domain, false);
+        try
+        {
+            StringBuilder sql = new StringBuilder("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ?");
+            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userParentLsid), container, false);
+            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userScopesLsid), container, false);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void clearDefaultValues(Container container, Domain domain, User user)

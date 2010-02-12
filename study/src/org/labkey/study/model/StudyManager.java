@@ -460,7 +460,7 @@ public class StudyManager
     }
 
 
-    public void deleteVisit(Study study, VisitImpl visit) throws SQLException
+    public void deleteVisit(StudyImpl study, VisitImpl visit, User user) throws SQLException
     {
         StudySchema schema = StudySchema.getInstance();
         try
@@ -493,6 +493,8 @@ public class StudyManager
 
             for (DataSetDefinition def : getDataSetDefinitions(study))
                 def.unmaterialize();
+
+            getVisitManager(study).updateParticipantVisits(user);
         }
         finally
         {
