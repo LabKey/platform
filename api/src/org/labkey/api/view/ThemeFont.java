@@ -116,7 +116,7 @@ public class ThemeFont
     }
 
     public final static ThemeFont DEFAULT_THEME_FONT = SMALL;
-    private static final Map<String, ThemeFont> webThemeFontMap = new HashMap<String, ThemeFont>();
+    private static final Map<String, ThemeFont> webThemeFontMap = new LinkedHashMap<String, ThemeFont>();
 
     static
     {
