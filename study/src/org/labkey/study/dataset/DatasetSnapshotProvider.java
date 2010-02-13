@@ -287,6 +287,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     view.setShowExportButtons(false);
                     view.setShowInsertNewButton(false);
                     view.setShowDeleteButton(false);
+                    view.setShowUpdateColumn(false);
 
                     // TODO: Create and use a ResultSetDataLoader here instead of round-tripping through a TSV StringBuilder
                     StringBuilder sb = new StringBuilder();
@@ -451,6 +452,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 QueryForm sourceForm = getQueryForm(def, context);
                 QueryView view = QueryView.create(sourceForm);
                 view.setCustomView(sourceForm.getCustomView());
+                view.setShowUpdateColumn(false);
 
                 TableInfo tinfo = view.getTable();
                 if (tinfo instanceof UnionTableInfo)
