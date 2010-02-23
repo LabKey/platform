@@ -674,9 +674,22 @@ public class PageFlowUtil
     {
         try
         {
+            return gzip(s.getBytes("UTF-8"));
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+
+    public static byte[] gzip(byte[] in)
+    {
+        try
+        {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             GZIPOutputStream zip = new GZIPOutputStream(buf);
-            zip.write(s.getBytes("UTF-8"));
+            zip.write(in);
             zip.close();
             return buf.toByteArray();
         }
@@ -900,7 +913,7 @@ public class PageFlowUtil
 		return contents.toString();
 	}
 
-	
+
     // Fetch the contents of an input stream, and return it in a list.
     public static List<String> getStreamContentsAsList(InputStream is) throws IOException
     {
@@ -1127,7 +1140,7 @@ public class PageFlowUtil
     {
         if (text == null || text.equals(""))
             return '"';
-        
+
         int singleQuote = text.indexOf('\'');
         int doubleQuote = text.indexOf('"');
         if (doubleQuote == -1 || (singleQuote != -1 && singleQuote <= doubleQuote))
@@ -1266,7 +1279,7 @@ public class PageFlowUtil
     }
 
 
-    static Pattern scriptPattern = Pattern.compile("(<script.*?>)(.*?)(</script>)", Pattern.CASE_INSENSITIVE|Pattern.DOTALL);        
+    static Pattern scriptPattern = Pattern.compile("(<script.*?>)(.*?)(</script>)", Pattern.CASE_INSENSITIVE|Pattern.DOTALL);
 
     public static Document convertHtmlToDocument(final String html, final Collection<String> errors)
     {
@@ -1483,18 +1496,31 @@ public class PageFlowUtil
     }
 
     // TODO: Use email param or eliminate it
+    // TODO: mixing css and js?
     public static StringBuilder getStylesheetIncludes(Container c, boolean email)
     {
+        CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
 
-        // Ext CSS
-        sb.append("    <link href=\"");
-        sb.append(AppProps.getInstance().getContextPath());
-        sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
-        sb.append("    <link href=\"");
-        sb.append(AppProps.getInstance().getContextPath());
-        sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+        boolean combinedCSS = false;
 
+        // Combined CSS
+        if (combinedCSS)
+        {
+            sb.append("<link href=\"").append(filter(coreUrls.getCombinedStylesheetURL(c))).append("\" type=\"text/css\" rel=\"stylesheet\">\n");
+        }
+
+        // Ext CSS
+        if (!combinedCSS)
+        {
+            sb.append("    <link href=\"");
+            sb.append(AppProps.getInstance().getContextPath());
+            sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("    <link href=\"");
+            sb.append(AppProps.getInstance().getContextPath());
+            sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+        }
+        
         ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
 
         // Ext JS
@@ -1519,51 +1545,52 @@ public class PageFlowUtil
         sb.append("/ext-2.2/ext-patches.js?").append(getServerHash());
         sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
 
-        sb.append("    <link href=\"");
-        sb.append(PageFlowUtil.filter(stylesheetURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
 
-        ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-        sb.append("    <link href=\"");
-        sb.append(PageFlowUtil.filter(printStyleURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
-        
-        CoreUrls coreUrls = urlProvider(CoreUrls.class);
-
-        sb.append("    <link href=\"");
-        sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
-
-        ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
-
-        if (null != rootCustomStylesheetURL)
+        if (!combinedCSS)
         {
             sb.append("    <link href=\"");
-            sb.append(PageFlowUtil.filter(rootCustomStylesheetURL));
+            sb.append(PageFlowUtil.filter(stylesheetURL));
             sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
-        }
 
-        if (!c.isRoot())
-        {
-            ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
+            ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
+            sb.append("    <link href=\"");
+            sb.append(PageFlowUtil.filter(printStyleURL));
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
 
-            if (null != containerThemeStylesheetURL)
+            sb.append("    <link href=\"");
+            sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+
+            ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
+
+            if (null != rootCustomStylesheetURL)
             {
                 sb.append("    <link href=\"");
-                sb.append(PageFlowUtil.filter(containerThemeStylesheetURL));
+                sb.append(PageFlowUtil.filter(rootCustomStylesheetURL));
                 sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
             }
 
-            ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-            if (null != containerCustomStylesheetURL)
+            if (!c.isRoot())
             {
-                sb.append("    <link href=\"");
-                sb.append(PageFlowUtil.filter(containerCustomStylesheetURL));
-                sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+                ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
+
+                if (null != containerThemeStylesheetURL)
+                {
+                    sb.append("    <link href=\"");
+                    sb.append(PageFlowUtil.filter(containerThemeStylesheetURL));
+                    sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+                }
+
+                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+                if (null != containerCustomStylesheetURL)
+                {
+                    sb.append("    <link href=\"");
+                    sb.append(PageFlowUtil.filter(containerCustomStylesheetURL));
+                    sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+                }
             }
         }
-
         return sb;
     }
 
