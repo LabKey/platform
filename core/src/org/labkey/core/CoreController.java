@@ -16,6 +16,7 @@
 
 package org.labkey.core;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -46,8 +47,12 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
+import org.labkey.api.webdav.ModuleStaticResolverImpl;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.workbook.*;
 import org.springframework.validation.BindException;
@@ -61,7 +66,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.io.StringWriter;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -75,6 +83,9 @@ public class CoreController extends SpringActionController
 
     private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    private static Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    
+
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
 
     public CoreController()
@@ -129,6 +140,12 @@ public class CoreController extends SpringActionController
                 return null;
             else
                 return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
+        }
+
+        public ActionURL getCombinedStylesheetURL(Container c)
+        {
+            Container s = LookAndFeelProperties.getSettingsContainer(c);
+            return getRevisionURL(CombinedStylesheetAction.class, s);
         }
     }
 
@@ -236,13 +253,107 @@ public class CoreController extends SpringActionController
     }
 
 
+    /*
+    * https://www.labkey.org/stylesheet.css?revision=94
+    * https://www.labkey.org/printStyle.css?revision=94
+    * https://www.labkey.org/core/themeStylesheet.view?revision=94
+    * https://www.labkey.org/core/customStylesheet.view?revision=94
+    * https://www.labkey.org/ext-2.2/resources/css/ext-all.css
+    * https://www.labkey.org/ext-2.2/resources/css/ext-patches.css
+    */
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    public class CombinedStylesheetAction extends BaseStylesheetAction
+    {
+        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
+        {
+            Container c = LookAndFeelProperties.getSettingsContainer(getContainer());
+
+            Content content = _combinedStylesheetCache.get(c);
+            Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
+
+            if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
+            {
+                String contextPath = request.getContextPath();
+                InputStream is = null;
+                try
+                {
+                    // get the root resolver
+                    WebdavResolver r = ModuleStaticResolverImpl.get(); //ServiceRegistry.get(WebdavResolver.class);
+                    //WebdavService wd = WebdavService.get(); doesn't include static resources
+                    Resource stylesheet = r.lookup(new Path("stylesheet.css"));
+                    Resource print = r.lookup(new Path("printStyle.css"));
+
+                    Content root = getCustomStylesheetContent(ContainerManager.getRoot());
+                    Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
+                    Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
+                    Resource extAll = r.lookup(Path.parse("/ext-2.2/resources/css/ext-all.css"));
+                    Resource extPatches = r.lookup(Path.parse("/ext-2.2/resources/css/ext-patches.css"));
+                    StringWriter out = new StringWriter();
+
+                    _appendCss(out, extAll);
+                    _appendCss(out, extPatches);
+                    _appendCss(out, stylesheet);
+                    _appendCss(out, print);
+                    _appendCss(out, root);
+                    _appendCss(out, theme);
+                    _appendCss(out, custom);
+
+                    // CONSIDER: look for identical css cached by another project
+                    String css = out.toString();
+                    content = new Content(css);
+                    content.encoded = compressCSS(css);
+                    content.dependencies = dependsOn;
+                    _combinedStylesheetCache.put(c, content);
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(is);
+                }
+                
+            }
+
+            return content;
+        }
+    }
+
+
+    void _appendCss(StringWriter out, Resource r)
+    {
+        if (null == r || !r.isFile())
+            return;
+        assert null != r.getFile();
+        String s = PageFlowUtil.getFileContentsAsString(r.getFile());
+        Path p = new Path(getViewContext().getContextPath()).append(r.getPath()).getParent();
+        _appendCss(out, p, s);
+    }
+
+
+    void _appendCss(StringWriter out, Content content)
+    {
+        if (null == content || content instanceof NoContent)
+            return;
+        // relative URLs aren't really going to work (/labkey/core/container/), so path=null
+        _appendCss(out, null, content.content);
+    }
+    
+
+    void _appendCss(StringWriter out, Path p, String s)
+    {
+        if (null != p)
+            s = s.replaceAll("url\\(\\s*([^/])", "url(" + p.toString("/","/") + "$1");
+        out.write(s);
+        out.write("\n");
+    }
+    
+
     private static byte[] compressCSS(String s)
     {
-        String c = s.trim();
-        // this works but probably unnecesary with gzip
-        //c = c.replaceAll("\\s+", " ");
-        //c = c.replaceAll("\\s*}\\s*", "}\r\n");
-        return PageFlowUtil.gzip(c);
+        String c = s;
+        c = c.replaceAll("/\\*(?:.|[\\n\\r])*?\\*/", "");
+        c = c.replaceAll("(?:\\s|[\\n\\r])+", " ");
+        c = c.replaceAll("\\s*}\\s*", "}\r\n");
+        return PageFlowUtil.gzip(c.trim());
     }
 
 
