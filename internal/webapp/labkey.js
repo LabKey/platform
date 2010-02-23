@@ -108,6 +108,15 @@ LABKEY.requiresScript = function(file, immediate)
     }
 };
 
+
+LABKEY.loadedScript = function(file)
+{
+    var ret = this._loadedScriptFiles[file] ? true : false;
+    this._loadedScriptFiles[file] = true;
+    return ret;
+};
+
+
 LABKEY.addElemToHead = function(elemName, attributes)
 {
     var elem = document.createElement(elemName);
@@ -116,9 +125,10 @@ LABKEY.addElemToHead = function(elemName, attributes)
     document.getElementsByTagName("head")[0].appendChild(elem);
 };
 
+
 LABKEY.addMarkup = function(html)
 {
-    if(LABKEY.isDocumentClosed)
+    if (LABKEY.isDocumentClosed)
     {
         var elem = document.createElement("div");
         elem.innerHTML = html;
