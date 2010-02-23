@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.exp.list.ListService;
@@ -81,6 +82,9 @@ public class ListModule extends DefaultModule
 
         if (null != registry)
             registry.addFactories(new StudyListWriter.Factory(), new StudyListImporter.Factory());
+
+        ServiceRegistry.get(SearchService.class).addDocumentProvider(ListManager.get());
+        ServiceRegistry.get(SearchService.class).addSearchCategory(ListManager.listCategory);
     }
 
     @Override

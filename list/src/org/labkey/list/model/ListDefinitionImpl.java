@@ -34,7 +34,9 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URLHelper;
@@ -77,6 +79,11 @@ public class ListDefinitionImpl implements ListDefinition
     public int getListId()
     {
         return _def.getRowId();
+    }
+
+    public String getEntityId()
+    {
+        return _def.getEntityId();
     }
 
     public Container getContainer()
@@ -203,6 +210,7 @@ public class ListDefinitionImpl implements ListDefinition
                 ExperimentService.get().rollbackTransaction();
             }
         }
+        ListManager.get().enumerateDocuments(null, getContainer(), null);
     }
 
     public ListItem createListItem()
@@ -294,6 +302,7 @@ public class ListDefinitionImpl implements ListDefinition
                 ListItemImpl.deleteListItemContents(itm, getContainer(), user);
             }
             Table.delete(ListManager.get().getTinfoList(), getListId());
+            ServiceRegistry.get(SearchService.class).deleteResource("list:" + _def.getEntityId());
             Domain domain = getDomain();
             domain.delete(user);
             if (fTransaction)

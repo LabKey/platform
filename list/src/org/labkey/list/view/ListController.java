@@ -47,10 +47,14 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -74,10 +78,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: adam
@@ -210,6 +211,14 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
+        @Override
+        protected Set<Role> getContextualRoles()
+        {
+            if (getViewContext().getUser() == User.getSearchUser())
+                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+            return null;
+        }
+        
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
