@@ -52,7 +52,7 @@
 
 %><html>
 <head>
-<%=PageFlowUtil.getStylesheetIncludes(c, true)%>
+<%=PageFlowUtil.getStylesheetIncludes(c)%>
 </head>
 <body><%
         %>You can review this issue here: <a href="<%=h(bean.url)%>"><%=h(bean.url)%></a><br/><%

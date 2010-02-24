@@ -24,7 +24,7 @@
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>
 <head>
-<%=PageFlowUtil.getStylesheetIncludes(c, true)%>
+<%=PageFlowUtil.getStylesheetIncludes(c)%>
 </head>
 
 <body>

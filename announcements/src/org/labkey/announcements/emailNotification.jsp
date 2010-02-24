@@ -24,7 +24,7 @@
 %>
 <html>
 <head>
-<%=PageFlowUtil.getStylesheetIncludes(c, true)%>
+<%=PageFlowUtil.getStylesheetIncludes(c)%>
 </head>
 
 <body>

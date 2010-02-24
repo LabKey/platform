@@ -85,6 +85,7 @@
 
     <tr><td colspan="2"><b>Runtime Information</b></td></tr>
     <tr><td>Mode</td><td><%=bean.mode%></td></tr>
+    <tr><td>Asserts</td><td><%=bean.asserts%></td></tr>
     <tr><td>Servlet Container</td><td><%=bean.servletContainer%></td></tr>
     <tr><td>Java Runtime</td><td><%=bean.javaVersion%></td></tr>
     <tr><td>Java Home</td><td><%=bean.javaHome%></td></tr>

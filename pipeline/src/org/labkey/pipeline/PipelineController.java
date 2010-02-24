@@ -705,7 +705,7 @@ public class PipelineController extends SpringActionController
 
         public void setResponseProperties(HttpServletResponse response)
         {
-            response.setHeader("Cache-Control", "no-cache");
+            response.setHeader("Cache-Control", "no-store");
         }
 
         public void render(Object o, BindException errors, PrintWriter out) throws Exception
@@ -729,7 +729,7 @@ public class PipelineController extends SpringActionController
         public void setResponseProperties(HttpServletResponse response)
         {
             // No caching, since this really RPC
-            response.setHeader("Cache-Control", "no-cache");
+            response.setHeader("Cache-Control", "no-store");
             response.setCharacterEncoding("UTF-8");            
         }
 

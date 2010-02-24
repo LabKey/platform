@@ -63,14 +63,11 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * User: jeckels
@@ -84,6 +81,7 @@ public class CoreController extends SpringActionController
     private static Map<Container, Content> _themeStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<Container, Content>();
     private static Map<Container, Content> _combinedStylesheetCache = new ConcurrentHashMap<Container, Content>();
+    private static Map<Content, Content> _setCombinedStylesheet = new ConcurrentHashMap<Content,Content>();
     
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
@@ -168,25 +166,31 @@ public class CoreController extends SpringActionController
             if (content instanceof NoContent)
                 return;
 
-            response.setContentType("text/css");
+            response.setContentType(getContentType());
 
             response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 35);
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.setDateHeader("Last-Modified", content.modified);
-            if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip"))
+            if (StringUtils.trimToEmpty(request.getHeader("Accept-Encoding")).contains("gzip") && null != content.compressed)
             {
                 response.setHeader("Content-Encoding", "gzip");
-                response.getOutputStream().write(content.encoded);
+                response.getOutputStream().write(content.compressed);
             }
             else
             {
-                response.getWriter().write(content.content);
+                response.getOutputStream().write(content.encoded);
             }
+        }
+
+        String getContentType()
+        {
+            return "text/css";
         }
 
         abstract Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception;
     }
+
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -211,6 +215,7 @@ public class CoreController extends SpringActionController
             return content;
         }
     }
+
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -243,7 +248,7 @@ public class CoreController extends SpringActionController
                 AttachmentService.get().writeDocument(writer, parent, cssAttachment.getName(), false);
                 content = new Content(new String(writer.getBytes()));
                 content.dependencies = dependsOn;
-                content.encoded = compressCSS(content.content);
+                content.compressed = compressCSS(content.content);
             }
 
             _customStylesheetCache.put(c, content);
@@ -253,16 +258,9 @@ public class CoreController extends SpringActionController
     }
 
 
-    /*
-    * https://www.labkey.org/stylesheet.css?revision=94
-    * https://www.labkey.org/printStyle.css?revision=94
-    * https://www.labkey.org/core/themeStylesheet.view?revision=94
-    * https://www.labkey.org/core/customStylesheet.view?revision=94
-    * https://www.labkey.org/ext-2.2/resources/css/ext-all.css
-    * https://www.labkey.org/ext-2.2/resources/css/ext-patches.css
-    */
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     public class CombinedStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -274,15 +272,13 @@ public class CoreController extends SpringActionController
 
             if (null == content || !dependsOn.equals(content.dependencies) || AppProps.getInstance().isDevMode())
             {
-                String contextPath = request.getContextPath();
                 InputStream is = null;
                 try
                 {
                     // get the root resolver
                     WebdavResolver r = ModuleStaticResolverImpl.get(); //ServiceRegistry.get(WebdavResolver.class);
-                    //WebdavService wd = WebdavService.get(); doesn't include static resources
+
                     Resource stylesheet = r.lookup(new Path("stylesheet.css"));
-                    Resource print = r.lookup(new Path("printStyle.css"));
 
                     Content root = getCustomStylesheetContent(ContainerManager.getRoot());
                     Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
@@ -294,23 +290,40 @@ public class CoreController extends SpringActionController
                     _appendCss(out, extAll);
                     _appendCss(out, extPatches);
                     _appendCss(out, stylesheet);
-                    _appendCss(out, print);
                     _appendCss(out, root);
                     _appendCss(out, theme);
                     _appendCss(out, custom);
 
-                    // CONSIDER: look for identical css cached by another project
                     String css = out.toString();
                     content = new Content(css);
-                    content.encoded = compressCSS(css);
+                    content.compressed = compressCSS(css);
                     content.dependencies = dependsOn;
+                    // save space
+                    content.content = null; out = null;
+
+                    synchronized (_setCombinedStylesheet)
+                    {
+                        Content shared = content.copy();
+                        shared.modified = 0;
+                        shared.dependencies = "";
+                        if (!_setCombinedStylesheet.containsKey(shared))
+                        {
+                            _setCombinedStylesheet.put(shared,shared);
+                        }
+                        else
+                        {
+                            shared = _setCombinedStylesheet.get(shared);
+                            content.content = shared.content;
+                            content.encoded = shared.encoded;
+                            content.compressed = shared.compressed;
+                        }
+                    }
                     _combinedStylesheetCache.put(c, content);
                 }
                 finally
                 {
                     IOUtils.closeQuietly(is);
                 }
-                
             }
 
             return content;
@@ -324,7 +337,7 @@ public class CoreController extends SpringActionController
             return;
         assert null != r.getFile();
         String s = PageFlowUtil.getFileContentsAsString(r.getFile());
-        Path p = new Path(getViewContext().getContextPath()).append(r.getPath()).getParent();
+        Path p = Path.parse(getViewContext().getContextPath()).append(r.getPath()).getParent();
         _appendCss(out, p, s);
     }
 
@@ -357,6 +370,63 @@ public class CoreController extends SpringActionController
     }
 
 
+    static AtomicReference<Content> _combinedJavascript = new AtomicReference<Content>(); 
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class CombinedJavascriptAction extends BaseStylesheetAction
+    {
+        Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
+        {
+            Content ret = _combinedJavascript.get();
+            if (null == ret)
+            {
+                // get the root resolver
+                WebdavResolver r = ModuleStaticResolverImpl.get();
+                
+                List<String> scripts = new ArrayList<String>();
+                LinkedHashSet<String> includes = new LinkedHashSet<String>();
+                PageFlowUtil.getJavaScriptPaths(scripts, includes);
+                List<String> concat = new ArrayList<String>();
+                for (String path : scripts)
+                {
+                    Resource script = r.lookup(Path.parse(path));
+                    assert(script.isFile());
+                    if (!script.isFile())
+                        continue;
+                    concat.add("/* ---- " + path + " ---- */");
+                    List<String> content = PageFlowUtil.getStreamContentsAsList(script.getInputStream(getUser()));
+                    concat.addAll(content);
+                }
+                int len = 0;
+                for (String s : concat)
+                    len = s.length()+1;
+                StringBuilder sb = new StringBuilder(len);
+                for (String s : concat)
+                {
+                    String t = StringUtils.trimToNull(s);
+                    if (t == null) continue;
+                    if (t.startsWith("//"))
+                        continue;
+                    sb.append(t).append('\n');
+                }
+                ret = new Content(sb.toString());
+                ret.content = null; sb = null; concat = null;
+                ret.compressed = PageFlowUtil.gzip(ret.encoded);
+                _combinedJavascript.set(ret);
+            }
+            return ret;
+        }
+
+        @Override
+        String getContentType()
+        {
+            return "text/javascript";
+        }
+    }
+
+
     @RequiresNoPermission
     @IgnoresTermsOfUse
     public class ContainerRedirectAction extends SimpleRedirectAction<RedirectForm>
@@ -375,7 +445,6 @@ public class CoreController extends SpringActionController
             url.setPageFlow(form.getPageflow());
             url.setAction(form.getAction());
             url.setContainer(targetContainer);
-
             return url;
         }
     }

@@ -238,7 +238,10 @@ public class LoginController extends SpringActionController
             if (!reshow && (isLoggedIn() || authenticate(form, request, response)))
                 return HttpView.redirect(getSuccessURL(form));
             else
+            {
+                response.setHeader("X-FRAME-OPTIONS", "DENY");
                 return showLogin(form, request, getPageConfig(), false);
+            }
         }
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception

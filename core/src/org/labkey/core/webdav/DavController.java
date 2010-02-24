@@ -1956,7 +1956,18 @@ public class DavController extends SpringActionController
             if (null == _fis)
             {
                 final InputStream is = getRequest().getInputStream();
-                final long _size = Long.parseLong(getRequest().getHeader("Content-Length"));
+                String contentLength = getRequest().getHeader("Content-Length");
+                long size = -1;
+                try
+                {
+                    if (null != contentLength)
+                        size = Long.parseLong(contentLength);
+                }
+                catch (NumberFormatException x)
+                {
+                    
+                }
+                final long _size = size;
                 _fis = new FileStream()
                 {
                     public long getSize()
