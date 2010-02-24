@@ -844,13 +844,52 @@ public class PageFlowUtil
         {
             content = s;
             encoded = e;
+            if (null == e && null != s)
+                encoded = s.getBytes();
             modified = m;
+        }
+
+        public Content copy()
+        {
+            Content ret = new Content(content,encoded,modified);
+            ret.dependencies = dependencies;
+            ret.compressed = compressed;
+            return ret;
         }
 
         public Object dependencies;
         public String content;
         public byte[] encoded;
+        public byte[] compressed;
         public long modified;
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Content content1 = (Content) o;
+
+            if (modified != content1.modified) return false;
+            if (content != null ? !content.equals(content1.content) : content1.content != null) return false;
+            if (dependencies != null ? !dependencies.equals(content1.dependencies) : content1.dependencies != null)
+                return false;
+            if (!Arrays.equals(encoded, content1.encoded)) return false;
+            //if (!Arrays.equals(compressed, content1.compressed)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = dependencies != null ? dependencies.hashCode() : 0;
+            result = 31 * result + (content != null ? content.hashCode() : 0);
+            result = 31 * result + (encoded != null ? Arrays.hashCode(encoded) : 0);
+            //result = 31 * result + (compressed != null ? Arrays.hashCode(compressed) : 0);
+            result = 31 * result + (int) (modified ^ (modified >>> 32));
+            return result;
+        }
     }
 
 
@@ -1471,12 +1510,16 @@ public class PageFlowUtil
         }
     }
 
+
     public static String getStandardIncludes(Container c)
     {
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getStylesheetIncludes(c, false));
+        sb.append(getLabkeyJS());
+        sb.append(getStylesheetIncludes(c));
+        sb.append(getJavaScriptIncludes());
         return sb.toString();
     }
+
 
     public static StringBuilder getFaviconIncludes(Container c)
     {
@@ -1495,69 +1538,34 @@ public class PageFlowUtil
         return sb;
     }
 
-    // TODO: Use email param or eliminate it
-    // TODO: mixing css and js?
-    public static StringBuilder getStylesheetIncludes(Container c, boolean email)
+
+    public static String getStylesheetIncludes(Container c)
     {
+        boolean combinedCSS = true; // UNDONE: verify that look and feel revision is modified on all relevant changes
+
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
-
-        boolean combinedCSS = false;
 
         // Combined CSS
         if (combinedCSS)
         {
             sb.append("<link href=\"").append(filter(coreUrls.getCombinedStylesheetURL(c))).append("\" type=\"text/css\" rel=\"stylesheet\">\n");
         }
-
-        // Ext CSS
-        if (!combinedCSS)
-        {
-            sb.append("    <link href=\"");
-            sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
-            sb.append("    <link href=\"");
-            sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
-        }
-        
-        ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
-
-        // Ext JS
-        sb.append("    <script src=\"");
-        sb.append(AppProps.getInstance().getContextPath());
-        sb.append("/ext-2.2/adapter/ext/ext-base.js?").append(getServerHash());
-        sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
-        sb.append("    <script src=\"");
-        sb.append(AppProps.getInstance().getContextPath());
-        if (AppProps.getInstance().isDevMode() && false)
-        {
-            sb.append("/ext-exploded.js?");
-        }
         else
         {
-            sb.append("/ext-2.2/ext-all").append(AppProps.getInstance().isDevMode() ? "-debug.js?" : ".js?");
-        }
-        sb.append(getServerHash());
-        sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
-        sb.append("    <script src=\"");
-        sb.append(AppProps.getInstance().getContextPath());
-        sb.append("/ext-2.2/ext-patches.js?").append(getServerHash());
-        sb.append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+            sb.append("<link href=\"");
+            sb.append(AppProps.getInstance().getContextPath());
+            sb.append("/ext-2.2/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("<link href=\"");
+            sb.append(AppProps.getInstance().getContextPath());
+            sb.append("/ext-2.2/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
-
-        if (!combinedCSS)
-        {
-            sb.append("    <link href=\"");
+            ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
+            sb.append("<link href=\"");
             sb.append(PageFlowUtil.filter(stylesheetURL));
             sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
 
-            ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
-            sb.append("    <link href=\"");
-            sb.append(PageFlowUtil.filter(printStyleURL));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
-
-            sb.append("    <link href=\"");
+            sb.append("<link href=\"");
             sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
             sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
 
@@ -1565,7 +1573,7 @@ public class PageFlowUtil
 
             if (null != rootCustomStylesheetURL)
             {
-                sb.append("    <link href=\"");
+                sb.append("<link href=\"");
                 sb.append(PageFlowUtil.filter(rootCustomStylesheetURL));
                 sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
             }
@@ -1576,7 +1584,7 @@ public class PageFlowUtil
 
                 if (null != containerThemeStylesheetURL)
                 {
-                    sb.append("    <link href=\"");
+                    sb.append("<link href=\"");
                     sb.append(PageFlowUtil.filter(containerThemeStylesheetURL));
                     sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
                 }
@@ -1585,13 +1593,311 @@ public class PageFlowUtil
 
                 if (null != containerCustomStylesheetURL)
                 {
-                    sb.append("    <link href=\"");
+                    sb.append("<link href=\"");
                     sb.append(PageFlowUtil.filter(containerCustomStylesheetURL));
                     sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
                 }
             }
         }
-        return sb;
+        
+        ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
+        sb.append("<link href=\"");
+        sb.append(filter(printStyleURL));
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
+
+        // mark these stylesheets as included (in case someone else tries)
+        sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
+        sb.append("LABKEY.loadedScripts('ext-2.2/resources/css/ext-all.css','ext-2.2/resources/css/ext-patches.css','stylesheet.css','printStyle.css');\n");
+        sb.append("</script>\n");
+
+        return sb.toString();
+    }
+
+
+    static String[] extExploded = new String[]
+    {
+        "ext2-2/source/core/DomHelper.js",
+        "ext2-2/source/core/Template.js",
+        "ext2-2/source/core/DomQuery.js",
+        "ext2-2/source/util/Observable.js",
+        "ext2-2/source/core/EventManager.js",
+        "ext2-2/source/core/Element.js",
+        "ext2-2/source/core/Fx.js",
+        "ext2-2/source/core/CompositeElement.js",
+        "ext2-2/source/data/Connection.js",
+        "ext2-2/source/core/UpdateManager.js",
+        "ext2-2/source/util/Date.js",
+        "ext2-2/source/util/DelayedTask.js",
+        "ext2-2/source/util/TaskMgr.js",
+        "ext2-2/source/util/MixedCollection.js",
+        "ext2-2/source/util/JSON.js",
+        "ext2-2/source/util/Format.js",
+        "ext2-2/source/util/XTemplate.js",
+        "ext2-2/source/util/CSS.js",
+        "ext2-2/source/util/ClickRepeater.js",
+        "ext2-2/source/util/KeyNav.js",
+        "ext2-2/source/util/KeyMap.js",
+        "ext2-2/source/util/TextMetrics.js",
+        "ext2-2/source/dd/DDCore.js",
+        "ext2-2/source/dd/DragTracker.js",
+        "ext2-2/source/dd/ScrollManager.js",
+        "ext2-2/source/dd/Registry.js",
+        "ext2-2/source/dd/StatusProxy.js",
+        "ext2-2/source/dd/DragSource.js",
+        "ext2-2/source/dd/DropTarget.js",
+        "ext2-2/source/dd/DragZone.js",
+        "ext2-2/source/dd/DropZone.js",
+        "ext2-2/source/data/SortTypes.js",
+        "ext2-2/source/data/Record.js",
+        "ext2-2/source/data/StoreMgr.js",
+        "ext2-2/source/data/Store.js",
+        "ext2-2/source/data/SimpleStore.js",
+        "ext2-2/source/data/JsonStore.js",
+        "ext2-2/source/data/DataField.js",
+        "ext2-2/source/data/DataReader.js",
+        "ext2-2/source/data/DataProxy.js",
+        "ext2-2/source/data/MemoryProxy.js",
+        "ext2-2/source/data/HttpProxy.js",
+        "ext2-2/source/data/ScriptTagProxy.js",
+        "ext2-2/source/data/JsonReader.js",
+        "ext2-2/source/data/XmlReader.js",
+        "ext2-2/source/data/ArrayReader.js",
+        "ext2-2/source/data/Tree.js",
+        "ext2-2/source/data/GroupingStore.js",
+        "ext2-2/source/widgets/ComponentMgr.js",
+        "ext2-2/source/widgets/Component.js",
+        "ext2-2/source/widgets/Action.js",
+        "ext2-2/source/widgets/Layer.js",
+        "ext2-2/source/widgets/Shadow.js",
+        "ext2-2/source/widgets/BoxComponent.js",
+        "ext2-2/source/widgets/SplitBar.js",
+        "ext2-2/source/widgets/Container.js",
+        "ext2-2/source/widgets/layout/ContainerLayout.js",
+        "ext2-2/source/widgets/layout/FitLayout.js",
+        "ext2-2/source/widgets/layout/CardLayout.js",
+        "ext2-2/source/widgets/layout/AnchorLayout.js",
+        "ext2-2/source/widgets/layout/ColumnLayout.js",
+        "ext2-2/source/widgets/layout/BorderLayout.js",
+        "ext2-2/source/widgets/layout/FormLayout.js",
+        "ext2-2/source/widgets/layout/AccordionLayout.js",
+        "ext2-2/source/widgets/layout/TableLayout.js",
+        "ext2-2/source/widgets/layout/AbsoluteLayout.js",
+        "ext2-2/source/widgets/Viewport.js",
+        "ext2-2/source/widgets/Panel.js",
+        "ext2-2/source/widgets/Window.js",
+        "ext2-2/source/widgets/WindowManager.js",
+        "ext2-2/source/widgets/PanelDD.js",
+        "ext2-2/source/state/Provider.js",
+        "ext2-2/source/state/StateManager.js",
+        "ext2-2/source/state/CookieProvider.js",
+        "ext2-2/source/widgets/DataView.js",
+        "ext2-2/source/widgets/ColorPalette.js",
+        "ext2-2/source/widgets/DatePicker.js",
+        "ext2-2/source/widgets/TabPanel.js",
+        "ext2-2/source/widgets/Button.js",
+        "ext2-2/source/widgets/SplitButton.js",
+        "ext2-2/source/widgets/CycleButton.js",
+        "ext2-2/source/widgets/Toolbar.js",
+        "ext2-2/source/widgets/PagingToolbar.js",
+        "ext2-2/source/widgets/Resizable.js",
+        "ext2-2/source/widgets/Editor.js",
+        "ext2-2/source/widgets/MessageBox.js",
+        "ext2-2/source/widgets/tips/Tip.js",
+        "ext2-2/source/widgets/tips/ToolTip.js",
+        "ext2-2/source/widgets/tips/QuickTip.js",
+        "ext2-2/source/widgets/tips/QuickTips.js",
+        "ext2-2/source/widgets/tree/TreePanel.js",
+        "ext2-2/source/widgets/tree/TreeEventModel.js",
+        "ext2-2/source/widgets/tree/TreeSelectionModel.js",
+        "ext2-2/source/widgets/tree/TreeNode.js",
+        "ext2-2/source/widgets/tree/AsyncTreeNode.js",
+        "ext2-2/source/widgets/tree/TreeNodeUI.js",
+        "ext2-2/source/widgets/tree/TreeLoader.js",
+        "ext2-2/source/widgets/tree/TreeFilter.js",
+        "ext2-2/source/widgets/tree/TreeSorter.js",
+        "ext2-2/source/widgets/tree/TreeDropZone.js",
+        "ext2-2/source/widgets/tree/TreeDragZone.js",
+        "ext2-2/source/widgets/tree/TreeEditor.js",
+        "ext2-2/source/widgets/menu/Menu.js",
+        "ext2-2/source/widgets/menu/MenuMgr.js",
+        "ext2-2/source/widgets/menu/BaseItem.js",
+        "ext2-2/source/widgets/menu/TextItem.js",
+        "ext2-2/source/widgets/menu/Separator.js",
+        "ext2-2/source/widgets/menu/Item.js",
+        "ext2-2/source/widgets/menu/CheckItem.js",
+        "ext2-2/source/widgets/menu/Adapter.js",
+        "ext2-2/source/widgets/menu/DateItem.js",
+        "ext2-2/source/widgets/menu/ColorItem.js",
+        "ext2-2/source/widgets/menu/DateMenu.js",
+        "ext2-2/source/widgets/menu/ColorMenu.js",
+        "ext2-2/source/widgets/form/Field.js",
+        "ext2-2/source/widgets/form/TextField.js",
+        "ext2-2/source/widgets/form/TriggerField.js",
+        "ext2-2/source/widgets/form/TextArea.js",
+        "ext2-2/source/widgets/form/NumberField.js",
+        "ext2-2/source/widgets/form/DateField.js",
+        "ext2-2/source/widgets/form/Combo.js",
+        "ext2-2/source/widgets/form/Checkbox.js",
+        "ext2-2/source/widgets/form/CheckboxGroup.js",
+        "ext2-2/source/widgets/form/Radio.js",
+        "ext2-2/source/widgets/form/RadioGroup.js",
+        "ext2-2/source/widgets/form/Hidden.js",
+        "ext2-2/source/widgets/form/BasicForm.js",
+        "ext2-2/source/widgets/form/Form.js",
+        "ext2-2/source/widgets/form/FieldSet.js",
+        "ext2-2/source/widgets/form/HtmlEditor.js",
+        "ext2-2/source/widgets/form/TimeField.js",
+        "ext2-2/source/widgets/form/Label.js",
+        "ext2-2/source/widgets/form/Action.js",
+        "ext2-2/source/widgets/form/VTypes.js",
+        "ext2-2/source/widgets/grid/GridPanel.js",
+        "ext2-2/source/widgets/grid/GridView.js",
+        "ext2-2/source/widgets/grid/GroupingView.js",
+        "ext2-2/source/widgets/grid/ColumnDD.js",
+        "ext2-2/source/widgets/grid/ColumnSplitDD.js",
+        "ext2-2/source/widgets/grid/GridDD.js",
+        "ext2-2/source/widgets/grid/ColumnModel.js",
+        "ext2-2/source/widgets/grid/AbstractSelectionModel.js",
+        "ext2-2/source/widgets/grid/RowSelectionModel.js",
+        "ext2-2/source/widgets/grid/CellSelectionModel.js",
+        "ext2-2/source/widgets/grid/EditorGrid.js",
+        "ext2-2/source/widgets/grid/GridEditor.js",
+        "ext2-2/source/widgets/grid/PropertyGrid.js",
+        "ext2-2/source/widgets/grid/RowNumberer.js",
+        "ext2-2/source/widgets/grid/CheckboxSelectionModel.js",
+        "ext2-2/source/widgets/LoadMask.js",
+        "ext2-2/source/widgets/ProgressBar.js",
+        "ext2-2/source/widgets/Slider.js",
+        "ext2-2/source/widgets/StatusBar.js",
+        "ext2-2/source/util/History.js",
+        "ext2-2/source/debug.js"
+    };
+    static String extDebug = "ext-2.2/ext-all-debug.js";
+    static String extMin = "ext-2.2/ext-all.js";
+
+    static String[] clientExploded = new String[]
+    {
+        "clientapi/ExtJsConfig.js",
+        "clientapi/ActionURL.js",
+        "clientapi/Assay.js",
+        "clientapi/Chart.js",
+        "clientapi/Domain.js",
+        "clientapi/Experiment.js",
+        "clientapi/LongTextEditor.js",
+        "clientapi/EditorGridPanel.js",
+        "clientapi/Filter.js",
+        "clientapi/GridView.js",
+        "clientapi/NavTrail.js",
+        "clientapi/Query.js",
+        "clientapi/ExtendedJsonReader.js",
+        "clientapi/Store.js",
+        "clientapi/Utils.js",
+        "clientapi/WebPart.js",
+        "clientapi/QueryWebPart.js",
+        "clientapi/Security.js",
+        "clientapi/SecurityPolicy.js",
+        "clientapi/Specimen.js",
+        "clientapi/MultiRequest.js",
+        "clientapi/HoverPopup.js",
+        "clientapi/Form.js",
+        "clientapi/PersistentToolTip.js",
+        "clientapi/Message.js",
+        "clientapi/FormPanel.js",
+        "clientapi/Pipeline.js"
+    };
+    static String clientDebug = "clientapi/clientapi.js";
+    static String clientMin = "clientapi/clientapi.min.js";
+
+
+    /** scripts are the explicitly included scripts,
+     * @param scripts   the scripts that should be explicitly included
+     * @param included  the scripts that are implicitly included
+     */
+    public static void getJavaScriptPaths(List<String> scripts, Set<String> included)
+    {
+        boolean explodedExt = AppProps.getInstance().isDevMode() && false;
+        boolean explodedClient = AppProps.getInstance().isDevMode();
+
+        // LABKEY
+        scripts.add("util.js");
+
+        // EXT
+        scripts.add("ext-2.2/adapter/ext/ext-base.js");
+        for (String e : extExploded)
+        {
+            //included.add(e);
+            if (explodedExt)
+                scripts.add(e);
+        }
+        if (!explodedExt)
+            scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
+        included.add(extDebug);
+        included.add(extMin);
+        scripts.add("ext-2.2/ext-patches.js");
+
+        // CLIENT
+        for (String e : clientExploded)
+        {
+            //included.add(e);
+            if (explodedClient)
+                scripts.add(e);
+        }
+        if (!explodedClient)
+            scripts.add(AppProps.getInstance().isDevMode() ? clientDebug : clientMin);
+        included.add(clientDebug);
+        included.add(clientMin);
+        scripts.add("DataRegion.js");
+
+        included.addAll(scripts);
+    }
+    
+
+    public static String getLabkeyJS()
+    {
+        String contextPath = AppProps.getInstance().getContextPath();
+        String serverHash = getServerHash();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+        sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
+        sb.append("LABKEY.init(").append(jsInitObject()).append(");\n");
+        sb.append("</script>\n");
+        return sb.toString();
+    }
+
+    
+    public static String getJavaScriptIncludes()
+    {
+        boolean combinedJS = true;
+
+        String contextPath = AppProps.getInstance().getContextPath();
+        String serverHash = getServerHash();
+
+        List<String> scripts = new ArrayList<String>();
+        LinkedHashSet<String> includes = new LinkedHashSet<String>();
+        getJavaScriptPaths(scripts, includes);
+
+        StringBuilder sb = new StringBuilder();
+
+        if (combinedJS && !AppProps.getInstance().isDevMode())
+        {
+            sb.append("<script src=\"").append(contextPath).append("/core/combinedJavascript.view?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+        }
+        else
+        {
+            for (String s : scripts)
+                sb.append("<script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
+        }
+        sb.append("<script type=\"text/javascript\" language=\"javascript\">\nLABKEY.loadedScripts(");
+        String comma = "";
+        for (String s : includes)
+        {
+            sb.append(comma).append(jsString(s));
+            comma = ",";
+        }
+        sb.append(");\n");
+        sb.append("</script>\n");
+        return sb.toString();
     }
 
 
@@ -1910,7 +2216,7 @@ public class PageFlowUtil
     public static void sendAjaxCompletions(HttpServletResponse response, List<AjaxCompletion> completions) throws IOException
     {
         response.setContentType("text/xml");
-        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Cache-Control", "no-store");
         Writer writer = response.getWriter();
         writer.write("<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n");
         writer.write("<completions>");

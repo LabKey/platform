@@ -28,7 +28,7 @@ public abstract class AjaxResponse<ModelBean> extends HttpView<ModelBean>
     protected void setHeaders(HttpServletResponse response)
     {
         response.setContentType(getContentType());
-        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Cache-Control", "no-store");
     }
 
     protected void renderInternal(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception

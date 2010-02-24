@@ -63,14 +63,6 @@ if (null != bean.getStyles())
     <style type="text/css"><!--<%= bean.getStyles() %>--></style><%
     }
 %>
-    <script type="text/javascript" src="<%=contextPath%>/labkey.js?<%=AppProps.getInstance().getServerSessionGUID()%>"></script>
-    <script type="text/javascript" language="javascript">
-        LABKEY.init(<%=PageFlowUtil.jsInitObject()%>);
-        LABKEY.requiresScript('util.js');
-    </script>
-    <script type="text/javascript">
-        LABKEY.requiresClientAPI();
-    </script>
 <%= null != bean.getScript() && 0 < bean.getScript().length() ? bean.getScript() + "\n": ""
 %>
 </head>

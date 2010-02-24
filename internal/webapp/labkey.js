@@ -4,11 +4,13 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// NOTE labkey.js should not depend on Ext
+
 if (typeof LABKEY == "undefined")
 {
     var LABKEY = {};
-    LABKEY.contextPath = "must call init()";
-    LABKEY.imagePath = "must call init()";
+    LABKEY.contextPath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath;
+    LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
     LABKEY.yahooRoot = "_yui/build";
     LABKEY.extJsRoot = "ext-2.2";
@@ -66,6 +68,8 @@ LABKEY.init = function(config)
     {
         this[p] = config[p];
     }
+    if ("Security" in LABKEY)
+        LABKEY.Security.currentUser = LABKEY.user;
 };
 
 
@@ -109,10 +113,11 @@ LABKEY.requiresScript = function(file, immediate)
 };
 
 
-LABKEY.loadedScript = function(file)
+LABKEY.loadedScripts = function()
 {
-    var ret = this._loadedScriptFiles[file] ? true : false;
-    this._loadedScriptFiles[file] = true;
+    var ret = (arguments.length > 0 && this._loadedScriptFiles[arguments[0]]) ? true : false
+    for (var i = 0 ; i < arguments.length ; i++)
+        this._loadedScriptFiles[arguments[i]] = true;
     return ret;
 };
 
@@ -175,10 +180,19 @@ LABKEY.requiresYahoo = function(script, immediate)
     LABKEY.requiresScript(expanded, immediate);
 };
 
-LABKEY.requiresExtJs = function()
+
+LABKEY.requiresExtJs = function(immediate)
 {
-    // No-op. This is now included in all page renders, and this method is solely here for backwards compatibility.
+    if (arguments.length < 1) immediate = true;
+
+    // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
+    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css', true);
+    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css', true);
+    LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
+
 
 LABKEY.requiresClientAPI = function(immediate)
 {
@@ -219,158 +233,6 @@ LABKEY.requiresClientAPI = function(immediate)
     LABKEY.requiresScript('DataRegion.js', immediate);
 };
 
-
-/**
- * Event handler that can be attached to text areas to let them handle indent/outdent with TAB/SHIFT-TAB.
- * Handles region selection for multi-line indenting as well.
- * Note that this overrides the browser's standard focus traversal keystrokes.
- * Based off of postings from http://ajaxian.com/archives/handling-tabs-in-textareas
- * Wire it up with a call like:
- *     Ext.EventManager.on('queryText', 'keydown', handleTabsInTextArea);
- * @param event an Ext.EventObject for the keydown event
- */
-function handleTabsInTextArea(event)
-{
-    // Check if the user hit TAB or SHIFT-TAB
-    if (event.getKey() == Ext.EventObject.TAB && !event.ctrlKey && !event.altKey)
-    {
-        var t = event.target;
-
-        if (Ext.isIE)
-        {
-            var range = document.selection.createRange();
-            var stored_range = range.duplicate();
-            stored_range.moveToElementText(t);
-            stored_range.setEndPoint('EndToEnd', range);
-            t.selectionStart = stored_range.text.length - range.text.length;
-            t.selectionEnd = t.selectionStart + range.text.length;
-            t.setSelectionRange = function(start, end)
-            {
-                var range = this.createTextRange();
-                range.collapse(true);
-                range.moveStart("character", start);
-                range.moveEnd("character", end - start);
-                range.select();
-            };
-        }
-
-        var ss = t.selectionStart;
-        var se = t.selectionEnd;
-        var newSelectionStart = ss;
-        var scrollTop = t.scrollTop;
-
-        if (ss != se)
-        {
-            // In case selection was not the entire line (e.g. selection begins in the middle of a line)
-            // we need to tab at the beginning as well as at the start of every following line.
-            var pre = t.value.slice(0,ss);
-            var sel = t.value.slice(ss,se);
-            var post = t.value.slice(se,t.value.length);
-
-            // If our selection starts in the middle of the line, include the full line
-            if (pre.length > 0 && pre.lastIndexOf('\n') != pre.length - 1)
-            {
-                // Add the beginning of the line to the indented area
-                sel = pre.slice(pre.lastIndexOf('\n') + 1, pre.length).concat(sel);
-                // Remove it from the prefix
-                pre = pre.slice(0, pre.lastIndexOf('\n') + 1);
-                if (!event.shiftKey)
-                {
-                    // Add one to the starting index since we're going to add a tab before it
-                    newSelectionStart++;
-                }
-            }
-            // If our last selected character is a new line, don't add a tab after it since that's
-            // part of the next line
-            if (sel.lastIndexOf('\n') == sel.length - 1)
-            {
-                sel = sel.slice(0, sel.length - 1);
-                post = '\n' + post;
-            }
-
-            // Shift means remove indentation
-            if (event.shiftKey)
-            {
-                // Remove one tab after each newline
-                sel = sel.replace(/\n\t/g,"\n");
-                if (sel.indexOf('\t') == 0)
-                {
-                    // Remove one leading tab, if present
-                    sel = sel.slice(1, sel.length);
-                    // We're stripping out a tab before the selection, so march it back one character
-                    newSelectionStart--;
-                }
-            }
-            else
-            {
-                pre = pre.concat('\t');
-                sel = sel.replace(/\n/g,"\n\t");
-            }
-
-            var originalLength = t.value.length;
-            t.value = pre.concat(sel).concat(post);
-            t.setSelectionRange(newSelectionStart, se + (t.value.length - originalLength));
-        }
-        // No text is selected
-        else
-        {
-            // Shift means remove indentation
-            if (event.shiftKey)
-            {
-                // Figure out where the current line starts
-                var lineStart = t.value.slice(0, ss).lastIndexOf('\n');
-                if (lineStart < 0)
-                {
-                    lineStart = 0;
-                }
-                // Look for the first tab
-                var tabIndex = t.value.slice(lineStart, ss).indexOf('\t');
-                if (tabIndex != -1)
-                {
-                    // The line has a tab - need to remove it
-                    tabIndex += lineStart;
-                    t.value = t.value.slice(0, tabIndex).concat(t.value.slice(tabIndex + 1, t.value.length));
-                    if (ss == se)
-                    {
-                        ss--;
-                        se = ss;
-                    }
-                    else
-                    {
-                        ss--;
-                        se--;
-                    }
-                }
-            }
-            else
-            {
-                // Shove a tab in at the cursor
-                t.value = t.value.slice(0,ss).concat('\t').concat(t.value.slice(ss,t.value.length));
-                if (ss == se)
-                {
-                    ss++;
-                    se = ss;
-                }
-                else
-                {
-                    ss++;
-                    se++;
-                }
-            }
-            t.setSelectionRange(ss, se);
-        }
-        t.scrollTop = scrollTop;
-
-        // Don't let the browser treat it as a focus traversal
-        event.preventDefault();
-    }
-};
-
-function showMenu(parent, menuElementId, align) {
-    if (!align)
-        align = "tl-bl?";
-    Ext.menu.MenuMgr.get(menuElementId).show(parent, align);
-}
 
 LABKEY.requiresMenu = function()
 {

@@ -351,6 +351,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             ModuleStaticResolverImpl.this._allStaticFiles.clear();
         }
 
+        @Override
+        public File getFile()
+        {
+            return exists() ? _files.get(0) : null;
+        }
 
         public List<Resource> list()
         {
