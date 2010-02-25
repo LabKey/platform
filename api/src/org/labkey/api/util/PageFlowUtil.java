@@ -2010,22 +2010,25 @@ public class PageFlowUtil
         sb.append(",displayName:").append(jsString(user.getDisplayName(context)));
         sb.append(",email:").append(PageFlowUtil.jsString(user.getEmail()));
         sb.append(",sessionid:").append(jsString(getSessionId(context.getRequest())));
-        sb.append(",canInsert:").append(container.hasPermission(user, InsertPermission.class) ? "true" : "false");
-        sb.append(",canUpdate:").append(container.hasPermission(user, UpdatePermission.class) ? "true" : "false");
-        sb.append(",canUpdateOwn:").append(container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
-        sb.append(",canDelete:").append(container.hasPermission(user, DeletePermission.class) ? "true" : "false");
-        sb.append(",canDeleteOwn:").append(container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
-        sb.append(",isAdmin:").append(container.hasPermission(user, AdminPermission.class) ? "true" : "false");
+
+        sb.append(",canInsert:").append(null != container && container.hasPermission(user, InsertPermission.class) ? "true" : "false");
+        sb.append(",canUpdate:").append(null != container && container.hasPermission(user, UpdatePermission.class) ? "true" : "false");
+        sb.append(",canUpdateOwn:").append(null != container && container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
+        sb.append(",canDelete:").append(null != container && container.hasPermission(user, DeletePermission.class) ? "true" : "false");
+        sb.append(",canDeleteOwn:").append(null != container && container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
+        sb.append(",isAdmin:").append(null != container && container.hasPermission(user, AdminPermission.class) ? "true" : "false");
         sb.append(",isSystemAdmin:").append(user.isAdministrator() ? "true" : "false");
         sb.append(",isGuest:").append(user.isGuest() ? "true" : "false");
         sb.append("}"); //end user object
+        if (null != container)
+        {
+            sb.append(",container:{id:'").append(container.getId()).append("'");
+            sb.append(",path:").append(jsString(container.getPath()));
+            sb.append(",name:").append(jsString(container.getName()));
+            sb.append("}"); //end container object
+        }
 
-        sb.append(",container:{id:'").append(container.getId()).append("'");
-        sb.append(",path:").append(jsString(container.getPath()));
-        sb.append(",name:").append(jsString(container.getName()));
-        sb.append("}"); //end container object
-
-        Container project = container.isRoot() ? null : container.getProject();
+        Container project = (null == container || container.isRoot()) ? null : container.getProject();
         if (null != project)
         {
             sb.append(",project:{id:'").append(project.getId()).append("'");
