@@ -71,10 +71,12 @@
                 %><a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
             }
         %></td></tr>
-        <tr><td valign="bottom" align="right" nowrap class="labkey-main-nav"><form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>"><table cellspacing=0 cellpadding=0 style="width:216px;" class="labkey-main-search"><tr>
-            <td style="width:200px;" align="right"><input style="width:200px" id="headerSearchInput" name="q" type="text"></td>
-            <%--<td width="16"><input type="image" width="16" height="16" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>--%>
-            <td style="width:16px;" nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td></tr></table><input id="headerSearchContainer" name="container" type="hidden" value=""></form></td>
+        <tr><td valign="bottom" align="right" nowrap class="labkey-main-nav"><form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
+          <table cellspacing=0 cellpadding=0 style="width:216px;" class="labkey-main-search"><tr>
+            <td style="width:200px;" align="right"><input id="headerSearchContainer" name="container" type="hidden" value=""><input style="width:200px" id="headerSearchInput" name="q" type="text"></td>
+            <td style="width:16px;" nowrap valign="middle"><input type="image" width="16" height="16" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
+            <%--<td style="width:16px;" nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td>--%>
+            </tr></table></form></td>
         </tr></table>
     </td>
 </tr>

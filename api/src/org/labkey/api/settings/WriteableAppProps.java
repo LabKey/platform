@@ -69,6 +69,11 @@ public class WriteableAppProps extends AppProps
         storeIntValue(MEMORY_USAGE_DUMP_INTERVAL, memoryUsageDumpInterval);
     }
 
+    public void setBLASTServerBaseURL(String blastServerBaseURL)
+    {
+        storeStringValue(BLAST_SERVER_BASE_URL_PROP, blastServerBaseURL);
+    }
+
     public void setMascotServer(String mascotServer)
     {
         storeStringValue(MASCOT_SERVER_PROP, mascotServer);

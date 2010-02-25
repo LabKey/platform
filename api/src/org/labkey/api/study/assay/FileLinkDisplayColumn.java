@@ -74,7 +74,7 @@ public class FileLinkDisplayColumn extends DataColumn
         {
             ActionURL url = _baseURL.clone();
             url.addParameter("propertyId", _pd.getPropertyId());
-            _url = StringExpressionFactory.create(url.toString() + "&objectId=${" + _objectIdColumn.getAlias() + "}", true);
+            _url = StringExpressionFactory.create(url.toString() + "&objectURI=${" + _objectIdColumn.getAlias() + "}", true);
         }
 
         String path = (String) getValue(ctx);

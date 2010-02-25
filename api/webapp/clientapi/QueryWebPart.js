@@ -56,6 +56,7 @@
  * @param {boolean} [config.showDeleteButton] Show a "Delete" button in the button bar (default true).
  * @param {boolean} [config.showExportButtons] Show the export button menu in the button bar (default true).
  * @param {boolean} [config.showBorders] Render the table with borders (default true).
+ * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
  * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default true).  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
  * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
  * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).

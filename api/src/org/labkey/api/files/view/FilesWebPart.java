@@ -88,7 +88,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
                 if (root != null)
-                    getModelBean().setRootPath(root.getContainer(), FileContentService.PIPELINE_LINK);
+                    getModelBean().setRootPath(root.getWebdavURL());
                 setTitle("Pipeline Files");
             }
             else
@@ -98,7 +98,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
                 //this.fileSet = fileSet;
                 getModelBean().setRoot(dir);
-                getModelBean().setRootPath(c, FileContentService.FILE_SETS_LINK, fileSet);
+                getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, fileSet));
                 setTitle(fileSet);
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
             }
@@ -109,6 +109,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     protected FilesForm createConfig()
     {
         FilesForm form = getModelBean();
+        ViewContext context = getViewContext();
 
         if (form == null)
         {
@@ -117,13 +118,13 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
-        form.setShowAddressBar(false);
+        form.setShowAddressBar(true);
         form.setShowDetails(false);
         form.setShowFolderTree(true);
         form.setFolderTreeCollapsed(true);
 
         if (form.getRootPath() == null)
-            form.setRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK);
+            form.setRootPath(getRootPath(getRootContext().getContainer(), FileContentService.FILES_LINK));
 
         form.setEnabled(!svc.isFileRootDisabled(getRootContext().getContainer()));
         form.setContentId("fileContent" + System.identityHashCode(this));
@@ -153,12 +154,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (canDisplayPipelineActions())
         {
             form.setPipelineRoot(true);
-            if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             {
                 actions.add(FilesForm.actions.importData);
             }
         }
-        if (policy.hasPermission(getViewContext().getUser(), AdminPermission.class))
+        if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
             actions.add(FilesForm.actions.customize);
 
         form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
@@ -170,6 +171,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     {
         this(ctx.getContainer(), StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet")));
 
+        CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
+        getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
+        
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
         String path = webPartDescriptor.getPropertyMap().get("path");
@@ -179,6 +183,32 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             _path = JSP_RIGHT;
             _page = JspLoader.createPage(HttpView.currentRequest(), (String)null, _path);
         }
+    }
+
+    public static String getRootPath(Container c, String davName)
+    {
+        return getRootPath(c, davName, null);
+    }
+
+    public static String getRootPath(Container c, String davName, String fileset)
+    {
+        String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
+        String rootPath;
+
+        if (davName != null)
+        {
+            if (fileset != null)
+                rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName) + "/" + fileset;
+            else
+                rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName);
+        }
+        else
+            rootPath = webdavPrefix + c.getEncodedPath();
+
+        if (!rootPath.endsWith("/"))
+            rootPath += "/";
+
+        return rootPath;
     }
 
     protected boolean canDisplayPipelineActions()
@@ -288,6 +318,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private Path _directory;
         private String _contentId;
         private boolean _isPipelineRoot;
+        private String _statePrefix;
 
         public enum actions {
             download,
@@ -368,29 +399,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             return _rootPath;
         }
 
-        public void setRootPath(Container c, String davName)
+        public void setRootPath(String rootPath)
         {
-            setRootPath(c, davName, null);
-        }
-
-        public void setRootPath(Container c, String davName, String fileset)
-        {
-            String webdavPrefix = AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
-            String rootPath;
-
-            if (davName != null)
-            {
-                if (fileset != null)
-                    rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName) + "/" + fileset;
-                else
-                    rootPath = webdavPrefix + c.getEncodedPath() + URLEncoder.encode(davName);
-            }
-            else
-                rootPath = webdavPrefix + c.getEncodedPath();
-
-            if (!rootPath.endsWith("/"))
-                rootPath += "/";
-            
             _rootPath = rootPath;
         }
 
@@ -442,6 +452,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public void setFolderTreeCollapsed(boolean folderTreeCollapsed)
         {
             _folderTreeCollapsed = folderTreeCollapsed;
+        }
+
+        public String getStatePrefix()
+        {
+            return _statePrefix;
+        }
+
+        public void setStatePrefix(String statePrefix)
+        {
+            _statePrefix = statePrefix;
         }
     }
 }

@@ -223,7 +223,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private static final int SCHEMA_INDEX = 0;
         private static final int FROM_INDEX = 1;
         private static final int TO_INDEX = 2;
-        private static final Pattern _scriptFileNamePattern = Pattern.compile("\\w+-[0-9]\\.[0-9]{2,3}-[0-9]\\.[0-9]{2,3}.sql");
+        private static final Pattern _scriptFileNamePattern = Pattern.compile("\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}.sql");
 
         private final FileSqlScriptProvider _provider;
         private final String _fileName;

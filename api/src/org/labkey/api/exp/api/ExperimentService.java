@@ -159,8 +159,8 @@ public class ExperimentService
         ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID) throws SQLException;
 
         ExpData[] getExpData(Container c) throws SQLException;
-        ExpData getExpDataByURL(String canonicalURL, Container container);
-        ExpData getExpDataByURL(File f, Container c);
+        ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
+        ExpData getExpDataByURL(File f, @Nullable Container c);
         
         TableInfo getTinfoMaterial();
         TableInfo getTinfoMaterialSource();
@@ -262,6 +262,6 @@ public class ExperimentService
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
 
-        ExpRun[] getRunsForPath(File file, Container container);
+        ExpRun[] getRunsForPath(File file, @Nullable Container container);
     }
 }

@@ -133,6 +133,14 @@ public class ActionResource extends AbstractDocumentResource
     }
 
 
+    @Override
+    public FileStream getFileStream(User user) throws IOException
+    {
+        final byte[] buf = getResponse(user).getContentAsByteArray();
+        return new FileStream.ByteArrayFileStream(buf);
+    }
+    
+
     MockHttpServletResponse _response = null;
     
     MockHttpServletResponse getResponse(final User user) throws IOException

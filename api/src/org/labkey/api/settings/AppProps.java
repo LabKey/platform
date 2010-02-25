@@ -65,6 +65,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
     protected static final String SERVER_GUID = "serverGUID";
     protected static final String MICROARRAY_FEATURE_EXTRACTION_SERVER_PROP = "microarrayFeatureExtractionServer";
+    protected static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
     protected static final String MASCOT_SERVER_PROP = "MascotServer";
     protected static final String MASCOT_USERACCOUNT_PROP = "MascotUserAccount";
     protected static final String MASCOT_USERPASSWORD_PROP = "MascotUserPassword";
@@ -366,6 +367,11 @@ public class AppProps extends AbstractWriteableSettingsGroup
             }
         }
         return serverGUID;
+    }
+
+    public String getBLASTServerBaseURL()
+    {
+        return lookupStringValue(BLAST_SERVER_BASE_URL_PROP, "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;LAYOUT=TwoWindows&amp;AUTO_FORMAT=Semiauto&amp;ALIGNMENTS=50&amp;ALIGNMENT_VIEW=Pairwise&amp;CDD_SEARCH=on&amp;CLIENT=web&amp;COMPOSITION_BASED_STATISTICS=on&amp;DATABASE=nr&amp;DESCRIPTIONS=100&amp;ENTREZ_QUERY=(none)&amp;EXPECT=1000&amp;FILTER=L&amp;FORMAT_OBJECT=Alignment&amp;FORMAT_TYPE=HTML&amp;I_THRESH=0.005&amp;MATRIX_NAME=BLOSUM62&amp;NCBI_GI=on&amp;PAGE=Proteins&amp;PROGRAM=blastp&amp;SERVICE=plain&amp;SET_DEFAULTS.x=41&amp;SET_DEFAULTS.y=5&amp;SHOW_OVERVIEW=on&amp;END_OF_HTTPGET=Yes&amp;SHOW_LINKOUT=yes&amp;QUERY=");
     }
 
     public boolean hasMascotServer()

@@ -130,7 +130,9 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 out.write("</tr>");
             }
             out.write("</table>");
-            getButtonBar(MODE_INSERT).render(ctx, out);
+            ButtonBar bbar = getButtonBar(MODE_INSERT);
+            bbar.setStyle(ButtonBar.Style.separateButtons);
+            bbar.render(ctx, out);
             renderFormEnd(ctx, out);
         }
     }
@@ -182,6 +184,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         boolean defaultsDefined = DefaultValueService.get().hasDefaultValues(domainIdForm.getContainer(), domain, false);
 
         ButtonBar bbar = new ButtonBar();
+        bbar.setStyle(ButtonBar.Style.separateButtons);
         ActionURL setDefaultsURL = getViewContext().getActionURL().clone().deleteParameters();
         ActionButton saveButton = new ActionButton(setDefaultsURL, "Save Defaults");
         saveButton.setActionType(ActionButton.Action.POST);

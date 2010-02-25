@@ -17,7 +17,9 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections15.map.ReferenceMap;
+import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
+import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.*;
@@ -501,16 +503,27 @@ public class QueryProfiler
 
         public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
-            // Export query statistics at every graceful shutdown
-            File file = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "QueryStats_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".tsv");
 
-            try
+            Logger logger = Logger.getLogger(QueryProfiler.class);
+            if (null != logger)
             {
-                shutdownWriter.write(file);
-            }
-            catch (ServletException e)
-            {
-                LOG.error("Exception writing query stats", e);
+                Appender appender = logger.getAppender("QUERY_STATS");
+                if (null != appender && appender instanceof RollingFileAppender)
+                    ((RollingFileAppender)appender).rollOver();
+                else
+                    LOG.warn("Could not rollover the query stats tsv file--there was no appender named QUERY_STATS, or it is not a RollingFileAppender.");
+
+                StringBuilder buf = new StringBuilder();
+                try
+                {
+                    shutdownWriter.write(buf);
+                }
+                catch (ServletException e)
+                {
+                    LOG.error("Exception writing query stats", e);
+                }
+
+                logger.info(buf.toString());
             }
         }
     }

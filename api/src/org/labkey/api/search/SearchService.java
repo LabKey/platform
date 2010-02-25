@@ -304,7 +304,7 @@ public interface SearchService
     // an interface that enumerates documents in a container (not recursive)
     public void addDocumentProvider(DocumentProvider provider);
 
-//    public void addDocumentParser(DocumentParser parser);
+    public void addDocumentParser(DocumentParser parser);
 
     
     //

@@ -38,23 +38,35 @@
     <input type="hidden" name="pageId" value="<%=form.getPageId()%>">
     <input type="hidden" name="index" value="<%=form.getIndex()%>">
     You can configure this web part to show files from the default directory for this folder or
-    from a directory configured by a site administrator.  <br>
-    Directory: <select name="fileSet">
-        <option value="" <%=null == form.getFileSet() ? "SELECTED" : ""%>>&lt;Default&gt;</option>
-        <option value="<%=h(FileContentService.PIPELINE_LINK)%>" <%=FileContentService.PIPELINE_LINK.equals(form.getFileSet()) ? "SELECTED" : ""%>>Pipeline files</option>
-<% for (AttachmentDirectory attDir : attDirs)
-{   %>
-        <option value="<%=h(attDir.getLabel())%>" <%=attDir.getLabel().equals(form.getFileSet()) ? "SELECTED" : ""%>><%=h(attDir.getLabel())%></option>
+    from a directory configured by a site administrator.<br><br>
 
-<%} %>
-    </select>
-    <% if (ctx.getUser().isAdministrator())
-{
-    ActionURL configUrl = PageFlowUtil.urlProvider(FileUrls.class).urlShowAdmin(ctx.getContainer());
-    %>
-    <a href="<%=h(configUrl)%>">Configure Directories</a>
-    <%
-}
-%><br>
-    <%=generateSubmitButton("Submit")%>
+    <table>
+        <tr>
+            <td class="labkey-form-label">File Root</td>
+            <td><select name="fileSet">
+                <option value="" <%=null == form.getFileSet() ? "SELECTED" : ""%>>&lt;Default&gt;</option>
+                <option value="<%=h(FileContentService.PIPELINE_LINK)%>" <%=FileContentService.PIPELINE_LINK.equals(form.getFileSet()) ? "SELECTED" : ""%>>Pipeline files</option>
+
+<%          for (AttachmentDirectory attDir : attDirs) { %>
+                <option value="<%=h(attDir.getLabel())%>" <%=attDir.getLabel().equals(form.getFileSet()) ? "SELECTED" : ""%>><%=h(attDir.getLabel())%></option>
+<%          } %>
+            </select>
+<%          if (ctx.getUser().isAdministrator())
+            {
+                ActionURL configUrl = PageFlowUtil.urlProvider(FileUrls.class).urlShowAdmin(ctx.getContainer()); %>
+                <a href="<%=h(configUrl)%>">Configure File Roots</a>
+<%          } %>
+            </td>
+        </tr>
+
+<%      if (HttpView.BODY.equals(form.getLocation())) { %>
+            <tr>
+                <td class="labkey-form-label">Folder Tree visible&nbsp;<%=PageFlowUtil.helpPopup("Folder Tree", "Checking this selection will display the folder tree by default. The user can toggle the show or hide state of the folder tree using a button on the toolbar.")%></td>
+                <td><input type="checkbox" name="folderTreeVisible" <%=form.isFolderTreeVisible() ? "checked" : ""%>></td>
+            </tr>
+<%      } %>
+
+        <tr><td></td></tr>
+        <tr><td></td><td><%=generateSubmitButton("Submit")%></td></tr>
+    </table>
 </form>

@@ -212,24 +212,20 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     },
 
     // private
-    _setCheck : function (ids, checked, success)
+    _setSelected : function (ids, checked, success)
     {
         if (!this.selectionKey || ids.length == 0)
             return;
-        this.selectionModified = true;
-        var url = LABKEY.ActionURL.buildURL("query", "setCheck.api", LABKEY.ActionURL.getContainer(),
-            { 'key' : this.selectionKey, 'checked' : checked });
-        var params = { id: ids };
-//        for (var i = 0; i < ids.length; i++)
-//            url += "&id=" + ids[i];
 
-        Ext.Ajax.request({
-            url: url,
-            method: "POST",
-            params: params,
+        this.selectionModified = true;
+
+        LABKEY.DataRegion.setSelected({
+            selectionKey: this.selectionKey,
+            ids: ids,
+            checked: checked,
             scope: this,
-            success: success,
-            failure: function (response, options) { this.showMessage("Error sending selection."); }
+            successCallback: success,
+            failureCallback: function (response, options) { this.showMessage("Error sending selection."); }
         });
     },
 
@@ -333,7 +329,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     selectRow : function (el)
     {
-        this._setCheck([el.value], el.checked);
+        this._setSelected([el.value], el.checked);
         var toggle = this.form[".toggle"];
         if (el.checked)
         {
@@ -350,9 +346,43 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
     },
 
-    getChecked : function()
+    /**
+     * Get selected items on the current page.
+     * @see getSelected
+     */
+    getChecked : function ()
     {
         return getCheckedValues(this.form, '.select');
+    },
+
+    /**
+     * Get all selected items.
+     * <b>This is an experimental API and is subject to change with out warning.</b>
+     *
+     * @param config A configuration object with the following properties:
+     * @param {Function} config.successCallback The function to be called upon success of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Function} [config.errorCallback] The function to call upon error of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     */
+    getSelected : function (config)
+    {
+        if (!this.selectionKey)
+            return;
+
+        config = config || { };
+        config.selectionKey = this.selectionKey;
+        LABKEY.DataRegion.getSelected(config);
     },
 
     /** Select all checkboxes on in the current page of the data region. */
@@ -365,7 +395,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             if (toggle)
                 toggle.checked = checked;
             this.onSelectChange(checked);
-            this._setCheck(ids, checked, function (response, options) {
+            this._setSelected(ids, checked, function (response, options) {
                 var count = 0;
                 try {
                     var json = Ext.util.JSON.decode(response.responseText);
@@ -435,12 +465,41 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     {
     },
 
-    selectNone : function ()
+    selectNone : function (config)
     {
+        return this.clearSelected(config);
+    },
+
+    /**
+     * Clear all selected items.
+     * <b>This is an experimental API and is subject to change with out warning.</b>
+     *
+     * @param config A configuration object with the following properties:
+     * @param {Function} config.successCallback The function to be called upon success of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Function} [config.errorCallback] The function to call upon error of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     */
+    clearSelected : function (config)
+    {
+        if (!this.selectionKey)
+            return;
+
         this.onSelectChange(false);
-        var url = LABKEY.ActionURL.buildURL("query", "selectNone.api", LABKEY.ActionURL.getContainer(),
-            { 'key' : this.selectionKey });
-        Ext.Ajax.request({ url: url });
+
+        config = config || { };
+        config.selectionKey = this.selectionKey;
+        LABKEY.DataRegion.clearSelected(config);
 
         if (this.showRows == "selected")
         {
@@ -500,7 +559,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             if (!regionHeader || !regionHeader.parent())
                 return;
 
-            this.ribbonContainer = regionHeader.parent().createChild({tag:'div',cls:'extContainer'}, this.msgbox);
+            this.ribbonContainer = regionHeader.parent().createChild({tag:'div',cls:'extContainer'});
         }
 
         var panelDiv = this.ribbonContainer;
@@ -536,6 +595,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             newItems[i] = new Object();
                             newItems[i].contentEl = Ext.get(tabPanelConfig.items[i].contentEl);
                             newItems[i].title = tabPanelConfig.items[i].title;
+                            newItems[i].autoScroll = true;
                         }
                         tabPanelConfig.items = newItems;
                         this.panelButtonContents[panelButton.id] = new Ext.ux.VerticalTabPanel(tabPanelConfig);
@@ -575,6 +635,108 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     }
 
 });
+
+
+/**
+ * Add or remove items from the current selection.
+ * <b>This is an experimental API and is subject to change with out warning.</b>
+ *
+ * @param config A configuration object with the following properties:
+ * @param {String} config.selectionKey The selection key.
+ * @param {Array} config.id Array of primary key ids for each row to select/unselect.
+ * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
+ * @param {Function} config.successCallback The function to be called upon success of the request.
+ * The callback will be passed the following parameters:
+ * <ul>
+ * <li><b>data:</b> an object with the property 'count' to indicate the updated selection count.
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Function} [config.errorCallback] The function to call upon error of the request.
+ * The callback will be passed the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+ * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+ */
+LABKEY.DataRegion.setSelected = function (config)
+{
+    var url = LABKEY.ActionURL.buildURL("query", "setSelected.api", config.containerPath,
+        { 'key' : config.selectionKey, 'checked' : config.checked });
+    var params = { id: config.ids };
+
+    Ext.Ajax.request({
+        url: url,
+        method: "POST",
+        params: params,
+        scope: config.scope,
+        success: config.successCallback,
+        failure: config.failureCallback
+    });
+};
+
+/**
+ * Clear all selected items.
+ * <b>This is an experimental API and is subject to change with out warning.</b>
+ *
+ * @param config A configuration object with the following properties:
+ * @param {String} config.selectionKey The selection key.
+ * @param {Function} config.successCallback The function to be called upon success of the request.
+ * The callback will be passed the following parameters:
+ * <ul>
+ * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Function} [config.errorCallback] The function to call upon error of the request.
+ * The callback will be passed the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+ * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+ */
+LABKEY.DataRegion.clearSelected = function (config)
+{
+    var url = LABKEY.ActionURL.buildURL("query", "clearSelected.api", config.containerPath,
+        { 'key' : config.selectionKey });
+
+    Ext.Ajax.request({ url: url });
+};
+
+/**
+ * Get all selected items.
+ * <b>This is an experimental API and is subject to change with out warning.</b>
+ *
+ * @param config A configuration object with the following properties:
+ * @param {String} config.selectionKey The selection key.
+ * @param {Function} config.successCallback The function to be called upon success of the request.
+ * The callback will be passed the following parameters:
+ * <ul>
+ * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Function} [config.errorCallback] The function to call upon error of the request.
+ * The callback will be passed the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+ * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+ */
+LABKEY.DataRegion.getSelected = function (config)
+{
+    var url = LABKEY.ActionURL.buildURL("query", "getSelected.api", config.containerPath,
+        { 'key' : this.selectionKey });
+
+    Ext.Ajax.request({
+        url: url,
+        success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+        failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+    });
+};
 
 
 // FILTER UI

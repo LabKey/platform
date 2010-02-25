@@ -65,4 +65,6 @@ public interface PipeRoot extends SecurableResource
 
     // returns whether this root should be indexed by the crawler
     boolean isSearchable();
+
+    String getWebdavURL();
 }

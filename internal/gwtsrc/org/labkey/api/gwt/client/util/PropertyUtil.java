@@ -36,7 +36,12 @@ public class PropertyUtil
 
     public static native String getCurrentURL()
         /*-{
-            return $wnd.location + '';
+            var location = $wnd.location + '';
+            // Safari returns current location with spaces, rather than %20.
+            // The "g" parameter creates a "global" regex, which will replace all instances.
+            location = location.replace(new RegExp(' ', 'g'), '%20');
+            location = location.replace(new RegExp('\\+', 'g'), '%20');
+            return location;
         }-*/;
 
     public static String getContainerPath()

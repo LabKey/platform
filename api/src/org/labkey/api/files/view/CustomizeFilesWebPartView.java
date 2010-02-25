@@ -16,8 +16,11 @@
 
 package org.labkey.api.files.view;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
+
+import java.util.Map;
 
 /**
  * User: Mark Igra
@@ -39,13 +42,21 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         private String fileSet;
         private String path;
         private boolean useFileSet;
+        private boolean _folderTreeVisible;
+        private String _location;
 
         public CustomizeWebPartForm(Portal.WebPart webPart)
         {
             pageId = webPart.getPageId();
             index = webPart.getIndex();
-            fileSet = webPart.getPropertyMap().get("fileSet");
-            path = webPart.getPropertyMap().get("path");
+            _location = webPart.getLocation();
+
+            Map<String, String> propertyMap = webPart.getPropertyMap();
+
+            fileSet = propertyMap.get("fileSet");
+            path = propertyMap.get("path");
+            _folderTreeVisible = BooleanUtils.toBoolean(propertyMap.get("folderTreeVisible"));
+
             useFileSet = fileSet != null;
         }
 
@@ -97,6 +108,21 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
         public void setUseFileSet(boolean useFileSet)
         {
             this.useFileSet = useFileSet;
+        }
+
+        public boolean isFolderTreeVisible()
+        {
+            return _folderTreeVisible;
+        }
+
+        public void setFolderTreeVisible(boolean folderTreeVisible)
+        {
+            _folderTreeVisible = folderTreeVisible;
+        }
+
+        public String getLocation()
+        {
+            return _location;
         }
     }
 }

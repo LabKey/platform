@@ -22,7 +22,6 @@ import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.arrays.DoubleArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
@@ -48,16 +47,23 @@ public class Crosstab
     private FieldKey _colFieldKey;
     private FieldKey _statFieldKey;
     private Report.Results _results;
+    private StatType _statType = StatType.unknown;
 
     List colHeaders = new  ArrayList<Object>();
 
 
     //TODO: This should be an arbitrary number of groupings in any combination!!
     //TODO: Improve memory usage
-    Map<Object, Map<Object, DoubleArray>> crossTab = new LinkedHashMap<Object, Map<Object, DoubleArray>>();
-    Map<Object, DoubleArray> rowDatasets = new HashMap<Object, DoubleArray>();
-    Map<Object, DoubleArray> colDatasets = new HashMap<Object, DoubleArray>();
-    DoubleArray grandTotalDataset = new DoubleArray();
+    Map<Object, Map<Object, List<Object>>> crossTab = new LinkedHashMap<Object, Map<Object, List<Object>>>();
+    Map<Object, List<Object>> rowDatasets = new HashMap<Object, List<Object>>();
+    Map<Object, List<Object>> colDatasets = new HashMap<Object, List<Object>>();
+    List<Object> grandTotalDataset = new ArrayList<Object>();
+
+    public enum StatType {
+        numeric,
+        string,
+        unknown,
+    }
 
     public Crosstab(Report.Results results, FieldKey rowFieldKey, FieldKey colFieldKey, FieldKey statFieldKey, Set<Stats.StatDefinition> statSet) throws SQLException
     {
@@ -80,7 +86,14 @@ public class Crosstab
         if (fieldMap.containsKey(colFieldKey))
             colFieldAlias = fieldMap.get(colFieldKey).getAlias();
         if (fieldMap.containsKey(statFieldKey))
+        {
             statFieldAlias = fieldMap.get(statFieldKey).getAlias();
+            ColumnInfo col = fieldMap.get(statFieldKey);
+            if (Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive())
+                _statType = StatType.numeric;
+            else if (String.class.isAssignableFrom(col.getJavaClass()))
+                _statType = StatType.string;
+        }
 
         ResultSet rs = _results.getResultSet();
 
@@ -89,20 +102,20 @@ public class Crosstab
             while (rs.next())
             {
                 Object rowVal = null;
-                DoubleArray cellValues = null;
-                DoubleArray colDataset = null;
+                List<Object> cellValues = null;
+                List<Object> colDataset = null;
                 if (null != rowFieldAlias)
                 {
                     rowVal = rs.getObject(rowFieldAlias);
-                    Map<Object, DoubleArray> rowMap = crossTab.get(rowVal);
+                    Map<Object, List<Object>> rowMap = crossTab.get(rowVal);
                     if (null == rowMap)
                     {
-                        rowMap = new HashMap<Object, DoubleArray>();
+                        rowMap = new HashMap<Object, List<Object>>();
                         crossTab.put(rowVal, rowMap);
                         if (null == colFieldAlias)
-                            rowMap.put(statCol, new DoubleArray());
+                            rowMap.put(statCol, new ArrayList<Object>());
 
-                        rowDatasets.put(rowVal, new DoubleArray());
+                        rowDatasets.put(rowVal, new ArrayList<Object>());
                     }
 
                     cellValues = null;
@@ -113,12 +126,12 @@ public class Crosstab
                         cellValues = rowMap.get(colVal);
                         if (null == cellValues)
                         {
-                            cellValues = new DoubleArray();
+                            cellValues = new ArrayList<Object>();
                             rowMap.put(colVal, cellValues);
                             if (!colHeaders.contains(colVal))
                             {
                                 colHeaders.add(colVal);
-                                colDataset = new DoubleArray();
+                                colDataset = new ArrayList<Object>();
                                 colDatasets.put(colVal, colDataset);
                             }
                         }
@@ -128,28 +141,34 @@ public class Crosstab
                 }
 
                 Object statFieldVal = rs.getObject(statFieldAlias);
-                double d;
-                if (statFieldVal instanceof Number)
-                    d = ((Number) statFieldVal).doubleValue();
-                else
-                    d = null == statFieldVal ? Double.NaN : 1.0;
-
+                if (statFieldVal == null)
+                {
+                    if (getStatType() == StatType.string)
+                        statFieldVal = "";
+                    else if (getStatType() == StatType.numeric)
+                        statFieldVal = Double.NaN;
+                }
                 if (null != cellValues)
-                    cellValues.add(d);
+                    cellValues.add(statFieldVal);
                 if (null != colDataset)
-                    colDataset.add(d);
+                    colDataset.add(statFieldVal);
 
                 Collections.sort(colHeaders, new GenericComparator());
 
-                grandTotalDataset.add(d);
+                grandTotalDataset.add(statFieldVal);
                 if (null != rowFieldAlias)
-                    rowDatasets.get(rowVal).add(d);
+                    rowDatasets.get(rowVal).add(statFieldVal);
             }
         }
         finally
         {
             try { rs.close(); } catch (SQLException e) {}
         }
+    }
+
+    public StatType getStatType()
+    {
+        return _statType;
     }
 
     public String getDescription()
@@ -219,23 +238,45 @@ public class Crosstab
         if (TOTAL_COLUMN.equals(colHeader))
         {
             if (TOTAL_ROW.equals(rowHeader))
-                return new Stats.DoubleStats(grandTotalDataset.toArray(null), statSet);
+                return createStat(grandTotalDataset, statSet);
             else
-                return new Stats.DoubleStats(rowDatasets.get(rowHeader).toArray(null), statSet);
+                return createStat(rowDatasets.get(rowHeader), statSet);
         }
         else if (TOTAL_ROW.equals(rowHeader))
         {
-            return new Stats.DoubleStats(colDatasets.get(colHeader).toArray(null), statSet);
+            return createStat(colDatasets.get(colHeader), statSet);
         }
         else
         {
-            Map<Object, DoubleArray> rowMap = crossTab.get(rowHeader);
-            DoubleArray data = rowMap.get(colHeader);
-            if (null != data)
-                return new Stats.DoubleStats(data.toArray(null), statSet);
-            else
-                return new Stats.DoubleStats(new double[0], statSet);
+            Map<Object, List<Object>> rowMap = crossTab.get(rowHeader);
+            List<Object> data = rowMap.get(colHeader);
+            return createStat(data, statSet);
         }
+    }
+
+    private Stats createStat(List<Object> data, Set<Stats.StatDefinition> statSet)
+    {
+        Object[] statData;
+        StatType type = getStatType();
+
+        if (type == StatType.numeric)
+        {
+            if (data != null)
+                statData = data.toArray(new Number[data.size()]);
+            else
+                statData = new Number[0];
+        }
+        else if (type == StatType.string)
+        {
+            if (data != null)
+                statData = data.toArray(new String[data.size()]);
+            else
+                statData = new String[0];
+        }
+        else
+            throw new IllegalArgumentException("Non number/string data handed to stats");
+
+        return Stats.getStats(statData, statSet);
     }
 
     public Set<Stats.StatDefinition> getStatSet()
@@ -276,6 +317,14 @@ public class Crosstab
         public CrosstabExcelWriter(Crosstab crosstab)
         {
             _crosstab = crosstab;
+            Class statColumnCls;
+
+            if (_crosstab.getStatType() == StatType.numeric)
+                statColumnCls = Double.class;
+            else if (_crosstab.getStatType() == StatType.string)
+                statColumnCls = String.class;
+            else
+                throw new IllegalArgumentException("Invalid Crosstab stat type");
 
             List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
 
@@ -285,9 +334,9 @@ public class Crosstab
                 columns.add(new CrosstabDisplayColumn(STAT_COLUMN, String.class));
 
             for (Object col : _crosstab.getColHeaders())
-                columns.add(new CrosstabDisplayColumn(StringUtils.trimToEmpty(ConvertUtils.convert(col)), Double.class));
+                columns.add(new CrosstabDisplayColumn(StringUtils.trimToEmpty(ConvertUtils.convert(col)), statColumnCls));
 
-            columns.add(new CrosstabDisplayColumn("Total", Double.class));
+            columns.add(new CrosstabDisplayColumn("Total", statColumnCls));
 
             setDisplayColumns(columns);
 

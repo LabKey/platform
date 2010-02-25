@@ -307,6 +307,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean shouldDisplay()
     {
+        User user = HttpView.currentContext().getUser();
+        return shouldDisplay(user);
+    }
+
+    
+    public boolean shouldDisplay(User user)
+    {
         if (isWorkbook())
             return false;
 
@@ -316,7 +323,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         char c = name.charAt(0);
         if (c == '_' || c == '.')
         {
-            User user = HttpView.currentContext().getUser();
             return user != null && (user.isAdministrator() || this.hasPermission(user, AdminPermission.class));
         }
         else
@@ -324,6 +330,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return true;
         }
     }
+
 
     public boolean isWorkbook()
     {

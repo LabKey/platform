@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -262,13 +264,13 @@ public abstract class Stats
         public String getFormattedStat(StatDefinition stat)
         {
             if (stat == MIN)
-                return getMin();
+                return StringUtils.trimToEmpty(getMin());
             if (stat == MAX)
-                return getMax();
+                return StringUtils.trimToEmpty(getMax());
             if (stat == COUNT)
                 return String.valueOf(getCount());
             else
-                return null;
+                return "";
         }
     }
 

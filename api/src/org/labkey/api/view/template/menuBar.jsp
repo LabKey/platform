@@ -54,6 +54,9 @@
         <%
         for (Portal.WebPart part : menus)
         {
+            if (null == Portal.getPortalPartCaseInsensitive(part.getName()))
+                continue;
+
             String menuName = part.getName() + part.getIndex();
         %>
             new LABKEY.HoverPopup({hoverElem:"<%=menuName%>$Header", webPartName:"<%=part.getName()%>",

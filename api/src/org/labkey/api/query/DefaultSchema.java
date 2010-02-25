@@ -88,7 +88,7 @@ final public class DefaultSchema extends AbstractSchema
         if (ret != null)
             return ret;
         SchemaProvider provider = _providers.get(name);
-        if (provider == null && name.startsWith("/"))
+        if (provider == null && name != null && name.startsWith("/"))
         {
             Container project = ContainerManager.getForPath(name);
             if (project != null && project.hasPermission(getUser(), ReadPermission.class))

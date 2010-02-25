@@ -318,7 +318,7 @@ public abstract class AbstractResource implements Resource
     
 
     @NotNull
-    public List<NavTree> getActions()
+    public List<NavTree> getActions(User user)
     {
         return Collections.emptyList();
     }
@@ -338,8 +338,6 @@ public abstract class AbstractResource implements Resource
 
     public FileStream getFileStream(User user) throws IOException
     {
-        if (!canRead(user))
-            return null;
         return new _FileStream(user);
     }
 

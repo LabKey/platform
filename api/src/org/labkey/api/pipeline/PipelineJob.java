@@ -60,6 +60,9 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final FileType FT_LOG = new FileType(".log");
 
     private static Logger _log = Logger.getLogger(PipelineJob.class);
+    // Send start/stop messages to a separate logger because the default logger for this class is set to
+    // only write ERROR level events to the system log
+    private static Logger _logJobStopStart = Logger.getLogger(Job.class);
 
     public static Logger getJobLogger(Class clazz)
     {
@@ -613,7 +616,7 @@ abstract public class PipelineJob extends Job implements Serializable
             boolean success = false;
             try
             {
-                _log.info("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+                _logJobStopStart.info("Starting to run task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
                 getLogger().info("Starting to run task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
                 if (task instanceof WorkDirectoryTask)
                 {
@@ -626,7 +629,7 @@ abstract public class PipelineJob extends Job implements Serializable
             finally
             {
                 getLogger().info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "'");
-                _log.info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
+                _logJobStopStart.info((success ? "Successfully completed" : "Failed to complete") + " task '" + factory.getId() + "' for job '" + toString() + "' with log file " + getLogFile());
                 try
                 {
                     if (workDirectory != null)

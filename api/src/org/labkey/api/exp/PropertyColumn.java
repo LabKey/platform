@@ -75,6 +75,18 @@ public class PropertyColumn extends LookupColumn
 
         this.containerId = containerId;
 
+        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+        {
+            setDisplayColumnFactory(new DisplayColumnFactory() {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    DataColumn dc = new DataColumn(colInfo);
+                    dc.setPreserveNewlines(true);
+                    return dc;
+                }
+            });
+        }
+
         if (pd.getLookupSchema() != null && pd.getLookupQuery() != null && user != null)
             setFk(new PdLookupForeignKey(user, pd));
 

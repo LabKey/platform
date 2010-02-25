@@ -113,7 +113,7 @@ public interface Resource
     List<WebdavResolver.History> getHistory();
 
     @NotNull
-    List<NavTree> getActions();
+    List<NavTree> getActions(User user);
 
     /** user may read properties of this resource */
     boolean canList(User user);

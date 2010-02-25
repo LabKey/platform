@@ -627,6 +627,18 @@ public abstract class SqlDialect
         }
     }
 
+    public boolean updateStatistics(TableInfo table) throws SQLException
+    {
+        String sql = getAnalyzeCommandForTable(table.getSelectName());
+        if (sql != null)
+        {
+            Table.execute(table.getSchema(), sql, null);
+            return true;
+        }
+        else
+            return false;
+    }
+
 
     public abstract String getBooleanDatatype();
     

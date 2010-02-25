@@ -113,4 +113,6 @@ public interface FileContentService
     public FilesAdminOptions getAdminOptions(Container c);
 
     public void setAdminOptions(Container c, FilesAdminOptions options);
+
+    public File getProjectDefaultRoot(Container c, boolean createDir);
 }

@@ -82,6 +82,7 @@ public class DataRegion extends DisplayElement
 
     private boolean _shadeAlternatingRows = false;
     private boolean _showBorders = false;
+    private boolean _showSurroundingBorder = true;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
 
@@ -769,10 +770,12 @@ public class DataRegion extends DisplayElement
                 headerMessage.append("'].clearAllFilters(); return false;\">Clear all filters</a>");
             }
 
+            renderHeaderScript(ctx, out, headerMessage.length() > 0 ? headerMessage.toString() : null);
             renderRegionStart(ctx, out, renderButtons);
 
             renderHeader(ctx, out, renderButtons, headerMessage.length() > 0 ? headerMessage.toString() : null);
-
+            renderMessageBox(ctx, out);
+            
             if (!_showPagination && rs instanceof Table.TableResultSet)
             {
                 Table.TableResultSet tableRS = (Table.TableResultSet) rs;
@@ -820,7 +823,13 @@ public class DataRegion extends DisplayElement
     {
         if(renderButtons)
             renderFormHeader(out, MODE_GRID);
-        out.write("<table class=\"labkey-data-region-container\">\n");
+        out.write("<table class=\"labkey-data-region-container");
+        if (isShowSurroundingBorder())
+             out.write(" labkey-data-region-container-with-border");
+        out.write("\"");
+        if (!shouldRenderHeader(renderButtons))
+            out.write(" style=\"border-top:0\"");
+        out.write(">\n");
     }
 
     protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
@@ -832,12 +841,12 @@ public class DataRegion extends DisplayElement
 
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, String headerMessage) throws IOException
     {
+        if (!shouldRenderHeader(renderButtons))
+            return;
+        
         out.write("<tr><td class=\"labkey-data-region-header-container");
-        if (!isShowBorders())
-            out.write(" labkey-data-region-header-bottom-border");
+        out.write(" labkey-data-region-header-bottom-border");
         out.write("\">\n");
-
-        renderHeaderScript(ctx, out, headerMessage);
 
         out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");
         out.write("<tr><td nowrap>\n");
@@ -855,8 +864,13 @@ public class DataRegion extends DisplayElement
             renderPagination(ctx, out);
         out.write("</td></tr></table>\n");
 
-        renderMessageBox(ctx, out);
         out.write("\n</td></tr>");
+    }
+
+    protected boolean shouldRenderHeader(boolean renderButtons)
+    {
+        return ((renderButtons && _buttonBarPosition.atTop() && _gridButtonBar.getList().size() > 0)
+                || (_showPagination && _buttonBarPosition.atTop() && !isSmallResultSet()));
     }
     
 
@@ -897,10 +911,11 @@ public class DataRegion extends DisplayElement
 
     protected void renderMessageBox(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<div class=\"labkey-dataregion-msgbox\" style=\"display:none;\" id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\">");
+        out.write("<tr id=\"" + PageFlowUtil.filter("dataregion_msgbox_" + getName()) + "\" style=\"display:none\">");
+        out.write("<td class=\"labkey-dataregion-msgbox\">");
         out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
         out.write("<span></span>");
-        out.write("</div>\n");
+        out.write("</td></tr>");
     }
 
     protected void renderFooter(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
@@ -2407,5 +2422,15 @@ public class DataRegion extends DisplayElement
     public void setShowBorders(boolean showBorders)
     {
         _showBorders = showBorders;
+    }
+
+    public boolean isShowSurroundingBorder()
+    {
+        return _showSurroundingBorder;
+    }
+
+    public void setShowSurroundingBorder(boolean showSurroundingBorder)
+    {
+        _showSurroundingBorder = showSurroundingBorder;
     }
 }

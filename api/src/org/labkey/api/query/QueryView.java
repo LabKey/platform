@@ -97,6 +97,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _shadeAlternatingRows = false;
     private boolean _showFilterDescription = true;
     private boolean _showBorders = false;
+    private boolean _showSurroundingBorder = true;
     private Report _report;
 
     private boolean _showExportButtons = true;
@@ -1139,6 +1140,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
         rgn.setShowFilterDescription(isShowFilterDescription());
         rgn.setShowBorders(isShowBorders());
+        rgn.setShowSurroundingBorder(isShowSurroundingBorder());
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
         if(null != getAggregates())
@@ -1647,6 +1649,16 @@ public class QueryView extends WebPartView<Object>
     public void setShowBorders(boolean showBorders)
     {
         _showBorders = showBorders;
+    }
+
+    public boolean isShowSurroundingBorder()
+    {
+        return _showSurroundingBorder;
+    }
+
+    public void setShowSurroundingBorder(boolean showSurroundingBorder)
+    {
+        _showSurroundingBorder = showSurroundingBorder;
     }
 
     public boolean isShowPagination()

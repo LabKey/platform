@@ -347,7 +347,7 @@ public class OntologyManager
 	}
 
 
-	private static OntologyObject getOntologyObject(Container container, String uri) throws SQLException
+	public static OntologyObject getOntologyObject(Container container, String uri) throws SQLException
 	{
 		SimpleFilter filter = new SimpleFilter("ObjectURI", uri);
         if (container != null)

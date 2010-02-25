@@ -71,6 +71,8 @@
 <%  } %>
 
 <script type="text/javascript">
+Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+
 Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 Ext.QuickTips.init();
 
@@ -127,6 +129,12 @@ function renderBrowser(rootPath, dir, renderTo)
             rootName:'fileset'
         });
 
+    var prefix = undefined;
+
+<%  if (bean.getStatePrefix() != null) { %>
+    prefix = '<%=bean.getStatePrefix()%>';
+<%  } %>
+
     fileBrowser = new LABKEY.FilesWebPartPanel({
         fileSystem: fileSystem,
         helpEl:null,
@@ -140,7 +148,8 @@ function renderBrowser(rootPath, dir, renderTo)
         //actions: {drop:dropAction, configure:configureAction},
         tbarItems: buttonActions,
         isPipelineRoot: <%=bean.isPipelineRoot()%>,
-        adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>
+        adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
+        statePrefix: prefix
 /*
         buttonCfg:['download','deletePath','refresh'
         <%=c.hasPermission(context.getUser(), InsertPermission.class)?",'uploadTool'":""%>
@@ -184,7 +193,7 @@ function renderBrowser(rootPath, dir, renderTo)
         Ext.EventManager.fireWindowResize();
     }
 
-    fileBrowser.start(dir);
+    fileBrowser.start();
 
     <% //Temporary code for testing events
     if (AppProps.getInstance().isDevMode())

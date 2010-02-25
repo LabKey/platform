@@ -38,6 +38,7 @@ LABKEY.Pipeline = new function(){
          * <ul>
          *  <li>containerPath: the container path in which the pipeline is defined. If no pipeline has
          * been defined in this container hierarchy, the value of this property will be null.</li>
+         *  <li>webDavURL: the WebDavURL for the pipeline root.</li>
          * </ul>
          * @param {Function} [config.errorCallback] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:

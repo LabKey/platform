@@ -253,10 +253,23 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                 field = buf.substring(start + 1, end);
                 if (hasQuotes && -1 != field.indexOf(_strQuoteQuote))
                     field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
-                // eat final " and any trailing white space
+
+                // eat final "
                 end++;
-                while (end < buf.length() && buf.charAt(end) != _chDelimiter && Character.isWhitespace(buf.charAt(end)))
-                    end++;
+
+                //FIX: 9727
+                //if not at end of line and next char is not a tab, append any chars to field up to the next tab/eol
+                //note that this is a surgical quick-fix due to the proximity of release.
+                //the better fix would be to parse the file character-by-character and support
+                //double quotes anywhere within the field to escape delimiters
+                if (end < buf.length() && buf.charAt(end) != _chDelimiter)
+                {
+                    start = end;
+                    end = buf.indexOf(_strDelimiter, end);
+                    if (-1 == end)
+                        end = buf.length();
+                    field = field + buf.substring(start, end);
+                }
             }
             else
             {
@@ -889,13 +902,14 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                     "Name\tMulti-Line\tAge\n" +
                     "Bob\t\"apple\norange\tgrape\"\t3\n" +
                     "Bob\t\"one\n\"\"two\"\"\tthree\"\n" +
-                    "\tred\\nblue\\tgreen\t4\n";
+                    "\tred\\nblue\\tgreen\t4\n" +
+                    "Fred\t\"quoted stuff\" unquoted\t1";
             TabLoader loader = new TabLoader(data, true);
             loader.setParseQuotes(true);
             loader.setUnescapeBackslashes(true);
 
             List<Map<String, Object>> rows = loader.load();
-            assertEquals(3, rows.size());
+            assertEquals(4, rows.size());
 
             Map<String, Object> row = rows.get(0);
             assertEquals("Bob", row.get("Name"));
@@ -918,7 +932,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
             loader.setUnescapeBackslashes(false);
 
             rows = loader.load();
-            assertEquals(3, rows.size());
+            assertEquals(4, rows.size());
 
             row = rows.get(0);
             assertEquals("Bob", row.get("Name"));
@@ -934,6 +948,11 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
             assertEquals(null, row.get("Name"));
             assertEquals("red\\nblue\\tgreen", row.get("Multi-Line"));
             assertEquals(4, row.get("Age"));
+
+            row = rows.get(3);
+            assertEquals("Fred", row.get("Name"));
+            assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
+            assertEquals(1, row.get("Age"));
         }
 
         public void testTransform()

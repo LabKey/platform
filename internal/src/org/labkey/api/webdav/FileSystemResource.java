@@ -23,16 +23,15 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.apache.commons.io.IOUtils;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -77,7 +76,7 @@ public class FileSystemResource extends AbstractResource
         super(path);
         setSearchCategory(SearchService.fileCategory);
         setSearchProperty(SearchService.PROPERTY.displayTitle, path.getName());
-        setSearchProperty(SearchService.PROPERTY.searchTitle, path.getName());   // TODO: Add stripped version
+        setSearchProperty(SearchService.PROPERTY.searchTitle, FileUtil.getSearchTitle(path.getName()));
     }
 
     protected FileSystemResource(Path folder, String name)
@@ -261,46 +260,51 @@ public class FileSystemResource extends AbstractResource
      * the original location on the file system into the @files directory if they don't exist
      * in the @files directory or are newer.
      */
-    private void mergeFiles()
+    private void mergeFilesIfNeeded()
     {
         if (_mergeFromParent && isCollection())
         {
-            File[] parentFiles = _file.getParentFile().listFiles((FileFilter)FileFileFilter.FILE);
-            if (parentFiles != null)
+            mergeFiles(_file);
+        }
+    }
+
+    public static void mergeFiles(File atFilesDirectory)
+    {
+        File[] parentFiles = atFilesDirectory.getParentFile().listFiles((FileFilter) FileFileFilter.FILE);
+        if (parentFiles != null)
+        {
+            for (File parentFile : parentFiles)
             {
-                for (File parentFile : parentFiles)
+                long lastModified = parentFile.lastModified();
+                File destFile = new File(atFilesDirectory, parentFile.getName());
+                // lastModified() returns 0 if the file doesn't exist, so this check works in either case
+                if (destFile.lastModified() < parentFile.lastModified())
                 {
-                    long lastModified = parentFile.lastModified();
-                    File destFile = new File(_file, parentFile.getName());
-                    // lastModified() returns 0 if the file doesn't exist, so this check works in either case
-                    if (destFile.lastModified() < parentFile.lastModified())
+                    _log.info("Detected updated file '" + parentFile + "', moving to @files subdirectory");
+                    try
                     {
-                        _log.info("Detected updated file '" + destFile + "', moving to @files subdirectory");
-                        try
+                        if (destFile.exists() && !destFile.delete())
                         {
-                            if (destFile.exists() && !destFile.delete())
-                            {
-                                _log.warn("Failed to delete outdated file '" + destFile + "' from @files location");
-                            }
-                            FileUtils.moveFile(parentFile, destFile);
-                            // Preserve the file's timestamp
-                            if (!destFile.setLastModified(lastModified))
-                            {
-                                _log.warn("Filed to set timestamp on " + destFile);
-                            }
+                            _log.warn("Failed to delete outdated file '" + destFile + "' from @files location");
                         }
-                        catch (IOException e)
+                        FileUtils.moveFile(parentFile, destFile);
+                        // Preserve the file's timestamp
+                        if (!destFile.setLastModified(lastModified))
                         {
-                            // Don't fail the request because of this error
-                            _log.warn("Unable to copy file '" + parentFile + "' from legacy location to new @files location");
+                            _log.warn("Filed to set timestamp on " + destFile);
                         }
                     }
-                    else
+                    catch (IOException e)
                     {
-                        if (!parentFile.delete())
-                        {
-                            _log.warn("Failed to delete file '" + parentFile + "' from legacy location");
-                        }
+                        // Don't fail the request because of this error
+                        _log.warn("Unable to copy file '" + parentFile + "' from legacy location to new @files location");
+                    }
+                }
+                else
+                {
+                    if (!parentFile.delete())
+                    {
+                        _log.warn("Failed to delete file '" + parentFile + "' from legacy location");
                     }
                 }
             }
@@ -312,7 +316,7 @@ public class FileSystemResource extends AbstractResource
     {
         if (!isCollection())
             return Collections.emptyList();
-        mergeFiles();
+        mergeFilesIfNeeded();
         ArrayList<String> list = new ArrayList<String>();
         if (_file != null && _file.isDirectory())
         {
@@ -344,7 +348,7 @@ public class FileSystemResource extends AbstractResource
 
     public Resource find(String name)
     {
-        mergeFiles();
+        mergeFilesIfNeeded();
         return new FileSystemResource(this, name);
     }
 
@@ -461,32 +465,39 @@ public class FileSystemResource extends AbstractResource
     }
 
     @NotNull @Override
-    public List<NavTree> getActions()
+    public List<NavTree> getActions(User user)
     {
         if (_file != null)
         {
             if (isFile())
             {
                 ExpData data = getExpData();
-                if (data != null)
+                if (data != null && data.getContainer().hasPermission(user, ReadPermission.class))
                 {
-                    ActionURL url = data.findDataHandler().getContentURL(data.getContainer(), data);
+                    ActionURL dataURL = data.findDataHandler().getContentURL(data.getContainer(), data);
                     List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
                     List<NavTree> result = new ArrayList<NavTree>();
                     for (ExpRun run : runs)
                     {
-                        result.add(new NavTree(run.getProtocol().getName(), url));
+                        if (run.getContainer().hasPermission(user, ReadPermission.class))
+                        {
+                            String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
+                            result.add(new NavTree(run.getProtocol().getName(), runURL));
+                        }
                     }
                     return result;
                 }
             }
             else
             {
-                ExpRun[] runs = ExperimentService.get().getRunsForPath(_file, getContainer());
+                ExpRun[] runs = ExperimentService.get().getRunsForPath(_file, null);
                 List<NavTree> result = new ArrayList<NavTree>();
                 for (ExpRun run : runs)
                 {
-                    result.add(new NavTree(run.getName(), LsidManager.get().getDisplayURL(run.getLSID())));
+                    if (run.getContainer().hasPermission(user, ReadPermission.class))
+                    {
+                        result.add(new NavTree(run.getName(), LsidManager.get().getDisplayURL(run.getLSID())));
+                    }
                 }
                 return result;
             }
@@ -500,7 +511,7 @@ public class FileSystemResource extends AbstractResource
         {
             try
             {
-                _data = ExperimentService.get().getExpDataByURL(_file.toURI().toURL().toString(), getContainer());
+                _data = ExperimentService.get().getExpDataByURL(_file.toURI().toURL().toString(), null);
             }
             catch (MalformedURLException e) {}
             _dataQueried = true;
