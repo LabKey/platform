@@ -516,6 +516,7 @@ public class AssayController extends SpringActionController
     {
         private Integer _propertyId;
         private Integer _objectId;
+        private String _objectURI;
 
         public Integer getObjectId()
         {
@@ -536,6 +537,16 @@ public class AssayController extends SpringActionController
         {
             _propertyId = propertyId;
         }
+
+        public String getObjectURI()
+        {
+            return _objectURI;
+        }
+
+        public void setObjectURI(String objectURI)
+        {
+            _objectURI = objectURI;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -543,9 +554,18 @@ public class AssayController extends SpringActionController
     {
         public ModelAndView getView(DownloadFileForm form, BindException errors) throws Exception
         {
-            if (form.getPropertyId() == null || form.getObjectId() == null)
+            if (form.getPropertyId() == null)
                 HttpView.throwNotFound();
-            OntologyObject obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
+            OntologyObject obj = null;
+            if (form.getObjectId() != null)
+            {
+                obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
+            }
+            else if (form.getObjectURI() != null)
+            {
+                // Don't filter by container - we'll redirect to the correct container ourselves
+                obj = OntologyManager.getOntologyObject(null, form.getObjectURI());
+            }
             if (obj == null)
                 throw new NotFoundException();
             if (!obj.getContainer().equals(getContainer()))

@@ -1499,14 +1499,34 @@ public class SpecimenController extends BaseStudyController
                 {
                     Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), sampleId);
                     if (specimen != null)
-                        samples.add(specimen);
+                    {
+
+                        Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen, true);
+                        if (requestIds != null && requestIds.length > 0)
+                        {
+                            errors.reject(null, "Vial " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0] +
+                            ".  This sample has been removed from the list below.");
+                        }
+                        else
+                            samples.add(specimen);
+                    }
                     else
                     {
                         ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
                                 new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + getContainer().getId()));
                     }
                 }
-                SampleManager.getInstance().createRequestSampleMapping(getUser(), _sampleRequest, samples, true, true);
+                if (errors.getErrorCount() == 0)
+                    SampleManager.getInstance().createRequestSampleMapping(getUser(), _sampleRequest, samples, true, true);
+                else
+                {
+                    int[] validSampleIds = new int[samples.size()];
+                    int index = 0;
+                    for (Specimen sample : samples)
+                        validSampleIds[index++] = sample.getRowId();
+                    form.setSampleRowIds(validSampleIds);
+                    return false;
+                }
             }
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
                 getUtils().sendNewRequestNotifications(_sampleRequest);

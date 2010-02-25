@@ -25,6 +25,7 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import java.io.Writer;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -83,8 +84,7 @@ public class StatusDataRegion extends DataRegion
 
         ActionURL url = StatusController.urlShowList(ctx.getContainer(), false);
         ActionURL urlFilter = ctx.getSortFilterURLHelper();
-
-        boolean selSeen = false;
+        SimpleFilter filters = new SimpleFilter(urlFilter, getName());
 
         out.write("<table><tr>");
         out.write("<td>Show:</td>");
@@ -102,7 +102,7 @@ public class StatusDataRegion extends DataRegion
             selected = (values != null && values.size() == 1 && value.equals(values.get(0)));
         }
         renderTab(out, "Running", url, selected);
-        selSeen = selSeen || selected;
+        boolean selSeen = selected;
 
         name = "StatusFiles.Status~eq";
         value = PipelineJob.ERROR_STATUS;
@@ -110,12 +110,10 @@ public class StatusDataRegion extends DataRegion
         url.addParameter(name, value);
         selected = !selSeen && value.equals(urlFilter.getParameter(name));
         renderTab(out, "Errors", url, selected);
-        selSeen = selSeen || selected;
 
-        url.deleteParameters();
-        selected = !selSeen && urlFilter.getParameters().length == 0;
-        renderTab(out, "All", url, selected);
         selSeen = selSeen || selected;
+        url.deleteParameters();
+        renderTab(out, "All", url, filters.getClauses().isEmpty() && !selSeen);
 
         out.write("</tr></table>\n");
         out.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");

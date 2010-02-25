@@ -39,7 +39,7 @@ public class BigIronModule extends DefaultModule
 
     public double getVersion()
     {
-        return 9.30;
+        return 10.09;
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()

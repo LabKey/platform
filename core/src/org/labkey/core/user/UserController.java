@@ -988,6 +988,7 @@ public class UserController extends SpringActionController
             DataRegion rgn = getGridRegion(isOwnRecord);
             String displayEmail = UserManager.getEmailForId(_detailsUserId);
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
+            bb.setStyle(ButtonBar.Style.separateButtons);
 
             if (isSiteAdmin)
             {

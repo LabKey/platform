@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -30,6 +31,21 @@
 %>
 
 <labkey:errors/>
+
+<%
+
+    if (bean.entrySet().size() == 0)
+    {
+        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getViewContext().getContainer());
+        createURL.addParameter("autoDatasetId", "true");
+%>
+    No datasets have been created in this study.<br><br>
+    <%= generateButton("Create New Dataset", createURL) %>&nbsp;<%= generateButton("Cancel", "manageTypes.view")%>
+<%
+    }
+    else
+    {
+%>
 
 <form action="dataSetVisibility.post" method="POST">
 
@@ -97,3 +113,6 @@
     </table>
     <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageTypes.view")%>
 </form>
+<%
+    }
+%>

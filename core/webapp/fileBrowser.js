@@ -1200,12 +1200,13 @@ var FileStore = Ext.extend(Ext.data.Store,
 //
 // FileListMenu
 //
-var FileListMenu = function(fileSystem, path, fn)
+var FileListMenu = function(fileSystem, path, folderFilter, fn)
 {
     FileListMenu.superclass.constructor.call(this, {items:[], cls:'extContainer'});
     this.showFiles = false;
     this.fileSystem = fileSystem;
     this.path = path;
+    this.folderFilter = folderFilter;
 
     if (path && path != fileSystem.rootPath)
     {
@@ -1221,6 +1222,10 @@ var FileListMenu = function(fileSystem, path, fn)
                 var data = record.data;
                 if (!this.showFiles && data.file)
                     continue;
+
+                else if (this.folderFilter && !this.folderFilter.test(data))
+                    continue;
+
                 this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, path:record.data.path}));
             }
         };
@@ -1813,6 +1818,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     showFileUpload: true,
     propertiesPanel : null,
     statePrefix : null,
+    cls: 'labkey-file-browser-elem',
 
     grid: null,
     store: null,
@@ -1883,7 +1889,14 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (this.actions.refresh)
             this.actions.refresh.execute();
         if (path)
+        {
             this.selectFile(path);
+            var record = this.fileSystem.recordFromCache(this.currentDirectory.data.path);
+            if (record && record.treeNode)
+                record.treeNode.reload();
+            else if (this.currentDirectory.data.path == this.fileSystem.rootPath)
+                this.root.reload();
+        }
     },
 
 
@@ -2168,11 +2181,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         for (var i = 0 ; i<count ; i++)
         {
             var record = transfers.getAt(i);
-            var id = record.id;
+            var id = new URI(record.id).pathname; //Normalize paths...
             var name = record.get("name");
             var state = record.get("state");
 
-            var notifyInfo =  this.notifyStates[record.id];
+            var notifyInfo =  this.notifyStates[id];
             if (null == notifyInfo)
             {
                 notifyInfo = {current:state, notified:null, name:name};
@@ -2407,9 +2420,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }
         var text;
         if (path == this.fileSystem.rootPath)
-            text = $h(this.fileSystem.rootRecord.data.name);
+            text = '';
+            //text = $h(this.fileSystem.rootRecord.data.name);
         else
-            text = $h(path);
+            text = 'folder: ' + $h(path);
         el.update('<table height=100% width=100%><tr><td height=100% width=100% valign=middle align=left>' + text + '</td></tr></table>');
         this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
         el.on("click", this.addressBarHandler);
@@ -2418,7 +2432,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     showFileListMenu : function(path)
     {
         var el = $('addressBar');
-        var menu = new FileListMenu(this.fileSystem, path, this.changeDirectory.createDelegate(this));
+        var menu = new FileListMenu(this.fileSystem, path, this.fileFilter, this.changeDirectory.createDelegate(this));
         menu.show(el);
     },
 
@@ -2912,21 +2926,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         var layoutItems = [];
 
-        // currently the address bar and the file upload panel occupy the same region, need to address this for 10.1
-        // we don't need the address bar--the file tree is more than adequate
-//        if (this.showAddressBar)
-//        {
-//            layoutItems.push(
-//            {
-//                region: 'north',
-//                height: 24,
-//                margins: '5 5 0 5',
-//                layout: 'fit',
-//                border: true,
-//                items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
-//            });
-//        }
-
         if (this.showFileUpload)
         {
             // the file upload collapsible panel
@@ -2942,7 +2941,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, checked: true
             });
             var uploadPanel_rb2 = new Ext.form.Radio({
-                boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2,
+                boxLabel: 'Multiple files', name: 'rb-auto', inputValue: 2,
                 listeners:{check:function(button, checked) {
                     if (checked)
                         this.onMultipleFileUpload();
@@ -2961,6 +2960,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     {
                     xtype: 'radiogroup',
                     fieldLabel: 'File Upload Type',
+                    width: 200,
                     groupCls: 'labkey-transparent-panel',
                     items: [
                         uploadPanel_rb1,
@@ -2988,7 +2988,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }, scope:this}
             });
             var uploadMultiPanel_rb2 = new Ext.form.Radio({
-                boxLabel: 'Multiple file', name: 'rb-auto', inputValue: 2, checked: true
+                boxLabel: 'Multiple files', name: 'rb-auto', inputValue: 2, checked: true
             });
 
             this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
@@ -3017,6 +3017,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [{
                     xtype: 'radiogroup',
+                    width: 200,
                     groupCls: 'labkey-transparent-panel',
                     fieldLabel: 'File Upload Type',
                     items: [
@@ -3029,7 +3030,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     new Ext.Button(this.actions.appletFileAction),
                     new Ext.Button(this.actions.appletDirAction),
                     {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
-                        this.appletStatusBar
+                    this.appletStatusBar
                 ]
             });
             uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
@@ -3048,6 +3049,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 hideCollapseTool: true,
                 activeTab: 'uploadFileTab',
                 deferredRender: false,
+                stateful: false,
                 items: [
                     uploadPanel,
                     uploadMultiPanel
@@ -3056,20 +3058,50 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             layoutItems.push(this.fileUploadPanel);
         }
 
+        var addressBar = {
+            region: 'south',
+            height: 24,
+            margins: '0 0 5 5',
+            layout: 'fit',
+            border: true,
+            stateful: false,
+            items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]};
+
         if (this.showDetails)
         {
+            var detailItems = [];
+            var panelHeight = 80;
+            var layout = 'fit';
+
+            if (this.showAddressBar)
+            {
+                addressBar.margins = '0';
+                layout = 'border';
+                detailItems.push({height: 80, region: 'center', html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'});
+                detailItems.push(addressBar);
+
+                panelHeight += 24;
+            }
+            else
+                detailItems.push({html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'});
+
             layoutItems.push(
             {
                 region: 'south',
                 split: true,
-                height: 80,
+                height: panelHeight,
                 minSize: 0,
                 maxSize: 250,
                 margins: '0 5 5 5',
-                layout: 'fit',
-                items: [{html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'}]
+                layout: layout,
+                items: detailItems
             });
         }
+        else if (this.showAddressBar)
+        {
+            layoutItems.push(addressBar);
+        }
+
         if (this.showFolderTree)
         {
             this.tree.region='west';
@@ -3128,7 +3160,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 // assume that we've got a WebdavFileSystem
                 form.errorReader = this.fileSystem.transferReader;
                 form.doAction(new Ext.form.Action.Submit(form, options));
-                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:options.url + path}]});
+                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.url, path)).pathname}]});
                 Ext.getBody().dom.style.cursor = "wait";
             }
         }
@@ -3146,7 +3178,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         //this.toggleTabPanel();
         this.refreshDirectory();
         this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
-        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:this.fileSystem.concatPaths(options.record.data.uri, options.name)}]});
+        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:new URI(this.fileSystem.concatPaths(options.record.data.uri, options.name)).pathname}]});
     },
 
     // handler for a file upload failed event
@@ -3183,6 +3215,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     onMultipleFileUpload : function()
     {
         this.hideProgressBar();
+        this.lastSummary= {info:0, success:0, file:'', pct:0};
+        this.progressRecord = null;
         this.toggleTabPanel('uploadMultiFileTab');
         if (!this.applet)
         {
@@ -3213,7 +3247,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     if (this.applet.isActive())
                     {
                         this.updateAppletState(this.currentDirectory);
-                        Ext.TaskMgr.stop(this);
+                        this.applet.getTransfers().removeAll();
+                        Ext.TaskMgr.stop(task);
                     }
                 }
             };
@@ -3224,11 +3259,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     createTreePanel : function()
     {
         var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false, folderFilter:this.fileFilter});
-        var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
+        this.root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
         var tree = new Ext.tree.TreePanel(
         {
             loader:treeloader,
-            root:root,
+            root: this.root,
             rootVisible:true,
             //title: 'Folders',
             useArrows:true,
@@ -3242,6 +3277,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             collapsed: this.folderTreeCollapsed,
             cmargins:'0 0 0 0',
             border:false,
+            stateful: false,
             pathSeparator:';'
         });
         treeloader.debugTree = tree;
@@ -3270,8 +3306,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode}
             ]
         });
-        // hack to get the file input field to size correctly
-        grid.on('render', function(c){this.fileUploadField.setSize(350);}, this);
         return grid;
     }
 });

@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.Resource;
@@ -30,6 +31,7 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Set;
 
 /**
@@ -54,10 +56,13 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
         if (null == root)
             return null;
-        if (!root.ensureSystemDirectory().exists())
+        if (!NetworkDrive.exists(root.getRootPath()))
             return null;
 
-        return PageFlowUtil.set(PIPELINE_LINK);
+        if (root.getWebdavURL().contains(URLEncoder.encode(PIPELINE_LINK)) && root.getContainer().equals(c))
+            return PageFlowUtil.set(PIPELINE_LINK);
+
+        return null;
     }
 
 

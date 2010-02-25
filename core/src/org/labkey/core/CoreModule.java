@@ -17,7 +17,9 @@ package org.labkey.core;
 
 import junit.framework.TestCase;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
+import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
@@ -86,7 +88,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public double getVersion()
     {
-        return 9.39;
+        return 10.09;
     }
 
     @Override
@@ -338,15 +340,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
-                File file = new File(ModuleLoader.getInstance().getWebappDir().getParentFile(), "ActionStats_" + DateUtil.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".tsv");
-                TSVWriter writer = new ActionsTsvWriter();
-                try
+                Logger logger = Logger.getLogger(ActionsTsvWriter.class);
+                if (null != logger)
                 {
-                    writer.write(file);
-                }
-                catch (ServletException e)
-                {
-                    Logger.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                    Appender appender = logger.getAppender("ACTION_STATS");
+                    if (null != appender && appender instanceof RollingFileAppender)
+                        ((RollingFileAppender)appender).rollOver();
+                    else
+                        Logger.getLogger(CoreModule.class).warn("Could not rollover the action stats tsv file--there was no appender named ACTION_STATS, or it is not a RollingFileAppender.");
+
+                    TSVWriter writer = new ActionsTsvWriter();
+                    StringBuilder buf = new StringBuilder();
+                    try
+                    {
+                        writer.write(buf);
+                    }
+                    catch (ServletException e)
+                    {
+                        Logger.getLogger(CoreModule.class).error("Exception exporting action stats", e);
+                    }
+
+                    logger.info(buf.toString());
                 }
             }
         });

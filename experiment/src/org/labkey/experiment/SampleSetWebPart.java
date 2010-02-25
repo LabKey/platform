@@ -52,6 +52,7 @@ public class SampleSetWebPart extends QueryView
         if (_narrow)
         {
             setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            setShowSurroundingBorder(false);
         }
         else
         {
@@ -119,7 +120,7 @@ public class SampleSetWebPart extends QueryView
 
         ActionURL setAsActiveURL = model.cloneActionURL();
         setAsActiveURL.setAction(ExperimentController.SetActiveSampleSetAction.class);
-        ActionButton setAsActiveButton = new ActionButton(setAsActiveURL.toString(), "Set as Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
+        ActionButton setAsActiveButton = new ActionButton(setAsActiveURL.toString(), "Make Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
         setAsActiveButton.setURL(setAsActiveURL);
         setAsActiveButton.setActionType(ActionButton.Action.POST);
         setAsActiveButton.setDisplayPermission(UpdatePermission.class);

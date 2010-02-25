@@ -354,18 +354,18 @@ public class ExperimentController extends SpringActionController
 
             if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source))
             {
-                ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
+                ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
                 updateButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
                 ActionURL editTypeURL = getViewContext().cloneActionURL();
                 editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
-                ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Property List", DataRegion.MODE_DETAILS);
+                ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Fields", DataRegion.MODE_DETAILS);
                 editTypeButton.setURL(editTypeURL);
                 editTypeButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
 
-                ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+                ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
                 deleteButton.setDisplayPermission(DeletePermission.class);
                 ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
                 deleteURL.addParameter("singleObjectRowId", _source.getRowId());
@@ -1356,7 +1356,7 @@ public class ExperimentController extends SpringActionController
                                 try { fIn.close(); } catch (IOException e) { /* fall through */ }
                         }
                     }
-                    else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".csv"))
+                    else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".csv"))
                     {
                         TabLoader tabLoader = new TabLoader(realContent);
                         if (lowerCaseFileName.endsWith(".csv"))
@@ -1368,7 +1368,16 @@ public class ExperimentController extends SpringActionController
                         JSONArray headerArray = new JSONArray();
                         for (ColumnDescriptor col : cols)
                         {
-                            headerArray.put(col.name);
+                            if (extended)
+                            {
+                                JSONObject valueObject = new JSONObject();
+                                valueObject.put("value", col.name);
+                                headerArray.put(valueObject);
+                            }
+                            else
+                            {
+                                headerArray.put(col.name);
+                            }
                         }
                         rowsArray.put(headerArray);
                         for (Map<String, Object> rowMap : tabLoader)

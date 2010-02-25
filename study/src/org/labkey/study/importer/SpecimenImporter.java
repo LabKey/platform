@@ -543,6 +543,11 @@ public class SpecimenImporter
 
             if (!DEBUG)
                 scope.commitTransaction();
+
+            updateStatistics(ExperimentService.get().getTinfoMaterial());
+            updateStatistics(StudySchema.getInstance().getTableInfoSpecimen());
+            updateStatistics(StudySchema.getInstance().getTableInfoVial());
+            updateStatistics(StudySchema.getInstance().getTableInfoSpecimenEvent());
         }
         finally
         {
@@ -552,6 +557,17 @@ public class SpecimenImporter
             SampleManager.getInstance().clearCaches(container);
         }
         dumpTimers();
+    }
+
+    private boolean updateStatistics(TableInfo tinfo) throws SQLException
+    {
+        info("Updating statistics for " + tinfo + "...");
+        boolean updated = tinfo.getSqlDialect().updateStatistics(tinfo);
+        if (updated)
+            info("Statistics update " + tinfo + " complete.");
+        else
+            info("Statistics update not supported for this database type.");
+        return updated;
     }
 
     protected void process(User user, Container container, Map<String, CloseableIterator<Map<String, Object>>> iterMap, Logger logger) throws SQLException, IOException

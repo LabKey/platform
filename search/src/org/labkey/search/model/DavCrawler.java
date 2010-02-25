@@ -310,6 +310,7 @@ public class DavCrawler implements ShutdownListener
                         Map<String, Object> props = new HashMap<String, Object>();
                         props.put(SearchService.PROPERTY.categories.toString(), SearchService.fileCategory.toString());
                         props.put(SearchService.PROPERTY.displayTitle.toString(), wrap.getPath().getName());
+                        props.put(SearchService.PROPERTY.searchTitle.toString(), FileUtil.getSearchTitle(wrap.getPath().getName()));
                         child = new SimpleDocumentResource(wrap.getPath(), wrap.getDocumentId(), wrap.getContainerId(), wrap.getContentType(),
                                 new byte[0], url, props){
                             @Override

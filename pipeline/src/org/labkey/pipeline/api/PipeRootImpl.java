@@ -17,23 +17,25 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.GlobusKeyPair;
-import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -84,6 +86,13 @@ public class PipeRootImpl implements PipeRoot
     private String _entityId;
     private GlobusKeyPairImpl _keyPair;
     private boolean _searchable;
+    private boolean _isDefaultRoot;     // true if this root is based on the
+
+    public PipeRootImpl(PipelineRoot root, boolean isDefaultRoot) throws URISyntaxException
+    {
+        this(root);
+        _isDefaultRoot = isDefaultRoot;
+    }
 
     public PipeRootImpl(PipelineRoot root) throws URISyntaxException
     {
@@ -307,5 +316,11 @@ public class PipeRootImpl implements PipeRoot
     public boolean isSearchable()
     {
         return _searchable;
+    }
+
+    public String getWebdavURL()
+    {
+        String davName = _isDefaultRoot ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK;
+        return FilesWebPart.getRootPath(getContainer(), davName);
     }
 }

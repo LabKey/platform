@@ -98,7 +98,7 @@ public class WorkbooksTableInfo extends FilteredTable
         this.setDefaultVisibleColumns(defCols);
 
         //workbook true
-        this.addCondition(getRealTable().getColumn("Workbook"), "true");
+        this.addCondition(new SQLFragment("Workbook=?", true));
     }
 
     @Override

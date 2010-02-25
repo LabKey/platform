@@ -291,13 +291,17 @@ public class SavePaths implements DavCrawler.SavePaths
         Date now = new Date(System.currentTimeMillis());
         Date awhileago = new Date(Math.max(_startupTime,now.getTime() - 30*60000));
 
+        SqlDialect dialect = getSearchSchema().getSqlDialect();
         SQLFragment f = new SQLFragment(
                 "SELECT Path, LastCrawled, NextCrawl\n" +
-                "FROM search.CrawlCollections\n" +
-                "WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?) " +
-                "ORDER BY NextCrawl",
-                now, awhileago);
-        SQLFragment sel = getSearchSchema().getSqlDialect().limitRows(f, limit);
+                "FROM search.CrawlCollections\n");
+        if (dialect.isSqlServer() && !dialect.supportsOffset()) // SQL Server 2000 test
+            f.append("WITH (NOLOCK)\n");
+        f.append("WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?) " +
+                "ORDER BY NextCrawl");
+        f.add(now);
+        f.add(awhileago);
+        SQLFragment sel = dialect.limitRows(f, limit);
 
         ResultSet rs = null;
         try

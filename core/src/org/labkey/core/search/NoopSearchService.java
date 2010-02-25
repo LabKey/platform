@@ -297,6 +297,10 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    public void addDocumentParser(DocumentParser parser)
+    {
+    }
+
     public void notFound(URLHelper url)
     {
     }

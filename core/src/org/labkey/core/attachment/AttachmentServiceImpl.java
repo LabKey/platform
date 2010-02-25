@@ -1126,9 +1126,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         private void initSearch(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
         {
-            String searchTitle = name + " " + replaceSymbols(name);
-
-            setSearchProperty(SearchService.PROPERTY.searchTitle, searchTitle);
+            setSearchProperty(SearchService.PROPERTY.searchTitle, FileUtil.getSearchTitle(name));
             setSearchProperty(SearchService.PROPERTY.displayTitle, null != displayTitle ? displayTitle : name);
 
             if (null == cat)
@@ -1176,13 +1174,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return AttachmentService.get().getAttachment(_parent, _name);
         }
 
-
-        private String replaceSymbols(String documentName)
-        {
-            // Replace some common symbols with spaces.  Lucene analyzers tokenize on whitespace; this allows
-            // a search on "labkey" to hit a document called "labkey.txt"
-            return documentName.replaceAll("[._-]", " ");
-        }
 
         @Override
         public String getContentType()

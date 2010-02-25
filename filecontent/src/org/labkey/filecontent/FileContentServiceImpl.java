@@ -93,20 +93,25 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             // check if there is a site wide file root
             if (root.getPath() == null || root.isUseDefault())
             {
-                File siteRoot = getSiteDefaultRoot();
-                if (siteRoot != null)
-                {
-                    File projRoot = new File(siteRoot, c.getProject().getName());
-
-                    // automatically create project roots if a site wide root is specified
-                    if (!projRoot.exists())
-                        projRoot.mkdirs();
-
-                    return projRoot;
-                }
+                return getProjectDefaultRoot(c, true);
             }
             else
                 return new File(root.getPath());
+        }
+        return null;
+    }
+
+    public File getProjectDefaultRoot(Container c, boolean createDir)
+    {
+        File siteRoot = getSiteDefaultRoot();
+        if (siteRoot != null && c != null && c.getProject() != null)
+        {
+            File projRoot = new File(siteRoot, c.getProject().getName());
+
+            if (!projRoot.exists() && createDir)
+                projRoot.mkdirs();
+
+            return projRoot;
         }
         return null;
     }
@@ -177,6 +182,9 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     public boolean isUseDefaultRoot(Container c)
     {
+        if (c == null)
+            return true;
+        
         Container project = c.getProject();
         if (null == project)
             return true;
@@ -191,9 +199,14 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         if (project != null)
         {
             FileRoot root = FileRootManager.get().getFileRoot(project);
+            String oldValue = root.getPath();
             root.setEnabled(true);
             root.setUseDefault(useDefaultRoot);
             FileRootManager.get().saveFileRoot(null, root);
+
+            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                    project, ContainerManager.Property.WebRoot, oldValue, null);
+            ContainerManager.firePropertyChangeEvent(evt);
         }
     }
 

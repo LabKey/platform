@@ -130,7 +130,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
     }
 
-    public ExpRun[] getRunsForPath(File file, Container container)
+    public ExpRun[] getRunsForPath(File file, @Nullable Container container)
     {
         try
         {
@@ -1374,7 +1374,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpDataImpl getExpDataByURL(File file, Container c)
+    public ExpDataImpl getExpDataByURL(File file, @Nullable Container c)
     {
         File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
         try
@@ -1388,7 +1388,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpDataImpl getExpDataByURL(String url, Container c)
+    public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
     {
         try
         {
@@ -1960,13 +1960,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            ExperimentRun[] runs = Table.executeQuery(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
-                    "RowId IN " +
-                    "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoDataInput() + " di " +
-                    "WHERE di.TargetApplicationId = pa.RowId AND di.DataID IN (" + dataRowIdSQL + ")) \n" +
-                    "OR RowId IN " +
-                    "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoData() + " d " +
-                    "WHERE d.SourceApplicationId = pa.RowId AND d.RowId IN (" + dataRowIdSQL + "))", new Object[0], ExperimentRun.class);
+            ExperimentRun[] runs = Table.executeQuery(getExpSchema(),
+                    "SELECT * FROM exp.ExperimentRun WHERE \n" +
+                            "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN \n" +
+                            "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE di.DataID IN (" + dataRowIdSQL + "))" +
+                            " UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE d.RowId IN (" + dataRowIdSQL + ")))",
+                    new Object[0], ExperimentRun.class);
             return Arrays.asList(ExpRunImpl.fromRuns(runs));
         }
         catch (SQLException e)

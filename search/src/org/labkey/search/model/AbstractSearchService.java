@@ -57,6 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
     private static final Category _log = Category.getInstance(AbstractSearchService.class);
+    protected static final long FILE_SIZE_LIMIT = 100L*(1024*1024); // 100 MB
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
     final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
@@ -1102,7 +1103,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    final AtomicReference<DocumentProvider[]> _documentProviders = new AtomicReference<DocumentProvider[]>();
+    protected final AtomicReference<DocumentProvider[]> _documentProviders = new AtomicReference<DocumentProvider[]>();
     
     public void addDocumentProvider(DocumentProvider provider)
     {
@@ -1123,6 +1124,30 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _documentProviders.set(documentProviders);
         }
     }
+
+
+    protected final AtomicReference<DocumentParser[]> _documentParsers = new AtomicReference<DocumentParser[]>();
+
+    public void addDocumentParser(DocumentParser parser)
+    {
+        synchronized (_documentParsers)
+        {
+            DocumentParser[] documentParsers = _documentParsers.get();
+            if (null == documentParsers)
+            {
+                documentParsers = new DocumentParser[1];
+            }
+            else
+            {
+                DocumentParser[] arr = new DocumentParser[documentParsers.length+1];
+                System.arraycopy(documentParsers, 0, arr, 0, documentParsers.length);
+                documentParsers = arr;
+            }
+            documentParsers[documentParsers.length-1] = parser;
+            _documentParsers.set(documentParsers);
+        }
+    }
+
 
 
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
@@ -1267,6 +1292,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
         sb.append("</table>");
         map.put("Indexing history added/updated", sb.toString());
+        map.put("Maximum allowed document size", FILE_SIZE_LIMIT);
 
         return map;
     }

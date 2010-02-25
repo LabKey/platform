@@ -21,8 +21,6 @@ LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
 
     onMouseDown : function(e, t)
     {
-        LABKEY.ActionsCheckColumn.superclass.onMouseDown.call(this, e, t);
-
         if(t.className && t.className.indexOf('x-grid3-cc-'+this.id) != -1)
         {
             if (this.listeners && this.listeners.mousedown)
@@ -30,12 +28,15 @@ LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
                 var index = this.grid.getView().findRowIndex(t);
                 var record = this.grid.store.getAt(index);
 
+                LABKEY.ActionsCheckColumn.superclass.onMouseDown.call(this, e, t);
                 if (record)
                 {
                     var scope = this.listeners.mousedown.scope || this;
                     this.listeners.mousedown.apply(scope, [record, this.dataIndex]);
                 }
             }
+            else
+                LABKEY.ActionsCheckColumn.superclass.onMouseDown.call(this, e, t);
         }
     }
 }),

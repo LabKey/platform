@@ -17,14 +17,14 @@
 %>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.query.FieldKey"%>
+<%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController"%>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
@@ -39,31 +39,33 @@
     <table>
         <tr>
             <td></td>
-            <td class="labkey-bordered" style="font-weight:bold">Column Field<%=fieldDropDown("colField", bean.getColumns(), bean.getColField(), false, true)%></td>
+            <td class="labkey-bordered" style="font-weight:bold">Column Field<%=fieldDropDown("colField", "colSelection", bean.getColumns(), bean.getColField(), false, true, null)%></td>
 
         </tr>
     <tr>
-        <td class="labkey-bordered" style="font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", bean.getColumns(), bean.getRowField(), false, true)%>
+        <td class="labkey-bordered" style="font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", "rowSelection", bean.getColumns(), bean.getRowField(), false, true, null)%>
         </td>
-        <td class="labkey-bordered" style="font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", bean.getColumns(), bean.getStatField(), true, false)%><br>
+        <td class="labkey-bordered" style="font-weight:bold" width="100%">Compute Statistics for Field<br>
+            <%=fieldDropDown("statField", "statSelection", bean.getColumns(), bean.getStatField(), true, false, "updateSelection();")%><br>
             <br>
             Compute<br>
-            <table><tr><td>
-            <input type=checkbox name=stats value=Count <%=stats.contains("Count") ? "CHECKED" : ""%> > Count <br>
-            <input type=checkbox name=stats value=Sum <%=stats.contains("Sum") ? "CHECKED" : ""%> > Sum <br>
-            </td>
+            <table><tr>
                 <td>
-                <input type=checkbox name=stats value=StdDev  <%=stats.contains("StdDev") ? "CHECKED" : ""%> > StdDev <br>
-            <input type=checkbox name=stats value=Mean <%=stats.contains("Mean") ? "CHECKED" : ""%> > Mean <br>
-            </td>
+                    <input id="cbCount" type=checkbox name=stats value=Count <%=stats.contains("Count") ? "CHECKED" : ""%> ><span>&nbsp;Count</span><br>
+                    <input id="cbSum" type=checkbox name=stats value=Sum <%=stats.contains("Sum") ? "CHECKED" : ""%> ><span>&nbsp;Sum</span>
+                </td>
                 <td>
-                <input type=checkbox name=stats value=Min <%=stats.contains("Min") ? "CHECKED" : ""%> > Min <br>
-            <input type=checkbox name=stats value=Max <%=stats.contains("Max") ? "CHECKED" : ""%> > Max <br>
-                    </td>
+                    <input id="cbStdDev" type=checkbox name=stats value=StdDev  <%=stats.contains("StdDev") ? "CHECKED" : ""%> ><span>&nbsp;StdDev</span><br>
+                    <input id="cbMean" type=checkbox name=stats value=Mean <%=stats.contains("Mean") ? "CHECKED" : ""%> ><span>&nbsp;Mean</span>
+                </td>
+                <td>
+                    <input id="cbMin" type=checkbox name=stats value=Min <%=stats.contains("Min") ? "CHECKED" : ""%> ><spah>&nbsp;Min</spah><br>
+                    <input id="cbMax" type=checkbox name=stats value=Max <%=stats.contains("Max") ? "CHECKED" : ""%> ><span>&nbsp;Max</span>
+                </td>
                 <td valign=top>
-            <input type=checkbox name=stats value=Median <%=stats.contains("Median") ? "CHECKED" : ""%> > Median<br>
-            </td>
-                </tr></table>
+                    <input id="cbMedian" type=checkbox name=stats value=Median <%=stats.contains("Median") ? "CHECKED" : ""%> ><span>&nbsp;Median</span><br>
+                </td>
+            </tr></table>
         </td>
     </tr>
     </table>
@@ -71,10 +73,14 @@
 </form>
 
 <%!
-    public String fieldDropDown(String name, Map<String, ColumnInfo> cols, String selected, boolean numericOnly, boolean allowBlank)
+    public String fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,
+                                boolean isStatField, boolean allowBlank, String changeHandler)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("<select name=\"").append(name).append("\">\n");
+        sb.append("<select name=\"").append(name).append("\" id=\"").append(id).append("\"");
+        if (changeHandler != null)
+            sb.append(" onChange=\"").append(changeHandler).append("\"");
+        sb.append(">\n");
         if (allowBlank)
             sb.append("<option></option>");
 
@@ -85,23 +91,21 @@
                 sb.append(" selected");
             sb.append(">Visit Id</option>");
         }
-        if (!numericOnly)
+
+        String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
+        if (cols.containsKey(subjectNoun))
         {
-            String subjectNoun = StudyService.get().getSubjectColumnName(getViewContext().getContainer());
-            if (cols.containsKey(subjectNoun))
-            {
-                sb.append("<option value=\"").append(subjectNoun).append("\"");
-                if (null != selected && selected.equalsIgnoreCase(subjectNoun))
-                    sb.append(" selected");
-                sb.append(">").append(StudyService.get().getSubjectColumnName(getViewContext().getContainer())).append("</option>");
-            }
+            sb.append("<option value=\"").append(subjectNoun).append("\"");
+            if (null != selected && selected.equalsIgnoreCase(subjectNoun))
+                sb.append(" selected");
+            sb.append(">").append(StudyService.get().getSubjectColumnName(getViewContext().getContainer())).append("</option>");
         }
         FieldKey ptid = new FieldKey(null,StudyService.get().getSubjectColumnName(getViewContext().getContainer()));
         FieldKey seqNum = new FieldKey(null, "SequenceNum");
 
         for (ColumnInfo col : cols.values())
         {
-            if (numericOnly && !(Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive()))
+            if (isStatField && !isValidStatColumn(col))
                 continue;
 
             if (ptid.equals(col.getFieldKey()) || seqNum.equals(col.getFieldKey().encode()))
@@ -120,4 +124,70 @@
         sb.append("</select>");
         return sb.toString();
     }
+
+    boolean isValidStatColumn(ColumnInfo col)
+    {
+        Class cls = col.getJavaClass();
+        if (Number.class.isAssignableFrom(cls) || cls.isPrimitive())
+            return true;
+
+        if (String.class.isAssignableFrom(cls))
+            return true;
+
+        return false;
+    }
 %>
+
+<script type="text/javascript">
+
+    // create a map of column to type
+    var columnTypeMap = {};
+<%  for (ColumnInfo col : bean.getColumns().values())
+    {
+        Class cls = col.getJavaClass();
+        if (Number.class.isAssignableFrom(cls) || cls.isPrimitive()) { %>
+            columnTypeMap['<%=col.getFieldKey().encode()%>'] = 'numeric';
+<%      }
+    } %>
+
+    Ext.onReady(function()
+    {
+        updateSelection();
+    });
+
+    function updateSelection()
+    {
+        var statSel = Ext.get('statSelection').getValue();
+        var enabled = false;
+
+        if (statSel && statSel in columnTypeMap)
+            enabled = true;
+
+        setEnabled('cbSum', enabled);
+        setEnabled('cbMean', enabled);
+        setEnabled('cbMedian', enabled);
+        setEnabled('cbStdDev', enabled);
+    }
+
+    function setEnabled(id, enabled)
+    {
+        var el = Ext.get(id);
+        if (el) {
+
+            el.dom.disabled = !enabled;
+            if (!enabled)
+            {
+                el.dom.checked = false;
+                var span = el.next('//span');
+                if (span)
+                    span.addClass('labkey-disabled');
+            }
+            else
+            {
+                var span = el.next('//span');
+                if (span)
+                    span.removeClass('labkey-disabled');
+            }
+        }
+    }
+</script>

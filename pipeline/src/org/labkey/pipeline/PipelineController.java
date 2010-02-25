@@ -402,6 +402,7 @@ public class PipelineController extends SpringActionController
             super(getContextContainer());
 
             FilesForm bean = getModelBean();
+            ViewContext context = getViewContext();
 
             bean.setDirectory(startPath);
             //bean.setShowAddressBar(true);
@@ -409,13 +410,14 @@ public class PipelineController extends SpringActionController
             bean.setFolderTreeCollapsed(false);
             bean.setShowDetails(true);
             bean.setAutoResize(true);
+            bean.setStatePrefix(context.getContainer().getId() + "#fileContent");
 
             // pipeline is always enabled
             bean.setEnabled(true);
 
-            PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+            PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
             if (root != null)
-                bean.setRootPath(root.getContainer(), PipelineWebdavProvider.PIPELINE_LINK);
+                bean.setRootPath(root.getWebdavURL());
 
             setTitle("Pipeline Files");
             setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));
@@ -1262,6 +1264,7 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
             resp.put("containerPath", null != root ? root.getContainer().getPath() : null);
+            resp.put("webDavURL", null != root ? root.getWebdavURL() : null);
             return resp;
         }
     }

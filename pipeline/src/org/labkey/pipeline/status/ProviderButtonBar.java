@@ -48,6 +48,7 @@ public class ProviderButtonBar extends ButtonBar
     public ProviderButtonBar(PipelineStatusFile sf)
     {
         _statusFile = sf;
+        setStyle(Style.separateButtons);
     }
 
 

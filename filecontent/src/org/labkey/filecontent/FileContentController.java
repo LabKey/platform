@@ -42,6 +42,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.FileSystemResource;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -117,7 +118,15 @@ public class FileContentController extends SpringActionController
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
 
             if (null == fileSet)
+            {
                 p = svc.getMappedAttachmentDirectory(getContainer(), false);
+                if (p != null && p.getFileSystemDirectory() != null)
+                {
+                    // For FileContent files, check if there's a newer copy in the legacy directory that needs to be
+                    // moved into the @files directory
+                    FileSystemResource.mergeFiles(p.getFileSystemDirectory());
+                }
+            }
             else
                 p = svc.getRegisteredDirectory(getContainer(), form.getFileSet());
 

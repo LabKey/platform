@@ -21,22 +21,23 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.files.UnsetRootDirectoryException;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -44,9 +45,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -205,6 +205,44 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
                         _log.error("error occured upgrading existing file roots", e);
                     }
                 }
+            }
+
+            // after the files have been moved, transfer metadata from the old attachment documents into the
+            // exp data table and delete the old attachment records
+            Container c = entry.getValue();
+            try {
+                if (!_svc.isUseDefaultRoot(c))
+                {
+                    // prior to 10.1 there were no default roots, everything was an override
+                    AttachmentDirectory root = _svc.getMappedAttachmentDirectory(c, false);
+                    if (root != null)
+                    {
+                        for (Attachment a : AttachmentService.get().getAttachments(root))
+                        {
+                            File file = a.getFile();
+                            if (file != null && file.exists() && a.getCreatedBy() != 0)
+                            {
+                                User user = UserManager.getUser(a.getCreatedBy());
+                                ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+
+                                if ((user != null && !user.isGuest()) && data == null)
+                                {
+                                    data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                                    data.setDataFileURI(file.toURI());
+                                    data.setName(file.getName());
+                                    data.save(user);
+                                }
+                            }
+                        }
+                        // remove the old attachments
+                        TableInfo tInfo = CoreSchema.getInstance().getTableInfoDocuments();
+                        Table.execute(tInfo.getSchema(), "DELETE FROM " + tInfo + " WHERE Parent = ?", new Object[]{root.getEntityId()});
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _log.error("error occurred migrating file content metadata to WebDav", e);
             }
         }
     }

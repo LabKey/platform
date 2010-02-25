@@ -66,7 +66,7 @@ public class AssayListPortalView extends AssayListQueryView
     public DataView createDataView()
     {
         DataView result = super.createDataView();
-        result.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+        result.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
         return result;
     }
 
@@ -76,9 +76,9 @@ public class AssayListPortalView extends AssayListQueryView
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
             insertURL.addParameter("returnURL", getViewContext().getActionURL().getLocalURIString());
-            bar.add(new SimpleTextDisplayElement(textLink("New Assay Design", insertURL), true));
+            bar.add(new ActionButton("New Assay Design", insertURL));
         }
 
-        bar.add(new SimpleTextDisplayElement(textLink("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())), true));
+        bar.add(new ActionButton("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())));
     }
 }

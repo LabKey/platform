@@ -447,7 +447,7 @@ public enum Method
             SQLFragment monthB = month.getSQL(schema, new SQLFragment[] {arguments[1]});
             SQLFragment dayB = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[1]});
 
-            ret.append("CASE WHEN (")
+            ret.append("(CASE WHEN (")
                     .append(monthA).append(">").append(monthB).append(" OR ")
                     .append(monthA).append("=").append(monthB).append(" AND ")
                     .append(dayA).append(">").append(dayB)
@@ -455,7 +455,7 @@ public enum Method
                     .append(yearB).append("-").append(yearA).append("-1")
                     .append(") ELSE (")
                     .append(yearB).append("-").append(yearA)
-                    .append(") END");
+                    .append(") END)");
             return ret;
         }
     }
@@ -482,7 +482,7 @@ public enum Method
             SQLFragment monthB = month.getSQL(schema, new SQLFragment[] {arguments[1]});
             SQLFragment dayB = dayofmonth.getSQL(schema, new SQLFragment[] {arguments[1]});
 
-            ret.append("CASE WHEN (")
+            ret.append("(CASE WHEN (")
                     .append(dayA).append(">").append(dayB)
                     .append(") THEN (")
                     .append("12*(").append(yearB).append("-").append(yearA).append(")")
@@ -492,7 +492,7 @@ public enum Method
                     .append("12*(").append(yearB).append("-").append(yearA).append(")")
                     .append("+")
                     .append(monthB).append("-").append(monthA)
-                    .append(") END");
+                    .append(") END)");
             return ret;
         }
     }

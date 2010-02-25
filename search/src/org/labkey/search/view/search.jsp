@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
@@ -53,6 +54,7 @@ if (loginStatusChanged())
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainer();
     User user = ctx.getUser();
+    String contextPath = ctx.getContextPath();
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
@@ -64,7 +66,8 @@ if (loginStatusChanged())
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
 %>
-<form id=searchForm name="search" action="<%=SearchController.getSearchURL(c)%>"><%
+<form class="labkey-search-form" id=searchForm name="search" action="<%=SearchController.getSearchURL(c)%>">
+    <table><tr><td><%
     if (form.isPrint())
     {
         %><input type=hidden name=_print value=1><%
@@ -85,10 +88,10 @@ if (loginStatusChanged())
         %><input type=hidden name=container value="<%=form.getContainer()%>"><%
     }
 
-    %><input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>">&nbsp;
-    <%=generateSubmitButton("Search")%>
-
-    <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>"></form><%
+    %>
+    <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>">
+    <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
+    <td>&nbsp;<%=generateSubmitButton("Search")%></td></tr><%
 
     String category = form.getCategory();
     ActionURL categoryResearchURL = ctx.cloneActionURL().deleteParameter("category");
@@ -97,31 +100,36 @@ if (loginStatusChanged())
 
     if (null != StringUtils.trimToNull(queryString))
     {
-        %><table>
-            <tr><td>
-                <table cellpadding="0" cellspacing="0"><tr>
-                    <td class="labkey-main-title"><%
-                        if (null == category)           { %>All<%      } else { %><a href="<%=h(categoryResearchURL)%>">All</a><% } %>&nbsp;<%
-                        if ("File".equals(category))    { %>Files<%    } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "File"))%>">Files</a><% } %>&nbsp;<%
-                        if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %>&nbsp;<%
-                        if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% }
-                    %></td>
-                    <td class="labkey-main-title" align="right" style="width:100%"><%
-                        SearchScope scope = form.getSearchScope(c);
-                        if (scope == SearchScope.All) { %>Site<% } else { %><a href="<%=h(scopeResearchURL)%>">Site</a><% } %>&nbsp;<%
+        %><tr><td colspan=1>
+        <table width=100% cellpadding="0" cellspacing="0"><tr>
+            <td class="labkey-search-filter"><%
+                %><span><%if (null == category)           { %>All<%      } else { %><a href="<%=h(categoryResearchURL)%>">All</a><% } %></span>&nbsp;<%
+                %><span><%if ("File".equals(category))    { %>Files<%    } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "File"))%>">Files</a><% } %></span>&nbsp;<%
+                %><span><%if ("Subject".equals(category)) { %>Subjects<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Subject"))%>">Subjects</a><% } %></span>&nbsp;<%
+                %><span><%if ("Dataset".equals(category)) { %>Datasets<% } else { %><a href="<%=h(categoryResearchURL.clone().addParameter("category", "Dataset"))%>">Datasets</a><% } %></span><%
+            %></td>
+            <td class="labkey-search-filter" align="right" style="width:100%"><%
+                SearchScope scope = form.getSearchScope(c);
+                %><span title="<%=h(LookAndFeelProperties.getInstance(c).getShortName())%>"><%if (scope == SearchScope.All) { %>Site<% } else { %><a href="<%=h(scopeResearchURL)%>">Site</a><% } %></span>&nbsp;<%
 
-                        Container project = c.getProject();
+                Container project = c.getProject();
 
-                        // Skip the "Project" and "Folder" links if we're at the root
-                        if (null != project)
-                        {
-                            if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %>&nbsp;<%
-                            if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% }
-                        }
-                    %></td>
-                </tr></table>
-            </td></tr>
-            <tr><td valign="top" align="left" width=700><%
+                // Skip the "Project" and "Folder" links if we're at the root
+                if (null != project)
+                {
+                    %><span title="<%=h(c.getProject().getName())%>"><%if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %></span>&nbsp;<%
+                    %><span title="<%=h(c.getName())%>"><%if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% } %></span><%
+                }
+            %></td><td>&nbsp</td>
+        </tr></table><%
+    }
+    %></td></tr></table></form><%
+
+    if (null != StringUtils.trimToNull(queryString))
+    {
+            %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
+            <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPath%>/_.gif" width=500 height=1><%
+            %><div id="searchResults" class="labkey-search-results"><%
 
         int hitsPerPage = 20;
         int offset = form.getOffset();
@@ -135,18 +143,18 @@ if (loginStatusChanged())
             int totalHits = result.totalHits;
             int pageCount = (int)Math.ceil((double)totalHits / hitsPerPage);
 
-            %><br>Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.<br><%
+            %><table cellspacing=0 cellpadding=0 width=100%><tr><td align=left>Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.</td><%
 
             if (hitsPerPage < totalHits)
             {
-                %>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format(pageCount)%><br><%
+                %><td align=right>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format(pageCount)%></td><%
             }
             else
             {
-                %>Displaying all results<br><%
+                %><td align=right>Displaying all results</td><%
             }
-            %><p />
-            <div id="searchResults"><%
+            %></tr></table><br>
+            <%
 
             for (SearchService.SearchHit hit : result.hits)
             {
@@ -168,7 +176,7 @@ if (loginStatusChanged())
                     //
                 }
 
-                %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:690px;'><%
+                %><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
                 if (null != summary)
                 {
                     %><%=PageFlowUtil.filter(summary, false)%><br><%
@@ -199,7 +207,7 @@ if (loginStatusChanged())
 
             if (pageCount > 1)
             { %>
-                <table width="100%"><tr><td align="center"><%
+                <div style="text-align:center;"><%
 
                 ActionURL currentURL = ctx.getActionURL();
 
@@ -223,32 +231,32 @@ if (loginStatusChanged())
                 if (pageNo < pageCount)
                 { %><a href="<%=h(currentURL.clone().replaceParameter("offset", String.valueOf(offset + hitsPerPage)))%>">Next &gt;</a><%
                 } %>
-                </td></tr></table><%
+                </div><%
             }
             
             %></div></td><%
 
-            if (null == category && wideView)
+            if (null == category && wideView && form.getSearchScope(null) != SearchScope.Folder)
             {
-                result = ss.search(queryString, SearchService.navigationCategory, user, ContainerManager.getRoot(), true, offset, hitsPerPage);
+                result = ss.search(queryString, SearchService.navigationCategory, user, form.getSearchContainer(), true, offset, hitsPerPage);
 
                 if (result.hits.size() > 0)
                 {
-                    %><td valign="top" align="left" width="350"><%
-                    WebPartView.startTitleFrame(out, "Quick Links");
-                    %><div id="navigationResults"><%
-
+                    %><td valign="top" align="left"><img title="" src="<%=contextPath%>/_.gif" width=200 height=1><%
+                    %><div id="navigationResults" class="labkey-search-navresults"><h3>Folders</h3><%
+                    //WebPartView.startTitleFrame(out, "Quick Links");
                     for (SearchService.SearchHit hit : result.hits)
                     {
-                        %><a href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><br><%
+                        %><table><tr><td><img src="<%=contextPath%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a></td></tr></table><%
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
                             %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                         }
                     }
+                    %><br><%
+                    //WebPartView.endTitleFrame(out);
                     %></div><%
-                    WebPartView.endTitleFrame(out);
                     %></td><%
                 }
             }
@@ -335,7 +343,7 @@ List<NavTree> getActions(SearchService.SearchHit hit)
     Resource r = WebdavService.get().getResolver().lookup(p);
     if (null == r || !r.exists())
         return null;
-    List<NavTree> nav = r.getActions();
+    List<NavTree> nav = r.getActions(HttpView.currentContext().getUser());
     return nav.isEmpty() ? null : nav;
 }
 

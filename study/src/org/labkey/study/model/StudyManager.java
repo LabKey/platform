@@ -489,6 +489,8 @@ public class StudyManager
             Table.delete(schema.getTableInfoVisit(), new Object[] {study.getContainer(), visit.getRowId()});
             _visitHelper.clearCache(visit);
 
+            SampleManager.getInstance().deleteSamplesForVisit(visit);
+
             schema.getSchema().getScope().commitTransaction();
 
             for (DataSetDefinition def : getDataSetDefinitions(study))
@@ -3341,7 +3343,7 @@ public class StudyManager
             Study study = StudyManager.getInstance().getStudy(c);
             if (null == study)
                 return;
-            String nav = NavTree.toJS(Collections.singleton(new NavTree("Study", new ActionURL("project","begin",c.getId()))), null, false).toString();
+            String nav = NavTree.toJS(Collections.singleton(new NavTree("study", new ActionURL("project","begin",c.getId()))), null, false).toString();
 
             SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
             if (null != c)
@@ -3468,7 +3470,7 @@ public class StudyManager
                 StudyManager.indexDatasets(task, c, null);
                 StudyManager.indexParticipantView(task, c, null);
                 StudyManager.indexParticipants(c);
-                AssayService.get().indexAssays(c);
+                AssayService.get().indexAssays(task, c);
             }
         };
 

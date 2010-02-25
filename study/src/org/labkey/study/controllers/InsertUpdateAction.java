@@ -171,10 +171,12 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
 
         ButtonBar buttonBar = new ButtonBar();
+        buttonBar.setStyle(ButtonBar.Style.separateButtons);
         ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getViewContext().getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId()), "Submit");
         ActionButton btnCancel = new ActionButton("Cancel", cancelURL);
         buttonBar.add(btnSubmit);
         buttonBar.add(btnCancel);
+        buttonBar.setStyle(ButtonBar.Style.separateButtons);
 
         dataRegion.setButtonBar(buttonBar);
         return new VBox(new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript(\"completion.js\");</script>"), view);

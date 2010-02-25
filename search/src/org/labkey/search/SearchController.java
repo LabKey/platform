@@ -409,6 +409,7 @@ public class SearchController extends SpringActionController
     public class SearchAction extends SimpleViewAction<SearchForm>
     {
         private String _category = null;
+        private SearchForm.SearchScope _scope = null;
 
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
@@ -422,6 +423,7 @@ public class SearchController extends SpringActionController
 
             form.setPrint(isPrint());
             _category = form.getCategory();
+            _scope = form.getSearchScope(getViewContext().getContainer());
 
             audit(form);
 
@@ -439,7 +441,22 @@ public class SearchController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Search" + (null != _category ? " " + _category + "s" : ""));
+            String title = "Search";
+            switch (_scope)
+            {
+                case All:
+                    title += " site";
+                    break;
+                case Project:
+                    title += " project '" + getContainer().getProject().getName() + "'";
+                    break;
+                case Folder:
+                    title += " folder '" + getContainer().getName() + "'";
+                    break;
+            }
+            if (null != _category)
+                title += " for " + _category + "s";
+            return root.addChild(title);
         }
     }
 

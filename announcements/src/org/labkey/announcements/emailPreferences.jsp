@@ -23,6 +23,8 @@
     <br>Send email notifications for these <%=conversationName%>s<br>
     <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE ? " checked" : ""%>>
     <b>None</b> - Don't send me any email for this message board<br>
+    <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_BROADCAST%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_BROADCAST ? " checked" : ""%>>
+    <b>Broadcast Only</b> - Send only broadcast messages posted by administrators<br>
     <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_MINE%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_MINE ? " checked" : ""%>>
     <b>Mine</b> - Send me email for posts to my <%=conversationName%>s (I've posted to the <%=conversationName%><% if (hasMemberList) { %> or I'm on its member list<% } %>)<br>
     <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_ALL%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_ALL ? " checked" : ""%>>

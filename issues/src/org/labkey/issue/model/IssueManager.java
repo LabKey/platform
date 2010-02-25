@@ -943,7 +943,8 @@ public class IssueManager
             return "text/html";
         }
 
-        public InputStream getInputStream(User user) throws IOException
+
+        public FileStream getFileStream(User user) throws IOException
         {
             String title = String.valueOf(_properties.get("title"));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -956,7 +957,12 @@ public class IssueManager
             for (Issue.Comment c : _comments)
                 out.write(c.getComment().getSource());
             out.close();
-            return new ByteArrayInputStream(bos.toByteArray());
+            return new FileStream.ByteArrayFileStream(bos.toByteArray());
+        }
+        
+        public InputStream getInputStream(User user) throws IOException
+        {
+            return getFileStream(user).openInputStream();
         }
 
         public long copyFrom(User user, FileStream in) throws IOException

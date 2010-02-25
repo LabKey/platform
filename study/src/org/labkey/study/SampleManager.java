@@ -1603,6 +1603,74 @@ public class SampleManager
         return map;
     }
 
+    public int getSampleCountForVisit(VisitImpl visit) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS NumVials FROM " +
+                StudySchema.getInstance().getTableInfoVial() +
+                " AS Vial\n" +
+                "LEFT OUTER JOIN " +
+                StudySchema.getInstance().getTableInfoSpecimen() +
+                " AS Specimen ON\n" +
+                "\tVial.SpecimenId = Specimen.RowId\n" +
+                " WHERE Specimen.VisitValue >= ? AND Specimen.VisitValue <= ? AND Specimen.Container = ?");
+        sql.add(visit.getSequenceNumMin());
+        sql.add(visit.getSequenceNumMax());
+        sql.add(visit.getContainer());
+        return Table.executeSingleton(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
+    }
+
+
+    public void deleteSamplesForVisit(VisitImpl visit) throws SQLException
+    {
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " +
+                StudySchema.getInstance().getTableInfoSpecimen() +
+                " WHERE Specimen.VisitValue >= ? AND Specimen.VisitValue <= ? AND Specimen.Container = ?");
+        specimenRowIdSelectSql.add(visit.getSequenceNumMin());
+        specimenRowIdSelectSql.add(visit.getSequenceNumMax());
+        specimenRowIdSelectSql.add(visit.getContainer());
+
+        SQLFragment deleteEventSql = new SQLFragment("DELETE FROM " +
+                StudySchema.getInstance().getTableInfoSpecimenEvent() +
+                " WHERE RowId IN (\n" +
+                "SELECT Event.RowId FROM " +
+                StudySchema.getInstance().getTableInfoSpecimenEvent() +
+                " AS Event\n" +
+                "LEFT OUTER JOIN study.Vial AS Vial ON\n" +
+                "\tEvent.VialId = Vial.RowId\n" +
+                "LEFT OUTER JOIN " +
+                StudySchema.getInstance().getTableInfoSpecimen() +
+                " AS Specimen ON\n" +
+                "\tVial.SpecimenId = Specimen.RowId\n" +
+                "WHERE Specimen.RowId IN (SELECT RowId ");
+        deleteEventSql.append(specimenRowIdSelectSql);
+        deleteEventSql.append("))");
+
+        Table.execute(StudySchema.getInstance().getSchema(), deleteEventSql);
+
+        SQLFragment deleteVialSql = new SQLFragment("DELETE FROM " +
+                StudySchema.getInstance().getTableInfoVial() +
+                " WHERE RowId IN (\n" +
+                "SELECT Vial.RowId FROM " +
+                StudySchema.getInstance().getTableInfoVial() +
+                " AS Vial\n" +
+                "LEFT OUTER JOIN " +
+                StudySchema.getInstance().getTableInfoSpecimen() +
+                " AS Specimen ON\n" +
+                "\tVial.SpecimenId = Specimen.RowId\n" +
+                "WHERE Specimen.RowId IN (SELECT RowId ");
+        deleteVialSql.append(specimenRowIdSelectSql);
+        deleteVialSql.append("))");
+
+        Table.execute(StudySchema.getInstance().getSchema(), deleteVialSql);
+
+        SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
+        deleteSpecimenSql.append(specimenRowIdSelectSql);
+
+        Table.execute(StudySchema.getInstance().getSchema(), deleteSpecimenSql);
+
+        clearCaches(visit.getContainer());
+    }
+
 
     public void deleteAllSampleData(Container c, Set<TableInfo> set) throws SQLException
     {

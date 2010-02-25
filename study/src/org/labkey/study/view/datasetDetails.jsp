@@ -41,22 +41,8 @@
     Set<Class<? extends Permission>> permissions = context.getContainer().getPolicy().getPermissions(context.getUser());
     StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-    String contextPath = AppProps.getInstance().getContextPath();
     boolean pipelineSet = null != PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
 %>
-<table id="details">
-    <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>
-    <tr><td class=labkey-form-label>Label</td><td><%= h(dataset.getLabel()) %></td></tr>
-    <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
-    <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
-    <tr><td class=labkey-form-label>Cohort</td><td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td></tr>
-    <tr><td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
-        StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + 
-        " in the study.")%></td><td><%= dataset.isDemographicData() ? "true" : "false" %></td></tr>
-    <tr><td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td><td><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
-    <tr><td class=labkey-form-label>Show By Default</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
-    <tr><td class=labkey-form-label>Description</td><td><%= h(dataset.getDescription()) %></td></tr>
-</table>
 <% if (permissions.contains(AdminPermission.class))
 {
     ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, context.getContainer());
@@ -73,11 +59,10 @@
     ActionURL exportSchemaURL = new ActionURL(StudyController.ExportDatasetSchemaAction.class, context.getContainer());
     exportSchemaURL.addParameter("datasetId", dataset.getDataSetId());
 
-    %><br><%=PageFlowUtil.generateButton("View Dataset Data", viewDatasetURL)%><%
+    %><br><%=PageFlowUtil.generateButton("View Data", viewDatasetURL)%><%
     if (study.getTimepointType() != TimepointType.CONTINUOUS)
     {
-    %>&nbsp;
-    <%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL)%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Associated " + visitManager.getPluralLabel(), updateDatasetURL)%><%
     }
     %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL)%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
@@ -93,7 +78,7 @@ if (permissions.contains(UpdatePermission.class))
     editTypeURL.addParameter("datasetId", dataset.getDataSetId());
 
     %>&nbsp;<%=PageFlowUtil.generateButton("Show Import History", showHistoryURL)%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset Definition", editTypeURL)%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Definition", editTypeURL)%><%
 }
 if (!pipelineSet)
 {
@@ -101,20 +86,58 @@ if (!pipelineSet)
 }
 %>
 
-<p />
-<table>
-<tr>
-<td valign=top><%
+<% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
+<table id="details" width="600px">
+    <tr>
+        <td class=labkey-form-label>Name</td>
+        <th align=left><%= h(dataset.getName()) %></th>
+
+        <td class=labkey-form-label>ID</td>
+        <td align=left><%= dataset.getDataSetId() %></td>
+    </tr>
+    <tr>
+        <td class=labkey-form-label>Label</td>
+        <td><%= h(dataset.getLabel()) %></td>
+
+        <td class=labkey-form-label>Category</td>
+        <td><%= h(dataset.getCategory()) %></td>
+    </tr>
+    <tr>
+        <td class=labkey-form-label>Cohort Association</td>
+        <td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td>
+
+        <td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td>
+        <td><%= h(dataset.getVisitDatePropertyName()) %></td>
+    </tr>
+    <tr>
+        <td class=labkey-form-label>Additional Key Column</td>
+        <td><%= dataset.getKeyPropertyName() != null ? h(dataset.getKeyPropertyName()) : "None" %></td>
+
+        <td rowspan="3" class=labkey-form-label>Description</td>
+        <td rowspan="3"><%= h(dataset.getDescription()) %></td>
+    </tr>
+    <tr>
+        <td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
+        StudyService.get().getSubjectNounSingular(getViewContext().getContainer()).toLowerCase() + 
+        " in the study.")%></td>
+        <td><%= dataset.isDemographicData() ? "true" : "false" %></td>
+    </tr>
+    <tr>
+        <td class=labkey-form-label>Show In Overview</td>
+        <td><%= dataset.isShowByDefault() ? "true" : "false" %></td>
+    </tr>
+</table>
+<% WebPartView.endTitleFrame(out); %>
+<p>
+<%
     JspView typeSummary = new StudyController.StudyJspView<DataSetDefinition>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
     typeSummary.setTitle("Dataset Fields");
     typeSummary.setFrame(WebPartView.FrameType.TITLE);
     me.include(typeSummary, out);
-    %>
-</td>
+%>
+
 <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
-<td><img src="<%=contextPath%>/_.gif" height=1 width=10 alt=""></td>
-<td valign=top>
-<% WebPartView.startTitleFrame(out, "Visit Map", null, null, null); %>
+<% WebPartView.startTitleFrame(out, "Visit Associations", null, "100%", null); %>
 <table><%
     List<VisitDataSet> visitList = StudyManager.getInstance().getMapping(dataset);
     HashMap<Integer,VisitDataSet> visitMap = new HashMap<Integer, VisitDataSet>();
@@ -131,7 +154,4 @@ if (!pipelineSet)
     }
 %></table>
 <% WebPartView.endTitleFrame(out); %>
-</td>
 <% } %>
-</tr>
-</table>

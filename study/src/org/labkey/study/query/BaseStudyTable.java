@@ -195,8 +195,10 @@ public abstract class BaseStudyTable extends FilteredTable
         if (study.getParticipantVisitCommentDataSetId() != null)
             defPtidVisit = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
 
-        TableInfo participantCommentTable = defPtid != null && defPtid.canRead(schema.getUser()) ? defPtid.getTableInfo(schema.getUser()) : null;
-        TableInfo participantVisitCommentTable = defPtidVisit != null && defPtidVisit.canRead(schema.getUser()) ? defPtidVisit.getTableInfo(schema.getUser()) : null;
+        boolean validParticipantCommentTable = defPtid != null && defPtid.canRead(schema.getUser()) && defPtid.isDemographicData();
+        TableInfo participantCommentTable = validParticipantCommentTable ? defPtid.getTableInfo(schema.getUser()) : null;
+        boolean validParticipantVisitCommentTable = defPtidVisit != null && defPtidVisit.canRead(schema.getUser()) && !defPtidVisit.isDemographicData();
+        TableInfo participantVisitCommentTable = validParticipantVisitCommentTable ? defPtidVisit.getTableInfo(schema.getUser()) : null;
 
         return new SpecimenCommentColumn(this, participantCommentTable, study.getParticipantCommentProperty(),
                 participantVisitCommentTable, study.getParticipantVisitCommentProperty(), includeVialComments);

@@ -64,7 +64,8 @@ public class AnnouncementManager
     public static final int EMAIL_PREFERENCE_NONE = 0;
     public static final int EMAIL_PREFERENCE_ALL = 1;
     public static final int EMAIL_PREFERENCE_MINE = 2;    //Only threads I've posted to or where I'm on the member list
-    public static final int EMAIL_PREFERENCE_MASK = 255; 
+    public static final int EMAIL_PREFERENCE_BROADCAST = 3;
+    public static final int EMAIL_PREFERENCE_MASK = 255;
 
     public static final int EMAIL_NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
 

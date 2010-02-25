@@ -49,11 +49,12 @@ public class RunGroupWebPart extends QueryView
         if (_narrow)
         {
             setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            setShowSurroundingBorder(false);
         }
         else
         {
             setShowRecordSelectors(true);
-            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             setShowExportButtons(false);
             setShowBorders(true);
             setShadeAlternatingRows(true);

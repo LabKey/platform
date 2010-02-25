@@ -27,10 +27,7 @@ import org.labkey.api.query.*;
 
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,7 +40,7 @@ public class AuditLogTable extends FilteredTable
 
     public AuditLogTable(QuerySchema schema, TableInfo tInfo, String viewFactoryName)
     {
-        super(tInfo);
+        super(tInfo, schema.getContainer());
 
         _viewFactoryName = viewFactoryName;
         
@@ -136,6 +133,20 @@ public class AuditLogTable extends FilteredTable
 
         // finalize any table customizations
         setupTable();
+    }
+
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        ColumnInfo containerColumn = _rootTable.getColumn("ContainerId");
+        if (containerColumn != null && getContainer() != null)
+        {
+            clearConditions(containerColumn.getName());
+            Collection<String> ids = filter.getIds(getContainer());
+            if (ids != null)
+            {
+                addCondition(new SimpleFilter(new SimpleFilter.InClause("ContainerId", ids)));
+            }
+        }
     }
 
     private List<FieldKey> getDefaultColumns()

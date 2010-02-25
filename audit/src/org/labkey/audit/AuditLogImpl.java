@@ -301,6 +301,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         QuerySettings settings = new QuerySettings(context, AuditQuerySchema.AUDIT_TABLE_NAME);
         settings.setSchemaName(schema.getSchemaName());
         settings.setQueryName(viewFactoryName);
+        settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
         return new AuditQueryViewImpl(schema, settings, filter);
     }
 

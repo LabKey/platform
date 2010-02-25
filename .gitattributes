@@ -4,8 +4,10 @@ announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-2.00.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.10-9.11.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.10-9.20.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-9.30-10.09.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.30-9.31.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-9.31-9.32.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-9.32-9.33.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -33,8 +35,10 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-2.00.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.10-9.11.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.10-9.20.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-9.30-10.09.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.30-9.31.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-9.31-9.32.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-9.32-9.33.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-1.00.sql -text
@@ -95,6 +99,7 @@ announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/MessageSearch.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
+announcements/src/org/labkey/announcements/model/OptOutEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/SecureMessageBoardReadPermission.java -text
@@ -278,6 +283,7 @@ core/resources/schemas/dbscripts/postgresql/core-9.10-9.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.11-9.12.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.12-9.13.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.13-9.14.sql -text
+core/resources/schemas/dbscripts/postgresql/core-9.30-10.09.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.31-9.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.32-9.33.sql -text
@@ -342,6 +348,7 @@ core/resources/schemas/dbscripts/postgresql/portal-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-2.00-2.10.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-8.30-9.10.sql -text
+core/resources/schemas/dbscripts/postgresql/prop-9.30-10.09.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
@@ -359,6 +366,7 @@ core/resources/schemas/dbscripts/sqlserver/core-9.10-9.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.11-9.12.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.12-9.13.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.13-9.14.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-9.30-10.09.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.31-9.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-9.32-9.33.sql -text
@@ -427,6 +435,7 @@ core/resources/schemas/dbscripts/sqlserver/portal-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-2.00-2.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-8.30-9.10.sql -text
+core/resources/schemas/dbscripts/sqlserver/prop-9.30-10.09.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-9.30-9.31.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
@@ -613,6 +622,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-9.22-9.23.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.24-9.25.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.25-9.26.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.26-9.27.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-9.30-10.09.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-9.30-9.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
@@ -705,6 +715,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-9.23-9.24.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.24-9.25.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.25-9.26.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.26-9.27.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-9.30-10.09.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-9.30-9.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
@@ -952,7 +963,9 @@ experiment/webapp/Experiment/unflagDefault.gif -text
 experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
 filecontent/module.properties -text
+filecontent/resources/schemas/dbscripts/postgresql/filecontent-9.30-10.09.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-9.31-9.32.sql -text
+filecontent/resources/schemas/dbscripts/sqlserver/filecontent-9.30-10.09.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/filecontent-9.31-9.32.sql -text
 filecontent/resources/schemas/filecontent.xml -text
 filecontent/src/META-INF/filecontent.xml -text
@@ -975,6 +988,7 @@ issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-2.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-2.30-8.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-8.10-8.20.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-9.30-10.09.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-9.30-9.31.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
@@ -989,6 +1003,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-8.10-8.11.sql -tex
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-2.00.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-2.30-8.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-8.10-8.20.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-9.30-10.09.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-9.30-9.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
@@ -1203,6 +1218,7 @@ pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.30.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.21-9.22.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.30-10.09.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.64.sql -text
@@ -1239,6 +1255,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.21-9.22.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.30-10.09.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.30-9.31.sql -text
 pipeline/src/META-INF/pipeline/jars.txt -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
@@ -1822,9 +1839,11 @@ search/lib/lucene-snowball-3.0.0.jar -text
 search/lib/tika-app-0.6.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text
+search/resources/schemas/dbscripts/postgresql/search-0.00-1.00.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.02-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.03-0.04.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.00-0.03.sql -text
+search/resources/schemas/dbscripts/sqlserver/search-0.00-10.09.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.02-0.03.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.03-0.04.sql -text
 search/resources/schemas/search.xml -text
@@ -2044,6 +2063,7 @@ study/resources/schemas/dbscripts/postgresql/study-9.22-9.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.24-9.25.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.25-9.26.sql -text
+study/resources/schemas/dbscripts/postgresql/study-9.30-10.09.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.30-9.301.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.301-9.302.sql -text
 study/resources/schemas/dbscripts/postgresql/study-9.302-9.303.sql -text
@@ -2170,6 +2190,7 @@ study/resources/schemas/dbscripts/sqlserver/study-9.22-9.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.23-9.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.24-9.25.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.25-9.26.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-9.30-10.09.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.30-9.301.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.301-9.302.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-9.302-9.303.sql -text
@@ -2785,7 +2806,9 @@ workbook/Workbook.iml -text
 workbook/build.xml -text
 workbook/module.properties -text
 workbook/resources/schemas/dbscripts/postgresql/workbook-0.00-0.01.sql -text
+workbook/resources/schemas/dbscripts/postgresql/workbook-0.00-1.00.sql -text
 workbook/resources/schemas/dbscripts/sqlserver/workbook-0.00-0.01.sql -text
+workbook/resources/schemas/dbscripts/sqlserver/workbook-0.00-1.00.sql -text
 workbook/resources/schemas/workbook.xml -text
 workbook/src/org/labkey/workbook/WorkbookContainerListener.java -text
 workbook/src/org/labkey/workbook/WorkbookController.java -text

@@ -24,10 +24,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.ContainerUtil;
-import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
+import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -50,6 +47,12 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
+    private static PipelineRoot NULL_ROOT;
+
+    static {
+        NULL_ROOT = new PipelineRoot();
+        MemTracker.remove(NULL_ROOT);
+    }
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
@@ -57,9 +60,21 @@ public class PipelineManager
         filter.addCondition("Type", type);
         try
         {
+            String cacheKey = getCacheKey(container, type);
+            PipelineRoot root = (PipelineRoot) DbCache.get(pipeline.getTableInfoPipelineRoots(), cacheKey);
+
+            if (root != null)
+                return (root == NULL_ROOT) ? null : root;
+
             PipelineRoot[] roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
             if (roots.length > 0)
+            {
+                DbCache.put(pipeline.getTableInfoPipelineRoots(), cacheKey, roots[0]);
                 return roots[0];
+            }
+            else
+                DbCache.put(pipeline.getTableInfoPipelineRoots(), cacheKey, NULL_ROOT);
+
             return null;
         }
         catch (SQLException x)
@@ -68,6 +83,10 @@ public class PipelineManager
         }
     }
 
+    private static String getCacheKey(Container c, String type)
+    {
+        return c.getId() + "/" + StringUtils.trimToEmpty(type);
+    }
 
     public static PipelineRoot findPipelineRoot(Container container)
     {
@@ -177,6 +196,7 @@ public class PipelineManager
             if (null != ss)
                 ss.addPathToCrawl(davPath, null);
         }
+        DbCache.remove(pipeline.getTableInfoPipelineRoots(), getCacheKey(container, type));
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(
                 container, ContainerManager.Property.PipelineRoot, oldValue, newValue));
@@ -186,6 +206,7 @@ public class PipelineManager
     {
         try
         {
+            DbCache.clear(pipeline.getTableInfoPipelineRoots());
             ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
         }
         catch (SQLException e)

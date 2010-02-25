@@ -60,7 +60,10 @@ class SecurityFilter extends Filter
             containerIds = new HashMap<String,Container>(containers.size());
 
             for (Container c : containers)
-                containerIds.put(c.getId(),c);
+            {
+                if (c.shouldDisplay(user))
+                    containerIds.put(c.getId(),c);
+            }
         }
         else
         {

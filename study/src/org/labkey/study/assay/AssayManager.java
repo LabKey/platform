@@ -16,11 +16,11 @@
 
 package org.labkey.study.assay;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -29,23 +29,25 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssaySchema;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.util.*;
 
@@ -303,9 +305,8 @@ public class AssayManager implements AssayService.Interface
         return null;
     }
 
-    public void indexAssays(Container c)
+    public void indexAssays(SearchService.IndexTask task, Container c)
     {
-        Logger log = Logger.getLogger(AssayManager.class);
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
         if (null == ss)
@@ -315,8 +316,47 @@ public class AssayManager implements AssayService.Interface
 
         for (ExpProtocol protocol : protocols)
         {
-            // TODO: Finish this stuff
-            String keywords = protocol.getDescription() + "\n" + protocol.getComment() + "\n" + protocol.getApplicationType().name() + "\n" + protocol.getInstrument() + "\n" + protocol.getName();
+            AssayProvider provider = getProvider(protocol);
+
+            if (null == provider)
+                continue;
+
+            ExpRun[] runs = ExperimentService.get().getExpRuns(c, protocol, null);
+
+            if (0 == runs.length)
+                continue;
+
+            StringBuilder runKeywords = new StringBuilder();
+
+            for (ExpRun run : runs)
+            {
+                runKeywords.append(" ");
+                runKeywords.append(run.getName());
+
+                if (null != run.getComments())
+                {
+                    runKeywords.append(" ");
+                    runKeywords.append(run.getComments());
+                }
+            }
+
+            String name = protocol.getName();
+            String instrument = protocol.getInstrument();
+            String description = protocol.getDescription();
+            String comment = protocol.getComment();
+
+            ActionURL assayRunsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
+
+            String searchTitle = StringUtils.trimToEmpty(name) + " " + StringUtils.trimToEmpty(instrument) + " " + StringUtils.trimToEmpty(provider.getName());
+            String body = StringUtils.trimToEmpty(provider.getName()) + " " + StringUtils.trimToEmpty(description) + " " + StringUtils.trimToEmpty(comment) + runKeywords.toString();
+            Map<String, Object> m = new HashMap<String, Object>();
+            m.put(SearchService.PROPERTY.displayTitle.toString(), name);
+            m.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+            m.put(SearchService.PROPERTY.categories.toString(), StudyManager.assayCategory.getName());
+
+            String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
+            Resource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body.getBytes(), assayRunsURL, m);
+            task.addResource(r, SearchService.PRIORITY.item);
         }
     }
 }

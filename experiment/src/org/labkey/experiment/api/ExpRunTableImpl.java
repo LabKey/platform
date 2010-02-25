@@ -494,21 +494,28 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return _experiments;
         }
 
-        public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+        public ColumnInfo createLookupColumn(final ColumnInfo parent, String displayField)
         {
             if (displayField == null)
                 return null;
-            for (ExpExperiment exp : getExperiments())
+            for (final ExpExperiment exp : getExperiments())
             {
                 if (displayField.equalsIgnoreCase(exp.getName()))
                 {
-                    SQLFragment sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
-                    sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-                    sql.append(" WHERE ExperimentRunId = " + parent.getValueSql().getSQL() + " AND ExperimentId = " + exp.getRowId() + ")");
-                    sql.append(" IS NOT NULL THEN 1 ELSE 0 END) AS ");
-                    sql.append(parent.getSqlDialect().getBooleanDatatype());
-                    sql.append("))");
-                    ExprColumn result = new ExprColumn(parent.getParentTable(), exp.getName(), sql, Types.BOOLEAN, parent);
+                    ExprColumn result = new ExprColumn(parent.getParentTable(), exp.getName(), new SQLFragment("~~PLACEHOLDER~~"), Types.BOOLEAN, parent)
+                    {
+                        @Override
+                        public SQLFragment getValueSql(String tableAlias)
+                        {
+                            SQLFragment sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
+                            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
+                            sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ")");
+                            sql.append(" IS NOT NULL THEN 1 ELSE 0 END) AS ");
+                            sql.append(parent.getSqlDialect().getBooleanDatatype());
+                            sql.append("))");
+                            return sql;
+                        }
+                    };
                     FieldKey parentFieldKey = FieldKey.fromString(parent.getName());
                     result.setLabel(parent.getLabel() + " " + exp.getName());
                     result.setDisplayColumnFactory(new ExperimentMembershipDisplayColumnFactory(exp.getRowId(), parentFieldKey.getParent()));

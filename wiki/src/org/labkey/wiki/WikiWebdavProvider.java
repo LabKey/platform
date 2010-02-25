@@ -404,6 +404,14 @@ class WikiWebdavProvider implements WebdavService.Provider
             return UserManager.getUser(_wiki.getModifiedBy());
         }
 
+
+        public FileStream getFileStream(User user) throws IOException
+        {
+            byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
+            return new FileStream.ByteArrayFileStream(buf);
+        }
+
+
         public InputStream getInputStream(User user) throws IOException
         {
             byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
@@ -509,11 +517,9 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public long getContentLength()
         {
-            WikiVersion v = getWikiVersion();
-            String txt = v.getBody();
             try
             {
-                byte[] buf = txt.getBytes("UTF-8");
+                byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
                 return buf.length;
             }
             catch (UnsupportedEncodingException e)

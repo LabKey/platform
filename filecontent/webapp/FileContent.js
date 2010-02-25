@@ -40,9 +40,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     constructor : function(config)
     {
         config.fileFilter = {test: function(record){
-            if (!record.file)
-                return record.name.indexOf('.') != 0;
-            return true;
+            return record.name.indexOf('.') != 0;
         }};
         LABKEY.FilesWebPartPanel.superclass.constructor.call(this, config);
     },
@@ -726,12 +724,20 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
             if (item.file)
             {
-                var params = [];
+                if (this.fileSystem.baseUrl.indexOf(encodeURIComponent('@pipeline')) != -1 && this.actions.download)
+                {
+                    // for pipeline roots, render is not currently supported, so just download the file
+                    this.actions.download.execute();
+                }
+                else
+                {
+                    var params = [];
 
-                params.push('name=' + encodeURIComponent(selections[0].data.name));
-                params.push('baseUrl=' + encodeURIComponent(this.fileSystem.baseUrl));
-                var renderFileURL = LABKEY.ActionURL.buildURL('filecontent', 'renderFile') + '?' + params.join('&');
-                window.location = renderFileURL;
+                    params.push('name=' + encodeURIComponent(selections[0].data.name));
+                    params.push('baseUrl=' + encodeURIComponent(this.fileSystem.baseUrl));
+                    var renderFileURL = LABKEY.ActionURL.buildURL('filecontent', 'renderFile') + '?' + params.join('&');
+                    window.location = renderFileURL;
+                }
             }
         }
     },

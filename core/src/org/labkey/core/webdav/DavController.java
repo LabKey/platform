@@ -552,7 +552,21 @@ public class DavController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             String zipName = request.getParameter(PARAM_ZIPNAME);
             if (null == zipName)
-                zipName = resource.getName() + " files";
+            {
+                Resource namingResource = resource;
+                while (namingResource != null && namingResource.getName().startsWith("@"))
+                {
+                    namingResource = namingResource.parent();
+                }
+                if (namingResource != null)
+                {
+                    zipName = namingResource.getName() + " files";
+                }
+                else
+                {
+                    zipName = "Files";
+                }
+            }
 
             int depth = 1;
             try
@@ -1296,7 +1310,7 @@ public class DavController extends SpringActionController
                         }
                         if (property.equals("actions"))
                         {
-                            List<NavTree> actions = resource.getActions();
+                            List<NavTree> actions = resource.getActions(getUser());
                             xml.writeElement(null, "actions", XMLWriter.OPENING);
                             for (NavTree action : actions)
                             {
@@ -3222,19 +3236,21 @@ public class DavController extends SpringActionController
         try
         {
             long headerValue = getRequest().getDateHeader("If-Modified-Since");
-            long lastModified = resource.getLastModified();
-            if (headerValue != -1)                              
+            if (headerValue != -1)
             {
-
                 // If an If-None-Match header has been specified, if modified since
                 // is ignored.
-                if ((getRequest().getHeader("If-None-Match") == null) && (lastModified < headerValue + 1000))
+                if ((getRequest().getHeader("If-None-Match") == null))
                 {
+                    long lastModified = resource.getLastModified();
+                    if (lastModified < headerValue + 1000)
+                    {
                     // The entity has not been modified since the date
                     // specified by the client. This is not an error case.
                     getResponse().setEntityTag(resource.getETag());
                     getResponse().setStatus(WebdavStatus.SC_NOT_MODIFIED);
                     return false;
+                    }
                 }
             }
         }
@@ -3313,10 +3329,10 @@ public class DavController extends SpringActionController
     {
         try
         {
-            long lastModified = resource.getLastModified();
             long headerValue = getRequest().getDateHeader("If-Unmodified-Since");
             if (headerValue != -1)
             {
+                long lastModified = resource.getLastModified();
                 if (lastModified >= (headerValue + 1000))   // UNDONE: why the +1000???
                     throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
             }
@@ -3436,7 +3452,6 @@ public class DavController extends SpringActionController
             }
 
             String eTag = resource.getETag();
-            long lastModified = resource.getLastModified();
 
             if (headerValueTime == (-1L))
             {
@@ -3451,6 +3466,7 @@ public class DavController extends SpringActionController
                 // If the timestamp of the entity the client got is older than
                 // the last modification date of the entity, the entire entity
                 // is returned.
+                long lastModified = resource.getLastModified();
                 if (lastModified > (headerValueTime + 1000))
                     return FULL;
             }

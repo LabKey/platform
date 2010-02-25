@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
@@ -35,21 +36,30 @@
     StudyManager manager = StudyManager.getInstance();
     VisitManager visitManager = manager.getVisitManager(study);
     Map<VisitMapKey,Integer> summaryMap = visitManager.getVisitSummary(null, null);
-    int count = 0;
+    int datasetRowCount = 0;
     for (Map.Entry<VisitMapKey,Integer> e : summaryMap.entrySet())
     {
         VisitMapKey key = e.getKey();
         if (key.visitRowId == visit.getRowId())
-            count += e.getValue().intValue();
+            datasetRowCount += e.getValue().intValue();
     }
+
+    int vialCount = SampleManager.getInstance().getSampleCountForVisit(visit);
 %>
 <labkey:errors/>
 
 <form action="deleteVisit.view" method=POST>
     Do you want to delete <%=visitManager.getLabel() %> <b><%=visit.getDisplayString()%></b>?<p/>
-    <%if (count != 0)
+    <%if (datasetRowCount != 0)
     {
-        %>This <%=visitManager.getLabel()%> has <%=count%> dataset results which will also be deleted.<p/><%
+        %>This <%=visitManager.getLabel()%> has <%=datasetRowCount%> dataset results
+        <%
+        if (vialCount > 0)
+        {
+            %> and <%= vialCount %> specimen vials<%
+        }
+        %>
+        which will also be deleted.<p/><%
     }%>
     <%=PageFlowUtil.generateSubmitButton("Delete")%>&nbsp;<%=PageFlowUtil.generateSubmitButton("Cancel", "javascript:window.history.back(); return false;")%>
     <input type=hidden name=id value="<%=visit.getRowId()%>">

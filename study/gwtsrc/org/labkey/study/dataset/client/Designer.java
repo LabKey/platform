@@ -508,7 +508,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         {
             super();
             setCharacterWidth(40);
-            setHeight("75px");
+            setHeight("10em");
             if (text != null)
                 setText(text);
 
@@ -651,7 +651,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 dsName.setEnabled(false);
             DOM.setElementAttribute(dsName._box.getElement(), "id", "DatasetDesignerName");
             HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Dataset Name"));
+            panel.add(new Label("Name"));
             panel.add(new HelpPopup("Name", "Short unique name, e.g. 'DEM1'"));
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
@@ -661,7 +661,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             dsId.setText(Integer.toString(_dataset.getDatasetId()));
             dsId.setEnabled(false);
 
-            _table.setHTML(row, 2, "Dataset Id");
+            _table.setHTML(row, 2, "ID");
             cellFormatter.setStyleName(row, 2, labelStyleName);
             _table.setWidget(row++, 3, dsId);
 
@@ -673,7 +673,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 }
             });
             panel = new HorizontalPanel();
-            panel.add(new Label("Dataset Label"));
+            panel.add(new Label("Label"));
             panel.add(new HelpPopup("Label", "Descriptive label, e.g. 'Demographics form 1'"));
 
             _table.setWidget(row, 0, panel);
@@ -688,7 +688,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 }
             });
             panel = new HorizontalPanel();
-            panel.add(new Label("Dataset Category"));
+            panel.add(new Label("Category"));
             panel.add(new HelpPopup("Dataset Category", "Datasets with the same category name are shown together in the study navigator and dataset list."));
             _table.setWidget(row, 2, panel);
             cellFormatter.setStyleName(row, 2, labelStyleName);
@@ -713,7 +713,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 }
             });
             panel = new HorizontalPanel();
-            panel.add(new Label("Cohort"));
+            panel.add(new Label("Cohort Association"));
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
 
@@ -746,7 +746,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 row++;
 
             panel = new HorizontalPanel();
-            panel.add(new Label("Additional Key"));
+            panel.add(new Label("Additional Key Column"));
             panel.add(new HelpPopup("Additional Key",
                     "If dataset has more than one row per participant/visit, " +
                             "an additional key field must be provided. There " +
@@ -823,7 +823,26 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             panel.add(managedFieldsBox);
             vPanel.add(panel);
-            _table.setWidget(row++, 1, vPanel);
+            _table.setWidget(row, 1, vPanel);
+
+            BoundTextArea description = new BoundTextArea(_dataset.getDescription(), new WidgetUpdatable()
+            {
+                public void update(Widget widget)
+                {
+                    _dataset.setDescription(((TextArea)widget).getText());
+                }
+            });
+            description.setName("description");
+            panel = new HorizontalPanel();
+            panel.add(new Label("Description"));
+            _table.setWidget(row, 2, panel);
+            cellFormatter.setStyleName(row, 2, labelStyleName);
+            _table.setWidget(row, 3, description);
+            
+            //noinspection UnusedAssignment
+            _table.getFlexCellFormatter().setRowSpan(row, 2, 3);
+            _table.getFlexCellFormatter().setRowSpan(row++, 3, 3);
+
 
             // Listen to the list of properties
             _propTable.addChangeListener(new ChangeListener()
@@ -903,22 +922,6 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row++, 1, showByDefault);
 
-            BoundTextArea description = new BoundTextArea(_dataset.getDescription(), new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _dataset.setDescription(((TextArea)widget).getText());
-                }
-            });
-            description.setName("description");
-            panel = new HorizontalPanel();
-            panel.add(new Label("Description"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, description);
-
-            //noinspection UnusedAssignment
-            _table.getFlexCellFormatter().setColSpan(row++, 1, 3);
         }
 
         private void setCheckboxId(Element e, String id)

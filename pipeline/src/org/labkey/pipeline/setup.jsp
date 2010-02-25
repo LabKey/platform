@@ -110,7 +110,7 @@
 <form enctype="multipart/form-data" method="POST" action="">
     <table>
         <tr><td></td></tr>
-        <tr><td>
+        <tr><td colspan="10">
             The LabKey Data Processing Pipeline allows you to process and import data files with tools we supply, or
             with tools you build on your own. If you have a pre-existing directory that contains the files you want
             to process, you can set a pipeline override to allow the data processing pipeline to operate on the
@@ -125,7 +125,7 @@
             <td class="labkey-form-label">Pipeline root <%=PageFlowUtil.helpPopup("Pipeline root", "Set a project level pipeline root. " +
                 "When a project level pipeline root is set, each folder for that project can share the same root or can override with a folder specific location.")%></td>
 --%>
-            <td>
+            <td colspan="10">
                 <table>
                     <tr>
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault"

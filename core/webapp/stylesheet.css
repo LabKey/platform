@@ -208,10 +208,9 @@ table.labkey-no-spacing
 
 .labkey-dataregion-msgbox
 {
-    margin: 2px;
     background-color: #F4F4F4;
     border: 1px solid #AAAAAA;
-    padding: 2px;
+    padding: 2px !important;
 }
 
 /* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
@@ -665,8 +664,12 @@ table.labkey-customize-view
 
 .labkey-data-region-container
 {
-    border: 1px solid #999999;
     border-collapse: collapse;
+}
+
+.labkey-data-region-container-with-border
+{
+    border: 1px solid #999999;
 }
 
 .labkey-data-region-container > tbody > tr > td
@@ -714,10 +717,15 @@ table.labkey-pad-cells
 /* Use this in the table class tag if you want your data region to have borders */
 table.labkey-show-borders
 {
-    border: 0;
+    border: 1px solid #DDDDDD;
     /* Part of a hack for IE 7 and below since IE gives precedence to table borders over cell borders */
     *border: 0px none;
+}
+
+.labkey-data-region-container .labkey-show-borders
+{
     width: 100%;
+    border: 0;
 }
 
 .labkey-show-borders td
@@ -754,9 +762,23 @@ in the table tag.  They are necessary so that the borders take precedence correc
     .labkey-show-borders .labkey-col-total td, .labkey-show-borders .labkey-col-header th,
     .labkey-show-borders .labkey-stat-title
 {
-    border-right: solid 1px #AAAAAA;
-    border-top: solid 1px #AAAAAA;
-    border-bottom: solid 1px #AAAAAA;
+    border: solid 1px #AAAAAA;
+}
+
+.labkey-data-region-container .labkey-show-borders th
+{
+    border-top: 0;
+}
+
+.labkey-data-region-container .labkey-show-borders th, .labkey-data-region-container .labkey-show-borders td
+{
+    border-right: 0;
+    border-left: 1px solid #DDDDDD;
+}
+
+.labkey-data-region-container .labkey-show-borders th:first-child, .labkey-data-region-container .labkey-show-borders td:first-child
+{
+    border-left: 0;
 }
 
 .labkey-has-row-totals col, .labkey-has-col-totals col
@@ -1053,7 +1075,6 @@ td.labkey-main-nav
     white-space: nowrap;
     padding:5px 5px 5px;
 }
-
 table.labkey-main-search
 {
     height:16px; font-size:8pt;
@@ -1063,13 +1084,55 @@ table.labkey-main-search
 {
     height:16px; vertical-align:bottom;
 }
-
 .labkey-main-search input
 {
     height:16px; font-size:8pt;
 /*    border:solid 1px #a0a0a0; */
     border:0;
 }
+/* search results page */
+.labkey-search-filter
+{
+    font-family: arial, helvetica, sans-serif;
+    font-size:10pt;
+    vertical-align: bottom;
+    color: #000000;
+    text-decoration: none;
+}
+.labkey-search-filter A, .labkey-search-filter A:visited
+{
+    font-family: arial, helvetica, sans-serif;
+    font-size:10pt;
+    vertical-align: bottom;
+    color: #666666;
+    text-decoration: none;
+}
+.labkey-search-filter A:hover
+{
+    text-decoration: underline;
+}
+.labkey-search-navresults
+{
+    padding-left:8px;
+    border-left:1px solid #89A1B4;
+}
+.labkey-search-navresults H3
+{
+    color: #666666; margin-top:0;
+}
+.labkey-search-results TD
+{
+    color: #666666; margin-top:0;
+}
+FORM.labkey-search-form
+{
+    padding:14px;
+}
+.labkey-search-title
+{
+    font-size:110%;
+}
+
 
 /* The strip at the top of the left side panel that is used to set its minimum width */
 .labkey-site-nav-expander
@@ -2848,4 +2911,9 @@ td.labkey-export-tab-buttons
 {
     vertical-align: bottom;
     text-align: right;
+}
+
+.labkey-file-browser-elem
+{
+    border: 1px solid #999999;
 }

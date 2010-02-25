@@ -63,7 +63,7 @@ public class AttachmentDisplayColumn extends DataColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        String filename = (String)value;
+        String filename = value instanceof String ? (String)value : null;
         String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
         String labelName = getBoundColumn().getAlias();
 

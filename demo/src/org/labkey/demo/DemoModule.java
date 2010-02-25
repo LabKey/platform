@@ -44,7 +44,7 @@ public class DemoModule extends DefaultModule
 
     public double getVersion()
     {
-        return 1.00;
+        return 10.09;
     }
 
     protected void init()

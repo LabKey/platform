@@ -107,7 +107,7 @@ if (bean.allowBroadcast)
   </tr>
   <tr>
     <td width="2%"><input type="checkbox" name="broadcast"></td>
-    <td>Send this message as email to all site users (site admins only)</td>
+    <td>Send this message as email to all site users who have not explicitly opted-out (site admins only)</td>
   </tr>
 </table><%
 }%>

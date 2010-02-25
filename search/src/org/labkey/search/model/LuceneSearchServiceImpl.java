@@ -15,7 +15,6 @@
  */
 package org.labkey.search.model;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.lucene.analysis.Analyzer;
@@ -28,13 +27,13 @@ import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.*;
+import org.apache.lucene.search.Filter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.pdfbox.exceptions.WrappedIOException;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
-import org.apache.poi.hssf.record.RecordFormatException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -44,16 +43,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.Resource;
 import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,7 +71,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexWriter()
     private final Analyzer _analyzer = new SnowballAnalyzer(LUCENE_VERSION, "English");
-    private static IndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
+    private static LabKeyIndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
 
     static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
@@ -132,13 +130,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     Map<?, ?> preprocess(String id, Resource r)
     {
-        InputStream is = null;
-                
+        FileStream fs = null;
+
         try
         {
             assert null != r.getDocumentId();
             assert null != r.getContainerId();
 
+            fs = r.getFileStream(User.getSearchUser());
+
+            if (null == fs)
+            {
+                logAsWarning(r, "FileStream is null");
+                return null;
+            }
+            
             Map<String, ?> props = r.getProperties();
             assert null != props;
 
@@ -155,12 +161,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 return null;
             }
-            else if ("text/html".equals(type))
+
+            InputStream is = fs.openInputStream();
+
+            if (null == is)
             {
-                String html = "";
-                is = r.getInputStream(User.getSearchUser());
-                if (null != is)
-                    html = PageFlowUtil.getStreamContentsAsString(is);
+                logAsWarning(r, "InputStream is null");
+                return null;
+            }
+
+            if ("text/html".equals(type))
+            {
+                String html = PageFlowUtil.getStreamContentsAsString(is);
 
                 // TODO: Need better check for issue HTML vs. rendered page HTML
                 if (r instanceof ActionResource)
@@ -182,9 +194,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             else if (type.startsWith("text/") && !type.contains("xml"))
             {
-                is = r.getInputStream(User.getSearchUser());
-                if (null != is)
-                    body = PageFlowUtil.getStreamContentsAsString(is);
+                body = PageFlowUtil.getStreamContentsAsString(is);
             }
             else
             {
@@ -192,21 +202,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
                 ContentHandler handler = new BodyContentHandler();
-                is = r.getInputStream(User.getSearchUser());
 
-                // TODO: Switch to single, static AutoDetectParser shared across all threads on upgrade to Tika 0.7
-                Parser parser = getParser();
+                parse(r, fs, is, handler, metadata);
 
-                parser.parse(is, handler, metadata);
-                is.close();
-                is = null;
                 body = handler.toString();
+
                 String extractedTitle = metadata.get(Metadata.TITLE);
                 if (StringUtils.isBlank(displayTitle))
                     displayTitle = extractedTitle;
                 searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
                 _log.debug("Parsed " + id);
             }
+            fs.closeInputStream();
+            fs = null;
 
             String url = r.getExecuteHref(null);
             assert null != url;
@@ -275,9 +283,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (TikaException e)
         {
+            String topMessage = (null != e.getMessage() ? e.getMessage() : "");
             Throwable cause = e.getCause();
 
-            if (e.getMessage().startsWith("TIKA-237: Illegal SAXException"))
+            // Get the root cause
+            Throwable rootCause = e;
+
+            while (null != rootCause.getCause())
+                rootCause = rootCause.getCause();
+
+            // IndexOutOfBoundsException has a dumb message
+            String rootMessage = (rootCause instanceof IndexOutOfBoundsException ? rootCause.getClass().getSimpleName() : rootCause.getMessage());
+
+            if (topMessage.startsWith("TIKA-237: Illegal SAXException"))
             {
                 // Malformed XML document -- CONSIDER: run XML tidy on the document and retry
                 logAsWarning(r, "Malformed XML document");
@@ -295,23 +313,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             else if (cause instanceof WrappedIOException && cause.getCause() instanceof NoSuchElementException)
             {
                 // NoSuchElementException in PDFBox -- see http://issues.apache.org/jira/browse/PDFBOX-546
-                logAsWarning(r, "Can't parse this PDF document");
+                logAsWarning(r, "Can't parse this PDF document [Known PDFBox issue 546]");
             }
-            else if (e.getMessage().startsWith("TIKA-198: Illegal IOException from org.apache.tika.parser.pdf.PDFParser"))
+            else if (topMessage.startsWith("Error creating OOXML extractor"))
             {
-                logAsWarning(r, "Can't parse this PDF document");
+                logAsWarning(r, "Can't parse this Office document [" + rootMessage + "]");
             }
-            else if (e.getMessage().startsWith("Unexpected RuntimeException from org.apache.tika.parser.microsoft.OfficeParser"))
+            else if (topMessage.startsWith("TIKA-198: Illegal IOException from org.apache.tika.parser.microsoft.OfficeParser"))
             {
-                if (cause instanceof RecordFormatException && null != cause.getCause())
-                    logAsWarning(r, cause.getCause().getMessage());
-                else
-                    logAsWarning(r, "Can't parse this document");
+                logAsWarning(r, "Can't parse this Office document [" + rootMessage + "]");
             }
-            else if ("Not a HPSF document".equals(e.getMessage()) && cause instanceof NoPropertySetStreamException)
+            else if (topMessage.startsWith("TIKA-198: Illegal IOException from org.apache.tika.parser.pdf.PDFParser") ||
+                     topMessage.startsWith("Unexpected RuntimeException from org.apache.tika.parser.pdf.PDFParser"))
             {
-               // XLS file generated by JavaExcel -- POI doesn't like them
-                logAsWarning(r, "Can't parse this Excel document");
+                logAsWarning(r, "Can't parse this PDF document [" + rootMessage + "]");
+            }
+            else if (topMessage.startsWith("Unexpected RuntimeException from org.apache.tika.parser.microsoft"))
+            {
+                logAsWarning(r, "Can't parse this document [" + rootMessage + "]");
+            }
+            else if (topMessage.equals("Not a HPSF document") && cause instanceof NoPropertySetStreamException)
+            {
+                // XLS file generated by JavaExcel -- POI doesn't like them
+                logAsWarning(r, "Can't parse this Excel document [POI can't read Java Excel spreadsheets]");
             }
             else
             {
@@ -324,7 +348,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
-            IOUtils.closeQuietly(is);
+            if (null != fs)
+            {
+                try
+                {
+                    fs.closeInputStream();
+                }
+                catch (IOException x)
+                {
+                }
+            }
         }
 
         return null;
@@ -332,7 +365,44 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
 
-    static final AutoDetectParser _parser = new AutoDetectParser(); 
+    void parse(Resource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
+    {
+        // TREAT files over the size limit as empty files
+        long size = fs.getSize();
+        if (size > FILE_SIZE_LIMIT)
+        {
+            logAsWarning(r, "The document is too large");
+            return;
+        }
+
+        Parser parser = getParser();
+
+        if (!is.markSupported())
+            is = new BufferedInputStream(is);
+
+        parser.parse(is, handler, metadata);
+
+        String type = metadata.get(Metadata.CONTENT_TYPE);
+        if (type.equals("application/octet-stream"))
+        {
+            DocumentParser[] parsers = _documentParsers.get();
+            is.skip(Long.MIN_VALUE);
+            byte[] header = FileUtil.readHeader(is, 8*1024);
+            for (DocumentParser p : parsers)
+            {
+                if (p.detect(header))
+                {
+                    metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
+                    p.parse(is, handler);
+                    return;
+                }
+            }
+        }
+    }
+    
+
+
+    static final AutoDetectParser _parser = new AutoDetectParser();
 
     private Parser getParser()
     {
@@ -533,11 +603,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            IndexSearcher s = _searcher;
+            LabKeyIndexSearcher s = _searcher;
             _searcher = null;
             if (null != s)
-                s.close();
-            getIndexSearcher();
+                s.decrement();
         }
         catch (IOException x)
         {
@@ -546,24 +615,67 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
     
 
-    private synchronized IndexSearcher getIndexSearcher() throws IOException
+    private synchronized LabKeyIndexSearcher getIndexSearcher() throws IOException
     {
         if (null == _searcher)
-            _searcher = new IndexSearcher(_directory, true);
+            _searcher = new LabKeyIndexSearcher();
+
+        // Increment ref count
+        _searcher.increment();
 
         return _searcher;
     }
 
 
+    private synchronized void releaseIndexSearcher(LabKeyIndexSearcher searcher) throws IOException
+    {
+        // Decrement ref count
+        searcher.decrement();
+    }
+
+
+    // Add reference counting to IndexSearcher so we know when to close it.  See #9785.
+    private static class LabKeyIndexSearcher extends IndexSearcher
+    {
+        private int _references = 1;
+
+        private LabKeyIndexSearcher() throws IOException
+        {
+            super(_directory, true);
+        }
+
+        private void increment()
+        {
+            _references++;
+        }
+
+        private void decrement() throws IOException
+        {
+            _references--;
+
+            if (0 == _references)
+                close();
+        }
+    }
+
+
     public SearchHit find(String id) throws IOException
     {
-        IndexSearcher searcher = getIndexSearcher();
-        TermQuery query = new TermQuery(new Term(FIELD_NAMES.uniqueId.toString(), id));
-        TopDocs topDocs = searcher.search(query, null, 1);
-        SearchResult result = createSearchResult(0, 1, topDocs, searcher);
-        if (result.hits.size() != 1)
-            return null;
-        return result.hits.get(0);
+        LabKeyIndexSearcher searcher = getIndexSearcher();
+
+        try
+        {
+            TermQuery query = new TermQuery(new Term(FIELD_NAMES.uniqueId.toString(), id));
+            TopDocs topDocs = searcher.search(query, null, 1);
+            SearchResult result = createSearchResult(0, 1, topDocs, searcher);
+            if (result.hits.size() != 1)
+                return null;
+            return result.hits.get(0);
+        }
+        finally
+        {
+            releaseIndexSearcher(searcher);
+        }
     }
     
 
@@ -631,17 +743,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             throw io;
         }
 
-        IndexSearcher searcher = getIndexSearcher();
-        Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, recursive);
+        LabKeyIndexSearcher searcher = getIndexSearcher();
 
-        TopDocs topDocs;
-        if (null == sort)
-            topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
-        else
-            topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
+        try
+        {
+            Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, recursive);
 
-        SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
-        return result;
+            TopDocs topDocs;
+            if (null == sort)
+                topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
+            else
+                topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
+
+            SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+            return result;
+        }
+        finally
+        {
+            releaseIndexSearcher(searcher);
+        }
     }
 
 
@@ -687,15 +807,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public Map<String, Object> getStats()
     {
         Map<String,Object> map = new LinkedHashMap<String,Object>();
+
         try
         {
-            IndexSearcher is = getIndexSearcher();
-            map.put("Indexed Documents", is.getIndexReader().numDocs());
+            LabKeyIndexSearcher is = null;
+
+            try
+            {
+                is = getIndexSearcher();
+                map.put("Indexed Documents", is.getIndexReader().numDocs());
+            }
+            finally
+            {
+                if (null != is)
+                    releaseIndexSearcher(is);
+            }
         }
         catch (IOException x)
         {
-            
+
         }
+
         map.putAll(super.getStats());
         return map;
     }

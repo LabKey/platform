@@ -16,8 +16,9 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.attachments.Attachment"%>
-<%@ page import="org.labkey.api.attachments.AttachmentDirectory"%>
+<%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
 <%@ page import="org.labkey.api.attachments.AttachmentService" %>
 <%@ page import="org.labkey.api.attachments.DownloadURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -41,6 +42,14 @@
     AttachmentDirectory parent = bean.getRoot();
     FilesWebPart me = (FilesWebPart) HttpView.currentView();
     Container c = context.getContainer();
+
+    if (!bean.isEnabled())
+    {
+        ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+        out.println("File sharing has been disabled for this project. Sharing can be configured from the <a href=" + projConfig + ">project settings</a> view.");
+        return;
+    }
+
     if (null == parent)
     {
         out.println("The file set for this directory is not configured properly.");

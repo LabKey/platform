@@ -1380,6 +1380,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
         {
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
 
             if (_schema != null && _table != null)
             {
@@ -2777,6 +2778,7 @@ public class QueryController extends SpringActionController
     }
 
 
+    @ActionNames("clearSelected, selectNone")
     @RequiresPermissionClass(ReadPermission.class)
     public static class SelectNoneAction extends ApiAction<SelectForm>
     {
@@ -2847,6 +2849,23 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public static class GetSelectedAction extends ApiAction<SelectForm>
+    {
+        public GetSelectedAction()
+        {
+            super(SelectForm.class);
+        }
+
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            Set<String> selected = DataRegionSelection.getSelected(
+                    getViewContext(), form.getKey(), true, false);
+            return new ApiSimpleResponse("selected", selected);
+        }
+    }
+
+    @ActionNames("setSelected, setCheck")
     @RequiresPermissionClass(ReadPermission.class)
     public static class SetCheckAction extends ApiAction<SetCheckForm>
     {

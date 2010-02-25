@@ -92,8 +92,9 @@
                         <option value='<%=AnnouncementManager.EMAIL_PREFERENCE_DEFAULT%>'<%=emailOptionValue == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT ? " selected" : "" %>>&lt;folder default&gt;</option><%
                         } %>
                         <option value='<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>'<%=emailOptionValue == AnnouncementManager.EMAIL_PREFERENCE_NONE ? " selected" : "" %>>No email</option>
-                        <option value='<%=AnnouncementManager.EMAIL_PREFERENCE_ALL%>'<%=emailOptionValue == AnnouncementManager.EMAIL_PREFERENCE_ALL ? " selected" : "" %>>All conversations</option>
+                        <option value='<%=AnnouncementManager.EMAIL_PREFERENCE_BROADCAST%>'<%=emailOptionValue == AnnouncementManager.EMAIL_PREFERENCE_BROADCAST ? " selected" : "" %>>Broadcast only</option>
                         <option value='<%=AnnouncementManager.EMAIL_PREFERENCE_MINE%>'<%=emailOptionValue == AnnouncementManager.EMAIL_PREFERENCE_MINE ? " selected" : "" %>>My conversations</option>
+                        <option value='<%=AnnouncementManager.EMAIL_PREFERENCE_ALL%>'<%=emailOptionValue == AnnouncementManager.EMAIL_PREFERENCE_ALL ? " selected" : "" %>>All conversations</option>
                         <option value='<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST | AnnouncementManager.EMAIL_PREFERENCE_ALL%>'<%=emailOptionValue == (AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST | AnnouncementManager.EMAIL_PREFERENCE_ALL) ? " selected" : "" %>>Daily digest of all conversations</option>
                         <option value='<%=AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST | AnnouncementManager.EMAIL_PREFERENCE_MINE%>'<%=emailOptionValue == (AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST | AnnouncementManager.EMAIL_PREFERENCE_MINE) ? " selected" : "" %>>Daily digest of my conversations</option>
                     </select>

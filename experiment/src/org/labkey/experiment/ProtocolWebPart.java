@@ -90,6 +90,7 @@ public class ProtocolWebPart extends WebPartView
         {
             dr.setButtonBar(new ButtonBar());
             dr.getDisplayColumn("Created").setVisible(false);
+            dr.setShowSurroundingBorder(false);
         }
 
         GridView gridView = new GridView(dr, (BindException)null);

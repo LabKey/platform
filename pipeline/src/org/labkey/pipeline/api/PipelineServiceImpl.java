@@ -121,17 +121,23 @@ public class PipelineServiceImpl extends PipelineService
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                 if (svc != null && container != null)
                 {
-                    File root = svc.getFileRoot(container.getProject());
-                    if (root != null)
+                    if (svc.isUseDefaultRoot(container.getProject()))
                     {
-                        AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                        PipelineRoot p = new PipelineRoot();
-
-                        p.setContainer(container.getId());
-                        p.setPath(dir.getFileSystemDirectory().toURI().toString());
-                        //p.setType("Default");
-
-                        return new PipeRootImpl(p);
+                        File root = svc.getFileRoot(container.getProject());
+                        if (root != null)
+                        {
+                            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
+                            return createDefaultRoot(container.getProject(), dir.getFileSystemDirectory(), true);
+                        }
+                    }
+                    else
+                    {
+                        File root = svc.getProjectDefaultRoot(container, true);
+                        if (root != null)
+                        {
+                            File dir = new File(root, svc.getFolderName(FileContentService.ContentType.files));
+                            return createDefaultRoot(container.getProject(), dir, false);
+                        }
                     }
                 }
             }
@@ -145,6 +151,17 @@ public class PipelineServiceImpl extends PipelineService
             _log.error("unexpected error", e);
         }
         return null;
+    }
+
+    private PipeRoot createDefaultRoot(Container container, File dir, boolean sameAsFilesRoot) throws URISyntaxException
+    {
+        PipelineRoot p = new PipelineRoot();
+
+        p.setContainer(container.getId());
+        p.setPath(dir.toURI().toString());
+        p.setType(PipelineRoot.PRIMARY_ROOT);
+
+        return new PipeRootImpl(p, sameAsFilesRoot);
     }
 
     public boolean hasSiteDefaultRoot(Container container)

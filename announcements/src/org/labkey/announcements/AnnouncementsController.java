@@ -1659,7 +1659,7 @@ public class AnnouncementsController extends SpringActionController
                 if (projectMembers.contains(user))
                     emailOption = AnnouncementManager.getDefaultEmailOption(c);
                 else
-                    emailOption = AnnouncementManager.EMAIL_PREFERENCE_NONE;
+                    emailOption = AnnouncementManager.EMAIL_PREFERENCE_BROADCAST;
             }
 
             form.setEmailOption(emailOption);
@@ -1676,6 +1676,7 @@ public class AnnouncementsController extends SpringActionController
             page.message = _message;
             page.hasMemberList = settings.hasMemberList();
             page.conversationName = settings.getConversationName().toLowerCase();
+            page.isProjectMember = projectMembers.contains(user);
 
             return view;
         }
@@ -1754,6 +1755,15 @@ public class AnnouncementsController extends SpringActionController
 
             // Get all site users' email addresses
             List<String> emails = UserManager.getUserEmailList();
+
+            //FIX: 9742 -- need to exclude users who have set their pref to none
+            OptOutEmailPrefsSelector selector = new OptOutEmailPrefsSelector(c);
+            Collection<User> optOutUsers = selector.getUsers();
+            List<String> optOutEmails = new ArrayList<String>(optOutUsers.size());
+            for (User user : optOutUsers)
+                optOutEmails.add(user.getEmail());
+            emails.removeAll(optOutEmails);
+
             ViewMessage m = getMessage(c, settings, null, parent, a, isResponse, null, currentRendererType, Reason.broadcast);
             m.setHeader("References", references);
             emailer.addMessage(emails, m);
