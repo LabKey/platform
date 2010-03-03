@@ -165,8 +165,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public File newFile(Function f, FileType type)
     {
-        // that null arg to type.getName causes it to try all know filename extensions instead of just default
-        return newFile(f, type.getName((File) null,_support.getBaseName()));
+        // that null arg to type.getName causes it to try all known filename extensions instead of just default
+        return newFile(f, type.getName(Function.output.equals(f)?_dir:(File)null,_support.getBaseName()));
     }
 
     public File newFile(String name)
