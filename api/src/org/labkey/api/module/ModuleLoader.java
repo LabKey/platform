@@ -665,6 +665,8 @@ public class ModuleLoader implements Filter
             if (isUpgradeRequired())
                 throw new IllegalStateException("Can't start modules before upgrade is complete");
 
+            _startupComplete = true;
+
             for (Module m : _modules)
             {
                 try
@@ -694,8 +696,6 @@ public class ModuleLoader implements Filter
             }
 
             ContextListener.moduleStartupComplete(_servletContext);
-
-            _startupComplete = true;
         }
     }
 

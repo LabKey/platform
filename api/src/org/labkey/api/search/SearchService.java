@@ -58,7 +58,6 @@ public interface SearchService
     // marker value for documents with indexing errors
     public static final java.util.Date failDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1899-12-30"));
 
-    
     enum PRIORITY
     {
         commit,
@@ -203,7 +202,7 @@ public interface SearchService
         public String navtrail;
     }
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth);
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink);
 
     public SearchResult search(String queryString, @Nullable SearchCategory category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
 
@@ -265,7 +264,7 @@ public interface SearchService
 
     public void clear();                // delete index and reset lastIndexed values
     public void clearLastIndexed();     // just reset lastIndexed values
-
+    public void maintenance();
 
     //
     // configuration, plugins 
@@ -368,6 +367,12 @@ public interface SearchService
                 _sqlf.append(prefix).append(modified.getSelectName()).append("> ?");
                 _sqlf.add(modifiedSince);
                 _colNames.add(modified.getName());
+            }
+
+            if (!_sqlf.isEmpty())
+            {
+                _sqlf.insert(0, "(");
+                _sqlf.append(")");
             }
         }
 

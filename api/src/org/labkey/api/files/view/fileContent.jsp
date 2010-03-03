@@ -68,6 +68,13 @@
 
     File sharing has been disabled for this project. Sharing can be configured from the <a href="<%=projConfig%>">project settings</a> view.    
 
+<%  } else if (!bean.isRootValid()) { %>
+
+    <span class="labkey-error">
+        The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
+        <%=c.hasPermission(context.getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem."%>
+    </span>
+
 <%  } %>
 
 <script type="text/javascript">
@@ -138,7 +145,7 @@ function renderBrowser(rootPath, dir, renderTo)
     fileBrowser = new LABKEY.FilesWebPartPanel({
         fileSystem: fileSystem,
         helpEl:null,
-        resizable: true,
+        resizable: !Ext.isIE,
         showAddressBar: <%=bean.isShowAddressBar()%>,
         showFolderTree: <%=bean.isShowFolderTree()%>,
         folderTreeCollapsed: <%=bean.isFolderTreeCollapsed()%>,
@@ -251,7 +258,7 @@ function renderBrowser(rootPath, dir, renderTo)
     }
 %>
 
-<%  if (bean.isEnabled()) { %>
+<%  if (bean.isEnabled() && bean.isRootValid()) { %>
         Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>, <%=q(bean.getContentId())%>);});
 <%  } %>
 </script>

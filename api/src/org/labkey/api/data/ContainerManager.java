@@ -439,7 +439,7 @@ public class ContainerManager
         {
             if (childIds == emptyStringArray)
                 return Collections.emptyMap();
-            Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
+            Map<String,Container> ret = new LinkedHashMap<String,Container>();
             for (String id : childIds)
             {
                 Container c = ContainerManager.getForId(id);
@@ -864,8 +864,8 @@ public class ContainerManager
             if (f.isWorkbook())
                 continue;
             
-            Set<Class<? extends Permission>> perms = f.getPolicy().getPermissions(user);
-            boolean skip = (perms.size() == 0 || (!f.shouldDisplay()));
+            SecurityPolicy policy = f.getPolicy();
+            boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay()));
             //Always put the project and current container in...
             if (skip && !f.equals(project) && !f.equals(c))
                 continue;
@@ -876,7 +876,7 @@ public class ContainerManager
                 name = "Home";
 
             NavTree t = new NavTree(name);
-            if (perms.size() > 0)
+            if (policy.hasPermission(user, ReadPermission.class))
             {
                 ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
                 t.second = (url.getEncodedLocalURIString());
@@ -960,17 +960,22 @@ public class ContainerManager
 
         try
         {
-            core.getSchema().getScope().beginTransaction();
+            // Synchronize the transaction, but not the listeners -- see #9901
+            synchronized (ContainerManager.class)
+            {
+                core.getSchema().getScope().beginTransaction();
 
-            Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", new Object[]{newParent.getId(), c.getId()});
+                Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", new Object[]{newParent.getId(), c.getId()});
 
-            // this could be done in the trigger, but I prefer to put it in the transaction
-            if (changedProjects)
-                SecurityManager.changeProject(c, oldProject, newProject);
+                // this could be done in the trigger, but I prefer to put it in the transaction
+                if (changedProjects)
+                    SecurityManager.changeProject(c, oldProject, newProject);
 
-            core.getSchema().getScope().commitTransaction();
+                core.getSchema().getScope().commitTransaction();
 
-            _clearCache();  // Clear the entire cache, since containers cache their full paths
+                _clearCache();  // Clear the entire cache, since containers cache their full paths
+            }
+
             Container newContainer = getForId(c.getId());
             fireMoveContainer(newContainer, oldParent);
         }

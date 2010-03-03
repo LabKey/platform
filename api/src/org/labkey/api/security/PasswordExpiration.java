@@ -80,14 +80,14 @@ public enum PasswordExpiration
 
         public void testExpirations()
         {
-            testExpiration(PasswordExpiration.Never, 60, 0);
-            testExpiration(PasswordExpiration.OneYear, 60, 7);
-            testExpiration(PasswordExpiration.SixMonths, 60, 33);
-            testExpiration(PasswordExpiration.ThreeMonths, 60, 46);
+            testExpiration(PasswordExpiration.Never, 60, 0, 0);
+            testExpiration(PasswordExpiration.OneYear, 60, 7, 7);
+            testExpiration(PasswordExpiration.SixMonths, 60, 33, 34);
+            testExpiration(PasswordExpiration.ThreeMonths, 60, 46, 47);
         }
 
         // Test expiration every week for the specified number of weeks
-        private void testExpiration(PasswordExpiration expiration, int weeks, int expectedExpirations)
+        private void testExpiration(PasswordExpiration expiration, int weeks, int expectedLow, int expectedHigh)
         {
             long now = new Date().getTime();
             long milliseconds_in_week = 1000 * 60 * 60 * 24 * 7;
@@ -101,7 +101,8 @@ public enum PasswordExpiration
                     expired++;
             }
 
-            assertEquals("Invalid number of expirations for " + expiration, expectedExpirations, expired);
+            if (expired < expectedLow || expired > expectedHigh)
+                fail("Invalid number of expirations for " + expiration + ": expected <" + expectedLow + (expectedLow != expectedHigh ? "," + expectedHigh : "") + "> but was <" + expired + ">");
         }
 
         public static Test suite()

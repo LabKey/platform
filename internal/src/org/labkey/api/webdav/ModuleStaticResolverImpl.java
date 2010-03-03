@@ -270,7 +270,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         @Override
         public boolean canList(User user)
         {
-            return false;
+            return true;
         }
 
         Map<String,Resource> getChildren()

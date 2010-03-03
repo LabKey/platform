@@ -18,6 +18,7 @@ package org.labkey.api.view.template;
 
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -113,9 +114,9 @@ public class PageConfig
         return _exploratoryFeatures;
     }
 
-    public HelpTopic getHelpTopic()
+    public @NotNull HelpTopic getHelpTopic()
     {
-        return _helpTopic;
+        return _helpTopic == null ? HelpTopic.DEFAULT_HELP_TOPIC : _helpTopic;
     }
 
     public String getTitle()

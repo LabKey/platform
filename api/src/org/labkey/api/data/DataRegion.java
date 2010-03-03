@@ -845,7 +845,8 @@ public class DataRegion extends DisplayElement
             return;
         
         out.write("<tr><td class=\"labkey-data-region-header-container");
-        out.write(" labkey-data-region-header-bottom-border");
+        if (!_showBorders)
+            out.write(" labkey-data-region-header-bottom-border");
         out.write("\">\n");
 
         out.write("<table class=\"labkey-data-region-header\" id=\"" + PageFlowUtil.filter("dataregion_header_" + getName()) + "\">\n");

@@ -306,6 +306,9 @@ LABKEY.ext.FormHelper =
             originalConfig: config
         };
 
+        if (config.tooltip && !config.helpPopup)
+            field.helpPopup = { html: config.tooltip };
+
         if (config.lookup)
         {
             // UNDONE: avoid self-joins
@@ -359,7 +362,8 @@ LABKEY.ext.FormHelper =
                                 'n-j-y|n-j-Y|' +
                                 'j-M-y|j-M-Y|' +
                                 'Y-n-d H:i:s|Y-n-d|' +
-                                'j M Y G:i:s O'; // 10 Sep 2009 11:24:12 -0700
+                                'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
+                                'j M Y H:i:s';     // 10 Sep 2009 01:24:12
                 break;
             case "string":
                 if (config.inputType=='textarea')
@@ -455,6 +459,7 @@ LABKEY.ext.FormHelper =
                     nullCaption: c.lookupNullCaption || "[none]"
                 };
             }
+            config.autoLoad = true;
             store = new LABKEY.ext.Store(config);
             this.lookupStores[uniqueName] = store;
         }

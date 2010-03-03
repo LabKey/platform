@@ -64,7 +64,7 @@ public class HelpTopic
     private static final String HELP_ROOT_URL = "http://help.labkey.org/wiki/home/";
     private static final String HELP_VERSION_URL = "/documentation/" + HELP_VERSION + "/page.view?name=";
 
-    private static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default", Area.SERVER);
+    public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default", Area.SERVER);
 
     public HelpTopic(String topic, Area area)
     {
@@ -84,10 +84,5 @@ public class HelpTopic
     public String getHelpTopicLink()
     {
         return HELP_ROOT_URL + _area.getAreaPath() + HELP_VERSION_URL + _topic;
-    }
-
-    public static String getDefaultHelpURL()
-    {
-        return DEFAULT_HELP_TOPIC.getHelpTopicLink();
     }
 }

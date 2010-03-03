@@ -60,9 +60,9 @@ import org.labkey.api.gwt.client.ui.domain.CancellationException;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 1000, "Property maps");
+	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<Map<String, ObjectProperty>>(getExpSchema().getScope(), 5000, "Property maps");
 	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000, "ObjectIds");
-    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 2000, "Property descriptors");
+    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 10000, "Property descriptors");
 	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 

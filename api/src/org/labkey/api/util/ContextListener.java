@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
 import org.apache.commons.logging.LogFactory;
+import org.labkey.api.module.ModuleLoader;
 import org.springframework.web.context.ContextLoaderListener;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -98,7 +99,17 @@ public class ContextListener implements ServletContextListener
             a = _startupListeners.toArray(new StartupListener[_startupListeners.size()]);
         }
         for (StartupListener listener : a)
-            listener.moduleStartupComplete(servletContext);
+        {
+            try
+            {
+                listener.moduleStartupComplete(servletContext);
+            }
+            catch (Throwable t)
+            {
+                ExceptionUtil.logExceptionToMothership(null, t);
+                ModuleLoader.getInstance().setStartupFailure(t);
+            }
+        }
     }
 
     public static void addStartupListener(StartupListener listener)

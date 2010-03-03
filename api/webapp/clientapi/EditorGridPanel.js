@@ -609,7 +609,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                                 'n/j/y|n/j/Y|' +
                                 'n-j-y|n-j-Y|' +
                                 'j-M-y|j-M-Y|' +
-                                'Y-n-d H:i:s|Y-n-d'
+                                'Y-n-d H:i:s|Y-n-d|' +
+                                'j M Y H:i:s' // 10 Sep 2009 01:24:12
                 });
                 //HACK: the DateMenu is created by the DateField
                 //and there's no config on DateField that lets you specify

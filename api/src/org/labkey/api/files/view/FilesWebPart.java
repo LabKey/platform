@@ -26,7 +26,8 @@ import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -37,6 +38,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 
+import java.io.File;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +90,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
                 if (root != null)
+                {
                     getModelBean().setRootPath(root.getWebdavURL());
+                    getModelBean().setRootDirectory(root.getRootPath());
+                }
                 setTitle("Pipeline Files");
             }
             else
@@ -96,8 +101,18 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
                 AttachmentDirectory dir = svc.getRegisteredDirectory(c, fileSet);
 
-                //this.fileSet = fileSet;
-                getModelBean().setRoot(dir);
+                if (dir != null)
+                {
+                    try {
+                        getModelBean().setRoot(dir);
+                        getModelBean().setRootDirectory(dir.getFileSystemDirectory());
+                    }
+                    catch (MissingRootDirectoryException e)
+                    {
+                        // this should never happen
+                        throw new RuntimeException(e);
+                    }
+                }
                 getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, fileSet));
                 setTitle(fileSet);
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
@@ -270,19 +285,23 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     {
         this.fileSet = fileSet;
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        if (null == fileSet)
-        {
-            try
+        try {
+            AttachmentDirectory dir;
+            if (null == fileSet)
+                dir = svc.getMappedAttachmentDirectory(container, false);
+            else
+                dir = svc.getRegisteredDirectory(container, fileSet);
+
+            if (dir != null)
             {
-                getModelBean().setRoot(svc.getMappedAttachmentDirectory(container, false));
-            }
-            catch (MissingRootDirectoryException ex)
-            {
-                setModelBean(null);
+                getModelBean().setRoot(dir);
+                getModelBean().setRootDirectory(dir.getFileSystemDirectory());
             }
         }
-        else
-            getModelBean().setRoot(svc.getRegisteredDirectory(container, fileSet));
+        catch (MissingRootDirectoryException ex)
+        {
+            setModelBean(null);
+        }
     }
 
     public static class Factory extends AlwaysAvailableWebPartFactory
@@ -319,6 +338,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private String _contentId;
         private boolean _isPipelineRoot;
         private String _statePrefix;
+        private File _rootDirectory;
 
         public enum actions {
             download,
@@ -462,6 +482,21 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public void setStatePrefix(String statePrefix)
         {
             _statePrefix = statePrefix;
+        }
+
+        public boolean isRootValid()
+        {
+            return (_rootDirectory != null && _rootDirectory.exists());
+        }
+
+        public File getRootDirectory()
+        {
+            return _rootDirectory;
+        }
+
+        public void setRootDirectory(File rootDirectory)
+        {
+            _rootDirectory = rootDirectory;
         }
     }
 }

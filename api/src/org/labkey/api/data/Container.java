@@ -217,7 +217,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         Container project = this;
         while (!project.isProject())
+        {
             project = project.getParent();
+            if (null == project)        // deleted container?
+                return null;
+        }
         return project;
     }
 
@@ -703,7 +707,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Set<Module> getActiveModules()
     {
         return getActiveModules(true);
-    } 
+    }
+
     public Set<Module> getActiveModules(boolean init)
     {
         if (_activeModules == null)
@@ -725,8 +730,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
             //remove forward from active web parts
             removeForward(activeWebparts);
 
-            //store active modules
-            if (props.isEmpty() && init)
+            // store active modules, checking first that the container still exists -- junit test creates and deletes
+            // containers quickly and this check helps keep the search indexer from creating orphaned property sets.
+            if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
             {
                 //initialize properties cache
                 PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(getId(), "activeModules", true);
@@ -734,7 +740,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
                 if (isProject())
                 {
-                    // first time in this project: initalize active modules now, based on the active webparts
+                    // first time in this project: initialize active modules now, based on the active webparts
                     Map<String, Module> mapWebPartModule = new HashMap<String, Module>();
                     //get set of all web parts for all modules
                     for (Module module : allModules)

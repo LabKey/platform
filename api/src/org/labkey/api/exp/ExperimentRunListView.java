@@ -22,8 +22,13 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -34,6 +39,7 @@ public class ExperimentRunListView extends QueryView
     private boolean _showAddToExperimentButton = false;
     private boolean _showRemoveFromExperimentButton = false;
     private boolean _showMoveRunsButton = false;
+    private boolean _showUploadAssayRunsButton = false;
 
     private final ExperimentRunType _selectedType;
 
@@ -70,6 +76,11 @@ public class ExperimentRunListView extends QueryView
         DataView result = super.createDataView();
         result.getRenderContext().setBaseSort(new Sort("-RowId"));
         return result;
+    }
+
+    public void setShowUploadAssayRunsButton(boolean showUploadAssayRunsButton)
+    {
+        _showUploadAssayRunsButton = showUploadAssayRunsButton;
     }
 
     public void setShowAddToRunGroupButton(boolean showAddToExperimentButton)
@@ -162,6 +173,25 @@ public class ExperimentRunListView extends QueryView
         }
 
         _selectedType.populateButtonBar(context, bar, view, getTable().getContainerFilter());
+
+        if (_showUploadAssayRunsButton && c.hasPermission(getUser(), InsertPermission.class))
+        {
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(getContainer());
+            if (!protocols.isEmpty())
+            {
+                Collections.sort(protocols);
+                MenuButton addRunsButton = new MenuButton("Upload Assay Runs");
+                for (ExpProtocol protocol : protocols)
+                {
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
+                    if (provider != null)
+                    {
+                        addRunsButton.addMenuItem(protocol.getName() + " (" + provider.getName() + ")", provider.getImportURL(getContainer(), protocol));
+                    }
+                }
+                bar.add(addRunsButton);
+            }
+        }
     }
 
     @Override

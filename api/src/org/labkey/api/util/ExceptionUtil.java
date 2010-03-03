@@ -150,7 +150,7 @@ public class ExceptionUtil
     {
         ex = unwrapException(ex);
 
-        if (ex == null || ex instanceof SkipMothershipLogging || isClientAbortException(ex))
+        if (ex == null || ex instanceof SkipMothershipLogging || isClientAbortException(ex) || _jobRunner.getJobCount() > 10)
         {
             // Don't log these
             return;

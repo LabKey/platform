@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -56,10 +57,12 @@
     <%}%>
     <td align="right" valign="top" style="height:100%"><table id="headerNav" cellpadding="0" cellspacing="0" style="height:100%" border=0 bordercolor=red>
         <tr>
-          <td valign="top" align="right" class="labkey-main-nav"><%
+          <td valign="top" align="right" class="labkey-main-nav">
+            <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>">Help</a>
+            <%
             if (null != user && !user.isGuest())
             {
-                %><a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
+                %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
             }
             else if (bean.pageConfig.shouldIncludeLoginLink())
             {
@@ -68,7 +71,7 @@
                 if (null != authLogoHtml)
                     out.print(authLogoHtml + "&nbsp;");
 
-                %><a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
+                %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
             }
         %></td></tr>
         <tr><td valign="bottom" align="right" nowrap class="labkey-main-nav"><form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">

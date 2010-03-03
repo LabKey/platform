@@ -76,11 +76,11 @@ public class FooterMenu extends NavTreeMenu
         //
         // HELP
         //
-        HelpTopic topic = null;
+        HelpTopic topic = HelpTopic.DEFAULT_HELP_TOPIC;
         if (null != page)
             topic = page.getHelpTopic();
 
-        menu.add(new NavTree("Help", null == topic ? HelpTopic.getDefaultHelpURL() : topic.getHelpTopicLink()));
+        menu.add(new NavTree("Help", topic.getHelpTopicLink()));
         return menu.toArray(new NavTree[menu.size()]);
     }
 }
