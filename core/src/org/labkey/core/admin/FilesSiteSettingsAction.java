@@ -74,7 +74,7 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "File Root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
                 }
-                else if (isNewRoot)
+                else if (isNewRoot && !form.isUpgrade())
                 {
                     // if this is a new root, make sure it is empty
                     String[] children = f.list();

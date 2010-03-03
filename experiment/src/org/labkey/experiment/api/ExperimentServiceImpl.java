@@ -870,6 +870,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(true);
+        if (type == ExperimentRunType.ALL_RUNS_TYPE)
+        {
+            view.setShowUploadAssayRunsButton(true);
+        }
         view.setTitle("Experiment Runs");
         ActionURL url = new ActionURL(ExperimentController.ShowRunsAction.class, context.getContainer());
         url.addParameter("experimentRunFilter", type.getDescription());

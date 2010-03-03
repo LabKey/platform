@@ -1182,6 +1182,11 @@ public class SecurityApiActions
         {
             if (null == form.getEmail() || form.getEmail().trim().length() == 0)
                 throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
+
+            //FIX: 8585 -- must have Admin perm on the project as well as the current container
+            Container c = getViewContext().getContainer();
+            if (!c.isRoot() && !c.getProject().hasPermission(getViewContext().getUser(), AdminPermission.class))
+                throw new UnauthorizedException("You must be an administrator at the project level to add new users");
             
             ValidEmail email = new ValidEmail(form.getEmail().getSource().trim());
             String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);

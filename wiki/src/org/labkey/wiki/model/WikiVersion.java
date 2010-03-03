@@ -63,6 +63,22 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
         assert MemTracker.put(this);
     }
 
+    /**
+     * Copy constructor used when creating a new version of a wiki
+     * @param copy The current latest version
+     */
+    public WikiVersion(WikiVersion copy)
+    {
+        if (null == copy)
+            return;
+        _pageEntityId = copy._pageEntityId;
+        _title = copy._title;
+        _body = copy._body;
+        _rendererType = copy._rendererType;
+        _wikiName = copy._wikiName;
+        assert MemTracker.put(this);
+    }
+
     public HString getName()
     {
         return _wikiName;

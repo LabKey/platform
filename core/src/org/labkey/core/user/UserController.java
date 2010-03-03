@@ -199,6 +199,7 @@ public class UserController extends SpringActionController
         rgn.setButtonBar(detailsButtonBar, DataRegion.MODE_DETAILS);
 
         ButtonBar updateButtonBar = new ButtonBar();
+        updateButtonBar.setStyle(ButtonBar.Style.separateButtons);
         ActionButton update = new ActionButton("showUpdate.post", "Submit");
         //update.setActionType(ActionButton.Action.LINK);
         updateButtonBar.add(update);

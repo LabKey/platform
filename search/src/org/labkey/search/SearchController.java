@@ -31,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
@@ -434,6 +435,7 @@ public class SearchController extends SpringActionController
             response.setHeader("Pragma", "cache");
             response.addHeader("Vary", "Cookie");
             getPageConfig().setMetaTag("robots", "noindex");
+            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT));
 
             HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
             return search;
@@ -497,6 +499,7 @@ public class SearchController extends SpringActionController
         private boolean _includeSubfolders = true;
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
+        private boolean _includeHelpLink = true;
 
         public static enum SearchScope {All, Project, Folder}
 
@@ -634,6 +637,16 @@ public class SearchController extends SpringActionController
         public void setTextBoxWidth(int textBoxWidth)
         {
             _textBoxWidth = textBoxWidth;
+        }
+
+        public boolean getIncludeHelpLink()
+        {
+            return _includeHelpLink;
+        }
+
+        public void setIncludeHelpLink(boolean includeHelpLink)
+        {
+            _includeHelpLink = includeHelpLink;
         }
     }
 

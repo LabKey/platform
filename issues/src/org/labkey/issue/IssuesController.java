@@ -1043,22 +1043,12 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresPermissionClass(InsertPermission.class)
     public class CompleteUserAction extends AjaxCompletionAction<CompleteUserForm>
     {
         public List<AjaxCompletion> getCompletions(CompleteUserForm form, BindException errors) throws Exception
         {
-            Container c = getContainer();
-
-            final int issueId = Integer.valueOf(form.getIssueId());
-            Issue issue = getIssue(issueId);
-            if (issue == null)
-            {
-                issue = new Issue();
-                issue.Open(c, getUser());
-            }
-            Collection<User> users = IssueManager.getAssignedToList(c, issue);
-            return UserManager.getAjaxCompletions(form.getPrefix(), users, getViewContext());
+            return UserManager.getAjaxCompletions(form.getPrefix(), getViewContext());
         }
     }
 
@@ -1595,21 +1585,26 @@ public class IssuesController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class SearchAction extends SimpleViewAction
     {
+        private String _status;
+
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
             Object q = getProperty("q", "");
             String searchTerm = (q instanceof String) ? (String)q : StringUtils.join((String[])q," ");
 
-            getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
+            _status = (String)getProperty("status");
 
-            HttpView results = new SearchResultsView(c, searchTerm, isPrint());
+            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT));
+
+            HttpView results = new SearchResultsView(c, searchTerm, _status, isPrint());
             return results;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Search Results");
+            String title = "Search " + (null != _status ? _status + " " : "") + "Issues";
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild(title);
         }
     }
 
@@ -1619,12 +1614,14 @@ public class IssuesController extends SpringActionController
         public Container _c;
         public String _query;
         public boolean _print;
+        public String _status;
         
-        SearchResultsView(Container c, String query, boolean isPrint)
+        SearchResultsView(Container c, String query, String status, boolean isPrint)
         {
             super(IssuesController.class, "search.jsp", null);
             _c = c;
             _query = query;
+            _status = status;
             _print = isPrint;
             setModelBean(this);
         }

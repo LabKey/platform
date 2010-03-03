@@ -17,6 +17,7 @@ package org.labkey.wiki;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -240,10 +241,26 @@ public class WikiManager
             throws SQLException
     {
         DbScope scope = comm.getSchema().getScope();
+        Container c = wikiUpdate.lookupContainer();
+        boolean uncacheAll = true;
+
         try
         {
             //transact wiki update and version insert
             scope.beginTransaction();
+
+            //if name, title, parent, & sort order are all still the same,
+            //we don't need to uncache all wikis--only the wiki being updated
+            //NOTE: getWikiByEntityId does not use the cache, so we'll get a fresh copy from the database
+            Wiki wikiCurrent = getWikiByEntityId(c, wikiUpdate.getEntityId());
+            WikiVersion versionCurrent = wikiCurrent.latestVersion();
+            String versionCurrentTitle = StringUtils.trimToEmpty(versionCurrent.getTitle().getSource());
+            
+            uncacheAll = !wikiCurrent.getName().equals(wikiUpdate.getName())
+                    || wikiCurrent.getParent() != wikiUpdate.getParent()
+                    || wikiCurrent.getDisplayOrder() != wikiUpdate.getDisplayOrder()
+                    || (null != wikiversion && !versionCurrentTitle.equals(wikiversion.getTitle().getSource()));
+
 
             //update Pages table
             //UNDONE: should take RowId, not EntityId
@@ -271,8 +288,11 @@ public class WikiManager
             if (scope != null)
                 scope.closeConnection();
 
-            // Uncache entire container to invalidate old version of page and references to this page from other pages
-            WikiCache.uncache(ContainerManager.getForId(wikiUpdate.getContainerId()));
+            // if we need to uncache all pages in the container do so
+            if (uncacheAll)
+                WikiCache.uncache(c);
+            else
+                WikiCache.uncache(c, wikiUpdate.getName().getSource());
 
             indexWiki(wikiUpdate);
         }

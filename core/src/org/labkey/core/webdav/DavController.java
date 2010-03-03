@@ -1132,10 +1132,14 @@ public class DavController extends SpringActionController
     class XMLResourceWriter implements ResourceWriter
     {
         XMLWriter xml;
+        boolean gvfs = false;
 
         XMLResourceWriter(Writer writer)
         {
             xml = new XMLWriter(writer);
+            String userAgent = getRequest().getHeader("User-Agent");
+            if (null != userAgent && -1 != userAgent.indexOf("gvfs"))
+                gvfs = true;
         }
 
         public void beginResponse(WebdavResponse response)
@@ -1162,7 +1166,10 @@ public class DavController extends SpringActionController
             String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
 
             xml.writeElement(null, "href", XMLWriter.OPENING);
-            xml.writeText(h(resource.getLocalHref(getViewContext())));
+            String href = resource.getLocalHref(getViewContext());
+            if (gvfs)
+                href = href.replace("%40","@"); // gvfs workaround
+            xml.writeText(h(href));
             xml.writeElement(null, "href", XMLWriter.CLOSING);
 
             String displayName = resource.getPath().equals("/") ? "/" : resource.getName();

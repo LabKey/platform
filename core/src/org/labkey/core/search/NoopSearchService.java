@@ -158,7 +158,7 @@ public class NoopSearchService implements SearchService
     }
 
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth)
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
     {
         return null;
     }
@@ -308,5 +308,9 @@ public class NoopSearchService implements SearchService
     public SearchCategory getCategory(String category)
     {
         return null;
+    }
+
+    public void maintenance()
+    {
     }
 }

@@ -3790,6 +3790,7 @@ public class ExperimentController extends SpringActionController
             drg.getDisplayColumn("Created").setVisible(false);
 
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit");
             bb.add(insertButton);
 

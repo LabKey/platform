@@ -56,7 +56,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 10.09;
+        return 10.10;
     }
 
     protected void init()

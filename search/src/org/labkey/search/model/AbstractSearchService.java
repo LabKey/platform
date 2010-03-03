@@ -26,6 +26,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
@@ -1298,8 +1299,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
     
 
-
-    static void indexMaintenance()
+    public void maintenance()
     {
         try
         {
@@ -1318,8 +1318,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             _log.error("maintenance error", x);
         }
-
-
     }
 
 
@@ -1338,7 +1336,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         public void run()
         {
-            indexMaintenance();
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null != ss)
+                ss.maintenance();
         }
     }
 }

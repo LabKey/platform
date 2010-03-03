@@ -149,13 +149,21 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         if (!this.actionConfig)
         {
-            this.updateActionConfiguration(true, true);
+            this.grid.store.on('datachanged', function(record){
+                Ext.Ajax.request({
+                    url:this.actionsURL + encodeURIComponent(this.path),
+                    method:'GET',
+                    disableCaching:false,
+                    success : this.updateActionConfiguration(true, true),
+                    updateSelection: true,
+                    scope: this
+                });
+            }, this, {single: true});
         }
         else
         {
             this.grid.store.on('datachanged', function(record){
                 Ext.Ajax.request({
-                    autoAbort:true,
                     url:this.actionsURL + encodeURIComponent(this.path),
                     method:'GET',
                     disableCaching:false,
@@ -170,7 +178,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     updateActionConfiguration : function(updatePipelineActions, updateSelection) {
 
         Ext.Ajax.request({
-            autoAbort:true,
             url:this.actionsConfigURL,
             method:'GET',
             disableCaching:false,
@@ -204,7 +211,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (e.updatePipelineActions)
         {
             Ext.Ajax.request({
-                autoAbort:true,
                 url:this.actionsURL + encodeURIComponent(this.path),
                 method:'GET',
                 disableCaching:false,

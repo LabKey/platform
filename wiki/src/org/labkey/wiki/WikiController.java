@@ -105,7 +105,7 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                WebPartView searchView = ss.getSearchView(false, 0);
+                WebPartView searchView = ss.getSearchView(false, 0, false);
 
                 ((HomeTemplate)template).setView("right", new VBox(searchView, toc));
             }
@@ -2905,9 +2905,7 @@ public class WikiController extends SpringActionController
             if (!policy.hasPermission(user, UpdatePermission.class, contextualRoles))
                 HttpView.throwUnauthorized("You are not allowed to edit this wiki page.");
 
-            WikiVersion wikiversion = wikiUpdate.latestVersion();
-            if (wikiversion == null)
-                HttpView.throwNotFound("There is no current version associated with this wiki page; the existing page may have been deleted.");
+            WikiVersion wikiversion = new WikiVersion(wikiUpdate.latestVersion());
 
             //if title is null, use name
             HString title = form.getTitle().isEmpty() ? form.getName() : form.getTitle();

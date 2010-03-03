@@ -840,7 +840,8 @@ public class AnnouncementManager
     }
 
 
-    public static void indexMessages(SearchService.IndexTask task, @NotNull String c, Date modifiedSince, String threadId)
+    // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
+    public static void indexMessages(SearchService.IndexTask task, @NotNull String cid, Date modifiedSince, String threadId)
     {
         if (null != modifiedSince && null != threadId)
             throw new IllegalArgumentException();
@@ -848,7 +849,9 @@ public class AnnouncementManager
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null == ss)
             return;
-        if (null != c && isSecure(c))
+
+        Container c = ContainerManager.getForId(cid);
+        if (null == c || isSecure(c))
             return;
 
         ResultSet rs = null;
@@ -884,8 +887,10 @@ public class AnnouncementManager
             {
                 String containerId = rs.getString(1);
 
-                // Don't index messages in secure message boards.
-                if (isSecure(containerId))
+                Container c2 = ContainerManager.getForId(containerId);
+
+                // Don't index messages in deleted containers or secure message boards
+                if (null == c2 || isSecure(c2))
                     continue;
 
                 String entityId = rs.getString(2);
@@ -931,8 +936,10 @@ public class AnnouncementManager
                 String parent = rs2.getString(3);
                 String title = rs2.getString(4);
 
-                // Don't index attachments in secure message boards.
-                if (isSecure(containerId))
+                Container c2 = ContainerManager.getForId(containerId);
+
+                // Don't index attachments in deleted containers or secure message boards
+                if (null == c2 || isSecure(c2))
                     continue;
 
                 annIds.add(entityId);
@@ -948,9 +955,9 @@ public class AnnouncementManager
             {
                 List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
                 ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
-                url.setExtraPath(c);
+                url.setExtraPath(c.getId());
                 ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-                urlThread.setExtraPath(c);
+                urlThread.setExtraPath(c.getId());
 
                 for (Pair<String, String> pair : list)
                 {
@@ -990,21 +997,7 @@ public class AnnouncementManager
     }
 
 
-    private static boolean isSecure(String containerId)
-    {
-        try
-        {
-            Container c = ContainerManager.getForId(containerId);
-            return AnnouncementManager.getMessageBoardSettings(c).isSecure();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private static boolean isSecure(Container c)
+    private static boolean isSecure(@NotNull Container c)
     {
         try
         {

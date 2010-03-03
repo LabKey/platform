@@ -38,6 +38,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.api.webdav.Resource" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -91,7 +92,12 @@ if (loginStatusChanged())
     %>
     <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>">
     <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
-    <td>&nbsp;<%=generateSubmitButton("Search")%></td></tr><%
+    <td>&nbsp;<%=generateSubmitButton("Search")%><%
+
+    if (form.getIncludeHelpLink())
+    {
+        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT).getHelpTopicLink())%></td></tr><%
+    }
 
     String category = form.getCategory();
     ActionURL categoryResearchURL = ctx.cloneActionURL().deleteParameter("category");
@@ -120,16 +126,16 @@ if (loginStatusChanged())
                     %><span title="<%=h(c.getProject().getName())%>"><%if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %></span>&nbsp;<%
                     %><span title="<%=h(c.getName())%>"><%if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% } %></span><%
                 }
-            %></td><td>&nbsp</td>
+            %></td><td>&nbsp;</td>
         </tr></table><%
     }
     %></td></tr></table></form><%
 
     if (null != StringUtils.trimToNull(queryString))
     {
-            %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
-            <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPath%>/_.gif" width=500 height=1><%
-            %><div id="searchResults" class="labkey-search-results"><%
+        %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
+        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPath%>/_.gif" width=500 height=1>
+           <div id="searchResults" class="labkey-search-results"><%
 
         int hitsPerPage = 20;
         int offset = form.getOffset();
@@ -263,10 +269,8 @@ if (loginStatusChanged())
         }
         catch (IOException e)
         {
-            Throwable t = e;
-            if (e.getCause() instanceof ParseException)
-                t = e.getCause();
-            out.write("Error: " + t.getMessage());
+            out.write(h("Error: " + e.getMessage()));
+            out.write("</div></td>");
         } %>
         </tr></table><%
     }

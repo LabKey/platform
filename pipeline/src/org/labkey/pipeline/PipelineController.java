@@ -417,7 +417,10 @@ public class PipelineController extends SpringActionController
 
             PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
             if (root != null)
+            {
                 bean.setRootPath(root.getWebdavURL());
+                bean.setRootDirectory(root.getRootPath());
+            }
 
             setTitle("Pipeline Files");
             setTitleHref(new ActionURL(BrowseAction.class, HttpView.getContextContainer()));

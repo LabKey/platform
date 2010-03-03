@@ -37,19 +37,18 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     var _iDelay = 0;
     var _delays = new Array(15, 30, 60, 120);
 
-    var shouldRefresh = function()
+    var isSelectionModified = function()
     {
         // Disable refresh if the user has toggled any checkboxes
         return LABKEY.DataRegions &&
                LABKEY.DataRegions["StatusFiles"] &&
-               !LABKEY.DataRegions["StatusFiles"].selectionModified &&
-               !LABKEY.DataRegions["StatusFiles"].isMessageShowing()
+               LABKEY.DataRegions["StatusFiles"].selectionModified;
     };
 
     // private methods:
     var nextUpdate = function(iNext)
     {
-        if (!shouldRefresh())
+        if (isSelectionModified())
         {
             return;
         }
@@ -73,7 +72,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
 
     var update = function()
     {
-        if (!shouldRefresh())
+        if (isSelectionModified())
         {
             return;
         }
@@ -88,7 +87,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
 
     var onUpdateSuccess = function (response)
     {
-        if (!shouldRefresh())
+        if (isSelectionModified())
         {
             return;
         }
@@ -108,7 +107,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
                 var newText = response.responseText;
                 if (_lastUpdate != newText)
                 {
-                    el.update(newText);
+                    el.update(newText, true);
                     _lastUpdate = newText;
                     LABKEY.DataRegions["StatusFiles"]._initElements();
                 }

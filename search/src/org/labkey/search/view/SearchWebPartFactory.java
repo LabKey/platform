@@ -35,13 +35,16 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
     {
-        int width = 40;
+        boolean includeSubfolders = Search.includeSubfolders(webPart);
+
         if ("right".equals(webPart.getLocation()))
         {
-            width = 0;
+            return new SearchWebPart(includeSubfolders, 0, false);
         }
-        boolean includeSubfolders = Search.includeSubfolders(webPart);
-        return new SearchWebPart(includeSubfolders, width);
+        else
+        {
+            return new SearchWebPart(includeSubfolders, 40, true);
+        }
     }
 
 

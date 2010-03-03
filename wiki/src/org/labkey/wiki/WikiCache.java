@@ -152,9 +152,7 @@ public class WikiCache
     }
 
 
-    // Not currently used -- only case where this would be the correct behavior is if we update the content of a wiki
-    // and verify that the title & name didn't change.  Not worth it.
-    private static void uncache(Container c, String name)
+    public static void uncache(Container c, String name)
     {
         _pageCache.remove(_cachedName(c, name));
         uncacheLists(c);

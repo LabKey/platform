@@ -73,6 +73,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private final Analyzer _analyzer = new SnowballAnalyzer(LUCENE_VERSION, "English");
     private static LabKeyIndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
     private static Directory _directory = null;
+    private final Object _indexWriterLock = new Object();   // Single lock for now, since indexing is single-threaded.  TODO: Reference count index writers and close() at 0
 
     static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
         url, container, resourceId, uniqueId, navtrail }
@@ -113,8 +114,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            getIndexWriter().deleteAll();
-            commit();
+            synchronized (_indexWriterLock)
+            {
+                getIndexWriter().deleteAll();
+                commit();
+            }
         }
         catch (IOException e)
         {
@@ -506,8 +510,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            IndexWriter iw = getIndexWriter();
-            iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.toString(), id));
+            synchronized (_indexWriterLock)
+            {
+                IndexWriter iw = getIndexWriter();
+                iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.toString(), id));
+            }
         }
         catch(Throwable e)
         {
@@ -521,8 +528,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
-            deleteDocument(r.getDocumentId());
-            getIndexWriter().addDocument(doc);
+
+            synchronized (_indexWriterLock)
+            {
+                deleteDocument(r.getDocumentId());
+                getIndexWriter().addDocument(doc);
+            }
         }
         catch(Throwable e)
         {
@@ -536,7 +547,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            IndexWriter w = getIndexWriter();
             Query query;
             String s="";
             try
@@ -552,7 +562,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 throw io;
             }
 
-            w.deleteDocuments(query);
+            synchronized (_indexWriterLock)
+            {
+                IndexWriter w = getIndexWriter();
+                w.deleteDocuments(query);
+            }
         }
         catch (IOException x)
         {
@@ -561,36 +575,43 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    protected synchronized void commitIndex()
+    protected void commitIndex()
     {
-        try
-        {
-            if (null != _iw)
-                _iw.close();
-        }
-        catch (IOException e)
+        synchronized (_indexWriterLock)
         {
             try
             {
-                _log.error("Exception closing index", e);
-                _log.error("Attempting to index close again");
-                _iw.close();
+                if (null != _iw)
+                    _iw.close();
             }
-            catch (IOException e2)
+            catch (IOException e)
             {
-                _log.error("Exception closing index", e2);
+                try
+                {
+                    _log.error("Exception closing index", e);
+                    _log.error("Attempting to index close again");
+                    _iw.close();
+                }
+                catch (IOException e2)
+                {
+                    _log.error("Exception closing index", e2);
+                }
             }
-        }
-        finally
-        {
-            resetIndexSearcher();
-            _iw = null;
+            finally
+            {
+                resetIndexSearcher();
+                _iw = null;
+            }
         }
     }
 
 
-    private synchronized IndexWriter getIndexWriter() throws IOException
+    // Note: callers must have index writer lock
+    private IndexWriter getIndexWriter() throws IOException
     {
+        if (!Thread.holdsLock(_indexWriterLock))
+            throw new IllegalStateException("Call to getIndexWriter() without the proper lock");
+
         // CONSIDER: Set a large, but finite max field length if we get OutOfMemory errors during indexing
         if (null == _iw)
             _iw = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
@@ -690,9 +711,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             boosts.put(standardFields[i], standardBoosts[i]);
     }
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth)
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
     {
-        return new SearchWebPart(includeSubfolders, textBoxWidth);
+        return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink);
     }
 
     public SearchResult search(String queryString, @Nullable SearchCategory searchCategory, User user, Container root, boolean recursive, int offset, int limit) throws IOException
@@ -715,32 +736,30 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
-            query = queryParser.parse(queryString.toUpperCase());  // Upper case to force all-caps OR, AND, NOT
-
-            if (null != category)
-            {
-                BooleanQuery bq = new BooleanQuery();
-                bq.add(query, BooleanClause.Occur.MUST);
-
-                Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), category.toLowerCase()));
-
-                if (limitToCategory)
-                {
-                    bq.add(categoryQuery, BooleanClause.Occur.MUST);
-                }
-                else
-                {
-                    categoryQuery.setBoost(3.0f);
-                    bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
-                }
-                query = bq;
-            }
+            query = queryParser.parse(queryString);
         }
         catch (ParseException x)
         {
-            IOException io = new IOException();
-            io.initCause(x);
-            throw io;
+            throw new IOException(x.getMessage());
+        }
+
+        if (null != category)
+        {
+            BooleanQuery bq = new BooleanQuery();
+            bq.add(query, BooleanClause.Occur.MUST);
+
+            Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), category.toLowerCase()));
+
+            if (limitToCategory)
+            {
+                bq.add(categoryQuery, BooleanClause.Occur.MUST);
+            }
+            else
+            {
+                categoryQuery.setBoost(3.0f);
+                bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+            }
+            query = bq;
         }
 
         LabKeyIndexSearcher searcher = getIndexSearcher();
@@ -854,5 +873,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 return true;
         }
         return false;
+    }
+
+    @Override
+    public void maintenance()
+    {
+        super.maintenance();
+
+        try
+        {
+            synchronized (_indexWriterLock)
+            {
+                IndexWriter iw = getIndexWriter();
+                iw.optimize();
+            }
+        }
+        catch (IOException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
     }
 }

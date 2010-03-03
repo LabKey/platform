@@ -2645,6 +2645,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         config = config || {};
         Ext.apply(this, config);
+        Ext.useShims = true;     // so floating elements can appear over the applet drop target
         this.actions = Ext.apply({}, this.actions,
         {
             parentFolder: this.getParentFolderAction(),
@@ -2948,7 +2949,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }, scope:this}
             });
 
-            var uploadPanel = new Ext.FormPanel({
+            this.uploadPanel = new Ext.FormPanel({
                 id: 'uploadFileTab',
                 formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
                 method : 'POST',
@@ -2978,7 +2979,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     "actionfailed" : {fn: this.uploadFailed, scope: this}
                 }
             });
-            uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
+            this.uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
 
             var uploadMultiPanel_rb1 = new Ext.form.Radio({
                 boxLabel: 'Single file', name: 'rb-auto', inputValue: 1,
@@ -3051,7 +3052,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 deferredRender: false,
                 stateful: false,
                 items: [
-                    uploadPanel,
+                    this.uploadPanel,
                     uploadMultiPanel
                 ]});
 
@@ -3061,7 +3062,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var addressBar = {
             region: 'south',
             height: 24,
-            margins: '0 0 5 5',
+            margins: '5',
             layout: 'fit',
             border: true,
             stateful: false,
@@ -3075,7 +3076,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             if (this.showAddressBar)
             {
-                addressBar.margins = '0';
+                addressBar.margins = '0 -1 -1 -1';
                 layout = 'border';
                 detailItems.push({height: 80, region: 'center', html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'});
                 detailItems.push(addressBar);
@@ -3116,7 +3117,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         layoutItems.push(
             {
                 region:'center',
-                margins: '0 ' + (this.propertiesPanel ? '0' : '0') + ' ' + (this.showDetails ? '0' : '0') + ' 0',
+                margins: '0 ' + (this.propertiesPanel ? '0' : '5') + ' ' + (this.showDetails ? '0' : '0') + ' 0',
                 minSize: 200,
                 layout:'border',
                 items: centerItems
@@ -3151,7 +3152,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var file = this.fileSystem.recordFromCache(target);
             if (file)
             {
-                alert('file already exists on server: ' + name);
+                Ext.MessageBox.alert('File: ' + name + ' already exists', 'There is already a file with the same name in this location');
             }
             else
             {
@@ -3169,7 +3170,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     // handler for a file upload complete event
     uploadSuccess : function(f, action)
     {
-        this.fileUploadField.reset();
+        var form = this.uploadPanel.getForm();
+        if (form)
+            form.reset();
         Ext.getBody().dom.style.cursor = "pointer";
         console.log("upload actioncomplete");
         console.log(action);
@@ -3184,7 +3187,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     // handler for a file upload failed event
     uploadFailed : function(f, action)
     {
-        this.fileUploadField.reset();
+        var form = this.uploadPanel.getForm();
+        if (form)
+            form.reset();
         Ext.getBody().dom.style.cursor = "pointer";
         console.log("upload actionfailed");
         console.log(action);
@@ -3267,7 +3272,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             rootVisible:true,
             //title: 'Folders',
             useArrows:true,
-            margins: this.showDetails ? '5 0 0 5' : '5 0 5 5',
+            margins: (this.showDetails || this.showAddressBar) ? '0 0 0 5' : '0 0 5 5',
             autoScroll:true,
             animate:true,
             enableDD:false,
@@ -3276,7 +3281,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             collapseMode: 'mini',
             collapsed: this.folderTreeCollapsed,
             cmargins:'0 0 0 0',
-            border:false,
+            border: true,
             stateful: false,
             pathSeparator:';'
         });

@@ -2938,7 +2938,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.3)
-    public class GetSchemasAction extends ApiAction
+    public class    GetSchemasAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {

@@ -765,11 +765,6 @@ in the table tag.  They are necessary so that the borders take precedence correc
     border: solid 1px #AAAAAA;
 }
 
-.labkey-data-region-container .labkey-show-borders th
-{
-    border-top: 0;
-}
-
 .labkey-data-region-container .labkey-show-borders th, .labkey-data-region-container .labkey-show-borders td
 {
     border-right: 0;
@@ -1087,9 +1082,13 @@ table.labkey-main-search
 .labkey-main-search input
 {
     height:16px; font-size:8pt;
-/*    border:solid 1px #a0a0a0; */
     border:0;
 }
+#headerSearchInput /* undo ie ext stuff */
+{
+    margin:0; top:0;
+}
+
 /* search results page */
 .labkey-search-filter
 {

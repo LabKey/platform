@@ -333,7 +333,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     createNewUser : function(email, sendEmail, callback, scope)
     {
         var me = this;
-        S.createNewUser({containerPath:'/', email:email, sendEmail:sendEmail,
+        S.createNewUser({email:email, sendEmail:sendEmail,
             successCallback : function(user,response)
             {
                 // make user match the Principals query

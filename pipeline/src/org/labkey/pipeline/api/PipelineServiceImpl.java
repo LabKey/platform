@@ -136,7 +136,9 @@ public class PipelineServiceImpl extends PipelineService
                         if (root != null)
                         {
                             File dir = new File(root, svc.getFolderName(FileContentService.ContentType.files));
-                            return createDefaultRoot(container.getProject(), dir, false);
+                            if (!dir.exists())
+                                dir.mkdirs();
+                            return createDefaultRoot(container, dir, false);
                         }
                     }
                 }

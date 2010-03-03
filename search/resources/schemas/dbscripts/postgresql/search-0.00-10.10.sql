@@ -17,10 +17,9 @@
 /* search-0.00-0.03.sql */
 
 CREATE SCHEMA search;
-SET search_path TO search, public;  -- include public to get ENTITYID, USERID
 
 
-CREATE TABLE CrawlCollections
+CREATE TABLE search.CrawlCollections
 (
   id SERIAL,
 
@@ -29,16 +28,16 @@ CREATE TABLE CrawlCollections
   Path VARCHAR(2000) NOT NULL,
 
   Modified TIMESTAMP NULL,      -- newest file at last crawl
-  LastCrawled TIMESTAMP NULL,   -- last crawl (or attemted crawl)
+  LastCrawled TIMESTAMP NULL,   -- last crawl (or attempted crawl)
   ChangeInterval int NULL DEFAULT 1000*60*60*24,  -- daily
   NextCrawl TIMESTAMP NOT NULL DEFAULT CAST('1967-10-04' as TIMESTAMP), -- approx LastCrawled + 1/2 * ChangeInterval
   CONSTRAINT PK_Collections PRIMARY KEY (id),
   CONSTRAINT AK_Unique UNIQUE (Parent, Name)
 );
-CREATE INDEX IDX_NextCrawl ON CrawlCollections(NextCrawl);
+CREATE INDEX IDX_NextCrawl ON search.CrawlCollections(NextCrawl);
 
 
-CREATE TABLE CrawlResources
+CREATE TABLE search.CrawlResources
 (
   Parent INT,
   Name VARCHAR(400) NOT NULL,
@@ -47,7 +46,7 @@ CREATE TABLE CrawlResources
   LastIndexed TIMESTAMP NULL,  -- server time
   CONSTRAINT PK_Resources PRIMARY KEY (Parent,Name)
 );
-CLUSTER PK_Resources ON CrawlResources;
+CLUSTER PK_Resources ON search.CrawlResources;
 
 /* search-0.03-0.04.sql */
 

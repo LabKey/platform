@@ -85,7 +85,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
         
     }
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth)
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
     {
         return null;
     }

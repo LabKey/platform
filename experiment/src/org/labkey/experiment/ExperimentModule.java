@@ -80,7 +80,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 10.09;
+        return 10.10;
     }
 
     protected void init()
