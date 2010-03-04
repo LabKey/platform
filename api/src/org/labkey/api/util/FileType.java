@@ -179,7 +179,7 @@ public class FileType implements Serializable
     /** Uses the preferred suffix, useful when there's not a directory of existing files to reference */
     /** if _preferGZ is set, will use preferred suffix.gz since TPP treats .gz as native format,
      *  unless non-gz file exists */
-    public String getName(String basename)
+    public String getDefaultName(String basename)
     {
         return tryName(null, basename + _defaultSuffix);
     }
@@ -481,17 +481,17 @@ public class FileType implements Serializable
             FileType ft = new FileType(".foo");
             assertTrue(ft.isType("test.foo"));
             assertTrue(!ft.isType("test.foo.gz"));
-            assertEquals("test.foo",ft.getName("test"));
+            assertEquals("test.foo",ft.getDefaultName("test"));
             // support for .gz
             FileType ftgz = new FileType(".foo",gzSupportLevel.SUPPORT_GZ);
             assertTrue(ftgz.isType("test.foo"));
             assertTrue(ftgz.isType("test.foo.gz"));
-            assertEquals("test.foo",ftgz.getName("test"));
+            assertEquals("test.foo",ftgz.getDefaultName("test"));
             // preference for .gz
             FileType ftgzgz = new FileType(".foo",gzSupportLevel.PREFER_GZ);
             assertTrue(ftgzgz.isType("test.foo"));
             assertTrue(ftgzgz.isType("test.foo.gz"));
-            assertEquals("test.foo.gz",ftgzgz.getName("test"));
+            assertEquals("test.foo.gz",ftgzgz.getDefaultName("test"));
             // multiple extensions
             ArrayList<String> foobar = new ArrayList<String>();
             foobar.add(".foo");
@@ -502,7 +502,7 @@ public class FileType implements Serializable
             assertTrue(ftt.isType("test.foo.gz"));
             assertTrue(ftt.isType("test.bar.gz"));
             assertTrue(ftt.isType("test.bAr.gZ")); // extensions are case insensitive
-            assertEquals("test.foo",ftt.getName("test"));
+            assertEquals("test.foo",ftt.getDefaultName("test"));
             // antitypes - for example avoid mistaking protxml ".pep-prot.xml" for pepxml ".xml"
             assertTrue(ftt.isType("test.foo.bar"));
             ftt.addAntiFileType(new FileType(".foo.bar"));
