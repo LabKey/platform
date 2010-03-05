@@ -133,7 +133,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             HelpTopic topic = new HelpTopic("configWebappMemory", HelpTopic.Area.SERVER);
             _warningMessages.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
                     "LabKey recommends <a href=\"" + topic.getHelpTopicLink()
-                    + "\">setting the maximum to 1024 Megabytes (-Xmx1024M)</a>.");
+                    + "\">setting the maximum heap to at least one gigabyte (-Xmx1024M)</a>.");
         }
     }
 

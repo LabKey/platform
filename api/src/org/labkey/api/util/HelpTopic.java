@@ -58,7 +58,10 @@ public class HelpTopic
         // Get core module version number, truncate to one decimal place, and use as help version
         Module core = ModuleLoader.getInstance().getCoreModule();
         double coreVersion = core.getVersion();
-        HELP_VERSION = Formats.f1.format(Math.floor(coreVersion*10)/10);
+
+        // Round up if we're within 0.01 of the next version, otherwise round down
+        //  e.g., 10.21 -> 10.2, 10.27 -> 10.2, 10.29 -> 10.3
+        HELP_VERSION = Formats.f1.format(Math.floor(coreVersion * 10 + 0.1) / 10);
     }
 
     private static final String HELP_ROOT_URL = "http://help.labkey.org/wiki/home/";
