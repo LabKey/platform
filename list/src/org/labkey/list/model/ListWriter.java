@@ -265,6 +265,5 @@ public class ListWriter
 
             return null;
         }
-
     }
 }
