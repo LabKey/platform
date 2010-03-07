@@ -417,17 +417,30 @@ public class Path implements Serializable, Iterable<String>
 
     public String encode()
     {
-        if (_length == 0)
-            return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i=0 ; i<_length ; i++)
-        {
-            sb.append("/");
-            sb.append(PageFlowUtil.encode(_path[i]));
-        }
-        return sb.toString();
+        return encode(null,null);
     }
 
+    public String encode(String start, String end)
+    {
+        if (start == null)
+            start = isAbsolute() ? "/" : "";
+        if (end == null)
+            end = isDirectory() ? "/" : "";
+        if (_length == 0)
+            return start;
+        
+        StringBuilder sb = new StringBuilder();
+        String slash = start;
+        for (int i=0 ; i<_length ; i++)
+        {
+            sb.append(slash);
+            sb.append(PageFlowUtil.encode(_path[i]));
+            slash = "/";
+        }
+        sb.append(end);
+        return sb.toString();
+    }
+    
 
     protected int compareName(String a, String b)
     {
