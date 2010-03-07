@@ -420,7 +420,7 @@ public enum Method
             if (unit.equals("YEAR") || unit.equals("SQL_TSI_YEAR"))
                 return new AgeInYearsMethodInfo().getSQL(schema, arguments);
             if (unit.equals("MONTH") || unit.equals("SQL_TSI_MONTH"))
-                return new AgeInYearsMethodInfo().getSQL(schema, arguments);
+                return new AgeInMonthsMethodInfo().getSQL(schema, arguments);
             throw new IllegalArgumentException("AGE(" + unit + ")");
         }
     }
