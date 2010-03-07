@@ -23,6 +23,12 @@
         <filter-class>org.labkey.api.data.TransactionFilter</filter-class>
     </filter>
 
+    <!-- filter for fast polling -->
+    <filter>
+        <filter-name>PollingFilter</filter-name>
+        <filter-class>org.labkey.api.util.PollingUtil$PollingFilter</filter-class>
+    </filter>
+    
     <!-- Example filter to set character encoding on each request -->
     <filter>
         <filter-name>Set Character Encoding</filter-name>
@@ -36,6 +42,11 @@
             <param-value>false</param-value>
         </init-param>
     </filter>
+
+    <filter-mapping>
+        <filter-name>PollingFilter</filter-name>
+        <url-pattern>*.poll</url-pattern>
+    </filter-mapping>
 
     <filter>
         <filter-name>Module Loader</filter-name>

@@ -852,6 +852,7 @@ api/src/org/labkey/api/util/NameString.java -text
 api/src/org/labkey/api/util/Pair.java -text
 api/src/org/labkey/api/util/Path.java -text
 api/src/org/labkey/api/util/PepXMLFileType.java -text
+api/src/org/labkey/api/util/PollingUtil.java -text
 api/src/org/labkey/api/util/PossiblyGZIPpedFileInputStreamFactory.java -text
 api/src/org/labkey/api/util/ProtXMLFileType.java -text
 api/src/org/labkey/api/util/ReturnURLString.java -text
