@@ -42,7 +42,6 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
-import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;

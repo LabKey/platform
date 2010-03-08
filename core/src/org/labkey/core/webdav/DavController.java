@@ -19,7 +19,6 @@ package org.labkey.core.webdav;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.json.JSONWriter;
 import org.labkey.api.action.ReturnUrlForm;
@@ -42,10 +41,10 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.webdav.Resource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.Resource;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
@@ -73,8 +72,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
-import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 /**
@@ -90,7 +89,7 @@ public class DavController extends SpringActionController
     public static final String name = "_dav_";
     public static final String mimeSeparation = "<[[mime " + GUID.makeHash() + "_separator_]]>";
 
-    static Category _log = Logger.getInstance(DavController.class);
+    static Logger _log = Logger.getLogger(DavController.class);
     static DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
     static boolean _readOnly = false;
     static boolean _locking = false;

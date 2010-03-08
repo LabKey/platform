@@ -28,7 +28,7 @@ jcommon-1.0.0.jar|JCommon|1.0.0|{link:JCommon|http://www.jfree.org/jcommon/index
 jfreechart-1.0.0.jar|JFreeChart|1.0.0|{link:JFreeChart|http://www.jfree.org/jfreechart/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|mbellew|Charting
 junit-4.1.jar|JUnit|4.1|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|Import/Export Excel files
-log4j-1.2.8.jar|Log4j|1.2.8|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+log4j-1.2.15.jar|Log4j|1.2.15|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
 radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 radeox.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 saaj.jar|SOAP with Attachments API for Java|1.2|{link:SAAJ|https://saaj.dev.java.net/}|{link:CDDL|https://glassfish.dev.java.net/public/CDDL+GPL.html}|jeckels|Attachments with webservices

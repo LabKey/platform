@@ -15,7 +15,7 @@
  */
 package org.labkey.search.model;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Cache;
@@ -122,7 +122,7 @@ public class DavCrawler implements ShutdownListener
     }
     
 
-    final static Category _log = Category.getInstance(DavCrawler.class);
+    final static Logger _log = Logger.getLogger(DavCrawler.class);
 
     
     DavCrawler()

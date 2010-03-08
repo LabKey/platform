@@ -15,7 +15,7 @@
  */
 package org.labkey.search.model;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class SolrSearchServiceImpl extends AbstractSearchService
 {
-    static Category _log = Category.getInstance(SolrSearchServiceImpl.class);
+    private static final Logger _log = Logger.getLogger(SolrSearchServiceImpl.class);
     
     protected void index(String id, Resource r, Map preprocessMap)
     {

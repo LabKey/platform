@@ -19,7 +19,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Category;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
@@ -716,7 +715,7 @@ public class IssueManager
         }
         catch (SQLException x)
         {
-            Category.getInstance(IssueManager.class).error(x);
+            Logger.getLogger(IssueManager.class).error(x);
             throw new RuntimeSQLException(x);
         }
         finally

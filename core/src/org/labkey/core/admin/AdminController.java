@@ -144,7 +144,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    public NavTree  appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
         if (null == action)
             root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);
@@ -1827,7 +1827,8 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Heap dump");
+            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Heap dump", null);
+            return root;
         }
     }
 
@@ -2095,6 +2096,12 @@ public class AdminController extends SpringActionController
                 {
                     return getQueriesURL(name);
                 }
+            },
+            new QueryProfiler.ActionURLFactory() {
+                public ActionURL getActionURL(String sql)
+                {
+                    return getQueryStackTracesURL(sql);
+                }
             });
         }
 
@@ -2120,10 +2127,52 @@ public class AdminController extends SpringActionController
     }
 
 
+    private static ActionURL getQueryStackTracesURL(String sql)
+    {
+        ActionURL url = new ActionURL(QueryStackTracesAction.class, ContainerManager.getRoot());
+        url.addParameter("sqlHashCode", sql.hashCode());
+        return url;
+    }
+
+
+    @RequiresPermissionClass(AdminReadPermission.class)
+    public class QueryStackTracesAction extends SimpleViewAction<QueryStackTraceForm>
+    {
+        public ModelAndView getView(QueryStackTraceForm form, BindException errors) throws Exception
+        {
+            return QueryProfiler.getStackTraceView(form.getSqlHashCode());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            appendAdminNavTrail(root, "Queries", QueriesAction.class);
+            root.addChild("Query Stack Traces");
+            return root;
+        }
+    }
+
+
+    public static class QueryStackTraceForm
+    {
+        int _sqlHashCode;
+
+        public int getSqlHashCode()
+        {
+            return _sqlHashCode;
+        }
+
+        public void setSqlHashCode(int sqlHashCode)
+        {
+            _sqlHashCode = sqlHashCode;
+        }
+    }
+
+
     private ActionURL getExportQueriesURL()
     {
         return new ActionURL(ExportQueriesAction.class, ContainerManager.getRoot());
     }
+
 
     @RequiresPermissionClass(AdminReadPermission.class)
     public class ExportQueriesAction extends ExportAction<Object>

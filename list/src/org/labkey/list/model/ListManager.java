@@ -17,7 +17,6 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
@@ -30,7 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.list.view.ListController;
 

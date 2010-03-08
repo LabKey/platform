@@ -17,7 +17,6 @@
 package org.labkey.study.model;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,13 +36,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.TimepointType;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.*;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
@@ -68,7 +63,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
-    private static Category _log = Logger.getInstance(DataSetDefinition.class);
+    private static Logger _log = Logger.getLogger(DataSetDefinition.class);
 
     private StudyImpl _study;
     private int _dataSetId;

@@ -25,20 +25,20 @@
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.webdav.Resource" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.search.SearchController" %>
-<%@ page import="org.labkey.search.SearchController.*" %>
+<%@ page import="org.labkey.search.SearchController.IndexAction" %>
+<%@ page import="org.labkey.search.SearchController.SearchForm" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm.SearchScope" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="java.text.ParseException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.webdav.WebdavService" %>
-<%@ page import="org.labkey.api.webdav.Resource" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -96,8 +96,10 @@ if (loginStatusChanged())
 
     if (form.getIncludeHelpLink())
     {
-        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT).getHelpTopicLink())%></td></tr><%
+        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT).getHelpTopicLink())%><%
     }
+
+    %></td></tr><%
 
     String category = form.getCategory();
     ActionURL categoryResearchURL = ctx.cloneActionURL().deleteParameter("category");
@@ -126,10 +128,14 @@ if (loginStatusChanged())
                     %><span title="<%=h(c.getProject().getName())%>"><%if (scope == SearchScope.Project) { %>Project<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getProject().getId())))%>">Project</a><% } %></span>&nbsp;<%
                     %><span title="<%=h(c.getName())%>"><%if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a href="<%=h(scopeResearchURL.clone().addParameter("container", h(c.getId())).addParameter("includeSubfolders", 0))%>">Folder</a><% } %></span><%
                 }
-            %></td><td>&nbsp;</td>
-        </tr></table><%
+            %></td>
+            <td>&nbsp;</td>
+        </tr></table>
+        </td></tr><%
     }
-    %></td></tr></table></form><%
+    %>
+    </table>
+</form><%
 
     if (null != StringUtils.trimToNull(queryString))
     {

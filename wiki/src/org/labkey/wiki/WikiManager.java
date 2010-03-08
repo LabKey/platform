@@ -18,7 +18,7 @@ package org.labkey.wiki;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
@@ -1001,7 +1001,7 @@ public class WikiManager
         }
         catch (SQLException x)
         {
-            Category.getInstance(WikiManager.class).error(x);
+            Logger.getLogger(WikiManager.class).error(x);
             throw new RuntimeSQLException(x);
         }
         finally
@@ -1109,7 +1109,7 @@ public class WikiManager
         }
         catch (SQLException x)
         {
-            Category.getInstance(WikiManager.class).error(x);
+            Logger.getLogger(WikiManager.class).error(x);
             throw new RuntimeSQLException(x);
         }
         finally

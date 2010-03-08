@@ -16,7 +16,7 @@
 package org.labkey.search.model;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.document.Document;
@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
  */
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
-    private static final Category _log = Category.getInstance(LuceneSearchServiceImpl.class);
+    private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
     private static final Version LUCENE_VERSION = Version.LUCENE_30;
 
     private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexWriter()

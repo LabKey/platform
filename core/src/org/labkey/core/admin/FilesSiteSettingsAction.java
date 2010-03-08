@@ -155,9 +155,8 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
         }
         catch (IOException e)
         {
-            _log.error("error occured moving the site-level file root", e);
+            _log.error("error occurred moving the site-level file root", e);
         }
-
     }
 
     private void upgradeExistingFileSets()
@@ -332,7 +331,7 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
 
     public NavTree appendNavTrail(NavTree root)
     {
-        return root.addChild("Configure File System Access");
+        return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Configure File System Access", null);
     }
 
     public static class FileSettingsForm

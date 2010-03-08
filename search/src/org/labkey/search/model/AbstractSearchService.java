@@ -17,7 +17,7 @@ package org.labkey.search.model;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMapFactory;
@@ -57,7 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
-    private static final Category _log = Category.getInstance(AbstractSearchService.class);
+    private static final Logger _log = Logger.getLogger(AbstractSearchService.class);
     protected static final long FILE_SIZE_LIMIT = 100L*(1024*1024); // 100 MB
 
     // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
