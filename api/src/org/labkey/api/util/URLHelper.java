@@ -44,7 +44,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     protected String _host = null;
     protected int _port = 80;
     protected Path _contextPath = Path.rootPath;
-    protected Path _path = null;
+    protected Path _path = Path.emptyPath;
     protected ArrayList<Pair<String, String>> _parameters = null;    // decoded key/value pairs
     protected String _fragment = null;
 
@@ -86,7 +86,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         }
         if (-1 != p.indexOf(' '))
             p = StringUtils.replace(p, " ", "%20");
-        _setURI(new URI(p));
+        if (!StringUtils.isEmpty(p))
+            _setURI(new URI(p));
         setRawQuery(q);
     }
 
@@ -256,7 +257,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public String getPath(boolean asForward)
     {
-        if (null == _path)
+        if (null == _path || _path.size() == 0)
             return "";
         Path p;
         if (_contextPath.size() == 0)
