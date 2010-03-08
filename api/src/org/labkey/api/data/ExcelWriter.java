@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import jxl.HeaderFooter;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
+import jxl.format.PaperSize;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import org.apache.log4j.Logger;
@@ -514,9 +515,14 @@ public class ExcelWriter
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 
         if (workbook.getNumberOfSheets() > sheetNumber)
+        {
             sheet = workbook.getSheet(sheetNumber);
+        }
         else
+        {
             sheet = workbook.createSheet(getSheetName(), sheetNumber);
+            sheet.getSettings().setPaperSize(PaperSize.LETTER);
+        }
 
         List<ExcelColumn> visibleColumns = getVisibleColumns(ctx);
 
