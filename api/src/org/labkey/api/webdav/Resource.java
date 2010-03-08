@@ -80,8 +80,10 @@ public interface Resource
     /** should only be called by creator of Resource (may not be thread-safe) */
     Map<String,Object> getMutableProperties();
 
+    /** Caller needs to check permissions */
     FileStream getFileStream(User user) throws IOException;
 
+    /** Caller needs to check permissions */
     InputStream getInputStream(User user) throws IOException;
 
     /** Caller needs to check permissions */
