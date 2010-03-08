@@ -848,24 +848,24 @@ loop:
         if (!getParseErrors().isEmpty())
             return null;
 
-        SQLFragment ret = sql;
+        SqlBuilder ret = sql;
 
         if (AppProps.getInstance().isDevMode())
         {
-            ret = new SQLFragment();
+            ret = new SqlBuilder(sql.getDialect());
             String comment = "<QuerySelect@" + System.identityHashCode(this);
             if (!StringUtils.isEmpty(_savedName))
                 comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
             comment += ">";
-            ret.appendComment(comment, getSqlDialect());
+            ret.appendComment(comment);
             if (null != _queryText)
             {
                 for (String s : _queryText.split("\n"))
                     if (null != StringUtils.trimToNull(s))
-                        ret.appendComment("|         " + s, getSqlDialect());
+                        ret.appendComment("|         " + s);
             }
             ret.append(sql);
-            ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">", getSqlDialect());
+            ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
         }
         return ret;
     }

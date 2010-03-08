@@ -24,12 +24,23 @@ import java.util.*;
 public class SqlBuilder extends Builder
 {
     private DbSchema _schema;
+    private SqlDialect _dialect;
 
-    /**
-     */
+
     public SqlBuilder(DbSchema schema)
     {
         _schema = schema;
+        _dialect = schema.getSqlDialect();
+    }
+
+    public SqlBuilder(SqlDialect dialect)
+    {
+        _dialect = dialect;
+    }
+
+    public boolean appendComment(String comment)
+    {
+        return super.appendComment(comment, getDialect());
     }
 
     /**
@@ -68,7 +79,7 @@ public class SqlBuilder extends Builder
 
     public SqlDialect getDialect()
     {
-        return _schema.getSqlDialect();
+        return _dialect;
     }
 
     public DbSchema getDbSchema()

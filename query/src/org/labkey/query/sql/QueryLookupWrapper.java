@@ -210,8 +210,8 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-        SQLFragment sql = new SQLFragment();
-        assert sql.appendComment("<QueryLookupWrapper@" + System.identityHashCode(this) + ">", getSchema().getDbSchema().getSqlDialect());
+        SqlBuilder sql = new SqlBuilder(getSchema().getDbSchema());
+        assert sql.appendComment("<QueryLookupWrapper@" + System.identityHashCode(this) + ">");
 
         sql.append("SELECT ");
         String comma = "";
@@ -238,7 +238,7 @@ public class QueryLookupWrapper extends QueryRelation
         for (SQLFragment j : joins.values())
             sql.append(j);
 
-        assert sql.appendComment("</QueryLookupWrapper@" + System.identityHashCode(this) + ">", getSchema().getDbSchema().getSqlDialect());
+        assert sql.appendComment("</QueryLookupWrapper@" + System.identityHashCode(this) + ">");
         return sql;
     }
 
