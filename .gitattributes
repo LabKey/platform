@@ -1861,6 +1861,8 @@ search/src/org/labkey/search/model/SavePaths.java -text
 search/src/org/labkey/search/model/SecurityFilter.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text
 search/src/org/labkey/search/umls/RRFLoader.java -text
+search/src/org/labkey/search/umls/UmlsController.java -text
+search/src/org/labkey/search/umls/index.jsp -text
 search/src/org/labkey/search/view/SearchWebPart.java -text
 search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/admin.jsp -text

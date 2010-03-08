@@ -1,0 +1,79 @@
+<%
+/*
+ * Copyright (c) 2010 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.search.umls.UmlsController" %>
+<%@ page import="org.labkey.api.util.PollingUtil" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+JspView<UmlsController.IndexAction> me = (JspView<UmlsController.IndexAction>) HttpView.currentView();
+UmlsController.IndexAction form = me.getModelBean();
+PollingUtil.PollKey pollKey = form._key;
+String pollURL = null==pollKey ? null : pollKey.getUrl();
+
+%>
+<form action="index.post" style="display:<%=null==pollURL?"block":"none"%>" method=POST><input type="submit" name="START" value="START"></form>
+<div style="display:<%=null==pollURL?"none":"block"%>">running: <span id="count"></span></div>
+<script type="text/javascript">
+var url = <%=PageFlowUtil.jsString(pollURL)%>;
+var task=null;
+var req=null;
+function stop()
+{
+    Ext.TaskMgr.stop(task);
+    Ext.Ajax.abort(req);
+}
+function updateCount(response,options)
+{
+    var o = eval('(' + response.responseText + ')');
+    if ('count' in o)
+    {
+        if ('done' in o && o.done)
+        {
+            stop();
+            Ext.get('count').update('DONE ' + o.count);
+        }
+        else if ('estimate' in o && o.estimate>0)
+        {
+            Ext.get('count').update(''+o.count + ' ' + Math.round(100.0*o.count/o.estimate) + '%');
+        }
+        else
+        {
+            Ext.get('count').update(''+o.count);
+        }
+    }
+}
+function requestCount()
+{
+    req = Ext.Ajax.request({
+       url: url,
+       success: updateCount,
+       failure: function(response,options)
+       {
+           stop();
+           alert(response.statusText + "\n\n" + response.responseText);
+       }
+    });
+}
+Ext.onReady(function(){
+    if (<%=null==pollURL?"false":"true"%>)
+    task = Ext.TaskMgr.start({ run: requestCount, interval: 500 });
+});
+</script>

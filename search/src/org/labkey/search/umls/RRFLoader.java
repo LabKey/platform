@@ -19,6 +19,7 @@ public class RRFLoader
 {
     public static class Definition // MRDEF
     {
+        final String _type="DEF";
         String CUI;
         String AUI;
         String ATUI;
@@ -50,10 +51,17 @@ public class RRFLoader
             {
             }
         }
+
+        @Override
+        public String toString()
+        {
+            return _type + ": " + CUI + " " + DEF;
+        }
     }
 
     public static class ConceptName  // MRCONSO
     {
+        final String _type="CONSO";
         String CUI;
         String LAT;
         String TS;
@@ -89,6 +97,7 @@ public class RRFLoader
                 AUI=args[i++];
                 SCUI=args[i++];
                 SDUI=args[i++];
+                i++; //TODO what is this field?  RSAB/VSAB instead of SAB??
                 SAB=args[i++];
                 TTY=args[i++];
                 CODE=args[i++];
@@ -104,10 +113,17 @@ public class RRFLoader
             {
             }
         }
+
+        @Override
+        public String toString()
+        {
+            return _type + ": " + CUI + " " + STR;
+        }
     }
 
     public static class SemanticType // MRSTY
     {
+        final String _type="STY"; 
         String CUI;
         String TUI;
         String STN;
@@ -137,6 +153,12 @@ public class RRFLoader
             catch (ArrayIndexOutOfBoundsException x)
             {
             }
+        }
+
+        @Override
+        public String toString()
+        {
+            return _type + ": " + CUI + " " + STN + " " + STY;
         }
     }
 
@@ -205,7 +227,7 @@ public class RRFLoader
 
     static String[] stringArray=new String[0];
 
-    private static class RRFReader<T> implements Iterator
+    private static class RRFReader<T> implements Iterator, Closeable
     {
         final Class _class;
         final Constructor<T> _constructor;
@@ -237,7 +259,10 @@ public class RRFLoader
 
         public boolean hasNext()
         {
-            return null != _next;
+            boolean ret = null != _next;
+            if (!ret)
+                closeQuietly(this);
+            return ret;
         }
 
         public T next()
@@ -267,7 +292,7 @@ public class RRFLoader
                 String line;
                 while (null != (line = _in.readLine()))
                 {
-                    args[0] = StringUtils.split(line,'|');
+                    args[0] = StringUtils.splitPreserveAllTokens(line,'|');
                     T t = _constructor.newInstance(args);
                     if (null == _filter || _filter.accept(t))
                         return t;
@@ -287,10 +312,95 @@ public class RRFLoader
                 throw new RuntimeException(e);
             }
         }
+
+        public void close() throws IOException
+        {
+            closeQuietly(_in);
+        }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            close();
+        }
     }
 
 
-    static class MergeIterator implements Iterator<ArrayList>
+    static class ConcatIterator<T> implements Iterator<T>, Closeable
+    {
+        final LinkedList<Iterator<T>> _iterators;
+        Iterator<T> _current;
+        T _next;
+        
+        ConcatIterator(Iterator<T>...iters)
+        {
+            _iterators = new LinkedList<Iterator<T>>(Arrays.asList(iters));
+            _current = _iterators.isEmpty() ? null : _iterators.removeFirst();
+            _next = readNext();
+        }
+        
+        public boolean hasNext()
+        {
+            return null != _next;
+        }
+
+        public T next()
+        {
+            T ret = _next;
+            _next = readNext();
+            return ret;
+        }
+
+        private T readNext()
+        {
+            while (null != _current)
+            {
+                if (_current.hasNext())
+                    return _current.next();
+                if (_current instanceof Closeable)
+                    closeQuietly((Closeable)_current);
+                _current = _iterators.isEmpty() ? null : _iterators.removeFirst();
+            }
+            return null;
+        }
+        
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public void close() throws IOException
+        {
+            while (null != _current)
+            {
+                if (_current instanceof Closeable)
+                    closeQuietly((Closeable)_current);
+                _current = _iterators.isEmpty() ? null : _iterators.removeFirst();
+            }
+        }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            close();
+        }
+        
+    }
+
+
+    private static String _min(String...strs)
+    {
+        String min = null;
+        for (String s : strs)
+        {
+            if (min==null || (s!=null && min.compareTo(s)>0))
+                min = s;
+        }
+        return min;
+    }
+    
+    
+    public static class MergeIterator implements Iterator<ArrayList>, Closeable
     {
         final Iterator<ConceptName> _names;
         final Iterator<Definition> _defs;
@@ -311,18 +421,18 @@ public class RRFLoader
 
         public boolean hasNext()
         {
-            return null != name || null != def || null != type;
+            boolean ret = null != name || null != def || null != type;
+            if (!ret)
+                closeQuietly(this);
+            return ret;
         }
 
         public ArrayList next()
         {
-            String nextCUI = null;
-            if (name != null)
-                nextCUI = name.CUI;
-            if (def != null)
-                nextCUI = null==nextCUI || def.CUI.compareTo(nextCUI)<0 ? def.CUI : null;
-            if (type != null)
-                nextCUI = null==nextCUI || type.CUI.compareTo(nextCUI)<0 ? type.CUI : null;
+            String nextCUI = _min(
+                    null==name ? null : name.CUI,
+                    null==def ? null : def.CUI,
+                    null==type ? null : type.CUI);
             assert null != nextCUI;
 
             ArrayList ret = new ArrayList();
@@ -352,8 +462,51 @@ public class RRFLoader
         {
             throw new UnsupportedOperationException();
         }
+
+        public void close() throws IOException
+        {
+            if (_names instanceof Closeable)
+                closeQuietly((Closeable)_names);
+            if (_defs instanceof Closeable)
+                closeQuietly((Closeable)_defs);
+            if (_names instanceof Closeable)
+                closeQuietly((Closeable)_names);
+        }
+    }
+
+
+    Iterator<Definition> getDefinitions(Filter filter)
+    {
+        return new RRFReader<Definition>(Definition.class, mrdef, filter);
+    }
+
+    
+    Iterator<SemanticType> getTypes(Filter filter)
+    {
+        return new RRFReader<SemanticType>(SemanticType.class, mrsty, filter);
+    }
+
+
+    Iterator<ConceptName> getNames(Filter filter)
+    {
+        RRFReader<ConceptName> name0 = new RRFReader<ConceptName>(ConceptName.class, mrconso[0], filter);
+        RRFReader<ConceptName> name1 = new RRFReader<ConceptName>(ConceptName.class, mrconso[1], filter);
+        return new ConcatIterator(name0, name1);
     }
     
+
+    private static void closeQuietly(Closeable c)
+    {
+        if (null == c) return;
+        try
+        {
+            c.close();
+        }
+        catch (IOException e)
+        {
+        }
+    }
+
 
     public static void main(String[] args)
     {
@@ -409,16 +562,17 @@ public class RRFLoader
             try
             {
                 RRFLoader l = new RRFLoader(new File(args[0]));
-                RRFReader<Definition> def = new RRFReader<Definition>(Definition.class, l.mrdef, null);
-                RRFReader<SemanticType> sty = new RRFReader<SemanticType>(SemanticType.class, l.mrsty, null);
-                RRFReader<ConceptName> name = new RRFReader<ConceptName>(ConceptName.class, l.mrconso[0], new Filter<ConceptName>()
-                {
-                    public boolean accept(ConceptName c)
+                Iterator<Definition> defs    = l.getDefinitions(null);
+                Iterator<SemanticType> types = l.getTypes(null);
+                Iterator<ConceptName> names  = l.getNames(new Filter<ConceptName>()
                     {
-                        return "ENG".equals(c.LAT);
-                    }
-                });
-                MergeIterator concept = new MergeIterator(name,def,sty);
+                        public boolean accept(ConceptName c)
+                        {
+                            return "ENG".equals(c.LAT);
+                        }
+                    });   
+                
+                MergeIterator concept = new MergeIterator(names,defs,types);
                 while (concept.hasNext())
                 {
                     ArrayList list = concept.next();

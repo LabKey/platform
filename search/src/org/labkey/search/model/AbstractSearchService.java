@@ -297,8 +297,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public void waitForIdle() throws InterruptedException
     {
-//        if (isRunning() && _runQueue.size() == 0 && _itemQueue.size() < 4)
-//            return;
+        if (_runQueue.size() == 0 && _itemQueue.size() < 4)
+            return;
         synchronized (_idleEvent)
         {
             _idleWaiting = true;
@@ -309,7 +309,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private void checkIdle()
     {
-        if (isRunning() && _runQueue.size() == 0 && _itemQueue.size() == 0)
+        if (_runQueue.size() == 0 && _itemQueue.size() == 0)
         {
             synchronized (_idleEvent)
             {
@@ -707,7 +707,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         }
                         if (null != ptids)
                             indexPtids(ptids);
-                        _itemQueue.add(_commitItem);
+                        //_itemQueue.add(_commitItem);
                     }
                 }
                 catch (InterruptedException x)
@@ -859,11 +859,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         // otherwise just wait on the preprocess queue
         i = _itemQueue.poll();
-        if (null == i)
-        {
+        if (null == i || i == _commitItem)
             checkIdle();
+        if (null == i)
             i = _itemQueue.poll(2, TimeUnit.SECONDS);
-        }
 
         if (null != i)
         {

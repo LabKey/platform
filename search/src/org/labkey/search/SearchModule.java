@@ -40,6 +40,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
 import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
@@ -86,6 +87,7 @@ public class SearchModule extends DefaultModule
     protected void init()
     {
         addController("search", SearchController.class);
+        addController("umls", UmlsController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
         ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
         {
@@ -133,6 +135,8 @@ public class SearchModule extends DefaultModule
 
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
+        
+        ServiceRegistry.get(SearchService.class).addSearchCategory(UmlsController.umlsCategory);
     }
 
 
