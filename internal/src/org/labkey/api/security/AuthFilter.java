@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,6 @@ public class AuthFilter implements Filter
     private static final Object FIRST_REQUEST_LOCK = new Object();
     private static boolean _firstRequestHandled = false;
 
-
     public void init(FilterConfig filterConfig) throws ServletException
     {
     }
@@ -49,6 +49,7 @@ public class AuthFilter implements Filter
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
+        ViewServlet.setAsRequestThread();
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = new SafeFlushResponseWrapper((HttpServletResponse)response);
 

@@ -20,12 +20,11 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Category;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.query.FieldKey;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.data.CompareType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -37,7 +36,7 @@ import java.util.*;
 
 public class URLHelper implements Cloneable, Serializable, Taintable
 {
-    private static final Category _log = Logger.getInstance(URLHelper.class);
+    private static final Logger _log = Logger.getLogger(URLHelper.class);
 
     protected boolean _tainted = false;
     protected String _scheme = "http";

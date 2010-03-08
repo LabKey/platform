@@ -15,7 +15,7 @@
  */
 package org.labkey.api.search;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
@@ -48,7 +48,7 @@ import java.util.concurrent.Future;
  */
 public interface SearchService
 {
-    static Category _log = Category.getInstance(SearchService.class);
+    static final Logger _log = Logger.getLogger(SearchService.class);
 
     public static final int DEFAULT_PAGE_SIZE = 20;
 

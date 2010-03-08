@@ -16,12 +16,12 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.AppProps;
@@ -33,13 +33,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.lang.management.ManagementFactory;
 
 /**
  * User: jeckels
@@ -47,7 +47,7 @@ import java.lang.management.ManagementFactory;
  */
 public class MothershipReport implements Runnable
 {
-    private static Category _log = Category.getInstance(MothershipReport.class);
+    private static Logger _log = Logger.getLogger(MothershipReport.class);
 
     private final URL _url;
     private final Map<String, String> _params = new HashMap<String, String>();

@@ -22,7 +22,7 @@ import java.util.regex.MatchResult;
 /**
  * <code>StringSubstitution</code> runs regular expression string substitution
  * similar to Perl and Unix tools.  The regular expression is a standard Java
- * regular expression, and the substition string uses the ${#} format to designate
+ * regular expression, and the substitution string uses the ${#} format to designate
  * matched "groups" from the regular expression.
  * <p>
  * e.g.    regex      = ([0-9.]+)@(\w)
@@ -70,7 +70,7 @@ public class StringSubstitution
         for (int i = 1; i < parts.length; i++)
         {
             if (parts[i].indexOf('}') == -1)
-                throw new IllegalArgumentException("Invalid substition string ending in group '" + parts[i] + "'");
+                throw new IllegalArgumentException("Invalid substitution string ending in group '" + parts[i] + "'");
             String[] subparts = parts[i].split("}");
             if (Integer.parseInt(subparts[0]) == 0 && !"0".equals(subparts[0]))
                 throw new IllegalArgumentException("Invalid substitution group '" + subparts[0] + "'");

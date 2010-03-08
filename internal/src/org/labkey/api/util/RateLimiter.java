@@ -18,7 +18,7 @@ package org.labkey.api.util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 public class RateLimiter
 {
-    static final Category _log = Category.getInstance(RateLimiter.class);
+    static final Logger _log = Logger.getLogger(RateLimiter.class);
     static final boolean _isDebugEnabled = _log.isDebugEnabled();
 
     final String _name;

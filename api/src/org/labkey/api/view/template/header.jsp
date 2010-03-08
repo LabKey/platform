@@ -29,7 +29,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -50,37 +49,46 @@
 %>
 <table id="header">
 <tr>
-    <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"><br><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
-    <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span></td>
-    <%if (hasWarnings) {%>
-    <td width="16" valign="bottom"><span id="labkey-warning-message-icon" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>><img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!" title="Click to view warning messages." style="cursor: pointer;" onclick="labkeyShowWarningMessages(true);"/></span></td>
-    <%}%>
-    <td align="right" valign="top" style="height:100%"><table id="headerNav" cellpadding="0" cellspacing="0" style="height:100%" border=0 bordercolor=red>
-        <tr>
-          <td valign="top" align="right" class="labkey-main-nav">
-            <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>">Help</a>
-            <%
-            if (null != user && !user.isGuest())
-            {
-                %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
-            }
-            else if (bean.pageConfig.shouldIncludeLoginLink())
-            {
-                String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
+  <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"><br><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
+  <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span></td>
+  <%if (hasWarnings) {%>
+  <td width="16" valign="bottom"><span id="labkey-warning-message-icon" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>><img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!" title="Click to view warning messages." style="cursor: pointer;" onclick="labkeyShowWarningMessages(true);"/></span></td>
+  <%}%>
+  <td align="right" valign="top" style="height:100%">
+    <table id="headerNav" cellpadding="0" cellspacing="0" style="height:100%" border=0 bordercolor=red>
+      <tr>
+        <td valign="top" align="right" class="labkey-main-nav">
+          <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>">Help</a>
+          <%
+          if (null != user && !user.isGuest())
+          {
+              %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
+          }
+          else if (bean.pageConfig.shouldIncludeLoginLink())
+          {
+              String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
 
-                if (null != authLogoHtml)
-                    out.print(authLogoHtml + "&nbsp;");
+              if (null != authLogoHtml)
+                  out.print(authLogoHtml + "&nbsp;");
 
-                %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
-            }
-        %></td></tr>
-        <tr><td valign="bottom" align="right" nowrap class="labkey-main-nav"><form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
-          <table cellspacing=0 cellpadding=0 style="width:216px;" class="labkey-main-search"><tr>
-            <td style="width:200px;" align="right"><input id="headerSearchContainer" name="container" type="hidden" value=""><input style="width:200px" id="headerSearchInput" name="q" type="text"></td>
-            <td style="width:16px;" nowrap valign="middle"><input type="image" width="16" height="16" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
-            <%--<td style="width:16px;" nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td>--%>
-            </tr></table></form></td>
-        </tr></table>
+              %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
+          }
+          %>
+        </td>
+      </tr>
+      <tr>
+        <td valign="bottom" align="right" nowrap class="labkey-main-nav">
+          <form id="headerSearchForm" action="<%=h(new ActionURL("search","search",c).toHString())%>" method="GET" style="margin:0; <%=showSearchForm?"":"display:none;"%>">
+            <table cellspacing=0 cellpadding=0 style="width:216px;" class="labkey-main-search">
+              <tr>
+                <td style="width:200px;" align="right"><input id="headerSearchContainer" name="container" type="hidden" value=""><input style="width:200px" id="headerSearchInput" name="q" type="text"></td>
+                <td style="width:16px;" nowrap valign="middle"><input type="image" width="16" height="16" src="<%=contextPath%>/_images/search.png" onclick="return submit_onClick();"></td>
+                <%--<td style="width:16px;" nowrap valign="middle" onClick="showMenu(this,'headerSearchMenu','tr-br?');"><a href="#"><img border=0 height=16 width=20 src="<%=contextPath%>/_images/search_menu.png"></a></td>--%>
+              </tr>
+            </table>
+          </form>
+        </td></tr>
+      </table>
     </td>
 </tr>
 <%

@@ -64,8 +64,8 @@ public class ViewServlet extends HttpServlet
     private static String _serverHeader = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
+    private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<Boolean>();
 
-//    static AtomicBoolean init = new AtomicBoolean(false);
     private static Map<Class, String> _pageFlowClassToName = null;
     private static Map<String, Class> _pageFlowNameToClass = null;
 
@@ -462,6 +462,20 @@ public class ViewServlet extends HttpServlet
     {
         // using HttpView to remember the root request, rather than have our own ThreadLocal
         return (ActionURL) HttpView.getRootContext().getRequest().getAttribute(REQUEST_ACTION_URL);
+    }
+
+
+    public static void setAsRequestThread()
+    {
+        // Would rather not use thread local for this, but other HttpView/ViewServlet settings get set later and are
+        //  awkward to use.
+        IS_REQUEST_THREAD.set(true);
+    }
+
+    // Returns true if the current thread is a request thread, false if it's a background thread
+    public static boolean isRequestThread()
+    {
+        return Boolean.TRUE.equals(IS_REQUEST_THREAD.get());
     }
 
 

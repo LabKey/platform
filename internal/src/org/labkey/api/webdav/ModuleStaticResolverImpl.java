@@ -26,7 +26,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.services.ServiceRegistry;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Category;
 
 import javax.servlet.ServletContext;
 import java.util.*;
@@ -54,7 +53,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     {
         ServiceRegistry.get().registerService(WebdavResolver.class, _instance);
     }
-    static Category _log = Logger.getInstance(ModuleStaticResolverImpl.class);
+    static Logger _log = Logger.getLogger(ModuleStaticResolverImpl.class);
 
     /** System property name for an extra directory of static content */
     private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";

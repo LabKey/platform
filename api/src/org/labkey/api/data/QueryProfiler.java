@@ -21,7 +21,6 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -30,13 +29,13 @@ import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
-import java.io.File;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.io.PrintWriter;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
 * User: adam
@@ -53,8 +52,10 @@ public class QueryProfiler
     private static final Collection<QueryTrackerSet> TRACKER_SETS = new ArrayList<QueryTrackerSet>();
 
     // All access to these guarded by LOCK
-    private static long _totalQueryCount;
-    private static long _totalQueryTime;
+    private static long _requestQueryCount;
+    private static long _requestQueryTime;
+    private static long _backgroundQueryCount;
+    private static long _backgroundQueryTime;
     private static long _uniqueQueryCountEstimate;  // This is a ceiling; true unique count is likely less than this since we're limiting capacity
     private static int _requestCountAtLastReset;
     private static long _upTimeAtLastReset;
@@ -128,8 +129,11 @@ public class QueryProfiler
 
     static void track(String sql, long elapsed)
     {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        boolean isRequestThread = ViewServlet.isRequestThread();
+
         // Don't block if queue is full
-        QUEUE.offer(new Query(sql, elapsed));
+        QUEUE.offer(new Query(sql, elapsed, stackTrace, isRequestThread));
     }
 
     public static void resetAllStatistics()
@@ -151,8 +155,10 @@ public class QueryProfiler
     {
         synchronized (LOCK)
         {
-            _totalQueryCount = 0;
-            _totalQueryTime = 0;
+            _requestQueryCount = 0;
+            _requestQueryTime = 0;
+            _backgroundQueryCount = 0;
+            _backgroundQueryTime = 0;
             _uniqueQueryCountEstimate = 0;
             _requestCountAtLastReset = ViewServlet.getRequestCount();
 
@@ -162,7 +168,7 @@ public class QueryProfiler
         }
     }
 
-    public static HttpView getReportView(String statName, String buttonHTML, ActionURLFactory factory)
+    public static HttpView getReportView(String statName, String buttonHTML, ActionURLFactory captionURLFactory, ActionURLFactory stackTraceURLFactory)
     {
         for (QueryTrackerSet set : TRACKER_SETS)
         {
@@ -170,7 +176,7 @@ public class QueryProfiler
             {
                 StringBuilder sb = new StringBuilder();
 
-                sb.append("<table>\n");
+                sb.append("\n<table>\n");
 
                 StringBuilder rows = new StringBuilder();
 
@@ -178,15 +184,37 @@ public class QueryProfiler
                 synchronized (LOCK)
                 {
                     int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
-                    sb.append("  <tr>");
-                    sb.append("<td>").append(buttonHTML).append("</td>");
-                    sb.append("</tr>\n  <tr>");
-                    sb.append("<td>Total Query Invocation Count:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryCount)).append("</td>");
+
+                    sb.append("  <tr><td>").append(buttonHTML).append("</td></tr>\n");
+
+                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Requests</td></tr>\n");
+                    sb.append("  <tr><td>Query Count:</td><td align=\"right\">").append(Formats.commaf0.format(_requestQueryCount)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
-                    sb.append("<td>").append(_hasBeenReset ? "Requests Since Last Reset" : "Server Requests").append(":</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td>");
+                    sb.append("<td>Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_requestQueryTime)).append("</td>");
                     sb.append("</tr>\n  <tr>");
-                    sb.append("<td>Total Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_totalQueryTime)).append("</td>");
+                    sb.append("<td>Queries per Request:</td><td align=\"right\">").append(Formats.f1.format((double) _requestQueryCount / requests)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
+                    sb.append("<td>Query Time per Request:</td><td align=\"right\">").append(Formats.f1.format((double) _requestQueryTime / requests)).append("</td>");
+                    sb.append("</tr>\n  </tr>");
+                    sb.append("<td>").append(_hasBeenReset ? "Request Count Since Last Reset" : "Request Count").append(":</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td>");
+                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>\n");
+
+                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Background Threads</td></tr>\n");
+                    sb.append("  <tr><td>Query Count:</td><td align=\"right\">").append(Formats.commaf0.format(_backgroundQueryCount)).append("</td>");
+                    sb.append("<td width=10>&nbsp;</td>");
+                    sb.append("<td>Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_backgroundQueryTime)).append("</td>");
+                    sb.append("</tr>\n");
+                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>\n");
+                    sb.append("  <tr><td colspan=5>&nbsp;</td></tr>\n");
+
+                    sb.append("  <tr><td>Total Unique Queries");
+
+                    if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
+                        sb.append(" (Estimate)");
+
+                    sb.append(":</td><td align=\"right\">").append(Formats.commaf0.format(_uniqueQueryCountEstimate)).append("</td>");
+                    sb.append("<td width=10>&nbsp;</td>");
+
                     RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
                     if (runtimeBean != null)
                     {
@@ -194,15 +222,6 @@ public class QueryProfiler
                         upTime = upTime - (upTime % 1000);
                         sb.append("<td>").append(_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime").append(":</td><td align=\"right\">").append(DateUtil.formatDuration(upTime)).append("</td>");
                     }
-                    sb.append("</tr>\n  <tr>");
-                    sb.append("<td>Total Unique Queries");
-
-                    if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
-                        sb.append(" (Estimate)");
-
-                    sb.append(":</td><td align=\"right\">").append(Formats.commaf0.format(_uniqueQueryCountEstimate)).append("</td>");
-                    sb.append("<td width=10>&nbsp;</td>");
-                    sb.append("<td>Queries per request:</td><td align=\"right\">").append(Formats.f1.format((double)_totalQueryCount / requests)).append("</td>");
                     sb.append("</tr>\n");
                     sb.append("</table><br><br>\n");
 
@@ -212,11 +231,11 @@ public class QueryProfiler
 
                     int row = 0;
                     for (QueryTracker tracker : set)
-                        tracker.insertRow(rows, (0 == (++row) % 2) ? "labkey-alternate-row" : "labkey-row");
+                        tracker.insertRow(rows, (0 == (++row) % 2) ? "labkey-alternate-row" : "labkey-row", stackTraceURLFactory);
                 }
 
                 sb.append("<table cellspacing=0 cellpadding=3>\n");
-                QueryTracker.appendRowHeader(sb, set, factory);
+                QueryTracker.appendRowHeader(sb, set, captionURLFactory);
                 sb.append(rows);
                 sb.append("</table>\n");
 
@@ -226,6 +245,41 @@ public class QueryProfiler
 
         return new HtmlView("<font class=\"labkey-error\">Error: Query statistic \"" + PageFlowUtil.filter(statName) + "\" does not exist</font>");
     }
+
+
+    public static HttpView getStackTraceView(int hashCode)
+    {
+        // Don't update anything while we're rendering the report or vice versa
+        synchronized (LOCK)
+        {
+            QueryTracker tracker = null;
+
+            for (QueryTracker candidate : QUERIES.values())
+            {
+                if (candidate.hashCode() == hashCode)
+                {
+                    tracker = candidate;
+                    break;
+                }
+            }
+
+            if (null == tracker)
+                return new HtmlView("<font class=\"labkey-error\">Error: That query no longer exists</font>");
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("<table>\n");
+            sb.append("<tr><td><b>SQL</b></td></tr>\n");
+            sb.append("<tr><td colspan=2>").append(PageFlowUtil.filter(tracker.getSql(), true)).append("<br><br></td></tr>");
+
+            tracker.appendStackTraces(sb);
+
+            sb.append("</table>\n");
+
+            return new HtmlView(sb.toString());
+        }
+    }
+
 
     public static class QueryStatTsvWriter extends TSVWriter
     {
@@ -241,6 +295,7 @@ public class QueryProfiler
                     return Integer.MAX_VALUE;
                 }
             };
+
             StringBuilder rows = new StringBuilder();
 
             // Don't update anything while we're rendering the report or vice versa
@@ -263,11 +318,15 @@ public class QueryProfiler
     {
         private final String _sql;
         private final long _elapsed;
+        private final StackTraceElement[] _stackTrace;
+        private final boolean _isRequestThread;
 
-        private Query (String sql, long elapsed)
+        private Query(String sql, long elapsed, StackTraceElement[] stackTrace, boolean isRequestThread)
         {
             _sql = sql;
             _elapsed = elapsed;
+            _stackTrace = stackTrace;
+            _isRequestThread = isRequestThread;
         }
 
         private String getSql()
@@ -279,32 +338,58 @@ public class QueryProfiler
         {
             return _elapsed;
         }
+
+        private String getStackTrace()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 3; i < _stackTrace.length; i++)
+            {
+                sb.append(_stackTrace[i]);
+                sb.append('\n');
+            }
+
+            return sb.toString();
+        }
+
+        public boolean isRequestThread()
+        {
+            return _isRequestThread;
+        }
     }
 
     private static class QueryTracker
     {
         private final String _sql;
         private final long _firstInvocation;
+        private final Map<String, AtomicInteger> _stackTraces = new HashMap<String, AtomicInteger>();
 
-        private long _count = 1;
-        private long _max;
-        private long _cumulative;
+        private long _count = 0;
+        private long _max = 0;
+        private long _cumulative = 0;
 
-        private QueryTracker(@NotNull String sql, long elapsed)
+        private QueryTracker(@NotNull String sql, long elapsed, String stackTrace)
         {
             _sql = sql;
-            _max = elapsed;
-            _cumulative = elapsed;
             _firstInvocation = System.currentTimeMillis();
+
+            addInvocation(elapsed, stackTrace);
         }
 
-        private void addInvocation(long elapsed)
+        private void addInvocation(long elapsed, String stackTrace)
         {
             _count++;
             _cumulative += elapsed;
 
             if (elapsed > _max)
                 _max = elapsed;
+
+            AtomicInteger frequency = _stackTraces.get(stackTrace);
+
+            if (null == frequency)
+                _stackTraces.put(stackTrace, new AtomicInteger(1));
+            else
+                frequency.incrementAndGet();
         }
 
         public String getSql()
@@ -337,6 +422,54 @@ public class QueryProfiler
             return _cumulative / _count;
         }
 
+        public int getStackTraceCount()
+        {
+            return _stackTraces.size();
+        }
+
+        public void appendStackTraces(StringBuilder sb)
+        {
+            // Descending order by occurrences (the key)
+            Set<Map.Entry<String, AtomicInteger>> set = new TreeSet<Map.Entry<String, AtomicInteger>>(new Comparator<Map.Entry<String, AtomicInteger>>() {
+                public int compare(Map.Entry<String, AtomicInteger> e1, Map.Entry<String, AtomicInteger> e2)
+                {
+                    int compare = e2.getValue().intValue() - e1.getValue().intValue();
+
+                    if (0 == compare)
+                        compare = e2.getKey().compareTo(e1.getKey());
+
+                    return compare;
+                }
+            });
+
+            set.addAll(_stackTraces.entrySet());
+
+            int commonLength = 0;
+            String formattedCommonPrefix = "";
+
+            if (set.size() > 1)
+            {
+                String commonPrefix = StringUtils.findCommonPrefix(_stackTraces.keySet());
+                commonLength = commonPrefix.lastIndexOf('\n');
+                formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
+            }
+
+            sb.append("<tr><td>").append("<b>Occurrences</b>").append("</td><td style=\"padding-left:10;\">").append("<b>Stack&nbsp;Traces</b>").append("</td></tr>\n");
+
+            int alt = 0;
+            String[] classes = new String[]{"labkey-alternate-row", "labkey-row"};
+
+            for (Map.Entry<String, AtomicInteger> entry : set)
+            {
+                String stackTrace = entry.getKey();
+                String formattedStackTrace = formattedCommonPrefix + PageFlowUtil.filter(stackTrace.substring(commonLength), true);
+                int count = entry.getValue().get();
+
+                sb.append("<tr class=\"").append(classes[alt]).append("\"><td valign=top align=right>").append(count).append("</td><td style=\"padding-left:10;\">").append(formattedStackTrace).append("</td></tr>\n");
+                alt = 1 - alt;
+            }
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -363,6 +496,8 @@ public class QueryProfiler
                     appendColumnHeader(set.getCaption(), set == currentSet, sb, factory);
 
             sb.append("<td>");
+            sb.append("Stack&nbsp;Traces");
+            sb.append("</td><td style=\"padding-left:10;\">");
             sb.append("SQL");
             sb.append("</td></tr>\n");
         }
@@ -402,7 +537,7 @@ public class QueryProfiler
             pw.println("SQL");
         }
 
-        private void insertRow(StringBuilder sb, String className)
+        private void insertRow(StringBuilder sb, String className, ActionURLFactory factory)
         {
             StringBuilder row = new StringBuilder();
             row.append("  <tr class=\"").append(className).append("\">");
@@ -411,7 +546,9 @@ public class QueryProfiler
                 if (set.shouldDisplay())
                     row.append("<td valign=top align=right>").append(Formats.commaf0.format(((QueryTrackerComparator)set.comparator()).getPrimaryStatisticValue(this))).append("</td>");
 
-            row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSql(),true)).append("</td>");
+            ActionURL url = factory.getActionURL(getSql());
+            row.append("<td valign=top align=right><a href=\"").append(PageFlowUtil.filter(url.getLocalURIString())).append("\">").append(Formats.commaf0.format(getStackTraceCount())).append("</a></td>");
+            row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSql(), true)).append("</td>");
             row.append("</tr>\n");
             sb.insert(0, row);
         }
@@ -457,14 +594,22 @@ public class QueryProfiler
                     // Don't update or add while we're rendering the report or vice versa
                     synchronized (LOCK)
                     {
-                        _totalQueryCount++;
-                        _totalQueryTime += query.getElapsed();
+                        if (query.isRequestThread())
+                        {
+                            _requestQueryCount++;
+                            _requestQueryTime += query.getElapsed();
+                        }
+                        else
+                        {
+                            _backgroundQueryCount++;
+                            _backgroundQueryTime += query.getElapsed();
+                        }
 
                         QueryTracker tracker = QUERIES.get(query.getSql());
 
                         if (null == tracker)
                         {
-                            tracker = new QueryTracker(query.getSql(), query.getElapsed());
+                            tracker = new QueryTracker(query.getSql(), query.getElapsed(), query.getStackTrace());
 
                             _uniqueQueryCountEstimate++;
 
@@ -478,7 +623,7 @@ public class QueryProfiler
                             for (QueryTrackerSet set : TRACKER_SETS)
                                 set.beforeUpdate(tracker);
 
-                            tracker.addInvocation(query.getElapsed());
+                            tracker.addInvocation(query.getElapsed(), query.getStackTrace());
 
                             for (QueryTrackerSet set : TRACKER_SETS)
                                 set.update(tracker);
@@ -503,8 +648,8 @@ public class QueryProfiler
 
         public void shutdownStarted(ServletContextEvent servletContextEvent)
         {
+            Logger logger = Logger.getLogger(QueryProfilerThread.class);
 
-            Logger logger = Logger.getLogger(QueryProfiler.class);
             if (null != logger)
             {
                 Appender appender = logger.getAppender("QUERY_STATS");
@@ -514,6 +659,7 @@ public class QueryProfiler
                     LOG.warn("Could not rollover the query stats tsv file--there was no appender named QUERY_STATS, or it is not a RollingFileAppender.");
 
                 StringBuilder buf = new StringBuilder();
+
                 try
                 {
                     shutdownWriter.write(buf);
@@ -603,7 +749,7 @@ public class QueryProfiler
         }
     }
 
-    // Use static class since we use this in a couple places
+    // Static class since we use this in a couple places
     private static class InvocationQueryTrackerSet extends QueryTrackerSet
     {
         InvocationQueryTrackerSet()
@@ -635,7 +781,7 @@ public class QueryProfiler
     {
         public int compare(QueryTracker qt1, QueryTracker qt2)
         {
-            // Can use simple substraction here since we won't have MAX_VALUE, MIN_VALUE, etc. 
+            // Can use simple subtraction here since we won't have MAX_VALUE, MIN_VALUE, etc.
             int ret = Long.signum(getPrimaryStatisticValue(qt1) - getPrimaryStatisticValue(qt2));
 
             if (0 == ret)
