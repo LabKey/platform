@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -1167,6 +1168,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class InitialUserAction extends FormViewAction<InitialUserForm>
     {
         private ActionURL _verificationURL = null;

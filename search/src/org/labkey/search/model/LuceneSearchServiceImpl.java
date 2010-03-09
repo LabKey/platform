@@ -655,7 +655,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    // Add reference counting to IndexSearcher so we know when to close it.  See #9785.
+    // Add reference counting to IndexSearcher so we know when to safely close it.  See #9785.
     private static class LabKeyIndexSearcher extends IndexSearcher
     {
         private int _references = 1;
@@ -735,7 +735,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, standardFields, _analyzer, boosts);
+            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, _analyzer, boosts);
             query = queryParser.parse(queryString);
         }
         catch (ParseException x)

@@ -32,6 +32,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
@@ -63,11 +64,13 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * User: jeckels
@@ -261,6 +264,7 @@ public class CoreController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class CombinedStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
@@ -375,6 +379,7 @@ public class CoreController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class CombinedJavascriptAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
