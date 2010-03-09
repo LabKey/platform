@@ -260,7 +260,7 @@ public class FileSystemResource extends AbstractResource
      * the original location on the file system into the @files directory if they don't exist
      * in the @files directory or are newer.
      */
-    private void mergeFilesIfNeeded()
+    final protected void mergeFilesIfNeeded()
     {
         if (_mergeFromParent && isCollection())
         {

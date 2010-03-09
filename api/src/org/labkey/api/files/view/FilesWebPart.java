@@ -148,6 +148,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         // Navigation actions
         actions.add(FilesForm.actions.folderTreeToggle);
+        actions.add(FilesForm.actions.parentFolder);
         actions.add(FilesForm.actions.refresh);
 
         // Actions not based on the current selection

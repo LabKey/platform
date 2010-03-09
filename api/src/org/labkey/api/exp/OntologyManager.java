@@ -94,6 +94,7 @@ public class OntologyManager
 	}
 
     public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
+    public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
     public static String[] insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
@@ -134,6 +135,7 @@ public class OntologyManager
             }
 
             int rowCount = 0;
+            int batchCount = 0;
 
 			for (Map<String, Object> map : rows)
 			{
@@ -196,6 +198,13 @@ public class OntologyManager
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
                     propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
+
+                    if (++batchCount % UPDATE_STATS_BATCH_COUNT == 0)
+                    {
+                        getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObject());
+                        getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObjectProperty());
+                        helper.updateStatistics(rowCount);
+                    }
                 }
             }
 
@@ -206,6 +215,10 @@ public class OntologyManager
 			insertPropertiesBulk(c, propsToInsert);
             helper.afterBatchInsert(rowCount);
 			assert insert.stop();
+
+            getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObject());
+            getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObjectProperty());
+            helper.updateStatistics(rowCount);
 		}
 		catch (SQLException x)
 		{
@@ -243,6 +256,7 @@ public class OntologyManager
 		/** return LSID for new or existing Object */
 		String beforeImportObject(Map<String, Object> map) throws SQLException;
 		void afterBatchInsert(int currentRow) throws SQLException;
+        void updateStatistics(int currentRow) throws SQLException;
     }
 
 	/**

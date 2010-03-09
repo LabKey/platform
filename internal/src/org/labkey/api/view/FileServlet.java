@@ -43,7 +43,10 @@ public class FileServlet extends HttpServlet
             throws ServletException, IOException
     {
         String pathInfo = StringUtils.trimToEmpty(request.getPathInfo());
-        int index = pathInfo.lastIndexOf('/');
+        int index = pathInfo.lastIndexOf("/@");         // new style URL's: /files/<container>/@files/<path>/<name>
+        if (index < 0)
+            index = pathInfo.lastIndexOf('/');          // legacy style: /files/<container>/<name>
+
         if (index < 0)
         {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);

@@ -43,4 +43,8 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
     {
 
     }
+
+    public void updateStatistics(int currentRow) throws SQLException
+    {
+    }
 }

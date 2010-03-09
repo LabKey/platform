@@ -99,8 +99,7 @@ public class SimpleModuleUserSchema extends UserSchema
                 {
                     wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
                 }
-
-                if (col.getFk() != null)
+                else if (col.getFk() != null)
                 {
                     //FIX: 5661
                     //get the column name in the target FK table that it would have joined against
@@ -111,9 +110,14 @@ public class SimpleModuleUserSchema extends UserSchema
                     if (null == pkColName && col.getFkTableInfo().getPkColumnNames().size() == 1)
                         pkColName = col.getFkTableInfo().getPkColumnNames().get(0);
 
-                    if(null != pkColName)
+                    if (null != pkColName)
                     {
-                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, fk.getLookupSchemaName(), null, fk.getLookupTableName(), pkColName, fk.isJoinWithContainer());
+                        // 9338 and 9051: fixup fks for external schemas that have been renamed
+                        // NOTE: This will only fixup fk schema names if they are within the current schema.
+                        String lookupSchemaName = fk.getLookupSchemaName();
+                        if (lookupSchemaName.equalsIgnoreCase(_userSchema.getDbSchema().getName()))
+                            lookupSchemaName = _userSchema.getName();
+                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, lookupSchemaName, null, fk.getLookupTableName(), pkColName, fk.isJoinWithContainer());
                         wrap.setFk(wrapFk);
                     }
                 }
@@ -243,7 +247,7 @@ public class SimpleModuleUserSchema extends UserSchema
             // getUserSchema() needs to take a scope so it knows where to look for that schema.
             if (_userSchema.getDbSchema().getScope() == DbScope.getLabkeyScope())
             {
-                schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), _userSchema.getName());
+                schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), getLookupSchemaName());
             }
             else
             {
