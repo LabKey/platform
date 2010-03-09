@@ -222,6 +222,7 @@ public class ExperimentController extends SpringActionController
             detailsView.getDataRegion().getDisplayColumn(2).setWidth("60%");
 
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionButton b = new ActionButton(ExperimentUrlsImpl.get().getShowUpdateURL(_experiment), "Edit");
             b.setDisplayPermission(UpdatePermission.class);
             bb.add(b);
@@ -1166,6 +1167,7 @@ public class ExperimentController extends SpringActionController
             DetailsView detailsView = new DetailsView(dr, _data.getRowId());
             detailsView.setTitle("Standard Properties");
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
 
             ActionURL viewDataURL = _data.findDataHandler().getContentURL(getContainer(), _data);
             if (viewDataURL != null)

@@ -42,6 +42,7 @@ public class ExperimentUpdateView extends UpdateView
         drg.getDisplayColumn("Created").setVisible(false);
 
         ButtonBar bb = new ButtonBar();
+        bb.setStyle(ButtonBar.Style.separateButtons);
         bb.add(ActionButton.BUTTON_DO_UPDATE);
 
         drg.setButtonBar(bb);

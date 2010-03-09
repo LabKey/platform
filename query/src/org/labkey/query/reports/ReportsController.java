@@ -213,7 +213,15 @@ public class ReportsController extends SpringActionController
             }
 
             if (report == null)
+            {
                 report = ReportService.get().createFromQueryString(context.getActionURL().getQueryString());
+                if (report != null)
+                {
+                    // set the container in case we need to get a securable resource for the report descriptor
+                    if (report.getDescriptor().lookupContainer() == null)
+                        report.getDescriptor().setContainer(context.getContainer().getId());
+                }
+            }
 
             if (report != null)
                 return report.renderReport(context);

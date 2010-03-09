@@ -98,7 +98,7 @@
 
 <div id="status" class="labkey-status-info" style="display:none;" width="99%">(status)</div>
 
-<table class="labkey-button-bar" width=99%;>
+<table width=99%;>
     <tr>
         <td width="50%" align="left"  nowrap="true">
             <%=PageFlowUtil.generateSubmitButton("Save & Close", "onFinish();", "id='wiki-button-finish'")%>

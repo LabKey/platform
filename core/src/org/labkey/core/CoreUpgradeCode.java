@@ -15,22 +15,21 @@
  */
 package org.labkey.core;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.*;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
-import org.apache.log4j.Logger;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.login.PasswordRule;
 
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -49,6 +48,23 @@ public class CoreUpgradeCode implements UpgradeCode
         GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
     }
 
+
+    // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
+    //  ContainerManager's assumptions. For example, older installations don't have a description column until
+    //  the 10.1 scripts run (see #9927).
+    private String getRootId()
+    {
+        try
+        {
+            return Table.executeSingleton(CoreSchema.getInstance().getSchema(), "SELECT EntityId FROM core.Containers WHERE Parent IS NULL", null, String.class);
+        }
+        catch (SQLException e)
+        {
+            return null;
+        }
+    }
+
+
     // Invoked by core-8.10-8.20.sql
     public void migrateLdapSettings(ModuleContext moduleContext)
     {
@@ -57,7 +73,8 @@ public class CoreUpgradeCode implements UpgradeCode
 
         try
         {
-            Map<String, String> props = AppProps.getInstance().getProperties(ContainerManager.getRoot());
+            Map<String, String> props = PropertyManager.getProperties(-1, getRootId(), "SiteConfig");
+
             String domain = props.get("LDAPDomain");
 
             if (null != domain && domain.trim().length() > 0)
@@ -75,7 +92,7 @@ public class CoreUpgradeCode implements UpgradeCode
                 saveAuthenticationProviders(false);
             }
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
@@ -88,8 +105,9 @@ public class CoreUpgradeCode implements UpgradeCode
         if (moduleContext.isNewInstall())
             return;
 
-        PropertyManager.PropertyMap configProps = PropertyManager.getWritableProperties(-1, ContainerManager.getRoot().getId(), "SiteConfig", true);
-        PropertyManager.PropertyMap lafProps = PropertyManager.getWritableProperties(-1, ContainerManager.getRoot().getId(), "LookAndFeel", true);
+        String rootId = getRootId();
+        PropertyManager.PropertyMap configProps = PropertyManager.getWritableProperties(-1, getRootId(), "SiteConfig", true);
+        PropertyManager.PropertyMap lafProps = PropertyManager.getWritableProperties(-1, getRootId(), "LookAndFeel", true);
 
         for (String settingName : new String[] {"systemDescription", "systemShortName", "themeName", "folderDisplayMode",
                 "navigationBarWidth", "logoHref", "themeFont", "companyName", "systemEmailAddress", "reportAProblemPath"})
@@ -105,7 +123,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         try
         {
-            // Need to insert standard MV indicators for the root
+            // Need to insert standard MV indicators for the root -- okay to call getRoot() here, since it's called after upgrade.
             Container rootContainer = ContainerManager.getRoot();
             String rootContainerId = rootContainer.getId();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
@@ -142,7 +160,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
     private void saveAuthenticationProviders(boolean enableLdap)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(0, getRootId(), "Authentication", true);
         String activeAuthProviders = map.get("Authentication");
 
         if (null == activeAuthProviders)
@@ -197,6 +215,7 @@ public class CoreUpgradeCode implements UpgradeCode
             //still exists and ignore if not--returned array is sorted so we can
             //use Arrays.binarySearch()
             int[] userIds = getAllUserIds();
+            String rootId = getRootId();
 
             rs = Table.executeQuery(coreSchema, "select * from core.ACLs", null);
             while(rs.next())
@@ -212,12 +231,28 @@ public class CoreUpgradeCode implements UpgradeCode
                 int[] perms = acl.getAllPermissions();
                 boolean empty = true; //will be set to true if ACL contains a valid group id
 
-                //get the container in order to determine if it's a project or folder
-                Container container = null == containerId ? null : ContainerManager.getForId(containerId);
-
                 //insert into policies
                 Table.execute(coreSchema, insertPolicySql,
                         new Object[]{objectId, resourceClass, containerId, now});
+
+                ContainerType containerType;
+
+                if (null == containerId)
+                {
+                    containerType = ContainerType.UNKNOWN;
+                }
+                else
+                {
+                    // Figure out the container type by reading properties directly from the database
+                    String parentId = Table.executeSingleton(CoreSchema.getInstance().getSchema(), "SELECT Parent FROM core.Containers WHERE EntityId = ?", new Object[]{containerId}, String.class);
+
+                    if (null == parentId)
+                        containerType = ContainerType.ROOT;
+                    else if (rootId.equals(parentId))
+                        containerType = ContainerType.PROJECT;
+                    else
+                        containerType = ContainerType.FOLDER;
+                }
 
                 //iterate over all groups in the ACL, mapping the store perms to a role
                 //and saving that role assignment to the new table
@@ -228,7 +263,7 @@ public class CoreUpgradeCode implements UpgradeCode
                     //so check the group against the full list in memory and skip if not found
                     if(Arrays.binarySearch(userIds, groups[idx]) > 0)
                     {
-                        Role role = getRoleForPerms(perms[idx], container, objectId);
+                        Role role = getRoleForPerms(perms[idx], containerType, objectId);
                         if(null == role)
                         {
                             _log.warn("Unable to determine a role for permissions bits 0x" + Integer.toHexString(perms[idx])
@@ -272,6 +307,8 @@ public class CoreUpgradeCode implements UpgradeCode
         _log.info("Finished migrating " + numAcls + " ACLs to RoleAssignments.");
     }
 
+    private enum ContainerType { ROOT, PROJECT, FOLDER, UNKNOWN }
+
     private int[] getAllUserIds() throws SQLException
     {
         Integer[] principalIds = Table.executeArray(CoreSchema.getInstance().getSchema(), "select UserId from core.Principals order by UserId", null, Integer.class);
@@ -283,13 +320,13 @@ public class CoreUpgradeCode implements UpgradeCode
         return ret;
     }
 
-    private Role getRoleForPerms(int perms, Container container, String objectId)
+    private Role getRoleForPerms(int perms, ContainerType containerType, String objectId)
     {
         if(SecurityManager.PermissionSet.ADMIN.getPermissions() == perms)
         {
-            if(null == container || container.isRoot())
+            if(ContainerType.UNKNOWN == containerType || ContainerType.ROOT == containerType)
                 return new SiteAdminRole();
-            else if(container.isProject())
+            else if(ContainerType.PROJECT == containerType)
                 return new ProjectAdminRole();
             else
                 return new FolderAdminRole();

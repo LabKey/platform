@@ -519,8 +519,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 for (var i=0; i <store.getCount(); i++)
                 {
                     var record = store.getAt(i);
-                    if (record.data.file)
-                        selections.push(record);
+                    selections.push(record);
                 }
             }
 
@@ -737,12 +736,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 }
                 else
                 {
-                    var params = [];
+                    // just redirect to the files servlet to render the file, the files servlet handles URLs very
+                    // similar to the webdav url.
+                    var resourceUrl = item.uri;
+                    resourceUrl = resourceUrl.replace('_webdav', 'files');
+                    resourceUrl = resourceUrl.concat('?renderAs=DEFAULT');
 
-                    params.push('name=' + encodeURIComponent(selections[0].data.name));
-                    params.push('baseUrl=' + encodeURIComponent(this.fileSystem.baseUrl));
-                    var renderFileURL = LABKEY.ActionURL.buildURL('filecontent', 'renderFile') + '?' + params.join('&');
-                    window.location = renderFileURL;
+                    window.location = resourceUrl;
                 }
             }
         }

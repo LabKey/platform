@@ -550,6 +550,11 @@ public class UploadSamplesHelper
         public void afterBatchInsert(int currentRow) throws SQLException
         {
         }
+
+
+        public void updateStatistics(int currentRow) throws SQLException
+        {
+        }
     }
 
 

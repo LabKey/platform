@@ -797,11 +797,11 @@ LABKEY.WebdavFileSystem = function(config)
                                 var childNode = childNodes[n];
                                 if (childNode.nodeName == 'message')
                                 {
-                                    action.message = childNode.textContent;
+                                    action.message = childNode.textContent || childNode.text;
                                 }
                                 else if (childNode.nodeName == 'href')
                                 {
-                                    action.href = childNode.textContent;
+                                    action.href = childNode.textContent || childNode.text;
                                 }
                             }
                             result[result.length] = action;
@@ -1891,11 +1891,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         if (path)
         {
             this.selectFile(path);
-            var record = this.fileSystem.recordFromCache(this.currentDirectory.data.path);
-            if (record && record.treeNode)
-                record.treeNode.reload();
-            else if (this.currentDirectory.data.path == this.fileSystem.rootPath)
-                this.root.reload();
+            this.refreshFolderTree();
         }
     },
 
@@ -2293,6 +2289,14 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.changeDirectory(this.currentDirectory, true);
     },
 
+    refreshFolderTree : function()
+    {
+        var record = this.fileSystem.recordFromCache(this.currentDirectory.data.path);
+        if (record && record.treeNode)
+            record.treeNode.reload();
+        else if (this.currentDirectory.data.path == this.fileSystem.rootPath)
+            this.root.reload();
+    },
 
     selectFile : function(record)
     {
@@ -2812,6 +2816,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.on(BROWSER_EVENTS.transfercomplete, function(result) {
             this.hideProgressBar();
             this.refreshDirectory();
+            this.refreshFolderTree();
         }, this);
 
         this.on(BROWSER_EVENTS.transferstarted, function(result) {this.showProgressBar();}, this);
@@ -2956,6 +2961,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 fileUpload: true,
                 enctype:'multipart/form-data',
                 border:false,
+                stateful: false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [
                     {
@@ -3015,6 +3021,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 id: 'uploadMultiFileTab',
                 layout: 'form',
                 border:false,
+                stateful: false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [{
                     xtype: 'radiogroup',
@@ -3161,7 +3168,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 // assume that we've got a WebdavFileSystem
                 form.errorReader = this.fileSystem.transferReader;
                 form.doAction(new Ext.form.Action.Submit(form, options));
-                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.url, path)).pathname}]});
+                this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.url, encodeURIComponent(options.name))).pathname}]});
                 Ext.getBody().dom.style.cursor = "wait";
             }
         }
@@ -3181,7 +3188,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         //this.toggleTabPanel();
         this.refreshDirectory();
         this.selectFile(this.fileSystem.concatPaths(options.record.data.path, options.name));
-        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:new URI(this.fileSystem.concatPaths(options.record.data.uri, options.name)).pathname}]});
+        this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"webform", files:[{name:options.name, id:new URI(this.fileSystem.concatPaths(options.record.data.uri, encodeURIComponent(options.name))).pathname}]});
     },
 
     // handler for a file upload failed event

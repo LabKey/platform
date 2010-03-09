@@ -3006,6 +3006,11 @@ public class StudyManager
         {
         }
 
+        public void updateStatistics(int currentRow) throws SQLException
+        {
+            tinfo.getSqlDialect().updateStatistics(tinfo);
+        }
+
 
         public void done()
         {

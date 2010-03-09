@@ -313,6 +313,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
                 public void afterBatchInsert(int currentRow) throws SQLException {
                 }
+
+                public void updateStatistics(int currentRow) throws SQLException {
+                }
             };
             OntologyManager.insertTabDelimited(c, user, null, helper, props, Arrays.asList(rows), false);
         }

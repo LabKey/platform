@@ -21,7 +21,10 @@ import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
@@ -43,6 +46,8 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.FileSystemResource;
+import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -106,7 +111,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
-        File file;
+        Resource _resource;
 
         public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
         {
@@ -142,24 +147,36 @@ public class FileContentController extends SpringActionController
                     throw new NotFoundException();
             }
 
-            file = new File(dir, form.getFileName());
-            //Double check to make sure file is really a direct child of the parent (no escape from the configured tree...)
-            // Also, check that it's not a directory
-            if (!NetworkDrive.exists(file) || !file.getParentFile().equals(dir) || file.isDirectory())
+            Path filePath = Path.decode(form.getFileName());
+            Path path;
+
+            // support both legacy and newer formats, new URLs looks like webdav URLs, while older formats assume files
+            // are only served out of the root
+            if (filePath.contains(FileContentService.FILES_LINK) || filePath.contains(FileContentService.FILE_SETS_LINK) ||
+                    filePath.contains(FileContentService.PIPELINE_LINK))
+            {
+                path = WebdavService.getPath().append(getContainer().getParsedPath()).append(filePath);
+            }
+            else
+                path = WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.FILES_LINK).append(filePath);
+
+            _resource = WebdavService.get().getResolver().lookup(path);
+
+            if (_resource == null || !_resource.isFile())
                 throw new NotFoundException();
 
             RenderStyle style = form.getRenderStyle();
             MimeMap mimeMap = new MimeMap();
-            String mimeType = StringUtils.defaultString(mimeMap.getContentTypeFor(file.getName()), "");
+            String mimeType = _resource.getContentType();
 
             if (style == RenderStyle.DEFAULT)
             {
-                style = defaultRenderStyle(file.getName());
+                style = defaultRenderStyle(_resource.getName());
             }
             else
             {
                 // verify legal RenderStyle
-                boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(file.getName());
+                boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(_resource.getName());
                 if (!canInline && !(RenderStyle.ATTACHMENT == style || RenderStyle.PAGE == style))
                     style = RenderStyle.PAGE;
                 if (RenderStyle.IMAGE == style && !mimeType.startsWith("image/"))
@@ -181,7 +198,12 @@ public class FileContentController extends SpringActionController
                 case PAGE:
                 {
                     getPageConfig().setTemplate(PageConfig.Template.None);
-                    PageFlowUtil.streamFile(getViewContext().getResponse(), file, RenderStyle.ATTACHMENT==style);
+
+                    PageFlowUtil.streamFile(getViewContext().getResponse(),
+                            Collections.singletonMap("Content-Type",_resource.getContentType()),
+                            _resource.getName(),
+                            _resource.getInputStream(getUser()),
+                            RenderStyle.ATTACHMENT==style);
                     return null;
                 }
                 case FRAME:
@@ -198,14 +220,14 @@ public class FileContentController extends SpringActionController
                         @Override
                         protected void renderView(Object model, PrintWriter out) throws Exception
                         {
-                            FileInputStream fis = new FileInputStream(file);
+                            InputStream fis = _resource.getInputStream(getUser());
                             try
                             {
                                 IOUtils.copy(new InputStreamReader(fis), out);
                             }
                             catch (FileNotFoundException x)
                             {
-                                out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(file.getName()) + "</span>");
+                                out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
                             }
                             finally
                             {
@@ -213,7 +235,7 @@ public class FileContentController extends SpringActionController
                             }
                         }
                     };
-                    webPart.setTitle(file.getName());
+                    webPart.setTitle(_resource.getName());
                     webPart.setFrame(WebPartView.FrameType.DIV);
                     return webPart;
                 }
@@ -227,17 +249,17 @@ public class FileContentController extends SpringActionController
                             try
                             {
                                 // UNDONE stream html filter
-                                String fileContents = PageFlowUtil.getFileContentsAsString(file);
+                                String fileContents = PageFlowUtil.getStreamContentsAsString(_resource.getInputStream(getUser()));
                                 String html = PageFlowUtil.filter(fileContents, true, true);
                                 out.write(html);
                             }
                             catch (OutOfMemoryError x)
                             {
-                                out.write("<span class='labkey-error'>file is too long: " + PageFlowUtil.filter(file.getName()) + "</span>");
+                                out.write("<span class='labkey-error'>file is too long: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
                             }
                         }
                     };
-                    webPart.setTitle(file.getName());
+                    webPart.setTitle(_resource.getName());
                     return webPart;
                 }
                 case IMAGE:
@@ -253,7 +275,7 @@ public class FileContentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            String name = file == null ? "<not found>" : file.getName();
+            String name = _resource == null ? "<not found>" : _resource.getName();
             return (new BeginAction()).appendNavTrail(root)
                     .addChild(name);
         }
@@ -748,92 +770,6 @@ public class FileContentController extends SpringActionController
                 node.put("uiProvider", "col");
             }
             return node;
-        }
-    }
-
-    public static class ShowFileForm
-    {
-        private String _name;
-        private String _baseUrl;
-
-        public String getBaseUrl()
-        {
-            return _baseUrl;
-        }
-
-        public void setBaseUrl(String baseUrl)
-        {
-            _baseUrl = baseUrl;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class RenderFileAction extends RedirectAction<ShowFileForm>
-    {
-        URLHelper _url;
-
-        @Override
-        public URLHelper getSuccessURL(ShowFileForm showFileForm)
-        {
-            return _url;
-        }
-
-        @Override
-        public boolean doAction(ShowFileForm form, BindException errors) throws Exception
-        {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            AttachmentDirectory dir = null;
-
-            String baseUrl = PageFlowUtil.decode(form.getBaseUrl());
-            if (baseUrl.contains(FileContentService.FILE_SETS_LINK))
-            {
-                if (baseUrl.endsWith("/"));
-                    baseUrl = baseUrl.substring(0, baseUrl.length()-1);
-
-                int idx = baseUrl.lastIndexOf("/");
-                if (idx != -1)
-                {
-                    String fileSet = baseUrl.substring(idx+1, baseUrl.length());
-                    dir = svc.getRegisteredDirectory(getContainer(), fileSet);
-                }
-            }
-            else
-                dir = svc.getMappedAttachmentDirectory(getContainer(), false);
-
-            if (dir != null)
-            {
-                Attachment a = AttachmentService.get().getAttachment(dir, form.getName());
-                if (a != null)
-                {
-                    _url = new URLHelper(new ActionURL("files", "", getContainer()).toString());
-
-                    _url.setFile(a.getName());
-                    FileContentController.RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
-                    _url.replaceParameter("renderAs", render.name());
-
-                    return true;
-                }
-                errors.reject(SpringActionController.ERROR_MSG, "Unable to render the selected attachment.");
-            }
-            else
-                errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the attachment directory.");
-            
-            return false;
-        }
-
-        @Override
-        public void validateCommand(ShowFileForm target, Errors errors)
-        {
         }
     }
 

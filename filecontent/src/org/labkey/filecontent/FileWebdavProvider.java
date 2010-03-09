@@ -17,8 +17,11 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.files.MissingRootDirectoryException;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
@@ -99,7 +102,7 @@ public class FileWebdavProvider implements WebdavService.Provider
                     AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, false);
                     if (dir != null)
                     {
-                        return new FileSystemResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy(), true);
+                        return new _FilesResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy(), true);
                     }
                 }
                 catch (MissingRootDirectoryException e)
@@ -110,6 +113,38 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
 
         return null;
+    }
+
+    class _FilesResource extends FileSystemResource
+    {
+        public _FilesResource(Resource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
+        {
+            super(folder,name,file,policy,mergeFromParent);
+        }
+
+        public _FilesResource(FileSystemResource folder, String relativePath)
+        {
+            super(folder,relativePath);
+        }
+
+        @Override
+        public String getExecuteHref(ViewContext context)
+        {
+            assert getPath().startsWith(WebdavService.getPath());
+            Path rel = WebdavService.getPath().relativize(getPath());
+            Path fileServlet = new Path("files");
+            Path contextPath = Path.parse(AppProps.getInstance().getContextPath());
+            Path full = contextPath.append(fileServlet).append(rel);
+            return full.encode() + "?renderAs=DEFAULT";
+        }
+
+        @Override
+        public Resource find(String name)
+        {
+            // TODO: move mergeFilesIfNeeded out of FileSystemResource to _FilesResource
+            mergeFilesIfNeeded();
+            return new _FilesResource(this, name);
+        }
     }
 
 

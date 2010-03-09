@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -32,6 +33,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.list.model.FileNameUniquifier;
 import org.labkey.list.model.ListItemImpl;
+import org.labkey.list.model.ListManager;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -132,5 +134,12 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     {
         if (null != _progress)
             _progress.setCurrentRow(currentRow);
+    }
+
+    public void updateStatistics(int currentRow) throws SQLException
+    {
+        SqlDialect dialect = ListManager.get().getTinfoIndexInteger().getSqlDialect();
+        dialect.updateStatistics(ListManager.get().getTinfoIndexInteger());
+        dialect.updateStatistics(ListManager.get().getTinfoIndexVarchar());
     }
 }
