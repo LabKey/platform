@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
@@ -369,8 +370,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         if (UserManager.hasNoUsers())
         {
-            // Let the "initial user" view & post through... otherwise redirect to initial user action
-            if (request.getRequestURL().toString().contains("/login/initialUser."))
+            // Let the "initial user" view & post, stylesheet & javascript actions, etc. through... otherwise redirect to initial user action
+            if (action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))
                 return null;
             else
                 return PageFlowUtil.urlProvider(LoginUrls.class).getInitialUserURL();

@@ -187,7 +187,7 @@ public class QueryProfiler
 
                     sb.append("  <tr><td>").append(buttonHTML).append("</td></tr>\n");
 
-                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Requests</td></tr>\n");
+                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within HTTP Requests</td></tr>\n");
                     sb.append("  <tr><td>Query Count:</td><td align=\"right\">").append(Formats.commaf0.format(_requestQueryCount)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
                     sb.append("<td>Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_requestQueryTime)).append("</td>");
