@@ -15,15 +15,14 @@
  */
 package org.labkey.study.model;
 
-import org.apache.commons.collections.functors.InstantiateFactory;
-import org.apache.commons.collections.map.MultiValueMap;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.MultiValueMap;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.PropertyUtil;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
 
@@ -39,7 +38,7 @@ import java.util.*;
 public class AllParticipantData
 {
     private Set<Integer> _dataSetIds;
-    private MultiValueMap _visitSequenceMap;
+    private VisitMultiMap _visitSequenceMap;
     private Map<ParticipantDataMapKey, RowSet> _valueMap;
 
     static final String allParticipantDataSql = "SELECT SD.DatasetId, PV.VisitRowId, SD.SequenceNum, SD._key, SD.SourceLsid, " +
@@ -53,15 +52,21 @@ public class AllParticipantData
             "WHERE SD.container=? AND PV.container=? AND exp.Object.container=? AND SD.participantid=?";
 
 
-    private static class VisitMultiMap extends MultiValueMap
+    private static class VisitMultiMap extends MultiValueMap<Integer, Double>
     {
         VisitMultiMap()
         {
-            super(new TreeMap(), new InstantiateFactory(TreeSet.class));
+            super(new TreeMap<Integer, Collection<Double>>());
+        }
+
+        @Override
+        protected Collection<Double> createValueCollection()
+        {
+            return new TreeSet<Double>();
         }
     }
 
-    private AllParticipantData(Set<Integer> dataSetIds, MultiValueMap visitSeqMap, Map<ParticipantDataMapKey, RowSet> valueMap)
+    private AllParticipantData(Set<Integer> dataSetIds, VisitMultiMap visitSeqMap, Map<ParticipantDataMapKey, RowSet> valueMap)
     {
         _dataSetIds = dataSetIds;
         _visitSequenceMap = visitSeqMap;
@@ -97,7 +102,7 @@ public class AllParticipantData
 
 
             Set<Integer> datasetIds = new HashSet<Integer>();
-            MultiValueMap visitSeqMap = new VisitMultiMap();
+            VisitMultiMap visitSeqMap = new VisitMultiMap();
 
             int colDatasetId = rs.findColumn("DatasetId");
             int colKey = rs.findColumn("_key");
@@ -214,7 +219,7 @@ public class AllParticipantData
         return _valueMap;
     }
 
-    public MultiValueMap getVisitSequenceMap()
+    public MultiValueMap<Integer, Double> getVisitSequenceMap()
     {
         return _visitSequenceMap;
     }

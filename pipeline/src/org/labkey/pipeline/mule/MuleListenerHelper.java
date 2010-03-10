@@ -18,7 +18,7 @@ package org.labkey.pipeline.mule;
 import org.apache.activemq.thread.Scheduler;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.commons.collections.map.CaseInsensitiveMap;
+import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.util.URIUtil;
@@ -63,7 +63,7 @@ public class MuleListenerHelper implements ServletContext
         // HACK: Fix for MULE-2289
         final Converter conv = ConvertUtils.lookup(Integer.TYPE);
         ConvertUtils.register(new Converter() {
-            private final Map POOL_EXHAUSTED_ACTIONS = new CaseInsensitiveMap()
+            private final Map POOL_EXHAUSTED_ACTIONS = new CaseInsensitiveMap<Integer>()
             {
                 // static initializer
                 {

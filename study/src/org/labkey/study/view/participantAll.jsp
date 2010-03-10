@@ -136,7 +136,7 @@
             for (VisitImpl visit : visits)
             {
                 int seqKeyCount = 0;
-                for (Double seqNum : (Collection<Double>)all.getVisitSequenceMap().get(visit.getRowId()))
+                for (Double seqNum : all.getVisitSequenceMap().get(visit.getRowId()))
                 {
                     Integer c = countKeysForSequence.get(seqNum);
                     seqKeyCount += c == null ? 1 : c;
@@ -152,7 +152,7 @@
 
         for (VisitImpl visit : visits)
         {
-            Collection<Double> sequences = ((Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()));
+            Collection<Double> sequences = all.getVisitSequenceMap().get(visit.getRowId());
             for (Double seqNum : sequences)
             {
                 Date date = visitDates.get(seqNum);
@@ -246,7 +246,7 @@
                 <%
                 for (VisitImpl visit : visits)
                 {
-                    for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
+                    for (double seq : all.getVisitSequenceMap().get(visit.getRowId()))
                     {
                         pdKey.sequenceNum = seq;
                         AllParticipantData.RowSet keyMap = valueMap.get(pdKey);
@@ -289,7 +289,7 @@
                 <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap><%=h(labelName)%></td><%
                 for (VisitImpl visit : visits)
                 {
-                    for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
+                    for (double seq : all.getVisitSequenceMap().get(visit.getRowId()))
                     {
                         // UNDONE
                         pdKey.sequenceNum = seq;
@@ -324,7 +324,7 @@
                 <tr class="<%=className%>" style="<%=expanded ? "" : "display:none"%>"><td align="left" nowrap>Details</td><%
                 for (VisitImpl visit : visits)
                 {
-                    for (double seq : (Collection<Double>) all.getVisitSequenceMap().get(visit.getRowId()))
+                    for (double seq : all.getVisitSequenceMap().get(visit.getRowId()))
                     {
                         pdKey.sequenceNum = seq;
                         AllParticipantData.RowSet keyMap = valueMap.get(pdKey);
