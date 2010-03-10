@@ -1,11 +1,6 @@
 * text=auto !eol
 api/remotesrc/org/labkey/api/RemoteControllerProxy.java -text
 api/remotesrc/org/labkey/api/ftp/FtpConnector.java -text
-api/src/java/sql/ClientInfoStatus.java -text
-api/src/java/sql/NClob.java -text
-api/src/java/sql/RowId.java -text
-api/src/java/sql/SQLClientInfoException.java -text
-api/src/java/sql/SQLXML.java -text
 api/src/org/json/CDL.java -text
 api/src/org/json/Cookie.java -text
 api/src/org/json/CookieList.java -text
