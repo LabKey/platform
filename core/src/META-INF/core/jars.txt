@@ -35,11 +35,9 @@ script-api.jar|Scripting for the Java Platform RI|1.0|{link:JCP|http://jcp.org/e
 spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-mock.jar dependency
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
-stax-api-1.0.1.jar|Streaming API for XML|1.0.1|{link:Codehaus|http://stax.codehaus.org/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|XML pull parser API
 tar.jar|Java Tar|2.5|{link:Ice Engineering|http://www.trustice.com/java/tar/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|adam|Reading SEQUEST/Comet tar.gz files
 tidy.jar|Java Tidy|svn r812|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 wsdl4j.jar|Web Services Description Language for Java|1.5|{link:WSDL4J|http://sourceforge.net/projects/wsdl4j}|{link:CPL|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|WSDL support - required for webservices
-wstx-lgpl-3.2.1.jar|Woodstox XML parser|3.2.1|{link:Codehaus|http://woodstox.codehaus.org/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|adam|XML Pull parser implementation
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|peter|Reading/writing XML
 xercesImpl.jar|Xerces|2.6.2|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|brittp|XML parser implementation
 xml-apis-1.2.01.jar|XML APIs for Java|1.2.01|{link:Apache|http://xml.apache.org/commons/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|brittp|Java XML APIs

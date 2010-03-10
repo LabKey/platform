@@ -2,7 +2,6 @@ The following JAR files are distributed and installed in the <tomcat>/common/lib
 
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-activation.jar|JavaBeans Activation Framework|1.1.1|{link:Sun|http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp}|{link:Sun Binary Distribution License|https://www.labkey.org/download/jaf-LICENSE.txt}|adam|JavaMail dependency
 ant.jar|Apache Ant|1.7.0|{link:Apache|http://ant.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Jasper dependency for dev-mode JSP auto-recompile
 jtds.jar|jTDS JDBC Driver|1.2.5|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server databases
 mail.jar|JavaMail|1.4.1|{link:Sun|http://java.sun.com/products/javamail}|{link:Sun Binary Distribution License|https://www.labkey.org/download/javamail-LICENSE.txt}|adam|Send email from LabKey Server
