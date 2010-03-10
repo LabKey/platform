@@ -15,9 +15,9 @@
  */
 package org.labkey.api.jsp;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
@@ -26,8 +26,11 @@ import org.labkey.api.util.HideConfigurationDetails;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import java.io.*;
-import java.lang.reflect.Method;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
@@ -160,24 +163,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private void compileJavaFile(String filePath, String classPath, String jspFilename) throws Exception
     {
         ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath);
 
-        /*
-            This is the code I want to execute here:
-
-                JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                int ret = compiler.run(null, null, errorStream, filePath, "-cp", classPath);
-
-            ...but these are Java 1.6 specific classes and we still need to compile on Java 1.5, so use reflection instead.
-
-            We check the Java version before using RecompilingJspClassLoader, so this code is never executed on Java 1.5.
-        */
-        Class<?> clazz = Class.forName("javax.tools.ToolProvider");
-        Method getSystemJavaCompilerMethod = clazz.getMethod("getSystemJavaCompiler");
-        Object javaCompiler = getSystemJavaCompilerMethod.invoke(null);
-        Method compileJavaMethod = javaCompiler.getClass().getMethod("run", InputStream.class, OutputStream.class, OutputStream.class, String[].class);
-        Integer ret = (Integer)compileJavaMethod.invoke(javaCompiler, null, null, errorStream, new String[]{filePath, "-cp", classPath});
-
-        if (0 != ret.intValue())
+        if (0 != ret)
             throw new JspCompilationException(jspFilename, errorStream.toString());
     }
 

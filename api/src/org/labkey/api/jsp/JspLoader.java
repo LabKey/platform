@@ -36,15 +36,7 @@ public class JspLoader
     {
         if (AppProps.getInstance().isRecompileJspEnabled())
         {
-            if (AppProps.getInstance().getJavaVersion().startsWith("1.6"))
-            {
-                _jspClassLoader = new RecompilingJspClassLoader();
-            }
-            else
-            {
-                _log.warn("Disabling auto-recompilation of .jsp files; this feature requires Java 1.6.");
-                _jspClassLoader = new JspClassLoader();
-            }
+            _jspClassLoader = new RecompilingJspClassLoader();
         }
         else
         {

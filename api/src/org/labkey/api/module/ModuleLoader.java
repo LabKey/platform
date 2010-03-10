@@ -414,10 +414,10 @@ public class ModuleLoader implements Filter
     {
         String javaVersion = AppProps.getInstance().getJavaVersion();
 
-        if (null != javaVersion && (javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6")))
+        if (null != javaVersion && javaVersion.startsWith("1.6"))
             return;
 
-        throw new ConfigurationException("Unsupported Java runtime version: " + javaVersion + ".  LabKey requires Java 1.5 or Java 1.6.");
+        throw new ConfigurationException("Unsupported Java runtime version: " + javaVersion + ".  LabKey Server requires Java 1.6.");
     }
 
     private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException
