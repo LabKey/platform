@@ -134,7 +134,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
     {
         try
         {
-            URLHelper dest = new URLHelper("/?");
+            URLHelper dest = new URLHelper("");
             String[] keys = url.getKeysByPrefix(dataRegionName + ".");
             if (keys.length == 0)
             {
