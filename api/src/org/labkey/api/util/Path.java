@@ -15,17 +15,15 @@
  */
 package org.labkey.api.util;
 
-import org.jetbrains.annotations.NotNull;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.collections.iterators.ArrayIterator;
-
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.Iterator;
-import java.io.Serializable;
-import java.io.IOException;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.lang.StringUtils;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by IntelliJ IDEA.
@@ -462,7 +460,7 @@ public class Path implements Serializable, Iterable<String>
 
     public Iterator<String> iterator()
     {
-        return new ArrayIterator(_path);
+        return new ArrayIterator<String>(_path);
     }
     
 

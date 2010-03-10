@@ -18,7 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.IteratorUtils;
-import org.apache.commons.collections.Predicate;
+import org.apache.commons.collections15.Predicate;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -83,7 +83,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     }
 
 
-    public CachedRowSetImpl(ResultSet rs, int maxRows, Predicate pred) throws SQLException
+    public CachedRowSetImpl(ResultSet rs, int maxRows, Predicate<Map<String, Object>> pred) throws SQLException
     {
         this();
         List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();

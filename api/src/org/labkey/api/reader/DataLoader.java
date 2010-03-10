@@ -16,7 +16,6 @@
 package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.Transformer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.util.CloseableIterator;
@@ -59,7 +58,6 @@ public abstract class DataLoader<T> implements Iterable<T>
     protected int _scanAheadLineCount = 100; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
-    protected Transformer _transformer = null;
 
     public static DataLoader<Map<String, Object>> getDataLoaderForFile(File file) throws ServletException, IOException
     {

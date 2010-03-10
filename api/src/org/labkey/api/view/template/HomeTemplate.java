@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view.template;
 
-import org.apache.commons.collections.ArrayStack;
+import org.apache.commons.collections15.ArrayStack;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
@@ -110,7 +110,7 @@ public class HomeTemplate extends PrintTemplate
 
         if (container != null)
         {
-            ArrayStack stack = new ArrayStack();
+            ArrayStack<NavTree> stack = new ArrayStack<NavTree>();
             while (!container.isRoot())
             {
                 // don't add the home project folder, since 'Home' is always displayed:
@@ -120,7 +120,7 @@ public class HomeTemplate extends PrintTemplate
                 container = container.getParent();
             }
             while (stack.size() > 0)
-                links.add(formatLink((NavTree) stack.pop()));
+                links.add(formatLink(stack.pop()));
         }
         return links;
     }

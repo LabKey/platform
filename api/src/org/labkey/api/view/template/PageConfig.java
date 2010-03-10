@@ -16,7 +16,8 @@
 
 package org.labkey.api.view.template;
 
-import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
@@ -73,7 +74,7 @@ public class PageConfig
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
-    private MultiValueMap _meta = new MultiValueMap();
+    private MultiMap<String, String> _meta = new MultiHashMap<String, String>();
 
     public PageConfig()
     {
@@ -310,7 +311,7 @@ public class PageConfig
         if (_meta.isEmpty())
             return "";
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, Collection<String>>  e : (Set<Map.Entry<String, Collection<String>>>)_meta.entrySet())
+        for (Map.Entry<String, Collection<String>>  e : _meta.entrySet())
         {
             sb.append("<META NAME=\"").append(PageFlowUtil.filter(e.getKey())).append("\" CONTENT=\"");
             sb.append(PageFlowUtil.filter(StringUtils.join(e.getValue(), ", ")));
