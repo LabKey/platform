@@ -31,7 +31,6 @@ log4j-1.2.15.jar|Log4j|1.2.15|{link:Apache|http://logging.apache.org/log4j/docs/
 radeox-api.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 radeox.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|daves|Wiki renderer
 saaj.jar|SOAP with Attachments API for Java|1.2|{link:SAAJ|https://saaj.dev.java.net/}|{link:CDDL|https://glassfish.dev.java.net/public/CDDL+GPL.html}|jeckels|Attachments with webservices
-script-api.jar|Scripting for the Java Platform RI|1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=223}|{link:Sun - JCP|http://jcp.org/aboutJava/communityprocess/final/jsr223/index.html}|klum|Scripting support for Programmatic QC
 spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-mock.jar dependency
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
