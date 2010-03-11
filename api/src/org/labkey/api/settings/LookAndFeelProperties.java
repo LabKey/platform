@@ -200,9 +200,10 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
 
     public static Container getSettingsContainer(Container c)
     {
+        if (null == c)
+            return null;
         if (c.isRoot())
             return c;
-        else
-            return c.getProject();
+        return c.getProject();
     }
 }
