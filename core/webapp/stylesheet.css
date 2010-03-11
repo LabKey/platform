@@ -305,6 +305,7 @@ a.labkey-disabled-button span
 a.labkey-menu-button span, a.labkey-disabled-menu-button span
 {
     padding-right: 1.0em;
+    color: black;
 }
 
 span.labkey-button:active
@@ -662,21 +663,6 @@ table.labkey-customize-view
 
 /* Data Region */
 
-.labkey-data-region-container
-{
-    border-collapse: collapse;
-}
-
-.labkey-data-region-container-with-border
-{
-    border: 1px solid #999999;
-}
-
-.labkey-data-region-container > tbody > tr > td
-{
-    padding: 0;
-}
-
 
 /* There are some odd styles that are used so that the data
 regions look the same in IE, Safari, and Firefox */
@@ -684,7 +670,13 @@ table.labkey-data-region
 {
     background-color: #FFFFFF;
     border-collapse: collapse;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0;
+}
+
+/* Used to draw a border around the entire data region table when showBorders = false */
+table.labkey-show-surrounding-border
+{
+    border: 1px solid #DDDDDD;
 }
 
 .labkey-data-region A
@@ -699,7 +691,13 @@ table.labkey-data-region
     vertical-align: top;
 }
 
-.labkey-data-region TD, .labkey-data-region TH, .wiki-table TD, .wiki-table TH
+.labkey-data-region .labkey-column-header
+{
+    border-bottom: solid 1px #AAAAAA;
+    vertical-align: top;
+}
+
+.labkey-data-region TD, .labkey-data-region TH, .wiki-table TD, .wiki-table TH, .labkey-data-region .labkey-column-header
 {
     padding: 1px;
     padding-right:4px;
@@ -714,18 +712,17 @@ table.labkey-pad-cells
     padding:5px;
 }
 
+table.labkey-fixed-width-columns
+{
+    table-layout: fixed;
+}
+
 /* Use this in the table class tag if you want your data region to have borders */
 table.labkey-show-borders
 {
     border: 1px solid #DDDDDD;
     /* Part of a hack for IE 7 and below since IE gives precedence to table borders over cell borders */
     *border: 0px none;
-}
-
-.labkey-data-region-container .labkey-show-borders
-{
-    width: 100%;
-    border: 0;
 }
 
 .labkey-show-borders td
@@ -763,17 +760,6 @@ in the table tag.  They are necessary so that the borders take precedence correc
     .labkey-show-borders .labkey-stat-title
 {
     border: solid 1px #AAAAAA;
-}
-
-.labkey-data-region-container .labkey-show-borders th, .labkey-data-region-container .labkey-show-borders td
-{
-    border-right: 0;
-    border-left: 1px solid #DDDDDD;
-}
-
-.labkey-data-region-container .labkey-show-borders th:first-child, .labkey-data-region-container .labkey-show-borders td:first-child
-{
-    border-left: 0;
 }
 
 .labkey-has-row-totals col, .labkey-has-col-totals col
@@ -863,6 +849,7 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
 .labkey-data-region-header-container
 {
     background-color: #F2F2F2;
+    border-bottom: 1px solid #AAAAAA
 }
 
 .labkey-data-region-header
@@ -870,16 +857,25 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
     border-collapse: collapse;
 }
 
-td.labkey-data-region-header-bottom-border
-{
-   border-bottom: 1px solid #AAAAAA;
-}
-
-.labkey-data-region-header td
+.labkey-data-region-header-container td
 {
     background-color: #F2F2F2;
     padding: 1px;
+    border: 0;
 }
+
+.labkey-sort-asc .x-grid3-sort-icon
+{
+    background-image:url(ext-2.2/resources/images/default/grid/sort_asc.gif);
+    display:inline;
+}
+
+.labkey-sort-desc .x-grid3-sort-icon
+{
+    background-image:url(ext-2.2/resources/images/default/grid/sort_desc.gif);
+    display:inline;
+}
+
 
 /* Used to highlight cells with a darker color, limited use right now */
 td.labkey-highlight-cell, th.labkey-highlight-cell
