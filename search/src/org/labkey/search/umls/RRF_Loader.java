@@ -171,9 +171,9 @@ public class RRF_Loader extends Job
                 paramList.clear();
 
                 JSONObject o = new JSONObject();
-                o.put("count",count);
+                o.put("count", count);
                 o.put("status", name);
-                o.put("done",false);
+                o.put("done", false);
                 _pollStatus.setJson(o);
             }
             if (0 == (count % 50000))

@@ -57,13 +57,13 @@ function updateCount(response,options)
         {
             if ('status' in o && o.status)
                 status = o.status + ' ';
-            else if ('estimate' in o && o.estimate>0)
+            if ('estimate' in o && o.estimate>0)
             {
-                status += ''+o.count + ' ' + Math.round(100.0*o.count/o.estimate) + '%';
+                status += '' + o.count + ' ' + Math.round(100.0*o.count/o.estimate) + '%';
             }
             else
             {
-                status += ''+o.count;
+                status += '' + o.count;
             }
         }
         Ext.get('status').update(status);
