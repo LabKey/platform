@@ -20,8 +20,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 
-import javax.ejb.Column;
-import javax.ejb.Transient;
 import java.util.Date;
 
 
@@ -145,14 +143,12 @@ public class Entity implements java.io.Serializable, Ownable
     }
 
 
-    @Column(name = "Container")
     public String getContainerId()
     {
         return containerId;
     }
 
 
-    @Column(nullable = false)
     public void setContainerId(String containerId)
     {
         this.containerId = containerId;
@@ -186,7 +182,6 @@ public class Entity implements java.io.Serializable, Ownable
         return null;
     }
 
-    @Transient
     public String getContainerPath()
     {
         if (null != containerId)

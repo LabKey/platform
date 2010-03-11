@@ -27,8 +27,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
 
-import javax.ejb.Entity;
-import javax.ejb.Transient;
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.Serializable;
@@ -44,8 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * NOTE: Attachment is only used to list the attachments, it does not contain document data
  * and cannot be used directly to insert or update attachments.
  */
-@Entity
-@javax.ejb.Table(name = "Documents")
 public class Attachment implements Serializable
 {
 /*    @DependentObject
@@ -92,7 +88,6 @@ public class Attachment implements Serializable
         assert MemTracker.put(this);
     }
 
-    @Transient
     public String getDownloadUrl(String pageFlow)
     {
         Container c = ContainerManager.getForId(getContainer());
@@ -101,7 +96,6 @@ public class Attachment implements Serializable
     }
 
 
-    @Transient
     public String getFileExtension()
     {
         if (null == name)
@@ -112,14 +106,12 @@ public class Attachment implements Serializable
         return "doc";
     }
 
-    @Transient
     public String getFileIcon()
     {
         return getFileIcon(name);
     }
     
 
-    @Transient
     public static String getFileIcon(String name)
     {
         String extension = "_generic"; // old-school default; used if name is null or file has no extension
@@ -226,7 +218,6 @@ public class Attachment implements Serializable
         }
 */
 
-    @Transient
     public String getName()
     {
         return name;
@@ -269,7 +260,6 @@ public class Attachment implements Serializable
     }
 
 
-    @Transient
     public String getCreatedByName(ViewContext context)
     {
         return UserManager.getDisplayName(createdBy, context);
@@ -298,7 +288,6 @@ public class Attachment implements Serializable
     }
 
 
-    @Transient
     public String getParent()
     {
         return parent;
