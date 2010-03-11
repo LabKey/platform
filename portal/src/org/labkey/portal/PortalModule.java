@@ -22,12 +22,10 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Search;
-import org.labkey.api.util.Search.SearchWebPart;
-import org.labkey.api.view.*;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartFactory;
 
 import java.beans.PropertyChangeEvent;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -66,34 +64,6 @@ public class PortalModule extends DefaultModule
     {
         return false;
     }
-
-    public static class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
-    {
-        public SearchWebPartFactory(String name, String location)
-        {
-            super(name, location, true, false);
-            addLegacyNames("Narrow Search");
-        }
-
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-        {
-            int width = 40;
-            if ("right".equals(webPart.getLocation()))
-            {
-                width = 0;
-            }
-            boolean includeSubfolders = Search.includeSubfolders(webPart);
-            return new SearchWebPart(Search.ALL_SEARCHABLES, "", ProjectController.getSearchUrl(portalCtx.getContainer()), includeSubfolders, false, width, false);
-        }
-
-
-        @Override
-        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
-        {
-            return new JspView<Portal.WebPart>("/org/labkey/portal/customizeSearchWebPart.jsp", webPart);
-        }
-    }
-
 
     @Override
     public TabDisplayMode getTabDisplayMode()

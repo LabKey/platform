@@ -33,9 +33,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
-import org.labkey.api.util.Search.SearchTermProvider;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.webdav.Resource;
@@ -66,8 +64,6 @@ public class WikiManager
     private static CoreSchema core = CoreSchema.getInstance();
 
     private static final int LATEST = -1;
-    private static final String SEARCH_HIT_TYPE = "labkey/wiki";
-    private static final String SEARCH_HIT_TYPE_PAGE = "Wiki Page";
 
 //    private static SessionFactory _sessionFactory = DataSourceSessionFactory.create(_schema,
 //            new Class[]{Wiki.class, Attachment.class},
@@ -442,42 +438,6 @@ public class WikiManager
         return ContainerUtil.purgeTable(comm.getTableInfoPages(), null);
     }
 
-
-    public static void search(SearchTermProvider provider, Set<Container> containers, List<SearchHit> hits)
-    {
-        String fromClause = comm.getTableInfoPages() + " p INNER JOIN " + comm.getTableInfoPageVersions() + " v ON p.EntityId = v.PageEntityId";
-        String maxVersionWhere = "v.RowId IN (SELECT MAX(RowId) FROM " + comm.getTableInfoPageVersions() + " GROUP BY PageEntityId)";
-        SimpleFilter versionFilter = new SimpleFilter().addWhereClause(maxVersionWhere, null);
-        SQLFragment fragment = Search.getSQLFragment("Container, Title, Name", "Container, Title, Name", fromClause, "Container", versionFilter, containers, provider, comm.getSchema().getSqlDialect(), "Title", "Body");
-
-        ResultSet rs = null;
-
-        try
-        {
-            rs = Table.executeQuery(comm.getSchema(), fragment);
-
-            while(rs.next())
-            {
-                String containerId = rs.getString(1);
-                Container c = ContainerManager.getForId(containerId);
-                ActionURL url = new ActionURL(WikiController.PageAction.class, c);
-                url.addParameter("name", rs.getString(3));
-
-                SimpleSearchHit hit = new SimpleSearchHit(WikiSearchable.SEARCH_DOMAIN, c.getPath(),
-                        rs.getString(2), url.getLocalURIString(), SEARCH_HIT_TYPE, SEARCH_HIT_TYPE_PAGE);
-
-                hits.add(hit);
-            }
-        }
-        catch(SQLException e)
-        {
-            ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), e);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
 
     private static Map<HString, Wiki> generatePageMap(Container c) throws SQLException
     {

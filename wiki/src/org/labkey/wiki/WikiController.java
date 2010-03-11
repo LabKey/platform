@@ -99,7 +99,7 @@ public class WikiController extends SpringActionController
             WebPartView toc = new WikiTOC(context);
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
-            if (null == ss || mv instanceof Search.SearchResultsView)
+            if (null == ss)
             {
                 ((HomeTemplate)template).setView("right", toc);
             }
@@ -2216,32 +2216,6 @@ public class WikiController extends SpringActionController
             }
         }
 
-    }
-
-    /**
-     * Search Action Implementation
-     */
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SearchAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            Container c = getViewContext().getContainer();
-            String searchTerm = (String)getProperty("search", "");
-            boolean includeSubfolders = Search.includeSubfolders(getPropertyValues());
-
-            List<Search.Searchable> l = new ArrayList<Search.Searchable>();
-            l.add(new WikiSearchable());
-
-            getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
-
-            return new Search.SearchResultsView(c, l, searchTerm, new ActionURL(SearchAction.class, c), includeSubfolders, true);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Wiki Search Results");
-        }
     }
 
     /**

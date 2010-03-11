@@ -47,7 +47,6 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.assay.*;
@@ -142,8 +141,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new AssayDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
-
-        Search.register(new StudySearch());
 
         EnumConverter.registerEnum(SecurityType.class);
         EnumConverter.registerEnum(TimepointType.class);

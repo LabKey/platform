@@ -20,21 +20,20 @@ import org.apache.log4j.Logger;
 import org.labkey.announcements.model.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Search;
-import org.labkey.api.view.*;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.search.SearchService;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -117,7 +116,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public void startup(ModuleContext moduleContext)
     {
-        Search.register(new MessageSearch());
         DiscussionService.register(new DiscussionServiceImpl());
 
         AnnouncementListener listener = new AnnouncementListener();

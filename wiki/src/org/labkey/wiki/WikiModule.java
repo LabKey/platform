@@ -23,24 +23,22 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
-import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.FolderType;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.DeveloperRole;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Search;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.search.SearchService;
 import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -98,7 +96,6 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
         
         ContainerManager.addContainerListener(new WikiContainerListener());
-        Search.register(new WikiSearchable());
         ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType());
         WebdavService.get().addProvider(new WikiWebdavProvider());
 

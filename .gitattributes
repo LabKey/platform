@@ -97,7 +97,6 @@ announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -tex
 announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text
 announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
-announcements/src/org/labkey/announcements/model/MessageSearch.java -text
 announcements/src/org/labkey/announcements/model/NormalMessageBoardPermissions.java -text
 announcements/src/org/labkey/announcements/model/OptOutEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/Permissions.java -text
@@ -1035,7 +1034,6 @@ issues/src/org/labkey/issue/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/list.jsp -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
-issues/src/org/labkey/issue/model/IssueSearch.java -text
 issues/src/org/labkey/issue/query/IssuesQuerySchema.java -text
 issues/src/org/labkey/issue/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/query/IssuesTable.java -text
@@ -1617,8 +1615,6 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -tex
 portal/module.properties -text
 portal/src/org/labkey/portal/PortalModule.java -text
 portal/src/org/labkey/portal/customizeErrors.jsp -text
-portal/src/org/labkey/portal/customizeSearchWebPart.jsp -text
-portal/src/org/labkey/portal/search.jsp -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text
@@ -1881,7 +1877,6 @@ search/src/org/labkey/search/view/admin.jsp -text
 search/src/org/labkey/search/view/customizeSearchWebPart.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
-search/src/schemas/search.xml -text
 study/gwtsrc/org/labkey/assay/designer/AssayDesigner.gwt.xml -text
 study/gwtsrc/org/labkey/assay/designer/client/AssayDesigner.java -text
 study/gwtsrc/org/labkey/assay/upload/ListChooser.gwt.xml -text
@@ -2224,7 +2219,6 @@ study/src/org/labkey/study/StudyFolderType.java -text
 study/src/org/labkey/study/StudyMacroProvider.java -text
 study/src/org/labkey/study/StudyModule.java -text
 study/src/org/labkey/study/StudySchema.java -text
-study/src/org/labkey/study/StudySearch.java -text
 study/src/org/labkey/study/StudyServiceImpl.java -text
 study/src/org/labkey/study/StudyUpgradeCode.java -text
 study/src/org/labkey/study/StudyUpgrader.java -text
@@ -2782,7 +2776,6 @@ wiki/src/org/labkey/wiki/WikiCache.java -text
 wiki/src/org/labkey/wiki/WikiContainerListener.java -text
 wiki/src/org/labkey/wiki/WikiManager.java -text
 wiki/src/org/labkey/wiki/WikiModule.java -text
-wiki/src/org/labkey/wiki/WikiSearchable.java -text
 wiki/src/org/labkey/wiki/WikiTOCFactory.java -text
 wiki/src/org/labkey/wiki/WikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/WikiWebdavProvider.java -text

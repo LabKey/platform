@@ -22,17 +22,15 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Search;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.search.SearchService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.sql.SQLException;
@@ -81,7 +79,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         ContainerManager.addContainerListener(new IssueContainerListener());
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
-        Search.register(IssueSearch.getInstance());
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)

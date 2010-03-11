@@ -17,15 +17,15 @@
 %>
 <%@ page import="org.labkey.api.action.SpringActionController"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.Search" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.search.view.SearchWebPartFactory" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>)HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
-    boolean includeSubfolders = Search.includeSubfolders(webPart);
+    boolean includeSubfolders = SearchWebPartFactory.includeSubfolders(webPart);
 %>
 <form name="frmCustomize" method="post">
 <table>

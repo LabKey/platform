@@ -32,8 +32,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.*;
-import org.labkey.api.util.Search.SearchResultsView;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
@@ -639,38 +640,6 @@ public class ProjectController extends SpringActionController
     }
 
 
-    public static ActionURL getSearchUrl(Container c)
-    {
-        return new ActionURL(SearchResultsAction.class, c);
-    }
-
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SearchResultsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-            String searchTerm = (String)getProperty("search", "");
-
-            boolean includeSubfolders = Search.includeSubfolders(getPropertyValues());
-
-            HttpView results = new SearchResultsView(c, Search.ALL_SEARCHABLES, searchTerm, getSearchUrl(c), includeSubfolders, true);
-
-            PageConfig config = getPageConfig();
-            config.setFocusId("search");
-            config.setTitle("Search Results");
-            config.setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
-            return results;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
     public static class MovePortletForm extends CustomizePortletForm
     {
         private int direction;
@@ -803,101 +772,6 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class SearchForm
-    {
-        private String _terms;
-        private String _domains;
-        private boolean _includeSubfolders;
-
-        public String getTerms()
-        {
-            return _terms;
-        }
-
-        public void setTerms(String terms)
-        {
-            _terms = terms;
-        }
-
-        public String getDomains()
-        {
-            return _domains;
-        }
-
-        public void setDomains(String domains)
-        {
-            _domains = domains;
-        }
-
-        public boolean isIncludeSubfolders()
-        {
-            return _includeSubfolders;
-        }
-
-        public void setIncludeSubfolders(boolean includeSubfolders)
-        {
-            _includeSubfolders = includeSubfolders;
-        }
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SearchAction extends ApiAction<SearchForm>
-    {
-        public ApiResponse execute(SearchForm form, BindException errors) throws Exception
-        {
-            //determine the set of containers to search
-            //if includeSubfolders is true, get all children in which the user has read permission
-            Set<Container> containers = form.isIncludeSubfolders() ?
-                    ContainerManager.getAllChildren(getViewContext().getContainer(), getViewContext().getUser()) :
-                    Collections.singleton(getViewContext().getContainer());
-
-            //determine the set of searchables to search based on the list of domains
-            List<Search.Searchable> searchables = getSearchables(form);
-
-            //parse the search terms
-            Search.SearchTermParser parser = new Search.SearchTermParser(form.getTerms());
-            List<SearchHit> hits = new ArrayList<SearchHit>();
-            if(parser.hasTerms())
-            {
-                //perform the searches
-                for(Search.Searchable src : searchables)
-                {
-                    src.search(parser, containers, hits, getUser());
-                }
-            }
-
-            //sort the results
-            Collections.sort(hits, new SearchHitComparator());
-
-            //build the results
-            ApiSimpleResponse resp = new ApiSimpleResponse("hitCount", hits.size());
-            resp.putBeanList("hits", hits);
-            resp.putBean("search", form);
-
-            return resp;
-        }
-
-        protected List<Search.Searchable> getSearchables(SearchForm form)
-        {
-            if (null == form.getDomains() || form.getDomains().length() == 0)
-                return Search.ALL_SEARCHABLES;
-
-            List<Search.Searchable> searchables = new ArrayList<Search.Searchable>();
-            String[] domains = form.getDomains().split(",");
-            if(null != domains)
-            {
-                for(String dom : domains)
-                {
-                    Search.Searchable src = Search.getDomain(dom);
-                    if(null == src)
-                        throw new IllegalArgumentException("'" + dom + "' is not a valid search domain!");
-
-                    searchables.add(src);
-                }
-            }
-            return searchables;
-        }
-    }
 
     public static class GetContainersForm
     {
