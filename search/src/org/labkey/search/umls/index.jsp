@@ -30,34 +30,43 @@ String pollURL = null==pollKey ? null : pollKey.getUrl();
 
 %>
 <form action="index.post" style="display:<%=null==pollURL?"block":"none"%>" method=POST><input type="submit" name="START" value="START"></form>
-<div style="display:<%=null==pollURL?"none":"block"%>">running: <span id="count"></span></div>
+<div style="display:<%=null==pollURL?"none":"block"%>"><span id="status"></span></div>
 <script type="text/javascript">
 var url = <%=PageFlowUtil.jsString(pollURL)%>;
 var task=null;
 var req=null;
+var stopped=false;
 function stop()
 {
     Ext.TaskMgr.stop(task);
     Ext.Ajax.abort(req);
+    stopped=true;
 }
 function updateCount(response,options)
 {
     var o = eval('(' + response.responseText + ')');
+    var status = '';
     if ('count' in o)
     {
         if ('done' in o && o.done)
         {
             stop();
-            Ext.get('count').update('DONE ' + o.count);
-        }
-        else if ('estimate' in o && o.estimate>0)
-        {
-            Ext.get('count').update(''+o.count + ' ' + Math.round(100.0*o.count/o.estimate) + '%');
+            status = "DONE: " + o.count;
         }
         else
         {
-            Ext.get('count').update(''+o.count);
+            if ('status' in o && o.status)
+                status = o.status + ' ';
+            else if ('estimate' in o && o.estimate>0)
+            {
+                status += ''+o.count + ' ' + Math.round(100.0*o.count/o.estimate) + '%';
+            }
+            else
+            {
+                status += ''+o.count;
+            }
         }
+        Ext.get('status').update(status);
     }
 }
 function requestCount()
@@ -67,6 +76,7 @@ function requestCount()
        success: updateCount,
        failure: function(response,options)
        {
+           if (stopped) return;
            stop();
            alert(response.statusText + "\n\n" + response.responseText);
        }

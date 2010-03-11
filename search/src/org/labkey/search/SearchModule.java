@@ -30,6 +30,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -73,7 +74,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Set<String> getSchemaNames()
     {
-        return Collections.singleton("search");
+        return PageFlowUtil.set("search","umls");
     }
 
 
