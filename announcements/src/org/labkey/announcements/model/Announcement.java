@@ -31,7 +31,6 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.announcements.AnnouncementsController;
 
-import javax.ejb.*;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -43,8 +42,6 @@ import java.util.ArrayList;
 /**
  * Bean Class for Announcement.
  */
-@javax.ejb.Entity
-@javax.ejb.Table(name = "Announcements")
 public class Announcement extends AttachmentParentEntity implements Serializable
 {
     private int _rowId = 0;
@@ -118,7 +115,6 @@ public class Announcement extends AttachmentParentEntity implements Serializable
      *
      * @return the rowId
      */
-    @Column(unique = true, insertable = false, updatable = false)
     public int getRowId()
     {
         return _rowId;
@@ -236,7 +232,6 @@ public class Announcement extends AttachmentParentEntity implements Serializable
         _broadcast = broadcast;
     }
 
-    @Transient
     public String getCreatedByName(ViewContext context)
     {
         return getCreatedByName(false, context);
@@ -270,7 +265,6 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     }
 
 
-    @Transient
     public String getModifiedByName(ViewContext context)
     {
         return UserManager.getDisplayNameOrUserId(getModifiedBy(), context);
@@ -283,8 +277,6 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     }
 
 
-    @OneToMany(fetch = FetchType.EAGER, targetEntity = "org.labkey.api.attachments.Attachment", cascade = CascadeType.ALL)
-    @JoinColumn(name = "parent")
     public Collection<Attachment> getAttachments() throws SQLException
     {
         if (null == _attachments)
@@ -300,8 +292,6 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     }
 
 
-    @OneToMany(fetch = FetchType.LAZY, targetEntity = "announcements.model.Announcement", cascade = CascadeType.ALL)
-    @JoinColumn(name = "parent")
     public Collection<Announcement> getResponses()
     {
         return _responses;

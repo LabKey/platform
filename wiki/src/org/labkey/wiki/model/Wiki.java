@@ -24,7 +24,6 @@ import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.WikiManager;
 
-import javax.ejb.*;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -37,8 +36,6 @@ import java.util.List;
  * Time: 10:28:24 AM
  */
 
-@javax.ejb.Entity
-@Table(name = "Pages")
 public class Wiki extends AttachmentParentEntity implements Serializable
 {
     // TODO: it's odd we need all of entityId, rowId and name
@@ -76,7 +73,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    @Transient
     public synchronized ActionURL getWikiLink(String action, HString name)
     {
         if (null == url)
@@ -89,7 +85,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return url.clone();
     }
 
-    @Transient
     public String getDeleteLink()
     {
         if (null == name || 0 == rowId)
@@ -100,7 +95,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return deleteLink.getLocalURIString();
     }
 
-    @Transient
     public String getManageLink()
     {
         if (null == name || 0 == rowId)
@@ -111,7 +105,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return manageLink.getLocalURIString();
     }
 
-    @Transient
     public String getAttachmentLink(String document)
     {
         DownloadURL urlDownload = new DownloadURL("Wiki", getContainerPath(), getEntityId(), document);
@@ -125,14 +118,12 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return getWikiLink("versions", name).getLocalURIString();
     }
 
-    @Transient
     public String getPageLink()
     {
         return getWikiLink("page", this.name).getLocalURIString();
     }
 
 
-    @Column(unique = true, updatable = false, insertable = false)
     public int getRowId()
     {
         return rowId;
@@ -172,7 +163,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    @Column(nullable = false)
     public HString getName()
     {
         return name;
@@ -194,8 +184,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         return WikiManager.getVersionCount(this);
     }
 
-    @OneToMany(fetch = FetchType.LAZY, targetEntity = "org.labkey.api.attachments.Attachment")
-    @JoinColumn(name = "parent", referencedColumnName = "entityId")
     public Collection<Attachment> getAttachments()
     {
         return attachments;

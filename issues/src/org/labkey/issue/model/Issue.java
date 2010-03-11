@@ -24,7 +24,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.ViewContext;
 
-import javax.ejb.*;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -33,8 +32,6 @@ import java.util.Date;
 import java.util.List;
 
 
-@javax.ejb.Entity
-@Table(name = "Issues")
 public class Issue extends Entity implements Serializable, Cloneable
 {
     public static HString statusOPEN = new HString("open",false);
@@ -150,7 +147,6 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    @Id(generate = GeneratorType.AUTO)
     public int getIssueId()
     {
         return issueId;
@@ -199,7 +195,6 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    @Transient
     public HString getAssignedToName(ViewContext context)
     {
         return new HString(UserManager.getDisplayName(assignedTo, context));
@@ -269,7 +264,6 @@ public class Issue extends Entity implements Serializable, Cloneable
 */
 
 
-    @Transient
     public String getCreatedByName(ViewContext context)
     {
         return UserManager.getDisplayName(getCreatedBy(), context);
@@ -301,7 +295,6 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    @Transient
     public String getResolvedByName(ViewContext context)
     {
         return UserManager.getDisplayName(getResolvedBy(), context);
@@ -358,7 +351,6 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    @Transient
     public String getClosedByName(ViewContext context)
     {
         return UserManager.getDisplayName(getClosedBy(), context);
@@ -417,8 +409,6 @@ public class Issue extends Entity implements Serializable, Cloneable
         this.int1 = int1;
     }
 
-    @OneToMany(fetch = FetchType.EAGER, targetEntity = "Issues.model.Issue$Comment", cascade = CascadeType.ALL)
-    @JoinColumn(name = "issueId")
     public Collection<Issue.Comment> getComments()
     {
 //        if (null == comments)
@@ -445,7 +435,6 @@ public class Issue extends Entity implements Serializable, Cloneable
         return _comments.isEmpty();
     }
 
-    @Transient
     public String getModifiedByName(ViewContext context)
     {
         return UserManager.getDisplayName(getModifiedBy(), context);
@@ -485,8 +474,6 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     /* CONSIDER: use Announcements/Notes instead of special Comments class */
 
-    @javax.ejb.Entity
-    @Table(name = "Comments")
     public static class Comment extends AttachmentParentEntity implements Serializable
     {
         private Issue issue;
@@ -503,8 +490,6 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.comment = new HString(comment, false);
         }
 
-        @ManyToOne
-        @JoinColumn(name = "issueId")
         public Issue getIssue()
         {
             return issue;
@@ -515,7 +500,6 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.issue = issue;
         }
 
-        @Id(generate = GeneratorType.AUTO)
         public int getCommentId()
         {
             return commentId;
@@ -526,7 +510,6 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.commentId = commentId;
         }
 
-        @Transient
         public String getCreatedByName(ViewContext context)
         {
             return UserManager.getDisplayName(getCreatedBy(), context);
