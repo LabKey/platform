@@ -104,10 +104,9 @@ public class RRF_Loader extends Job
         try
         {
             load("MRREL");
-            throw new NullPointerException();
-            //load("MRCONSO");
-            //load("MRDEF");
-            //load("MRSTY");
+            load("MRCONSO");
+            load("MRDEF");
+            load("MRSTY");
         }
         finally
         {
