@@ -412,14 +412,14 @@ public abstract class DisplayColumn extends RenderColumn
         boolean filtered = isFiltered(ctx);
         String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getName() : super.getName());
 
-        out.write("\n<th class='");
+        out.write("\n<td class='labkey-column-header ");
         out.write(getGridHeaderClass());
         if (sortField != null)
         {
             if (sortField.getSortDirection() == Sort.SortDirection.ASC)
-                out.write(" sort-asc");
+                out.write(" labkey-sort-asc");
             else
-                out.write(" sort-desc");
+                out.write(" labkey-sort-desc");
         }
         if (filtered)
             out.write(" labkey-filtered");
@@ -475,7 +475,7 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("</script>\n");
         }
 
-        out.write("</th>");
+        out.write("</td>");
     }
 
     private Sort getSort(RenderContext ctx)
