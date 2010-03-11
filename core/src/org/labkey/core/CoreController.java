@@ -269,7 +269,10 @@ public class CoreController extends SpringActionController
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            Container c = LookAndFeelProperties.getSettingsContainer(getContainer());
+            Container c = getContainer();
+            if (null == c)
+                c = ContainerManager.getRoot();
+            c = LookAndFeelProperties.getSettingsContainer(c);
 
             Content content = _combinedStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
