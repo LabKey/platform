@@ -185,6 +185,7 @@ biotrue/resources/schemas/dbscripts/postgresql/obsolete/biotrue-0.01-0.02.sql -t
 biotrue/resources/schemas/dbscripts/sqlserver/biotrue-0.00-2.10.sql -text
 biotrue/resources/schemas/dbscripts/sqlserver/obsolete/biotrue-0.00-0.01.sql -text
 biotrue/resources/schemas/dbscripts/sqlserver/obsolete/biotrue-0.01-0.03.sql -text
+biotrue/src/META-INF/biotrue/jars.txt -text
 biotrue/src/org/labkey/biotrue/BtModule.java -text
 biotrue/src/org/labkey/biotrue/controllers/BtController.java -text
 biotrue/src/org/labkey/biotrue/controllers/BtOverview.java -text
