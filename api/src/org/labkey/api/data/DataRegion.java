@@ -874,10 +874,12 @@ public class DataRegion extends DisplayElement
 
     protected void renderHeader(RenderContext ctx, Writer out, boolean renderButtons, int colCount) throws IOException
     {
+        out.write("\n<tr");
         if (!shouldRenderHeader(renderButtons))
-            return;
+            out.write(" style=\"display:none\"");
+        out.write(">");
         
-        out.write("\n<tr><td colspan=\"");
+        out.write("<td colspan=\"");
         out.write(String.valueOf(colCount));
         out.write("\" class=\"labkey-data-region-header-container\">\n");
 
