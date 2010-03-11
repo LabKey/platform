@@ -680,17 +680,18 @@ public class IssueManager
     }
     
 
-    public static void indexIssues(SearchService.IndexTask task, Container c, Date modifiedSince)
+    public static void indexIssues(SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
+        assert null != c;
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss)
+        if (null == ss || null == c)
             return;
+        
         ResultSet rs = null;
         try
         {
             SimpleFilter f = new SimpleFilter();
-            if (null != c)
-                f.addCondition("container", c);
+            f.addCondition("container", c);
             SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
             if (!incremental.toSQLFragment(null,null).isEmpty())
                 f.addClause(incremental);
@@ -746,7 +747,6 @@ public class IssueManager
     public static void indexIssues(SearchService.IndexTask task, int[] ids, int count)
     {
         if (count == 0) return;
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
         SQLFragment f = new SQLFragment();
         f.append("SELECT I.issueId, I.container, I.entityid, I.title, I.status, AssignedTo$.searchTerms as assignedto, I.type, I.area, ")

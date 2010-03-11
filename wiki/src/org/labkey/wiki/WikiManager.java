@@ -897,43 +897,14 @@ public class WikiManager
     }
 
     
-    public static void indexWikis(@NotNull final SearchService.IndexTask task, Container c, final Date modifiedSince)
+    public static void indexWikis(@NotNull final SearchService.IndexTask task, @NotNull Container c, final Date modifiedSince)
     {
+        assert null != c;
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss)
+        if (null == ss || null == c)
             return;
 
-        if (null != c)
-        {
-            indexWikiContainerFast(task, c, modifiedSince, null);
-            return;
-        }
-
-        ResultSet rs = null;
-        try
-        {
-            rs = Table.executeQuery(comm.getSchema(), "SELECT DISTINCT container FROM comm.pages", null);
-            while (rs.next())
-            {
-                final String id = rs.getString(1);
-                final Container wikiContainer = ContainerManager.getForId(id);
-                if (null != wikiContainer)
-                {
-                    task.addRunnable(new Runnable(){public void run(){
-                        indexWikiContainerFast(task, wikiContainer, modifiedSince, null);
-                    }}, SearchService.PRIORITY.group);
-                }
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-
+        indexWikiContainerFast(task, c, modifiedSince, null);
     }
 
 

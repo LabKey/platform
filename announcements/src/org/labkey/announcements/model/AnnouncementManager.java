@@ -841,33 +841,27 @@ public class AnnouncementManager
 
 
     // TODO: Fix inconsistency -- cid is @NotNull and we check c != null, yet some code below allows for c == null
-    public static void indexMessages(SearchService.IndexTask task, @NotNull String cid, Date modifiedSince, String threadId)
+    public static void indexMessages(SearchService.IndexTask task, @NotNull String containerId, Date modifiedSince, String threadId)
     {
-        if (null != modifiedSince && null != threadId)
+        assert null != containerId;
+        if (null == containerId || (null != modifiedSince && null != threadId))
             throw new IllegalArgumentException();
-        
-        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        if (null == ss)
-            return;
-
-        Container c = ContainerManager.getForId(cid);
+        // make sure container still exists
+        Container c = ContainerManager.getForId(containerId);
         if (null == c || isSecure(c))
             return;
+        
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
         ResultSet rs = null;
         ResultSet rs2 = null;
 
         try
         {
-            SQLFragment sql = new SQLFragment("SELECT container, entityId FROM " + _comm.getTableInfoThreads());
-            String and = " WHERE ";
-
-            if (null != c)
-            {
-                sql.append(and).append("container = ?");
-                sql.add(c);
-                and = " AND ";
-            }
+            SQLFragment sql = new SQLFragment("SELECT entityId FROM " + _comm.getTableInfoThreads());
+            sql.append(" WHERE container = ?");
+            sql.add(containerId);
+            String and = " AND ";
 
             if (null != threadId)
             {
@@ -885,15 +879,7 @@ public class AnnouncementManager
 
             while (rs.next())
             {
-                String containerId = rs.getString(1);
-
-                Container c2 = ContainerManager.getForId(containerId);
-
-                // Don't index messages in deleted containers or secure message boards
-                if (null == c2 || isSecure(c2))
-                    continue;
-
-                String entityId = rs.getString(2);
+                String entityId = rs.getString(1);
                 _indexThread(task, containerId, entityId);
                 if (Thread.interrupted())
                     return;
@@ -902,14 +888,10 @@ public class AnnouncementManager
             // Get the attachments... unfortunately, they're attached to individual announcements, not to the thread,
             // so we need a different query.
             // find all messages that have attachments
-            sql = new SQLFragment("SELECT a.Container, a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent\n");
-            and = " WHERE ";
-            if (null != c)
-            {
-                sql.append(and).append("a.container = ?");
-                sql.add(c);
-                and = " AND ";
-            }
+            sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
+            sql.append("\nWHERE a.container = ?");
+            sql.add(containerId);
+            and = " AND ";
             if (null != threadId)
             {
                 sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
@@ -922,7 +904,7 @@ public class AnnouncementManager
                 if (!modified.isEmpty())
                     sql.append(and).append(modified);
             }
-            sql.append(" GROUP BY a.Container, a.EntityId");
+            sql.append("\nGROUP BY a.EntityId");
 
             Collection<String> annIds = new HashSet<String>();
             Map<String, Announcement> map = new HashMap<String, Announcement>();
@@ -931,16 +913,9 @@ public class AnnouncementManager
 
             while (rs2.next())
             {
-                String containerId = rs2.getString(1);
-                String entityId = rs2.getString(2);
-                String parent = rs2.getString(3);
-                String title = rs2.getString(4);
-
-                Container c2 = ContainerManager.getForId(containerId);
-
-                // Don't index attachments in deleted containers or secure message boards
-                if (null == c2 || isSecure(c2))
-                    continue;
+                String entityId = rs2.getString(1);
+                String parent = rs2.getString(2);
+                String title = rs2.getString(3);
 
                 annIds.add(entityId);
                 Announcement ann = new Announcement();
@@ -955,9 +930,9 @@ public class AnnouncementManager
             {
                 List<Pair<String, String>> list = AttachmentService.get().listAttachmentsForIndexing(annIds, modifiedSince);
                 ActionURL url = new ActionURL(AnnouncementsController.DownloadAction.class, null);
-                url.setExtraPath(c.getId());
+                url.setExtraPath(containerId);
                 ActionURL urlThread = new ActionURL(AnnouncementsController.ThreadAction.class, null);
-                urlThread.setExtraPath(c.getId());
+                urlThread.setExtraPath(containerId);
 
                 for (Pair<String, String> pair : list)
                 {
