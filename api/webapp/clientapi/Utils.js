@@ -450,6 +450,83 @@ LABKEY.Utils.convertToExcel(
             if (value.length < ending.length)
                 return false;
             return value.substring(value.length - ending.length) == ending;
+        },
+
+        /**
+         * Iteratively calls a tester function you provide, calling another callback function once the
+         * tester function returns true. This function is useful for advanced JavaScript scenarios, such
+         * as cases where you are including common script files dynamically using the requiresScript()
+         * method, and need to wait until classes defined in those files are parsed and ready for use.
+         *  
+         * @param {Object} config a configuration object with the following properties:
+         * @param {Function} config.testCallback A function that returns true or false. This will be called every
+         * ten milliseconds until it returns true or the maximum number of tests have been made.
+         * @param {Array} [config.testArguments] An optional array of arguments to pass to the testCallback function
+         * @param {Function} config.successCallback The function to call when the testCallback returns true.
+         * @param {Array} [config.successArguments] An optional array of arguments to pass to the successCallback function
+         * @param {Object} [config.errorCallback] A function to call when the testCallback throws an exception, or when
+         * the maximum number of tests have been made.
+         * @param {Array} [config.errorArguments] An optional array of arguments to pass to the errorCallback function
+         * @param {Object} [config.scope] A scope to use when calling any of the callback methods (defaults to this)
+         * @param {int} [config.maxTests] Maximum number of tests before the errorCallback is called (defaults to 1000).
+         *
+         * @example
+&lt;script&gt;
+    LABKEY.Utils.requiresScript("FileUploadField.js");
+    LABKEY.Utils.requiresCSS("FileUploadField.css");
+&lt;/script&gt;
+
+&lt;script&gt;
+    function tester()
+    {
+        return undefined != Ext.form.FileUploadField;
+    }
+
+    function onTrue(msg)
+    {
+        //this alert is merely to demonstrate the successArguments config property
+        alert(msg);
+
+        //use the file upload field...
+    }
+
+    function onError(msg)
+    {
+        alert("ERROR: " + msg);
+    }
+
+    LABKEY.Utils.onTrue({
+        testCallback: tester,
+        successCallback: onTrue,
+        successArguments: ['FileUploadField is ready to use!'],
+        errorCallback: onError,
+        maxTests: 100
+    });
+&lt;/script&gt;
+         */
+        onTrue : function(config)
+        {
+            config.maxTests = config.maxTests || 1000;
+            try
+            {
+                if(config.testCallback.apply(config.scope || this, config.testArguments))
+                    config.successCallback.apply(config.scope || this, config.successArguments);
+                else
+                {
+                    if (config.maxTests <= 0)
+                        throw "Maximum number of tests reached!";
+                    else
+                    {
+                        --config.maxTests;
+                        LABKEY.Utils.onTrue.defer(10, this, [config]);
+                    }
+                }
+            }
+            catch(e)
+            {
+                if (config.errorCallback)
+                    config.errorCallback.apply(config.scope || this, [e,config.errorArguments]);
+            }
         }
     };
 };
