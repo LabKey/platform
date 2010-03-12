@@ -58,6 +58,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
@@ -824,6 +825,7 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
+            _log.debug("PROPFIND " + getResourcePathStr());
             Resource root = getResource();
             if (root == null || !root.exists())
                 return notFound();
@@ -1588,6 +1590,8 @@ public class DavController extends SpringActionController
                 return;
 
             Resource resource = resolvePath(path);
+            if (null == resource)
+                return;
 
             xml.writeElement(null, "response", XMLWriter.OPENING);
             String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
@@ -1836,6 +1840,8 @@ public class DavController extends SpringActionController
                 return;
 
             Resource resource = resolvePath(path);
+            if (null == resource)
+                return;
 
             json.object();
             json.key("id").value(resource.getPath());
@@ -1869,10 +1875,10 @@ public class DavController extends SpringActionController
             checkLocked();
 
             Path path = getResourcePath();
-
             Resource resource = resolvePath();
-            if (null == resource)
-                return notFound();
+            if (null == resource || path.size()==0)
+                throw new DavException(WebdavStatus.SC_FORBIDDEN, path.toString());
+
             boolean exists = resource.exists();
 
             // Can't create a collection if a resource already exists at the given path
@@ -1917,6 +1923,11 @@ public class DavController extends SpringActionController
             {
                 IOUtils.closeQuietly(is);
             }
+
+            // MKCOL with missing intermediate should fail (RFC2518:8.3.1)
+            Resource parent = resource.parent();
+            if (null == parent || !parent.isCollection())
+                throw new DavException(WebdavStatus.SC_CONFLICT, String.valueOf(path.getParent()) + " is not a collection");
 
             if (!resource.canCreate(getUser()))
                 return unauthorized(resource);
@@ -2415,14 +2426,15 @@ public class DavController extends SpringActionController
             checkLocked();
 
             Path destinationPath = getDestinationPath();
-
             if (destinationPath == null)
                 throw new DavException(WebdavStatus.SC_BAD_REQUEST);
 
-            Resource dest = resolvePath(destinationPath);
             Resource src = resolvePath();
+            if (null == src || !src.exists())
+                notFound();
 
-            if (dest.getPath().equals(src.getPath()))
+            Resource dest = resolvePath(destinationPath);
+            if (null == dest || dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
 
             boolean overwrite = getOverwriteParameter();
@@ -3116,8 +3128,7 @@ public class DavController extends SpringActionController
     }
                                                              
 
-    // UNDONE: normalize path
-    Resource resolvePath() throws DavException
+    @Nullable Resource resolvePath() throws DavException
     {
         // NOTE: security is enforced via WebFolderInfo, however we expect the container to be a parent of the path
         Container c = getViewContext().getContainer();
@@ -3131,17 +3142,18 @@ public class DavController extends SpringActionController
         return resolvePath(path);
     }
 
+    
     // per request cache
     Map<Path, Resource> resourceCache = new HashMap<Path, Resource>();
     Resource nullDavFileInfo = (Resource)Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{Resource.class}, new InvocationHandler(){public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{return null;}});
 
-    Resource resolvePath(String path) throws DavException
+    @Nullable Resource resolvePath(String path) throws DavException
     {
         return resolvePath(Path.parse(path));
     }
 
 
-    Resource resolvePath(Path path) throws DavException
+    @Nullable Resource resolvePath(Path path) throws DavException
     {
         Resource resource = resourceCache.get(path);
 
@@ -3156,9 +3168,6 @@ public class DavController extends SpringActionController
             resourceCache.put(path, resource == null ? nullDavFileInfo : resource);
             return resource;
         }
-
-        if (null == resource)
-            throw new DavException(WebdavStatus.SC_FORBIDDEN);
 
         boolean isRoot = path.size() == 0;
         if ( !isRoot && path.isDirectory() && resource.isFile())
