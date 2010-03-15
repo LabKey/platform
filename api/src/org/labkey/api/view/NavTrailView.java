@@ -196,7 +196,7 @@ public class NavTrailView extends HttpView
             }
             if (_pageConfig.getExploratoryFeatures())
             {
-                _out.print("<a class=\"labkey-error\" href=\"");_out.print(filter((new HelpTopic("exploratory", HelpTopic.Area.CPAS)).getHelpTopicLink()));
+                _out.print("<a class=\"labkey-error\" href=\"");_out.print(filter((new HelpTopic("exploratory")).getHelpTopicLink()));
                 _out.print("\" target=\"help\">This page contains exploratory features</a>");
             }
 

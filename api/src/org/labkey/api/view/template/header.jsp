@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -58,7 +59,7 @@
     <table id="headerNav" cellpadding="0" cellspacing="0" style="height:100%" border=0 bordercolor=red>
       <tr>
         <td valign="top" align="right" class="labkey-main-nav">
-          <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>">Help</a>
+          <a href="<%= bean.pageConfig.getHelpTopic().getHelpTopicLink() %>">Help<% if (AppProps.getInstance().isDevMode() && bean.pageConfig.getHelpTopic() == HelpTopic.DEFAULT_HELP_TOPIC) { %> (default)<% } %></a>
           <%
           if (null != user && !user.isGuest())
           {

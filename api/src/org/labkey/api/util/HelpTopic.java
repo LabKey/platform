@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 
@@ -26,30 +27,7 @@ import org.labkey.api.module.ModuleLoader;
  */
 public class HelpTopic
 {
-    public enum Area
-    {
-        CPAS("cpas"),
-        FLOW("flow"),
-        STUDY("study"),
-        SERVER("server"),
-        DEVELOPER("developer"),
-        DEFAULT(SERVER.getAreaPath());
-
-        private String _area;
-
-        Area(String area)
-        {
-            _area = area;
-        }
-
-        public String getAreaPath()
-        {
-            return _area;
-        }
-    }
-
     private String _topic;
-    private Area _area;
 
     private static String HELP_VERSION = null;
 
@@ -67,15 +45,14 @@ public class HelpTopic
     private static final String HELP_ROOT_URL = "http://help.labkey.org/wiki/home/";
     private static final String HELP_VERSION_URL = "/documentation/" + HELP_VERSION + "/page.view?name=";
 
-    public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default", Area.SERVER);
+    public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
 
-    public HelpTopic(String topic, Area area)
+    public HelpTopic(@NotNull String topic)
     {
-        if (topic == null || area == null)
-            throw new IllegalArgumentException("Neither help topic nor area can be null");
+        if (topic == null)
+            throw new IllegalArgumentException("Topic cannot be null");
         
         _topic = topic;
-        _area = area;
     }
 
     @Override
@@ -86,6 +63,6 @@ public class HelpTopic
 
     public String getHelpTopicLink()
     {
-        return HELP_ROOT_URL + _area.getAreaPath() + HELP_VERSION_URL + _topic;
+        return HELP_ROOT_URL + HELP_VERSION_URL + _topic;
     }
 }

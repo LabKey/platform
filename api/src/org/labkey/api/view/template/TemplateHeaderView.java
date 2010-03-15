@@ -100,7 +100,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
             if(dbVersion.getMajor() <= 8 && dbVersion.getMinor() < 3)
             {
-                HelpTopic topic = new HelpTopic("postgresUpgrade", HelpTopic.Area.SERVER);
+                HelpTopic topic = new HelpTopic("postgresUpgrade");
                 _warningMessages.add("Support for PostgreSQL Version 8.2 and earlier has been deprecated. Please <a href=\""
                         + topic.getHelpTopicLink() + "\">upgrade to version 8.3 or later</a>.");
             }
@@ -130,7 +130,7 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
         long maxMem = membean.getHeapMemoryUsage().getMax();
         if (null != user && user.isAdministrator() && maxMem > 0 && maxMem <= 268435456)
         {
-            HelpTopic topic = new HelpTopic("configWebappMemory", HelpTopic.Area.SERVER);
+            HelpTopic topic = new HelpTopic("configWebappMemory");
             _warningMessages.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
                     "LabKey recommends <a href=\"" + topic.getHelpTopicLink()
                     + "\">setting the maximum heap to at least one gigabyte (-Xmx1024M)</a>.");
