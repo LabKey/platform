@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -35,7 +34,6 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -301,7 +299,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public NavTree appendNavTrail(NavTree root)
     {
-        setHelpTopic(new HelpTopic("customizeLook", HelpTopic.Area.SERVER));
+        setHelpTopic(new HelpTopic("customizeLook"));
 
         Container c = getViewContext().getContainer();
 
@@ -495,7 +493,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private static abstract class LookAndFeelBean
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("customizeLook", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
+        public String helpLink = "<a href=\"" + (new HelpTopic("customizeLook")).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
     }
 
     public static class LookAndFeelResourcesBean extends LookAndFeelBean

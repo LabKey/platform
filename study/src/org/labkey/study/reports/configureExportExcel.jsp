@@ -54,7 +54,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
     <ol>
     <li>You must have imported a Specimen Archive in order for the "Sites" dropdown to list sites. The Specimen Archive defines a list of sites for your Study. </li>
     <li>You must associate ParticipantIDs with CurrentSiteIds via a "Participant Dataset". This step allows participant data records to be mapped to sites.</li>
-    </ol> See the <a href="<%=new HelpTopic("exportExcel", HelpTopic.Area.STUDY).getHelpTopicLink()%>">help page</a> for more information.
+    </ol> See the <a href="<%=new HelpTopic("exportExcel" ).getHelpTopicLink()%>">help page</a> for more information.
 <% WebPartView.endTitleFrame(out);
 }
 

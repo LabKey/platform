@@ -498,7 +498,7 @@ public class AssayController extends SpringActionController
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
-            setHelpTopic(new HelpTopic("defineAssaySchema", HelpTopic.Area.DEFAULT));
+            setHelpTopic(new HelpTopic("defineAssaySchema"));
             return root;
         }
     }

@@ -48,7 +48,7 @@ columns will be ignored.
 </p>
 <p>
 For more information about the schema definition format, see
-<a href="<%=new HelpTopic("DatasetBulkDefinition", HelpTopic.Area.STUDY).getHelpTopicLink()%>" target="help">the dataset schema definition documentation page</a>. 
+<a href="<%=new HelpTopic("DatasetBulkDefinition" ).getHelpTopicLink()%>" target="help">the dataset schema definition documentation page</a>.
 </p>
 <table>
     <tr>

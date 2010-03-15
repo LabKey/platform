@@ -49,7 +49,7 @@ public class AnalysisController extends SpringActionController
 
     private static HelpTopic getHelpTopic(String topic)
     {
-        return new HelpTopic(topic, HelpTopic.Area.SERVER);
+        return new HelpTopic(topic);
     }
 
     public AnalysisController()

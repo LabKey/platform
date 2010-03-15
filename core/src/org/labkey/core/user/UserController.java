@@ -560,12 +560,12 @@ public class UserController extends SpringActionController
         {
             if (getContainer().isRoot())
             {
-                setHelpTopic(new HelpTopic("manageUsers", HelpTopic.Area.SERVER));
+                setHelpTopic(new HelpTopic("manageUsers"));
                 return root.addChild("Site Users");
             }
             else
             {
-                setHelpTopic(new HelpTopic("manageProjectMembers", HelpTopic.Area.SERVER));
+                setHelpTopic(new HelpTopic("manageProjectMembers"));
                 return root.addChild("Project Users");
             }
         }

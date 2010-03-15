@@ -35,7 +35,7 @@ list templates.<%
 <%
     }
 %>
-<p>For more information about exporting and importing lists, see <a href="<%=new HelpTopic("importExportLists", HelpTopic.Area.DEFAULT)%>">the list documentation</a>.</p>
+<p>For more information about exporting and importing lists, see <a href="<%=new HelpTopic("importExportLists" )%>">the list documentation</a>.</p>
 </td></tr>
 <tr><td><input type="file" name="listZip" size="50"></td></tr>
 <tr>

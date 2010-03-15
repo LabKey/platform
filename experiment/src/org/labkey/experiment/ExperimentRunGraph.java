@@ -23,7 +23,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
@@ -153,7 +152,7 @@ public class ExperimentRunGraph
                 sb.append(dotExePath);
                 sb.append(" due to system configuration error. \n<BR>");
                 sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
-                sb.append((new HelpTopic("thirdPartyCode", HelpTopic.Area.SERVER)).getHelpTopicLink());
+                sb.append((new HelpTopic("thirdPartyCode")).getHelpTopicLink());
                 sb.append("\" target=\"_blank\">LabKey Server documentation on third party components</a>.<br>");
                 throw new ExperimentException(sb.toString());
             }

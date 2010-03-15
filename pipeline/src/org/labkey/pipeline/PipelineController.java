@@ -80,7 +80,7 @@ public class PipelineController extends SpringActionController
 
     private static HelpTopic getHelpTopic(String topic)
     {
-        return new HelpTopic(topic, HelpTopic.Area.SERVER);
+        return new HelpTopic(topic);
     }
 
     public PipelineController()

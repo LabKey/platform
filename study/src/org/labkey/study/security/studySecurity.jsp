@@ -30,8 +30,8 @@
 <p>Before setting up security for your study please read the documentation on LabKey security and
     on setting up study security.</p>
 <ul>
-    <li><a href="<%=new HelpTopic("security", HelpTopic.Area.SERVER).getHelpTopicLink()%>" target="_blank">LabKey Security Documentation</a></li>
-    <li><a href="<%=new HelpTopic("studySecurity", HelpTopic.Area.STUDY).getHelpTopicLink()%>" target="_blank">Study Security Documentation</a></li>
+    <li><a href="<%=new HelpTopic("security" ).getHelpTopicLink()%>" target="_blank">LabKey Security Documentation</a></li>
+    <li><a href="<%=new HelpTopic("studySecurity" ).getHelpTopicLink()%>" target="_blank">Study Security Documentation</a></li>
 </ul>
 
 <p>All users must have READ permissions on this folder to access anything in this study. You can configure

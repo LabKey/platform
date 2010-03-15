@@ -92,7 +92,7 @@ public class LdapController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configLdap", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">More information about LDAP authentication</a>";
+        public String helpLink = "<a href=\"" + (new HelpTopic("configLdap")).getHelpTopicLink() + "\" target=\"labkey\">More information about LDAP authentication</a>";
         public boolean reshow = false;
 
         private String servers = StringUtils.join(LdapAuthenticationManager.getServers(), ";");

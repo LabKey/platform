@@ -238,7 +238,7 @@
             <div id="wiki-help-RADEOX-source" style="display:none">
                 <table>
                     <tr>
-                        <td colspan=2><b>Wiki Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax", HelpTopic.Area.SERVER)).getHelpTopicLink()%>">more help</a>):</td>
+                        <td colspan=2><b>Wiki Formatting Guide</b> (<a target="_blank" href="<%=(new HelpTopic("wikiSyntax" )).getHelpTopicLink()%>">more help</a>):</td>
                     </tr>
                     <tr>
                         <td>link to page in this wiki&nbsp;&nbsp;</td>

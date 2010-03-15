@@ -242,7 +242,7 @@ public class QueryController extends SpringActionController
                 HttpView.throwUnauthorized();
             getPageConfig().setFocusId("ff_newQueryName");
             _form = form;
-            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
+            setHelpTopic(new HelpTopic("customSQL"));
             return new JspView<NewQueryForm>(QueryController.class, "newQuery.jsp", form, errors);
         }
 
@@ -438,7 +438,7 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
+            setHelpTopic(new HelpTopic("customSQL"));
 
             (new SchemaAction(_form)).appendNavTrail(root)
                     .addChild("Edit " + _form.getQueryName(), _form.urlFor(QueryAction.sourceQuery));
@@ -509,7 +509,7 @@ public class QueryController extends SpringActionController
             }
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
-            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
+            setHelpTopic(new HelpTopic("customSQL"));
             return queryView;
         }
 
@@ -922,7 +922,7 @@ public class QueryController extends SpringActionController
                     return HttpView.redirect(_queryDef.urlFor(QueryAction.sourceQuery));
                 form.ff_designXML = queryDoc.toString();
             }
-            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
+            setHelpTopic(new HelpTopic("customSQL"));
             return new JspView<DesignForm>(QueryController.class, "designQuery.jsp", form, errors);
         }
 
@@ -1152,7 +1152,7 @@ public class QueryController extends SpringActionController
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
             _form.setHidden(queryDef.isHidden());
-            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
+            setHelpTopic(new HelpTopic("customSQL"));
             _queryName = form.getQueryName();
             
             return new JspView<PropertiesForm>(QueryController.class, "propertiesQuery.jsp", form, errors);
@@ -2197,7 +2197,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-           setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
+           setHelpTopic(new HelpTopic("externalSchemas"));
            return new JspView<QueryForm>(getClass(), "admin.jsp", form, errors);
         }
 
@@ -2222,7 +2222,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
+            setHelpTopic(new HelpTopic("externalSchemas"));
             return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
 
@@ -2379,7 +2379,7 @@ public class QueryController extends SpringActionController
             if (!defContainer.equals(getContainer()))
                 throw new UnauthorizedException();
 
-            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
+            setHelpTopic(new HelpTopic("externalSchemas"));
             return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
 

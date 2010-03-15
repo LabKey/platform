@@ -3617,7 +3617,7 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             try {
-                setHelpTopic(new HelpTopic(_helpTopic, HelpTopic.Area.STUDY));
+                setHelpTopic(new HelpTopic(_helpTopic));
 
                 root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
@@ -4069,7 +4069,7 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             try {
-                setHelpTopic(new HelpTopic("specimenRequest", HelpTopic.Area.STUDY));
+                setHelpTopic(new HelpTopic("specimenRequest"));
 
                 root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
@@ -4217,7 +4217,7 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             try {
-                setHelpTopic(new HelpTopic("specimenRequest", HelpTopic.Area.STUDY));
+                setHelpTopic(new HelpTopic("specimenRequest"));
 
                 root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
@@ -4270,7 +4270,7 @@ public class SpecimenController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             try {
-                setHelpTopic(new HelpTopic("specimenRequest", HelpTopic.Area.STUDY));
+                setHelpTopic(new HelpTopic("specimenRequest"));
 
                 root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));

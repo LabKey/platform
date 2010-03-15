@@ -46,7 +46,7 @@
                 In either case, a reload attempt causes the server to locate a file named <strong>studyload.txt</strong> in the
                 pipeline root. If this file has changed (i.e., the file's modification time has changed) since the last
                 reload then the server will reload the study data from the pipeline.  For more information about the file
-                formats used see the <a href="<%=new HelpTopic("importExportStudy", HelpTopic.Area.STUDY)%>" target="help">Import/Export/Reload a Study documentation page</a>.
+                formats used see the <a href="<%=new HelpTopic("importExportStudy" )%>" target="help">Import/Export/Reload a Study documentation page</a>.
             </td>
         </tr>
         <tr>

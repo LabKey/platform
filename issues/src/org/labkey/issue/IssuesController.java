@@ -100,7 +100,7 @@ public class IssuesController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig config = super.defaultPageConfig();
-        config.setHelpTopic(new HelpTopic(helpTopic, HelpTopic.Area.SERVER));
+        config.setHelpTopic(new HelpTopic(helpTopic));
         return config;
     }
 
@@ -1595,7 +1595,7 @@ public class IssuesController extends SpringActionController
 
             _status = (String)getProperty("status");
 
-            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT));
+            getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 
             HttpView results = new SearchResultsView(c, searchTerm, _status, isPrint());
             return results;

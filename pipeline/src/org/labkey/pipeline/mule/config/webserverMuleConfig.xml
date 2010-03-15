@@ -32,7 +32,7 @@
             <property name="connectionFactoryJndiName" value="java:comp/env/jms/ConnectionFactory"/>
             <property name="jndiInitialFactory" value="org.apache.naming.java.javaURLContextFactory"/>
             <property name="persistentDelivery" value="true"/>
-            
+
             <property name="specification" value="1.1"/>
         </properties>
         <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
@@ -101,9 +101,33 @@
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
+    <connector name="jmsConnectorCloud" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
+        <properties>
+            <!-- JMS connector from JNDI. -->
+            <property name="connectionFactoryJndiName" value="java:comp/env/jms/ConnectionFactory"/>
+            <property name="jndiInitialFactory" value="org.apache.naming.java.javaURLContextFactory"/>
+            <property name="persistentDelivery" value="true"/>
+
+            <property name="specification" value="1.1"/>
+        </properties>
+        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
+                maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
+
+        <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
+    </connector>
+
+    <connector name="sqsConnectorState" className="org.mule.providers.sqs.SqsConnector">
+        <properties>
+            <property name="awsAccessKey" value="14YHE2J1CWVFR0JGG2G2" />
+            <property name="awsSecretKey" value="mBNF8S/Tbp/CwOpsG9u+6ps2ptZv6lBmzN+Ry1dZ" />
+            <property name="pollingFrequency" value="10000" />
+        </properties>
+    </connector>
+
     <endpoint-identifiers>
         <endpoint-identifier name="JobMQ" value="jms://job.queue"/>
         <endpoint-identifier name="StatusMQ" value="jms://status.queue"/>
+        <endpoint-identifier name="StatusSQS" value="sqs://status-queue"/>
     </endpoint-identifiers>
 
     <transformers>
@@ -115,6 +139,7 @@
             returnClass="java.lang.String"/>
         <transformer name="XMLToStatus" className="org.mule.transformers.xml.XmlToObject"
             returnClass="org.labkey.pipeline.mule.StatusRequest"/>
+
         <transformer name="StatusToXML" className="org.mule.transformers.xml.ObjectToXml"
             returnClass="java.lang.String"/>
         <transformer name="XMLToJMSMessage" className="org.mule.providers.jms.transformers.ObjectToJMSMessage"
@@ -126,7 +151,7 @@
     <global-endpoints>
         <endpoint name="PipelineQueue" type="sender" address="JobMQ"
                   transformers="JobToJMSMessage" connector="jmsConnectorState"/>
-        
+
         <!-- Give the pipeline module access to this address for queue browsing -->
         <endpoint name="JobQueue" address="JobMQ" connector="jmsConnectorWork"/>
     </global-endpoints>
@@ -283,10 +308,43 @@
                         responseTransformers="NoOpTransformer" connector="jmsConnectorState">
                 </endpoint>
             </inbound-router>
-            
+
             <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
             <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
-            
+
+            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
+        </mule-descriptor>
+
+        <mule-descriptor name="PipelineStatusSetterCloud" implementation="org.labkey.pipeline.mule.StatusRequestHandler">
+
+            <inbound-router>
+                <endpoint type="receiver" address="StatusSQS"
+                         connector="sqsConnectorState"/>
+                <router className="org.labkey.pipeline.mule.routing.CloudInboundAggregator"/>
+            </inbound-router>
+
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
+            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
+        </mule-descriptor>
+        <mule-descriptor name="CloudWaitDummy" implementation="org.mule.components.simple.PassThroughComponent" >
+
+            <inbound-router>
+                <endpoint type="receiver" address="JobMQ" transformers="NoOpTransformer"
+                        responseTransformers="NoOpTransformer" connector="jmsConnectorCloud">
+                    <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
+                        <properties>
+                            <property name="location" value="cloud"/>
+                            <property name="includeMonolithic" value="true"/>
+                        </properties>
+                    </filter>
+                </endpoint>
+            </inbound-router>
+
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+
             <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
     </model>

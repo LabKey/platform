@@ -45,7 +45,7 @@ this folder to caBIG&trade;.  If you do this then all experiment data in this fo
 <%  }  %>
 
 <%=publishButton%>&nbsp;<%=PageFlowUtil.generateButton("Admin", adminUrl)%>
-<br><br>For more information about publishing to caBIG&trade;, <a href="<%=h(new HelpTopic("cabig", HelpTopic.Area.CPAS).getHelpTopicLink())%>" target="cabig">click here</a>.
+<br><br>For more information about publishing to caBIG&trade;, <a href="<%=h(new HelpTopic("cabig" ).getHelpTopicLink())%>" target="cabig">click here</a>.
 
 <%
     if (isPublished)

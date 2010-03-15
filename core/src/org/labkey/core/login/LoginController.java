@@ -1478,7 +1478,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("authenticationModule", HelpTopic.Area.SERVER));
+            setHelpTopic(new HelpTopic("authenticationModule"));
             return getUrls().appendAuthenticationNavTrail(root);
         }
     }
@@ -1586,7 +1586,7 @@ public class LoginController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configDbLogin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">More information about database authentication</a>";
+        public String helpLink = "<a href=\"" + (new HelpTopic("configDbLogin")).getHelpTopicLink() + "\" target=\"labkey\">More information about database authentication</a>";
         public PasswordRule currentRule = DbLoginManager.getPasswordRule();
         public PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
         public boolean reshow = false;

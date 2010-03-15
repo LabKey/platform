@@ -51,7 +51,7 @@ be created using a standard template.
 <%
     }
 %>
-<p>For more information about exporting, importing, and reloading studies, see <a href="<%=new HelpTopic("importExportStudy", HelpTopic.Area.STUDY)%>">the study documentation</a>.</p>
+<p>For more information about exporting, importing, and reloading studies, see <a href="<%=new HelpTopic("importExportStudy" )%>">the study documentation</a>.</p>
 </td></tr>
 <tr><td class="labkey-announcement-title" align=left><span><%=initialCapVerb%> Study From Local Zip Archive</span></td></tr>
 <tr><td class="labkey-title-area-line"><img height=1 width=1 src="/labkey/_.gif"></td></tr>

@@ -274,7 +274,7 @@ if (null == webThemeErrors)
 
     String disabled = isBuiltInTheme ? "disabled" : "";
 
-    String helpLink = (new HelpTopic("customizeTheme", HelpTopic.Area.SERVER)).getHelpTopicLink();
+    String helpLink = (new HelpTopic("customizeTheme")).getHelpTopicLink();
 %>
 <tr>
     <td colspan=2>Choose an existing web theme or define a new one. (<a href="<%=helpLink%>" target="_new">examples...</a>)</td>

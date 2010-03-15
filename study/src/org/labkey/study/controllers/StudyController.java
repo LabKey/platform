@@ -1972,7 +1972,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition", HelpTopic.Area.STUDY));
+            getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
             _appendNavTrailDatasetAdmin(root);
             return root.addChild("Bulk Import");
         }
@@ -3611,7 +3611,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("Set Default View", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("Set Default View"));
 
             root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -3731,7 +3731,7 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
             Study study = StudyManager.getInstance().getStudy(c);
-            setHelpTopic(new HelpTopic("importExportStudy", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("importExportStudy"));
             _reload = null != study;
 
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))

@@ -49,7 +49,7 @@ public class PermissionsDetailsView extends WebPartView
             "<b>Reader:</b> Users can read text and data, but cannot modify it.<br><br>" +
             "<b>Submitter:</b> Users can insert new records, but cannot view or change other records.<br><br>" +
             "<b>No Permissions:</b> Users cannot view or modify any information in a folder.<br><br>" +
-            "See the LabKey Server <a target=\"_new\" href=\"" + (new HelpTopic("configuringPerms", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\">security</a> help topics for more information.";
+            "See the LabKey Server <a target=\"_new\" href=\"" + (new HelpTopic("configuringPerms")).getHelpTopicLink() + "\">security</a> help topics for more information.";
 
     Container _c;
     Container _project;

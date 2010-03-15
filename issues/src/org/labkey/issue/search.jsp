@@ -54,7 +54,7 @@
         %><input type=hidden name=status value="<%=h(status)%>"><%
     }
 
-    %><input type="text" size=50 id="query" name="q" value="<%=h(q)%>">&nbsp;<%=generateSubmitButton("Search")%>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT).getHelpTopicLink())%>
+    %><input type="text" size=50 id="query" name="q" value="<%=h(q)%>">&nbsp;<%=generateSubmitButton("Search")%>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch").getHelpTopicLink())%>
 </form><%
     if (0 < q.length())
     {

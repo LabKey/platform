@@ -275,7 +275,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         if (!certsDir.exists() || certsDir.listFiles(filter) == null || certsDir.listFiles(filter).length == 0)
         {
             result.add("Your LabKey Server does not have the required Globus CA certificates in " + certsDir +
-                    ". Please see " + new HelpTopic("configureEnterprisePipeline", HelpTopic.Area.SERVER) +
+                    ". Please see " + new HelpTopic("configureEnterprisePipeline") +
                     " for instructions.");
         }
         if (keyPair != null)
@@ -322,7 +322,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             if (message.length() > originalLength)
             {
                 message.append(". Please see ");
-                message.append(new HelpTopic("configureEnterprisePipeline", HelpTopic.Area.SERVER));
+                message.append(new HelpTopic("configureEnterprisePipeline"));
                 message.append(" for instructions.");
                 result.add(message.toString());
             }

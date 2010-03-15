@@ -61,7 +61,7 @@ public class StatusController extends SpringActionController
 
     private static HelpTopic getHelpTopic(String topic)
     {
-        return new HelpTopic(topic, HelpTopic.Area.SERVER);
+        return new HelpTopic(topic);
     }
 
     private void reject(Errors errors, String message)
@@ -134,7 +134,7 @@ public class StatusController extends SpringActionController
         {
             Container c = getContainerCheckAdmin();
 
-            setHelpTopic(getHelpTopic("Pipeline-Status/status"));
+            setHelpTopic(getHelpTopic("pipeline"));
 
             QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, false);
             gridView.setTitle("Data Pipeline");

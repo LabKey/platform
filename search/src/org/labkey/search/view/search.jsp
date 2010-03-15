@@ -96,7 +96,7 @@ if (loginStatusChanged())
 
     if (form.getIncludeHelpLink())
     {
-        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch", HelpTopic.Area.DEFAULT).getHelpTopicLink())%><%
+        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch").getHelpTopicLink())%><%
     }
 
     %></td></tr><%

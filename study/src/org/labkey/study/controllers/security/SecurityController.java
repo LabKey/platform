@@ -64,7 +64,7 @@ public class SecurityController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("studySecurity", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("studySecurity"));
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (null == study)
                 return HttpView.redirect(new ActionURL(StudyController.BeginAction.class, getContainer()));
@@ -303,7 +303,7 @@ public class SecurityController extends SpringActionController
     {
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("reportPermissions", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("reportPermissions"));
             return new ReportPermissionsTabStrip(form);
         }
 

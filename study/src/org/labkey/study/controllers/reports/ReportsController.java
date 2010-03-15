@@ -185,7 +185,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(StudyManageReportsBean form, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("manageReportsAndViews", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("manageReportsAndViews"));
             return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", form, errors);
         }
 
@@ -397,7 +397,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("enrollmentView", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("enrollmentView"));
             org.labkey.api.reports.Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
             final ReportDescriptor descriptor = report.getDescriptor();
 
@@ -892,7 +892,7 @@ public class ReportsController extends BaseStudyController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("exportExcel", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("exportExcel"));
 
             return new JspView<StudyImpl>("/org/labkey/study/reports/configureExportExcel.jsp", getStudy());
         }
@@ -943,7 +943,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(UploadForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("staticReports", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("staticReports"));
             form.setErrors(errors);
             if (form.getReportId() != 0)
             {
@@ -1144,7 +1144,7 @@ public class ReportsController extends BaseStudyController
 
         public ModelAndView getView(QueryReportForm form, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("datasetViews", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("datasetViews"));
             return new JspView<CreateQueryReportBean>("/org/labkey/study/view/createQueryReport.jsp",
                     new CreateQueryReportBean(getViewContext(), form.getQueryName()));
         }
@@ -1161,7 +1161,7 @@ public class ReportsController extends BaseStudyController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("crosstabReports", HelpTopic.Area.STUDY));
+            setHelpTopic(new HelpTopic("crosstabReports"));
             return new JspView<CreateCrosstabBean>("/org/labkey/study/view/createCrosstabReport.jsp",
                     new CreateCrosstabBean(getViewContext()));
         }
