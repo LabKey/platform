@@ -288,13 +288,13 @@ public class FileType implements Serializable
         {
             for (int i = 0; i < _suffixes.size(); i++)
             {
-
-                if (file.getName().endsWith(_suffixes.get(i)))
+                String s = _suffixes.get(i).toLowerCase();
+                if (file.getName().toLowerCase().endsWith(s))
                 {
                     return i;
                 }
                 // TPP treats .xml.gz as a native format
-                if (_supportGZ.booleanValue() && file.getName().endsWith(_suffixes.get(i)+".gz"))
+                if (_supportGZ.booleanValue() && file.getName().toLowerCase().endsWith(s + ".gz"))
                 {
                     return i;
                 }

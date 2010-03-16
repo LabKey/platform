@@ -220,7 +220,7 @@ LABKEY.Assay = new function()
 
 
         /**
-        * Select NAb assay data.
+        * Select NAb assay data from an assay folder.
         * @param {Object} config An object which contains the following configuration properties.
          * @param {String} config.assayName  The name of the NAb assay design for which runs are to be retrieved.
          * @param {Boolean} [config.includeStats]  Whether or not statistics (standard deviation, max, min, etc.) should
@@ -237,7 +237,7 @@ LABKEY.Assay = new function()
                     <li>options: the options used for the AJAX request</li>
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                 </ul>
-        * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+        * @param {Function} [config.errorCallback] Function called when execution of the "getNAbRuns" function fails.
         *       This function will be called with the following arguments:
                 <ul>
                     <li>responseObj: The XMLHttpRequest object containing the response data.</li>
@@ -292,6 +292,61 @@ LABKEY.Assay = new function()
 
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getNabRuns', config.containerPath),
+                method : 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(function(data, response){
+                    if(config.successCallback)
+                        config.successCallback.call(config.scope, data.runs);
+                }, this),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                params : dataObject
+            });
+        },
+
+
+        /**
+        * Select detailed NAb information for runs with summary data that has been copied to a study folder.  Note that this
+         * method must be executed against the study folder containing the copied NAb summary data.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Array} config.objectIds The object Ids for the NAb data rows that have been copied to the study.
+         * @param {Boolean} [config.includeStats]  Whether or not statistics (standard deviation, max, min, etc.) should
+         * be returned with calculations and well data.
+         * @param {Boolean} [config.includeWells]  Whether well-level data should be included in the response.
+         * @param {Boolean} [config.calculateNeut]  Whether neutralization should be calculated on the server.
+         * @param {Boolean} [config.includeFitParameters]  Whether the parameters used in the neutralization curve fitting calculation
+         * should be included in the response.
+         * @param {String} [config.containerPath] The path to the study container containing the NAb summary,
+         *       if different than the current container. If not supplied, the current container's path will be used.
+         * @param {Function} config.successCallback
+                Function called when the "getStudyNabRuns" function executes successfully.
+                This function will be called with the following arguments:
+                <ul>
+                    <li>runs: an array of NAb run objects</li>
+                    <li>options: the options used for the AJAX request</li>
+                    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+                </ul>
+        * @param {Function} [config.errorCallback] Function called when execution of the "getStudyNabRuns" function fails.
+        *       This function will be called with the following arguments:
+                <ul>
+                    <li>responseObj: The XMLHttpRequest object containing the response data.</li>
+                    <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
+                </ul>
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
+        */
+        getStudyNabRuns : function(config)
+        {
+            var dataObject = {};
+
+            Ext.apply(dataObject, config);
+
+            if(config.timeout)
+                Ext.Ajax.timeout = config.timeout;
+
+            if (!config.errorCallback)
+               config.errorCallback = LABKEY.Utils.displayAjaxErrorResponse;
+
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
                     if(config.successCallback)

@@ -92,7 +92,7 @@ public class WebdavResolverImpl implements WebdavResolver
             Resource r = resource.find(name);
             // short circuit the descent at last web folder
             if (null == r  || r instanceof UnboundResource)
-                return new UnboundResource(resource.getPath().append(name));
+                return new UnboundResource(fullPath);
             resource = r;
         }
         if (null == resource)
