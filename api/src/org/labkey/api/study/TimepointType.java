@@ -24,7 +24,19 @@ package org.labkey.api.study;
  */
 public enum TimepointType
 {
-    VISIT,
-    DATE,
-    CONTINUOUS,
+    VISIT(true),
+    DATE(false),
+    CONTINUOUS(false);
+
+    private boolean _visitBased;
+
+    private TimepointType(boolean visitBased)
+    {
+        _visitBased = visitBased;
+    }
+
+    public boolean isVisitBased()
+    {
+        return _visitBased;
+    }
 }
