@@ -509,8 +509,19 @@ public class DavController extends SpringActionController
             if ("GET".equals(method) && getResourcePath().size() == 0)
                 resource = getResolver().welcome();
             if (null == resource)
-                resource = resolvePath();
-            if (null == resource)
+            {
+                try
+                {
+                    resource = resolvePath();
+                }
+                catch (DavException x)
+                {
+                    if (x.getStatus() == WebdavStatus.SC_FORBIDDEN)
+                        return notFound();
+                    throw x;
+                }
+            }
+            if (null == resource || resource instanceof WebdavResolverImpl.UnboundResource)
                 return notFound();
             if (resource.isCollection() && !allowHtmlListing(resource))
                 return notFound(resource.getPath());

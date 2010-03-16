@@ -155,6 +155,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     method:'GET',
                     disableCaching:false,
                     success : this.updateActionConfiguration(true, true),
+                    failure: LABKEY.Utils.displayAjaxErrorResponse,
                     updateSelection: true,
                     scope: this
                 });
@@ -168,6 +169,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     method:'GET',
                     disableCaching:false,
                     success : this.updatePipelineActions,
+                    failure: LABKEY.Utils.displayAjaxErrorResponse,
                     updateSelection: true,
                     scope: this
                 });
@@ -182,6 +184,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             method:'GET',
             disableCaching:false,
             success : this.getActionConfiguration,
+            failure: LABKEY.Utils.displayAjaxErrorResponse,
             scope: this,
             updatePipelineActions: updatePipelineActions,
             updateSelection: updateSelection
@@ -215,6 +218,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 method:'GET',
                 disableCaching:false,
                 success : this.updatePipelineActions,
+                failure: LABKEY.Utils.displayAjaxErrorResponse,
                 scope: this,
                 updateSelection: e.updateSelection
             });

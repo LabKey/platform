@@ -71,7 +71,7 @@
         <tr><td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment information.</td></tr>
         <tr><td/></tr>
         <tr><td>
-            The comments associated with a <%= h(subjectNounSingle) %> or <%= h(subjectNounSingle) %>/Visit are saved as fields in datasets.
+            The comments associated with each <%= h(subjectNounSingle) %> or <%= h(subjectNounSingle) %>/Visit are saved as fields in datasets.
             Each of the datasets can contain multiple fields, but only one field can
             be designated to hold the comment text. Comment fields must be of type text or multi-line text.
             Comments will appear automatically in colums for the specimen and vial views.

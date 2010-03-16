@@ -2189,9 +2189,9 @@ public class ReportsController extends BaseStudyController
                     out.print("\"");
                     out.print("participantId".equals(bean.getFilterParam()) ? "checked" : "");
                     out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
-                    out.print(PageFlowUtil.filter(subjectNoun) + " chart.&nbsp;" + PageFlowUtil.helpPopup(subjectNoun + " chart", "A " + subjectNoun +
-                            " chart view shows measures for only one " + subjectNoun + " at a time. A " + subjectNoun +
-                            " chart view allows the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
+                    out.print(PageFlowUtil.filter(subjectNoun) + " chart.&nbsp;" + PageFlowUtil.helpPopup(subjectNoun + " chart", subjectNoun +
+                            " chart views show measures for only one " + subjectNoun + " at a time. " + subjectNoun +
+                            " chart views allow the user to step through charts for each " + subjectNoun + " shown in any dataset grid."));
                     out.print("</td></tr>");
                 }
                 out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");

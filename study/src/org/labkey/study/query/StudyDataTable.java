@@ -21,6 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
@@ -58,10 +59,11 @@ public class StudyDataTable extends FilteredTable
         addColumn(datasetColumn);
         defaultColumns.add(FieldKey.fromParts("DataSet"));
 
-        ColumnInfo participantIdColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("ParticipantId"));
-        participantIdColumn.setFk(new TitleForeignKey(getParticipantURL(), null, null, "participantId"));
+        String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+        ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("ParticipantId"));
+        participantIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
         addColumn(participantIdColumn);
-        defaultColumns.add(FieldKey.fromParts("ParticipantId"));
+        defaultColumns.add(FieldKey.fromParts(subjectColName));
 
         ColumnInfo dateColumn = new AliasedColumn(this, "Date", _rootTable.getColumn("_visitdate"));
         addColumn(dateColumn);
