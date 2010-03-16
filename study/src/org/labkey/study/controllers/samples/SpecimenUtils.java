@@ -130,13 +130,17 @@ public class SpecimenUtils
         RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
 
         if (cachedFilterData != null)
+        {
             gridView = SpecimenQueryView.createView(getViewContext(), cachedFilterData,
                     showVials ? SpecimenQueryView.ViewType.VIALS :
                                 SpecimenQueryView.ViewType.SUMMARY);
+        }
         else
+        {
             gridView = SpecimenQueryView.createView(getViewContext(),
                             showVials ? SpecimenQueryView.ViewType.VIALS :
                                         SpecimenQueryView.ViewType.SUMMARY, cohortFilter);
+        }
         gridView.setShowHistoryLinks(showVials && !forExport && !settings.isSimple());
         gridView.setDisableLowVialIndicators(forExport || settings.isSimple());
         gridView.setShowRecordSelectors(settings.isEnableRequests() || commentsMode);

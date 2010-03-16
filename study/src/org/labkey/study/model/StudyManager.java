@@ -1706,7 +1706,31 @@ public class StudyManager
         params[lsids.size()] = container.getId();
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause(whereClause.toString(), params);
-        return Table.select(_tableInfoStudyData, Table.ALL_COLUMNS, filter, null, ParticipantDataset.class);
+        // We can't use the table layer to map results to our bean class because of the unfortunately named
+        // "_VisitDate" column in study.StudyData.
+        ResultSet rs = null;
+        try
+        {
+            List<ParticipantDataset> pds = new ArrayList<ParticipantDataset>();
+            rs = Table.select(_tableInfoStudyData, Table.ALL_COLUMNS, filter, null);
+            while (rs.next())
+            {
+                ParticipantDataset pd = new ParticipantDataset();
+                pd.setContainer(container);
+                pd.setDataSetId(rs.getInt("DatasetId"));
+                pd.setLsid(rs.getString("LSID"));
+                pd.setSequenceNum(rs.getDouble("SequenceNum"));
+                pd.setVisitDate(rs.getTimestamp("_VisitDate"));
+                pd.setParticipantId(rs.getString("ParticipantId"));
+                pds.add(pd);
+            }
+            return pds.toArray(new ParticipantDataset[pds.size()]);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
     }
 
 

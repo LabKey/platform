@@ -21,6 +21,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -29,6 +30,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.StudySchema;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
@@ -353,7 +355,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
     public static SpecimenQueryView createView(ViewContext context, ParticipantDataset[] participantDatasets, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
-        addFilterClause(filter, participantDatasets);
+        Study study = StudyManager.getInstance().getStudy(context.getContainer());
+        addFilterClause(study, filter, participantDatasets);
         return createView(context, filter, createDefaultSort(viewType), viewType, true, null);
     }
 
@@ -515,8 +518,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return filter;
     }
 
-    protected static SimpleFilter addFilterClause(SimpleFilter filter, ParticipantDataset[] participantDatasets)
+    protected static SimpleFilter addFilterClause(Study study, SimpleFilter filter, ParticipantDataset[] participantDatasets)
     {
+        boolean visitBased = study.getTimepointType().isVisitBased();
         if (participantDatasets != null && participantDatasets.length > 0)
         {
             StringBuilder whereClause = new StringBuilder();
@@ -526,8 +530,20 @@ public class SpecimenQueryView extends BaseStudyQueryView
             {
                 if (param > 0)
                     whereClause.append(" OR ");
-                whereClause.append("(Visit = ? AND " + StudyService.get().getSubjectColumnName(getContextContainer()) + " = ?)");
-                params[param++] = pd.getSequenceNum();
+                whereClause.append("(");
+                if (visitBased)
+                {
+                    whereClause.append("Visit = ? AND ");
+                    params[param++] = pd.getSequenceNum();
+                }
+                else
+                {
+                    whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("DrawTimestamp"));
+                    whereClause.append(" = ");
+                    whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
+                    params[param++] = pd.getVisitDate();
+                }
+                whereClause.append(StudyService.get().getSubjectColumnName(getContextContainer())).append(" = ?)");
                 params[param++] = pd.getParticipantId();
             }
             filter = filter.addWhereClause(whereClause.toString(), params);

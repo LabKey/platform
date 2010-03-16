@@ -202,8 +202,15 @@ public class SpecimenController extends BaseStudyController
             {
                 for (ParticipantDataset pd : getFilterPds())
                 {
-                    VisitImpl visit = pd.getSequenceNum() != null ? StudyManager.getInstance().getVisitForSequence(study, pd.getSequenceNum()) : null;
-                    ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + VisitImpl.formatSequenceNum(pd.getSequenceNum())));
+                    if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
+                    {
+                        ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), DateUtil.formatDate(pd.getVisitDate())));
+                    }
+                    else
+                    {
+                        VisitImpl visit = pd.getSequenceNum() != null ? StudyManager.getInstance().getVisitForSequence(study, pd.getSequenceNum()) : null;
+                        ptidVisits.add(new Pair<String, String>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + VisitImpl.formatSequenceNum(pd.getSequenceNum())));
+                    }
                 }
             }
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);

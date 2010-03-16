@@ -18,6 +18,8 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 
+import java.util.Date;
+
 /**
  * User: brittp
  * Date: Feb 1, 2006
@@ -28,6 +30,7 @@ public class ParticipantDataset
     private String _lsid;
     private Container _container;
     private Double _sequenceNum;
+    private Date _visitDate;
     private Integer _studyDataSetId;
     private String _studyParticipantId;
 
@@ -79,5 +82,15 @@ public class ParticipantDataset
     public void setSequenceNum(Double sequenceNum)
     {
         _sequenceNum = sequenceNum;
+    }
+
+    public Date getVisitDate()
+    {
+        return _visitDate;
+    }
+
+    public void setVisitDate(Date visitDate)
+    {
+        _visitDate = visitDate;
     }
 }

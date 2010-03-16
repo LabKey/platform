@@ -60,7 +60,7 @@
     {
         // get the first visit label:
         StringBuilder filterString = new StringBuilder();
-        filterString.append("This view is displaying specimens only from ");
+        filterString.append("<b>This view is displaying specimens only from ");
         if (bean.isSingleVisitFilter())
         {
             filterString.append("participant(s) ");
@@ -71,15 +71,15 @@
                 if (it.hasNext())
                     filterString.append(", ");
             }
-            filterString.append(" at visit \"").append(bean.getFilteredPtidVisits().iterator().next().getValue()).append("\".");
+            filterString.append(" at visit ").append(bean.getFilteredPtidVisits().iterator().next().getValue()).append(".</b><br>");
         }
         else
         {
-            filterString.append(" the following ").append(h(subjectNounSingle.toLowerCase())).append("/visit pairs: ");
+            filterString.append(" the following ").append(h(subjectNounSingle.toLowerCase())).append("/visit pairs:</b><br>");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 Pair<String, String> ptidVisit = it.next();
-                filterString.append(ptidVisit.getKey()).append("/\"").append(ptidVisit.getValue()).append("\"");
+                filterString.append(ptidVisit.getKey()).append("/").append(ptidVisit.getValue()).append("");
                 if (it.hasNext())
                     filterString.append(", ");
             }
@@ -87,8 +87,12 @@
         }
         ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction("samples");
 %>
-    <b><%= filterString %></b><br><%= textLink("Remove " + h(subjectNounSingle) + "/Visit Filter", noFitlerUrl )%><br>
-<%
+    <p>
+        <table width="700px">
+            <tr><td><%= filterString %></td></tr>
+        </table>
+    </p>
+<%= textLink("Remove " + h(subjectNounSingle) + "/Visit Filter", noFitlerUrl )%><%
     }
 %>
 <div id="specimen-request-div" class="x-hidden">
