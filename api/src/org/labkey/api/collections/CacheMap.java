@@ -15,8 +15,6 @@
  */
 package org.labkey.api.collections;
 
-import org.apache.log4j.Logger;
-
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -253,6 +251,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         private AtomicLong expirations = new AtomicLong(0);
         private AtomicLong removes = new AtomicLong(0);
         private AtomicLong clears = new AtomicLong(0);
+        private AtomicLong max_size = new AtomicLong(0);
     }
 
     //
@@ -363,15 +362,13 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected void trackPut(V value)
     {
-        //assert null != value;       TODO: Enable once null puts are eliminated
-
-        if (null == value)
-        {
-            //noinspection ThrowableInstanceNeverThrown
-            Logger.getLogger(CacheMap.class).info("Attempting to cache NULL -- should use marker for misses", new Exception());
-        }
-
+        assert null != value : "Attempt to cache null into " + getDebugName() + "; must use marker for null instead.";
         stats.puts.incrementAndGet();
+
+        long maxSize = stats.max_size.get();
+        long currentSize = size();
+        if (currentSize > maxSize)
+            stats.max_size.compareAndSet(maxSize, currentSize);
     }
 
 
@@ -407,7 +404,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     private CacheStats getCacheStats(Stats stats, int size)
     {
-        return new CacheStats(getDebugName(), stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size);
+        return new CacheStats(getDebugName(), stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get());
     }
 
 

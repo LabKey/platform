@@ -15,11 +15,10 @@
  */
 package org.labkey.api.util;
 
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
-import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 
 import java.util.Collection;
 import java.util.LinkedList;

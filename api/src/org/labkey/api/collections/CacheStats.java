@@ -26,9 +26,10 @@ public class CacheStats implements Comparable<CacheStats>
     private final long _removes;
     private final long _clears;
     private final long _size;
+    private final long _maxSize;
 
 
-    public CacheStats(String description, long gets, long misses, long puts, long expirations, long removes, long clears, long size)
+    public CacheStats(String description, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize)
     {
         _description = description;
         _gets = gets;
@@ -38,6 +39,7 @@ public class CacheStats implements Comparable<CacheStats>
         _removes = removes;
         _clears = clears;
         _size = size;
+        _maxSize = maxSize;
     }
 
     public String getDescription()
@@ -48,6 +50,11 @@ public class CacheStats implements Comparable<CacheStats>
     public long getSize()
     {
         return _size;
+    }
+
+    public long getMaxSize()
+    {
+        return _maxSize;
     }
 
     public long getGets()
