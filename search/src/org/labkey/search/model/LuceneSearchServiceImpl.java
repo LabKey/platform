@@ -346,6 +346,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 logAsPreProcessingException(r, e);
             }
         }
+        catch (IOException e)
+        {
+            // Permissions problem, network drive disappeared, file disappeared, etc.
+            logAsWarning(r, e);
+        }
         catch (Throwable e)
         {
             logAsPreProcessingException(r, e);
@@ -437,6 +442,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         //noinspection ThrowableInstanceNeverThrown
         ExceptionUtil.logExceptionToMothership(null, new PreProcessingException(getNameToLog(r), e));
+    }
+
+    private void logAsWarning(Resource r, Exception e)
+    {
+        logAsWarning(r, e.getMessage());
     }
 
     private void logAsWarning(Resource r, String message)
