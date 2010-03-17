@@ -2227,9 +2227,11 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            html.append("<table>\n");
             appendStats(html, "Cache Maps", cmStats);
             appendStats(html, "TTL Cache Maps", ttlStats);
             appendStats(html, "Transaction Cache Maps", transStats);
+            html.append("</table>\n");
 
             return new HtmlView(html.toString());
         }
@@ -2238,11 +2240,12 @@ public class AdminController extends SpringActionController
         {
             Collections.sort(stats);
 
-            html.append("<br/><table>\n<tr><td><b>").append(title).append(" (").append(stats.size()).append(")</b></td></tr>\n");
+            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
+            html.append("<tr><td><b>").append(title).append(" (").append(stats.size()).append(")</b></td></tr>\n");
             html.append("<tr><td colspan=4>&nbsp;</td></tr>");
 
             html.append("<tr><th>Debug Name</th>");
-            html.append("<th>Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
+            html.append("<th>Max&nbsp;Size</th><th>Current&nbsp;Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
 
             long size = 0;
             long gets = 0;
@@ -2264,7 +2267,7 @@ public class AdminController extends SpringActionController
 
                 html.append("<tr><td>").append(stat.getDescription()).append("</td>");
 
-                appendLongs(html, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
+                appendLongs(html, stat.getMaxSize(), stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
                 html.append("</tr>\n");
@@ -2274,16 +2277,21 @@ public class AdminController extends SpringActionController
             html.append("<tr><td colspan=4>&nbsp;</td></tr>");
             html.append("<tr><td>Total</td>");
 
-            appendLongs(html, size, gets, misses, puts, expirations, removes, clears);
+            appendLongs(html, null, size, gets, misses, puts, expirations, removes, clears);
             appendDoubles(html, ratio);
 
-            html.append("</tr>\n</table>\n");
+            html.append("</tr>\n");
         }
 
-        private void appendLongs(StringBuilder html, long... stats)
+        private void appendLongs(StringBuilder html, Long... stats)
         {
-            for (long stat : stats)
-                html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+            for (Long stat : stats)
+            {
+                if (null == stat)
+                    html.append("<td>&nbsp;</td>");
+                else
+                    html.append("<td align=\"right\">").append(Formats.commaf0.format(stat)).append("</td>");
+            }
         }
 
         private void appendDoubles(StringBuilder html, double... stats)

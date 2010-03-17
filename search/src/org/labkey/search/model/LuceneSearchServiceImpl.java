@@ -742,6 +742,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             throw new IOException(x.getMessage());
         }
+        catch (IllegalArgumentException x)
+        {
+            throw new IOException("Cannot parse '" + queryString + "': " + x.getMessage());
+        }
 
         if (null != category)
         {

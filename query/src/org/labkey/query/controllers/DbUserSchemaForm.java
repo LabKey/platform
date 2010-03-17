@@ -16,15 +16,48 @@
 
 package org.labkey.query.controllers;
 
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.BeanViewForm;
 
+import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
+import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.persist.QueryManager;
+import org.springframework.validation.Errors;
 
 public class DbUserSchemaForm extends BeanViewForm<DbUserSchemaDef>
 {
     public DbUserSchemaForm()
     {
         super(DbUserSchemaDef.class, QueryManager.get().getTableInfoDbUserSchema());
+    }
+
+    public void validate(Errors errors)
+    {
+        DbUserSchemaDef bean = getBean();
+        IdentifierString i = new IdentifierString(bean.getUserSchemaName());
+        if (i.isTainted())
+            errors.reject(SpringActionController.ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
+
+        String metaData = bean.getMetaData();
+
+        try
+        {
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+            TablesDocument doc = TablesDocument.Factory.parse(metaData, options);
+            XmlBeansUtil.validateXmlDocument(doc);
+        }
+        catch (XmlException e)
+        {
+            errors.reject("metaData", e.getMessage());    // TODO: Place error message above meta data box
+        }
+        catch (XmlValidationException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getDetails());
+        }
     }
 }

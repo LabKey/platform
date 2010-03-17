@@ -2215,9 +2215,7 @@ public class QueryController extends SpringActionController
     {
         public void validateCommand(DbUserSchemaForm form, Errors errors)
         {
-			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
-			if (i.isTainted())
-                errors.reject(ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
+			form.validate(errors);
         }
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
@@ -2365,9 +2363,7 @@ public class QueryController extends SpringActionController
     {
 		public void validateCommand(DbUserSchemaForm form, Errors errors)
 		{
-			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
-			if (i.isTainted())
-				errors.reject(ERROR_MSG, "Schema name can only contain alphanumeric characters and underscores");
+            form.validate(errors);
 		}
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
