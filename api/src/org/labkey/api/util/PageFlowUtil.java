@@ -1542,7 +1542,7 @@ public class PageFlowUtil
 
     public static String getStylesheetIncludes(Container c)
     {
-        boolean combinedCSS = true; // UNDONE: verify that look and feel revision is modified on all relevant changes
+        boolean combinedCSS = false; // UNDONE: verify that look and feel revision is modified on all relevant changes
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
