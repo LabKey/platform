@@ -135,6 +135,9 @@ public interface SearchService
     }
 
 
+    boolean accept(Resource r);
+
+
     //
     // plug in interfaces
     //
