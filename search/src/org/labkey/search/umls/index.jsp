@@ -36,6 +36,7 @@ var url = <%=PageFlowUtil.jsString(pollURL)%>;
 var task=null;
 var req=null;
 var stopped=false;
+var numberFormat = function(n) {return '' + n;}; //Ext.util.Format.number(n,"0,000");};
 function stop()
 {
     Ext.TaskMgr.stop(task);
@@ -59,11 +60,11 @@ function updateCount(response,options)
                 status = o.status + ' ';
             if ('estimate' in o && o.estimate>0)
             {
-                status += '' + o.count + ' ' + Math.round(100.0*o.count/o.estimate) + '%';
+                status += numberFormat(o.count) + ' ' + Math.round(100.0*o.count/o.estimate) + '%';
             }
             else
             {
-                status += '' + o.count;
+                status += numberFormat(o.count);
             }
         }
         Ext.get('status').update(status);

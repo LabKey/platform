@@ -543,11 +543,9 @@ public class DavCrawler implements ShutdownListener
     }
 
     
-    static boolean skipFile(Resource r)
+    boolean skipFile(Resource r)
     {
-        // let's not index large files, or files that probably aren't useful to index
-        String contentType = r.getContentType();
-        if (contentType.startsWith("image/"))
+        if (!getSearchService().accept(r))
             return true;
         String name = r.getName();
         String ext = "";

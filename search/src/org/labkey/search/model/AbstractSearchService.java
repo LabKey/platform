@@ -112,6 +112,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    public boolean accept(Resource r)
+    {
+        return true;
+    }
+    
+
     public void addPathToCrawl(Path path, Date next)
     {
         DavCrawler.getInstance().addPathToCrawl(path, next);
@@ -1244,7 +1250,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         // crank crawler into high gear!
         DavCrawler.getInstance().startFull(WebdavService.getPath(), force);
     }
-
 
 
     LinkedList<RateLimiter.RateAccumulator> _history = new LinkedList<RateLimiter.RateAccumulator>();

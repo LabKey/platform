@@ -313,4 +313,9 @@ public class NoopSearchService implements SearchService
     public void maintenance()
     {
     }
+
+    public boolean accept(Resource r)
+    {
+        return true;
+    }
 }

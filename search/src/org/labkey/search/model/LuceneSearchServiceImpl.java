@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -373,42 +374,125 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-
+    /**
+     * parse the document of the resource, not that parse() and accept() should agree on what is parsable
+     * 
+     * @param r
+     * @param fs
+     * @param is
+     * @param handler
+     * @param metadata
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     */
     void parse(Resource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
     {
         // TREAT files over the size limit as empty files
         long size = fs.getSize();
-        if (size > FILE_SIZE_LIMIT)
-        {
-            logAsWarning(r, "The document is too large");
-            return;
-        }
 
         Parser parser = getParser();
 
         if (!is.markSupported())
             is = new BufferedInputStream(is);
 
-        parser.parse(is, handler, metadata);
+        boolean parsed = false;
 
-        String type = metadata.get(Metadata.CONTENT_TYPE);
-        if (type.equals("application/octet-stream"))
+        if (size <= FILE_SIZE_LIMIT)
         {
+            parser.parse(is, handler, metadata);
+            String type = metadata.get(Metadata.CONTENT_TYPE);
+            if (!type.equals("application/octet-stream"))
+                parsed = true;
+        }
+        
+        if (!parsed)
+        {
+            DocumentParser p = detectParser(r, is);
+            if (null != p)
+            {
+                metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
+                p.parse(is, handler);
+                parsed = true;
+            }
+        }
+
+        if (!parsed && size > FILE_SIZE_LIMIT)
+        {
+            logAsWarning(r, "The document is too large");
+        }
+    }
+
+    
+    /**
+     * This method is used to indicate to the crawler (or any external process) which files
+     * this indexer will not index.
+     *
+     * The caller may choose to skip the document, or substitute an alternate document.
+     * e.g. file name only
+     *
+     * @param r
+     * @return
+     */
+    @Override
+    public boolean accept(Resource r)
+    {
+        try
+        {
+            String contentType = r.getContentType();
+            if (isImage(contentType) || isZip(contentType))
+                return false;
+            FileStream fs = r.getFileStream(User.getSearchUser());
+            if (null == fs)
+                return false;
+            long size = fs.getSize();
+            fs.closeInputStream();
+            if (size > FILE_SIZE_LIMIT)
+            {
+                DocumentParser p = detectParser(r, null);
+                return p != null;
+            }
+            return true;
+        }
+        catch (IOException x)
+        {
+            return false;
+        }
+    }
+
+
+    DocumentParser detectParser(Resource r, InputStream in)
+    {
+        InputStream is = in;
+        try
+        {
+            if (null == is)
+            {
+                is = r.getInputStream(User.getSearchUser());
+                if (null == is)
+                    return null;
+            }
             DocumentParser[] parsers = _documentParsers.get();
             is.skip(Long.MIN_VALUE);
             byte[] header = FileUtil.readHeader(is, 8*1024);
             for (DocumentParser p : parsers)
             {
                 if (p.detect(header))
-                {
-                    metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
-                    p.parse(is, handler);
-                    return;
-                }
+                    return p;
             }
+            return null;
+        }
+        catch (IOException x)
+        {
+            return null;
+        }
+        finally
+        {
+            if (is != in)
+                IOUtils.closeQuietly(is);
         }
     }
-    
+
 
 
     static final AutoDetectParser _parser = new AutoDetectParser();
@@ -864,6 +948,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         map.putAll(super.getStats());
         return map;
     }
+
 
 
     private boolean isImage(String contentType)
