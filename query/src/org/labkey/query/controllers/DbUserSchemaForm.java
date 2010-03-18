@@ -45,19 +45,22 @@ public class DbUserSchemaForm extends BeanViewForm<DbUserSchemaDef>
 
         String metaData = bean.getMetaData();
 
-        try
+        if (null != metaData)
         {
-            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            TablesDocument doc = TablesDocument.Factory.parse(metaData, options);
-            XmlBeansUtil.validateXmlDocument(doc);
-        }
-        catch (XmlException e)
-        {
-            errors.reject("metaData", e.getMessage());    // TODO: Place error message above meta data box
-        }
-        catch (XmlValidationException e)
-        {
-            errors.reject(SpringActionController.ERROR_MSG, e.getDetails());
+            try
+            {
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                TablesDocument doc = TablesDocument.Factory.parse(metaData, options);
+                XmlBeansUtil.validateXmlDocument(doc);
+            }
+            catch (XmlException e)
+            {
+                errors.reject("metaData", e.getMessage());    // TODO: Place error message above meta data box
+            }
+            catch (XmlValidationException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getDetails());
+            }
         }
     }
 }
