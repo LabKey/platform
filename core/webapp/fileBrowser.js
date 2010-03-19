@@ -2939,7 +2939,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 id: this.id ? this.id + 'Upload' : 'fileUpload',
                 buttonText: "Browse...",
-                fieldLabel: 'Choose a file'
+                fieldLabel: 'Choose a file',
+                width: 350
             });
 
             var uploadPanel_rb1 = new Ext.form.Radio({
@@ -2968,7 +2969,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     xtype: 'radiogroup',
                     fieldLabel: 'File Upload Type',
                     width: 200,
-                    groupCls: 'labkey-transparent-panel',
                     items: [
                         uploadPanel_rb1,
                         uploadPanel_rb2
@@ -3026,7 +3026,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 items: [{
                     xtype: 'radiogroup',
                     width: 200,
-                    groupCls: 'labkey-transparent-panel',
                     fieldLabel: 'File Upload Type',
                     items: [
                         uploadMultiPanel_rb1,

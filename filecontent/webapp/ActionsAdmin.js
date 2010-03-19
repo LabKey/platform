@@ -245,6 +245,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             selModel: selModel,
             stripeRows: true,
             clicksToEdit: 1,
+            flex: 1,
             cm: cm,
             plugins: [enabledColumn, onToolbarColumn],
             view: new Ext.grid.GroupingView({
@@ -256,20 +257,19 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             })
         });
 
-        if (Ext.isIE)
-            grid.setSize(455, 225);
-
-        grid.on('render', function()
-        {
-            grid.getView().hmenu.getEl().addClass("extContainer");
-            grid.getView().colMenu.getEl().addClass("extContainer");
-        });
-
         var actionPanel = new Ext.Panel({
+            id: 'actionTab',
+            title: 'Actions',
             bodyStyle : 'padding:10px;',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
             items: [
                 new Ext.Panel({
                     border: false,
+                    height: 60,
                     bodyStyle : 'padding:10 10 10 0px;',
                     items:{
                         xtype: 'checkbox',
@@ -284,6 +284,39 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             ]
         });
 
+        var filePanel = new Ext.Panel({
+                id: 'fileTab',
+                title: 'File Properties',
+                bodyStyle : 'padding:10px;',
+                autoHeight: true,
+                items: [
+                    new Ext.form.RadioGroup({
+                        xtype: 'radiogroup',
+                        itemCls: 'x-check-group',
+                        columns: 1,
+                        labelSeparator: '',
+                        items: [
+                            {xtype:'radio', boxLabel:'Use Default File Properties'},
+                            {xtype:'radio', boxLabel:'Use Custom File Properties'},
+                            {xtype:'radio', boxLabel:'Use Same Settings as Parent'}
+                        ]
+                    })
+                ]
+        });
+
+        var tabPanel = new Ext.TabPanel({
+            //header: false,
+            //margins:'0 0 0 0',
+            //border: false,
+            bodyStyle: 'background-color:#f0f0f0;',
+            activeTab: 'actionTab',
+            stateful: false,
+            items: [
+                actionPanel,
+                filePanel
+            ]
+        });
+
         var win = new Ext.Window({
             title: 'Manage Pipeline Actions',
             width: 500,
@@ -292,7 +325,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             autoScroll: true,
             closeAction:'close',
             modal: true,
-            items: [actionPanel],
+            layout: 'fit',
+            items: [tabPanel],
             buttons: [{
                 text: 'Submit',
                 id: 'btn_submit',

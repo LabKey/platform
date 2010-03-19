@@ -311,15 +311,12 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         var toolbar = this.getTopToolbar();
         if (toolbar && toolbar.items)
         {
-            for (var i=0; i < toolbar.items.getCount(); i++)
-            {
-                var o = toolbar.items.item(i);
-                o.destroy();
-            }
-            toolbar.items.clear();
+            toolbar.removeAll(true);
+            toolbar.setAutoScroll(true);
         }
 
         // add the standard buttons to the toolbar
+        var buttons = [];
         if (this.tbarItems && this.tbarItems.length)
         {
             for (var i=0; i < this.tbarItems.length; i++)
@@ -332,7 +329,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     {
                         continue;
                     }
-                    toolbar.addButton(this.actions[item]);
+                    buttons.push(this.actions[item]);
                 }
             }
         }
@@ -353,11 +350,14 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                     {
                         this.toolbarActions[a.id] = action;
                         this.hasToolbarButtons = true;
-                        toolbar.addButton(action);
+                        buttons.push(action);
                     }
                 }
             }
         }
+
+        if (toolbar && buttons.length)
+            toolbar.addButton(buttons);
     },
 
     showImportData : function()
