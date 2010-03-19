@@ -480,16 +480,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 if (msg) {
                     tbarAction.each(function(c) {
                         if (c.buttonSelector) {
-                            var btnEl = c.el.child(c.buttonSelector);
-
-                            if (btnEl) {
-                                Ext.QuickTips.unregister(btnEl.id);
-                                Ext.QuickTips.register({
-                                    target: btnEl.id,
-                                    text: msg,
-                                    title: ''
-                                });
-                            }
+                            c.setTooltip(msg);
                         }
                     }, this);
                 }

@@ -347,7 +347,7 @@
                 id: 'btn_cancel',
                 handler: function(){win.close();}
             }],
-            bbar: new Ext.StatusBar({height: 40})
+            bbar: [{ xtype: 'tbtext', text: '',id:'statusTxt' }]
         });
 
         win.show(button);
@@ -365,7 +365,7 @@
             return false;
         }
 
-        win.getBottomToolbar().clearStatus();
+        win.getBottomToolbar().get(0).setText("");
         form.submit({
             url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSave"),
             waitMsg:'Submiting Form...',
@@ -392,10 +392,7 @@
             if (jsonResponse && jsonResponse.exception)
                 errorTxt = jsonResponse.exception;
         }
-        win.getBottomToolbar().setStatus({
-            text: errorTxt,
-            iconCls:'labkey-error'
-        });
+        win.getBottomToolbar().get(0).setText(errorTxt);
     }
 
     Ext.onReady(function()

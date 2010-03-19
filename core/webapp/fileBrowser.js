@@ -397,7 +397,7 @@ var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
                 disableCaching:false,
                 success : (function(response)
                 {
-                    var contentType = response.getResponseHeader["Content-Type"] || "text/html";
+                    var contentType = response.getResponseHeader("Content-Type") || "text/html";
                     if (startsWith(contentType,"text/"))
                     {
                         var id = 'iframePreview' + (++Ext.Component.AUTO_ID);
@@ -460,7 +460,7 @@ var PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
                 disableCaching:false,
                 success : (function(response)
                 {
-                    var contentType = response.getResponseHeader["Content-Type"] || "text/plain";
+                    var contentType = response.getResponseHeader("Content-Type") || "text/plain";
                     if (startsWith(contentType,"text/"))
                     {
                         var text = response.responseText;
@@ -944,7 +944,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         var url = this.concatPaths(this.prefixUrl, encodePath(path));
         this.connection.url = url;
         var args = {url: url, path: path, callback:callback};
-        this.proxy.load({method:"PROPFIND",depth:"0", propname : this.propNames}, this.transferReader, this.processFile, this, args);
+        this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"0", propname : this.propNames}, this.transferReader, this.processFile, this, args);
         return true;
     },
 
@@ -994,7 +994,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         {
             this.connection.abort(args.transId);
             this.connection.url = args.url;
-            this.proxy.load({method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
+            this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
             args.transId = this.connection.transId;
         }
     },
@@ -1016,7 +1016,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         this.connection.url = url;
         console.debug("requesting " + url);
         this.pendingPropfind[path] = args = {url: url, path: path, callbacks:[cb]};
-        this.proxy.load({method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
+        this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
         args.transId = this.connection.transId;
         return true;
     },
@@ -2683,8 +2683,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.grid.on(GRIDPANEL_EVENTS.click, this.Grid_onClick, this);
         this.grid.on(PANEL_EVENTS.render, function()
         {
-            this.getView().hmenu.getEl().addClass("extContainer");
-            this.getView().colMenu.getEl().addClass("extContainer");
+//            this.getView().hmenu.getEl().addClass("extContainer");
+//            this.getView().colMenu.getEl().addClass("extContainer");
         }, this.grid);
 
 
@@ -2999,7 +2999,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
-            this.appletStatusBar = new Ext.StatusBar({
+            this.appletStatusBar = new Ext.Panel({
                 id:'appletStatusBar', defaultText:'', busyText:'Copying...',
                 width: 200,
                 hidden: true,

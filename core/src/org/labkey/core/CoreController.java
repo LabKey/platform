@@ -290,8 +290,8 @@ public class CoreController extends SpringActionController
                     Content root = getCustomStylesheetContent(ContainerManager.getRoot());
                     Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
                     Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
-                    Resource extAll = r.lookup(Path.parse("/ext-2.2/resources/css/ext-all.css"));
-                    Resource extPatches = r.lookup(Path.parse("/ext-2.2/resources/css/ext-patches.css"));
+                    Resource extAll = r.lookup(Path.parse("/ext-3.1.1/resources/css/ext-all.css"));
+                    Resource extPatches = r.lookup(Path.parse("/ext-3.1.1/resources/css/ext-patches.css"));
                     StringWriter out = new StringWriter();
 
                     _appendCss(out, extAll);

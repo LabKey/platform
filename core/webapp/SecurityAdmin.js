@@ -1151,7 +1151,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     onRender : function(ct,position)
     {
         PrincipalComboBox.superclass.onRender.call(this,ct,position);
-        this.el.parent().addStyles({display:'inline'});
+        this.el.parent().applyStyles({display:'inline'});
         this.el.on("blur",this.Input_onBlur,this);
     },
 
@@ -1290,10 +1290,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             this.policy.clearRoleAssignments(id);
             this._redraw();
         }
-    },
-
-    initComponent : function()
-    {
     },
 
     onRender : function(ct, position)
@@ -1815,7 +1811,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var w = mb.getDialog();
         var save = w.el.getStyles();
         w.el.pause(1);
-        w.el.fadeOut({callback:function(){mb.hide(); w.el.addStyles(save);}, scope:mb});
+        w.el.fadeOut({callback:function(){mb.hide(); w.el.applyStyles(save);}, scope:mb});
     },
 
     saveFail : function(json, response, options)

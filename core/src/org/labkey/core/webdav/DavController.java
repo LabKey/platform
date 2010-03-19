@@ -2671,7 +2671,7 @@ public class DavController extends SpringActionController
     }
 
 
-    Path extPath = new Path("ext-2.2");
+    Path extPath = new Path("ext-3.1.1");
     Path yuiPath = new Path("_yui");
     Path mcePath = new Path("timymce3");
     
