@@ -361,7 +361,7 @@ public abstract class SqlDialectSas extends SqlDialect
         return new SasStatementWrapper(conn, stmt, sql);
     }
 
-    // SAS driver doesn't support setting java.sql.Timestamp paramters, so convert to java.sql.Date
+    // SAS driver doesn't support setting java.sql.Timestamp parameters, so convert to java.sql.Date
     private static class SasStatementWrapper extends StatementWrapper
     {
         protected SasStatementWrapper(ConnectionWrapper conn, Statement stmt)
