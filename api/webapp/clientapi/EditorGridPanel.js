@@ -420,7 +420,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             col.editable = this.editable && col.editable;
 
             //if column type is boolean, substitute an Ext.grid.CheckColumn
-            if(meta.type == "boolean")
+            if(meta.type == "boolean" || meta.type == "bool")
             {
                 col = this.columns[idx] = new Ext.grid.CheckColumn(col);
                 if(col.editable)
