@@ -106,8 +106,8 @@ LABKEY.Utils = new function()
             var error;
             if (responseObj &&
                 responseObj.responseText &&
-                responseObj.getResponseHeader['Content-Type'] &&
-                responseObj.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+                responseObj.getResponseHeader('Content-Type') &&
+                responseObj.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
                 var jsonResponse = Ext.util.JSON.decode(responseObj.responseText);
                 if (jsonResponse && jsonResponse.exception)
@@ -284,8 +284,8 @@ LABKEY.Utils.convertToExcel(
             {
                 //ensure response is JSON before trying to decode
                 var json = null;
-                if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                        && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+                if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                        && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
                     json = Ext.util.JSON.decode(response.responseText);
 
                 if(!json && isErrorCallback)

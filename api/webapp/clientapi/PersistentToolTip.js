@@ -193,8 +193,8 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
                 render: function (el, response, updateManager, callback)
                 {
                     var json = null;
-                    if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                            && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+                    if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                            && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
                         json = Ext.util.JSON.decode(response.responseText);
 
                     // XXX: error handling

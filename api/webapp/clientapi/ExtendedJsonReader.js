@@ -20,87 +20,69 @@
 
 Ext.namespace("LABKEY", "LABKEY.ext");
 
+/* NOTE: This has been updated for Ext 3.1.1
+*  and required many changes from the Ext 2.0 version.
+*  Because it relies on overriding non-public
+*  member functions, this is likely to break in
+*  future versions of Ext.
+*/
+
 LABKEY.ext.ExtendedJsonReader = Ext.extend(Ext.data.JsonReader, {
-    /**
-     * Overridden to handle the new extended format
-     * the only changes are marked below
-     * @param o the json
-     */
-    readRecords : function(o){
-        this.jsonData = o;
-        if(o.metaData){
-            delete this.ef;
-            this.meta = o.metaData;
-            this.recordType = Ext.data.Record.create(o.metaData.fields);
-            this.onMetaChange(this.meta, this.recordType, o);
+    /* Overridden to add .value to the id accessor */
+    buildExtractors : function() {
+        if(this.ef){
+            return;
         }
         var s = this.meta, Record = this.recordType,
             f = Record.prototype.fields, fi = f.items, fl = f.length;
 
-//      Generate extraction functions for the totalProperty, the root, the id, and for each field
-        if (!this.ef) {
-            if(s.totalProperty) {
-	            this.getTotal = this.getJsonAccessor(s.totalProperty);
-	        }
-	        if(s.successProperty) {
-	            this.getSuccess = this.getJsonAccessor(s.successProperty);
-	        }
-	        this.getRoot = s.root ? this.getJsonAccessor(s.root) : function(p){return p;};
-	        if (s.id) {
-	        	var g = this.getJsonAccessor(s.id + ".value");
-	        	this.getId = function(rec) {
-	        		var r = g(rec);
-		        	return (r === undefined || r === "") ? null : r;
-	        	};
-	        } else {
-	        	this.getId = function(){return null;};
-	        }
-            this.ef = [];
-            for(var i = 0; i < fl; i++){
-                f = fi[i];
-                var map = (f.mapping !== undefined && f.mapping !== null) ? f.mapping : f.name;
-                this.ef[i] = this.getJsonAccessor(map);
+        if(s.totalProperty) {
+            this.getTotal = this.createAccessor(s.totalProperty);
+        }
+        if(s.successProperty) {
+            this.getSuccess = this.createAccessor(s.successProperty);
+        }
+        if (s.messageProperty) {
+            this.getMessage = this.createAccessor(s.messageProperty);
+        }
+        this.getRoot = s.root ? this.createAccessor(s.root) : function(p){return p;};
+        if (s.id || s.idProperty) {
+            var g = this.createAccessor((s.id || s.idProperty) + ".value");  //MODIFIED: id column value is in .value property
+            this.getId = function(rec) {
+                var r = g(rec);
+                return (r === undefined || r === '') ? null : r;
+            };
+        } else {
+            this.getId = function(){return null;};
+        }
+        var ef = [];
+        for(var i = 0; i < fl; i++){
+            f = fi[i];
+            var map = (f.mapping !== undefined && f.mapping !== null) ? f.mapping : f.name;
+            ef.push(this.createAccessor(map));
+        }
+        this.ef = ef;
+    },
+    /**
+     * Overridden to handle the new extended format
+     * type-casts a single row of raw-data from server
+     * @param {Object} data
+     * @param {Array} items
+     * @param {Integer} len
+     * @private
+     */
+    extractValues : function(data, items, len) {
+        var f, values = {};
+        for(var j = 0; j < len; j++){
+            f = items[j];
+            if (this.ef[j]) //MODIFIED: silently ignore cases where this is no accessor--securityAdmin.js creates new fields for sorting
+            {
+                var v = this.ef[j](data);
+                var value = undefined === v ? undefined : v.value;  //MODIFIED: column value is in .value property
+                values[f.name] = f.convert((value !== undefined) ? value : f.defaultValue, data);
             }
         }
-
-    	var root = this.getRoot(o), c = root.length, totalRecords = c, success = true;
-    	if(s.totalProperty){
-            var v = parseInt(this.getTotal(o), 10);
-            if(!isNaN(v)){
-                totalRecords = v;
-            }
-        }
-        if(s.successProperty){
-            var v = this.getSuccess(o);
-            if(v === false || v === 'false'){
-                success = false;
-            }
-        }
-        var records = [];
-	    for(var i = 0; i < c; i++){
-		    var n = root[i];
-	        var values = {};
-	        var id = this.getId(n);
-	        for(var j = 0; j < fl; j++){
-	            f = fi[j];
-                var v = this.ef[j](n);
-
-                //-----------------------------------------------------------------
-                //the following lines are changed from the base class
-                //instead of the field property having a scalar value, it now
-                //is an object with several properties.
-                var value = undefined === v ? undefined : v.value;
-                values[f.name] = f.convert((value !== undefined) ? value : f.defaultValue, n);
-                //-----------------------------------------------------------------
-	        }
-	        var record = new Record(values, id);
-	        record.json = n;
-	        records[i] = record;
-	    }
-	    return {
-	        success : success,
-	        records : records,
-	        totalRecords : totalRecords
-	    };
+        return values;
     }
+
 });

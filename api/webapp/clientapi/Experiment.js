@@ -36,8 +36,8 @@ LABKEY.Experiment = new function()
             //ensure response is JSON before trying to decode
             var json = null;
             var experiment = null;
-            if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+            if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
                 json = Ext.util.JSON.decode(response.responseText);
                 experiment = createExpFn(json);
@@ -55,8 +55,8 @@ LABKEY.Experiment = new function()
         return function (response, options)
         {
             var errorInfo = null;
-            if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+            if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
                 errorInfo = Ext.util.JSON.decode(response.responseText);
             else
                 errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
@@ -700,8 +700,8 @@ LABKEY.Exp.Data = function (config) {
         {
             //ensure response is JSON before trying to decode
             var content = null;
-            if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+            if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
                 content = Ext.util.JSON.decode(response.responseText);
             }
@@ -722,8 +722,8 @@ LABKEY.Exp.Data = function (config) {
         return function (response, options)
         {
             var errorInfo = null;
-            if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+            if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
+                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
                 errorInfo = Ext.util.JSON.decode(response.responseText);
             else
                 errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};

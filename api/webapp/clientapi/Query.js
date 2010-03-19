@@ -70,7 +70,7 @@ LABKEY.Query = new function()
         //The response object is not actually the XMLHttpRequest object
         //it's a 'synthesized' object provided by Ext to help on IE 6
         //http://extjs.com/forum/showthread.php?t=27190&highlight=getResponseHeader
-        return response && response.getResponseHeader ? response.getResponseHeader['Content-Type'] : null;
+        return response && response.getResponseHeader ? response.getResponseHeader('Content-Type') : null;
     }
 
     function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)

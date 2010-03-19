@@ -495,8 +495,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     },
 
     getJson : function(response) {
-        return (response && undefined != response.getResponseHeader && undefined != response.getResponseHeader['Content-Type']
-                && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0) 
+        return (response && undefined != response.getResponseHeader && undefined != response.getResponseHeader('Content-Type')
+                && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
                 ? Ext.util.JSON.decode(response.responseText)
                 : null;
     },
@@ -574,7 +574,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         var loadError = {message: error};
 
         if(response && response.getResponseHeader
-                && response.getResponseHeader["Content-Type"].indexOf("application/json") >= 0)
+                && response.getResponseHeader("Content-Type").indexOf("application/json") >= 0)
         {
             var errorJson = Ext.util.JSON.decode(response.responseText);
             if(errorJson && errorJson.exception)

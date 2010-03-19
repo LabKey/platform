@@ -373,8 +373,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         //a JavaScript error on these lines, look at the API docs for
         //a method or property that returns the sort and column hide/show
         //menus shown from the column headers
-        this.getView().hmenu.getEl().addClass("extContainer");
-        this.getView().colMenu.getEl().addClass("extContainer");
+//        this.getView().hmenu.getEl().addClass("extContainer");
+//        this.getView().colMenu.getEl().addClass("extContainer");
 
         //set up filtering
         if (this.enableFilters)
@@ -565,7 +565,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     onLookupStoreError : function(proxy, options, response, error)
     {
         var message = error;
-        var ctype = response.getResponseHeader["Content-Type"];
+        var ctype = response.getResponseHeader("Content-Type");
         if(ctype.indexOf("application/json") >= 0)
         {
             var errorJson = Ext.util.JSON.decode(response.responseText);
@@ -777,7 +777,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     {
         var filterItem = new Ext.menu.Item({text:"Filter...", scope:this, handler:function() {this.handleFilter();}});
         var hmenu = this.getView().hmenu;
-        hmenu.getEl().addClass("extContainer");
+//        hmenu.getEl().addClass("extContainer");
         hmenu.addItem(filterItem);
     },
 
