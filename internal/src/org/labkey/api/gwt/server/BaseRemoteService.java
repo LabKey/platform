@@ -62,6 +62,12 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
         return _context.getActionURL();
     }
 
+    @Override
+    public String getServletName()
+    {
+        return getServletConfig().getServletName();
+    }
+
     public ServletConfig getServletConfig()
     {
         return new ServletConfig()
