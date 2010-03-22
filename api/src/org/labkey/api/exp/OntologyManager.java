@@ -107,7 +107,7 @@ public class OntologyManager
 		assert getExpSchema().getScope().isTransactionActive();
 		String[] resultingLsids = new String[rows.size()];
         int resultingLsidsIndex = 0;
-        // Make sure we have enough rows to hande the overflow of the current row so we don't have to resize the list
+        // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
 
         ValidatorContext validatorCache = new ValidatorContext(c, user);

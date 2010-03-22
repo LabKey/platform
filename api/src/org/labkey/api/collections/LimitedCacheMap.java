@@ -37,5 +37,11 @@ public class LimitedCacheMap<K, V> extends CacheMap<K, V>
     {
         return (size() >= _maxSize);
     }
+
+    @Override
+    protected Long getLimit()
+    {
+        return new Long(_maxSize);
+    }
 }
 

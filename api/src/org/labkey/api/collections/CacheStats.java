@@ -16,6 +16,8 @@
 
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.Nullable;
+
 public class CacheStats implements Comparable<CacheStats>
 {
     private final String _description;
@@ -27,9 +29,10 @@ public class CacheStats implements Comparable<CacheStats>
     private final long _clears;
     private final long _size;
     private final long _maxSize;
+    private final Long _limit;  // null means this cache is unlimited
 
 
-    public CacheStats(String description, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize)
+    public CacheStats(String description, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize, @Nullable Long limit)
     {
         _description = description;
         _gets = gets;
@@ -40,6 +43,7 @@ public class CacheStats implements Comparable<CacheStats>
         _clears = clears;
         _size = size;
         _maxSize = maxSize;
+        _limit = limit;
     }
 
     public String getDescription()
@@ -55,6 +59,15 @@ public class CacheStats implements Comparable<CacheStats>
     public long getMaxSize()
     {
         return _maxSize;
+    }
+
+    // null means this cache is unlimited... so does max int
+    public @Nullable Long getLimit()
+    {
+        if (null != _limit && Integer.MAX_VALUE == _limit)
+            return null;
+
+        return _limit;
     }
 
     public long getGets()

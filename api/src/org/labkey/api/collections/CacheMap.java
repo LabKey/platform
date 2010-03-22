@@ -15,6 +15,8 @@
  */
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -333,8 +335,8 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     {
         Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);
-        trackPut(value);
         testOldestEntry();
+        trackPut(value);
         return prev;
     }
 
@@ -404,7 +406,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     private CacheStats getCacheStats(Stats stats, int size)
     {
-        return new CacheStats(getDebugName(), stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get());
+        return new CacheStats(getDebugName(), stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get(), getLimit());
     }
 
 
@@ -538,6 +540,12 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     public String getDebugName()
     {
         return _debugName;
+    }
+
+
+    protected @Nullable Long getLimit()
+    {
+        return null;   // Unlimited... subclasses may implement a limit
     }
 
 
