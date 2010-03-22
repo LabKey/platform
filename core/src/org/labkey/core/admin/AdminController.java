@@ -2245,7 +2245,7 @@ public class AdminController extends SpringActionController
             html.append("<tr><td colspan=4>&nbsp;</td></tr>");
 
             html.append("<tr><th>Debug Name</th>");
-            html.append("<th>Max&nbsp;Size</th><th>Current&nbsp;Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
+            html.append("<th>Limit</th><th>Max&nbsp;Size</th><th>Current&nbsp;Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
 
             long size = 0;
             long gets = 0;
@@ -2267,8 +2267,14 @@ public class AdminController extends SpringActionController
 
                 html.append("<tr><td>").append(stat.getDescription()).append("</td>");
 
-                appendLongs(html, stat.getMaxSize(), stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
+                Long limit = stat.getLimit();
+                Long maxSize = stat.getMaxSize();
+
+                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
+
+                if (null != limit && maxSize >= limit)
+                    html.append("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
 
                 html.append("</tr>\n");
             }
@@ -2277,7 +2283,7 @@ public class AdminController extends SpringActionController
             html.append("<tr><td colspan=4>&nbsp;</td></tr>");
             html.append("<tr><td>Total</td>");
 
-            appendLongs(html, null, size, gets, misses, puts, expirations, removes, clears);
+            appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
