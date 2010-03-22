@@ -550,7 +550,7 @@ public class PageFlowUtil
     {
         try
         {
-            return URLDecoder.decode(s, "UTF-8");
+            return null==s ? "" : URLDecoder.decode(s, "UTF-8");
         }
         catch (UnsupportedEncodingException x)
         {
