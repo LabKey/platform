@@ -37,14 +37,16 @@ import org.labkey.api.collections.TTLCacheMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
+import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.*;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
@@ -56,9 +58,6 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.search.SearchService;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -161,7 +160,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ShowAdminAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1019,7 +1018,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
@@ -1043,9 +1042,6 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
-            if (!getUser().isAdministrator())
-                HttpView.throwUnauthorized();
-
             ModuleLoader.getInstance().setDeferUsageReport(false);
             HttpServletRequest request = getViewContext().getRequest();
 
@@ -1801,7 +1797,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ShowThreadsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1815,12 +1811,11 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class DumpHeapAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            // Use reflection so that we don't have to build directly against the com.sun. class
             File destination = BreakpointThread.dumpHeap();
             return new HtmlView(PageFlowUtil.filter("Heap dumped to " + destination.getAbsolutePath()));
         }
@@ -1947,7 +1942,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ShowErrorsSinceMarkAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -1957,7 +1952,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ShowAllErrorsAction extends ExportAction
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -2011,7 +2006,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ActionsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2061,7 +2056,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ExportActionsAction extends ExportAction<ExportActionsForm>
     {
         public void export(ExportActionsForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -2084,7 +2079,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
         public ModelAndView getView(QueriesForm form, BindException errors) throws Exception
@@ -2135,7 +2130,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class QueryStackTracesAction extends SimpleViewAction<QueryStackTraceForm>
     {
         public ModelAndView getView(QueryStackTraceForm form, BindException errors) throws Exception
@@ -2174,7 +2169,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class ExportQueriesAction extends ExportAction<Object>
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -2202,7 +2197,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class CachesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2312,7 +2307,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class EnvironmentVariablesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2326,7 +2321,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class SystemPropertiesAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2373,7 +2368,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)   // CONSIDER: flushing caches and forcing GC is not technically "reading"
+    @AdminConsoleAction
     public class MemTrackerAction extends SimpleViewAction<MemForm>
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
@@ -2593,7 +2588,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class MemoryChartAction extends ExportAction<ChartForm>
     {
         public void export(ChartForm form, HttpServletResponse response, BindException errors) throws Exception

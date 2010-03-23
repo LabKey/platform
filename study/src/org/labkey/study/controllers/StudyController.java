@@ -3744,7 +3744,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        // This handles this case of posting a .zip archive directly (not using the pipeline)
+        // This handles the case of posting a .zip archive directly (not using the pipeline)
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();

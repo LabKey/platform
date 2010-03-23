@@ -19,14 +19,12 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
@@ -115,7 +113,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class CurrentSettingsAction extends SimpleViewAction<ConfigProperties>
     {
         public ModelAndView getView(ConfigProperties form, BindException errors) throws Exception
@@ -147,7 +145,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class PickAuthLogoAction extends AuthenticationManager.PickAuthLogoAction
     {
         @Override
@@ -174,7 +172,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminReadPermission.class)
+    @AdminConsoleAction
     public class PickReferrerAction extends FormViewAction<PickReferrerForm>
     {
         public void validateCommand(PickReferrerForm target, Errors errors)
@@ -189,8 +187,6 @@ public class OpenSSOController extends SpringActionController
 
         public boolean handlePost(PickReferrerForm form, BindException errors) throws Exception
         {
-            if (!getUser().isAdministrator())
-                HttpView.throwUnauthorized();
             OpenSSOManager.get().saveReferrerPrefix(form.getPrefix());
             return true;
         }
