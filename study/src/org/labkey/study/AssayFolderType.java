@@ -19,6 +19,7 @@ package org.labkey.study;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -65,11 +66,16 @@ public class AssayFolderType extends DefaultFolderType
 
     protected static Set<Module> getActiveModulesForOwnedFolder(StudyModule module)
     {
+        ModuleLoader ml = ModuleLoader.getInstance();
         Set<Module> active = getDefaultModuleSet();
         active.add(module);
         Set<String> dependencies = module.getModuleDependenciesAsSet();
         for (String moduleName : dependencies)
-            active.add(ModuleLoader.getInstance().getModule(moduleName));
+            active.add(ml.getModule(moduleName));
+
+        //add the pipeline module as well so the Data Pipeline web part is available
+        active.add(ml.getModule(PipelineService.MODULE_NAME));
+        
         return active;
     }
 
