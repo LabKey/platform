@@ -176,6 +176,7 @@ public class BreakpointThread extends Thread implements ShutdownListener
 
     public static File dumpHeap() throws Exception
     {
+        // Use reflection so that we don't have to build directly against the com.sun. class
         Class hotspotClass = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
         Object bean = ManagementFactory.newPlatformMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), HOTSPOT_BEAN_NAME, hotspotClass);
         Method method = hotspotClass.getMethod("dumpHeap", String.class, boolean.class);

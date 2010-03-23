@@ -604,6 +604,7 @@ api/src/org/labkey/api/reports/report/view/reportHeader.jsp -text
 api/src/org/labkey/api/reports/report/view/scriptReportDesigner.jsp -text
 api/src/org/labkey/api/search/SearchService.java -text
 api/src/org/labkey/api/security/ActionNames.java -text
+api/src/org/labkey/api/security/AdminConsoleAction.java -text
 api/src/org/labkey/api/security/AuthenticatedRequest.java -text
 api/src/org/labkey/api/security/AuthenticatedResponse.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text

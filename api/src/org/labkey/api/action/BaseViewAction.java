@@ -595,6 +595,25 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             contextualRoles = RoleManager.mergeContextualRoles(context, rolesAnnotation.value(), contextualRoles);
         }
         
+        // Special handling for admin console actions to support TroubleShooter role.  Only site admins can POST,
+        // but those with AdminReadPermission (i.e., TroubleShooters) can GET. 
+        boolean adminConsoleAction = actionClass.isAnnotationPresent(AdminConsoleAction.class);
+        if (adminConsoleAction)
+        {
+            assert c.isRoot();  // TODO: HttpView.throwUnauthorized(); -- once we've done some testing with the assert
+
+            String method = context.getRequest().getMethod();
+            if ("POST".equals(method))
+            {
+                if (!user.isAdministrator())
+                    HttpView.throwUnauthorized();
+            }
+            else
+            {
+                permissionsRequired = RoleManager.permSet(AdminReadPermission.class);
+            }
+        }
+
         if (null != permissionsRequired)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(c);
@@ -612,8 +631,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 
-        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission)
-            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, or @RequiresNoPermission annotation is required on class " + actionClass.getName());
+        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin && !requiresNoPermission && !adminConsoleAction)
+            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, @RequiresLogin, @RequiresNoPermission, or @AdminConsoleAction annotation is required on class " + actionClass.getName());
     }
 
     private static Class<? extends Permission> translatePermission(RequiresPermission requiresPerm)
