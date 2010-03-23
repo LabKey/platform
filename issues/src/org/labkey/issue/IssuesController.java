@@ -33,6 +33,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -2058,17 +2061,8 @@ public class IssuesController extends SpringActionController
      */
     private boolean hasUpdatePermission(User user, Issue issue)
     {
-        // If we have full Update rights on the container, continue
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE))
-            return true;
-
-        // If UpdateOwn on the container AND we created this Issue, continue
-        //noinspection RedundantIfStatement
-        if (getViewContext().hasPermission(ACL.PERM_UPDATEOWN)
-                && issue.getCreatedBy() == user.getUserId())
-            return true;
-
-        return false;
+        return getContainer().hasPermission(user, UpdatePermission.class,
+                (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
     }
 
 
