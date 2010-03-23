@@ -742,7 +742,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_UPDATEOWN)
+    @RequiresPermissionClass(ReadPermission.class)
     public class UpdateAction extends IssueUpdateAction
     {
         public ModelAndView getView(IssuesForm form, boolean reshow, BindException errors) throws Exception
