@@ -88,8 +88,16 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
         if(null == other)
             throw new NullPointerException();
 
-        //sort by resource id, user id
-        int ret = _resourceId.compareTo(other._resourceId);
+        int ret = 0;
+        //sort by resource id, then user id, then role unique name
+        //FIX: 10023 -- the resource ids should never be null, but some modules
+        //seem to use null resource ids on occasion (esp. reports and pipe roots)
+        //let's be defensive here and handle null resource ids
+        if (null == _resourceId)
+            ret = (null == other._resourceId ? 0 : -1);
+        else
+            ret = _resourceId.compareTo(other._resourceId);
+
         if (0 == ret)
             ret = _userId - other._userId;
         if (0 == ret) // CONSIDER _role extends Comparable
