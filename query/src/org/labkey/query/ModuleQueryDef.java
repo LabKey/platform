@@ -15,15 +15,21 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.io.IOUtils;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.resource.ResourceRef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.module.ModuleFileResource;
 import org.labkey.api.data.Container;
 import org.w3c.dom.Node;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +45,7 @@ import java.io.IOException;
  * This is separate from ModuleCustomQueryDefinition so that it can be cached and
  * used for multiple containers.
  */
-public class ModuleQueryDef extends ModuleFileResource
+public class ModuleQueryDef extends ResourceRef
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION = ".query.xml";
@@ -52,17 +58,17 @@ public class ModuleQueryDef extends ModuleFileResource
     private String _description;
     private double _schemaVersion;
 
-    public ModuleQueryDef(File sqlFile, String schemaName)
+    public ModuleQueryDef(Resource r, String schemaName)
     {
-        super(sqlFile);
+        super(r);
 
         _schemaName = schemaName;
-        _name = getNameFromFile(sqlFile);
+        _name = getNameFromFile();
 
         //load the sql from the sqlFile
         try
         {
-            _sql = getFileContents();
+            _sql = IOUtils.toString(r.getInputStream());
         }
         catch(IOException e)
         {
@@ -70,27 +76,40 @@ public class ModuleQueryDef extends ModuleFileResource
         }
 
         //meta-data file is optional
-        File metaFile = new File(sqlFile.getParentFile(), _name + META_FILE_EXTENSION);
-        addAssociatedFile(metaFile);
-        if(metaFile.exists())
+        Resource parent = r.parent();
+        if (parent != null)
         {
-            try
+            Resource metadataResource = parent.find(_name + META_FILE_EXTENSION);
+            if (metadataResource != null)
             {
-                loadMetadata(parseFile(metaFile));
-            }
-            catch(Exception e)
-            {
-                _log.warn("Unable to load meta-data from module query file " + metaFile.getAbsolutePath(), e);
+                ResourceRef metadataRef = new ResourceRef(metadataResource);
+                addDependency(metadataRef);
+                try
+                {
+                    loadMetadata(parseFile(metadataResource));
+                }
+                catch (Exception e)
+                {
+                    _log.warn("Unable to load meta-data from module query file " + metadataResource.getPath(), e);
+                }
             }
         }
     }
 
-    protected static String getNameFromFile(File sqlFile)
+    protected String getNameFromFile()
     {
-        String fileName = sqlFile.getName();
-        return fileName.substring(0, fileName.length() - FILE_EXTENSION.length());
+        String name = getResource().getName();
+        return name.substring(0, name.length() - FILE_EXTENSION.length());
     }
 
+    protected Document parseFile(Resource r) throws ParserConfigurationException, IOException, SAXException
+    {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setValidating(false);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+
+        return db.parse(r.getInputStream());
+    }
 
     protected void loadMetadata(Document doc) throws TransformerException, IOException
     {

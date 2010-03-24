@@ -23,7 +23,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.security.*;
 import org.labkey.api.security.roles.ReaderRole;
@@ -98,12 +98,12 @@ public class CrawlerTest extends junit.framework.TestCase
             return Path.rootPath;
         }
 
-        public Resource lookup(Path path)
+        public WebdavResource lookup(Path path)
         {
             return new FileSystemResource(path, new File(_base, path.toString()), _policy);
         }
 
-        public Resource welcome()
+        public WebdavResource welcome()
         {
             return null;
         }

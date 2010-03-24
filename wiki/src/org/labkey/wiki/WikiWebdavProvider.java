@@ -53,7 +53,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     final static String WIKI_NAME = "@wiki";
     
     // currently addChildren is called only for web folders
-    public Set<String> addChildren(@NotNull Resource target)
+    public Set<String> addChildren(@NotNull WebdavResource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -63,7 +63,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     }
 
 
-    public Resource resolve(@NotNull Resource parent, @NotNull String name)
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!WIKI_NAME.equalsIgnoreCase(name))
             return null;
@@ -84,11 +84,11 @@ class WikiWebdavProvider implements WebdavService.Provider
     }
 
 
-    class WikiProviderResource extends AbstractCollectionResource
+    class WikiProviderResource extends AbstractWebdavResourceCollection
     {
         Container _c;
         
-        WikiProviderResource(Resource parent, Container c)
+        WikiProviderResource(WebdavResource parent, Container c)
         {
             super(parent.getPath(), WIKI_NAME);
             _c = c;
@@ -96,19 +96,18 @@ class WikiWebdavProvider implements WebdavService.Provider
             setPolicy(c.getPolicy());
         }
 
-        @Override
         public String getName()
         {
             return WIKI_NAME;
         }
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             return new WikiFolder(this, name);
         }
 
         @NotNull
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             try
             {
@@ -149,7 +148,6 @@ class WikiWebdavProvider implements WebdavService.Provider
             return false;
         }
         
-        @Override
         public boolean isFile()
         {
             return false;
@@ -161,7 +159,6 @@ class WikiWebdavProvider implements WebdavService.Provider
             return Long.MIN_VALUE;
         }
 
-        @Override
         public long getLastModified()
         {
             return Long.MIN_VALUE;
@@ -175,11 +172,11 @@ class WikiWebdavProvider implements WebdavService.Provider
     }
     
 
-    public static class WikiFolder extends AbstractCollectionResource
+    public static class WikiFolder extends AbstractWebdavResourceCollection
     {
         Container _c;
         Wiki _wiki;
-        Resource _attachments;
+        WebdavResource _attachments;
 
         WikiFolder(WikiProviderResource folder, String name)
         {
@@ -218,7 +215,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @NotNull
-        public synchronized List<String> listNames()
+        public synchronized Collection<String> listNames()
         {
             if (!exists())
                 return Collections.emptyList();
@@ -228,7 +225,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return ret;
         }
 
-        public synchronized Resource find(String name)
+        public synchronized WebdavResource find(String name)
         {
             String docName = getDocumentName(_wiki);
             if (docName.equalsIgnoreCase(name))
@@ -261,14 +258,14 @@ class WikiWebdavProvider implements WebdavService.Provider
     static String getResourcePath(Wiki page)
     {
         String docname = getDocumentName(page);
-        return AbstractResource.c(page.getContainerPath(),WIKI_NAME,page.getName().getSource(),docname);
+        return AbstractWebdavResource.c(page.getContainerPath(),WIKI_NAME,page.getName().getSource(),docname);
     }
 
 
     static String getResourcePath(Container c, String name, WikiRendererType type)
     {
         String docname = getDocumentName(name, type);
-        return AbstractResource.c(c.getPath(),WIKI_NAME,name,docname);
+        return AbstractWebdavResource.c(c.getPath(),WIKI_NAME,name,docname);
     }
 
 
@@ -494,7 +491,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public Resource parent()
+        public WebdavResource parent()
         {
             return _folder;
         }

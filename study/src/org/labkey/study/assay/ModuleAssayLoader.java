@@ -19,6 +19,7 @@ package org.labkey.study.assay;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -47,6 +48,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
+        // NOTE: Can't use Module's resource resolver yet since the module hasn't been initialized.
         File assayDir = new File(explodedModuleDir, ASSAY_DIR_NAME);
         if (assayDir.exists())
             return Collections.singleton(StudyModule.MODULE_NAME);
@@ -55,24 +57,25 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
     public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
     {
-        File assayDir = new File(explodedModuleDir, ASSAY_DIR_NAME);
-        if (assayDir.exists())
+        Resource assayDir = module.getModuleResource(ASSAY_DIR_NAME);
+        if (assayDir != null && assayDir.exists() && assayDir.isCollection())
         {
-            for (File assayProviderDir : assayDir.listFiles())
+            for (Resource assayProviderDir : assayDir.list())
             {
-                if (!assayProviderDir.isHidden())
-                    loadAssayProvider(assayProviderDir);
+                if (!assayProviderDir.isCollection())
+                    continue;
+                loadAssayProvider(module, assayProviderDir);
             }
         }
     }
 
-    private void loadAssayProvider(File assayProviderDir) throws IOException, ModuleResourceLoadException
+    private void loadAssayProvider(Module module, Resource assayProviderDir) throws IOException, ModuleResourceLoadException
     {
         String assayName = assayProviderDir.getName();
 
-        File configFile = new File(assayProviderDir, "config.xml");
+        Resource configFile = assayProviderDir.find("config.xml");
         ProviderType providerConfig = null;
-        if (configFile.canRead())
+        if (configFile != null && configFile.isFile())
             providerConfig = parseProvider(configFile);
         if (providerConfig == null)
             providerConfig = ProviderDocument.Factory.newInstance().addNewProvider();
@@ -82,16 +85,16 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         else
             providerConfig.setName(assayName);
 
-        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, assayProviderDir, providerConfig);
+        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, module.getModuleResolver(), providerConfig);
 
         AssayService.get().registerAssayProvider(assayProvider);
     }
 
-    private ProviderType parseProvider(File configFile) throws IOException, ModuleResourceLoadException
+    private ProviderType parseProvider(Resource configFile) throws IOException, ModuleResourceLoadException
     {
         try
         {
-            ProviderDocument doc = ProviderDocument.Factory.parse(configFile);
+            ProviderDocument doc = ProviderDocument.Factory.parse(configFile.getInputStream());
             if (doc != null)
                 return doc.getProvider();
         }

@@ -31,6 +31,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -41,7 +42,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
@@ -441,7 +442,7 @@ public class DavController extends SpringActionController
             }
             catch (UnauthorizedException uex)
             {
-                Resource resource = uex.getResource();
+                WebdavResource resource = uex.getResource();
                 if (!getUser().isGuest())
                 {
                     getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resource.getPath());
@@ -479,7 +480,7 @@ public class DavController extends SpringActionController
 
         WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
-            Resource resource = resolvePath();
+            WebdavResource resource = resolvePath();
             if (null != resource)
             {
                 StringBuilder methodsAllowed = determineMethodsAllowed(resource);
@@ -505,7 +506,7 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            Resource resource = null;
+            WebdavResource resource = null;
             if ("GET".equals(method) && getResourcePath().size() == 0)
                 resource = getResolver().welcome();
             if (null == resource)
@@ -555,7 +556,7 @@ public class DavController extends SpringActionController
         WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             User user = getUser();
-            Resource resource = resolvePath();
+            WebdavResource resource = resolvePath();
             if (null == resource)
                 return notFound();
 
@@ -614,7 +615,7 @@ public class DavController extends SpringActionController
         }
 
         /** @param includeNames if non-null, the set of children to include in the zip. If null, all are included */
-        private void addResource(Resource resource, ZipOutputStream out, User user, Resource rootResource, int depth, Set<String> includeNames) throws IOException
+        private void addResource(WebdavResource resource, ZipOutputStream out, User user, WebdavResource rootResource, int depth, Set<String> includeNames) throws IOException
         {
             if (!resource.canRead(user))
                 return;
@@ -623,7 +624,7 @@ public class DavController extends SpringActionController
             {
                 if (depth > 0)
                 {
-                    for (Resource child : resource.list())
+                    for (WebdavResource child : resource.list())
                     {
                         if (includeNames == null || includeNames.contains(child.getName()))
                         {
@@ -676,13 +677,13 @@ public class DavController extends SpringActionController
     }
 
 
-    WebdavStatus mountResource(Resource resource) throws DavException, IOException
+    WebdavStatus mountResource(WebdavResource resource) throws DavException, IOException
     {
         StringBuilder sb = new StringBuilder();
         String root = resolvePath("/").getHref(getViewContext());
         if (!root.endsWith("/")) root += "/";
         if (resource.isFile())
-            resource = resource.parent();
+            resource = (WebdavResource)resource.parent();
         String path = resource.getHref(getViewContext());
         if (!path.endsWith("/")) path += "/";
         String open = path.substring(root.length());
@@ -718,7 +719,7 @@ public class DavController extends SpringActionController
         @Override
         public WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
-            Resource resource = resolvePath();
+            WebdavResource resource = resolvePath();
             if (null == resource)
                 return notFound();
             boolean isCollection = resource.isCollection();
@@ -736,7 +737,7 @@ public class DavController extends SpringActionController
                     String fileName = file.getOriginalFilename();
                     if (file.isEmpty())
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;
-                    Resource dest = resource.find(fileName);
+                    WebdavResource dest = resource.find(fileName);
                     if (null == dest)
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;
                     // CONSIDER: support multi-file POST
@@ -782,7 +783,7 @@ public class DavController extends SpringActionController
     @RequiresNoPermission
     public class PropfindAction extends DavAction
     {
-        Resource _resource = null;
+        WebdavResource _resource = null;
         boolean defaultListRoot = true; // return root node when depth>0?
         int defaultDepth = 1;
         
@@ -796,12 +797,12 @@ public class DavController extends SpringActionController
             super(method);
         }
 
-        protected void setResource(Resource r)
+        protected void setResource(WebdavResource r)
         {
             _resource = r;
         }
 
-        Resource getResource() throws DavException
+        WebdavResource getResource() throws DavException
         {
             if (null == _resource)
                 _resource = resolvePath();
@@ -837,7 +838,7 @@ public class DavController extends SpringActionController
         public WebdavStatus doMethod() throws DavException, IOException
         {
             _log.debug("PROPFIND " + getResourcePathStr());
-            Resource root = getResource();
+            WebdavResource root = getResource();
             if (root == null || !root.exists())
                 return notFound();
             
@@ -989,7 +990,7 @@ public class DavController extends SpringActionController
 
                     // Stack of the objects one level below
                     boolean skipFirst = noroot;
-                    Resource resource;
+                    WebdavResource resource;
                     LinkedList<Path> stackBelow = new LinkedList<Path>();
 
                     while ((!stack.isEmpty()) && (depth >= 0))
@@ -1010,7 +1011,7 @@ public class DavController extends SpringActionController
 
                         if (resource.isCollection() && depth > 0)
                         {
-                            List<String> listPaths = resource.listNames();
+                            Collection<String> listPaths = resource.listNames();
                             for (String listPath : listPaths)
                             {
                                 Path newPath = currentPath.append(listPath);
@@ -1088,7 +1089,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        protected Resource getResource() throws DavException
+        protected WebdavResource getResource() throws DavException
         {
             String node = getRequest().getParameter("node");
             if (null != node)
@@ -1114,7 +1115,7 @@ public class DavController extends SpringActionController
          * @param propertiesVector If the propfind type is find properties by
          *                         name, then this Vector contains those properties
          */
-        public void writeProperties(Resource resource, Find type, List<String> propertiesVector) throws Exception;
+        public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception;
 
         /**
          * @param path             Path of the current resource
@@ -1128,7 +1129,7 @@ public class DavController extends SpringActionController
     }
 
 
-    long _contentLength(Resource r)
+    long _contentLength(WebdavResource r)
     {
         try
         {
@@ -1169,7 +1170,7 @@ public class DavController extends SpringActionController
         }
 
 
-        public void writeProperties(Resource resource, Find type, List<String> propertiesVector)
+        public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector)
         {
             boolean exists = resource.exists();
             boolean isFile = exists && resource.isFile();
@@ -1329,7 +1330,7 @@ public class DavController extends SpringActionController
                         }
                         if (property.equals("actions"))
                         {
-                            List<NavTree> actions = resource.getActions(getUser());
+                            Collection<NavTree> actions = resource.getActions(getUser());
                             xml.writeElement(null, "actions", XMLWriter.OPENING);
                             for (NavTree action : actions)
                             {
@@ -1532,7 +1533,7 @@ public class DavController extends SpringActionController
                         else if (property.equals("history"))
                         {
                             xml.writeElement(null, "history", XMLWriter.OPENING);
-                            List<WebdavResolver.History> list = resource.getHistory();
+                            Collection<WebdavResolver.History> list = resource.getHistory();
                             for (WebdavResolver.History history : list)
                             {
                                 xml.writeElement(null, "entry", XMLWriter.OPENING);
@@ -1600,7 +1601,7 @@ public class DavController extends SpringActionController
             if (lock == null)
                 return;
 
-            Resource resource = resolvePath(path);
+            WebdavResource resource = resolvePath(path);
             if (null == resource)
                 return;
 
@@ -1812,7 +1813,7 @@ public class DavController extends SpringActionController
             json.endArray();
         }
 
-        public void writeProperties(Resource resource, Find type, List<String> propertiesVector) throws Exception
+        public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception
         {
             json.object();
             json.key("id").value(resource.getPath());
@@ -1850,7 +1851,7 @@ public class DavController extends SpringActionController
             if (lock == null)
                 return;
 
-            Resource resource = resolvePath(path);
+            WebdavResource resource = resolvePath(path);
             if (null == resource)
                 return;
 
@@ -1886,7 +1887,7 @@ public class DavController extends SpringActionController
             checkLocked();
 
             Path path = getResourcePath();
-            Resource resource = resolvePath();
+            WebdavResource resource = resolvePath();
             if (null == resource || path.size()==0)
                 throw new DavException(WebdavStatus.SC_FORBIDDEN, path.toString());
 
@@ -1963,7 +1964,7 @@ public class DavController extends SpringActionController
     public class PutAction extends DavAction
     {
         // this is a member so PostAction() can set it
-        Resource _resource;
+        WebdavResource _resource;
         FileStream _fis;
 
         public PutAction()
@@ -1976,12 +1977,12 @@ public class DavController extends SpringActionController
             super(method);
         }
 
-        protected void setResource(Resource r)
+        protected void setResource(WebdavResource r)
         {
             _resource = r;
         }
         
-        Resource getResource() throws DavException
+        WebdavResource getResource() throws DavException
         {
             if (null == _resource)
                 _resource = resolvePath();
@@ -2034,7 +2035,7 @@ public class DavController extends SpringActionController
             checkReadOnly();
             checkLocked();
 
-            Resource resource = getResource();
+            WebdavResource resource = getResource();
             if (resource == null)
                 return notFound();
             boolean exists = resource.exists();
@@ -2173,7 +2174,7 @@ public class DavController extends SpringActionController
         if (isLocked(path, ifHeader + lockTokenHeader))
             throw new DavException(WebdavStatus.SC_LOCKED);
 
-        Resource resource = resolvePath(path);
+        WebdavResource resource = resolvePath(path);
         boolean exists = resource != null && resource.exists();
         if (!exists)
             return notFound();
@@ -2208,19 +2209,19 @@ public class DavController extends SpringActionController
 
     // The following fire*Event() methods should be replaced with a full subscribe-notify implementation, but for now
     // just add to the method bodies
-    private void fireFileReplacedEvent(Resource resource)
+    private void fireFileReplacedEvent(WebdavResource resource)
     {
         audit(resource, "replaced");
         updateIndexAndDataObject(resource);
     }
 
-    private void fireFileCreatedEvent(Resource resource)
+    private void fireFileCreatedEvent(WebdavResource resource)
     {
         audit(resource, "created");
         updateIndexAndDataObject(resource);
     }
 
-    private void updateIndexAndDataObject(Resource resource)
+    private void updateIndexAndDataObject(WebdavResource resource)
     {
         addToIndex(resource);
 
@@ -2252,7 +2253,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    private void fireFileDeletedEvent(Resource resource)
+    private void fireFileDeletedEvent(WebdavResource resource)
     {
         audit(resource, "deleted");
         removeFromIndex(resource);
@@ -2276,7 +2277,7 @@ public class DavController extends SpringActionController
      * @param coll collection to be deleted
      * @param errorList Contains the list of the errors which occurred
      */
-    private void deleteCollection(Resource coll, Map<Path,WebdavStatus> errorList)
+    private void deleteCollection(WebdavResource coll, Map<Path,WebdavStatus> errorList)
     {
         HttpServletRequest request = getRequest();
         Path path = coll.getPath();
@@ -2291,9 +2292,9 @@ public class DavController extends SpringActionController
         if (lockTokenHeader == null)
             lockTokenHeader = "";
 
-        List<Resource> children = coll.list();
+        Collection<? extends WebdavResource> children = coll.list();
 
-        for (Resource child : children)
+        for (WebdavResource child : children)
         {
             Path childName = child.getPath();
 
@@ -2440,11 +2441,11 @@ public class DavController extends SpringActionController
             if (destinationPath == null)
                 throw new DavException(WebdavStatus.SC_BAD_REQUEST);
 
-            Resource src = resolvePath();
+            WebdavResource src = resolvePath();
             if (null == src || !src.exists())
                 notFound();
 
-            Resource dest = resolvePath(destinationPath);
+            WebdavResource dest = resolvePath(destinationPath);
             if (null == dest || dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
 
@@ -2487,7 +2488,8 @@ public class DavController extends SpringActionController
                 {
                     if (dest.getFile().exists())
                     {
-                        tmp = new File(dest.parent().getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
+                        WebdavResource parent = (WebdavResource)dest.parent();
+                        tmp = new File(parent.getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
                         markTempFile(tmp);
                         if (!dest.getFile().renameTo(tmp))
                             throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
@@ -2536,7 +2538,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    private void fireFileMovedEvent(Resource dest, Resource src)
+    private void fireFileMovedEvent(WebdavResource dest, WebdavResource src)
     {
         audit(src, null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
         audit(dest, null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
@@ -2563,7 +2565,7 @@ public class DavController extends SpringActionController
     }
 
 
-    boolean isSafeCopy(Resource src, Resource dest)
+    boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
         // Don't allow creating text/html via rename (circumventing script checking)
         if (src.isFile() && !UserManager.mayWriteScript(getUser()))
@@ -2619,13 +2621,13 @@ public class DavController extends SpringActionController
     static Path servletPrefix = WebdavService.getPath();
     
     /** allow html listing of this resource */
-    private boolean allowHtmlListing(Resource resource)
+    private boolean allowHtmlListing(WebdavResource resource)
     {
         return resource.getPath().startsWith(servletPrefix);
     }
     
 
-    private WebdavStatus serveCollection(Resource resource, boolean content)
+    private WebdavStatus serveCollection(WebdavResource resource, boolean content)
             throws DavException
     {
         String contentType = resource.getContentType();
@@ -2646,7 +2648,7 @@ public class DavController extends SpringActionController
     }
 
 
-    final static Map<Path,Resource> compressedResources = Collections.synchronizedMap(new HashMap<Path,Resource>());
+    final static Map<Path, WebdavResource> compressedResources = Collections.synchronizedMap(new HashMap<Path, WebdavResource>());
     boolean supportStaticGzFiles = false;
 
     boolean isStaticContent(Path path)
@@ -2654,10 +2656,10 @@ public class DavController extends SpringActionController
         return !path.startsWith(servletPrefix);
     }
 
-    Resource getGzipResource(Path path) throws DavException
+    WebdavResource getGzipResource(Path path) throws DavException
     {
         assert isStaticContent(path);
-        Resource gzResource = compressedResources.get(path);
+        WebdavResource gzResource = compressedResources.get(path);
         if (gzResource == null)
         {
             Path gz = path.getParent().append(path.getName() + ".gz");
@@ -2681,7 +2683,7 @@ public class DavController extends SpringActionController
     }
     
 
-    private WebdavStatus serveResource(Resource resource, boolean content)
+    private WebdavStatus serveResource(WebdavResource resource, boolean content)
             throws DavException, IOException
     {
         // If the resource is not a collection, and the resource path ends with "/"
@@ -2768,7 +2770,7 @@ public class DavController extends SpringActionController
                 String accept = getRequest().getHeader("accept-encoding");
                 if (null != accept && -1 != accept.indexOf("gzip"))
                 {
-                    Resource gzResource = getGzipResource(resource.getPath());
+                    WebdavResource gzResource = getGzipResource(resource.getPath());
                     if (null != gzResource)
                     {
                         if (!isDevMode || gzResource.getLastModified() >= resource.getLastModified())
@@ -2860,7 +2862,7 @@ public class DavController extends SpringActionController
     }
 
 
-    protected void copy(Resource resource, OutputStream ostream, Iterator ranges, String contentType) throws IOException
+    protected void copy(WebdavResource resource, OutputStream ostream, Iterator ranges, String contentType) throws IOException
     {
         while (ranges.hasNext())
         {
@@ -2923,14 +2925,14 @@ public class DavController extends SpringActionController
 
     private StringBuilder determineMethodsAllowed() throws DavException
     {
-        Resource resource = resolvePath();
+        WebdavResource resource = resolvePath();
         if (resource == null)
             return new StringBuilder();
         return determineMethodsAllowed(resource);
     }
 
 
-    private StringBuilder determineMethodsAllowed(Resource resource)
+    private StringBuilder determineMethodsAllowed(WebdavResource resource)
     {
         User user = getUser();
         StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
@@ -3139,7 +3141,8 @@ public class DavController extends SpringActionController
     }
                                                              
 
-    @Nullable Resource resolvePath() throws DavException
+    // UNDONE: normalize path
+    @Nullable WebdavResource resolvePath() throws DavException
     {
         // NOTE: security is enforced via WebFolderInfo, however we expect the container to be a parent of the path
         Container c = getViewContext().getContainer();
@@ -3155,18 +3158,18 @@ public class DavController extends SpringActionController
 
     
     // per request cache
-    Map<Path, Resource> resourceCache = new HashMap<Path, Resource>();
-    Resource nullDavFileInfo = (Resource)Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{Resource.class}, new InvocationHandler(){public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{return null;}});
+    Map<Path, WebdavResource> resourceCache = new HashMap<Path, WebdavResource>();
+    WebdavResource nullDavFileInfo = (WebdavResource)Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{WebdavResource.class}, new InvocationHandler(){public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{return null;}});
 
-    @Nullable Resource resolvePath(String path) throws DavException
+    @Nullable WebdavResource resolvePath(String path) throws DavException
     {
         return resolvePath(Path.parse(path));
     }
 
 
-    @Nullable Resource resolvePath(Path path) throws DavException
+    @Nullable WebdavResource resolvePath(Path path) throws DavException
     {
-        Resource resource = resourceCache.get(path);
+        WebdavResource resource = resourceCache.get(path);
 
         if (resource != null)
         {
@@ -3196,7 +3199,7 @@ public class DavController extends SpringActionController
      *         and false if any of the conditions is not satisfied, in which case
      *         request processing is stopped
      */
-    private boolean checkIfHeaders(Resource resource)
+    private boolean checkIfHeaders(WebdavResource resource)
             throws DavException
     {
         return checkIfMatch(resource)
@@ -3213,7 +3216,7 @@ public class DavController extends SpringActionController
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private boolean checkIfMatch(Resource resource)
+    private boolean checkIfMatch(WebdavResource resource)
             throws DavException
     {
 
@@ -3256,7 +3259,7 @@ public class DavController extends SpringActionController
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private boolean checkIfModifiedSince(Resource resource)
+    private boolean checkIfModifiedSince(WebdavResource resource)
             throws DavException
     {
         try
@@ -3295,7 +3298,7 @@ public class DavController extends SpringActionController
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private boolean checkIfNoneMatch(Resource resource) throws DavException
+    private boolean checkIfNoneMatch(WebdavResource resource) throws DavException
     {
         String eTag = resource.getETag();
         String headerValue = getRequest().getHeader("If-None-Match");
@@ -3351,7 +3354,7 @@ public class DavController extends SpringActionController
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private boolean checkIfUnmodifiedSince(Resource resource) throws DavException
+    private boolean checkIfUnmodifiedSince(WebdavResource resource) throws DavException
     {
         try
         {
@@ -3459,7 +3462,7 @@ public class DavController extends SpringActionController
      *
      * @return Vector of ranges
      */
-    private List<Range> parseRange(Resource resource) throws DavException
+    private List<Range> parseRange(WebdavResource resource) throws DavException
     {
         // Checking If-Range
         String headerValue = getRequest().getHeader("If-Range");
@@ -3589,7 +3592,7 @@ public class DavController extends SpringActionController
     public class ListPage
     {
         public Path root = Path.emptyPath;
-        public Resource resource;
+        public WebdavResource resource;
         public ActionURL loginURL;
         public Path getDirectory()
         {
@@ -3599,7 +3602,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    WebdavStatus listHtml(Resource resource)
+    WebdavStatus listHtml(WebdavResource resource)
     {
         try
         {
@@ -3772,13 +3775,13 @@ public class DavController extends SpringActionController
             throw new DavException(WebdavStatus.SC_BAD_REQUEST);
         _log.debug("Dest path :" + destinationPath);
 
-        Resource resource = resolvePath();
+        WebdavResource resource = resolvePath();
         if (null == resource || !resource.exists())
            throw new DavException(WebdavStatus.SC_NOT_FOUND);
         if (!resource.canRead(getUser()))
            unauthorized(resource);
 
-        Resource destination = resolvePath(destinationPath);
+        WebdavResource destination = resolvePath(destinationPath);
         if (null == destination)
             throw new DavException(WebdavStatus.SC_FORBIDDEN);
         WebdavStatus successStatus = destination.exists() ? WebdavStatus.SC_NO_CONTENT : WebdavStatus.SC_CREATED;
@@ -3832,11 +3835,11 @@ public class DavController extends SpringActionController
      * during the copy operation
      * @param destPath Destination path
      */
-    private WebdavStatus copyResource(Resource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
+    private WebdavStatus copyResource(WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
     {
         _log.debug("Copy: " + src.getPath() + " To: " + destPath);
 
-        Resource dest = resolvePath(destPath);
+        WebdavResource dest = resolvePath(destPath);
         
         if (src.isCollection())
         {
@@ -3848,8 +3851,8 @@ public class DavController extends SpringActionController
 
             try
             {
-                List<Resource> children = src.list();
-                for (Resource child : children)
+                Collection<? extends WebdavResource> children = src.list();
+                for (WebdavResource child : children)
                 {
                     Path childDest = dest.getPath().append(child.getName());
                     copyResource(child, errorList, childDest);
@@ -3894,7 +3897,7 @@ public class DavController extends SpringActionController
 
 
     // UNDONE: move auditing into the Resource
-    void audit(Resource resource, String message)
+    void audit(WebdavResource resource, String message)
     {
         String dir;
         String name;
@@ -4277,7 +4280,7 @@ public class DavController extends SpringActionController
     {
         protected WebdavStatus status;
         protected String message;
-        protected Resource resource;
+        protected WebdavResource resource;
 
         DavException(WebdavStatus status)
         {
@@ -4318,7 +4321,7 @@ public class DavController extends SpringActionController
             return StringUtils.defaultIfEmpty(message, status.message);
         }
 
-        public Resource getResource()
+        public WebdavResource getResource()
         {
             return resource;
         }
@@ -4326,14 +4329,14 @@ public class DavController extends SpringActionController
 
     class UnauthorizedException extends DavException
     {
-        UnauthorizedException(Resource resource)
+        UnauthorizedException(WebdavResource resource)
         {
             super(WebdavStatus.SC_UNAUTHORIZED);
             this.resource = resource;
         }
     }
 
-    WebdavStatus unauthorized(Resource resource) throws DavException
+    WebdavStatus unauthorized(WebdavResource resource) throws DavException
     {
         throw new UnauthorizedException(resource);
     }
@@ -4419,7 +4422,7 @@ public class DavController extends SpringActionController
     static Set<String> _tempFiles = Collections.synchronizedSet(new TreeSet<String>());
     static Set<Path> _tempResources = Collections.synchronizedSet(new HashSet<Path>());
 
-    private void markTempFile(Resource r)
+    private void markTempFile(WebdavResource r)
     {
         _tempResources.add(r.getPath());
         markTempFile(r.getFile());
@@ -4431,7 +4434,7 @@ public class DavController extends SpringActionController
             _tempFiles.add(f.getPath());
     }
     
-    public static boolean rmTempFile(Resource r)
+    public static boolean rmTempFile(WebdavResource r)
     {
         rmTempFile(r.getFile());
         return _tempResources.remove(r.getPath());
@@ -4451,7 +4454,7 @@ public class DavController extends SpringActionController
         return false;
     }
 
-    private boolean isTempFile(Resource r)
+    private boolean isTempFile(WebdavResource r)
     {
         return _tempResources.contains(r.getPath());
     }
@@ -4473,7 +4476,7 @@ public class DavController extends SpringActionController
     }
 
 
-    private void addToIndex(Resource r)
+    private void addToIndex(WebdavResource r)
     {
         if (!r.shouldIndex())
             return;
@@ -4510,7 +4513,7 @@ public class DavController extends SpringActionController
     }
 
 
-    private void removeFromIndex(Resource r)
+    private void removeFromIndex(WebdavResource r)
     {
         SearchService ss = ServiceRegistry.get(SearchService.class);
         if (null != ss)

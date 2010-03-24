@@ -52,7 +52,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.workbook.*;
@@ -285,13 +285,13 @@ public class CoreController extends SpringActionController
                     // get the root resolver
                     WebdavResolver r = ModuleStaticResolverImpl.get(); //ServiceRegistry.get(WebdavResolver.class);
 
-                    Resource stylesheet = r.lookup(new Path("stylesheet.css"));
+                    WebdavResource stylesheet = r.lookup(new Path("stylesheet.css"));
 
                     Content root = getCustomStylesheetContent(ContainerManager.getRoot());
                     Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
                     Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
-                    Resource extAll = r.lookup(Path.parse("/ext-3.1.1/resources/css/ext-all.css"));
-                    Resource extPatches = r.lookup(Path.parse("/ext-3.1.1/resources/css/ext-patches.css"));
+                    WebdavResource extAll = r.lookup(Path.parse("/ext-3.1.1/resources/css/ext-all.css"));
+                    WebdavResource extPatches = r.lookup(Path.parse("/ext-3.1.1/resources/css/ext-patches.css"));
                     StringWriter out = new StringWriter();
 
                     _appendCss(out, extAll);
@@ -338,7 +338,7 @@ public class CoreController extends SpringActionController
     }
 
 
-    void _appendCss(StringWriter out, Resource r)
+    void _appendCss(StringWriter out, WebdavResource r)
     {
         if (null == r || !r.isFile())
             return;
@@ -399,7 +399,7 @@ public class CoreController extends SpringActionController
                 List<String> concat = new ArrayList<String>();
                 for (String path : scripts)
                 {
-                    Resource script = r.lookup(Path.parse(path));
+                    WebdavResource script = r.lookup(Path.parse(path));
                     assert(script.isFile());
                     if (!script.isFile())
                         continue;

@@ -30,6 +30,9 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.resource.FileResource;
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
@@ -38,10 +41,7 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayPipelineProvider;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.FileType;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.study.assay.xml.DomainDocument;
@@ -78,8 +78,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private static final String UPLOAD_VIEW_FILENAME = "upload.html";
     private static final String BEGIN_VIEW_FILENAME = "begin.html";
 
-    private File baseDir;
-    private File viewsDir;
+    private Resolver resolver;
     private String name;
     private String description;
     private FileType[] inputFileSuffices = new FileType[0];
@@ -91,7 +90,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
 
-    public ModuleAssayProvider(String name, File baseDir, ProviderType providerConfig)
+    public ModuleAssayProvider(String name, Resolver resolver, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
         _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey())
@@ -129,8 +128,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             }
         };
         this.name = name;
-        this.baseDir = baseDir;
-        this.viewsDir = new File(baseDir, "views");
+        this.resolver = resolver;
 
         init(providerConfig);
     }
@@ -176,12 +174,11 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws IOException, XmlException
     {
-        File domainDir = new File(baseDir, ModuleAssayLoader.DOMAINS_DIR_NAME);
-        File domainFile = new File(domainDir, domainType.getName().toLowerCase() + ".xml");
-        if (!domainFile.canRead())
+        Resource domainFile = resolver.lookup(new Path(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
+        if (domainFile == null || !domainFile.exists())
             return null;
 
-        DomainDocument doc = DomainDocument.Factory.parse(domainFile);
+        DomainDocument doc = DomainDocument.Factory.parse(domainFile.getInputStream());
         DomainDescriptorType xDomain = doc.getDomain();
         ArrayList<XmlError> errors = new ArrayList<XmlError>();
         XmlOptions options = new XmlOptions().setErrorListener(errors);
@@ -202,7 +199,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             while (errors.size() > 0)
             {
                 XmlError error = errors.remove(0);
-                sb.append(error.toString(baseDir.toURI()));
+                sb.append(error.toString());
                 if (errors.size() > 0)
                     sb.append("\n");
             }
@@ -292,7 +289,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return required;
     }
 
-    protected String getViewFileName(IAssayDomainType domainType, boolean details)
+    protected String getViewResourcePath(IAssayDomainType domainType, boolean details)
     {
         String viewName = domainType.getName().toLowerCase();
         if (!details)
@@ -306,23 +303,23 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return viewName + ".html";
     }
 
-    protected boolean hasCustomView(String viewFileName)
+    protected boolean hasCustomView(String viewResourceName)
     {
-        return new File(viewsDir, viewFileName).canRead();
+        return resolver.lookup(new Path("views", viewResourceName)) != null;
     }
 
     @Override
     public boolean hasCustomView(IAssayDomainType domainType, boolean details)
     {
-        return hasCustomView(getViewFileName(domainType, details));
+        return hasCustomView(getViewResourcePath(domainType, details));
     }
 
-    protected ModelAndView getCustomView(String viewFileName)
+    protected ModelAndView getCustomView(String viewResourceName)
     {
-        File viewFile = new File(viewsDir, viewFileName);
-        if (viewFile.canRead())
+        Resource viewResource = resolver.lookup(new Path("views", viewResourceName));
+        if (viewResource != null && viewResource.exists())
         {
-            ModuleHtmlView view = new ModuleHtmlView(viewFile);
+            ModuleHtmlView view = new ModuleHtmlView(viewResource);
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }
@@ -332,7 +329,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     // XXX: consider moving to TsvAssayProvider
     protected ModelAndView getCustomView(IAssayDomainType domainType, boolean details)
     {
-        return getCustomView(getViewFileName(domainType, details));
+        return getCustomView(getViewResourcePath(domainType, details));
     }
 
     public static class AssayPageBean
@@ -523,20 +520,24 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
             // lazily get the validation scripts
-            File scriptDir = new File(baseDir, "scripts");
+            Resource scriptDir = resolver.lookup(new Path("scripts"));
 
-            if (scriptDir.canRead())
+            if (scriptDir != null && scriptDir.exists())
             {
                 final ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
-                File[] scripts = scriptDir.listFiles(new FileFilter(){
-                    public boolean accept(File pathname)
+                Collection<? extends Resource> scripts = scriptDir.list();
+                List<File> scriptFiles = new ArrayList<File>(scripts.size());
+                for (Resource r : scripts)
+                {
+                    if (r instanceof FileResource)
                     {
-                        String ext = FileUtil.getExtension(pathname);
-                        return  (manager.getEngineByExtension(ext) != null);
+                        String ext = r.getPath().extension();
+                        if (manager.getEngineByExtension(ext) != null)
+                            scriptFiles.add(((FileResource)r).getFile());
                     }
-                });
-                validationScripts.addAll(Arrays.asList(scripts));
+                }
+                validationScripts.addAll(scriptFiles);
                 Collections.sort(validationScripts, new Comparator<File>(){
                     public int compare(File o1, File o2)
                     {

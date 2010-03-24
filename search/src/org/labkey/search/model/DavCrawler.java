@@ -23,11 +23,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
@@ -248,7 +249,7 @@ public class DavCrawler implements ShutdownListener
 
             _log.debug("IndexDirectoryJob.run(" + _path + ")");
 
-            final Resource r = getResolver().lookup(_path);
+            final WebdavResource r = getResolver().lookup(_path);
 
             // CONSIDER: delete previously indexed resources in child containers as well
             if (null == r || !r.isCollection() || !r.shouldIndex() || skipContainer(r))
@@ -285,7 +286,7 @@ public class DavCrawler implements ShutdownListener
             // CONSIDER: store documentId in crawlResources
             Map<String,ResourceInfo> map = _paths.getFiles(_path);
 
-            for (Resource child : r.list())
+            for (WebdavResource child : r.list())
             {
                 if (_shuttingDown)
                     return;
@@ -305,7 +306,7 @@ public class DavCrawler implements ShutdownListener
                     if (skipFile(child))
                     {
                         // just index the name and that's all
-                        final Resource wrap = child;
+                        final WebdavResource wrap = child;
                         ActionURL url = new ActionURL(r.getExecuteHref(null));
                         Map<String, Object> props = new HashMap<String, Object>();
                         props.put(SearchService.PROPERTY.categories.toString(), SearchService.fileCategory.toString());
@@ -367,7 +368,7 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    void addRecent(Resource r)
+    void addRecent(WebdavResource r)
     {
         synchronized (_recent)
         {
@@ -500,7 +501,7 @@ public class DavCrawler implements ShutdownListener
     }
     
 
-    static boolean skipContainer(Resource r)
+    static boolean skipContainer(WebdavResource r)
     {
         Path path = r.getPath();
         String name = path.getName();
@@ -543,7 +544,7 @@ public class DavCrawler implements ShutdownListener
     }
 
     
-    boolean skipFile(Resource r)
+    boolean skipFile(WebdavResource r)
     {
         if (!getSearchService().accept(r))
             return true;

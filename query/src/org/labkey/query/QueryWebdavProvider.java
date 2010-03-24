@@ -25,10 +25,7 @@ import org.labkey.api.security.User;
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
@@ -44,14 +41,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 {
 	final String QUERY_NAME = "@query";
 
-	public Set<String> addChildren(@NotNull Resource target)
+	public Set<String> addChildren(@NotNull WebdavResource target)
 	{
 		if (target instanceof WebdavResolverImpl.WebFolderResource)
 			return PageFlowUtil.set(QUERY_NAME);
 		return null;
 	}
 
-	public Resource resolve(@NotNull Resource parent, @NotNull String name)
+	public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
 	{
 		if (!QUERY_NAME.equalsIgnoreCase(name))
 			return null;
@@ -64,7 +61,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 	}
 
 
-	class QueryResource extends AbstractCollectionResource
+	class QueryResource extends AbstractWebdavResourceCollection
 	{
 		Container _c;
 		ArrayList<String> _schemaNames = null;
@@ -81,7 +78,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return true;
 		}
 
-		public Resource find(String name)
+		public WebdavResource find(String name)
 		{
 			DefaultSchema folderSchema = DefaultSchema.get(null, _c);
 			QuerySchema s  = folderSchema.getSchema(name);
@@ -90,7 +87,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return null;
 		}
 
-		public List<String> listNames()
+		public Collection<String> listNames()
 		{
 			if (_schemaNames == null)
 			{
@@ -116,7 +113,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
     }
 
 
-	class SchemaResource extends AbstractCollectionResource
+	class SchemaResource extends AbstractWebdavResourceCollection
 	{
 		QueryResource _parent;
 		
@@ -132,7 +129,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return true;
 		}
 
-		public Resource find(String name)
+		public WebdavResource find(String name)
 		{
 			if (!name.endsWith(".sql"))
 				return null;
@@ -143,7 +140,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return new SqlResource(this, q);
 		}
 
-		public List<String> listNames()
+		public Collection<String> listNames()
 		{
 			Map<String, QueryDefinition> m = QueryService.get().getQueryDefs(_parent._c, getName());
 			ArrayList<String> list = new ArrayList<String>(m.size());

@@ -46,7 +46,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.FileSystemResource;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -111,7 +111,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
-        Resource _resource;
+        WebdavResource _resource;
 
         public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
         {

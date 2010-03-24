@@ -38,7 +38,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.ActionResource;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -949,7 +949,7 @@ public class AnnouncementManager
                     String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
 
                     String displayTitle = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
-                    Resource attachmentRes = AttachmentService.get().getDocumentResource(
+                    WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId, documentName),
                             attachmentUrl, displayTitle,
                             ann,

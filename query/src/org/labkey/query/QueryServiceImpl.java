@@ -31,6 +31,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -144,11 +146,6 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<QueryDefinition>(getAllQueryDefs(container, null, true, false).values());
     }
 
-    private File getModuleQueriesDir(Module module)
-    {
-        return new File(module.getExplodedPath(), "queries");
-    }
-
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         return getAllQueryDefs(container, schemaName, inheritable, includeSnapshots, false);
@@ -166,37 +163,38 @@ public class QueryServiceImpl extends QueryService
 
             for (Module module : modules)
             {
-                File schemaDir = new File(getModuleQueriesDir(module), schemaName);
-                File[] fileSet;
+                Resolver resolver = module.getModuleResolver();
+                Resource schemaDir = resolver.lookup(new Path("queries"));
+                Collection<? extends Resource> queries = null;
 
                 //always scan the file system in dev mode
                 if (AppProps.getInstance().isDevMode())
                 {
-                    fileSet = schemaDir.listFiles(moduleQueryFileFilter);
+                    queries = getModuleQueries(schemaDir);
                 }
                 else
                 {
                     //in production, cache the set of query defs for each module on first request
                     String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
-                    fileSet = (File[])_moduleResourcesCache.get(fileSetCacheKey);
+                    queries = (Collection<? extends Resource>)_moduleResourcesCache.get(fileSetCacheKey);
 
-                    if (null == fileSet && schemaDir.exists())
+                    if (null == queries && schemaDir.exists())
                     {
-                        fileSet = schemaDir.listFiles(moduleQueryFileFilter);
-                        _moduleResourcesCache.put(fileSetCacheKey, fileSet);
+                        queries = getModuleQueries(schemaDir);
+                        _moduleResourcesCache.put(fileSetCacheKey, queries);
                     }
                 }
 
-                if (null != fileSet)
+                if (null != queries)
                 {
-                    for (File sqlFile : fileSet)
+                    for (Resource query : queries)
                     {
-                        ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(sqlFile.getAbsolutePath());
-
+                        String cacheKey = query.getPath().toString();
+                        ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(cacheKey);
                         if (null == moduleQueryDef || moduleQueryDef.isStale())
                         {
-                            moduleQueryDef = new ModuleQueryDef(sqlFile, schemaName);
-                            _moduleResourcesCache.put(sqlFile.getAbsolutePath(), moduleQueryDef);
+                            moduleQueryDef = new ModuleQueryDef(query, schemaName);
+                            _moduleResourcesCache.put(cacheKey, moduleQueryDef);
                         }
 
                         ret.put(new Pair<String,String>(schemaName, moduleQueryDef.getName()),
@@ -240,6 +238,20 @@ public class QueryServiceImpl extends QueryService
         }
 
         return ret;
+    }
+
+    private Collection<? extends Resource> getModuleQueries(Resource schemaDir)
+    {
+        if (schemaDir == null)
+            return Collections.emptyList();
+        
+        Collection<? extends Resource> queries = schemaDir.list();
+        List<Resource> result = new ArrayList<Resource>(queries.size());
+        for (Resource query : queries)
+            if (query.getName().endsWith(ModuleQueryDef.FILE_EXTENSION))
+                result.add(query);
+
+        return result;
     }
 
     public QueryDefinition getQueryDef(Container container, String schema, String name)

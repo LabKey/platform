@@ -36,7 +36,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.ActionResource;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.DavCrawler;
@@ -92,14 +92,14 @@ public class SearchModule extends DefaultModule
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
         ss.addResourceResolver("action", new AbstractSearchService.ResourceResolver()
         {
-            public Resource resolve(@NotNull String str)
+            public WebdavResource resolve(@NotNull String str)
             {
                 return new ActionResource(str);
             }
         });
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
-            public Resource resolve(@NotNull String path)
+            public WebdavResource resolve(@NotNull String path)
             {
                 return WebdavService.get().lookup(path);
             }

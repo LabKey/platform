@@ -42,7 +42,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.*;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
@@ -355,7 +355,7 @@ public class AssayManager implements AssayService.Interface
             m.put(SearchService.PROPERTY.categories.toString(), StudyManager.assayCategory.getName());
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
-            Resource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body.getBytes(), assayRunsURL, m);
+            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body.getBytes(), assayRunsURL, m);
             task.addResource(r, SearchService.PRIORITY.item);
         }
     }

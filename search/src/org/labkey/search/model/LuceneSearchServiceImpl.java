@@ -42,12 +42,13 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.search.view.SearchWebPart;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -133,7 +134,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
-    Map<?, ?> preprocess(String id, Resource r)
+    Map<?, ?> preprocess(String id, WebdavResource r)
     {
         FileStream fs = null;
 
@@ -386,7 +387,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
      * @throws SAXException
      * @throws TikaException
      */
-    void parse(Resource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
+    void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
     {
         // TREAT files over the size limit as empty files
         long size = fs.getSize();
@@ -435,7 +436,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
      * @return
      */
     @Override
-    public boolean accept(Resource r)
+    public boolean accept(WebdavResource r)
     {
         try
         {
@@ -461,7 +462,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    DocumentParser detectParser(Resource r, InputStream in)
+    DocumentParser detectParser(WebdavResource r, InputStream in)
     {
         InputStream is = in;
         try
@@ -512,7 +513,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
     
 
-    private String getNameToLog(Resource r)
+    private String getNameToLog(WebdavResource r)
     {
         String name = r.getPath().toString();
         File f = r.getFile();
@@ -522,18 +523,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return name;
     }
 
-    private void logAsPreProcessingException(Resource r, Throwable e)
+    private void logAsPreProcessingException(WebdavResource r, Throwable e)
     {
         //noinspection ThrowableInstanceNeverThrown
         ExceptionUtil.logExceptionToMothership(null, new PreProcessingException(getNameToLog(r), e));
     }
 
-    private void logAsWarning(Resource r, Exception e)
+    private void logAsWarning(WebdavResource r, Exception e)
     {
         logAsWarning(r, e.getMessage());
     }
 
-    private void logAsWarning(Resource r, String message)
+    private void logAsWarning(WebdavResource r, String message)
     {
         _log.warn("Can't index file \"" + getNameToLog(r) + "\" due to: " + message);
     }
@@ -617,7 +618,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     
-    protected void index(String id, Resource r, Map preprocessMap)
+    protected void index(String id, WebdavResource r, Map preprocessMap)
     {
         try
         {

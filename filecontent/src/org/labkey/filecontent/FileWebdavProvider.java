@@ -45,7 +45,7 @@ import java.util.*;
 public class FileWebdavProvider implements WebdavService.Provider
 {
     @Nullable
-    public Set<String> addChildren(@NotNull Resource target)
+    public Set<String> addChildren(@NotNull WebdavResource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -82,7 +82,7 @@ public class FileWebdavProvider implements WebdavService.Provider
     }
 
 
-    public Resource resolve(@NotNull Resource parent, @NotNull String name)
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -117,7 +117,7 @@ public class FileWebdavProvider implements WebdavService.Provider
 
     class _FilesResource extends FileSystemResource
     {
-        public _FilesResource(Resource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
+        public _FilesResource(WebdavResource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
         {
             super(folder,name,file,policy,mergeFromParent);
         }
@@ -138,8 +138,7 @@ public class FileWebdavProvider implements WebdavService.Provider
             return full.encode() + "?renderAs=DEFAULT";
         }
 
-        @Override
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             // TODO: move mergeFilesIfNeeded out of FileSystemResource to _FilesResource
             mergeFilesIfNeeded();
@@ -148,7 +147,7 @@ public class FileWebdavProvider implements WebdavService.Provider
     }
 
 
-    class _FilesetsFolder extends AbstractCollectionResource
+    class _FilesetsFolder extends AbstractWebdavResourceCollection
     {
         Container _c;
         HashMap<String,AttachmentDirectory> _map = new HashMap<String, AttachmentDirectory>();
@@ -195,12 +194,12 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
 
         @NotNull
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             return Collections.unmodifiableList(_names);
         }
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             AttachmentDirectory dir = _map.get(name);
             Path path = getPath().append(name);

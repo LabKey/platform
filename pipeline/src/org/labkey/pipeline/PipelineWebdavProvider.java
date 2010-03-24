@@ -26,7 +26,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.FileSystemResource;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
 
@@ -46,7 +46,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
     // currently addChildren is called only for web folders
     @Nullable
-    public Set<String> addChildren(@NotNull Resource target)
+    public Set<String> addChildren(@NotNull WebdavResource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -66,7 +66,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     }
 
 
-    public Resource resolve(@NotNull Resource parent, @NotNull String name)
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!PIPELINE_LINK.equalsIgnoreCase(name))
             return null;
@@ -87,7 +87,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     {
         Container c;
 
-        PipelineFolderResource(Resource parent, Container c, PipeRoot root)
+        PipelineFolderResource(WebdavResource parent, Container c, PipeRoot root)
         {
             super(parent.getPath(), PIPELINE_LINK);
 

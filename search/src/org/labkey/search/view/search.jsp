@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.webdav.Resource" %>
+<%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.SearchController.IndexAction" %>
@@ -39,6 +39,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -209,7 +210,7 @@ if (loginStatusChanged())
                 {
                     %>&nbsp;<%=formatNavTrail(parseNavTrail(hit.navtrail))%><%
                 }
-                List<NavTree> actions = getActions(hit);
+                Collection<NavTree> actions = getActions(hit);
                 if (null != actions && !actions.isEmpty())
                 {
                     %>&nbsp;<%=formatNavTrail(getActions(hit))%><%
@@ -282,7 +283,7 @@ if (loginStatusChanged())
     }
 %>
 <%!
-String formatNavTrail(List<NavTree> list)
+String formatNavTrail(Collection<NavTree> list)
 {
     if (null == list || list.isEmpty())
         return "";
@@ -344,16 +345,16 @@ List<NavTree> parseNavTrail(String s)
 }
 
 
-List<NavTree> getActions(SearchService.SearchHit hit)
+Collection<NavTree> getActions(SearchService.SearchHit hit)
 {
     String docid = hit.docid;
     if (!docid.startsWith("dav:"))
         return null;
     Path p = Path.parse(docid.substring(4));
-    Resource r = WebdavService.get().getResolver().lookup(p);
+    WebdavResource r = WebdavService.get().getResolver().lookup(p);
     if (null == r || !r.exists())
         return null;
-    List<NavTree> nav = r.getActions(HttpView.currentContext().getUser());
+    Collection<NavTree> nav = r.getActions(HttpView.currentContext().getUser());
     return nav.isEmpty() ? null : nav;
 }
 

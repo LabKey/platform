@@ -501,6 +501,31 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return dirs;
     }
 
+    @NotNull
+    @Override
+    protected Class[] getResourceClasses()
+    {
+        return new Class[] { getClass(), org.labkey.api.RemoteControllerProxy.class };
+    }
+
+    @NotNull
+    @Override
+    protected List<File> getResourceDirectories()
+    {
+        List<File> resources = super.getResourceDirectories();
+
+        String root = AppProps.getInstance().getProjectRoot();
+
+        resources.add(new File(root + "/server/api"));
+        resources.add(new File(root + "/server/internal"));
+        if (AppProps.getInstance().isDevMode())
+        {
+            resources.add(new File(root + "/build/modules/api"));
+            resources.add(new File(root + "/build/modules/internal"));
+        }
+
+        return resources;
+    }
 
     public void enumerateDocuments(SearchService.IndexTask task, Container c, Date since)
     {
@@ -542,7 +567,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Map<String,Object> properties = new HashMap<String,Object>();
         properties.put(SearchService.PROPERTY.displayTitle.toString(), title);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
-        Resource doc = new SimpleDocumentResource(c.getParsedPath(),
+        WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
                 "link:" + c.getId(),
                 c.getId(),
                 "text/plain",

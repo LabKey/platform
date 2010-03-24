@@ -599,7 +599,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
     /** Collection resource with all attachments for this parent */
-    public Resource getAttachmentResource(Path path, AttachmentParent parent)
+    public WebdavResource getAttachmentResource(Path path, AttachmentParent parent)
     {
         // NOTE parent does not supply ACL, but should?
         // acl = parent.getAcl()
@@ -611,7 +611,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public Resource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
+    public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat)
     {
         return new AttachmentResource(path, downloadURL, displayTitle, parent, name, cat);
     }
@@ -1002,7 +1002,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
      *   regular file attachments: assume that this collection resource will be wrapped rather then exposed directly in the tree
      *   filesets: expect that this will be directly exposed in the tree
      */
-    private class AttachmentCollection extends AbstractCollectionResource
+    private class AttachmentCollection extends AbstractWebdavResourceCollection
     {
         AttachmentParent _parent;
 
@@ -1041,7 +1041,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             Attachment a = getAttachment(_parent, name);
             if (null != a)
@@ -1061,7 +1061,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
 
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             Attachment[] attachments = getAttachments(_parent);
             ArrayList<String> names = new ArrayList<String>(attachments.length);
@@ -1075,11 +1075,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
 
-        @Override
-        public List<Resource> list()
+        public Collection<? extends WebdavResource> list()
         {
             Attachment[] attachments = getAttachments(_parent);
-            ArrayList<Resource> resources = new ArrayList<Resource>(attachments.length);
+            ArrayList<WebdavResource> resources = new ArrayList<WebdavResource>(attachments.length);
             for (Attachment a : attachments)
             {
                 if (null != a.getFile() && !a.getFile().exists())
@@ -1099,7 +1098,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     private class AttachmentResource extends AbstractDocumentResource
     {
-        Resource _folder;
+        WebdavResource _folder;
         final AttachmentParent _parent;
         final String _name;
         long _created = Long.MIN_VALUE;
@@ -1135,7 +1134,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + " " + cat.toString());
         }
 
-        AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
+        AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
         {
             this(folder, parent, attachment.getName());
 
@@ -1145,7 +1144,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
 
-        AttachmentResource(@NotNull Resource folder, @NotNull AttachmentParent parent, @NotNull String name)
+        AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull String name)
         {
             super(folder.getPath(), name);
             _containerId = parent.getContainerId();
@@ -1244,7 +1243,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public void moveFrom(User user, Resource r) throws IOException
+        public void moveFrom(User user, WebdavResource r) throws IOException
         {
             if (r instanceof AttachmentResource)
             {
@@ -1323,7 +1322,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return 0;
         }
 
-        public Resource parent()
+        public WebdavResource parent()
         {
             return _folder;
         }

@@ -39,7 +39,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 {
     final static String VIEW_NAME = "@views";
 
-    public Set<String> addChildren(@NotNull Resource target)
+    public Set<String> addChildren(@NotNull WebdavResource target)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -49,7 +49,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         return hasViews(null, c) ? PageFlowUtil.set(VIEW_NAME) : null;
     }
 
-    public Resource resolve(@NotNull Resource parent, @NotNull String name)
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!VIEW_NAME.equalsIgnoreCase(name))
             return null;
@@ -72,11 +72,11 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
     }
 
-    static class ViewProviderResource extends AbstractCollectionResource
+    static class ViewProviderResource extends AbstractWebdavResourceCollection
     {
         Container _c;
 
-        ViewProviderResource(Resource parent, Container c)
+        ViewProviderResource(WebdavResource parent, Container c)
         {
             super(parent.getPath(), VIEW_NAME);
             _c = c;
@@ -90,7 +90,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
 
         private Map<String, Report> _map;
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             Map<String, Report> map = getReportMap();
             if (map.containsKey(name))
@@ -100,7 +100,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
 
         @NotNull
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             Map<String, Report> map = getReportMap();
             return new ArrayList<String>(map.keySet());
@@ -151,9 +151,9 @@ public class ReportWebdavProvider implements WebdavService.Provider
             _folder = folder;
         }
 
-        public List<WebdavResolver.History> getHistory()
+        public Collection<WebdavResolver.History> getHistory()
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            return Collections.emptyList();
         }
 
         public boolean exists()
@@ -220,7 +220,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public Resource parent()
+        public WebdavResource parent()
         {
             return _folder;
         }
@@ -253,7 +253,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             }
         }
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             return null;
         }

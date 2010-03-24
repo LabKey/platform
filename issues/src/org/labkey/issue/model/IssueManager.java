@@ -32,7 +32,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.issue.IssuesController;
 import org.jetbrains.annotations.NotNull;
@@ -845,7 +845,7 @@ public class IssueManager
     {
         return new SearchService.ResourceResolver()
         {
-            public Resource resolve(@NotNull String resourceIdentifier)
+            public WebdavResource resolve(@NotNull String resourceIdentifier)
             {
                 return IssueManager.resolve(resourceIdentifier);
             }
@@ -853,7 +853,7 @@ public class IssueManager
     }
 
 
-    public static Resource resolve(String id)
+    public static WebdavResource resolve(String id)
     {
         int issueId;
         try

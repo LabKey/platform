@@ -36,7 +36,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -1025,7 +1025,7 @@ public class WikiManager
                             .replaceParameter("name",documentName);
                     // UNDONE: set title to make LuceneSearchServiceImpl work
                     String displayTitle = "\"" + documentName + "\" attached to page \"" + titles.get(entityId) + "\"";
-                    Resource attachmentRes = AttachmentService.get().getDocumentResource(
+                    WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
                             new Path(entityId,documentName),
                             attachmentUrl, displayTitle,
                             parent,

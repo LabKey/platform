@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
 import java.util.Map;
@@ -34,7 +34,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(SolrSearchServiceImpl.class);
     
-    protected void index(String id, Resource r, Map preprocessMap)
+    protected void index(String id, WebdavResource r, Map preprocessMap)
     {
         _log.info("INDEX: " + r.getExecuteHref(null));
 //        if ("text/html".equals(r.getContentType()))

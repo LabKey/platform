@@ -36,7 +36,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
@@ -164,7 +164,7 @@ public class FtpController extends SpringActionController
                 return null;
 
             Path path = Path.parse(pathStr);
-            Resource resource = _resolver.lookup(_resolver.getRootPath().resolve(path));
+            WebdavResource resource = _resolver.lookup(_resolver.getRootPath().resolve(path));
             if (!(resource instanceof WebdavResolver.WebFolder))
                 return null;
 

@@ -25,7 +25,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.data.Container;
 
 import java.io.IOException;
@@ -63,7 +63,7 @@ public class NoopSearchService implements SearchService
         {
         }
 
-        public void addResource(@NotNull Resource r, PRIORITY pri)
+        public void addResource(@NotNull WebdavResource r, PRIORITY pri)
         {
         }
 
@@ -314,7 +314,7 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public boolean accept(Resource r)
+    public boolean accept(WebdavResource r)
     {
         return true;
     }

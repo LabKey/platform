@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -30,7 +31,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.ServletContextEvent;
@@ -112,7 +113,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public boolean accept(Resource r)
+    public boolean accept(WebdavResource r)
     {
         return true;
     }
@@ -182,7 +183,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
 
-        public void addResource(@NotNull Resource r, PRIORITY pri)
+        public void addResource(@NotNull WebdavResource r, PRIORITY pri)
         {
             Item i = new Item(this, OPERATION.add, r.getDocumentId(), r, pri);
             addItem(i);
@@ -226,7 +227,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         OPERATION _op;
         String _id;
         IndexTask _task;
-        Resource _res;
+        WebdavResource _res;
         Runnable _run;
         PRIORITY _pri;
 
@@ -236,7 +237,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         Map<?,?> _preprocessMap = null;
         
-        Item(IndexTask task, OPERATION op, String id, Resource r, PRIORITY pri)
+        Item(IndexTask task, OPERATION op, String id, WebdavResource r, PRIORITY pri)
         {
             if (null != r)
                 _start = System.currentTimeMillis();
@@ -255,7 +256,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             _id = String.valueOf(r);
         }
 
-        Resource getResource()
+        WebdavResource getResource()
         {
             if (null == _res)
             {
@@ -273,7 +274,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             if (!success)
             {
-                Resource r = getResource();
+                WebdavResource r = getResource();
                 if (null != r)
                     r.setLastIndexed(SavePaths.failDate.getTime(), _modified);
             }
@@ -505,7 +506,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     // CONSIDER Iterable<Resource>
     @Nullable
-    public Resource resolveResource(@NotNull String resourceIdentifier)
+    public WebdavResource resolveResource(@NotNull String resourceIdentifier)
     {
         int i = resourceIdentifier.indexOf(":");
         if (i == -1)
@@ -776,7 +777,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (_commitItem == i)
             return true;
 
-        Resource r = i.getResource();
+        WebdavResource r = i.getResource();
         if (null == r || !r.exists())
             return false;
         
@@ -924,7 +925,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                         continue;
                     }
 
-                    Resource r = i.getResource();
+                    WebdavResource r = i.getResource();
                     if (null == r || !r.exists())
                         continue;
                     assert MemTracker.put(r);
@@ -1093,7 +1094,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    protected abstract void index(String id, Resource r, Map preprocessProps);
+    protected abstract void index(String id, WebdavResource r, Map preprocessProps);
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
     protected abstract void deleteIndexedContainer(String id);
@@ -1103,7 +1104,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     static Map emptyMap = Collections.emptyMap();
     
-    Map<?,?> preprocess(String id, Resource r)
+    Map<?,?> preprocess(String id, WebdavResource r)
     {
         return emptyMap;
     }
