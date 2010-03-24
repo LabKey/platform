@@ -1097,7 +1097,6 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             store : config.cache.principalsStore,
             mode : 'local',
             minListWidth : 200,
-            style:{display:'inline'},
             triggerAction : 'all',
             forceSelection : true,
             typeAhead : true,
@@ -1155,7 +1154,6 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     onRender : function(ct,position)
     {
         PrincipalComboBox.superclass.onRender.call(this,ct,position);
-        this.el.parent().applyStyles({display:'inline'});
         this.el.on("blur",this.Input_onBlur,this);
     },
 
