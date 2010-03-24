@@ -78,7 +78,15 @@
 <%  } %>
 
 <script type="text/javascript">
-Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+
+    /**
+     * activate the Ext state manager (for directory persistence), but by default, make all components
+     * not try to load state.
+     */
+    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+    Ext.override(Ext.Component,{
+        stateful:false
+    });
 
 Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 Ext.QuickTips.init();
