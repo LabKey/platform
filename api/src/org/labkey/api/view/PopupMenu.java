@@ -150,8 +150,9 @@ public class PopupMenu extends DisplayElement
                 continue;
             }
 
-            String title = tree.isHighlighted() ? "<b>" + tree.getKey() + "</b>" : tree.getKey();
-            sb.append("{").append("text:").append(PageFlowUtil.jsString(title));
+            sb.append("{").append("text:").append(PageFlowUtil.jsString(tree.getKey()));
+            if (tree.isHighlighted())
+                sb.append(", cls:'labkey-strong'");
             if (StringUtils.isNotEmpty(tree.getId()))
                 sb.append(", id:").append(PageFlowUtil.jsString(tree.getId()));
             if (tree.isSelected())
