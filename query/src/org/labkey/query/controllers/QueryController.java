@@ -3028,7 +3028,7 @@ public class QueryController extends SpringActionController
             QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
             if(null == qschema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
-                        + "' was not found within the folder '" + getViewContext().getContainer().getPath());
+                        + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
             if(!(qschema instanceof UserSchema))
                 throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
@@ -3148,7 +3148,7 @@ public class QueryController extends SpringActionController
             QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
             if(null == qschema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
-                        + "' was not found within the folder '" + getViewContext().getContainer().getPath());
+                        + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
             if(!(qschema instanceof UserSchema))
                 throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
