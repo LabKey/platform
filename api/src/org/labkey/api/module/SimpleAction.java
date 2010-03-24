@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -40,11 +41,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
 {
     public static WebPartView getModuleHtmlView(Module module, String viewName) throws IOException
     {
-        File viewFile = new File(new File(module.getExplodedPath(), SimpleController.VIEWS_DIRECTORY), viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        if(viewFile.exists() && viewFile.isFile())
-            return new ModuleHtmlView(viewFile);
-        else
-            return null;
+        Resource r = module.getModuleResource(SimpleController.VIEWS_DIRECTORY + "/" + viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+        return r != null ? new ModuleHtmlView(r) : null;
     }
 
     public enum Permission
@@ -73,11 +71,11 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     private ModuleHtmlView _view;
     private Exception _exception;
 
-    public SimpleAction(File viewFile)
+    public SimpleAction(Resource r)
     {
         try
         {
-            _view = new ModuleHtmlView(viewFile);
+            _view = new ModuleHtmlView(r);
         }
         catch(Exception e)
         {

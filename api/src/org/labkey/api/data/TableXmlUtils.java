@@ -19,6 +19,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.resource.Resource;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.OntologyType;
 import org.labkey.data.xml.TableType;
@@ -61,7 +62,9 @@ public class TableXmlUtils
         try
         {
 
-            xmlStream = DbSchema.getSchemaXmlStream(dbSchemaName);
+            Resource r = DbSchema.getSchemaResource(dbSchemaName);
+            if (null != r)
+                xmlStream = r.getInputStream();
             if (null == xmlStream)
             {
                 _log.debug("No xml tables doc found for " + dbSchemaName);
@@ -115,7 +118,9 @@ public class TableXmlUtils
             TablesDocument tablesDocFromXml = null;
 
             tablesDocMetaData = getXmlDocumentFromMetaData(dbSchemaName, false);
-            xmlStream = DbSchema.getSchemaXmlStream(dbSchemaName);
+            Resource r = DbSchema.getSchemaResource(dbSchemaName);
+            if (null != r)
+                xmlStream = r.getInputStream();
             if (null != xmlStream)
                 tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
 

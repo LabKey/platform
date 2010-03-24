@@ -376,6 +376,15 @@ public class Path implements Serializable, Iterable<String>
         return createPath(path, path.length, isAbsolute() && begin==0, end<_length||isDirectory());
     }
 
+    public String extension()
+    {
+        String name = getName();
+        if (name.lastIndexOf('.') != -1)
+        {
+            return name.substring(name.lastIndexOf('.') + 1, name.length());
+        }
+        return null;
+    }
 
     public String toString()
     {

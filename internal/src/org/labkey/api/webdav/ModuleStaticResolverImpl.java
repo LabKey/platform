@@ -73,7 +73,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     // DavController has a per request cache, but we want to aggressively cache static file resources
     StaticResource _root = null;
-    Map<Path, Resource> _allStaticFiles = Collections.synchronizedMap(new HashMap<Path,Resource>());
+    Map<Path, WebdavResource> _allStaticFiles = Collections.synchronizedMap(new HashMap<Path, WebdavResource>());
 
 
     public boolean requiresLogin()
@@ -88,17 +88,17 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     final static Path pathIndexHtml = new Path("index.html");
     
-    public Resource welcome()
+    public WebdavResource welcome()
     {
         return lookup(pathIndexHtml);
     }
 
     
-    public Resource lookup(Path path)
+    public WebdavResource lookup(Path path)
     {
         Path normalized = path.normalize();
 
-        Resource r = _allStaticFiles.get(normalized);
+        WebdavResource r = _allStaticFiles.get(normalized);
         if (r == null)
         {
             r = resolve(normalized);
@@ -118,12 +118,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
 
-    private Resource resolve(Path path)
+    private WebdavResource resolve(Path path)
     {
         if (!initialized.get())
             init();
 
-        Resource r = _root;
+        WebdavResource r = _root;
         for (int i=0 ; i<path.size() ; i++)
         {
             String p = path.get(i);
@@ -182,7 +182,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
             roots.add(ModuleLoader.getInstance().getWebappDir());
 
-            _root = new StaticResource(Path.emptyPath, roots, new SymbolicLink(WebdavResolverImpl.get().getRootPath(),WebdavResolverImpl.get()));
+            _root = new StaticResource(Path.emptyPath, roots, new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()));
             initialized.set(true);
         }
     }
@@ -200,7 +200,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
-    private abstract class _PublicResource extends AbstractResource
+    private abstract class _PublicResource extends AbstractWebdavResource
     {
         protected _PublicResource(Path path)
         {
@@ -250,16 +250,16 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
-    private static final CacheMap<Path, Map<String, Resource>> CHILDREN_CACHE = new CacheMap<Path, Map<String, Resource>>(50, "StaticResourceCache");
+    private static final CacheMap<Path, Map<String, WebdavResource>> CHILDREN_CACHE = new CacheMap<Path, Map<String, WebdavResource>>(50, "StaticResourceCache");
 
     private class StaticResource extends _PublicResource
     {
         List<File> _files;
-        Resource[] _additional; // for _webdav
+        WebdavResource[] _additional; // for _webdav
 
         final Object _lock = new Object();
 
-        StaticResource(Path path, List<File> files, Resource... addl)
+        StaticResource(Path path, List<File> files, WebdavResource... addl)
         {
             super(path);
             this._files = files;
@@ -272,11 +272,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return true;
         }
 
-        Map<String,Resource> getChildren()
+        Map<String,WebdavResource> getChildren()
         {
             synchronized (_lock)
             {
-                Map<String, Resource> children = CHILDREN_CACHE.get(getPath());
+                Map<String, WebdavResource> children = CHILDREN_CACHE.get(getPath());
                 if (null == children)
                 {
                     Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
@@ -297,13 +297,13 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                             map.get(name).add(f);
                         }
                     }
-                    children = new CaseInsensitiveTreeMap<Resource>();
+                    children = new CaseInsensitiveTreeMap<WebdavResource>();
                     for (Map.Entry<String,ArrayList<File>> e : map.entrySet())
                     {
                         Path path = getPath().append(e.getKey());
                         children.put(e.getKey(), new StaticResource(path, e.getValue()));
                     }
-                    for (Resource r : _additional)
+                    for (WebdavResource r : _additional)
                         children.put(r.getName(),r);
 
                     CHILDREN_CACHE.put(getPath(), children);
@@ -318,11 +318,11 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             synchronized (_lock)
             {
-                Map<String, Resource> originalChildren = getChildren();
+                Map<String, WebdavResource> originalChildren = getChildren();
                 if (null != originalChildren.get(name))
                     throw new IllegalArgumentException(name + " already exists");
                 // _children is not synchronized so don't add put, create a new map
-                Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
+                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<WebdavResource>();
                 children.putAll(originalChildren);
                 children.put(name, new SymbolicLink(getPath().append(name), target));
                 CHILDREN_CACHE.put(getPath(), children);
@@ -335,14 +335,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         {
             synchronized (_lock)
             {
-                Map<String, Resource> originalChildren = getChildren();
-                Resource link = originalChildren.get(name);
+                Map<String, WebdavResource> originalChildren = getChildren();
+                WebdavResource link = originalChildren.get(name);
                 if (null == link)
                     return; // silent?
                 if (!(link instanceof SymbolicLink))
                     throw new IllegalArgumentException(name + " is not a link");
                 // _children is not synchronized so don't add put, create a new map
-                Map<String,Resource> children = new CaseInsensitiveTreeMap<Resource>();
+                Map<String,WebdavResource> children = new CaseInsensitiveTreeMap<WebdavResource>();
                 children.putAll(originalChildren);
                 children.remove(name);
                 CHILDREN_CACHE.put(getPath(), children);
@@ -356,10 +356,10 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return exists() ? _files.get(0) : null;
         }
 
-        public List<Resource> list()
+        public Collection<WebdavResource> list()
         {
-            Map<String, Resource> children = getChildren();
-            return new ArrayList<Resource>(children.values());
+            Map<String, WebdavResource> children = getChildren();
+            return new ArrayList<WebdavResource>(children.values());
         }
 
         public boolean exists()
@@ -372,10 +372,10 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return exists() && _files.get(0).isDirectory();
         }
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
 
-            Resource r = getChildren().get(name);
+            WebdavResource r = getChildren().get(name);
             if (r == null && AppProps.getInstance().isDevMode())
             {
                 for (File dir : _files)
@@ -394,7 +394,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return exists() && _files.get(0).isFile();
         }
 
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             return new ArrayList<String>(getChildren().keySet());
         }
@@ -456,7 +456,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return false;
         }
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             return null;
         }
@@ -466,12 +466,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return true;
         }
 
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             return Collections.emptyList();
         }
 
-        public List<Resource> list()
+        public Collection<WebdavResource> list()
         {
             return Collections.emptyList();
         }
@@ -505,7 +505,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
 
-    public class SymbolicLink extends AbstractCollectionResource
+    public class SymbolicLink extends AbstractWebdavResourceCollection
     {
         final WebdavResolver _resolver;
         final Path _target;
@@ -524,14 +524,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             _resolver = null;
         }
         
-        public Resource lookup(Path relpath)
+        public WebdavResource lookup(Path relpath)
         {
             Path full = null==_target ? getPath().append(relpath) : _target.append(relpath);
             WebdavResolver resolver = null == _resolver ? ModuleStaticResolverImpl.this : _resolver;
             return resolver.lookup(full);
         }
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             return lookup(new Path(name));
         }
@@ -541,7 +541,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return true;
         }
 
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             return _resolver.lookup(getPath()).listNames();
         }
@@ -585,14 +585,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             WebdavService s = new WebdavService();
             s.setResolver(new ModuleStaticResolverImpl());
 
-            Resource rUtils = s.lookup(new Path("utils"));
+            WebdavResource rUtils = s.lookup(new Path("utils"));
             assertNotNull(rUtils);
             assertTrue(rUtils.isCollection());
 
-            Resource utilsJs = s.lookup(new Path("utils","dialogBox.js"));
+            WebdavResource utilsJs = s.lookup(new Path("utils","dialogBox.js"));
             assertTrue(utilsJs.isFile());
             
-            Resource rU = s.lookup(new Path("U"));
+            WebdavResource rU = s.lookup(new Path("U"));
             assertTrue(rU == null || !rU.exists());
             
             // This test depends on knowing some existing webapp directories

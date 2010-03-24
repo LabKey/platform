@@ -16,10 +16,9 @@
 
 package org.labkey.api.webdav;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.util.Path;
 
 import java.util.List;
@@ -58,13 +57,13 @@ public class WebdavService
     }
 
 
-    public Resource lookup(Path path)
+    public WebdavResource lookup(Path path)
     {
         return _resolver.lookup(path);
     }
 
 
-    public Resource lookup(String path)
+    public WebdavResource lookup(String path)
     {
         return _resolver.lookup(Path.parse(path));
     }
@@ -112,24 +111,24 @@ public class WebdavService
         }
         if (from.equals(Path.rootPath) || from.startsWith(target))
             throw new IllegalArgumentException(from.toString() + " --> " + target.toString());
-        Resource r  = _resolver.lookup(from);
-        Resource rParent = _resolver.lookup(from.getParent());
+        WebdavResource r  = _resolver.lookup(from);
+        WebdavResource rParent = _resolver.lookup(from.getParent());
         if (null != r && !r.isCollection() || !rParent.exists())
             throw new IllegalArgumentException(from.toString());
-        if (!(rParent instanceof AbstractResource))
+        if (!(rParent instanceof AbstractWebdavResource))
             throw new IllegalArgumentException(from.toString());
-        ((AbstractResource)rParent).createLink(from.getName(), target);
+        ((AbstractWebdavResource)rParent).createLink(from.getName(), target);
     }
 
 
     public void removeLink(Path from)
     {
-        Resource rParent = _resolver.lookup(from.getParent());
+        WebdavResource rParent = _resolver.lookup(from.getParent());
         if (null == rParent || !rParent.isCollection())
             throw new IllegalArgumentException(from.toString());
-        if (!(rParent instanceof AbstractResource))
+        if (!(rParent instanceof AbstractWebdavResource))
             throw new IllegalArgumentException(from.toString());
-        ((AbstractResource)rParent).removeLink(from.getName());
+        ((AbstractWebdavResource)rParent).removeLink(from.getName());
     }
 
     
@@ -142,8 +141,8 @@ public class WebdavService
     {
         // currently addChildren is called only for web folders
         @Nullable
-        Set<String> addChildren(@NotNull Resource target);
-        Resource resolve(@NotNull Resource parent, @NotNull String name);
+        Set<String> addChildren(@NotNull WebdavResource target);
+        WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name);
     }
 
     public void addProvider(Provider provider)

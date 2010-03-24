@@ -47,7 +47,7 @@ import java.util.Date;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 import org.labkey.api.view.HttpView;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 
@@ -3292,7 +3292,7 @@ public class OntologyManager
 
                 ActionURL url = new ActionURL("experiment-types","findConcepts",shared.getId());
                 url.addParameter("concept",propertyURI);
-                Resource r = new org.labkey.api.webdav.SimpleDocumentResource(
+                WebdavResource r = new org.labkey.api.webdav.SimpleDocumentResource(
                     new Path(propertyURI),
                     "concept:" + propertyURI,
                     shared.getId(),

@@ -22,12 +22,15 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.*;
+import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
@@ -1003,7 +1006,6 @@ public class ModuleLoader implements Filter
         }
     }
 
-
     public Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
         for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
@@ -1012,7 +1014,6 @@ public class ModuleLoader implements Filter
 
         return null;
     }
-
 
     public Module getModuleForResourcePath(String path)
     {
@@ -1023,6 +1024,22 @@ public class ModuleLoader implements Filter
         return null;
     }
 
+    public Resource getResource(Path path)
+    {
+        for (Module m : _modules)
+        {
+            Resource r = m.getModuleResource(path);
+            if (r != null)
+                return r;
+        }
+
+        return null;
+    }
+
+    public Resource getResource(Module module, Path path)
+    {
+        return module.getModuleResource(path);
+    }
 
     public Module getCurrentModule()
     {
@@ -1065,34 +1082,6 @@ public class ModuleLoader implements Filter
             _resourceLoaders.addAll(loaders);
         }
     }
-
-    public static File searchModuleSourceForFile(String rootPath, String filepath)
-    {
-        File rootDir = new File(rootPath + "/server/modules");
-        File[] moduleDirs = rootDir.listFiles(new FileFilter() {
-            public boolean accept(File f)
-            {
-                return f.isDirectory();
-            }
-        });
-
-        for (File moduleDir : moduleDirs)
-        {
-            File f = new File(moduleDir.getPath() + filepath);
-            if (f.exists())
-                return f;
-        }
-
-        File f = new File(rootPath + "/server/internal/" + filepath);
-        if (f.exists())
-            return f;
-
-        f = new File(rootPath + "/server/api/" + filepath);
-        if (f.exists())
-            return f;
-        return null;
-    }
-
 
 
     private ModuleContext getModuleContext(String name)

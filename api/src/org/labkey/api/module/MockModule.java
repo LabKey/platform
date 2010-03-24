@@ -15,6 +15,9 @@
  */
 package org.labkey.api.module;
 
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.ActionURL;
@@ -169,17 +172,22 @@ public class MockModule implements Module
         return null;
     }
 
-    public InputStream getResourceStreamFromWebapp(ServletContext ctx, String filename) throws FileNotFoundException
+    public Resolver getModuleResolver()
+    {
+        return null;
+    }
+    
+    public Resource getModuleResource(Path path)
+    {
+        return null;
+    }
+
+    public Resource getModuleResource(String path)
     {
         return null;
     }
 
     public InputStream getResourceStream(String filename) throws FileNotFoundException
-    {
-        return null;
-    }
-
-    public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException
     {
         return null;
     }

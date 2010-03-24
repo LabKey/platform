@@ -15,8 +15,10 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.util.Path;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,7 +27,7 @@ import java.util.List;
  * Date: Oct 22, 2008
  * Time: 3:00:19 PM
  */
-public abstract class AbstractDocumentResource extends AbstractResource
+public abstract class AbstractDocumentResource extends AbstractWebdavResource
 {
     public AbstractDocumentResource(Path path)
     {
@@ -42,17 +44,12 @@ public abstract class AbstractDocumentResource extends AbstractResource
 		return exists();
 	}
 
-	public Resource find(String name)
+	public WebdavResource find(String name)
 	{
 		return null;
 	}
 
-	public List<Resource> list()
-    {
-        return Collections.emptyList();
-    }
-
-    public List<String> listNames()
+    public Collection<String> listNames()
     {
         return Collections.emptyList();
     }

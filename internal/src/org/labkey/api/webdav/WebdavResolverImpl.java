@@ -21,6 +21,8 @@ import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.AbstractWebdavResource;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -63,7 +65,7 @@ public class WebdavResolverImpl implements WebdavResolver
         return false;
     }
 
-    public Resource welcome()
+    public WebdavResource welcome()
     {
         return lookup(Path.rootPath);
     }
@@ -75,21 +77,21 @@ public class WebdavResolverImpl implements WebdavResolver
         return _rootPath;
     }
 
-    public Resource lookup(Path fullPath)
+    public WebdavResource lookup(Path fullPath)
     {
         if (fullPath == null || !fullPath.startsWith(getRootPath()))
             return null;
         Path path = getRootPath().relativize(fullPath).normalize();
 
-        Resource root = getRoot();
+        WebdavResource root = getRoot();
         if (path.size() == 0)
             return root;
 
         // start at the root and work down, to avoid lots of cache misses
-        Resource resource = root;
+        WebdavResource resource = root;
         for (String name : path)
         {
-            Resource r = resource.find(name);
+            WebdavResource r = resource.find(name);
             // short circuit the descent at last web folder
             if (null == r  || r instanceof UnboundResource)
                 return new UnboundResource(fullPath);
@@ -103,7 +105,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
     WebFolderResource _root = null;
 
-    synchronized Resource getRoot()
+    synchronized WebdavResource getRoot()
     {
         if (null == _root)
             _root = new WebFolderResource(this, ContainerManager.getRoot());
@@ -113,7 +115,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
     // end up with just one of these.
-    private class FolderCache extends TTLCacheMap<Path, Resource> implements ContainerManager.ContainerListener
+    private class FolderCache extends TTLCacheMap<Path, WebdavResource> implements ContainerManager.ContainerListener
     {
         private FolderCache()
         {
@@ -121,17 +123,17 @@ public class WebdavResolverImpl implements WebdavResolver
             ContainerManager.addContainerListener(this);
         }
 
-        public synchronized Resource put(Path key, Resource value)
+        public synchronized WebdavResource put(Path key, WebdavResource value)
         {
             return super.put(key,value);
         }
 
-        public synchronized Resource get(Path key)
+        public synchronized WebdavResource get(Path key)
         {
             return super.get(key);
         }
 
-        public synchronized Resource remove(Path key)
+        public synchronized WebdavResource remove(Path key)
         {
             return super.remove(key);
         }
@@ -227,7 +229,7 @@ public class WebdavResolverImpl implements WebdavResolver
         public void removeUsingPrefix(Path prefix)
         {
             // since we're touching all the Entrys anyway, might as well test expired()
-            for (Entry<Path, Resource> entry = head.next; entry != head; entry = entry.next)
+            for (Entry<Path, WebdavResource> entry = head.next; entry != head; entry = entry.next)
             {
                 if (removeOldestEntry(entry))
                 {
@@ -323,7 +325,7 @@ public class WebdavResolverImpl implements WebdavResolver
 //        return resource;
 //    }
 
-    public class WebFolderResource extends AbstractCollectionResource implements WebFolder
+    public class WebFolderResource extends AbstractWebdavResourceCollection implements WebFolder
     {
         WebdavResolver _resolver;
         final Container _c;
@@ -388,7 +390,7 @@ public class WebdavResolverImpl implements WebdavResolver
             ArrayList<String> ret = new ArrayList<String>();
             for (String name : _children)
             {
-                Resource r = lookup(this.getPath().append(name));
+                WebdavResource r = lookup(this.getPath().append(name));
                 if (null != r && r.canRead(user))
                     ret.add(name);
             }
@@ -429,7 +431,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
 
         @NotNull
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             Set<String> set = new TreeSet<String>();
 //            if (null != _attachmentResource)
@@ -441,7 +443,7 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
 
-        public Resource find(String child)
+        public WebdavResource find(String child)
         {
             String name = null;
             for (String folder : getWebFoldersNames(null))
@@ -460,7 +462,7 @@ public class WebdavResolverImpl implements WebdavResolver
             {
                 Path path = getPath().append(name);
                 // check in webfolder cache
-                Resource resource = _folderCache.get(path);
+                WebdavResource resource = _folderCache.get(path);
                 if (null != resource)
                     return resource;
 
@@ -514,16 +516,10 @@ public class WebdavResolverImpl implements WebdavResolver
             return new UnboundResource(this.getPath().append(child));
         }
 
-
-        @NotNull
-        public List<History> getHistory()
-        {
-            return Collections.emptyList();
-        }
     }
 
 
-    public static class UnboundResource extends AbstractResource
+    public static class UnboundResource extends AbstractWebdavResource
     {
         UnboundResource(String path)
         {
@@ -558,17 +554,17 @@ public class WebdavResolverImpl implements WebdavResolver
 
 
 
-        public Resource find(String name)
+        public WebdavResource find(String name)
         {
             return new UnboundResource(this.getPath().append(name));
         }
 
-        public List<String> listNames()
+        public Collection<String> listNames()
         {
             return Collections.emptyList();
         }
 
-        public List<Resource> list()
+        public Collection<WebdavResource> list()
         {
             return Collections.emptyList();
         }
@@ -599,7 +595,7 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
         @NotNull
-        public List<History> getHistory()
+        public Collection<History> getHistory()
         {
             return Collections.emptyList();
         }
@@ -666,13 +662,13 @@ public class WebdavResolverImpl implements WebdavResolver
             assertNull(resolver.lookup(Path.parse(c.getPath() + "/./../../..")));
 
             Path rootPath = resolver.getRootPath();
-            Resource root = resolver.lookup(rootPath);
+            WebdavResource root = resolver.lookup(rootPath);
             assertNotNull(root);
             assertTrue(root.isCollection());
             assertTrue(root.canRead(user));
             assertFalse(root.canCreate(user));
 
-            Resource junit = resolver.lookup(rootPath.append(c.getParsedPath()));
+            WebdavResource junit = resolver.lookup(rootPath.append(c.getParsedPath()));
             assertNotNull(junit);
             assertTrue(junit.isCollection());
 
@@ -684,7 +680,7 @@ public class WebdavResolverImpl implements WebdavResolver
             policyNone.addRoleAssignment(user, ReaderRole.class);
             SecurityManager.savePolicy(policyNone);
 
-            Resource rTest = resolver.lookup(rootPath.append(pathTest));
+            WebdavResource rTest = resolver.lookup(rootPath.append(pathTest));
             assertNotNull(rTest);
             assertTrue(rTest.canRead(user));
             assertFalse(rTest.canWrite(user));
@@ -692,9 +688,9 @@ public class WebdavResolverImpl implements WebdavResolver
             assertTrue(rTest.parent().isCollection());
 
 
-            List<String> names = resolver.lookup(junit.getPath()).listNames();
-            assertFalse(names.contains("webdav"));
-            assertTrue(names.contains("dav"));
+            Collection<String> names = resolver.lookup(junit.getPath()).listNames();
+            assertNotNull(resolver.lookup(junit.getPath().append("webdav")));
+            assertNotNull(names.contains("dav"));
 
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
@@ -711,7 +707,7 @@ public class WebdavResolverImpl implements WebdavResolver
             assertTrue(names.contains("webdav"));
             assertFalse(names.contains("dav"));
 
-            Resource rNotFound = resolver.lookup(rootPath.append("NotFound").append(GUID.makeHash()));
+            WebdavResource rNotFound = resolver.lookup(rootPath.append("NotFound").append(GUID.makeHash()));
             assertFalse(rNotFound.exists());
         }
 

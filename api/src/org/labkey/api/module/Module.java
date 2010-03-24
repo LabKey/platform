@@ -19,7 +19,10 @@ import junit.framework.TestCase;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -179,9 +182,11 @@ public interface Module extends Comparable<Module>
      */
     public Set<String> getSchemaNames();
 
-    public InputStream getResourceStreamFromWebapp(ServletContext ctx, String filename) throws FileNotFoundException;
-    public InputStream getResourceStream(String filename) throws FileNotFoundException;
-    public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException;
+    public Resolver getModuleResolver();
+    public Resource getModuleResource(String path);
+    public Resource getModuleResource(Path path);
+    public InputStream getResourceStream(String filename) throws IOException;
+
     public String getSourcePath();
     public String getBuildPath();
     public String getSvnRevision();
@@ -259,7 +264,6 @@ public interface Module extends Comparable<Module>
     @NotNull
     public List<File> getStaticFileDirectories();
 
-    
     /**
      * Used in dev mode to verify that the module credits pages is complete.  Called only if jars.txt is present in
      * <module>/META-INF/<module> directory.

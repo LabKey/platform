@@ -16,8 +16,11 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.io.IOUtils;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Path;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -36,20 +39,16 @@ public class JavaScriptFilter implements Filter
         if (!_cachingAllowed && null != AppProps.getInstance().getProjectRoot())
         {
             HttpServletRequest request = (HttpServletRequest)servletRequest;
-            File file = ModuleLoader.searchModuleSourceForFile(AppProps.getInstance().getProjectRoot(), "/webapp" + request.getServletPath());
-
-            if (null != file)
+            Path path = Path.parse(request.getServletPath());
+            Resource r = ModuleLoader.getInstance().getCurrentModule().getModuleResource(path);
+            if (r != null)
             {
-                byte[] buf = new byte[4096];
-                InputStream is = new FileInputStream(file);
+                InputStream is = r.getInputStream();
                 OutputStream os = servletResponse.getOutputStream();
-
-                for(int len; (len=is.read(buf))!=-1; )
-                    os.write(buf,0,len);
+                IOUtils.copy(is, os);
 
                 os.close();
                 is.close();
-
                 return;
             }
         }

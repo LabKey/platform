@@ -19,10 +19,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Collections;
 
@@ -32,14 +35,14 @@ import java.util.Collections;
  * Date: Oct 22, 2008
  * Time: 2:49:44 PM
  */
-public abstract class AbstractCollectionResource extends AbstractResource
+public abstract class AbstractWebdavResourceCollection extends AbstractWebdavResource
 {
-    protected AbstractCollectionResource(Path path)
+    protected AbstractWebdavResourceCollection(Path path)
     {
         super(path);
     }
     
-    protected AbstractCollectionResource(Path parent, String name)
+    protected AbstractWebdavResourceCollection(Path parent, String name)
     {
         super(parent, name);
     }
@@ -52,11 +55,6 @@ public abstract class AbstractCollectionResource extends AbstractResource
     public boolean isFile()
     {
         return false;
-    }
-
-    public User getModifiedBy()
-    {
-        return null;
     }
 
     public InputStream getInputStream(User user) throws IOException
@@ -74,13 +72,15 @@ public abstract class AbstractCollectionResource extends AbstractResource
         return 0;
     }
 
-    public List<Resource> list()
+    abstract public WebdavResource find(String name);
+
+    public Collection<? extends WebdavResource> list()
     {
-        List<String> names = listNames();
-        List<Resource> list = new ArrayList<Resource>(names.size());
+        Collection<String> names = listNames();
+        List<WebdavResource> list = new ArrayList<WebdavResource>(names.size());
         for (String name : names)
         {
-            Resource r = find(name);
+            WebdavResource r = find(name);
             if (r != null)
                 list.add(r);
         }
@@ -88,9 +88,8 @@ public abstract class AbstractCollectionResource extends AbstractResource
     }
 
     @NotNull
-    public List<WebdavResolver.History> getHistory()
+    public Collection<WebdavResolver.History> getHistory()
     {
-        //noinspection unchecked
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 }

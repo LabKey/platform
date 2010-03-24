@@ -16,6 +16,7 @@
 
 package org.labkey.api.webdav;
 
+import org.labkey.api.resource.Resolver;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 
@@ -28,12 +29,12 @@ import java.util.List;
  * Date: Apr 28, 2008
  * Time: 2:02:25 PM
  */
-public interface WebdavResolver
+public interface WebdavResolver extends Resolver
 {
     boolean requiresLogin();
     Path getRootPath();
-    Resource lookup(Path path);
-    Resource welcome();
+    WebdavResource lookup(Path path);
+    WebdavResource welcome();
 
 
     public static interface History

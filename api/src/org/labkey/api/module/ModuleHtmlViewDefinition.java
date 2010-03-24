@@ -17,9 +17,10 @@ package org.labkey.api.module;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -29,8 +30,6 @@ import org.labkey.data.xml.view.PermissionsListType;
 import org.labkey.data.xml.view.ViewDocument;
 import org.labkey.data.xml.view.ViewType;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
@@ -45,37 +44,48 @@ import java.util.HashMap;
  * Definition of a file-based html view in a module.
  * This is separate from ModuleHtmlView so that it can be cached
  */
-public class ModuleHtmlViewDefinition extends ModuleFileResource
+public class ModuleHtmlViewDefinition extends ResourceRef
 {
     public static final String HTML_VIEW_EXTENSION = ".html";
     public static final String VIEW_METADATA_EXTENSION = ".view.xml";
 
     private String _name;
     private String _html;
-    private File _metadataFile;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
     private ViewType _viewDef = null;
 
-    public ModuleHtmlViewDefinition(File htmlFile)
+    public ModuleHtmlViewDefinition(Resource r)
     {
-        super(htmlFile);
-        _name = htmlFile.getName().substring(0, htmlFile.getName().length() - HTML_VIEW_EXTENSION.length());
+        super(r);
+        _name = r.getName().substring(0, r.getName().length() - HTML_VIEW_EXTENSION.length());
 
-        Logger log = Logger.getLogger(ModuleHtmlViewDefinition.class);
         try
         {
-            _html = IOUtils.toString(new FileReader(htmlFile));
+            _html = IOUtils.toString(r.getInputStream());
         }
         catch(IOException e)
         {
-            log.error("Error trying to read HTML content from " + htmlFile.getAbsolutePath(), e);
+            _log.error("Error trying to read HTML content from " + r.getPath(), e);
             throw new RuntimeException(e);
         }
 
-        _metadataFile = new File(htmlFile.getParentFile(), _name + VIEW_METADATA_EXTENSION);
-        addAssociatedFile(_metadataFile);
-        if(_metadataFile.exists() && _metadataFile.isFile())
+        Resource parent = r.parent();
+        if (parent != null)
+        {
+            Resource metadataResource = parent.find(_name + VIEW_METADATA_EXTENSION);
+            if (metadataResource != null)
+            {
+                ResourceRef metadataRef = new ResourceRef(metadataResource);
+                addDependency(metadataRef);
+                parseMetadata(metadataResource);
+            }
+        }
+    }
+
+    private void parseMetadata(Resource r)
+    {
+        if (r.exists())
         {
             try
             {
@@ -84,16 +94,16 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
                 namespaceMap.put("", "http://labkey.org/data/xml/view");
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
-                ViewDocument viewDoc = ViewDocument.Factory.parse(_metadataFile, xmlOptions);
+                ViewDocument viewDoc = ViewDocument.Factory.parse(r.getInputStream(), xmlOptions);
                 _viewDef = viewDoc.getView();
-                if(null != _viewDef)
+                if (null != _viewDef)
                     calculatePermissions();
             }
             catch(Exception e)
             {
-                log.error("Error trying to read and parse the metadata XML content from " + _metadataFile.getAbsolutePath(), e);
+                _log.error("Error trying to read and parse the metadata XML content from " + r.getPath(), e);
                 _html = "<p class='labkey-error'>The following exception occurred while attempting to load view metadata from "
-                         + PageFlowUtil.filter(_metadataFile.getAbsolutePath()) + ": "
+                         + PageFlowUtil.filter(r.getPath()) + ": "
                          + e.getMessage() + "</p>";
             }
         }
@@ -128,11 +138,6 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
     public String getName()
     {
         return _name;
-    }
-
-    public File getMetadataFile()
-    {
-        return _metadataFile;
     }
 
     public String getHtml()

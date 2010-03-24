@@ -15,8 +15,8 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.Path;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -34,37 +35,21 @@ import java.util.Map;
  * Date: Apr 28, 2008
  * Time: 11:42:10 AM
  */
-public interface Resource
+public interface WebdavResource extends Resource
 {
-    Path getPath();
 
-    String getName();
-
-    boolean exists();
-
-    boolean isCollection();
-
-    Resource find(String name);
-
-    // should really be 'isResource()'
-    boolean isFile();
+    WebdavResource find(String name);
 
     // TODO move more functionality into interface and remove this method
     File getFile();
 
-    List<String> listNames();
-
-    List<Resource> list();
-
-    Resource parent();
+    Collection<? extends WebdavResource> list();
 
     long getCreated();
 
     User getCreatedBy();
 
     String getDescription();
-
-    long getLastModified();
 
     User getModifiedBy();
 
@@ -90,10 +75,10 @@ public interface Resource
     long copyFrom(User user, FileStream in) throws IOException;
 
     /** Caller needs to check permissions */
-    long copyFrom(User user, Resource r) throws IOException;
+    long copyFrom(User user, WebdavResource r) throws IOException;
 
     /** Caller needs to check permissions */
-    void moveFrom(User user, Resource r) throws IOException;
+    void moveFrom(User user, WebdavResource r) throws IOException;
 
     long getContentLength() throws IOException;
 
@@ -112,10 +97,10 @@ public interface Resource
     String getETag();
 
     @NotNull
-    List<WebdavResolver.History> getHistory();
+    Collection<WebdavResolver.History> getHistory();
 
     @NotNull
-    List<NavTree> getActions(User user);
+    Collection<NavTree> getActions(User user);
 
     /** user may read properties of this resource */
     boolean canList(User user);

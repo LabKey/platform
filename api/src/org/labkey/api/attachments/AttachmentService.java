@@ -25,7 +25,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.Pair;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.springframework.validation.BindException;
 import org.apache.commons.lang.StringUtils;
 
@@ -71,8 +71,8 @@ public class AttachmentService
         public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         public Attachment[] getAttachments(AttachmentParent parent);
         public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince);
-        public Resource getAttachmentResource(Path path, AttachmentParent parent);
-        public Resource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
+        public WebdavResource getAttachmentResource(Path path, AttachmentParent parent);
+        public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
         public Attachment getAttachment(AttachmentParent parent, String name);
         public void setAttachments(Collection<AttachmentParent> parents) throws SQLException;
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;

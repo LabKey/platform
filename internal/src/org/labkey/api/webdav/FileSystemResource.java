@@ -51,13 +51,13 @@ import java.util.*;
 *
 *   Base class for file-system based resources
 */
-public class FileSystemResource extends AbstractResource
+public class FileSystemResource extends AbstractWebdavResource
 {
     private static final Logger _log = Logger.getLogger(FileSystemResource.class);
 
     protected File _file;
     String _name = null;
-    Resource _folder;   // containing controller used for canList()
+    WebdavResource _folder;   // containing controller used for canList()
     protected Boolean _shouldIndex = null; // null means ask parent
 
     private FileType _type;
@@ -84,12 +84,12 @@ public class FileSystemResource extends AbstractResource
         this(folder.append(name));
     }
 
-    public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy)
+    public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
     {
         this(folder, name, file, policy, false);
     }
 
-    public FileSystemResource(Resource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
+    public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
     {
         this(folder.getPath(), name);
         _folder = folder;
@@ -312,7 +312,7 @@ public class FileSystemResource extends AbstractResource
     }
 
     @NotNull
-    public List<String> listNames()
+    public Collection<String> listNames()
     {
         if (!isCollection())
             return Collections.emptyList();
@@ -332,13 +332,13 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public List<Resource> list()
+    public Collection<WebdavResource> list()
     {
-        List<String> names = listNames();
-        ArrayList<Resource> infos = new ArrayList<Resource>(names.size());
+        Collection<String> names = listNames();
+        ArrayList<WebdavResource> infos = new ArrayList<WebdavResource>(names.size());
         for (String name : names)
         {
-            Resource r = find(name);
+            WebdavResource r = find(name);
             if (null != r && !(r instanceof WebdavResolverImpl.UnboundResource))
                 infos.add(r);
         }
@@ -346,7 +346,7 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public Resource find(String name)
+    public WebdavResource find(String name)
     {
         mergeFilesIfNeeded();
         return new FileSystemResource(this, name);
@@ -429,7 +429,7 @@ public class FileSystemResource extends AbstractResource
     }
 
     @NotNull
-    public List<WebdavResolver.History> getHistory()
+    public Collection<WebdavResolver.History> getHistory()
     {
         SimpleFilter filter = new SimpleFilter("EventType",  "FileSystem"); // FileSystemAuditViewFactory.EVENT_TYPE);
         filter.addCondition("Key1", _file.getParent());
@@ -450,7 +450,6 @@ public class FileSystemResource extends AbstractResource
         return data == null ? super.getCreatedBy() : data.getCreatedBy();
     }
 
-    @Override
     public String getDescription()
     {
         ExpData data = getExpData();
@@ -465,7 +464,7 @@ public class FileSystemResource extends AbstractResource
     }
 
     @NotNull @Override
-    public List<NavTree> getActions(User user)
+    public Collection<NavTree> getActions(User user)
     {
         if (_file != null)
         {

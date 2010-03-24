@@ -19,6 +19,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.resource.AbstractResource;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -39,82 +41,60 @@ import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Oct 21, 2008
-* Time: 10:00:49 AM
-*/
-public abstract class AbstractResource implements Resource
+ * User: matthewb
+ * Date: Oct 21, 2008
+ * Time: 10:00:49 AM
+ */
+public abstract class AbstractWebdavResource extends AbstractResource implements WebdavResource
 {
-    protected long _ts = System.currentTimeMillis();                   
-    private Path _path;
     private SecurityPolicy _policy;
     protected String _containerId;
     
     protected String _etag = null;
     protected Map<String,Object> _properties = null;
 
-
-    protected AbstractResource(Path path)
+    protected AbstractWebdavResource(Path path)
     {
-        this._path = path;
+        super(path);
     }
 
-    protected AbstractResource(Path folder, String name)
+    protected AbstractWebdavResource(Path folder, String name)
     {
-        this(folder.append(name));
+        super(folder, name);
     }
 
-    protected AbstractResource(Resource folder, String name)
+    protected AbstractWebdavResource(Resource folder, String name)
     {
-        this(folder.getPath().append(name));
+        super(folder, name);
     }
 
-    public Path getPath()
+    public WebdavResource parent()
     {
-        return _path;
-    }
-
-    protected void setPath(Path path)
-    {
-        _path = path;
-    }
-
-
-    public String getName()
-    {
-        return _path.getName();
-    }
-
-
-    public Resource parent()
-    {
-        if (_path.getNameCount()==0)
+        Path p = getPath();
+        if (p.getNameCount()==0)
             return null;
-        Path parent = _path.getParent();
+        Path parent = p.getParent();
         return WebdavService.get().lookup(parent);
     }
 
+    public WebdavResource find(String name)
+    {
+        return null;
+    }
+
+    public Collection<? extends WebdavResource> list()
+    {
+        return Collections.emptyList();
+    }
 
     public long getCreated()
     {
         return getLastModified();
     }
 
-
     public User getCreatedBy()
     {
         return null;
-    }
-
-    public String getDescription()
-    {
-        return null;
-    }
-
-
-    public long getLastModified()
-    {
-        return Long.MIN_VALUE;
     }
 
     public long getLastIndexed()
@@ -133,7 +113,11 @@ public abstract class AbstractResource implements Resource
         return null;
     }
 
-    
+    public String getDescription()
+    {
+        return null;
+    }
+
     public String getContentType()
     {
         if (isCollection())
@@ -157,7 +141,7 @@ public abstract class AbstractResource implements Resource
     public String getLocalHref(ViewContext context)
     {
         String contextPath = null==context ? AppProps.getInstance().getContextPath() : context.getContextPath();
-        String href = c(contextPath, _path.encode());
+        String href = c(contextPath, getPath().encode());
         if (isCollection() && !href.endsWith("/"))
             href += "/";
         return href;
@@ -211,6 +195,11 @@ public abstract class AbstractResource implements Resource
         return _properties;
     }
     
+    public InputStream getInputStream() throws IOException
+    {
+        return getInputStream(null);
+    }
+
     /** provides one place to completely block access to the resource */
     protected boolean hasAccess(User user)
     {
@@ -241,7 +230,7 @@ public abstract class AbstractResource implements Resource
 
     public boolean canRead(User user)
     {
-        if ("/".equals(_path))
+        if ("/".equals(getPath()))
             return true;
         if (user == User.getSearchUser())
             return true;
@@ -297,13 +286,13 @@ public abstract class AbstractResource implements Resource
         return null;
     }
 
-    public long copyFrom(User user, Resource r) throws IOException
+    public long copyFrom(User user, WebdavResource r) throws IOException
     {
         return copyFrom(user, r.getFileStream(user));
     }
 
 
-    public void moveFrom(User user, Resource src) throws IOException
+    public void moveFrom(User user, WebdavResource src) throws IOException
     {
         copyFrom(user, src);
         src.delete(user);
@@ -311,14 +300,14 @@ public abstract class AbstractResource implements Resource
 
 
     @NotNull
-    public List<WebdavResolver.History> getHistory()
+    public Collection<WebdavResolver.History> getHistory()
     {
         return Collections.emptyList();
     }
     
 
     @NotNull
-    public List<NavTree> getActions(User user)
+    public Collection<NavTree> getActions(User user)
     {
         return Collections.emptyList();
     }

@@ -24,18 +24,16 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.TestContext;
+import org.labkey.api.util.*;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
 import javax.naming.*;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
@@ -55,7 +53,7 @@ public class DbSchema
     private final String _name;
     private final String _owner;  // also called "schema" in sql
 
-    private long _schemaXmlTimestamp = -1;
+    private ResourceRef _resourceRef = null;
 
     public static DbSchema get(String schemaName)
     {
@@ -79,34 +77,31 @@ public class DbSchema
 
             try
             {
-                Pair<InputStream, Long> pair;
-
+                Resource resource = null;
                 if (null == schema)
                 {
-                    pair = getXmlStreamIfChanged(schemaName, -1);
+                    resource = getSchemaResource(schemaName);
                 }
                 else
                 {
-                    long tsPrevious = schema.getSchemaXmlTimestamp();
-
-                    if (-1 == tsPrevious)
+                    if (AppProps.getInstance().isDevMode() && schema.isStale())
+                    {
+                        resource = schema.getResource();
+                    }
+                    else
+                    {
                         return schema;
-
-                    pair = getXmlStreamIfChanged(schemaName, tsPrevious);
-
-                    if (null == pair)
-                        return schema;
+                    }
                 }
 
                 schema = createFromMetaData(schemaName, scope);
 
                 if (null != schema)
                 {
-                    if (pair != null)
+                    if (resource != null)
                     {
-                        xmlStream = pair.first;
-                        schema.setSchemaXmlTimestamp(pair.second);
-
+                        schema.setResource(resource);
+                        xmlStream = resource.getInputStream();
                         if (null != xmlStream)
                         {
                             TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
@@ -137,7 +132,7 @@ public class DbSchema
         }
     }
 
-    public static InputStream getSchemaXmlStream(String schemaName) throws FileNotFoundException
+    public static Resource getSchemaResource(String schemaName) throws IOException
     {
         Module module = getModuleForSchemaName(schemaName);
         if (null == module)
@@ -145,21 +140,8 @@ public class DbSchema
             _log.debug("no module for schema '" + schemaName + "'");
             return null;
         }
-        return module.getResourceStream("/schemas/" + schemaName + ".xml");
+        return module.getModuleResource("/schemas/" + schemaName + ".xml");
     }
-
-
-    public static Pair<InputStream, Long> getXmlStreamIfChanged(String schemaName, long tsPrevious) throws FileNotFoundException
-    {
-        Module module = getModuleForSchemaName(schemaName);
-        if (null == module)
-        {
-            _log.debug("no module for schema '" + schemaName + "'");
-            return null;
-        }
-        return module.getResourceStreamIfChanged("/schemas/" + schemaName + ".xml", tsPrevious);
-    }
-
 
     private static Module getModuleForSchemaName(String schemaName)
     {
@@ -315,14 +297,22 @@ public class DbSchema
         return _scope.getSqlDialect();
     }
 
-    private long getSchemaXmlTimestamp()
+    private boolean isStale()
     {
-        return _schemaXmlTimestamp;
+        return _resourceRef == null || _resourceRef.isStale();
     }
 
-    public void setSchemaXmlTimestamp(long schemaXmlTimestamp)
+    private Resource getResource()
     {
-        _schemaXmlTimestamp = schemaXmlTimestamp;
+        return _resourceRef != null ? _resourceRef.getResource() : null;
+    }
+
+    private void setResource(Resource r)
+    {
+        if (_resourceRef == null || _resourceRef.getResource() != r)
+            _resourceRef = new ResourceRef(r);
+        else
+            _resourceRef.updateVersionStamp();
     }
 
     public void loadXml(TablesDocument tablesDoc, boolean merge) throws Exception

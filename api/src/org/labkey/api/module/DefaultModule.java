@@ -27,17 +27,21 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.resource.ClassResourceCollection;
+import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -68,6 +72,7 @@ public abstract class DefaultModule implements Module
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
     private Collection<? extends WebPartFactory> _webPartFactories;
 
+    private ModuleResourceResolver _resolver;
     private boolean _loadFromSource;
     private String _name = null;
     private double _version = 0.0;
@@ -129,7 +134,7 @@ public abstract class DefaultModule implements Module
         }
 
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
-        if(null != getSourcePath() && null != getBuildPath())
+        if (null != getSourcePath() && null != getBuildPath())
             ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
 
         if (AppProps.getInstance().isDevMode() && _sourcePath != null)
@@ -138,6 +143,8 @@ public abstract class DefaultModule implements Module
             if (f.exists())
                 _loadFromSource = true;
         }
+
+        _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
         init();
 
@@ -630,65 +637,27 @@ public abstract class DefaultModule implements Module
         return Collections.emptySet();
     }
 
-    public InputStream getResourceStreamFromWebapp(ServletContext ctx, String path) throws FileNotFoundException
+    public Resolver getModuleResolver()
     {
-        if (_loadFromSource)
-        {
-            File f = new File(_sourcePath, "/webapp" + path);
-            return new FileInputStream(f);
-        }
-        else
-            return ctx.getResourceAsStream(path);
+        return _resolver;
     }
 
-
-    // In dev mode, check the file timestamp against the previous timestamp.  If they match, return null, otherwise return the stream & new timestamp
-    // In production mode, always load and return the stream
-    public Pair<InputStream, Long> getResourceStreamIfChanged(String path, long tsPrevious) throws FileNotFoundException
+    public Resource getModuleResource(Path path)
     {
-        if (_loadFromSource)
-        {
-            File file = new File(_sourcePath, path);
-            if (!file.exists() && !path.startsWith("resources"))
-                file = new File(_sourcePath, "resources/" + path);
-            if (!file.exists() && !path.startsWith("src"))
-                file = new File(_sourcePath, "src/" + path);
-            long ts = file.lastModified();
-            if (tsPrevious == ts)
-                return null;
-            return new Pair<InputStream, Long>(new FileInputStream(file), ts);
-        }
-        else
-        {
-            File file = new File(_explodedPath, path);
-            if (file.exists())
-                return new Pair<InputStream, Long>(new FileInputStream(file), -1L);
-            else
-                return new Pair<InputStream, Long>(this.getClass().getResourceAsStream(path), -1L);
-        }
+        return _resolver.lookup(path);
     }
 
-    public InputStream getResourceStream(String path) throws FileNotFoundException
+    public Resource getModuleResource(String path)
     {
-        //first try to get this from the exploded/source directory,
-        //and if not found, try the class loader
-        File file;
-        if (_loadFromSource)
-        {
-            //FIX: 8122 - if path does not start with src/, add that
-            file = new File(_sourcePath, path);
-            if (!file.exists() && !path.startsWith("resources"))
-                file = new File(_sourcePath, "resources/" + path);
-            if (!file.exists() && !path.startsWith("src"))
-                file = new File(_sourcePath, "src/" + path);
-        }
-        else
-            file = new File(_explodedPath, path);
+        return _resolver.lookup(Path.parse(path));
+    }
 
-        if (file.exists())
-            return new FileInputStream(file);
-        else
-            return this.getClass().getResourceAsStream(path);
+    public InputStream getResourceStream(String path) throws IOException
+    {
+        Resource r = getModuleResource(path);
+        if (r != null)
+            return r.getInputStream();
+        return null;
     }
 
     @Override
@@ -819,6 +788,47 @@ public abstract class DefaultModule implements Module
                 l.add(f);
         }
         return l;
+    }
+
+    @NotNull
+    protected Class[] getResourceClasses()
+    {
+        return new Class[] { this.getClass() };
+    }
+
+    @NotNull
+    protected List<File> getResourceDirectories()
+    {
+        List<File> dirs = new ArrayList<File>(3);
+        String build = getBuildPath();
+        File exploded = getExplodedPath();
+        String source = getSourcePath();
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            if (null != source)
+            {
+                File f = new File(new File(source), "resources");
+                if (f.isDirectory())
+                    dirs.add(FileUtil.canonicalFile(f));
+
+                f = new File(new File(source), "src");
+                if (f.isDirectory())
+                    dirs.add(FileUtil.canonicalFile(f));
+            }
+            if (null != build)
+            {
+                File f = new File(build);
+                if (f.isDirectory())
+                    dirs.add(FileUtil.canonicalFile(f));
+            }
+        }
+        if (exploded != null && exploded.isDirectory())
+        {
+            dirs.add(FileUtil.canonicalFile(exploded));
+        }
+
+        return dirs;
     }
 
 

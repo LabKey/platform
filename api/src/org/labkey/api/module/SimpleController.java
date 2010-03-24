@@ -17,6 +17,8 @@ package org.labkey.api.module;
 
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -36,6 +38,9 @@ import java.util.Collections;
  */
 public class SimpleController extends SpringActionController implements SpringActionController.ActionResolver
 {
+    public static final String ACTIONS_DIRECTORY = "actions";
+    public static final String ACTIONS_FILE = "actions.js";
+    
     public static final String VIEWS_DIRECTORY = "views";
     public static final String BEGIN_VIEW_NAME = "begin";
 
@@ -44,20 +49,12 @@ public class SimpleController extends SpringActionController implements SpringAc
         setActionResolver(this);
     }
 
-    private static File getViewFile(Module module, String actionName)
+    private static Resource getViewResource(Module module, String actionName)
     {
         if (null == module)
             return null;
 
-        File viewFile = new File(new File(module.getSourcePath(), "/resources/" + VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        if (viewFile.isFile())
-            return viewFile;
-
-        viewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        if (viewFile.isFile())
-            return viewFile;
-
-        return null;
+        return module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
     }
 
     public Controller resolveActionName(Controller actionController, String actionName)
@@ -65,9 +62,9 @@ public class SimpleController extends SpringActionController implements SpringAc
         String controllerName = getViewContext().getActionURL().getPageFlow();
         Module module = ModuleLoader.getInstance().getModuleForPageFlow(controllerName);
 
-        File viewFile = getViewFile(module, actionName);
-        if (viewFile != null)
-            return new SimpleAction(viewFile);
+        Resource r = getViewResource(module, actionName);
+        if (r != null)
+            return new SimpleAction(r);
 
         return null;
     }
@@ -83,8 +80,8 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public static ActionURL getBeginViewUrl(Module module, Container container)
     {
-        File beginViewFile = getViewFile(module, BEGIN_VIEW_NAME);
-        if (beginViewFile != null)
+        Resource r = getViewResource(module, BEGIN_VIEW_NAME);
+        if (r != null)
             return new ActionURL(module.getName(), BEGIN_VIEW_NAME, container);
 
         return null;

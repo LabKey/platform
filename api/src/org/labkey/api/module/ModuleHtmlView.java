@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.labkey.api.resource.Resource;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
@@ -37,10 +38,10 @@ public class ModuleHtmlView extends HtmlView
 
     private ModuleHtmlViewDefinition _viewdef = null;
 
-    public ModuleHtmlView(File htmlFile)
+    public ModuleHtmlView(Resource r)
     {
         super(null);
-        _viewdef = getViewDef(htmlFile);
+        _viewdef = getViewDef(r);
         setTitle(_viewdef.getTitle());
         setHtml(replaceTokens(_viewdef.getHtml()));
         if(null != _viewdef.getFrameType())
@@ -61,13 +62,14 @@ public class ModuleHtmlView extends HtmlView
         return ret;
     }
 
-    public static ModuleHtmlViewDefinition getViewDef(File htmlFile)
+    public static ModuleHtmlViewDefinition getViewDef(Resource r)
     {
-        ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(htmlFile.getAbsolutePath());
-        if(null == viewdef || viewdef.isStale())
+        String cacheKey = r.getPath().toString();
+        ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(cacheKey);
+        if (null == viewdef || viewdef.isStale())
         {
-            viewdef = new ModuleHtmlViewDefinition(htmlFile);
-            _viewdefCache.put(htmlFile.getAbsolutePath(), viewdef);
+            viewdef = new ModuleHtmlViewDefinition(r);
+            _viewdefCache.put(cacheKey, viewdef);
         }
         return viewdef;
     }

@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -28,7 +29,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.webdav.Resource;
+import org.labkey.api.webdav.WebdavResource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -129,13 +130,13 @@ public interface SearchService
 
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
-        void addResource(@NotNull Resource r, SearchService.PRIORITY pri);
+        void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
 
         void onSuccess(Runnable r);
     }
 
 
-    boolean accept(Resource r);
+    boolean accept(WebdavResource r);
 
 
     //
@@ -144,7 +145,7 @@ public interface SearchService
     
     public interface ResourceResolver
     {
-        Resource resolve(@NotNull String resourceIdentifier);
+        WebdavResource resolve(@NotNull String resourceIdentifier);
     }
 
 
