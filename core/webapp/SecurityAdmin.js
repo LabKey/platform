@@ -1159,6 +1159,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 
     Input_onBlur : function()
     {
+        this.clearValue().defer(10, this);
     }
 });
 
