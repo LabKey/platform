@@ -99,7 +99,7 @@
         <td><table><tr><td><input type="checkbox" name="formatPicker"<%=settings.hasFormatPicker() ? " checked" : ""%>></td></tr></table></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">Show Administrators Posters' Groups</td>
+        <td class="labkey-form-label">Show poster's groups (visible to admins only)</td>
         <td><table><tr><td><input type="checkbox" name="includeGroups"<%=settings.includeGroups() ? " checked" : ""%>></td></tr></table></td>
     </tr>
     <tr>
