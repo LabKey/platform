@@ -891,11 +891,11 @@ var CloseButton = Ext.extend(Ext.Button,{
                     "</tbody></table><span>"),
     // add &nbsp;
     templateIE : new Ext.Template(
-                    '<span><table cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline;"><tbody>',
-                    '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
-                    '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><i class="pclose">&#160;</i><i>&nbsp;</i></td></tr>',
-                    '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
-                    "</tbody></table>&nbsp;<span>"),
+            '<span><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="display:inline;"><tbody>',
+            '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc" colspan="2"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
+            '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><td class="x-btn-mc"><i class="pclose">&#160;</i></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr>',
+            '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc" colspan="2"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
+            "</tbody></table>&nbsp;<span>"),
 
     initComponent : function()
     {
