@@ -16,11 +16,10 @@
 package org.labkey.api.security;
 
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.HasContextualRoles;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /*
 * User: Dave
@@ -29,8 +28,7 @@ import java.lang.annotation.ElementType;
 */
 
 /**
- * Use to require one of the new permission classes. The old RequiresPermission is being
- * kept around for backwards compatibility.
+ * Specifies the required permissions for an action.
  */
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
 public @interface RequiresPermissionClass
