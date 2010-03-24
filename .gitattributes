@@ -2775,6 +2775,7 @@ api/webapp/ext-3.1.1/src/widgets/tree/TreeSorter.js -text
 api/webapp/gtheme/img/btn-arrow.gif -text
 api/webapp/gtheme/img/btn.gif -text
 api/webapp/gtheme/img/icons7.png -text
+api/webapp/gtheme/img/lkbtn.png -text
 api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
 api/webapp/verticalTabPanel/VerticalTabPanel.css -text
