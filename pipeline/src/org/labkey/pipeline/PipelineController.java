@@ -378,6 +378,7 @@ public class PipelineController extends SpringActionController
             if (pathForm.getPath() != null)
             try { path = Path.parse(pathForm.getPath()); } catch (Exception x) { }
             BrowseWebPart wp = new BrowseWebPart(path);
+            wp.getModelBean().setAutoResize(true);
             wp.setFrame(WebPartView.FrameType.NONE);
             return wp;
         }
@@ -408,7 +409,7 @@ public class PipelineController extends SpringActionController
             //bean.setShowFolderTree(true);
             bean.setFolderTreeCollapsed(false);
             bean.setShowDetails(true);
-            bean.setAutoResize(true);
+            bean.setAutoResize(false);
             bean.setStatePrefix(context.getContainer().getId() + "#fileContent");
 
             // pipeline is always enabled

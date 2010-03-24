@@ -735,8 +735,6 @@ public class DavController extends SpringActionController
                     Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>)multipartRequest.getFileMap().entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     String fileName = file.getOriginalFilename();
-                    if (file.isEmpty())
-                        return WebdavStatus.SC_METHOD_NOT_ALLOWED;
                     WebdavResource dest = resource.find(fileName);
                     if (null == dest)
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;

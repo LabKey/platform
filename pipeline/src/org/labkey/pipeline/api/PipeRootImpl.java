@@ -257,6 +257,10 @@ public class PipeRootImpl implements PipeRoot
     @NotNull
     public String getResourceId()
     {
+        // if the root is a file-based default, it won't have an entityId, so default to containerId
+        if (_entityId == null)
+            return _container != null ? _container.getResourceId() : null;
+
         return _entityId;
     }
 

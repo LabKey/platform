@@ -147,33 +147,36 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.enableImportData(false);
         //this.actions.importData.disable();
 
-        if (!this.actionConfig)
+        if (this.isPipelineRoot)
         {
-            this.grid.store.on('datachanged', function(record){
-                Ext.Ajax.request({
-                    url:this.actionsURL + encodeURIComponent(this.path),
-                    method:'GET',
-                    disableCaching:false,
-                    success : this.updateActionConfiguration(true, true),
-                    failure: LABKEY.Utils.displayAjaxErrorResponse,
-                    updateSelection: true,
-                    scope: this
-                });
-            }, this, {single: true});
-        }
-        else
-        {
-            this.grid.store.on('datachanged', function(record){
-                Ext.Ajax.request({
-                    url:this.actionsURL + encodeURIComponent(this.path),
-                    method:'GET',
-                    disableCaching:false,
-                    success : this.updatePipelineActions,
-                    failure: LABKEY.Utils.displayAjaxErrorResponse,
-                    updateSelection: true,
-                    scope: this
-                });
-            }, this, {single: true});
+            if (!this.actionConfig)
+            {
+                this.grid.store.on('datachanged', function(record){
+                    Ext.Ajax.request({
+                        url:this.actionsURL + encodeURIComponent(this.path),
+                        method:'GET',
+                        disableCaching:false,
+                        success : this.updateActionConfiguration(true, true),
+                        failure: LABKEY.Utils.displayAjaxErrorResponse,
+                        updateSelection: true,
+                        scope: this
+                    });
+                }, this, {single: true});
+            }
+            else
+            {
+                this.grid.store.on('datachanged', function(record){
+                    Ext.Ajax.request({
+                        url:this.actionsURL + encodeURIComponent(this.path),
+                        method:'GET',
+                        disableCaching:false,
+                        success : this.updatePipelineActions,
+                        failure: LABKEY.Utils.displayAjaxErrorResponse,
+                        updateSelection: true,
+                        scope: this
+                    });
+                }, this, {single: true});
+            }
         }
     },
 
@@ -291,7 +294,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 }
             }
         }
-        if (this.pipelineActions.length)
+        if (this.pipelineActions && this.pipelineActions.length)
             this.enableImportData(true);
 
         if (e.updateSelection)
@@ -487,7 +490,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             }
         }
 
-        if (this.pipelineActions.length)
+        if (this.pipelineActions && this.pipelineActions.length)
             this.enableImportData(true);
 
         this.selectionProcessed = true;

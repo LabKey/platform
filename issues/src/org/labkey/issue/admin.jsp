@@ -108,9 +108,13 @@
                             </td>
                             <td>Specific Group
                                 <select<%=Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"true\"" : ""%> name="assignedToGroup"><%
-                                    for (Group group : SecurityManager.getGroups(c.getProject(), false))
+                                    for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
-                                        out.println("<option value=\"" + group.getUserId() + "\"" + (null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId() ? " selected" : "") + ">" + h(group.getName()) + "</option>");
+                                        if (!group.isGuests() && !group.isUsers())
+                                        {
+                                            String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
+                                            out.println("<option value=\"" + group.getUserId() + "\"" + (null != bean.assignedToGroup && group.getUserId() == bean.assignedToGroup.getUserId() ? " selected" : "") + ">" + h(displayText) + "</option>");
+                                        }
                                     }
                                 %>
                                 </select>
