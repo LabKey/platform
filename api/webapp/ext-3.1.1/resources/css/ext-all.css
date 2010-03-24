@@ -4,20 +4,60 @@
  * licensing@extjs.com
  * http://www.extjs.com/license
  */
-.extContainer html,.extContainer body,.extContainer div,.extContainer dl,.extContainer dt,.extContainer dd,
-.extContainer ul,.extContainer ol,.extContainer li,.extContainer h1,.extContainer h2,.extContainer h3,
-.extContainer h4,.extContainer h5,.extContainer h6,.extContainer pre,.extContainer form,
-.extContainer fieldset,.extContainer input,.extContainer p,.extContainer blockquote,
-.extContainer th,.extContainer td{margin:0;padding:0;}
-.extContainer img,.extContainer body,.extContainer html{border:0;}
-.extContainer address,.extContainer caption,.extContainer cite,.extContainer code,
-.extContainer dfn,.extContainer em,.extContainer strong,.extContainer th,.extContainer var
+.extContainer html
+,.extContainer body
+,.extContainer div
+,.extContainer dl
+,.extContainer dt
+,.extContainer dd
+,.extContainer ul
+,.extContainer ol
+,.extContainer li
+,.extContainer h1
+,.extContainer h2
+,.extContainer h3
+,.extContainer h4
+,.extContainer h5
+,.extContainer h6
+,.extContainer pre
+,.extContainer form
+,.extContainer fieldset
+,.extContainer input
+,.extContainer p
+,.extContainer blockquote
+,.extContainer th
+,.extContainer td
+{margin:0;padding:0;}
+.extContainer img
+,.extContainer body
+,.extContainer html
+{border:0;}
+.extContainer address
+,.extContainer caption
+,.extContainer cite
+,.extContainer code,
+.extContainer dfn
+,.extContainer em
+,.extContainer strong
+,.extContainer th
+,.extContainer var
 {font-style:normal;font-weight:normal;}
-.extContainer ol,.extContainer ul {list-style:none;}
-.extContainer caption,.extContainer th {text-align:left;}
-.extContainer h1,.extContainer h2,.extContainer h3,.extContainer h4,.extContainer h5,.extContainer h6
+.extContainer ol
+,.extContainer ul
+{list-style:none;}
+.extContainer caption
+,.extContainer th
+{text-align:left;}
+.extContainer h1
+,.extContainer h2
+,.extContainer h3
+,.extContainer h4
+,.extContainer h5
+,.extContainer h6
 {font-size:100%;}
-.extContainer q:before,.extContainer q:after{content:'';}
+.extContainer q:before
+,.extContainer q:after
+{content:'';}
 .ext-el-mask {
     z-index: 100;
     position: absolute;
@@ -3430,7 +3470,7 @@ a.x-menu-item {
     white-space: nowrap;
 }
 
-.extContainer .x-menu-item-active {
+.x-menu-item-active {
     background-repeat: repeat-x;
     background-position: left bottom;
     border-style:solid;
@@ -3439,7 +3479,7 @@ a.x-menu-item {
 	padding: 0;
 }
 
-.extContainer .x-menu-item-active a.x-menu-item {
+.x-menu-item-active a.x-menu-item {
     border-style:solid;
     border-width:0 1px;
     margin:0 -1px;
@@ -6278,11 +6318,11 @@ td.x-date-mp-sep {
 	background-image:none;
 }
 
-.extContainer .x-menu-list-item{
+.x-menu-list-item{
 	font:normal 11px arial,tahoma,sans-serif;
 }
 
-.extContainer .x-menu-item-arrow{
+.x-menu-item-arrow{
 	background-image:url(../images/default/menu/menu-parent.gif);
 }
 
@@ -6295,13 +6335,13 @@ td.x-date-mp-sep {
 	color:#222;
 }
 
-.extContainer .x-menu-item-active {
+.x-menu-item-active {
     background-image: url(../images/default/menu/item-over.gif);
 	background-color: #dbecf4;
     border-color:#aaccf6;
 }
 
-.extContainer .x-menu-item-active a.x-menu-item {
+.x-menu-item-active a.x-menu-item {
 	border-color:#aaccf6;
 }
 
