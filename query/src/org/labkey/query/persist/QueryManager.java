@@ -298,6 +298,15 @@ public class QueryManager
     }
 
 
+    public void reloadAllDbUserSchemas(Container c)
+    {
+        DbUserSchemaDef[] defs = getDbUserSchemaDefs(c);
+
+        for (DbUserSchemaDef def : defs)
+            reloadDbUserSchema(def);
+    }
+
+
     public void reloadDbUserSchema(DbUserSchemaDef def)
     {
         DbUserSchema.uncache(def);

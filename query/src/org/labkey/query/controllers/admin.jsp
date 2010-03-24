@@ -34,15 +34,23 @@
 <% }
 else
 {
-String reloadedSchema = request.getParameter("reloadedSchema");
-if (null != StringUtils.trimToNull(reloadedSchema))
-    {
+String reloadedSchema = StringUtils.trimToNull(request.getParameter("reloadedSchema"));
+if (null != reloadedSchema)
+{
     %>
-    <div class="labkey-error">
-        Schema <%=h(reloadedSchema)%> was reloaded successfully.
+    <div class="labkey-error"><%
+
+    if ("ALL".equals(reloadedSchema))
+    { %>
+        All schemas in this folder were reloaded successfully.<%
+    }
+    else
+    { %>
+        Schema <%=h(reloadedSchema)%> was reloaded successfully.<%
+    } %>
     </div><br>
     <%
-    }
+}
     %>
 <table>
     <%
@@ -53,7 +61,7 @@ if (null != StringUtils.trimToNull(reloadedSchema))
         ActionURL urlView = new ActionURL(QueryController.SchemaAction.class, getContainer());
         urlView.addParameter("schemaName", def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction(QueryController.AdminReloadDbUserSchemaAction.class);
+        urlReload.setAction(QueryController.ReloadDbUserSchemaAction.class);
 %>
         <tr>
             <td><a href="<%=urlView%>"><%=h(def.getUserSchemaName())%></a></td>
@@ -64,4 +72,7 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     </table>
 <% } %>
 <br>
-<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/><%}%>
+<%if (getUser().isAdministrator()) { %>
+    <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/>
+    <labkey:link href="<%= new ActionURL(QueryController.ReloadAllUserSchemas.class, getContainer())%>" text="reload all schemas"/>
+<%}%>

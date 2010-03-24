@@ -2460,7 +2460,7 @@ public class QueryController extends SpringActionController
 
     // UNDONE: should use POST, change to FormHandlerAction
     @RequiresPermissionClass(AdminPermission.class)
-    public class AdminReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
+    public class ReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
     {
         public ModelAndView getView(DbUserSchemaForm form, BindException errors) throws Exception
         {
@@ -2489,6 +2489,18 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ReloadAllUserSchemas extends SimpleRedirectAction
+    {
+        @Override
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            QueryManager.get().reloadAllDbUserSchemas(getContainer());
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "ALL");
         }
     }
 
