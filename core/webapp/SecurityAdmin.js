@@ -1154,13 +1154,8 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     onRender : function(ct,position)
     {
         PrincipalComboBox.superclass.onRender.call(this,ct,position);
-        this.el.on("blur",this.Input_onBlur,this);
-    },
-
-    Input_onBlur : function()
-    {
-        this.clearValue().defer(10, this);
     }
+
 });
 
 
