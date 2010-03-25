@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.security.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -39,7 +40,14 @@
     Container root = ContainerManager.getRoot();
     User user = getViewContext().getUser();
 %>
-
+<style type="text/css">
+    .x-tree-node-leaf .x-tree-node-icon{
+        background-image:url(<%=getViewContext().getContextPath()%>/ext-3.1.1/resources/images/default/tree/folder.gif);
+    }
+    .x-tree-node-current {
+        font-weight: bold;
+    }
+</style>
 <script type="text/javascript">
 LABKEY.requiresCss("SecurityAdmin.css");
 LABKEY.requiresScript("SecurityAdmin.js", true);
@@ -77,6 +85,7 @@ var policyEditor = null;
 <% } %>
 <div id="buttonDiv" style="padding:5px;"></div>
 <div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
+<div style="font-style:italic">* indicates permissions are inherited</div>
 <script type="text/javascript">
 
 var tabItems = [];
@@ -127,8 +136,6 @@ Ext.onReady(function(){
     for (var i=0 ; i<tabItems.length ; i++)
         tabItems[i].contentEl = $(tabItems[i].contentEl);
 
-    var treeContentEl = $('permissionsContainerTree');
-
     var items = [];
     items.push(
         {
@@ -143,22 +150,31 @@ Ext.onReady(function(){
             region:'center',
             xtype:'tabpanel'
         });
-    if (treeContentEl)
-    {
-        treeContentEl.setStyle('margin','5px');
-        items.push({
-            autoScroll : autoScroll,
-            autoHeight : !autoScroll,
-            border:true,
-            contentEl:treeContentEl,
-            maxSize:300,
-            region:'west',
-            split:true,
-            title:'Folders',
-            width:140
-        });
-    }
-    
+<% if (!c.isRoot()) { %>
+    items.push(new Ext.tree.TreePanel({
+            loader: new Ext.tree.TreeLoader({
+                dataUrl: LABKEY.ActionURL.buildURL("core", "getExtSecurityContainerTree.api"),
+                baseParams: {requiredPermission: '<%=RoleManager.getPermission(AdminPermission.class).getUniqueName()%>'}
+            }),
+            root: new Ext.tree.AsyncTreeNode({
+                id: '<%=project.getRowId()%>',
+                expanded: true,
+                expandable: false,
+                text: <%=PageFlowUtil.jsString(project.getName())%>,
+                href: <%=PageFlowUtil.jsString(new ActionURL(SecurityController.ProjectAction.class, project).getLocalURIString())%>,
+                cls: '<%=project.equals(c) ? "x-tree-node-current" : ""%>'
+            }),
+            enableDrag: false,
+            useArrows: true,
+            autoScroll: true,
+            width: 140,
+            region: 'west',
+            split: true,
+            title: 'Folders',
+            border: true
+        }));
+<% } %>
+
     borderPanel = new Ext.Panel({
         layout:'border',
         border:false,

@@ -50,7 +50,7 @@ to the selected folder:</div>
 
     Ext.onReady(function(){
         _containerTree = new Ext.tree.TreePanel({
-            dataUrl: LABKEY.ActionURL.buildURL("core", "getExtContainerTree.api"),
+            dataUrl: LABKEY.ActionURL.buildURL("core", "getExtMWBContainerTree.api"),
             root: new Ext.tree.AsyncTreeNode({
                 id: '<%=ContainerManager.getRoot().getRowId()%>',
                 expanded: true,

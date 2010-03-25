@@ -38,10 +38,8 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
@@ -55,6 +53,7 @@ import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -773,6 +772,7 @@ public class CoreController extends SpringActionController
     public static class ExtContainerTreeForm
     {
         private String _node;
+        private String _requiredPermission;
 
         public String getNode()
         {
@@ -783,11 +783,22 @@ public class CoreController extends SpringActionController
         {
             _node = node;
         }
+
+        public String getRequiredPermission()
+        {
+            return _requiredPermission;
+        }
+
+        public void setRequiredPermission(String requiredPermission)
+        {
+            _requiredPermission = requiredPermission;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class GetExtContainerTreeAction extends ApiAction<ExtContainerTreeForm>
     {
+        protected Class<? extends Permission> _reqPerm = ReadPermission.class;
         public ApiResponse execute(ExtContainerTreeForm form, BindException errors) throws Exception
         {
             User user = getViewContext().getUser();
@@ -796,9 +807,17 @@ public class CoreController extends SpringActionController
             Container parent = ContainerManager.getForRowId(form.getNode());
             if (null != parent)
             {
+                //determine which permission should be required for a child to show up
+                if (null != form.getRequiredPermission())
+                {
+                    Permission perm = RoleManager.getPermission(form.getRequiredPermission());
+                    if (null != perm)
+                        _reqPerm = perm.getClass();
+                }
+
                 for (Container child : parent.getChildren())
                 {
-                    if (!child.isWorkbook() && child.hasPermission(user, ReadPermission.class))
+                    if (!child.isWorkbook() && child.hasPermission(user, _reqPerm))
                     {
                         children.put(getContainerProps(child));
                     }
@@ -812,12 +831,64 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        private JSONObject getContainerProps(Container c)
+        protected JSONObject getContainerProps(Container c)
         {
             JSONObject props = new JSONObject();
             props.put("id", c.getRowId());
             props.put("text", c.getName());
             props.put("containerPath", c.getPath());
+            props.put("leaf", !c.hasChildren());
+            return props;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetExtSecurityContainerTreeAction extends GetExtContainerTreeAction
+    {
+        @Override
+        protected JSONObject getContainerProps(Container c)
+        {
+            JSONObject props = super.getContainerProps(c);
+            String text = PageFlowUtil.filter(c.getName());
+            if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
+                text += "*";
+            if (c.equals(getViewContext().getContainer()))
+                props.put("cls", "x-tree-node-current");
+
+            props.put("text", text);
+
+            ActionURL url = new ActionURL(SecurityController.ProjectAction.class, c);
+            props.put("href", url.getLocalURIString());
+
+            //if the current container is an ancestor of the request container
+            //recurse into the children so that we can show the request container
+            if (getViewContext().getContainer().isDescendant(c))
+            {
+                JSONArray childrenProps = new JSONArray();
+                for (Container child : c.getChildren())
+                {
+                    if (!child.isWorkbook())
+                    {
+                        JSONObject childProps = getContainerProps(child);
+                        childProps.put("expanded", true);
+                        childrenProps.put(childProps);
+                    }
+                }
+                props.put("children", childrenProps);
+                props.put("expanded", true);
+            }
+            
+            return props;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetExtMWBContainerTreeAction extends GetExtContainerTreeAction
+    {
+        @Override
+        protected JSONObject getContainerProps(Container c)
+        {
+            JSONObject props = super.getContainerProps(c);
             if (c.equals(getViewContext().getContainer()))
                 props.put("disabled", true);
             return props;
