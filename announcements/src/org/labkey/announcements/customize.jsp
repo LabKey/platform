@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2009 LabKey Corporation
+ * Copyright (c) 2006-2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<CustomizeBean> me = (HttpView<CustomizeBean>) HttpView.currentView();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009 LabKey Corporation
+ * Copyright (c) 2007-2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ import java.sql.SQLException;
 
 public class ListServiceImpl implements ListService.Interface
 {
-    static private final Logger _log = Logger.getLogger(ListServiceImpl.class);
+    private static final Logger _log = Logger.getLogger(ListServiceImpl.class);
+
     public Map<String, ListDefinition> getLists(Container container)
     {
         try
@@ -93,5 +94,4 @@ public class ListServiceImpl implements ListService.Interface
     {
         return new ActionURL(ListController.BeginAction.class, container);
     }
-
 }
