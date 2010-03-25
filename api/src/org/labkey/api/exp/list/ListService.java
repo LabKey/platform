@@ -19,7 +19,6 @@ package org.labkey.api.exp.list;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 
 import java.util.Map;
 

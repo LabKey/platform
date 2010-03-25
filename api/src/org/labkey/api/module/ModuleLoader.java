@@ -15,14 +15,13 @@
  */
 package org.labkey.api.module;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.*;
-import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
