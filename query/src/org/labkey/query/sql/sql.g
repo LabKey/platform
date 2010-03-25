@@ -27,6 +27,7 @@ tokens
 	ASCENDING="asc";
 	AVG="avg";
 	BETWEEN="between";
+    CAST="cast";
 	CLASS="class";
 	COUNT="count";
 	DELETE="delete";
@@ -605,12 +606,19 @@ identPrimary
 			)?
 	// Also allow special 'aggregate functions' such as count(), avg(), etc.
 	| aggregate
+	| cast
 	;
 
 
 aggregate
 	: ( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ ) OPEN! additiveExpression CLOSE! { #aggregate.setType(AGGREGATE); }
 	| COUNT^ OPEN! (additiveExpression | STAR{ #STAR.setType(ROW_STAR); }) CLOSE! { #aggregate.setType(AGGREGATE); }
+	;
+
+
+cast
+	: id:CAST! { #id.setType(IDENT); } op:OPEN! { #op.setType(METHOD_CALL);} expr:expression! as:AS! {#as.setType(EXPR_LIST);} type:identifier! CLOSE!
+	    { #cast=#(#op, #id, #(#as, #expr, #type));}
 	;
 
 
@@ -632,18 +640,25 @@ subQuery
 	;
 
 
+// exprList
+// {
+//    AST trimSpec = null;
+// }
+// 	: (t:TRAILING {#trimSpec = #t;} | l:LEADING {#trimSpec = #l;} | b:BOTH {#trimSpec = #b;})?
+// 	  		{ if(#trimSpec != null) #trimSpec.setType(IDENT); }
+// 	  (
+// 	  		expression ( (COMMA! expression)+ | FROM { #FROM.setType(IDENT); } expression | AS! identifier )?
+// 	  		| FROM { #FROM.setType(IDENT); } expression
+// 	  )?
+// 			{ #exprList = #([EXPR_LIST,"exprList"], #exprList); }
+// 	;
+
+
 exprList
-{
-   AST trimSpec = null;
-}
-	: (t:TRAILING {#trimSpec = #t;} | l:LEADING {#trimSpec = #l;} | b:BOTH {#trimSpec = #b;})?
-	  		{ if(#trimSpec != null) #trimSpec.setType(IDENT); }
-	  ( 
-	  		expression ( (COMMA! expression)+ | FROM { #FROM.setType(IDENT); } expression | AS! identifier )? 
-	  		| FROM { #FROM.setType(IDENT); } expression
-	  )?
+	: expression ((COMMA! expression)+)?
 			{ #exprList = #([EXPR_LIST,"exprList"], #exprList); }
-	;
+ 	;
+
 
 constant
 	: NUM_INT
