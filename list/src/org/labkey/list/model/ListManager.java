@@ -75,17 +75,27 @@ public class ListManager implements SearchService.DocumentProvider
         return key.select();
     }
 
+
     public ListDef[] getAllLists() throws SQLException
     {
         return Table.select(getTinfoList(), Table.ALL_COLUMNS, null, null, ListDef.class);
     }
 
-    public ListDef getList(Container container, int id) throws SQLException
+
+    public ListDef getList(Container container, int id)
     {
-        SimpleFilter filter = new PkFilter(getTinfoList(), id);
-        filter.addCondition("Container", container);
-        return Table.selectObject(getTinfoList(), filter, null, ListDef.class);
+        try
+        {
+            SimpleFilter filter = new PkFilter(getTinfoList(), id);
+            filter.addCondition("Container", container);
+            return Table.selectObject(getTinfoList(), filter, null, ListDef.class);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
+
     
     public ListDef insert(User user, ListDef def) throws SQLException
     {
@@ -95,6 +105,7 @@ public class ListManager implements SearchService.DocumentProvider
             enumerateDocuments(null, c, null);
         return ret;
     }
+
 
     public ListDef update(User user, ListDef def) throws SQLException
     {

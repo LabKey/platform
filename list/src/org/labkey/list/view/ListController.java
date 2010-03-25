@@ -63,10 +63,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.list.model.ListAuditViewFactory;
-import org.labkey.list.model.ListImporter;
-import org.labkey.list.model.ListManager;
-import org.labkey.list.model.ListWriter;
+import org.labkey.list.model.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -353,6 +350,59 @@ public class ListController extends SpringActionController
             return appendListNavTrail(root, _list, "Edit " + _list.getName());
         }
     }
+
+
+
+
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GwtEditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
+    {
+        private ListDefinition _list;
+
+        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
+        {
+            _list = form.getList();
+            Domain d = _list.getDomain();
+
+            if (null == _list)
+            {
+                HttpView.throwNotFound();
+            }
+
+            Map<String, String> props = new HashMap<String, String>();
+            ActionURL returnURL = new ActionURL(ShowListDefinitionAction.class, getContainer()).addParameter("listId", String.valueOf(form.getListId()));
+            props.put("listId", String.valueOf(_list.getListId()));
+            props.put("typeURI", d.getTypeURI());
+            props.put("returnURL", returnURL.toString());
+            props.put("allowFileLinkProperties", "0");
+            props.put("allowAttachmentProperties", "1");
+            props.put("showDefaultValueSettings", "1");
+            return new GWTView("org.labkey.list.Designer", props);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Edit Fields in list " + _list.getName());
+            return root;
+        }
+    }
+
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ListEditorServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new ListEditorServiceImpl(getViewContext());
+        }
+    }
+
+
+
+
 
 
     @RequiresPermissionClass(AdminPermission.class)

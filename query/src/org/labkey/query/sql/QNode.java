@@ -122,7 +122,7 @@ abstract public class QNode implements Cloneable
 
 	void _replaceChildren(LinkedList<QNode> list)
 	{
-		for (QNode n : list) assert _validChildrenClass != null &&_validChildrenClass.isAssignableFrom(n.getClass());
+		for (QNode n : list) assert _validChildrenClass != null && _validChildrenClass.isAssignableFrom(n.getClass());
 	   	_children = list;
 	}
 

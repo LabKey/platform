@@ -1048,7 +1048,13 @@ issues/src/org/labkey/issue/summaryWebpart.jsp -text
 issues/src/org/labkey/issue/updateEmail.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
 list/List.iml -text
+list/ListGWT.iml -text
 list/build.xml -text
+list/gwtsrc/org/labkey/list/Designer.gwt.xml -text
+list/gwtsrc/org/labkey/list/client/GWTList.java -text
+list/gwtsrc/org/labkey/list/client/ListDesigner.java -text
+list/gwtsrc/org/labkey/list/client/ListEditorService.java -text
+list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
 list/module.properties -text
 list/src/org/labkey/list/ListContainerListener.java -text
 list/src/org/labkey/list/ListModule.java -text
@@ -1057,6 +1063,7 @@ list/src/org/labkey/list/model/ListAuditViewFactory.java -text
 list/src/org/labkey/list/model/ListDef.java -text
 list/src/org/labkey/list/model/ListDefinitionImpl.java -text
 list/src/org/labkey/list/model/ListDomainType.java -text
+list/src/org/labkey/list/model/ListEditorServiceImpl.java -text
 list/src/org/labkey/list/model/ListImporter.java -text
 list/src/org/labkey/list/model/ListItemImpl.java -text
 list/src/org/labkey/list/model/ListItm.java -text
