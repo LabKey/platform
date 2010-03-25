@@ -311,11 +311,15 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors) throws Exception
         {
+            User user = getViewContext().getUser();
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, null == form.getRedirUrl() ? null : new ActionURL(form.getRedirUrl()));
             if(null != form.getUserId())
             {
                 for(Integer userId : form.getUserId())
-                    bean.addUser(UserManager.getUser(userId.intValue()));
+                {
+                    if (null != userId && userId.intValue() != user.getUserId())
+                        bean.addUser(UserManager.getUser(userId.intValue()));
+                }
             }
             else
             {
@@ -325,7 +329,11 @@ public class UserController extends SpringActionController
                     throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
 
                 for(String userId : userIds)
-                    bean.addUser(UserManager.getUser(Integer.parseInt(userId)));
+                {
+                    int id = Integer.parseInt(userId);
+                    if (id != user.getUserId())
+                        bean.addUser(UserManager.getUser(id));
+                }
             }
 
             if(bean.getUsers().size() == 0)
@@ -342,7 +350,8 @@ public class UserController extends SpringActionController
             User curUser = getViewContext().getUser();
             for(Integer userId : form.getUserId())
             {
-                UserManager.setUserActive(curUser, userId.intValue(), _active);
+                if (null != userId && userId.intValue() != curUser.getUserId())
+                    UserManager.setUserActive(curUser, userId.intValue(), _active);
             }
             return true;
         }
@@ -389,11 +398,15 @@ public class UserController extends SpringActionController
         {
             String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
             DeleteUsersBean bean = new DeleteUsersBean();
+            User user = getViewContext().getUser();
 
             if(null != form.getUserId())
             {
                 for(Integer userId : form.getUserId())
-                    bean.addUser(UserManager.getUser(userId.intValue()));
+                {
+                    if (null != userId && userId.intValue() != user.getUserId())
+                        bean.addUser(UserManager.getUser(userId.intValue()));
+                }
             }
             else
             {
@@ -403,7 +416,11 @@ public class UserController extends SpringActionController
                     throw new RedirectException(siteUsersUrl);
 
                 for(String userId : userIds)
-                    bean.addUser(UserManager.getUser(Integer.parseInt(userId)));
+                {
+                    int id = Integer.parseInt(userId);
+                    if (id != user.getUserId())
+                        bean.addUser(UserManager.getUser(Integer.parseInt(userId)));
+                }
             }
 
             if(bean.getUsers().size() == 0)
@@ -417,9 +434,12 @@ public class UserController extends SpringActionController
             if(null == form.getUserId())
                 return false;
 
+            User curUser = getViewContext().getUser();
+
             for(Integer userId : form.getUserId())
             {
-                UserManager.deleteUser(userId.intValue());
+                if (null != userId && userId.intValue() != curUser.getUserId())
+                    UserManager.deleteUser(userId.intValue());
             }
             return true;
         }
@@ -1009,14 +1029,17 @@ public class UserController extends SpringActionController
                 changeEmail.setURL(changeEmailURL.getLocalURIString());
                 bb.add(changeEmail);
 
-                ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
-                deactivateUrl.addParameter("userId", _detailsUserId);
-                deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getEncodedLocalURIString());
-                bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
+                if (user.getUserId() != detailsUser.getUserId())
+                {
+                    ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
+                    deactivateUrl.addParameter("userId", _detailsUserId);
+                    deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getEncodedLocalURIString());
+                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
 
-                ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
-                deleteUrl.addParameter("userId", _detailsUserId);
-                bb.add(new ActionButton("Delete", deleteUrl));
+                    ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
+                    deleteUrl.addParameter("userId", _detailsUserId);
+                    bb.add(new ActionButton("Delete", deleteUrl));
+                }
             }
 
             if (isAnyAdmin)
