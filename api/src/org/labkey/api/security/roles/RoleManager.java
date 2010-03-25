@@ -93,6 +93,16 @@ public class RoleManager
         return perm;
     }
 
+    public static Permission getPermission(String uniqueName)
+    {
+        Permission perm = (Permission)_nameToRoleMap.get(uniqueName);
+        if(null == perm)
+            Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
+        return perm;
+
+    }
+
+
     public static List<Role> getAllRoles()
     {
         return _roles;
