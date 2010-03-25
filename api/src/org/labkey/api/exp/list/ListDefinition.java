@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
@@ -47,6 +48,10 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     else
                         return java.lang.Integer.valueOf(key.toString());
                 }
+                public PropertyType getPropertyType()
+                {
+                    return PropertyType.INTEGER;
+                }
             },
         AutoIncrementInteger("Auto-Increment Integer")
             {
@@ -57,12 +62,20 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     else
                         return java.lang.Integer.valueOf(key.toString());
                 }
+                public PropertyType getPropertyType()
+                {
+                    return PropertyType.INTEGER;
+                }
             },
         Varchar("Text (String)")
             {
                 protected Object convertKeyInternal(Object key)
                 {
                     return key.toString();
+                }
+                public PropertyType getPropertyType()
+                {
+                    return PropertyType.STRING;
                 }
             };
         final String label;
@@ -100,6 +113,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
 
         protected abstract Object convertKeyInternal(Object key) throws KeyConversionException;
+        public abstract PropertyType getPropertyType();
     }
 
     public static class KeyConversionException extends NotFoundException

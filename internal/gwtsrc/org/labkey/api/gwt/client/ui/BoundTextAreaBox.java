@@ -17,6 +17,7 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
+import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 /**
@@ -28,6 +29,16 @@ public class BoundTextAreaBox extends HorizontalPanel
     protected TextArea _box;
     protected String _caption;
 
+    public BoundTextAreaBox(String caption, String id, final StringProperty property, final DirtyCallback dirtyCallback)
+    {
+        this(caption, id, property.getString(), new WidgetUpdatable(){
+            public void update(Widget widget)
+            {
+                property.set(((TextArea)widget).getText());
+            }
+        }, dirtyCallback);
+    }
+    
     public BoundTextAreaBox(String caption, String id, String initialValue, final WidgetUpdatable updatable, final DirtyCallback dirtyCallback)
     {
         _caption = caption;

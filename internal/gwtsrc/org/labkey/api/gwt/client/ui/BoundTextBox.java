@@ -17,6 +17,7 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
+import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 /**
@@ -32,6 +33,16 @@ public class BoundTextBox extends HorizontalPanel
     public BoundTextBox(String caption, String id, String initialValue, final WidgetUpdatable updatable)
     {
         this(caption, id, initialValue, updatable, null);
+    }
+
+    public BoundTextBox(String caption, String id, final StringProperty prop)
+    {
+        this(caption, id, prop.getString(), new WidgetUpdatable(){
+            public void update(Widget widget)
+            {
+                prop.set(((TextBox)widget).getText());
+            }
+        }, null);
     }
 
     public BoundTextBox(String caption, String id, String initialValue, final WidgetUpdatable updatable, final DirtyCallback dirtyCallback)

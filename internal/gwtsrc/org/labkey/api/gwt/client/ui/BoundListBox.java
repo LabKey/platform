@@ -18,6 +18,7 @@ package org.labkey.api.gwt.client.ui;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.ChangeListener;
 import com.google.gwt.user.client.ui.Widget;
+import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.Map;
@@ -29,6 +30,19 @@ import java.util.Iterator;
 */
 public class BoundListBox extends ListBox
 {
+    public BoundListBox(boolean isMultipleSelect, final IPropertyWrapper property, final DirtyCallback dirtyCallback)
+    {
+        this(isMultipleSelect, new WidgetUpdatable(){
+            public void update(Widget widget)
+            {
+                ListBox lb = (ListBox)widget;
+                if (lb.getSelectedIndex() != -1)
+                    property.set(lb.getValue(lb.getSelectedIndex()));
+            }
+        }, dirtyCallback);
+    }
+
+    
     public BoundListBox(boolean isMultipleSelect, final WidgetUpdatable updatable, final DirtyCallback dirtyCallback)
     {
         super();

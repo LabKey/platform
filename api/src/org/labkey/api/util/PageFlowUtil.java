@@ -1856,7 +1856,7 @@ public class PageFlowUtil
     public static String getLabkeyJS()
     {
         String contextPath = AppProps.getInstance().getContextPath();
-        String serverHash = getServerHash();
+        String serverHash = getServerSessionHash();
 
         StringBuilder sb = new StringBuilder();
         sb.append("<script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\" language=\"javascript\"></script>\n");
@@ -1872,7 +1872,7 @@ public class PageFlowUtil
         boolean combinedJS = true;
 
         String contextPath = AppProps.getInstance().getContextPath();
-        String serverHash = getServerHash();
+        String serverHash = getServerSessionHash();
 
         List<String> scripts = new ArrayList<String>();
         LinkedHashSet<String> includes = new LinkedHashSet<String>();
@@ -2000,7 +2000,7 @@ public class PageFlowUtil
         sb.append(",");
         sb.append("devMode:").append(props.isDevMode()?"true":"false");
         sb.append(",");
-        sb.append("hash:'").append(getServerHash()).append("'");
+        sb.append("hash:'").append(getServerSessionHash()).append("'");
         sb.append(",");
 
         //TODO: these should be passed in by callers
@@ -2066,7 +2066,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    private static String getServerHash()
+    public static String getServerSessionHash()
     {
         if (null == serverHash)
             serverHash = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();

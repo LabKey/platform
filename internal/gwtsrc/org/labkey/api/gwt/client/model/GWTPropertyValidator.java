@@ -15,6 +15,7 @@
  */
 package org.labkey.api.gwt.client.model;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.io.Serializable;
@@ -27,7 +28,7 @@ import java.util.List;
 * Date: Aug 8, 2008
 * Time: 3:49:42 PM
 */
-public class GWTPropertyValidator implements Serializable
+public class GWTPropertyValidator implements Serializable, IsSerializable
 {
     public static final String TYPE_REGEX = "regex";
     public static final String TYPE_RANGE = "range";

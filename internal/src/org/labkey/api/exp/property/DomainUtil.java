@@ -147,7 +147,7 @@ public class DomainUtil
         return d;
     }
 
-    public static GWTDomain getDomain(DomainDescriptor dd)
+    private static GWTDomain getDomain(DomainDescriptor dd)
     {
         GWTDomain gwtDomain = new GWTDomain();
 

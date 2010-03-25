@@ -52,7 +52,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lookupContainer = new StringProperty();
     private StringProperty lookupSchema = new StringProperty();
     private StringProperty lookupQuery = new StringProperty();
-    private DefaultValueType defaultValueType = null;
+    private String defaultValueType = null;
     private StringProperty defaultValue = new StringProperty();
     private StringProperty defaultDisplayValue = new StringProperty("[none]");
     private BooleanProperty mvEnabled = new BooleanProperty(false);
@@ -60,12 +60,24 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty url = new StringProperty();
     private BooleanProperty shownInInsertView = new BooleanProperty(true);
     private BooleanProperty shownInUpdateView = new BooleanProperty(true);
-    private BooleanProperty shownInDetailsView = new BooleanProperty(true); 
+    private BooleanProperty shownInDetailsView = new BooleanProperty(true);
 
+    // for controlling the property editor (not persisted or user settable)
+    private boolean isEditable = true;
+    private boolean isTypeEditable = true;
+    private boolean isNameEditable = true;
+
+    
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
     public GWTPropertyDescriptor()
     {
+    }
+
+    public GWTPropertyDescriptor(String name, String rangeURI)
+    {
+        setName(name);
+        setRangeURI(rangeURI);
     }
 
     public GWTPropertyDescriptor(GWTPropertyDescriptor s)
@@ -320,12 +332,12 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     public DefaultValueType getDefaultValueType()
     {
-        return defaultValueType;
+        return null==defaultValueType ? null : DefaultValueType.valueOf(defaultValueType);
     }
 
     public void setDefaultValueType(DefaultValueType defaultValueType)
     {
-        this.defaultValueType = defaultValueType;
+        this.defaultValueType = null==defaultValueType ? null : defaultValueType.name();
     }
 
     public String getDefaultValue()
@@ -520,5 +532,37 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         return "http://cpas.fhcrc.org/exp/xml#fileLink".equals(getRangeURI()) ||
                "http://www.labkey.org/exp/xml#attachment".equals(getRangeURI());
+    }
+
+
+    // for communicating with the type editor, not persisted
+    public void setEditable(boolean b)
+    {
+        isEditable = b;
+    }
+
+    public boolean isEditable()
+    {
+        return isEditable;
+    }
+
+    public void setTypeEditable(boolean b)
+    {
+        isTypeEditable = b;
+    }
+
+    public boolean isTypeEditable()
+    {
+        return isTypeEditable;
+    }
+
+    public void setNameEditable(boolean b)
+    {
+        isNameEditable = b;
+    }
+
+    public boolean isNameEditable()
+    {
+        return isNameEditable;
     }
 }

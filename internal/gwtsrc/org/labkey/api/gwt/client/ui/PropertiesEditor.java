@@ -618,7 +618,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
         nameTextBox.addFocusHandler(focusHandler);
-        nameTextBox.setEnabled(!locked && !readOnly && !_domain.isMandatoryField(pd));
+        nameTextBox.setEnabled(!locked && !readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
         _table.setWidget(tableRow, col, nameTextBox);
 
         col++;
@@ -659,7 +659,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
     {
-        return status == FieldStatus.Added;
+        return pd.isEditable() && pd.isTypeEditable() && status == FieldStatus.Added;
     }
 
     static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)

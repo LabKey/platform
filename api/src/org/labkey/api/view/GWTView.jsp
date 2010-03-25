@@ -18,10 +18,9 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
-    HttpView me = (org.labkey.api.view.HttpView) HttpView.currentView();
+    HttpView me = HttpView.currentView();
     GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
 %>
 <div id="<%= PageFlowUtil.filter(bean.getModuleName()) %>-Root"></div>
@@ -38,20 +37,16 @@ String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js
   The ant build will insert an empty file "fake.js" into the directory of the
   GWT app.
   --%>
-<script type="text/javascript" src="<%=contextPath + "/" + bean.getModuleName() + "/fake.js"%>">
-</script>
-
-<script id="__gwt_marker_<%=bean.getModuleName()%>">
-</script>
-
+<script type="text/javascript" src="<%=contextPath%>/<%=bean.getModuleName()%>/fake.js"></script>
+<script id="__gwt_marker_<%=bean.getModuleName()%>"></script>
+<script type="text/javascript" src="<%=contextPath%>/<%=jsPath%>?<%=PageFlowUtil.getServerSessionHash()%>"></script>
 <script type="text/javascript">
-    LABKEY.requiresScript("<%=jsPath%>", <%= bean.isImmediateLoad()%>);
-    
-    <%= GWTView.PROPERTIES_OBJECT_NAME %> = new Object();
-<%
+<%= GWTView.PROPERTIES_OBJECT_NAME %> = {<%
+    String comma ="\n\t";
     for (Map.Entry<String, String> entry : bean.getProperties().entrySet())
-    {%>
-    <%= GWTView.PROPERTIES_OBJECT_NAME %>[<%= PageFlowUtil.jsString(entry.getKey()) %>] = <%= PageFlowUtil.jsString(entry.getValue()) %>;<%
+    {
+        %><%=comma%><%=q(entry.getKey())%>:<%= q(entry.getValue()) %><%
+        comma=",\n\t";
     }
-%>
+%>};
 </script>

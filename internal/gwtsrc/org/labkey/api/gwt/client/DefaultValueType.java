@@ -15,13 +15,15 @@
  */
 package org.labkey.api.gwt.client;
 
+import java.io.Serializable;
+
 /*
  * User: brittp
  * Date: Jan 29, 2009
  * Time: 2:55:25 PM
  */
 
-public enum DefaultValueType
+public enum DefaultValueType implements Serializable
 {
     FIXED_EDITABLE("Editable default", "An editable default value will be entered for the user.  The default value will be the same for every user for every upload."),
     FIXED_NON_EDITABLE("Fixed value", "Fixed values cannot be edited by the user.  This option is used to save fixed data with each inserted data row."),

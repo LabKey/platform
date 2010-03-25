@@ -53,7 +53,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
     {
         private String _moduleName;
         private Map<String, String> _properties;
-        private boolean _immediateLoad;
 
         public GWTViewBean(String moduleName, Map<String, String> properties)
         {
@@ -79,16 +78,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         public Map<String, String> getProperties()
         {
             return _properties;
-        }
-
-        public boolean isImmediateLoad()
-        {
-            return _immediateLoad;
-        }
-
-        public void setImmediateLoad(boolean immediateLoad)
-        {
-            _immediateLoad = immediateLoad;
         }
     }
 
@@ -123,11 +112,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         super("/org/labkey/api/view/GWTView.jsp", new GWTViewBean(moduleName, properties));
         getModelBean().init(getViewContext());
         getModulesForRootContext().add(moduleName);
-    }
-
-    public void setImmediateLoad(boolean immediateLoad)
-    {
-        getModelBean().setImmediateLoad(immediateLoad);
     }
 
     public static Set<String> getModulesForRootContext()
