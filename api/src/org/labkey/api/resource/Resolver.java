@@ -15,6 +15,7 @@
  */
 package org.labkey.api.resource;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Path;
 
 /**
@@ -30,5 +31,5 @@ public interface Resolver
      * @param path
      * @return
      */
-    Resource lookup(Path path);
+    @Nullable Resource lookup(Path path);
 }

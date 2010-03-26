@@ -41,6 +41,7 @@ public class ModuleResourceResolver implements Resolver
 
     Module _module;
     MergedDirectoryResource _root;
+    ClassResourceCollection[] _classes;
 
     ModuleResourceResolver(Module module, List<File> dirs, Class... classes)
     {
@@ -50,7 +51,9 @@ public class ModuleResourceResolver implements Resolver
         for (Class clazz : classes)
             additional.add(new ClassResourceCollection(clazz));
 
-        _root = new MergedDirectoryResource(this, Path.emptyPath, dirs, additional.toArray(new Resource[classes.length]));
+
+        _root = new MergedDirectoryResource(this, Path.emptyPath, dirs);
+        _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
 
     public Path getRootPath()
@@ -100,6 +103,15 @@ public class ModuleResourceResolver implements Resolver
 
     private Resource resolve(Path path)
     {
+        Resource r = resolveFileResource(path);
+        if (r != null)
+            return r;
+
+        return resolveClassResource(path);
+    }
+
+    private Resource resolveFileResource(Path path)
+    {
         Resource r = _root;
         for (int i=0 ; i<path.size() ; i++)
         {
@@ -110,7 +122,21 @@ public class ModuleResourceResolver implements Resolver
             if (null == r)
                 return null;
         }
+
         return r;
+    }
+
+    private Resource resolveClassResource(Path path)
+    {
+        String p = path.toString();
+        for (ClassResourceCollection rc : _classes)
+        {
+            Resource r = rc.find(p);
+            if (r != null)
+                return r;
+        }
+
+        return null;
     }
 
     protected boolean filter(String p)

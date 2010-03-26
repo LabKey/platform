@@ -16,6 +16,7 @@
 
 package org.labkey.api.webdav;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
@@ -33,8 +34,8 @@ public interface WebdavResolver extends Resolver
 {
     boolean requiresLogin();
     Path getRootPath();
-    WebdavResource lookup(Path path);
-    WebdavResource welcome();
+    @Nullable WebdavResource lookup(Path path);
+    @Nullable WebdavResource welcome();
 
 
     public static interface History

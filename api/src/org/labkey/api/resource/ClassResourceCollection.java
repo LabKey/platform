@@ -63,6 +63,14 @@ public class ClassResourceCollection extends AbstractResourceCollection
 
     public Resource find(String name)
     {
+        Resource r = _find(name);
+        if (r == null && !name.startsWith("/"))
+            r = _find("/" + name);
+        return r;
+    }
+
+    private Resource _find(String name)
+    {
         URL url = clazz.getResource(name);
         if (url != null)
             return new ClassResource(this, name);

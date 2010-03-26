@@ -59,12 +59,12 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         }
     }
 
-    public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... addl)
+    public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
     {
         super(path);
         _resolver = resolver;
         _dirs = dirs;
-        _additional = addl;
+        _additional = children;
     }
 
     public Resource parent()
@@ -117,7 +117,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                     children.put(e.getKey(), r);
                 }
                 for (Resource r : _additional)
-                    children.put(r.getName(),r);
+                    children.put(r.getName(), r);
 
                 CHILDREN_CACHE.put(cacheKey, children);
             }
