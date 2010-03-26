@@ -702,12 +702,6 @@ public class DavController extends SpringActionController
     }
 
 
-    /*
-     * CONSIDER: make this work like a form post
-     * <form method="post" action="" enctype="multipart/form-data">
-     * <input type="file" name="file">
-     * </form>
-     */
     @RequiresNoPermission
     public class PostAction extends PutAction
     {
@@ -720,60 +714,79 @@ public class DavController extends SpringActionController
         public WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             WebdavResource resource = resolvePath();
-            if (null == resource)
+            if (null == resource || !resource.exists())
                 return notFound();
             boolean isCollection = resource.isCollection();
 
-            if (isCollection && getRequest() instanceof MultipartHttpServletRequest)
+            if (isCollection)
             {
-                MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)getRequest();
-                if (multipartRequest.getFileMap().size() > 1)
-                    return WebdavStatus.SC_NOT_IMPLEMENTED;
-
-                if (!multipartRequest.getFileMap().isEmpty())
+                String filename;
+                FileStream stream;
+                
+                if (getRequest() instanceof MultipartHttpServletRequest)
                 {
+                    MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)getRequest();
+                    if (multipartRequest.getFileMap().size() > 1)
+                        return WebdavStatus.SC_NOT_IMPLEMENTED;
+                    if (multipartRequest.getFileMap().isEmpty())
+                        return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+
                     Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>)multipartRequest.getFileMap().entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
-                    String fileName = file.getOriginalFilename();
-                    WebdavResource dest = resource.find(fileName);
-                    if (null == dest)
-                        return WebdavStatus.SC_METHOD_NOT_ALLOWED;
-                    // CONSIDER: support multi-file POST
-                    setResource(dest);
-                    setFileStream(new SpringAttachmentFile(file));
-                    WebdavStatus status = super.doMethod();
-
-                    // if _returnUrl then redirect, else respond as if PROPFIND
-                    String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
-                    if (null != StringUtils.trimToNull(returnUrl))
-                    {
-                        HttpView.throwRedirect(returnUrl);
-                        return WebdavStatus.SC_OK;
-                    }
-
-                    if (status == WebdavStatus.SC_CREATED)
-                    {
-                        PropfindAction action = new PropfindAction()
-                        {
-                            @Override
-                            protected InputStream getInputStream() throws IOException
-                            {
-                                return new ByteArrayInputStream(new byte[0]);
-                            }
-
-                            @Override
-                            protected Pair<Integer, Boolean> getDepthParameter()
-                            {
-                                return new Pair<Integer,Boolean>(0,Boolean.FALSE);
-                            }
-                        };
-                        action.setResource(dest);
-                        return action.doMethod();
-                    }
-                    return status;
+                    filename = file.getOriginalFilename();
+                    stream = new SpringAttachmentFile(file);
                 }
+                else
+                {
+                    // CONSIDER: enforce ContentType=text/plain?
+                    filename = getRequest().getParameter("filename");
+                    String content = getRequest().getParameter("content");
+                    stream = new FileStream.ByteArrayFileStream(content.getBytes());
+                }
+
+                if (StringUtils.isEmpty(filename) || -1 != filename.indexOf("/"))
+                    return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+                WebdavResource dest = resource.find(filename);
+                if (null == dest)
+                    return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+                setFileStream(stream);
+
+                setResource(dest);
+                WebdavStatus status = super.doMethod();
+
+                // if _returnUrl then redirect, else respond as if PROPFIND
+                String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
+                if (null != StringUtils.trimToNull(returnUrl))
+                {
+                    HttpView.throwRedirect(returnUrl + (returnUrl.indexOf('?')==-1 ? '?' : '&') + "status=" + status);
+                    return WebdavStatus.SC_OK;
+                }
+
+                if (status == WebdavStatus.SC_CREATED)
+                {
+                    PropfindAction action = new PropfindAction()
+                    {
+                        @Override
+                        protected InputStream getInputStream() throws IOException
+                        {
+                            return new ByteArrayInputStream(new byte[0]);
+                        }
+
+                        @Override
+                        protected Pair<Integer, Boolean> getDepthParameter()
+                        {
+                            return new Pair<Integer,Boolean>(0,Boolean.FALSE);
+                        }
+                    };
+                    action.setResource(dest);
+                    return action.doMethod();
+                }
+                return status;
             }
-            return new GetAction().doMethod();
+            else
+            {
+                return new GetAction().doMethod();
+            }
         }
     }
 

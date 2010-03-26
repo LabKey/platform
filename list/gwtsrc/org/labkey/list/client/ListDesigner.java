@@ -18,8 +18,10 @@ package org.labkey.list.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.dom.client.Element;
@@ -30,11 +32,9 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.util.StringProperty;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,6 +47,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     private String _returnURL;
     private String _cancelURL;
 
+    private boolean _readonly = true;
+    private int _listId = 0;
+    private HashSet<String> _listNames = new HashSet<String>();
     private GWTList _list;
     private GWTDomain _domain;
 
@@ -111,44 +114,131 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public void onModuleLoad()
     {
-        int listId = Integer.parseInt(PropertyUtil.getServerProperty("listId"));
+        _listId = Integer.parseInt(PropertyUtil.getServerProperty("listId"));
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _cancelURL = PropertyUtil.getServerProperty("cancelURL");
 
         _root = RootPanel.get("org.labkey.list.Designer-Root");
 
-        _loading = new Label("Loading...");
-
-        _propTable = new PropertiesEditor(new DomainListSaveable(this), getService());
+        _propTable = new _ListPropertiesEditor(new DomainListSaveable(this), getService());
 
         _buttons = new FlexTable();
 
         _saveButton = new SubmitButton();
 
-        _buttons.setWidget(0, 0, _saveButton);
-        _buttons.setWidget(0, 1, new CancelButton());
-
-        _root.add(_loading);
-
+        asyncGetListNames();
 
         // NOTE for now we're displaying list info w/ static HTML
-        asyncGetList(listId);
-
-        Window.addWindowCloseListener(new WindowCloseListener()
+        if (_listId == 0)
         {
-            public void onWindowClosed()
-            {
-            }
+            _list = new GWTList(0);
+            showNewListUI();
+        }
+        else
+        {
+            asyncGetList(_listId);
+        }
 
-            public String onWindowClosing()
+        Window.addWindowClosingHandler(new Window.ClosingHandler()
+        {
+            public void onWindowClosing(Window.ClosingEvent event)
             {
                 if (isDirty())
-                    return "Changes have not been saved and will be discarded.";
-                else
-                    return null;
+                    event.setMessage("Changes have not been saved and will be discarded.");
             }
         });
     }
+
+
+    public void loading()
+    {
+        _root.clear();
+        _loading = new Label("Loading...");
+        _root.add(_loading);
+    }
+
+
+    public void refreshButtons()
+    {
+        _buttons.clear();
+
+        int col=0;
+
+        if (_listId == 0)
+        {
+            _buttons.setWidget(0, col++, new ImageButton("Create List", new ClickHandler(){
+                public void onClick(ClickEvent event)
+                {
+                    if (null != _list && _list.getName() != null && _list.getName().length() > 0)
+                        _service.createList(_list, new AsyncCallback<GWTList>(){
+                            public void onFailure(Throwable caught)
+                            {
+                                Window.alert(caught.getMessage());
+                            }
+
+                            public void onSuccess(GWTList result)
+                            {
+                                setList(result);
+                            }
+                        });
+                    Window.alert("create");
+                }
+            }));
+        }
+        else if (!_readonly)
+        {
+            _buttons.setWidget(0, col++, _saveButton);
+        }
+        else
+        {
+            _buttons.setWidget(0, col++, new ImageButton("edit design", new ClickHandler(){
+                public void onClick(ClickEvent event)
+                {
+                    setReadOnly(false);
+                }
+            }));
+
+            if (canDeleteList() && _listId != 0)
+            {
+                _buttons.setWidget(0, col++, (new ImageButton("delete list", new ClickHandler(){
+                    public void onClick(ClickEvent event)
+                    {
+                        WindowUtil.setLocation("deleteListDefinition.view?listId=" + _listId);
+                    }
+                })));
+            }
+
+            if (canInsert() && _listId != 0)
+            {
+                _buttons.setWidget(0, col++, new ImageButton("import data", new ClickHandler(){
+                    public void onClick(ClickEvent event)
+                    {
+                        WindowUtil.setLocation("uploadListItems.view?listId=" + _listId);
+                    }
+                }));
+            }
+        }
+
+        if (_listId != 0 && _readonly)
+        {
+            _buttons.setWidget(0, col++, new ImageButton("Done", new ClickHandler(){
+                public void onClick(ClickEvent event)
+                {
+                    cancel();
+                }
+            }));
+        }
+        else
+        {
+            _buttons.setWidget(0, col++, new ImageButton("Cancel", new ClickHandler(){
+                public void onClick(ClickEvent event)
+                {
+                    cancel();
+                }
+            }));
+        }
+    }
+
 
     private void setDirty(boolean dirty)
     {
@@ -165,7 +255,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         _list = ds;
         asyncGetDefinition();
-        showUI();
     }
 
 
@@ -180,24 +269,53 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         if (null == d.getFields() || d.getFields().size() == 0)
             _propTable.addField(new GWTPropertyDescriptor());
 
-        showUI();
+        showDesignerUI();
+    }
+
+    
+    private void showNewListUI()
+    {
+        if (0 == _listId)
+        {
+            _root.clear();
+            _root.add(_buttons);
+            
+            _list = new GWTList();
+            CreateListPanel p = new CreateListPanel();
+            _root.add(p);
+
+            refreshButtons();
+        }
     }
 
 
-    private void showUI()
+    private void showDesignerUI()
     {
         if (null != _domain && null != _list)
         {
-            _root.remove(_loading);
+            _root.clear();
             _root.add(_buttons);
 
-            _propertiesPanel = new ListPropertiesPanel();
+            _propertiesPanel = new ListPropertiesPanel(_readonly);
             _root.add(new WebPartPanel("List Properties", _propertiesPanel));
 
+            _propTable.setReadOnly(_readonly);
             _schemaPanel = new ListSchema(_propTable);
             _root.add(new WebPartPanel("List Fields", _schemaPanel));
+
+            refreshButtons();
         }
     }
+
+
+    private void setReadOnly(boolean ro)
+    {
+        if (ro == _readonly)
+            return;
+        _readonly = ro;
+        showDesignerUI();
+    }
+    
 
     class SubmitButton extends ImageButton
     {
@@ -212,22 +330,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
     }
 
-
-    class CancelButton extends ImageButton
-    {
-        CancelButton()
-        {
-            super("Cancel");
-        }
-
-        public void onClick(Widget sender)
-        {
-            if (_cancelURL != null && _cancelURL.length() > 0)
-                navigate(_cancelURL);
-            else
-                cancel();
-        }
-    }
 
     public void save(final SaveListener<GWTList> listener)
     {
@@ -283,9 +385,25 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         save(null);
     }
 
+
     public void cancel()
     {
-        back();
+        if (!_readonly && _listId != 0)
+        {
+            //
+            if (isDirty())
+            {
+                Window.alert("dirty");
+            }
+            setReadOnly(true);
+            asyncGetList(_listId);
+            return;
+        }
+
+        if (_cancelURL != null && _cancelURL.length() > 0)
+            WindowUtil.setLocation(_cancelURL);
+        else
+            WindowUtil.setLocation("begin.view");
     }
 
     public void finish()
@@ -297,19 +415,10 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 if (null == _returnURL || _returnURL.length() == 0)
                     cancel();
                 else
-                    navigate(_returnURL);
+                    WindowUtil.setLocation(_returnURL);
             }
         });
     }
-
-    public static native void navigate(String url) /*-{
-      $wnd.location.href = url;
-    }-*/;
-
-
-    public static native void back() /*-{
-        $wnd.history.back();
-    }-*/;
 
 
     /*
@@ -328,8 +437,27 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
+    void asyncGetListNames()
+    {
+        _service.getListNames(new AsyncCallback<List<String>>(){
+            public void onFailure(Throwable caught)
+            {
+            }
+
+            public void onSuccess(List<String> result)
+            {
+                _listNames.addAll(result);
+            }
+        });
+    }
+
+
     void asyncGetList(int id)
     {
+        loading();
+        setDirty(false);
+        _list = null;
+        _domain = null;
         getService().getList(id, new AsyncCallback<GWTList>()
         {
                 public void onFailure(Throwable caught)
@@ -378,18 +506,23 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
-    private interface WidgetUpdatable
+    boolean canDeleteList()
     {
-        void update(Widget widget);
+        return true;
+    }
+
+    boolean canInsert()
+    {
+        return true;
     }
 
 
-    private class ListPropertiesPanel extends VerticalPanel
+
+    private class CreateListPanel extends VerticalPanel
     {
         final FlexTable _table = new FlexTable();
-        RadioButton _noneButton;
 
-        public ListPropertiesPanel()
+        public CreateListPanel()
         {
             super();
             createPanel();
@@ -406,7 +539,83 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // NAME
             {
-            Label listNameTextBox = new Label(_list.getName());
+            Widget listNameTextBox = new _ListNameTextBox("Name", "ff_name", _list.name);
+            HorizontalPanel panel = new HorizontalPanel();
+            panel.add(new Label("Name"));
+            //panel.add(new HelpPopup("Name", "Name of this List"));
+            _table.setWidget(row, 0, panel);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
+            _table.setWidget(row, 1, listNameTextBox);
+            row++;
+            }
+
+            // PK TYPE
+            {
+                BoundListBox type = new BoundListBox(false, _list.keyPropertyType, null);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Name"));
+                //panel.add(new HelpPopup("Name", "Name of this List"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, type);
+                row++;
+            }
+        }
+
+
+/*
+    <form action="/labkey/list/home/newListDefinition.view?" method="POST">
+    <p>What is the name of your list?<br>
+        <input type="text" id="ff_name" name="ff_name" value=""/>
+    </p>
+    <p>
+        Every item in a list has a key value which uniquely identifies that item.
+        What is the data type of the key in your list?<br>
+        <select name="ff_keyType" >
+
+<option value="AutoIncrementInteger" selected>Auto-Increment Integer</option>
+<option value="Integer">Integer</option>
+<option value="Varchar">Text (String)</option>
+        </select>
+    </p>
+    <p>
+        What is the name of the key in your list?<br>
+        <input type="text" name="ff_keyName" value="Key"/>
+    </p>
+    <p>
+        Import from file <a href="#" tabindex="-1" onClick="return showHelpDiv(this, &#039;Import from File&#039;, &#039;Use this option if you have a spreadsheet that you would like uploaded as a list.&#039;);" onMouseOut="return hideHelpDivDelay();" onMouseOver="return showHelpDivDelay(this, &#039;Import from File&#039;, &#039;Use this option if you have a spreadsheet that you would like uploaded as a list.&#039;);"><span class="labkey-help-pop-up">?</span></a>:
+        <input type="checkbox" name="fileImport" >
+    </p>
+    <input type="submit" style="display: none;" id="8e91ea84-1a9b-102d-8214-d0d1b91d714f"><a class="labkey-button" href="#" onclick="submitForm(document.getElementById('8e91ea84-1a9b-102d-8214-d0d1b91d714f').form); return false;"  ><span>Create List</span></a>
+    <a class="labkey-button" href="/labkey/list/home/begin.view?" ><span>Cancel</span></a>
+</form>
+*/
+    }
+
+    private class ListPropertiesPanel extends VerticalPanel
+    {
+        final FlexTable _table = new FlexTable();
+
+        public ListPropertiesPanel(boolean readonly)
+        {
+            super();
+            createPanel(readonly);
+        }
+
+        private void createPanel(boolean readonly)
+        {
+            String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
+            HTMLTable.CellFormatter cellFormatter = _table.getCellFormatter();
+
+            int row = 0;
+
+            add(_table);
+
+            // NAME
+            {
+            Widget listNameTextBox = readonly ?
+                    new Label(_list.getName()) :
+                    new _ListNameTextBox("Name", "ff_name", _list.name);
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Name"));
             //panel.add(new HelpPopup("Name", "Name of this List"));
@@ -418,7 +627,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // DESCRIPTION
             {
-            BoundTextAreaBox descriptionTextBox = new BoundTextAreaBox("Description", "ff_description", _list.name, null);
+            Widget descriptionTextBox = readonly ?
+                    new Label(_list.getName()) :
+                    new BoundTextAreaBox("Description", "ff_description", _list.name, null);
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Description"));
             //panel.add(new HelpPopup("Name", "Name of this List"));
@@ -431,7 +642,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // TITLE
             {
-                BoundListBox titleListBox = new BoundListBox(false, _list.titleField, null);
+                Widget titleListBox = readonly ?
+                        new Label(_list.getTitleField()) :
+                        new BoundListBox(false, _list.titleField, null);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Title Field"));
                 //panel.add(new HelpPopup("Name", "Name of this List"));
@@ -448,7 +661,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             // ALLOW
 
 
-            
             /*
             BoundTextBox dsName = new BoundTextBox("dsName", _list.getName(), new WidgetUpdatable()
             {
@@ -822,4 +1034,70 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     }
 
+
+    class _ListNameTextBox extends BoundTextBox
+    {
+        String origName;
+
+        _ListNameTextBox(String caption, String id, StringProperty prop)
+        {
+            super(caption, id, prop);
+            setRequired(true);
+            origName = prop.getString();
+            if (null == origName)
+                origName = "";
+        }
+
+        @Override
+        public String validateValue(String name)
+        {
+            String msg = super.validateValue(name);
+            if (null != msg)
+                return msg;
+            if (_listNames.contains(name) && !origName.equalsIgnoreCase(name))
+                return "The name '" + name + "' is already in use.";
+            return null;
+        }
+    }
+
+
+    private class _ListPropertiesEditor extends PropertiesEditor
+    {
+        _ListPropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync lookup)
+        {
+            super(owner, lookup);
+        }
+
+        private boolean isKeyRow(PropertiesEditor.Row row)
+        {
+            if (null == _list)
+                return false;
+            String name = (null == row.orig ? row.edit.getName() : row.orig.getName());
+            return name.equalsIgnoreCase(_list.getKeyPropertyName());
+        }
+
+        @Override
+        protected Image getStatusImage(String id, FieldStatus status, PropertiesEditor.Row row)
+        {
+            if (isKeyRow(row))
+            {
+                String name = (null == row.orig ? row.edit.getName() : row.orig.getName());
+                if (name.equalsIgnoreCase(_list.getKeyPropertyName()))
+                {
+                    String src = PropertyUtil.getContextPath() + "/_images/key.gif";
+                    Image i = new Image(src);
+                    i.setPixelSize(14, 21);
+                    DOM.setElementProperty(i.getElement(), "id", id);
+                    Tooltip.addTooltip(i, "primary key");
+                    return i;
+                }
+            }
+            return super.getStatusImage(id, status, row);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        protected boolean canDelete(Row row)
+        {
+            return !isKeyRow(row) && super.canDelete(row);
+        }
+    }
 }

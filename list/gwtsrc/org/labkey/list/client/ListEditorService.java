@@ -16,6 +16,7 @@
 
 package org.labkey.list.client;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.LookupService;
 
@@ -30,7 +31,22 @@ import java.util.Map;
  */
 public interface ListEditorService extends LookupService
 {
+    public static class DuplicateNameException extends Exception implements IsSerializable
+    {
+        public DuplicateNameException()
+        {
+            
+        }
+
+        public DuplicateNameException(String name)
+        {
+            super("The name '" + name + "' is already in use.");
+        }
+    }
+
     public GWTList getList(int id);
-    public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd);
-    public GWTDomain getDomainDescriptor(GWTList list);
+    public GWTList createList(GWTList list) throws DuplicateNameException;
+    public List<String> getListNames(); // names in use already
+    public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws Exception;
+    public GWTDomain getDomainDescriptor(GWTList list) throws Exception;
 }

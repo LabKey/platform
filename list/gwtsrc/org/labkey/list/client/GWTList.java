@@ -34,7 +34,7 @@ public class GWTList implements IsSerializable
     private StringProperty _description = new StringProperty();
 //    private StringProperty _getTypeURI = new StringProperty();
     private StringProperty _keyPropertyName = new StringProperty();
-    private StringProperty _keyPropertyType = new StringProperty();
+    public StringProperty keyPropertyType = new StringProperty();
     public StringProperty titleField = new StringProperty();
     private IntegerProperty _discussionSetting = new IntegerProperty();
     private BooleanProperty _allowDelete = new BooleanProperty();
@@ -45,8 +45,9 @@ public class GWTList implements IsSerializable
     {
     }
 
-    public GWTList(int x)
+    public GWTList(int id)
     {
+        _listId.set(id);
     }
 
     public int getListId()
@@ -101,12 +102,17 @@ public class GWTList implements IsSerializable
 
     public String getKeyPropertyType()
     {
-        return _keyPropertyType.getString();
+        return keyPropertyType.getString();
     }
 
     public void setKeyPropertyType(String keyPropertyType)
     {
-        _keyPropertyType.set(keyPropertyType);
+        if ("Integer".equals(keyPropertyType) || "AutoIncrementInteger".equals(keyPropertyType) || "Varchar".equals(keyPropertyType))
+        {
+            this.keyPropertyType.set(keyPropertyType);
+            return;
+        }
+        throw new IllegalArgumentException(keyPropertyType);
     }
 
     public String getTitleField()
@@ -131,7 +137,7 @@ public class GWTList implements IsSerializable
 
     public boolean getAllowDelete()
     {
-        return _allowDelete.getBool();
+        return _allowDelete.booleanValue();
     }
 
     public void setAllowDelete(boolean allowDelete)

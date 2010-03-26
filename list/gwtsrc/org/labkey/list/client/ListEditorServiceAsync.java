@@ -31,6 +31,8 @@ import java.util.List;
 public interface ListEditorServiceAsync extends LookupServiceAsync
 {
     void getList(int id, AsyncCallback<GWTList> async);
+    void createList(GWTList list, AsyncCallback<GWTList> async);
+    void getListNames(AsyncCallback<List<String>> async); // names in use already
     void updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
     void getDomainDescriptor(GWTList list, AsyncCallback<GWTDomain> async);
 }

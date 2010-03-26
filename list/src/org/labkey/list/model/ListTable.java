@@ -79,6 +79,13 @@ public class ListTable extends FilteredTable
         for (DomainProperty property : listDef.getDomain().getProperties())
         {
             PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, null, user);
+
+            if (property.getName().equalsIgnoreCase(colKey.getName()))
+            {
+                colKey.copyAttributesFrom(column);
+                continue;
+            }
+
             column.setParentIsObjectId(true);
             column.setReadOnly(false);
             column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn

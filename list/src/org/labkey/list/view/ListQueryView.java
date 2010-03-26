@@ -21,6 +21,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.ACL;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.springframework.validation.BindException;
 
@@ -65,7 +66,9 @@ public class ListQueryView extends QueryView
         }
         if (getViewContext().hasPermission(ACL.PERM_UPDATE))
         {
-            ActionButton btnUpload = new ActionButton("View Design", getList().urlFor(ListController.Action.showListDefinition));
+            ActionURL designURL = getList().urlFor(ListController.Action.showListDefinition);
+            designURL.addReturnURL(getViewContext().getActionURL());
+            ActionButton btnUpload = new ActionButton("View Design", designURL);
             bar.add(btnUpload);
         }
     }
