@@ -163,16 +163,12 @@ public class QueryServiceImpl extends QueryService
 
             for (Module module : modules)
             {
-                Resolver resolver = module.getModuleResolver();
-                Resource schemaDir = resolver.lookup(new Path("queries"));
-                if (schemaDir == null)
-                    continue;
-                
                 Collection<? extends Resource> queries = null;
 
                 //always scan the file system in dev mode
                 if (AppProps.getInstance().isDevMode())
                 {
+                    Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
                     queries = getModuleQueries(schemaDir);
                 }
                 else
@@ -183,6 +179,7 @@ public class QueryServiceImpl extends QueryService
 
                     if (null == queries)
                     {
+                        Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
                         queries = getModuleQueries(schemaDir);
                         _moduleResourcesCache.put(fileSetCacheKey, queries);
                     }
@@ -247,7 +244,7 @@ public class QueryServiceImpl extends QueryService
     {
         if (schemaDir == null)
             return Collections.emptyList();
-        
+
         Collection<? extends Resource> queries = schemaDir.list();
         List<Resource> result = new ArrayList<Resource>(queries.size());
         for (Resource query : queries)
