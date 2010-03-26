@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.*;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
 import org.labkey.api.gwt.client.util.StringProperty;
@@ -26,6 +28,9 @@ import org.labkey.api.gwt.client.util.StringUtils;
 */
 public class BoundTextBox extends HorizontalPanel
 {
+    protected final String _initialValue;
+    private final WidgetUpdatable _updateable;
+    private final DirtyCallback _dirtyCallback;
     protected TextBox _box;
     protected String _caption;
     private boolean _required;
@@ -45,56 +50,112 @@ public class BoundTextBox extends HorizontalPanel
         }, null);
     }
 
-    public BoundTextBox(String caption, String id, String initialValue, final WidgetUpdatable updatable, final DirtyCallback dirtyCallback)
+    public BoundTextBox(String caption, String id, String initialValue, WidgetUpdatable updatable, final DirtyCallback dirtyCallback)
     {
+        _initialValue = null==initialValue ? "" : initialValue;
+        _updateable = updatable;
+        _dirtyCallback = dirtyCallback;
         _caption = caption;
         _box = new TextBox();
         DOM.setElementAttribute(_box.getElement(), "id", id);
         _box.setText(StringUtils.trimToEmpty(initialValue));
-        _box.addFocusListener(new FocusListenerAdapter()
+        _box.addBlurHandler(new BlurHandler()
         {
-            public void onLostFocus(Widget sender)
+            public void onBlur(BlurEvent event)
             {
-                updatable.update(sender);
+                _update((Widget)event.getSource());
             }
         });
-        _box.addChangeListener(new ChangeListener()
+        _box.addChangeHandler(new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent change)
             {
-                updatable.update(sender);
+                _update((Widget)change.getSource());
             }
         });
-        _box.addKeyboardListener(new KeyboardListenerAdapter()
+        _box.addKeyPressHandler(new KeyPressHandler()
         {
-            public void onKeyPress(Widget sender, char keyCode, int modifiers)
+            public void onKeyPress(KeyPressEvent e)
             {
-                if (dirtyCallback != null)
-                {
-                    dirtyCallback.setDirty(true);
-                }
+                _dirty();
             }
         });
         add(_box);
     }
+
 
     public void setRequired(boolean required)
     {
         _required = required;
     }
 
-    public String validate()
+
+    void _update(Widget sender)
     {
-        if (_required)
+        if (checkValid())
+            _updateable.update(sender);
+    }
+
+
+    void _dirty()
+    {
+        checkValid();
+        if (_dirtyCallback != null && !_initialValue.equals(getBox().getText()))
+            _dirtyCallback.setDirty(true);
+    }
+
+
+    public boolean checkValid()
+    {
+        String value = _box.getText();
+        String msg = validateValue(value);
+        if (null == msg)
         {
-            if (_box.getText() == null || _box.getText().length() == 0)
-                return "\"" + _caption + "\" is required.";
+            clearErrorFormat(getBox());
+            return true;
         }
+        else
+        {
+            setErrorFormat(getBox(), msg, false);
+            return false;
+        }
+    }
+
+    public final String validate()
+    {
+        return validateValue(getBox().getText());
+    }
+
+
+    protected String validateValue(String text)
+    {
+        if (_required && text == null || text.length() == 0)
+            return "\"" + _caption + "\" is required.";
         return null;
     }
+
 
     public TextBox getBox()
     {
         return _box;
+    }
+
+
+
+    static void setErrorFormat(Widget w, String message, boolean alert)
+    {
+        if (null == message)
+            message = "illegal value";
+        
+        w.addStyleName("labkey-textbox-error");
+        w.setTitle(message);
+        if (alert)
+            Window.alert(message);
+    }
+
+    static void clearErrorFormat(Widget w)
+    {
+        w.removeStyleName("labkey-textbox-error");
+        w.setTitle("");
     }
 }

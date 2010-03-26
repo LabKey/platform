@@ -27,7 +27,7 @@ public class LinkButton extends Composite
 {
     public LinkButton(String html, final String link)
     {
-        this(html, link, false); 
+        this(html, link, false);
     }
 
     public LinkButton(String html, final String link, boolean isBracketStyle)

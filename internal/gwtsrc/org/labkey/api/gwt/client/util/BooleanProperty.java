@@ -50,7 +50,12 @@ public class BooleanProperty implements IPropertyWrapper, IsSerializable
 
     public void set(Object o)
     {
-        b = (Boolean)o;
+        if (o instanceof String)
+            b = Boolean.valueOf((String)o);
+        else if (o instanceof Boolean)
+            b = (Boolean)o;
+        else
+            throw new IllegalArgumentException(String.valueOf(o));
     }
 
     public Boolean getBoolean()
@@ -63,9 +68,15 @@ public class BooleanProperty implements IPropertyWrapper, IsSerializable
         this.b = Boolean.valueOf(b);
     }
 
+    public boolean booleanValue()
+    {
+        return b != null && b.booleanValue();
+    }
+
+    @Deprecated
     public boolean getBool()
     {
-        return b.booleanValue();
+        return b != null && b.booleanValue();
     }
 
     public String toString()

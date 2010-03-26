@@ -94,7 +94,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     protected DomainType _domain;
     ArrayList<Row> _rows;
 
-    private class Row
+    protected class Row
     {
         Row(FieldType p)
         {
@@ -102,9 +102,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             edit = (FieldType)p.copy();
         }
 
-        FieldType orig;
-        FieldType edit;
-        boolean deleted;
+        public FieldType orig;
+        public FieldType edit;
+        public boolean deleted;
     }
 
     public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service)
@@ -402,8 +402,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         if (index != -1)
         {
-            FieldStatus status = getStatus(pd);
-            boolean readOnly = isReadOnly(pd, getRow(index));
+            boolean readOnly = isReadOnly(getRow(index));
 
             int tableRow = index + 1;
 
@@ -439,7 +438,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected boolean isReorderable()
     {
-        return true;
+        return !_readOnly;
     }
     
     private void repositionExtraProperties()
@@ -469,19 +468,22 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
 
         final Row rowObject = _rows.get(index);
-        final int tableRow = index + 1;
+        refreshRow(index, rowObject);
+    }
+
+    public void refreshRow(final int index, final Row rowObject)
+    {
+        final FieldType pd = rowObject.edit;
+        int tableRow = index+1;
         int col = 0;
 
-        FieldStatus status = getStatus(pd);
-        boolean readOnly = isReadOnly(pd, rowObject);
-        boolean locked = isLocked(index);
+        FieldStatus status = getStatus(rowObject);
+        boolean readOnly = isReadOnly(rowObject);
 
-        Image statusImage = getStatusImage(Integer.toString(index), status);
+        String imageId = "part" + status.toString().toLowerCase() + "_" + index;
+        Image statusImage = getStatusImage(imageId, status, rowObject);
         if (status != FieldStatus.Existing)
-        {
             fireChangeEvent();
-            Tooltip.addTooltip(statusImage, status.getDescription());
-        }
         _table.setWidget(tableRow, col, statusImage);
         col++;
 
@@ -523,7 +525,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             _table.setText(tableRow, col++, "");
         }
 
-        if (!locked && !_readOnly && !_domain.isMandatoryField(pd))
+        if (!_readOnly && canDelete(rowObject))
         {
             if (status == FieldStatus.Deleted)
             {
@@ -618,7 +620,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
         nameTextBox.addFocusHandler(focusHandler);
-        nameTextBox.setEnabled(!locked && !readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
+        nameTextBox.setEnabled(!readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
         _table.setWidget(tableRow, col, nameTextBox);
 
         col++;
@@ -632,11 +634,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
         typePicker.addFocusHandler(focusHandler);
         typePicker.setRangeURI(pd.getRangeURI());
-        typePicker.setEnabled(isTypeEditable(pd, status) && !locked && !readOnly);
+        typePicker.setEnabled(isTypeEditable(pd, status) && !readOnly);
         _table.setWidget(tableRow, col, typePicker);
         col++;
 
-        if (!locked && !readOnly)
+        if (!readOnly)
         {
             PushButton l = getDownButton("lookup" + index, new ClickHandler()
             {
@@ -657,10 +659,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _table.getFlexCellFormatter().setWidth(tableRow, col, "900px");
     }
 
+
+    protected boolean canDelete(Row row)
+    {
+        if (_domain.isMandatoryField(row.edit))
+            return false;
+        return true;
+    }
+
+
     protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
     {
-        return pd.isEditable() && pd.isTypeEditable() && status == FieldStatus.Added;
+        return pd.isEditable() && status == FieldStatus.Added;
     }
+
 
     static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)
     {
@@ -697,11 +709,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return getImageButton("cancel", idSuffix, l);
     }
 
-    Image getStatusImage(Object idSuffix, FieldStatus status)
+    protected Image getStatusImage(String id, FieldStatus status, Row row)
     {
         String src = PropertyUtil.getContextPath() + "/_images/part" + status.toString().toLowerCase() + ".gif";
         Image i = new Image(src);
-        DOM.setElementProperty(i.getElement(), "id", "part" + status.toString().toLowerCase() + "_" + idSuffix);
+        DOM.setElementProperty(i.getElement(), "id", id);
+        Tooltip.addTooltip(i, status.getDescription());
         return i;
     }
 
@@ -710,21 +723,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return _rows.get(i);
     }
 
-
-    public boolean isLocked(int i)
-    {
-        return !_domain.isEditable(getRow(i).edit);
-    }
-
     /** @return ReadOnly status of the field. */
-    public boolean isReadOnly(FieldType fieldType, Row row)
+    public boolean isReadOnly(Row row)
     {
-        FieldStatus status = getStatus(fieldType);
-        GWTPropertyDescriptor pd = row.edit;
+        FieldType pd = row.edit;
+
+        if (_readOnly || !_domain.isEditable(pd))
+            return true;
+
+        if (FieldStatus.Deleted == getStatus(row))
+            return true;
 
         // new properties (no container) or those in the domain's container
         boolean inSameContainer = pd != null && (pd.getContainer() == null || pd.getContainer().equals(_domain.getContainer()));
-        return _readOnly || status == FieldStatus.Deleted || !inSameContainer;
+        return !inSameContainer;
     }
 
     public FieldStatus getStatus(GWTPropertyDescriptor pd)
@@ -735,6 +747,21 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         GWTPropertyDescriptor orig = getRow(i).orig;
         GWTPropertyDescriptor edit = getRow(i).edit;
+
+        if (orig == null)
+            return FieldStatus.Added;
+
+        return edit.equals(orig) ? FieldStatus.Existing : FieldStatus.Changed;
+    }
+
+
+    public FieldStatus getStatus(Row row)
+    {
+        if (row.deleted)
+            return FieldStatus.Deleted;
+
+        GWTPropertyDescriptor orig = row.orig;
+        GWTPropertyDescriptor edit = row.edit;
 
         if (orig == null)
             return FieldStatus.Added;
@@ -881,8 +908,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public void setReadOnly(boolean readOnly)
     {
+        if (_readOnly == readOnly)
+            return;
         _readOnly = readOnly;
         refreshButtons(_buttonPanel);
+        refresh();
     }
 
     public void addChangeListener(ChangeListener cl)

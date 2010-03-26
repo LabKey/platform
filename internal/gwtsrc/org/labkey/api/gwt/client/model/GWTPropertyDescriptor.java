@@ -64,7 +64,7 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     // for controlling the property editor (not persisted or user settable)
     private boolean isEditable = true;
-    private boolean isTypeEditable = true;
+//    private boolean isTypeEditable = true;
     private boolean isNameEditable = true;
 
     
@@ -546,15 +546,15 @@ public class GWTPropertyDescriptor implements IsSerializable
         return isEditable;
     }
 
-    public void setTypeEditable(boolean b)
-    {
-        isTypeEditable = b;
-    }
-
-    public boolean isTypeEditable()
-    {
-        return isTypeEditable;
-    }
+//    public void setTypeEditable(boolean b)
+//    {
+//        isTypeEditable = b;
+//    }
+//
+//    public boolean isTypeEditable()
+//    {
+//        return isTypeEditable;
+//    }
 
     public void setNameEditable(boolean b)
     {
