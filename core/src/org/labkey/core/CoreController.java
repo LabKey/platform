@@ -399,8 +399,8 @@ public class CoreController extends SpringActionController
                 for (String path : scripts)
                 {
                     WebdavResource script = r.lookup(Path.parse(path));
-                    assert(script.isFile());
-                    if (!script.isFile())
+                    assert(script != null && script.isFile()) : "Failed to find: " + path;
+                    if (script == null || !script.isFile())
                         continue;
                     concat.add("/* ---- " + path + " ---- */");
                     List<String> content = PageFlowUtil.getStreamContentsAsList(script.getInputStream(getUser()));

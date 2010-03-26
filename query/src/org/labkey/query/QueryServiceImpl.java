@@ -165,6 +165,9 @@ public class QueryServiceImpl extends QueryService
             {
                 Resolver resolver = module.getModuleResolver();
                 Resource schemaDir = resolver.lookup(new Path("queries"));
+                if (schemaDir == null)
+                    continue;
+                
                 Collection<? extends Resource> queries = null;
 
                 //always scan the file system in dev mode
@@ -178,7 +181,7 @@ public class QueryServiceImpl extends QueryService
                     String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
                     queries = (Collection<? extends Resource>)_moduleResourcesCache.get(fileSetCacheKey);
 
-                    if (null == queries && schemaDir.exists())
+                    if (null == queries)
                     {
                         queries = getModuleQueries(schemaDir);
                         _moduleResourcesCache.put(fileSetCacheKey, queries);
