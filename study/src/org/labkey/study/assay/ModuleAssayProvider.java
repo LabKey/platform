@@ -52,7 +52,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.*;
 
@@ -78,6 +77,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private static final String UPLOAD_VIEW_FILENAME = "upload.html";
     private static final String BEGIN_VIEW_FILENAME = "begin.html";
 
+    private Resource basePath;
     private Resolver resolver;
     private String name;
     private String description;
@@ -90,7 +90,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
 
-    public ModuleAssayProvider(String name, Resolver resolver, ProviderType providerConfig)
+    public ModuleAssayProvider(String name, Resolver resolver, Resource basePath, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
         _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey())
@@ -129,6 +129,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         };
         this.name = name;
         this.resolver = resolver;
+        this.basePath = basePath;
 
         init(providerConfig);
     }
@@ -174,7 +175,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws IOException, XmlException
     {
-        Resource domainFile = resolver.lookup(new Path(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
+        Resource domainFile = resolver.lookup(basePath.getPath().append(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
         if (domainFile == null || !domainFile.exists())
             return null;
 
@@ -305,7 +306,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected boolean hasCustomView(String viewResourceName)
     {
-        return resolver.lookup(new Path("views", viewResourceName)) != null;
+        return resolver.lookup(basePath.getPath().append("views", viewResourceName)) != null;
     }
 
     @Override
@@ -316,7 +317,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected ModelAndView getCustomView(String viewResourceName)
     {
-        Resource viewResource = resolver.lookup(new Path("views", viewResourceName));
+        Resource viewResource = resolver.lookup(basePath.getPath().append("views", viewResourceName));
         if (viewResource != null && viewResource.exists())
         {
             ModuleHtmlView view = new ModuleHtmlView(viewResource);
@@ -520,7 +521,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
             // lazily get the validation scripts
-            Resource scriptDir = resolver.lookup(new Path("scripts"));
+            Resource scriptDir = resolver.lookup(basePath.getPath().append("scripts"));
 
             if (scriptDir != null && scriptDir.exists())
             {
