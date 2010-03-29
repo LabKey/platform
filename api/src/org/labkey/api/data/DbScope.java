@@ -120,6 +120,15 @@ public class DbScope
         return _dsName;
     }
 
+    // Strip off "DataSource" to create friendly name.  TODO: Add UI to allow site admin to add friendly name to each data source.
+    public String getDisplayName()
+    {
+        if (_dsName.endsWith("DataSource"))
+            return _dsName.substring(0, _dsName.length() - 10);
+        else
+            return _dsName;
+    }
+
     public DataSource getDataSource()
     {
         return _dataSource;

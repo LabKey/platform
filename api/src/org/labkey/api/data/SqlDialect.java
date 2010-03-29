@@ -511,6 +511,7 @@ public abstract class SqlDialect
         return systemTableSet.contains(tableName);
     }
 
+    public abstract boolean isSystemSchema(String schemaName);
 
     public boolean isReserved(String word)
     {
