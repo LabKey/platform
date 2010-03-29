@@ -150,6 +150,7 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
             text: 'Schemas',
             expanded: true,
             expandable: false,
+            rootVisible:false,
             draggable: false,
             listeners: {
                 load: {
@@ -1512,11 +1513,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     selectSchema : function(schemaName) {
         var tree = this.getComponent("lk-sb-tree");
-        var root = tree.getRootNode();
-        var schemaToFind = schemaName.toLowerCase();
-        var schemaNode = root.findChildBy(function(node){
-            return node.attributes.schemaName && node.attributes.schemaName.toLowerCase() == schemaToFind;
-        });
+        var schemaNode = getSchemaNode(tree, schemaName);
+
         if (schemaNode)
         {
             tree.selectPath(schemaNode.getPath());
@@ -1529,8 +1527,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     selectQuery : function(schemaName, queryName, callback, scope) {
         var tree = this.getComponent("lk-sb-tree");
-        var root = tree.getRootNode();
-        var schemaNode = root.findChildBy(function(node){return node.attributes.schemaName.toLowerCase() == schemaName.toLowerCase();});
+        var schemaNode = getSchemaNode(tree, schemaName);
         if (!schemaNode)
         {
             Ext.Msg.alert("Missing Schema", "The schema '" +  Ext.util.Format.htmlEncode(schemaName) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
@@ -1557,6 +1554,24 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         });
     }
 });
+
+function getSchemaNode(tree, schemaName)
+{
+    var root = tree.getRootNode();
+
+    var dataSourceNodes = root.childNodes;
+    var schemaToFind = schemaName.toLowerCase();
+    var schemaNode;
+
+    for (var i = 0; !schemaNode && i < dataSourceNodes.length; i++)
+    {
+        schemaNode = dataSourceNodes[i].findChildBy(function(node){
+            return node.attributes.schemaName && node.attributes.schemaName.toLowerCase() == schemaToFind;
+        });
+    }
+
+    return schemaNode;
+}
 
 //adapted from http://www.extjs.com/deploy/dev/examples/tabs/tabs-adv.js
 Ext.ux.TabCloseMenu = function(){

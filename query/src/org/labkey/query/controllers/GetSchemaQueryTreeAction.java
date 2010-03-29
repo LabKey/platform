@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: dave
  * Date: Sep 3, 2009
  * Time: 1:09:00 PM
@@ -43,7 +42,6 @@ import java.util.*;
 @RequiresPermissionClass(ReadPermission.class)
 public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction.Form>
 {
-
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         JSONArray respArray = new JSONArray();
@@ -53,12 +51,23 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
         if ("root".equals(form.getNode()))
         {
-            //return list of schemas
+            Map<String, JSONArray> map = new LinkedHashMap<String, JSONArray>();
+
+            //return list of schemas grouped by datasource
             for (String name : defSchema.getUserSchemaNames())
             {
                 QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
                 if (null == schema)
                     continue;
+
+                String dsName = schema.getDbSchema().getScope().getDataSourceName();
+                JSONArray schemas = map.get(dsName);
+
+                if (null == schemas)
+                {
+                    schemas = new JSONArray();
+                    map.put(dsName, schemas);
+                }
 
                 JSONObject schemaProps = new JSONObject();
                 schemaProps.put("id", "s:" + name);
@@ -67,9 +76,23 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
                 schemaProps.put("schemaName", name);
 
-                respArray.put(schemaProps);
+                schemas.put(schemaProps);
             }
 
+            for (Map.Entry<String, JSONArray> scope : map.entrySet())
+            {
+                String dsName = scope.getKey();
+                JSONArray schemas = scope.getValue();
+                JSONObject ds = new JSONObject();
+                ds.put("id", "ds:" + dsName);
+                ds.put("text", dsName);
+                ds.put("qtip", "Schemas in data source '" + dsName + "'");
+                ds.put("expanded", true);
+                ds.put("children", schemas);
+                ds.put("dataSourceName", dsName);
+
+                respArray.put(ds);
+            }
         }
         else
         {
@@ -78,6 +101,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
             {
                 String schemaName = form.getNode().substring(2);
                 QuerySchema schema = defSchema.getSchema(schemaName);
+
                 if (null != schema && schema instanceof UserSchema)
                 {
                     UserSchema uschema = (UserSchema)schema;
@@ -102,7 +126,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     }
 
                     //get user-defined queries
-                    Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(container, uschema.getSchemaName());
+                    Map<String, QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(container, uschema.getSchemaName());
                     queryNames = new ArrayList<String>(queryDefMap.keySet());
                     Collections.sort(queryNames, new Comparator<String>(){
                         public int compare(String name1, String name2)
@@ -110,6 +134,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                             return name1.compareToIgnoreCase(name2);
                         }
                     });
+
                     for (String qname : queryNames)
                     {
                         QueryDefinition qdef = queryDefMap.get(qname);

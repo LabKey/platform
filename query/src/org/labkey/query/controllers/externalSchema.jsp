@@ -59,12 +59,23 @@
         out.print(sep);
         out.print("        [");
         out.print("'" + scope.getDataSourceName() + "', ");
-        out.print("'" + getDisplayName(scope.getDataSourceName()) + "', ");
+        out.print("'" + scope.getDisplayName() + "', ");
         out.print(scope.getSqlDialect().isEditable() + ", [");
 
         String sep2 = "";
 
-        for (String schemaName : bean.getSchemaNames(scope))
+        for (String schemaName : bean.getSchemaNames(scope, false))
+        {
+            out.print(sep2);
+            out.print("'" + schemaName + "'");
+            sep2 = ",";
+        }
+
+        out.print("], [");
+
+        sep2 = "";
+
+        for (String schemaName : bean.getSchemaNames(scope, true))
         {
             out.print(sep2);
             out.print("'" + schemaName + "'");
@@ -83,10 +94,11 @@
     ];
 
 var store = new Ext.data.SimpleStore({
-    fields:['value', 'name', 'editable', 'schemas'],
+    fields:['value', 'name', 'editable', 'schemas', 'schemasWithSystem'],
     data:dataSources
 });
 
+var schemaIndex = 3;
 var dataSourceCombo;
 var dbSchemaCombo;
 var userSchemaText;
@@ -101,7 +113,8 @@ var f = new LABKEY.ext.FormPanel({
         items:[
             // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
             dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', helpPopup:{title:'Data Source', html:'<%=bean.getHelpHTML("DataSource")%>'}, value:dataSources[<%=coreIndex%>][0]}),
-            // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out). 
+            includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem', fieldLabel:'Include System Schemas', helpPopup:{title:'Include System Schemas', html:'<%=bean.getHelpHTML("includeSystem")%>'}}),
+            // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
             dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, value:<%=q(h(def.getDbSchemaName()))%>}),
             userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:'<%=bean.getHelpHTML("UserSchemaName")%>'}, value:<%=q(h(def.getUserSchemaName()))%>}),
             editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:'<%=bean.getHelpHTML("Editable")%>'}}),
@@ -116,6 +129,7 @@ Ext.onReady(function()
     f.render('form');
     new Ext.Resizable(metaDataTextArea.el, {handles:'se', wrap:true});
     dataSourceCombo.on('select', dataSourceCombo_onSelect);
+    includeSystemCheckBox.on('check', includeSystemCheckBox_onCheck);
     dbSchemaCombo.on('select', dbSchemaCombo_onSelect);
     initEditable(<%=def.isEditable()%>, <%=initialScope.getSqlDialect().isEditable()%>);
 });
@@ -125,9 +139,15 @@ function dataSourceCombo_onSelect()
 {
     userSchemaText.setValue("");
     var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
-    dbSchemaCombo.store.loadData(dataSources[dataSourceIndex][3]);
+    dbSchemaCombo.store.loadData(dataSources[dataSourceIndex][schemaIndex]);
     dbSchemaCombo.setValue("");
     dbSchemaCombo_onSelect();  // reset all fields that depend on database schema name
+}
+
+function includeSystemCheckBox_onCheck()
+{
+    schemaIndex = includeSystemCheckBox.getValue() ? 4 : 3;
+    dataSourceCombo_onSelect();
 }
 
 // Default to schema name = database schema name, editable false, editable disabled for non-editable scopes, meta data blank
@@ -145,13 +165,3 @@ function initEditable(value, enabled)
     editableCheckBox.setDisabled(!enabled);
 }
 </script>
-<%!
-    // Strip off "DataSource" to create friendly name.  TODO: Add UI to allow site admin to add friendly name to each data source.
-    private String getDisplayName(String dsName)
-    {
-        if (dsName.endsWith("DataSource"))
-            dsName = dsName.substring(0, dsName.length() - 10);
-
-        return dsName;
-    }
-%>

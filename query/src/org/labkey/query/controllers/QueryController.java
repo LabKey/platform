@@ -2261,6 +2261,7 @@ public class QueryController extends SpringActionController
     public static class ExternalSchemaBean
     {
         private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
+        private final Map<DbScope, Collection<String>> _scopesAndSchemasIncludingSystem = new LinkedHashMap<DbScope, Collection<String>>();
         private final Container _c;
         private final DbUserSchemaDef _def;
         private final boolean _insert;
@@ -2277,6 +2278,7 @@ public class QueryController extends SpringActionController
             {
                 Connection con = null;
                 ResultSet rs = null;
+                SqlDialect dialect = scope.getSqlDialect();
 
                 try
                 {
@@ -2286,11 +2288,20 @@ public class QueryController extends SpringActionController
                     rs = dbmd.getSchemas();
 
                     Collection<String> schemaNames = new LinkedList<String>();
+                    Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
 
                     while(rs.next())
-                        schemaNames.add(rs.getString(1).trim());
+                    {
+                        String schemaName = rs.getString(1).trim();
+
+                        if (!dialect.isSystemSchema(schemaName))
+                            schemaNames.add(schemaName);
+
+                        schemaNamesIncludingSystem.add(schemaName);
+                    }
 
                     _scopesAndSchemas.put(scope, schemaNames);
+                    _scopesAndSchemasIncludingSystem.put(scope, schemaNamesIncludingSystem);
                 }
                 catch (SQLException e)
                 {
@@ -2326,9 +2337,12 @@ public class QueryController extends SpringActionController
             return _scopesAndSchemas.keySet();
         }
 
-        public Collection<String> getSchemaNames(DbScope scope)
+        public Collection<String> getSchemaNames(DbScope scope, boolean includeSystem)
         {
-            return _scopesAndSchemas.get(scope);
+            if (includeSystem)
+                return _scopesAndSchemasIncludingSystem.get(scope);
+            else
+                return _scopesAndSchemas.get(scope);
         }
 
         public DbUserSchemaDef getSchemaDef()
@@ -2946,7 +2960,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermissionClass(ReadPermission.class)
     @ApiVersion(9.3)
-    public class    GetSchemasAction extends ApiAction
+    public class GetSchemasAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
@@ -2971,7 +2985,6 @@ public class QueryController extends SpringActionController
                 }
 
                 return resp;
-
             }
             else
                 return new ApiSimpleResponse("schemas", DefaultSchema.get(getViewContext().getUser(),

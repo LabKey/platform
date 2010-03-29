@@ -271,6 +271,12 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "pg_logdir_ls";
     }
 
+    @Override
+    public boolean isSystemSchema(String schemaName)
+    {
+        return schemaName.equals("information_schema") || schemaName.equals("pg_catalog") || schemaName.startsWith("pg_toast_temp_");
+    }
+
     public String sanitizeException(SQLException ex)
     {
         if ("22001".equals(ex.getSQLState()))

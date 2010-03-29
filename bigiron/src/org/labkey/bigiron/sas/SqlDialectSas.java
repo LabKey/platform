@@ -18,13 +18,13 @@ package org.labkey.bigiron.sas;
 import junit.framework.TestSuite;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Calendar;
+import java.sql.Date;
+import java.util.*;
 
 /**
  * User: adam
@@ -270,6 +270,15 @@ public abstract class SqlDialectSas extends SqlDialect
     public String getBooleanDatatype()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+
+    private static final Set<String> SYSTEM_SCHEMAS = PageFlowUtil.set("MAPS", "SASADMIN", "SASCATCA", "SASHELP", "SASUSER", "WORK");
+
+    @Override
+    public boolean isSystemSchema(String schemaName)
+    {
+        return SYSTEM_SCHEMAS.contains(schemaName);
     }
 
     @Override

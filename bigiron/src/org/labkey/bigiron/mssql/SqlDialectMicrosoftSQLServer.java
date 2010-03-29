@@ -29,6 +29,7 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 
@@ -369,6 +370,15 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "dtproperties,sysconstraints,syssegments";
     }
 
+    private static final Set<String> SYSTEM_SCHEMAS = PageFlowUtil.set("db_accessadmin", "db_backupoperator",
+        "db_datareader", "db_datawriter", "db_ddladmin", "db_denydatareader", "db_denydatawriter", "db_owner",
+        "db_securityadmin", "guest", "INFORMATION_SCHEMA", "sys");
+
+    @Override
+    public boolean isSystemSchema(String schemaName)
+    {
+        return SYSTEM_SCHEMAS.contains(schemaName);
+    }
 
     public String getColumnSelectName(String columnName)
     {
