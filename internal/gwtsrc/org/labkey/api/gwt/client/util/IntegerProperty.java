@@ -64,6 +64,12 @@ public class IntegerProperty implements IPropertyWrapper, IsSerializable
         this.i = new Integer(i);
     }
 
+    public int intValue()
+    {
+        return null==i ? 0 : i.intValue();
+    }
+
+    @Deprecated
     public int getInt()
     {
         return i.intValue();

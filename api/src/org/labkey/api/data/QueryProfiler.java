@@ -587,7 +587,7 @@ public class QueryProfiler
             try
             {
                 //noinspection InfiniteLoopStatement
-                while (true)
+                while (!interrupted())
                 {
                     Query query = QUEUE.take();
 
