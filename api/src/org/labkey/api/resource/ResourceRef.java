@@ -16,7 +16,7 @@
 package org.labkey.api.resource;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.util.HeartBeatThread;
+import org.labkey.api.util.HeartBeat;
 
 import java.util.HashSet;
 
@@ -24,7 +24,7 @@ import java.util.HashSet;
  * Base-class for resource references. This class provides
  * some basic functionality, such as tracking if this instance is stale compared
  * to the resource and it's dependencies and tries to not hit the file-system
- * too frequently by using the HeartBeatThread.
+ * too frequently by using the HeartBeat.
  */
 public class ResourceRef
 {
@@ -40,7 +40,7 @@ public class ResourceRef
     {
         _resource = resource;
         _version = resource.getVersionStamp();
-        _counter = HeartBeatThread.counter;
+        _counter = HeartBeat.counter;
     }
 
     public Resource getResource()
@@ -55,7 +55,7 @@ public class ResourceRef
 
     public boolean isStale()
     {
-        int counter = HeartBeatThread.counter;
+        int counter = HeartBeat.getCounter();
         if (_counter == counter)
             return false;
         _counter = counter;

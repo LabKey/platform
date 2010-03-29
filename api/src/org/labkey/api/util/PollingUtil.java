@@ -137,7 +137,7 @@ public class PollingUtil
 
         void accessed()
         {
-            lastAccessed = System.currentTimeMillis();
+            lastAccessed = HeartBeat.currentTimeMillis();
         }
 
         public String getUrl()
@@ -172,7 +172,7 @@ public class PollingUtil
                 key.map.get(key.key);
                 return false;
             }
-            long age = (System.currentTimeMillis() - key.lastAccessed)/(60*1000);
+            long age = (HeartBeat.currentTimeMillis() - key.lastAccessed)/(60*1000);
             return age > 30;
         }
     }

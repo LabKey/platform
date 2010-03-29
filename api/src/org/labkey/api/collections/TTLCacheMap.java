@@ -17,6 +17,7 @@
 package org.labkey.api.collections;
 
 import org.apache.commons.lang.time.DateUtils;
+import org.labkey.api.util.HeartBeat;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -84,7 +85,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
         private boolean expired()
         {
-            return getValue() == null || _expires != -1 && System.currentTimeMillis() > _expires;
+            return getValue() == null || _expires != -1 && HeartBeat.currentTimeMillis() > _expires;
         }
     }
 
@@ -134,7 +135,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
         Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);
-        ((TTLCacheEntry) e)._expires = timeToLive == -1 ? -1 : System.currentTimeMillis() + timeToLive;
+        ((TTLCacheEntry) e)._expires = timeToLive == -1 ? -1 : HeartBeat.currentTimeMillis() + timeToLive;
         testOldestEntry();
         trackPut(value);
         return prev;
