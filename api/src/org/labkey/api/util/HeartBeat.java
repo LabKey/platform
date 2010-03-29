@@ -60,7 +60,7 @@ public class HeartBeat
 
     private static class HeartBeatThread extends Thread implements ShutdownListener
     {
-        private static volatile boolean _shutdown = false;
+        private volatile boolean _shutdown = false;
 
         HeartBeatThread()
         {
@@ -90,6 +90,7 @@ public class HeartBeat
                     counter++;
                 }
             }
+            //_log.debug("shutdown heartbeat");
         }
 
         public void shutdownPre(ServletContextEvent servletContextEvent)
