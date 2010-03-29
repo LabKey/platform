@@ -33,10 +33,10 @@ public class GWTList implements IsSerializable
     public StringProperty name = new StringProperty();
     private StringProperty _description = new StringProperty();
 //    private StringProperty _getTypeURI = new StringProperty();
-    private StringProperty _keyPropertyName = new StringProperty();
+    public StringProperty keyPropertyName = new StringProperty();
     public StringProperty keyPropertyType = new StringProperty();
     public StringProperty titleField = new StringProperty();
-    private IntegerProperty _discussionSetting = new IntegerProperty();
+    private IntegerProperty _discussionSetting = new IntegerProperty(0); // DiscussionSetting.None
     private BooleanProperty _allowDelete = new BooleanProperty();
     private BooleanProperty _allowUpload = new BooleanProperty();
     private BooleanProperty _allowExport = new BooleanProperty();
@@ -62,12 +62,12 @@ public class GWTList implements IsSerializable
 
     public String getKeyPropertyName()
     {
-        return _keyPropertyName.getString();
+        return keyPropertyName.getString();
     }
 
     public void setKeyPropertyName(String keyPropertyName)
     {
-        this._keyPropertyName.set(keyPropertyName);
+        this.keyPropertyName.set(keyPropertyName);
     }
 
     public String getName()
@@ -127,7 +127,7 @@ public class GWTList implements IsSerializable
 
     public int getDiscussionSetting()
     {
-        return _discussionSetting.getInt();
+        return _discussionSetting.intValue();
     }
 
     public void setDiscussionSetting(int setting)

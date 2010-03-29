@@ -30,6 +30,7 @@ import com.google.gwt.dom.client.Node;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.StringProperty;
@@ -52,6 +53,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     private HashSet<String> _listNames = new HashSet<String>();
     private GWTList _list;
     private GWTDomain _domain;
+    private BooleanProperty _importFromFile = new BooleanProperty(false);
+    
 
     // UI bits
     private RootPanel _root = null;
@@ -170,6 +173,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 public void onClick(ClickEvent event)
                 {
                     if (null != _list && _list.getName() != null && _list.getName().length() > 0)
+                    {
                         _service.createList(_list, new AsyncCallback<GWTList>(){
                             public void onFailure(Throwable caught)
                             {
@@ -178,10 +182,11 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
                             public void onSuccess(GWTList result)
                             {
+                                setReadOnly(false);
                                 setList(result);
                             }
                         });
-                    Window.alert("create");
+                    }
                 }
             }));
         }
@@ -191,7 +196,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
         else
         {
-            _buttons.setWidget(0, col++, new ImageButton("edit design", new ClickHandler(){
+            _buttons.setWidget(0, col++, new ImageButton("Edit Design", new ClickHandler(){
                 public void onClick(ClickEvent event)
                 {
                     setReadOnly(false);
@@ -200,7 +205,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             if (canDeleteList() && _listId != 0)
             {
-                _buttons.setWidget(0, col++, (new ImageButton("delete list", new ClickHandler(){
+                _buttons.setWidget(0, col++, (new ImageButton("Delete List", new ClickHandler(){
                     public void onClick(ClickEvent event)
                     {
                         WindowUtil.setLocation("deleteListDefinition.view?listId=" + _listId);
@@ -210,7 +215,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             if (canInsert() && _listId != 0)
             {
-                _buttons.setWidget(0, col++, new ImageButton("import data", new ClickHandler(){
+                _buttons.setWidget(0, col++, new ImageButton("Import Data", new ClickHandler(){
                     public void onClick(ClickEvent event)
                     {
                         WindowUtil.setLocation("uploadListItems.view?listId=" + _listId);
@@ -253,6 +258,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public void setList(GWTList ds)
     {
+        _listId = ds.getListId();
         _list = ds;
         asyncGetDefinition();
     }
@@ -542,22 +548,52 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             Widget listNameTextBox = new _ListNameTextBox("Name", "ff_name", _list.name);
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Name"));
-            //panel.add(new HelpPopup("Name", "Name of this List"));
+            panel.add(new HelpPopup("Name", "Name of new list"));
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row, 1, listNameTextBox);
             row++;
             }
 
+            // PK NAME
+            {
+                _list.setKeyPropertyName("Key");
+                BoundTextBox name = new BoundTextBox("Primary Key Name", "ff_keyName", _list.keyPropertyName);
+                name.setRequired(true);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Primary Key"));
+                panel.add(new HelpPopup("Primary Key", "What is the name of the key in your list?"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, name);
+                row++;
+            }
+
             // PK TYPE
             {
-                BoundListBox type = new BoundListBox(false, _list.keyPropertyType, null);
+                _list.keyPropertyType.set("AutoIncrementInteger");
+                BoundListBox type = new BoundListBox("ff_keyType", false, _list.keyPropertyType, null);
+                type.addItem("Auto-Increment Integer", "AutoIncrementInteger");
+                type.addItem("Integer", "Integer");
+                type.addItem("Text (String)", "Varchar");
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Name"));
-                //panel.add(new HelpPopup("Name", "Name of this List"));
+                panel.add(new HelpPopup("Key Type", "Every item in a list has a key value which uniquely identifies that item. What is the data type of the key in your list?"));
                 _table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
                 _table.setWidget(row, 1, type);
+                row++;
+            }
+
+            // IMPORT
+            {
+                CheckBox importFile = new BoundCheckBox("fileImport", _importFromFile, null);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Import from file"));
+                panel.add(new HelpPopup("Import from file", "Use this option if you have a spreadsheet that you would like uploaded as a list."));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, importFile);
                 row++;
             }
         }
@@ -644,7 +680,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             {
                 Widget titleListBox = readonly ?
                         new Label(_list.getTitleField()) :
-                        new BoundListBox(false, _list.titleField, null);
+                        new BoundListBox("ff_title", false, _list.titleField, null);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Title Field"));
                 //panel.add(new HelpPopup("Name", "Name of this List"));
@@ -1073,6 +1109,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             if (null == _list)
                 return false;
             String name = (null == row.orig ? row.edit.getName() : row.orig.getName());
+            if (null == name)
+                return false;
             return name.equalsIgnoreCase(_list.getKeyPropertyName());
         }
 

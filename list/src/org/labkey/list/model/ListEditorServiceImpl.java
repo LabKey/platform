@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlDialect;
@@ -28,6 +29,8 @@ import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.client.GWTList;
 import org.labkey.list.client.ListEditorService;
@@ -50,17 +53,17 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
     public GWTList createList(GWTList list) throws DuplicateNameException
     {
+        if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
+            throw new UnauthorizedException();
         if (list.getListId() != 0)
             throw new IllegalArgumentException();
-        
-        ListDef def = new ListDef();
-        update(def, list);
 
         try
         {
-            ListManager.get().insert(getUser(), def);
-            int listId = def.getRowId();
-            return getList(listId);
+            ListDefinition definition = ListService.get().createList(getContainer(), list.getName());
+            update(definition, list);
+            definition.save(getUser());
+            return getList(definition.getListId());
         }
         catch (SQLException x)
         {
@@ -115,13 +118,29 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         def.setDescription(gwt.getDescription());
         def.setDiscussionSetting(gwt.getDiscussionSetting());
         def.setKeyName(gwt.getKeyPropertyName());
+        def.setKeyType(gwt.getKeyPropertyType());
         def.setTitleColumn(gwt.getTitleField());
     }
 
 
+    private void update(ListDefinition def, GWTList gwt)
+    {
+        def.setAllowDelete(gwt.getAllowDelete());
+        def.setAllowExport(gwt.getAllowExport());
+        def.setAllowUpload(gwt.getAllowUpload());
+        def.setDescription(gwt.getDescription());
+        def.setDiscussionSetting(ListDefinition.DiscussionSetting.getForValue(gwt.getDiscussionSetting()));
+        def.setKeyName(gwt.getKeyPropertyName());
+        def.setKeyType(ListDefinition.KeyType.valueOf(gwt.getKeyPropertyType()));
+        def.setTitleColumn(gwt.getTitleField());
+    }
+
 
     public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws ListEditorService.DuplicateNameException
     {
+        if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
+            throw new UnauthorizedException();
+
         DbScope scope = ListManager.get().getSchema().getScope();
         
         ListDef def = ListManager.get().getList(getContainer(), list.getListId());
