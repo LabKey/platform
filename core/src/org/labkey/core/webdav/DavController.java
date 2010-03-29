@@ -2731,7 +2731,7 @@ public class DavController extends SpringActionController
         {
             boolean allowCaching = AppProps.getInstance().isCachingAllowed();
             if (allowCaching || alwaysCacheFile(resource.getPath()))
-                getResponse().setExpires(System.currentTimeMillis() + 35*24*60*60*1000L, "public");
+                getResponse().setExpires(HeartBeat.currentTimeMillis() + 35*24*60*60*1000L, "public");
         }
 
         // Get content length
@@ -3994,7 +3994,7 @@ public class DavController extends SpringActionController
          */
         boolean hasExpired()
         {
-            return (System.currentTimeMillis() > expiresAt);
+            return (HeartBeat.currentTimeMillis() > expiresAt);
         }
 
 
@@ -4042,7 +4042,7 @@ public class DavController extends SpringActionController
             generatedXML.writeElement(null, "owner", XMLWriter.CLOSING);
 
             generatedXML.writeElement(null, "timeout", XMLWriter.OPENING);
-            long timeout = (expiresAt - System.currentTimeMillis()) / 1000;
+            long timeout = (expiresAt - HeartBeat.currentTimeMillis()) / 1000;
             generatedXML.writeText("Second-" + timeout);
             generatedXML.writeElement(null, "timeout", XMLWriter.CLOSING);
 

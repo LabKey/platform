@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
@@ -94,21 +95,15 @@ public class StudyPipeline extends PipelineProvider
     private static long lastTime = 0;
     private static final Object timeLock = new Object();
 
+    /** return a unique time (rounded to the nearest second) */
     private static long currentSeconds()
     {
         synchronized(timeLock)
         {
-            while (true)
-            {
-                long sec = System.currentTimeMillis();
-                sec -= sec % 1000;
-                if (sec != lastTime)
-                {
-                    lastTime = sec;
-                    return sec;
-                }
-                try {Thread.sleep(500);} catch(InterruptedException x){/* */}
-            }
+            long sec = HeartBeat.currentTimeMillis();
+            sec -= sec % 1000;
+            lastTime = Math.max(sec, lastTime+1000);
+            return lastTime;
         }
     }
 
