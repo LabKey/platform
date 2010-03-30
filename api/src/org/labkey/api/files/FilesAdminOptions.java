@@ -43,6 +43,13 @@ public class FilesAdminOptions
     private List<PipelineActionConfig> _pipelineConfig = new ArrayList<PipelineActionConfig>();
     private Container _container;
     private Map<String, PipelineActionConfig> _configMap = new HashMap<String, PipelineActionConfig>();
+    private fileConfig _fileConfig = fileConfig.useDefault;
+
+    public enum fileConfig {
+        useDefault,
+        useCustom,
+        useParent,
+    }
 
     public FilesAdminOptions(Container c, String xml)
     {
@@ -68,6 +75,10 @@ public class FilesAdminOptions
             if (pipeOptions != null)
             {
                 _importDataEnabled = pipeOptions.getImportEnabled();
+
+                if (pipeOptions.getFilePropertiesConfig() != null)
+                    _fileConfig = fileConfig.valueOf(pipeOptions.getFilePropertiesConfig());
+
                 ActionOptions actionOptions = pipeOptions.getActionConfig();
                 if (actionOptions != null)
                 {
@@ -148,6 +159,16 @@ public class FilesAdminOptions
         _container = container;
     }
 
+    public fileConfig getFileConfig()
+    {
+        return _fileConfig;
+    }
+
+    public void setFileConfig(fileConfig fileConfig)
+    {
+        _fileConfig = fileConfig;
+    }
+
     public String serialize()
     {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -156,6 +177,7 @@ public class FilesAdminOptions
             PipelineOptionsDocument.PipelineOptions pipelineOptions = doc.addNewPipelineOptions();
 
             pipelineOptions.setImportEnabled(isImportDataEnabled());
+            pipelineOptions.setFilePropertiesConfig(_fileConfig.name());
             
             if (!_pipelineConfig.isEmpty())
             {
@@ -220,6 +242,9 @@ public class FilesAdminOptions
         if (props.containsKey("importDataEnabled"))
             options.setImportDataEnabled((Boolean)props.get("importDataEnabled"));
 
+        if (props.containsKey("fileConfig"))
+            options.setFileConfig(fileConfig.valueOf((String)props.get("fileConfig")));
+
         return options;
     }
 
@@ -238,6 +263,7 @@ public class FilesAdminOptions
             props.put("actions", actions);
         }
         props.put("importDataEnabled", isImportDataEnabled());
+        props.put("fileConfig", _fileConfig.name());
         
         return props;
     }
