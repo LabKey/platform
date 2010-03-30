@@ -82,7 +82,7 @@ public class DbSchema
 
         long startLoad = System.currentTimeMillis();
 
-        _log.info("Loading DbSchema \"" + schemaName + "\"");
+        _log.info("Loading DbSchema \"" + scope.getDisplayName() + "." + schemaName + "\"");
 
         try
         {
@@ -167,7 +167,8 @@ public class DbSchema
 
     boolean isStale()
     {
-        return _resourceRef == null || _resourceRef.isStale();
+        // TODO: Check this with Kevin
+        return _resourceRef != null && _resourceRef.isStale();
     }
 
     Resource getResource()

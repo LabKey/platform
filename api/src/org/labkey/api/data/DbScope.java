@@ -497,10 +497,15 @@ public class DbScope
             for (String schemaName : schemaNames)
             {
                 Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
-                ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
 
-                if (!context.isInstallComplete())
-                    invalidateSchema(schemaName);
+                // We only care about schemas associated with a module (not external schemas)
+                if (null != module)
+                {
+                    ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
+
+                    if (!context.isInstallComplete())
+                        invalidateSchema(schemaName);
+                }
             }
         }
     }

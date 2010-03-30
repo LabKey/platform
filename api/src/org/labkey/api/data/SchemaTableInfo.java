@@ -186,7 +186,7 @@ public class SchemaTableInfo implements TableInfo
 
     public String getTitleColumn()
     {
-        if (null == titleColumn)
+        if (null == titleColumn && !columns.isEmpty())
         {
             for (ColumnInfo column : columns)
             {

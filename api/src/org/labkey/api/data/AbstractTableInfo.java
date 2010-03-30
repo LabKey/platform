@@ -488,6 +488,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         {
             setTitleColumn(xbTable.getTitleColumn());
         }
+        if (xbTable.getDescription() != null)
+        {
+            setDescription(xbTable.getDescription());
+        }
         if (xbTable.getGridUrl() != null)
         {
             _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getGridUrl(), errors);
