@@ -18,24 +18,23 @@ package org.labkey.api.data;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
-import javax.naming.*;
+import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -45,7 +44,6 @@ import java.util.*;
 
 public class DbSchema
 {
-    private static final HashMap<String, DbSchema> _loadedSchemas = new HashMap<String, DbSchema>();
     private static final Logger _log = Logger.getLogger(DbSchema.class);
 
     private final Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
@@ -57,84 +55,12 @@ public class DbSchema
 
     public static DbSchema get(String schemaName)
     {
-        return get(schemaName, DbScope.getLabkeyScope());
-    }
-
-    public static DbSchema get(String schemaName, DbScope scope)
-    {
-        // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
-        // load process directly or indirectly causing another call to this method.)
-        assert !Thread.holdsLock(_loadedSchemas) : "Schema load re-entrancy detected";
-
-        synchronized (_loadedSchemas)
-        {
-            DbSchema schema = _loadedSchemas.get(schemaName);
-
-            if (null != schema && !AppProps.getInstance().isDevMode())
-                return schema;
-
-            InputStream xmlStream = null;
-
-            try
-            {
-                Resource resource = null;
-                if (null == schema)
-                {
-                    resource = getSchemaResource(schemaName);
-                }
-                else
-                {
-                    if (AppProps.getInstance().isDevMode() && schema.isStale())
-                    {
-                        resource = schema.getResource();
-                    }
-                    else
-                    {
-                        return schema;
-                    }
-                }
-
-                schema = createFromMetaData(schemaName, scope);
-
-                if (null != schema)
-                {
-                    if (resource != null)
-                    {
-                        schema.setResource(resource);
-                        xmlStream = resource.getInputStream();
-                        if (null != xmlStream)
-                        {
-                            TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
-                            schema.loadXml(tablesDoc, true);
-                        }
-                    }
-
-                    _loadedSchemas.put(schema.getName(), schema);
-                }
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
-            }
-            finally
-            {
-                try
-                {
-                    if (null != xmlStream) xmlStream.close();
-                }
-                catch (Exception x)
-                {
-                    _log.error("DbSchema.get()", x);
-                }
-            }
-
-            return schema;
-        }
+        return DbScope.getLabkeyScope().getSchema(schemaName);
     }
 
     public static Resource getSchemaResource(String schemaName) throws IOException
     {
-        Module module = getModuleForSchemaName(schemaName);
+        Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
         if (null == module)
         {
             _log.debug("no module for schema '" + schemaName + "'");
@@ -143,34 +69,21 @@ public class DbSchema
         return module.getModuleResource("/schemas/" + schemaName + ".xml");
     }
 
-    private static Module getModuleForSchemaName(String schemaName)
-    {
-        return ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
-    }
-
-
     public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
     {
         return createFromMetaData(dbSchemaName, DbScope.getLabkeyScope());
     }
 
 
-    protected static DbSchema createFromMetaData(String dbSchemaName, DbScope scope) throws SQLException, NamingException, ServletException
-    {
-        String ownerName = dbSchemaName;  // TODO: Get rid of this
-
-        return createFromMetaData(dbSchemaName, scope, ownerName);
-    }
-
-    public static DbSchema createFromMetaData(String name, DbScope scope, String owner) throws SQLException, SqlDialect.SqlDialectNotSupportedException
+    public static DbSchema createFromMetaData(String schemaName, DbScope scope) throws SQLException
     {
         Connection conn = null;
-        DbSchema schema = new DbSchema(name, scope, owner);
+        DbSchema schema = new DbSchema(schemaName, scope);
         String dbName = scope.getDatabaseName();
 
         long startLoad = System.currentTimeMillis();
 
-        _log.info("Loading DbSchema \"" + name + "\"");
+        _log.info("Loading DbSchema \"" + schemaName + "\"");
 
         try
         {
@@ -179,7 +92,7 @@ public class DbSchema
             DatabaseMetaData dbmd = conn.getMetaData();
 
             String[] types = {"TABLE", "VIEW",};
-            ResultSet rs = dbmd.getTables(dbName, owner, "%", types);
+            ResultSet rs = dbmd.getTables(dbName, schemaName, "%", types);
             ArrayList<SchemaTableInfo> list = new ArrayList<SchemaTableInfo>();
 
             try
@@ -209,7 +122,7 @@ public class DbSchema
 
             for (SchemaTableInfo ti : list)
             {
-                ti.loadFromMetaData(dbmd, dbName, owner);
+                ti.loadFromMetaData(dbmd, dbName, schemaName);
                 schema.addTable(ti.getName(), ti);
             }
 
@@ -217,7 +130,7 @@ public class DbSchema
         }
         catch (SQLException e)
         {
-            _log.log(Priority.ERROR, "Exception loading schema \"" + name + "\" from database metadata", e);
+            _log.error("Exception loading schema \"" + schemaName + "\" from database metadata", e);
             throw e;
         }
         finally
@@ -237,49 +150,11 @@ public class DbSchema
     }
 
 
-    public static void invalidateSchemas()
-    {
-        synchronized (_loadedSchemas)
-        {
-            _loadedSchemas.clear();
-        }
-    }
-
-
-    // Once a module is done with its upgrade then all database schemas it owns are upgraded.  This clears out only
-    // schemas of modules that are not upgraded, so we don't, for example, reload core, prop, etc. after they're
-    // complete.
-    public static void invalidateIncompleteSchemas()
-    {
-        synchronized (_loadedSchemas)
-        {
-            List<String> schemaNames = new ArrayList<String>(_loadedSchemas.keySet());
-
-            for (String schemaName : schemaNames)
-            {
-                Module module = getModuleForSchemaName(schemaName);
-                ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
-
-                if (!context.isInstallComplete())
-                    _loadedSchemas.remove(schemaName);
-            }
-        }
-    }
-
-
-    public static void invalidateSchema(String schemaName)
-    {
-        synchronized (_loadedSchemas)
-        {
-            _loadedSchemas.remove(schemaName);
-        }
-    }
-
-    protected DbSchema(String name, DbScope scope, String owner)
+    protected DbSchema(String name, DbScope scope)
     {
         _name = name;
         _scope = scope;
-        _owner = owner;
+        _owner = name;
     }
 
     public String getName()
@@ -297,17 +172,17 @@ public class DbSchema
         return _scope.getSqlDialect();
     }
 
-    private boolean isStale()
+    boolean isStale()
     {
         return _resourceRef == null || _resourceRef.isStale();
     }
 
-    private Resource getResource()
+    Resource getResource()
     {
         return _resourceRef != null ? _resourceRef.getResource() : null;
     }
 
-    private void setResource(Resource r)
+    void setResource(Resource r)
     {
         if (_resourceRef == null || _resourceRef.getResource() != r)
             _resourceRef = new ResourceRef(r);

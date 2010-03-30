@@ -659,11 +659,6 @@ public class SchemaTableInfo implements TableInfo
         _sequence = sequence;
     }
 
-    public void setFromSql(SQLFragment fragment)
-    {
-        selectName = fragment;
-    }
-
     public String decideAlias(String name)
     {
         return name;

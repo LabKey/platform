@@ -501,7 +501,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    public static boolean isLegalName(String name, StringBuffer error)
+    public static boolean isLegalName(String name, StringBuilder error)
     {
         if (null == name || 0 == name.trim().length())
         {

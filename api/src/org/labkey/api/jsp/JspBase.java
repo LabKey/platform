@@ -466,7 +466,7 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
         if (l.size() == 0)
             return "";
         ViewContext context = getViewContext();
-        StringBuffer message = new StringBuffer();
+        StringBuilder message = new StringBuilder();
         String br = "";
         message.append("<div class=\"labkey-error\">");
         for (ObjectError e : l)

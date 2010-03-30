@@ -181,7 +181,7 @@ public class ContainerManager
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
 
-        StringBuffer error = new StringBuffer();
+        StringBuilder error = new StringBuilder();
         if (!Container.isLegalName(name, error))
             throw new IllegalArgumentException(error.toString());
 

@@ -130,7 +130,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     private String getContents(String filename) throws SqlScriptException
     {
-        StringBuffer contents = new StringBuffer();
+        StringBuilder contents = new StringBuilder();
         InputStream is;
         BufferedReader br = null;
 
@@ -139,7 +139,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             File path = new File(_module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect()), filename);
             is = _module.getResourceStream(path.getPath());
             if (null == is)
-                throw new SqlScriptException(new FileNotFoundException(path.getPath()), filename);
+                throw new SqlScriptException("File not found: " + path.getPath(), filename);
 
             // TODO: use PageFlowUtil.getStreamContentsAsString()?
             br = new BufferedReader(new InputStreamReader(is));

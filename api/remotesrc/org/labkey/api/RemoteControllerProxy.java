@@ -242,7 +242,7 @@ public class RemoteControllerProxy
 
             void _logDebug()
             {
-                StringBuffer msg = new StringBuffer(100);
+                StringBuilder msg = new StringBuilder(100);
                 msg.append("remote call: " ).append(_method).append("(");
                 String and = "";
                 for (Object o : _argsDebug)

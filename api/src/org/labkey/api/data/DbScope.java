@@ -17,11 +17,18 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.data.xml.TablesDocument;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
+import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -47,13 +54,13 @@ public class DbScope
     private DataSource _dataSource;
     private SqlDialect _dialect;
     private String _databaseName;          // Possibly null, e.g., for SAS datasources
-
     private String _URL;
     private String _databaseProductName;
     private String _databaseProductVersion;
     private String _driverName;
     private String _driverVersion;
 
+    private final HashMap<String, DbSchema> _loadedSchemas = new HashMap<String, DbSchema>();
 
     private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
 
@@ -112,6 +119,12 @@ public class DbScope
                 }
             }
         }
+    }
+
+
+    public String toString()
+    {
+        return getDataSourceName();
     }
 
 
@@ -387,6 +400,119 @@ public class DbScope
     public SqlDialect getSqlDialect()
     {
         return _dialect;
+    }
+
+
+    public DbSchema getSchema(String schemaName)
+    {
+        // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
+        // load process directly or indirectly causing another call to this method.)
+        assert !Thread.holdsLock(_loadedSchemas) : "Schema load re-entrancy detected";
+
+        synchronized (_loadedSchemas)
+        {
+            DbSchema schema = _loadedSchemas.get(schemaName);
+
+            if (null != schema && !AppProps.getInstance().isDevMode())
+                return schema;
+
+            InputStream xmlStream = null;
+
+            try
+            {
+                Resource resource;
+
+                if (null == schema)
+                {
+                    resource = DbSchema.getSchemaResource(schemaName);
+                }
+                else
+                {
+                    if (AppProps.getInstance().isDevMode() && schema.isStale())
+                    {
+                        resource = schema.getResource();
+                    }
+                    else
+                    {
+                        return schema;
+                    }
+                }
+
+                schema = DbSchema.createFromMetaData(schemaName, this);
+
+                if (null != schema)
+                {
+                    if (resource != null)
+                    {
+                        schema.setResource(resource);
+                        xmlStream = resource.getInputStream();
+                        if (null != xmlStream)
+                        {
+                            TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
+                            schema.loadXml(tablesDoc, true);
+                        }
+                    }
+
+                    _loadedSchemas.put(schema.getName(), schema);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
+            }
+            finally
+            {
+                try
+                {
+                    if (null != xmlStream) xmlStream.close();
+                }
+                catch (Exception x)
+                {
+                    _log.error("DbSchema.get()", x);
+                }
+            }
+
+            return schema;
+        }
+
+    }
+
+
+    public void invalidateSchema(String schemaName)
+    {
+        synchronized (_loadedSchemas)
+        {
+            _loadedSchemas.remove(schemaName);
+        }
+    }
+
+
+    // Invalidates all incomplete schemas in this scope (see below for details).
+    public void invalidateIncompleteSchemas()
+    {
+        synchronized (_loadedSchemas)
+        {
+            List<String> schemaNames = new ArrayList<String>(_loadedSchemas.keySet());
+
+            for (String schemaName : schemaNames)
+            {
+                Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
+                ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
+
+                if (!context.isInstallComplete())
+                    invalidateSchema(schemaName);
+            }
+        }
+    }
+
+
+    // Invalidates all incomplete schemas in all scopes.  Once a module is done with its upgrade then all database
+    // schemas it owns are upgraded.  This clears out only schemas of modules that are not upgraded, so we don't, for
+    // example, reload core, prop, etc. after they're complete.
+    public static void invalidateAllIncompleteSchemas()
+    {
+        for (DbScope scope : getDbScopes())
+            scope.invalidateIncompleteSchemas();
     }
 
 
