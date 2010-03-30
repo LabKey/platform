@@ -656,9 +656,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 xmlFk.setFkTable(sfk._tableName);
                 DbSchema fkDbOwnerSchema = sfk.getLookupTableInfo().getSchema().getScope().getSchema(sfk._dbSchemaName);
 
-                if (null==fkDbOwnerSchema)
+                if (null == fkDbOwnerSchema)
                 {
-                    xmlFk.setFkDbSchema("********** Error:  can't load schema " + sfk._dbSchemaName + "/" + sfk._ownerName);
+                    xmlFk.setFkDbSchema("********** Error:  can't load schema " + sfk._dbSchemaName);
                 }
                 else if (fkDbOwnerSchema != getParentTable().getSchema())
                 {
@@ -993,7 +993,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
 
         final String _dbSchemaName;
-        final String _ownerName;
         final String _tableName;
         final String _lookupKey;
         final boolean _joinWithContainer;
@@ -1001,7 +1000,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String ownerName, String tableName, String lookupKey, boolean joinWithContaienr)
         {
             _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
-            _ownerName = ownerName == null ? foreignKey.getParentTable().getSchema().getOwner() : ownerName;
             _tableName = tableName;
             _lookupKey = lookupKey;
             _joinWithContainer = joinWithContaienr;

@@ -78,7 +78,7 @@ public class SchemaTableInfo implements TableInfo
         this(parentSchema);
 
         this.name = tableName;
-        String name = getSqlDialect().getTableSelectName(parentSchema.getOwner())
+        String name = getSqlDialect().getTableSelectName(parentSchema.getName())
                 + "." + getSqlDialect().getTableSelectName(tableName);
         this.selectName = new SQLFragment(name);
     }

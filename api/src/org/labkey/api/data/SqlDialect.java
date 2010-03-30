@@ -716,7 +716,7 @@ public abstract class SqlDialect
      */
     public void dropIfExists (DbSchema schema, String objectName, String objectType, String subObjectName) throws SQLException
     {
-        Object[] parameters = new Object[]{objectName, schema.getOwner(), objectType, subObjectName};
+        Object[] parameters = new Object[]{objectName, schema.getName(), objectType, subObjectName};
         String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
         Table.execute(schema, sql, parameters);
     }

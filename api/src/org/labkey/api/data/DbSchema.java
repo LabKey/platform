@@ -49,7 +49,6 @@ public class DbSchema
     private final Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
     private final DbScope _scope;
     private final String _name;
-    private final String _owner;  // also called "schema" in sql
 
     private ResourceRef _resourceRef = null;
 
@@ -154,17 +153,11 @@ public class DbSchema
     {
         _name = name;
         _scope = scope;
-        _owner = name;
     }
 
     public String getName()
     {
         return _name;
-    }
-
-    public String getOwner()
-    {
-        return _owner;
     }
 
     public SqlDialect getSqlDialect()
