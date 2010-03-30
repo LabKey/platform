@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2009 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2010 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -400,11 +400,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     public String getTableSelectName(String tableName)
     {
         return getColumnSelectName(tableName);  // Same as column names
-    }
-
-    public String getOwnerSelectName(String ownerName)
-    {
-        return getColumnSelectName(ownerName);  // Same as column names
     }
 
     public String sanitizeException(SQLException ex)
