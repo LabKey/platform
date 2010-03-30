@@ -20,11 +20,11 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
-<%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
+<%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     QueryController.ExternalSchemaBean bean = (QueryController.ExternalSchemaBean)HttpView.currentModel();
-    DbUserSchemaDef def = bean.getSchemaDef();
+    ExternalSchemaDef def = bean.getSchemaDef();
     DbScope initialScope = null;
 
     try

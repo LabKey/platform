@@ -22,7 +22,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.query.view.DbUserSchema;
+import org.labkey.query.view.ExternalSchema;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -244,33 +244,33 @@ public class QueryManager
         return (flag & FLAG_INHERITABLE) != 0;
     }
 
-    public DbUserSchemaDef getDbUserSchemaDef(int id)
+    public ExternalSchemaDef getExternalSchemaDef(int id)
     {
-        return Table.selectObject(getTableInfoDbUserSchema(), id, DbUserSchemaDef.class);
+        return Table.selectObject(getTableInfoDbUserSchema(), id, ExternalSchemaDef.class);
     }
 
-    public DbUserSchemaDef[] getDbUserSchemaDefs(Container container)
+    public ExternalSchemaDef[] getExternalSchemaDefs(Container container)
     {
         try
         {
-            DbUserSchemaDef.Key key = new DbUserSchemaDef.Key(container);
+            ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
             return key.select();
         }
         catch (SQLException e)
         {
             _log.error("Error", e);
         }
-        return new DbUserSchemaDef[0];
+        return new ExternalSchemaDef[0];
     }
 
-    public DbUserSchemaDef getDbUserSchemaDef(Container container, String userSchemaName)
+    public ExternalSchemaDef getDbUserSchemaDef(Container container, String userSchemaName)
     {
         if (userSchemaName == null)
             return null;
 
         try
         {
-            DbUserSchemaDef.Key key = new DbUserSchemaDef.Key(container);
+            ExternalSchemaDef.Key key = new ExternalSchemaDef.Key(container);
             key.setUserSchemaName(userSchemaName);
             return key.selectObject();
         }
@@ -281,18 +281,18 @@ public class QueryManager
         }
     }
 
-    public DbUserSchemaDef insert(User user, DbUserSchemaDef def) throws Exception
+    public ExternalSchemaDef insert(User user, ExternalSchemaDef def) throws Exception
     {
         return Table.insert(user, getTableInfoDbUserSchema(), def);
     }
 
-    public DbUserSchemaDef update(User user, DbUserSchemaDef def) throws Exception
+    public ExternalSchemaDef update(User user, ExternalSchemaDef def) throws Exception
     {
-        DbUserSchemaDef ret = Table.update(user, getTableInfoDbUserSchema(), def, def.getDbUserSchemaId());
+        ExternalSchemaDef ret = Table.update(user, getTableInfoDbUserSchema(), def, def.getDbUserSchemaId());
         return ret;
     }
 
-    public void delete(User user, DbUserSchemaDef def) throws Exception
+    public void delete(User user, ExternalSchemaDef def) throws Exception
     {
         Table.delete(getTableInfoDbUserSchema(), def.getDbUserSchemaId());
     }
@@ -300,17 +300,17 @@ public class QueryManager
 
     public void reloadAllDbUserSchemas(Container c)
     {
-        DbUserSchemaDef[] defs = getDbUserSchemaDefs(c);
+        ExternalSchemaDef[] defs = getExternalSchemaDefs(c);
 
-        for (DbUserSchemaDef def : defs)
+        for (ExternalSchemaDef def : defs)
             reloadDbUserSchema(def);
     }
 
 
-    public void reloadDbUserSchema(DbUserSchemaDef def)
+    public void reloadDbUserSchema(ExternalSchemaDef def)
     {
-        DbUserSchema.uncache(def);
-        DbUserSchema.initDbSchema(def);
+        ExternalSchema.uncache(def);
+        ExternalSchema.getDbSchema(def);
     }
 
 

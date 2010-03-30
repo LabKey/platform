@@ -1348,8 +1348,7 @@ public class WikiController extends SpringActionController
             HString pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            return new VersionsAction(_wiki, _wikiVersion1).appendNavTrail(root)
-                    .addChild(pageTitle);
+            return new VersionsAction(_wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
         }
     }
 

@@ -20,18 +20,18 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CacheKey;
 
-public class DbUserSchemaDef extends Entity
+public class ExternalSchemaDef extends Entity
 {
     public enum Column
     {
         userschemaname
     }
 
-    static public class Key extends CacheKey<DbUserSchemaDef, Column>
+    static public class Key extends CacheKey<ExternalSchemaDef, Column>
     {
         public Key(Container container)
         {
-            super(QueryManager.get().getTableInfoDbUserSchema(), DbUserSchemaDef.class, container);
+            super(QueryManager.get().getTableInfoDbUserSchema(), ExternalSchemaDef.class, container);
         }
         public void setUserSchemaName(String name)
         {
@@ -101,7 +101,7 @@ public class DbUserSchemaDef extends Entity
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DbUserSchemaDef that = (DbUserSchemaDef) o;
+        ExternalSchemaDef that = (ExternalSchemaDef) o;
 
         if (_dbUserSchemaId != that._dbUserSchemaId) return false;
         if (_dbSchemaName != null ? !_dbSchemaName.equals(that._dbSchemaName) : that._dbSchemaName != null)

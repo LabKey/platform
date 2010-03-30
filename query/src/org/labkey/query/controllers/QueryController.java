@@ -48,7 +48,7 @@ import org.labkey.query.design.ViewDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
 import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.persist.CstmView;
-import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
@@ -2211,20 +2211,20 @@ public class QueryController extends SpringActionController
 
     
     @RequiresSiteAdmin
-    public class InsertExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
+    public class InsertExternalSchemaAction extends FormViewAction<ExternalSchemaForm>
     {
-        public void validateCommand(DbUserSchemaForm form, Errors errors)
+        public void validateCommand(ExternalSchemaForm form, Errors errors)
         {
 			form.validate(errors);
         }
 
-        public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
             return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
         }
 
-        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
         {
             try
             {
@@ -2244,7 +2244,7 @@ public class QueryController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
@@ -2263,11 +2263,11 @@ public class QueryController extends SpringActionController
         private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
         private final Map<DbScope, Collection<String>> _scopesAndSchemasIncludingSystem = new LinkedHashMap<DbScope, Collection<String>>();
         private final Container _c;
-        private final DbUserSchemaDef _def;
+        private final ExternalSchemaDef _def;
         private final boolean _insert;
         private final Map<String, String> _help = new HashMap<String, String>();
 
-        public ExternalSchemaBean(Container c, DbUserSchemaDef def, boolean insert)
+        public ExternalSchemaBean(Container c, ExternalSchemaDef def, boolean insert)
         {
             _c = c;
             _def = def;
@@ -2345,7 +2345,7 @@ public class QueryController extends SpringActionController
                 return _scopesAndSchemas.get(scope);
         }
 
-        public DbUserSchemaDef getSchemaDef()
+        public ExternalSchemaDef getSchemaDef()
         {
             return _def;
         }
@@ -2373,17 +2373,17 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class EditExternalSchemaAction extends FormViewAction<DbUserSchemaForm>
+    public class EditExternalSchemaAction extends FormViewAction<ExternalSchemaForm>
     {
-		public void validateCommand(DbUserSchemaForm form, Errors errors)
+		public void validateCommand(ExternalSchemaForm form, Errors errors)
 		{
             form.validate(errors);
 		}
 
-        public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             form.refreshFromDb();
-            DbUserSchemaDef def = form.getBean();
+            ExternalSchemaDef def = form.getBean();
             Container defContainer = def.lookupContainer();
 
             if (!defContainer.equals(getContainer()))
@@ -2393,10 +2393,10 @@ public class QueryController extends SpringActionController
             return new JspView<ExternalSchemaBean>(QueryController.class, "externalSchema.jsp", new ExternalSchemaBean(getContainer(), def, false), errors);
         }
 
-        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
         {
-            DbUserSchemaDef def = form.getBean();
-            DbUserSchemaDef fromDb = QueryManager.get().getDbUserSchemaDef(def.getDbUserSchemaId());
+            ExternalSchemaDef def = form.getBean();
+            ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getDbUserSchemaId());
 
             // Unauthorized if def in the database reports a different container
             if (!fromDb.lookupContainer().equals(getContainer()))
@@ -2419,7 +2419,7 @@ public class QueryController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
@@ -2442,30 +2442,30 @@ public class QueryController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class DeleteExternalSchemaAction extends ConfirmAction<DbUserSchemaForm>
+    public class DeleteExternalSchemaAction extends ConfirmAction<ExternalSchemaForm>
     {
         public String getConfirmText()
         {
             return "Delete";
         }
 
-        public ModelAndView getConfirmView(DbUserSchemaForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(ExternalSchemaForm form, BindException errors) throws Exception
         {
             form.refreshFromDb();
             return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
         }
 
-        public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
         {
             QueryManager.get().delete(getUser(), form.getBean());
             return true;
         }
 
-        public void validateCommand(DbUserSchemaForm dbUserSchemaForm, Errors errors)
+        public void validateCommand(ExternalSchemaForm externalSchemaForm, Errors errors)
         {
         }
 
-        public ActionURL getSuccessURL(DbUserSchemaForm dbUserSchemaForm)
+        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
@@ -2474,12 +2474,12 @@ public class QueryController extends SpringActionController
 
     // UNDONE: should use POST, change to FormHandlerAction
     @RequiresPermissionClass(AdminPermission.class)
-    public class ReloadDbUserSchemaAction extends SimpleViewAction<DbUserSchemaForm>
+    public class ReloadExternalSchemaAction extends SimpleViewAction<ExternalSchemaForm>
     {
-        public ModelAndView getView(DbUserSchemaForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExternalSchemaForm form, BindException errors) throws Exception
         {
             form.refreshFromDb();
-            DbUserSchemaDef def = form.getBean();
+            ExternalSchemaDef def = form.getBean();
 
             try
             {
@@ -2495,7 +2495,7 @@ public class QueryController extends SpringActionController
             return HttpView.redirect(getSuccessURL(form));
         }
 
-        public ActionURL getSuccessURL(DbUserSchemaForm form)
+        public ActionURL getSuccessURL(ExternalSchemaForm form)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), form.getBean().getUserSchemaName());
         }

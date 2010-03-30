@@ -24,7 +24,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
-import org.labkey.query.view.DbUserSchema;
+import org.labkey.query.view.ExternalSchema;
 
 import java.util.*;
 
@@ -35,7 +35,7 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
     Container _container;
     
 
-    public DbUserSchemaTable(DbUserSchema schema, SchemaTableInfo table, TableType metadata)
+    public DbUserSchemaTable(ExternalSchema schema, SchemaTableInfo table, TableType metadata)
     {
         super(schema, table);
         _metadata = metadata;
@@ -46,9 +46,9 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
     }
 
     @Override
-    public DbUserSchema getUserSchema()
+    public ExternalSchema getUserSchema()
     {
-        return (DbUserSchema)super.getUserSchema();
+        return (ExternalSchema)super.getUserSchema();
     }
 
     public boolean hasPermission(User user, Class<? extends Permission> perm)
@@ -96,7 +96,7 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
     public Container getContainer(Map context)
     {
         assert null == getRealTable().getColumn("container") || null != _container;
-        DbUserSchema s = getUserSchema();
+        ExternalSchema s = getUserSchema();
         return null != _container ? _container : s.getContainer();
     }
 

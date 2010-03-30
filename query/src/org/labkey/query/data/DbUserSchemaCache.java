@@ -22,7 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.ExternalSchemaDef;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +44,7 @@ public class DbUserSchemaCache
 
     private static class SchemaEntry
     {
-        DbUserSchemaDef dbUserSchemaDef;
+        ExternalSchemaDef _externalSchemaDef;
         DbSchema schema;
     }
 
@@ -53,7 +53,7 @@ public class DbUserSchemaCache
         return instance;
     }
 
-    public DbSchema getSchema(DbUserSchemaDef def)
+    public DbSchema getSchema(ExternalSchemaDef def)
     {
         Container container = ContainerManager.getForId(def.getContainerId());
         if (container == null)
@@ -61,7 +61,7 @@ public class DbUserSchemaCache
 
 
         SchemaEntry entry = map.get(def.getDbUserSchemaId());
-        if (entry == null || !def.equals(entry.dbUserSchemaDef))
+        if (entry == null || !def.equals(entry._externalSchemaDef))
         {
             map.remove(def.getDbUserSchemaId());
             entry = makeSchemaEntry(def);
@@ -70,20 +70,20 @@ public class DbUserSchemaCache
         return entry.schema;
     }
 
-    public DbSchema loadSchema(DbUserSchemaDef dbUserSchemaDef) throws DbUserSchemaException
+    public DbSchema loadSchema(ExternalSchemaDef externalSchemaDef) throws DbUserSchemaException
     {
         SchemaEntry ret = new SchemaEntry();
-        ret.dbUserSchemaDef = dbUserSchemaDef;
+        ret._externalSchemaDef = externalSchemaDef;
         DbSchema schema;
         try
         {
-            schema = DbSchema.createFromMetaData(dbUserSchemaDef.getDbSchemaName());
+            schema = DbSchema.createFromMetaData(externalSchemaDef.getDbSchemaName());
         }
         catch (Exception e)
         {
-            throw new DbUserSchemaException("Error finding the schema '" + dbUserSchemaDef.getDbSchemaName() + "' in the database", e); 
+            throw new DbUserSchemaException("Error finding the schema '" + externalSchemaDef.getDbSchemaName() + "' in the database", e);
         }
-        String metadata = dbUserSchemaDef.getMetaData();
+        String metadata = externalSchemaDef.getMetaData();
         if (metadata != null)
         {
 
@@ -109,10 +109,10 @@ public class DbUserSchemaCache
         return schema;
     }
 
-    synchronized private SchemaEntry makeSchemaEntry(DbUserSchemaDef def)
+    synchronized private SchemaEntry makeSchemaEntry(ExternalSchemaDef def)
     {
         SchemaEntry ret = new SchemaEntry();
-        ret.dbUserSchemaDef = def;
+        ret._externalSchemaDef = def;
         try
         {
             ret.schema = loadSchema(def);

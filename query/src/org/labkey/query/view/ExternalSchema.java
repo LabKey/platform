@@ -25,20 +25,20 @@ import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.DbUserSchemaTable;
-import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.ExternalSchemaDef;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class DbUserSchema extends SimpleModuleUserSchema
+public class ExternalSchema extends SimpleModuleUserSchema
 {
-    private Logger _log = Logger.getLogger(DbUserSchema.class);
-    private DbUserSchemaDef _def;
+    private Logger _log = Logger.getLogger(ExternalSchema.class);
+    private ExternalSchemaDef _def;
     static final Map<String, DbSchema> s_schemaMap = new HashMap<String, DbSchema>();
 
-    public DbUserSchema(User user, Container container, DbUserSchemaDef def)
+    public ExternalSchema(User user, Container container, ExternalSchemaDef def)
     {
-        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, initDbSchema(def));
+        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def));
         _def = def;
         if (_dbSchema == null)
         {
@@ -46,36 +46,37 @@ public class DbUserSchema extends SimpleModuleUserSchema
         }
     }
 
-    public static DbSchema initDbSchema(DbUserSchemaDef def)
+    public static DbSchema getDbSchema(ExternalSchemaDef def)
     {
+        String dbSchemaName = def.getDbSchemaName();
         DbSchema dbSchema;
 
         synchronized (s_schemaMap)
         {
-            if (s_schemaMap.containsKey(def.getDbSchemaName()))
+            if (s_schemaMap.containsKey(dbSchemaName))
             {
-                dbSchema = s_schemaMap.get(def.getDbSchemaName());
+                dbSchema = s_schemaMap.get(dbSchemaName);
             }
             else
             {
                 try
                 {
                     DbScope scope = DbScope.getDbScope(def.getDataSource());
-                    dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName(), scope);
+                    dbSchema = DbSchema.createFromMetaData(dbSchemaName, scope);
                 }
                 catch (Exception e)
                 {
                     throw new RuntimeException(e);
                 }
 
-                s_schemaMap.put(def.getDbSchemaName(), dbSchema);
+                s_schemaMap.put(dbSchemaName, dbSchema);
             }
         }
 
         return dbSchema;
     }
 
-    public static void uncache(DbUserSchemaDef def)
+    public static void uncache(ExternalSchemaDef def)
     {
         s_schemaMap.remove(def.getDbSchemaName());
         DbScope scope = DbScope.getDbScope(def.getDataSource());

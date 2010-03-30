@@ -25,12 +25,15 @@
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
 <%@ page import="org.labkey.api.data.MenuButton" %>
 <%@ page import="org.labkey.api.data.RenderContext" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiController.VersionBean> me = (JspView<WikiController.VersionBean>) HttpView.currentView();
     WikiController.VersionBean bean = me.getModelBean();
-    User user = me.getViewContext().getUser();
-    Container c = me.getViewContext().getContainer();
+    ViewContext ctx = me.getViewContext();
+    User user = ctx.getUser();
+    Container c = ctx.getContainer();
 %>
 <!--wiki-->
 <table width="100%">
@@ -91,9 +94,10 @@ else
         {
             WikiVersion v = versions[i];
             int n = v.getVersion();
+            User author = UserManager.getUser(v.getCreatedBy()); 
 
             if (n != bean.wikiVersion.getVersion())
-                compare.addMenuItem(n == nLatestVersion ? "Latest Version" : "Version " + n, baseCompareLink + "&version2=" + n);
+                compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + " (" + author.getDisplayName(ctx) + ")", baseCompareLink + "&version2=" + n);
         }
 
         compare.render(new RenderContext(getViewContext()), out);

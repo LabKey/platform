@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
+<%@ page import="org.labkey.query.persist.ExternalSchemaDef" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
@@ -28,7 +28,7 @@
     arbitrary data on the site.  Also, the database schema may change in future releases.  Queries written against
     this version of the database schema may stop working after an upgrade.
 </p>
-<% DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(getContainer());
+<% ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(getContainer());
     if (defs.length == 0) { %>
 <p>There are no database user schemas defined in this folder.</p>
 <% }
@@ -54,14 +54,14 @@ if (null != reloadedSchema)
     %>
 <table>
     <%
-    for (DbUserSchemaDef def : defs)
+    for (ExternalSchemaDef def : defs)
     {
         ActionURL urlEdit = new ActionURL(QueryController.EditExternalSchemaAction.class, getContainer());
         urlEdit.addParameter("dbUserSchemaId", Integer.toString(def.getDbUserSchemaId()));
         ActionURL urlView = new ActionURL(QueryController.SchemaAction.class, getContainer());
         urlView.addParameter("schemaName", def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction(QueryController.ReloadDbUserSchemaAction.class);
+        urlReload.setAction(QueryController.ReloadExternalSchemaAction.class);
 %>
         <tr>
             <td><a href="<%=urlView%>"><%=h(def.getUserSchemaName())%></a></td>

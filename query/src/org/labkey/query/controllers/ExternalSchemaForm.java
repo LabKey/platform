@@ -25,20 +25,20 @@ import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryManager;
 import org.springframework.validation.Errors;
 
-public class DbUserSchemaForm extends BeanViewForm<DbUserSchemaDef>
+public class ExternalSchemaForm extends BeanViewForm<ExternalSchemaDef>
 {
-    public DbUserSchemaForm()
+    public ExternalSchemaForm()
     {
-        super(DbUserSchemaDef.class, QueryManager.get().getTableInfoDbUserSchema());
+        super(ExternalSchemaDef.class, QueryManager.get().getTableInfoDbUserSchema());
     }
 
     public void validate(Errors errors)
     {
-        DbUserSchemaDef bean = getBean();
+        ExternalSchemaDef bean = getBean();
         IdentifierString i = new IdentifierString(bean.getUserSchemaName());
         if (i.isTainted())
             errors.reject(SpringActionController.ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");

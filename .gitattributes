@@ -1705,10 +1705,10 @@ query/src/org/labkey/query/TableQueryDefinition.java -text
 query/src/org/labkey/query/TableXML.java -text
 query/src/org/labkey/query/ViewFilterItemImpl.java -text
 query/src/org/labkey/query/controllers/ChooseColumnsForm.java -text
-query/src/org/labkey/query/controllers/DbUserSchemaForm.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
 query/src/org/labkey/query/controllers/DesignForm.java -text
 query/src/org/labkey/query/controllers/DesignServiceForm.java -text
+query/src/org/labkey/query/controllers/ExternalSchemaForm.java -text
 query/src/org/labkey/query/controllers/GetQueryDetailsAction.java -text
 query/src/org/labkey/query/controllers/GetSchemaQueryTreeAction.java -text
 query/src/org/labkey/query/controllers/InternalNewViewForm.java -text
@@ -1744,7 +1744,7 @@ query/src/org/labkey/query/data/DbUserSchemaCache.java -text
 query/src/org/labkey/query/data/DbUserSchemaTable.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
-query/src/org/labkey/query/persist/DbUserSchemaDef.java -text
+query/src/org/labkey/query/persist/ExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
@@ -1823,9 +1823,9 @@ query/src/org/labkey/query/sql/SqlTokenTypes.java -text
 query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
 query/src/org/labkey/query/sql/sql.g -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
-query/src/org/labkey/query/view/DbUserSchema.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text
+query/src/org/labkey/query/view/ExternalSchema.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/webapp/query/columnPicker.js -text

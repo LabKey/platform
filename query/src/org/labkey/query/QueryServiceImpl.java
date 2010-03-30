@@ -31,7 +31,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -42,7 +41,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.*;
 import org.labkey.query.sql.Query;
-import org.labkey.query.view.DbUserSchema;
+import org.labkey.query.view.ExternalSchema;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -617,16 +616,16 @@ public class QueryServiceImpl extends QueryService
         return new WebPartView[0];
     }
 
-    public Map<String, UserSchema> getDbUserSchemas(DefaultSchema folderSchema)
+    public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema)
     {
         Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
-        DbUserSchemaDef[] defs = QueryManager.get().getDbUserSchemaDefs(folderSchema.getContainer());
+        ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(folderSchema.getContainer());
 
-        for (DbUserSchemaDef def : defs)
+        for (ExternalSchemaDef def : defs)
         {
             try
             {
-                UserSchema schema = new DbUserSchema(folderSchema.getUser(), folderSchema.getContainer(), def);
+                UserSchema schema = new ExternalSchema(folderSchema.getUser(), folderSchema.getContainer(), def);
                 ret.put(def.getUserSchemaName(), schema);
             }
             catch (Exception e)
