@@ -98,7 +98,7 @@ final public class DefaultSchema extends AbstractSchema
         }
         if (provider == null)
         {
-            return QueryService.get().getDbUserSchemas(this).get(name);
+            return QueryService.get().getExternalSchemas(this).get(name);
         }
         return provider.getSchema(this);
     }
@@ -106,7 +106,7 @@ final public class DefaultSchema extends AbstractSchema
     public Set<String> getSchemaNames()
     {
         Set<String> ret = new TreeSet<String>(_providers.keySet());
-        ret.addAll(QueryService.get().getDbUserSchemas(this).keySet());
+        ret.addAll(QueryService.get().getExternalSchemas(this).keySet());
         return Collections.unmodifiableSet(ret);
     }
 
