@@ -545,12 +545,6 @@ public abstract class SqlDialect
         return tableName;
     }
 
-    // Just return name by default... subclasses can override and (for example) put quotes around keywords
-    public String getOwnerSelectName(String ownerName)
-    {
-        return ownerName;
-    }
-
     // String version for convenience
     public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)
     {
