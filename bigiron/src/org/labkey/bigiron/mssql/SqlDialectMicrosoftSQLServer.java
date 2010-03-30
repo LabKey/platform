@@ -222,7 +222,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     // Execute a stored procedure/function with the specified parameters
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
-        return "EXEC " + schema.getOwner() + "." + procedureName + " " + parameters;
+        return "EXEC " + schema.getName() + "." + procedureName + " " + parameters;
     }
 
 

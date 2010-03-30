@@ -221,7 +221,7 @@ class SqlDialectPostgreSQL extends SqlDialect
 
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
-        return "SELECT " + schema.getOwner() + "." + procedureName + "(" + parameters + ")";
+        return "SELECT " + schema.getName() + "." + procedureName + "(" + parameters + ")";
     }
 
 
@@ -515,7 +515,7 @@ class SqlDialectPostgreSQL extends SqlDialect
                             "\tJOIN pg_class on pg_attribute.attrelid=pg_class.oid \n" +
                             "\tJOIN pg_namespace ON pg_class.relnamespace=pg_namespace.oid\n" +
                             "WHERE nspname=?",
-                    new Object[]{schema.getOwner()});
+                    new Object[]{schema.getName()});
 
             while (rsSeq.next())
             {
@@ -531,8 +531,8 @@ class SqlDialectPostgreSQL extends SqlDialect
                 if (end > start)
                 {
                     String sequence = src.substring(start + 1, end);
-                    if (!sequence.toLowerCase().startsWith(schema.getOwner().toLowerCase() + "."))
-                        sequence = schema.getOwner() + "." + sequence;
+                    if (!sequence.toLowerCase().startsWith(schema.getName().toLowerCase() + "."))
+                        sequence = schema.getName() + "." + sequence;
                     t.setSequence(sequence);
                 }
             }
