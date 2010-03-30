@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
@@ -600,5 +601,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             root.setProperties(options.serialize());
             FileRootManager.get().saveFileRoot(null, root);
         }
+    }
+
+    private static final String NAMESPACE = "List";
+    public static final String PROPERTIES_DOMAIN = "File Properties";
+
+    public String getDomainURI(String type)
+    {
+        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type).toString();
     }
 }

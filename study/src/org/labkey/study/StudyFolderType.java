@@ -91,6 +91,7 @@ public class StudyFolderType extends DefaultFolderType
 
     public void addManageLinks(NavTree adminNavTree, Container container)
     {
+        adminNavTree.addChild(new NavTree("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, container)));
         adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
         adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
         adminNavTree.addChild(new NavTree("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, container)));

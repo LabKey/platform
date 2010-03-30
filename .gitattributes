@@ -964,6 +964,11 @@ experiment/webapp/Experiment/images/unflagData.png -text
 experiment/webapp/Experiment/unflagDefault.gif -text
 experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
+filecontent/gwtsrc/FileContentGWT.iml -text
+filecontent/gwtsrc/org/labkey/filecontent/designer/FilePropertiesDesigner.gwt.xml -text
+filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesDesigner.java -text
+filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesService.java -text
+filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesServiceAsync.java -text
 filecontent/module.properties -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-9.30-10.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-9.31-9.32.sql -text
@@ -974,6 +979,7 @@ filecontent/src/META-INF/filecontent.xml -text
 filecontent/src/org/labkey/filecontent/FileContentController.java -text
 filecontent/src/org/labkey/filecontent/FileContentModule.java -text
 filecontent/src/org/labkey/filecontent/FileContentServiceImpl.java -text
+filecontent/src/org/labkey/filecontent/FilePropertiesServiceImpl.java -text
 filecontent/src/org/labkey/filecontent/FileRoot.java -text
 filecontent/src/org/labkey/filecontent/FileRootManager.java -text
 filecontent/src/org/labkey/filecontent/FileSystemAttachmentParent.java -text

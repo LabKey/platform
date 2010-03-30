@@ -20,9 +20,14 @@ import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.view.SetupForm;
@@ -579,10 +584,76 @@ public class PipelineController extends SpringActionController
             }
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("config", options.toJSON());
+            resp.putBeanList("fileProperties", getFileProperties(getViewContext(), options.getFileConfig()));
             resp.put("success", true);
 
             return resp;
         }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetPipelineFilePropertiesAction extends ApiAction
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            FilesAdminOptions.fileConfig config = FilesAdminOptions.fileConfig.valueOf(getViewContext().getActionURL().getParameter("fileConfig"));
+
+            resp.putBeanList("fileProperties", getFileProperties(getViewContext(), config));
+            resp.put("configOption", config.name());
+            resp.put("success", true);
+
+            return resp;
+        }
+    }
+
+    private List<GWTPropertyDescriptor> getFileProperties(ViewContext context, FilesAdminOptions.fileConfig config)
+    {
+        PipeRoot pr = PipelineService.get().findPipelineRoot(context.getContainer());
+        if (pr == null || !URIUtil.exists(pr.getUri()))
+        {
+            HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
+            return null;
+        }
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+
+        List<GWTPropertyDescriptor> properties = new ArrayList<GWTPropertyDescriptor>();
+
+        switch (config) {
+            case useCustom:
+                String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
+
+                if (dd != null)
+                {
+                    GWTDomain domain = DomainUtil.getDomainDescriptor(context.getUser(), uri, getContainer());
+                    return domain.getFields();
+/*
+                    Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+                    if (domain != null)
+                    {
+                        for (DomainProperty prop : domain.getProperties())
+                        {
+                            properties.add(PageFlowUtil.map(
+                                    "name", prop.getLabel() != null ? prop.getLabel() : prop.getName(),
+                                    "type", prop.getType().getLabel()));
+                        }
+                    }
+*/
+                }
+                break;
+            case useDefault:
+            case useParent:
+                GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
+
+                prop.setName("description");
+                prop.setLabel("Description");
+                prop.setRangeURI("String");
+
+                properties.add(prop);
+                break;
+        }
+        return properties;
     }
 
     @RequiresSiteAdmin

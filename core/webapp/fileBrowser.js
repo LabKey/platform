@@ -2955,6 +2955,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }, scope:this}
             });
 
+            this.filePropertiesBtnId = Ext.id();
+
             this.uploadPanel = new Ext.FormPanel({
                 id: 'uploadFileTab',
                 formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
@@ -2977,6 +2979,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     {xtype: 'textfield', name: 'description', fieldLabel: 'Description', width: 350}
                 ],
                 buttons:[
+                    {text: 'File Properties...', name:'filePropertiesBtn', id: this.filePropertiesBtnId, tooltip:'Displays a form to enter additional file properties', handler:this.onCustomFileProperties, scope:this},
                     {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
                     {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
                 ],

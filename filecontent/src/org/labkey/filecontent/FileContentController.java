@@ -32,12 +32,14 @@ import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -54,6 +56,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.*;
@@ -773,53 +776,90 @@ public class FileContentController extends SpringActionController
         }
     }
 
-   public static class FileContentForm
-   {
-       private String rootPath;
-       private String message;
-       private String fileSetName;
-       private String path;
+    public static class DesignerForm
+    {
 
-       public String getRootPath()
-       {
-           return rootPath;
-       }
+    }
 
-       public void setRootPath(String rootPath)
-       {
-           this.rootPath = rootPath;
-       }
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DesignerAction extends SimpleViewAction<DesignerForm>
+    {
+        @Override
+        public ModelAndView getView(DesignerForm designerForm, BindException errors) throws Exception
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            Map<String, String> properties = new HashMap<String, String>();
 
-       public String getMessage()
-       {
-           return message;
-       }
+            properties.put("typeURI", svc.getDomainURI(FileContentService.TYPE_PROPERTIES));
+            properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
+            
+            return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
+        }
 
-       public void setMessage(String message)
-       {
-           this.message = message;
-       }
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("File Properties Designer");
+        }
+    }
 
-       public String getFileSetName()
-       {
-           return fileSetName;
-       }
+    // GWT Action
+    @RequiresPermissionClass(AdminPermission.class)
+    public class FilePropertiesServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new FilePropertiesServiceImpl(getViewContext());
+        }
+    }
 
-       public void setFileSetName(String fileSetName)
-       {
-           this.fileSetName = fileSetName;
-       }
+    public static class FileContentForm
+    {
+        private String rootPath;
+        private String message;
+        private String fileSetName;
+        private String path;
 
-       public void setPath(String path)
-       {
-           this.path = path;
-       }
+        public String getRootPath()
+        {
+            return rootPath;
+        }
 
-       public String getPath()
-       {
-           return path;
-       }
-   }
+        public void setRootPath(String rootPath)
+        {
+            this.rootPath = rootPath;
+        }
+
+        public String getMessage()
+        {
+            return message;
+        }
+
+        public void setMessage(String message)
+        {
+            this.message = message;
+        }
+
+        public String getFileSetName()
+        {
+            return fileSetName;
+        }
+
+        public void setFileSetName(String fileSetName)
+        {
+            this.fileSetName = fileSetName;
+        }
+
+        public void setPath(String path)
+        {
+            this.path = path;
+        }
+
+        public String getPath()
+        {
+            return path;
+        }
+    }
 
    public static class SendFileForm
    {

@@ -214,6 +214,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
         this.updateToolbarButtons();
 
+        var fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
+        var visible = fileConfig == 'useCustom';
+        var filePropertiesBtn = Ext.getCmp(this.filePropertiesBtnId);
+        if (filePropertiesBtn)
+            filePropertiesBtn.setVisible(visible);
+        this.filePropertiesFields = o.success ? o.fileProperties : {};
+
         if (e.updatePipelineActions)
         {
             Ext.Ajax.request({
@@ -763,5 +770,37 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 title: ''
             });
         }
+    },
+
+    onCustomFileProperties : function()
+    {
+        var panel = new LABKEY.ext.FormPanel({
+            addAllFields: true,
+            metaData: {fields: this.filePropertiesFields}
+        });
+
+        var win = new Ext.Window({
+            title: 'Extended File Properties',
+            width: 500,
+            height: 400,
+            cls: 'extContainer',
+            autoScroll: true,
+            closeAction:'close',
+            modal: true,
+            layout: 'fit',
+            items: [panel],
+            buttons: [{
+                text: 'Submit',
+                id: 'btn_submit',
+                listeners: {click:function(button, event) {
+                    //this.saveActionConfig(store, button, event);
+                    win.close();}, scope:this}
+            },{
+                text: 'Cancel',
+                id: 'btn_cancel',
+                handler: function(){win.close();}
+            }]
+        });
+        win.show();
     }
 });

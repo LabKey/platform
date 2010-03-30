@@ -49,6 +49,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
 
     importDataEnabled : true,
+    fileConfig : undefined,
+    filePropertiesPanel : undefined,
+    filePropsGrid : undefined,
 
     isPipelineRoot : false,
     
@@ -121,6 +124,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         // check whether the import data button is enabled
         this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
+        this.fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
 
         if ('object' == typeof config.actions)
         {
@@ -284,31 +288,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             ]
         });
 
-        var filePanel = new Ext.Panel({
-                id: 'fileTab',
-                title: 'File Properties',
-                bodyStyle : 'padding:10px;',
-                autoHeight: true,
-                items: [
-                    new Ext.form.RadioGroup({
-                        xtype: 'radiogroup',
-                        itemCls: 'x-check-group',
-                        columns: 1,
-                        labelSeparator: '',
-                        items: [
-                            {xtype:'radio', boxLabel:'Use Default File Properties'},
-                            {xtype:'radio', boxLabel:'Use Custom File Properties'},
-                            {xtype:'radio', boxLabel:'Use Same Settings as Parent'}
-                        ]
-                    })
-                ]
-        });
+        var filePanel = this.createFilePropertiesPanel();
 
         var tabPanel = new Ext.TabPanel({
-            //header: false,
-            //margins:'0 0 0 0',
-            //border: false,
-            bodyStyle: 'background-color:#f0f0f0;',
             activeTab: 'actionTab',
             stateful: false,
             items: [
@@ -331,8 +313,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 text: 'Submit',
                 id: 'btn_submit',
                 listeners: {click:function(button, event) {
-                    win.close();
-                    this.saveActionConfig(store, button, event);}, scope:this}
+                    this.saveActionConfig(store, button, event);
+                    win.close();}, scope:this}
             },{
                 text: 'Cancel',
                 id: 'btn_cancel',
@@ -340,6 +322,112 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             }]
         });
         win.show();
+    },
+
+    /**
+     * Creates the file properties tab
+     */
+    createFilePropertiesPanel : function()
+    {
+        var store = new Ext.data.Store({
+            reader: new Ext.data.JsonReader({
+                root:'fileProperties',
+                fields: [
+                    {name:'name'},
+                    {name:'rangeURI'}]}),
+            baseParams: {fileConfig: this.fileConfig},
+            proxy: new Ext.data.HttpProxy({
+                url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineFileProperties"),
+                method: 'GET'}),
+            autoLoad: true});
+
+        this.filePropsGrid = new Ext.grid.GridPanel({
+            loadMask:{msg:"Loading, please wait..."},
+            store: store,
+            flex: 1,
+            stripeRows: true,
+            view: new Ext.grid.GridView({
+                cls: 'extContainer',
+                forceFit:true
+            }),
+            columns: [
+                {header:'Name', dataIndex:'name', width:200},
+                {header:'Type', dataIndex:'rangeURI'}
+            ]
+        });
+
+        this.editBtn = new Ext.Button({
+            text: 'Edit Properties...',
+            disabled: this.fileConfig != 'useCustom',
+            listeners:{click:function(button, event){
+                Ext.Ajax.request({
+                    autoAbort:true,
+                    url:this.actionsURL,
+                    method:'GET',
+                    disableCaching:false,
+                    success : this.editFileProperties,
+                    scope: this
+                });
+                this.onEditFileProperties(button, event);
+            }, scope:this}
+        });
+
+        this.filePropertiesPanel = new Ext.form.FormPanel({
+            border: false,
+            height: 150,
+            items: [
+                new Ext.form.RadioGroup({
+                    xtype: 'radio',
+                    itemCls: 'x-check-group',
+                    columns: 1,
+                    labelSeparator: '',
+                    items: [
+                        {boxLabel:'Use Default File Properties', name: 'fileOption', inputValue: 'useDefault', checked: this.fileConfig == 'useDefault'},
+                        {boxLabel:'Use Same Settings as Parent', name: 'fileOption', inputValue: 'useParent', checked: this.fileConfig == 'useParent'},
+                        {boxLabel:'Use Custom File Properties',
+                            name: 'fileOption',
+                            inputValue: 'useCustom',
+                            checked: this.fileConfig == 'useCustom'
+                        }
+                    ],
+                    listeners: {change:function(group, btn) {
+                        this.onFilePropConfigChanged(group, btn);
+                    }, scope:this}
+                }),
+                this.editBtn
+            ]
+        });
+
+        var filePanel = new Ext.Panel({
+            id: 'fileTab',
+            title: 'File Properties',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            bodyStyle : 'padding:10px;',
+            items:[
+                    {html: 'Define additional properties to be collected with each file:', border: false, height: 15},
+                    this.filePropertiesPanel,
+                    {html: 'Current Properties:', border: false, height: 15},
+                    this.filePropsGrid]
+        });
+
+        return filePanel;
+    },
+
+    onFilePropConfigChanged : function(group, rb)
+    {
+        this.fileConfig = rb.getGroupValue();
+        this.editBtn.setDisabled(this.fileConfig != 'useCustom');
+
+        this.filePropsGrid.getStore().load({params:{fileConfig: this.fileConfig}});
+    },
+
+    onEditFileProperties : function(btn, evt)
+    {
+        window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer');
     },
 
     /**
@@ -390,6 +478,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             }
 
             adminOptions.importDataEnabled = this.importDataEnabled;
+            adminOptions.fileConfig = this.fileConfig;
 
             Ext.Ajax.request({
                 url: this.actionsUpdateURL,
