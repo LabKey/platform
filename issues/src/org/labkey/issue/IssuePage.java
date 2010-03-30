@@ -194,7 +194,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
         if (null != caption)
         {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
 
             sb.append("<tr><td class=\"labkey-form-label\">");
             sb.append(getLabel(tableColumnName));
@@ -302,7 +302,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             return new HString(s);
 
         Keyword[] keywords = IssueManager.getKeywords(container.getId(), type);
-        StringBuffer sb = new StringBuffer(keywords.length * 30);
+        StringBuilder sb = new StringBuilder(keywords.length * 30);
         if (allowBlank)
             sb.append("<option></option>\n");
         for (Keyword keyword : keywords)
@@ -444,7 +444,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public String renderAttachments(ViewContext context, AttachmentParent parent)
     {
         Attachment[] attachments = AttachmentService.get().getAttachments(parent);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean canEdit = isEditable("attachments");
 
         if (attachments.length > 0)

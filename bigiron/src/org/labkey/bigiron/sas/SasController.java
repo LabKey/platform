@@ -88,7 +88,7 @@ public class SasController extends SpringActionController
 
         public ModelAndView getView(SchemaForm form, BindException errors) throws Exception
         {
-            DbSchema sas = SasDbSchema.get(form.getSchema());
+            DbSchema sas = DbScope.getDbScope("sasDataSource").getSchema(form.getSchema());
             DbScope scope = sas.getScope();
             Connection con = scope.getConnection();
             DatabaseMetaData dma = con.getMetaData();
@@ -140,7 +140,7 @@ public class SasController extends SpringActionController
 
         public ModelAndView getView(TableForm form, BindException errors) throws Exception
         {
-            DbSchema sas = SasDbSchema.get(form.getSchema());
+            DbSchema sas = DbScope.getDbScope("sasDataSource").getSchema(form.getSchema());
             ResultSet rs = Table.executeQuery(sas, new SQLFragment("SELECT * FROM " + form.getSchema() + "." + form.getTable()));
             ModelAndView dataView = new ResultSetView(rs, "Table Data");
 

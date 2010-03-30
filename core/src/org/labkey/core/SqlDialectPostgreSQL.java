@@ -551,7 +551,7 @@ class SqlDialectPostgreSQL extends SqlDialect
     /**
      * Wrap one or more INSERT statements to allow explicit specification
      * of values for autoincrementing columns (e.g. IDENTITY in SQL Server
-     * or SERIAL in Postgres). The input StringBuffer is modified.
+     * or SERIAL in Postgres). The input StringBuilder is modified.
      *
      * @param statements the insert statements. If more than one,
      *                   they must have been joined by appendStatement

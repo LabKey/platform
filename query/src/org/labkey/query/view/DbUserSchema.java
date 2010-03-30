@@ -61,7 +61,7 @@ public class DbUserSchema extends SimpleModuleUserSchema
                 try
                 {
                     DbScope scope = DbScope.getDbScope(def.getDataSource());
-                    dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName(), scope, def.getDbSchemaName());
+                    dbSchema = DbSchema.createFromMetaData(def.getDbSchemaName(), scope);
                 }
                 catch (Exception e)
                 {
@@ -78,7 +78,8 @@ public class DbUserSchema extends SimpleModuleUserSchema
     public static void uncache(DbUserSchemaDef def)
     {
         s_schemaMap.remove(def.getDbSchemaName());
-        DbSchema.invalidateSchema(def.getDbSchemaName());
+        DbScope scope = DbScope.getDbScope(def.getDataSource());
+        scope.invalidateSchema(def.getDbSchemaName());
     }
 
     protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)

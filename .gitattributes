@@ -170,7 +170,6 @@ bigiron/src/org/labkey/bigiron/mssql/SqlDialectMicrosoftSQLServer.java -text
 bigiron/src/org/labkey/bigiron/mssql/SqlDialectMicrosoftSQLServer9.java -text
 bigiron/src/org/labkey/bigiron/sas/ExportSasScriptModel.java -text
 bigiron/src/org/labkey/bigiron/sas/SasController.java -text
-bigiron/src/org/labkey/bigiron/sas/SasDbSchema.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas91.java -text

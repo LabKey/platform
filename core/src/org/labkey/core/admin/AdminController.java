@@ -2530,7 +2530,7 @@ public class AdminController extends SpringActionController
 
         try
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("init = ").append(_formatInteger.format(usage.getInit()));
             sb.append("; used = ").append(_formatInteger.format(usage.getUsed()));
             sb.append("; committed = ").append(_formatInteger.format(usage.getCommitted()));
@@ -3206,7 +3206,7 @@ public class AdminController extends SpringActionController
         {
             ActionURL currentUrl = getViewContext().cloneActionURL();
             String fixRequested = currentUrl.getParameter("_fix");
-            StringBuffer contentBuffer = new StringBuffer();
+            StringBuilder contentBuilder = new StringBuilder();
 
             if (null != fixRequested)
             {
@@ -3215,35 +3215,35 @@ public class AdminController extends SpringActionController
                        sqlcheck = DbSchema.checkAllContainerCols(true);
                 if (fixRequested.equalsIgnoreCase("descriptor"))
                        sqlcheck = OntologyManager.doProjectColumnCheck(true);
-                contentBuffer.append(sqlcheck);
+                contentBuilder.append(sqlcheck);
             }
             else
             {
-                contentBuffer.append("\n<br/><br/>Checking Container Column References...");
+                contentBuilder.append("\n<br/><br/>Checking Container Column References...");
                 String strTemp = DbSchema.checkAllContainerCols(false);
                 if (strTemp.length() > 0)
                 {
-                    contentBuffer.append(strTemp);
+                    contentBuilder.append(strTemp);
                     currentUrl = getViewContext().cloneActionURL();
                     currentUrl.addParameter("_fix", "container");
-                    contentBuffer.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                    contentBuffer.append(currentUrl.getEncodedLocalURIString());
-                    contentBuffer.append("\" >here</a> to attempt recovery .");
+                    contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
+                    contentBuilder.append(currentUrl.getEncodedLocalURIString());
+                    contentBuilder.append("\" >here</a> to attempt recovery .");
                 }
 
-                contentBuffer.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
+                contentBuilder.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
                 strTemp = OntologyManager.doProjectColumnCheck(false);
                 if (strTemp.length() > 0)
                 {
-                    contentBuffer.append(strTemp);
+                    contentBuilder.append(strTemp);
                     currentUrl = getViewContext().cloneActionURL();
                     currentUrl.addParameter("_fix", "descriptor");
-                    contentBuffer.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                    contentBuffer.append(currentUrl);
-                    contentBuffer.append("\" >here</a> to attempt recovery .");
+                    contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
+                    contentBuilder.append(currentUrl);
+                    contentBuilder.append("\" >here</a> to attempt recovery .");
                 }
 
-                contentBuffer.append("\n<br/><br/>Checking Schema consistency with tableXML...");
+                contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML...");
                 Set<DbSchema> schemas = new HashSet<DbSchema>();
                 List<Module> modules = ModuleLoader.getInstance().getModules();
 
@@ -3255,17 +3255,17 @@ public class AdminController extends SpringActionController
                     String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
                     if (null!=sOut)
                     {
-                        contentBuffer.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
-                        contentBuffer.append(schema.getName());
-                        contentBuffer.append("<br/>");
-                        contentBuffer.append(sOut);
+                        contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
+                        contentBuilder.append(schema.getName());
+                        contentBuilder.append("<br/>");
+                        contentBuilder.append(sOut);
                     }
                 }
 
-                contentBuffer.append("\n<br/><br/>Database Consistency checker complete");
+                contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
             }
 
-            return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuffer.toString() + "</td></tr></table>");
+            return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuilder.toString() + "</td></tr></table>");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3618,7 +3618,7 @@ public class AdminController extends SpringActionController
         {
             Container c = getContainer();
             String folderName = form.getName();
-            StringBuffer error = new StringBuffer();
+            StringBuilder error = new StringBuilder();
 
             if (Container.isLegalName(folderName, error))
             {
@@ -3798,7 +3798,7 @@ public class AdminController extends SpringActionController
         {
             Container parent = getContainer();
             String folderName = form.getName();
-            StringBuffer error = new StringBuffer();
+            StringBuilder error = new StringBuilder();
 
             if (Container.isLegalName(folderName, error))
             {

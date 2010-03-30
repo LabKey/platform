@@ -705,7 +705,7 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(UserPreferenceForm form, BindException errors) throws Exception
         {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             if (form.getRequiredFields().length > 0)
             {
                 String sep = "";
