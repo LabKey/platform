@@ -28,17 +28,16 @@ import org.labkey.query.view.ExternalSchema;
 
 import java.util.*;
 
-public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
+public class ExternalSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
 {
-    TableType _metadata;
-    String _containerId;
-    Container _container;
+    private String _containerId;
+    private Container _container;
     
 
-    public DbUserSchemaTable(ExternalSchema schema, SchemaTableInfo table, TableType metadata)
+    public ExternalSchemaTable(ExternalSchema schema, SchemaTableInfo table, TableType metadata)
     {
         super(schema, table);
-        _metadata = metadata;
+
         if (metadata != null)
         {
             loadFromXML(schema, metadata, null);
@@ -69,11 +68,6 @@ public class DbUserSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
             _containerId = containerId;
             _container = ContainerManager.getForId(containerId);
         }
-    }
-
-    public String getContainerId()
-    {
-        return _containerId;
     }
 
     @Override

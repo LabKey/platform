@@ -767,15 +767,22 @@ public class QueryServiceImpl extends QueryService
         }
         String tableAlias = AliasManager.makeLegalName(tableName, table.getSchema().getSqlDialect());
 
-		for (ColumnInfo column : allColumns)
-		{
-			assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
-			column.declareJoins(tableAlias, joins);
-            selectFrag.append(strComma);
-            selectFrag.append(column.getValueSql(tableAlias));
-            selectFrag.append(" AS " );
-            selectFrag.append(dialect.quoteColumnIdentifier(column.getAlias()));
-            strComma = ",\n";
+        if (allColumns.isEmpty())
+        {
+            selectFrag.append(" * ");
+        }
+        else
+        {
+            for (ColumnInfo column : allColumns)
+            {
+                assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
+                column.declareJoins(tableAlias, joins);
+                selectFrag.append(strComma);
+                selectFrag.append(column.getValueSql(tableAlias));
+                selectFrag.append(" AS " );
+                selectFrag.append(dialect.quoteColumnIdentifier(column.getAlias()));
+                strComma = ",\n";
+            }
         }
 
         if (requiresExtraColumns)

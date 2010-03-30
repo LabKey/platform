@@ -16,7 +16,6 @@
 
 package org.labkey.query.view;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
@@ -24,68 +23,36 @@ import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.data.DbUserSchemaTable;
+import org.labkey.query.data.ExternalSchemaTable;
 import org.labkey.query.persist.ExternalSchemaDef;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ExternalSchema extends SimpleModuleUserSchema
 {
-    private Logger _log = Logger.getLogger(ExternalSchema.class);
     private ExternalSchemaDef _def;
-    static final Map<String, DbSchema> s_schemaMap = new HashMap<String, DbSchema>();
 
     public ExternalSchema(User user, Container container, ExternalSchemaDef def)
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def));
         _def = def;
-        if (_dbSchema == null)
-        {
-            _dbSchema = CoreSchema.getInstance().getSchema();             // TODO: Assuming core schema is troubling... assert _dbSchema != null instead?
-        }
+
+        assert _dbSchema != null;
     }
 
     public static DbSchema getDbSchema(ExternalSchemaDef def)
     {
-        String dbSchemaName = def.getDbSchemaName();
-        DbSchema dbSchema;
-
-        synchronized (s_schemaMap)
-        {
-            if (s_schemaMap.containsKey(dbSchemaName))
-            {
-                dbSchema = s_schemaMap.get(dbSchemaName);
-            }
-            else
-            {
-                try
-                {
-                    DbScope scope = DbScope.getDbScope(def.getDataSource());
-                    dbSchema = DbSchema.createFromMetaData(dbSchemaName, scope);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
-
-                s_schemaMap.put(dbSchemaName, dbSchema);
-            }
-        }
-
-        return dbSchema;
+        DbScope scope = DbScope.getDbScope(def.getDataSource());
+        return scope.getSchema(def.getDbSchemaName());
     }
 
     public static void uncache(ExternalSchemaDef def)
     {
-        s_schemaMap.remove(def.getDbSchemaName());
         DbScope scope = DbScope.getDbScope(def.getDataSource());
         scope.invalidateSchema(def.getDbSchemaName());
     }
 
     protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)
     {
-        DbUserSchemaTable ret = new DbUserSchemaTable(this, schematable, getXbTable(name));
+        ExternalSchemaTable ret = new ExternalSchemaTable(this, schematable, getXbTable(name));
         ret.setContainer(_def.getContainerId());
         return ret;
     }
@@ -94,6 +61,7 @@ public class ExternalSchema extends SimpleModuleUserSchema
     {
         if (_def.getMetaData() == null)
             return null;
+
         try
         {
             TablesDocument doc = TablesDocument.Factory.parse(_def.getMetaData());

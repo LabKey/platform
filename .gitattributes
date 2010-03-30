@@ -1747,7 +1747,7 @@ query/src/org/labkey/query/controllers/newQuery.jsp -text
 query/src/org/labkey/query/controllers/propertiesQuery.jsp -text
 query/src/org/labkey/query/controllers/sourceQuery.jsp -text
 query/src/org/labkey/query/data/DbUserSchemaCache.java -text
-query/src/org/labkey/query/data/DbUserSchemaTable.java -text
+query/src/org/labkey/query/data/ExternalSchemaTable.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text

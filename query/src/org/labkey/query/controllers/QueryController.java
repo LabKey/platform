@@ -2483,7 +2483,7 @@ public class QueryController extends SpringActionController
 
             try
             {
-                QueryManager.get().reloadDbUserSchema(def);
+                QueryManager.get().reloadExternalSchema(def);
             }
             catch (Exception e)
             {
@@ -2513,7 +2513,7 @@ public class QueryController extends SpringActionController
         @Override
         public ActionURL getRedirectURL(Object o) throws Exception
         {
-            QueryManager.get().reloadAllDbUserSchemas(getContainer());
+            QueryManager.get().reloadAllExternalSchemas(getContainer());
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "ALL");
         }
     }

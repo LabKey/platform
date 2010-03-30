@@ -263,7 +263,7 @@ public class QueryManager
         return new ExternalSchemaDef[0];
     }
 
-    public ExternalSchemaDef getDbUserSchemaDef(Container container, String userSchemaName)
+    public ExternalSchemaDef getExternalSchemaDef(Container container, String userSchemaName)
     {
         if (userSchemaName == null)
             return null;
@@ -298,16 +298,16 @@ public class QueryManager
     }
 
 
-    public void reloadAllDbUserSchemas(Container c)
+    public void reloadAllExternalSchemas(Container c)
     {
         ExternalSchemaDef[] defs = getExternalSchemaDefs(c);
 
         for (ExternalSchemaDef def : defs)
-            reloadDbUserSchema(def);
+            reloadExternalSchema(def);
     }
 
 
-    public void reloadDbUserSchema(ExternalSchemaDef def)
+    public void reloadExternalSchema(ExternalSchemaDef def)
     {
         ExternalSchema.uncache(def);
         ExternalSchema.getDbSchema(def);
