@@ -202,6 +202,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setExtraAttributesFrom(col);
 
         // and the remaining
+        setUserEditable(col.isUserEditable());
         setNullable(col.getNullable());
         setAutoFillValue(col.getAutoFillValue());
         setAutoIncrement(col.isAutoIncrement());
@@ -240,7 +241,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             setNullable(col.getNullable());
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
-        setUserEditable(col.isUserEditable());
         setWidth(col.getWidth());
         setFk(col.getFk());
         setPropertyURI(col.getPropertyURI());
