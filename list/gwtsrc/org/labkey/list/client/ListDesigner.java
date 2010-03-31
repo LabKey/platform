@@ -651,7 +651,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 type.addItem("Integer", "Integer");
                 type.addItem("Text (String)", "Varchar");
                 HorizontalPanel panel = new HorizontalPanel();
-                panel.add(new Label("Name"));
+                panel.add(new Label("Primary Key Type"));
                 panel.add(new HelpPopup("Key Type", "Every item in a list has a key value which uniquely identifies that item. What is the data type of the key in your list?"));
                 _table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
