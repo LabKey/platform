@@ -64,7 +64,8 @@ if (null != reloadedSchema)
         urlReload.setAction(QueryController.ReloadExternalSchemaAction.class);
 %>
         <tr>
-            <td><a href="<%=urlView%>"><%=h(def.getUserSchemaName())%></a></td>
+            <td><%=h(def.getUserSchemaName())%></td>
+            <td><labkey:link text="view" href="<%=urlView%>" /></td>
             <td><%if (getUser().isAdministrator()) {%><labkey:link text="edit" href="<%=urlEdit%>" /><%}%></td>
             <td><labkey:link text="reload" href="<%=urlReload%>" /></td>
         </tr>

@@ -2382,9 +2382,21 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.refreshFromDb();
-            ExternalSchemaDef def = form.getBean();
-            Container defContainer = def.lookupContainer();
+            ExternalSchemaDef def;
+            Container defContainer;
+
+            if (reshow)
+            {
+                def = form.getBean();
+                ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getDbUserSchemaId());
+                defContainer = fromDb.lookupContainer();               
+            }
+            else
+            {
+                form.refreshFromDb();
+                def = form.getBean();
+                defContainer = def.lookupContainer();
+            }
 
             if (!defContainer.equals(getContainer()))
                 throw new UnauthorizedException();
