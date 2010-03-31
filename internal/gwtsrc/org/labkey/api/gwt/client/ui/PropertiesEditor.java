@@ -16,10 +16,7 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.FocusEvent;
-import com.google.gwt.event.dom.client.FocusHandler;
+import com.google.gwt.event.dom.client.*;
 import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.event.logical.shared.SelectionEvent;
 import com.google.gwt.user.client.DOM;
@@ -82,7 +79,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private HorizontalPanel _buttonPanel;
     private boolean _readOnly;
     protected LookupServiceAsync _lookupService;
-    private List<ChangeListener> _listeners = new ArrayList<ChangeListener>();
+    private List<ChangeHandler> _listeners = new ArrayList<ChangeHandler>();
 
     private FieldType _selectedPD;
     private ImageButton _addFieldButton;
@@ -248,6 +245,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         col++;  // delete button
         col++;  // up button
         col++;  // down button
+        col++;  // decoration (e.g. PK)
+        assert col == COLUMN_OF_NAMEFIELD;
         _table.getFlexCellFormatter().setWidth(0, col, "120px");
         setBoldText(_table, 0, col++, "Name");
         _table.getFlexCellFormatter().setWidth(0, col, "120px");
@@ -326,6 +325,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    int COLUMN_OF_NAMEFIELD = 5;
+    
     public FieldType addField(FieldType field)
     {
         _table.setVisible(true);
@@ -336,7 +337,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         refresh();
 
         select(newRow.edit);
-        ((TextBox)_table.getWidget(index + 1, 4)).setFocus(true);
+        ((TextBox)_table.getWidget(index + 1, COLUMN_OF_NAMEFIELD)).setFocus(true);
         return newRow.edit;
     }
 
@@ -525,6 +526,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             _table.setText(tableRow, col++, "");
         }
 
+
         if (!_readOnly && canDelete(rowObject))
         {
             if (status == FieldStatus.Deleted)
@@ -589,6 +591,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             _table.setText(tableRow,col,"");
         col++;
 
+
+        {
+        Image decorationImage = getDecorationImage(status, rowObject);
+        if (null == decorationImage)
+            _table.setText(tableRow, col++, "");
+        else
+            _table.setWidget(tableRow, col++, decorationImage);
+        }
+
+        
         FocusHandler focusHandler = new FocusHandler()
         {
             public void onFocus(FocusEvent event)
@@ -600,42 +612,71 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         };
 
-        BoundTextBox nameTextBox = new BoundTextBox(pd, "name", "120", 200, "ff_name" + index)
+        Widget name;
+        if (readOnly)
         {
-            String validateValue(String text)
+            name = new Label(pd.getName());
+            name.setHeight("20px");
+        }
+        else
+        {
+            BoundTextBox nameTextBox = new BoundTextBox(pd, "name", "120", 200, "ff_name" + index)
             {
-                if (text == null || isLegalName(text))
-                    return null;
-                return BAD_NAME_ERROR_MESSAGE;
-            }
-
-            @Override
-            String validateValueWarning(String text)
-            {
-                if (text != null && text.contains(" "))
+                String validateValue(String text)
                 {
-                    return "Name should not contain spaces.";
+                    if (text == null || isLegalName(text))
+                        return null;
+                    return BAD_NAME_ERROR_MESSAGE;
                 }
-                return null;
-            }
-        };
-        nameTextBox.addFocusHandler(focusHandler);
-        nameTextBox.setEnabled(!readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
-        _table.setWidget(tableRow, col, nameTextBox);
+
+                @Override
+                String validateValueWarning(String text)
+                {
+                    if (text != null && text.contains(" "))
+                    {
+                        return "Name should not contain spaces.";
+                    }
+                    return null;
+                }
+            };
+            nameTextBox.addFocusHandler(focusHandler);
+            nameTextBox.setEnabled(!readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
+            name = nameTextBox;
+        }
+        _table.setWidget(tableRow, col, name);
 
         col++;
 
-        BoundTextBox labelTextBox = new BoundTextBox(pd, "label", "120", 200, "ff_label" + index);
-        labelTextBox.addFocusHandler(focusHandler);
-        labelTextBox.setEnabled(!readOnly);
-        _table.setWidget(tableRow, col, labelTextBox);
+        Widget label;
+        if (readOnly)
+        {
+            label = new Label(pd.getLabel());
+        }
+        else
+        {
+            BoundTextBox labelTextBox = new BoundTextBox(pd, "label", "120", 200, "ff_label" + index);
+            labelTextBox.addFocusHandler(focusHandler);
+            labelTextBox.setEnabled(!readOnly);
+            label = labelTextBox;
+        }
+        _table.setWidget(tableRow, col, label);
         col++;
 
-        BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
-        typePicker.addFocusHandler(focusHandler);
-        typePicker.setRangeURI(pd.getRangeURI());
-        typePicker.setEnabled(isTypeEditable(pd, status) && !readOnly);
-        _table.setWidget(tableRow, col, typePicker);
+
+        Widget type;
+        if (readOnly)
+        {
+            type = new Label(TypePicker.getDisplayString(pd.getRangeURI()));
+        }
+        else
+        {
+            BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
+            typePicker.addFocusHandler(focusHandler);
+            typePicker.setRangeURI(pd.getRangeURI());
+            typePicker.setEnabled(isTypeEditable(pd, status) && !readOnly);
+            type = typePicker;
+        }
+        _table.setWidget(tableRow, col, type);
         col++;
 
         if (!readOnly)
@@ -718,6 +759,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return i;
     }
 
+    protected Image getDecorationImage(FieldStatus status, Row row)
+    {
+        return null;
+    }
+
     Row getRow(int i)
     {
         return _rows.get(i);
@@ -767,6 +813,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             return FieldStatus.Added;
 
         return edit.equals(orig) ? FieldStatus.Existing : FieldStatus.Changed;
+    }
+
+
+    public boolean isDeleted(int i)
+    {
+        return getRow(i).deleted;
     }
 
 
@@ -866,6 +918,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return getRow(i).edit;
     }
 
+    public FieldType getOriginalPropertyDescriptor(int i)
+    {
+        return getRow(i).orig;
+    }
 
     public int getPropertyCount()
     {
@@ -874,7 +930,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public int getPropertyCount(boolean includeDeleted)
     {
-        if(includeDeleted || null == _rows)
+        if (includeDeleted || null == _rows)
             return getPropertyCount();
         else
         {
@@ -915,10 +971,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         refresh();
     }
 
-    public void addChangeListener(ChangeListener cl)
-    {
-        _listeners.add(cl);
-    }
 
     public boolean isDirty()
     {
@@ -932,6 +984,34 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
         return false;
     }
+
+
+    @Deprecated
+    public void addChangeListener(final ChangeListener cl)
+    {
+        _listeners.add(new ChangeHandler(){
+            public void onChange(ChangeEvent event)
+            {
+                cl.onChange(null == event ? null : (Widget)event.getSource());
+            }
+        });
+    }
+
+
+    public void addChangeHandler(ChangeHandler ch)
+    {
+        _listeners.add(ch);
+    }
+
+
+    private void fireChangeEvent()
+    {
+        for (ChangeHandler listener : _listeners)
+            listener.onChange(null);
+    }
+
+
+
 
     /*
      * These widgets are bound in one direction, that is they push changes into the
@@ -963,12 +1043,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-    private void fireChangeEvent()
-    {
-        for (ChangeListener listener : _listeners)
-            listener.onChange(null);
-    }
-
+    
     private class BoundTextBox extends TextBox implements ChangeListener, FocusListener
     {
         FieldType _pd = null;

@@ -58,6 +58,7 @@ public class BoundTextBox extends HorizontalPanel
         _caption = caption;
         _box = new TextBox();
         DOM.setElementAttribute(_box.getElement(), "id", id);
+        DOM.setElementAttribute(_box.getElement(), "name", id);
         _box.setText(StringUtils.trimToEmpty(initialValue));
         _box.addBlurHandler(new BlurHandler()
         {

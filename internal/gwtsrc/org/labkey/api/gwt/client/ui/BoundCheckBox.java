@@ -31,7 +31,7 @@ public class BoundCheckBox extends CheckBox
 {
     public BoundCheckBox(String id, final BooleanProperty property, final DirtyCallback dirtyCallback)
     {
-        super();
+        super("", true);
         DOM.setElementAttribute(getElement(), "id", id);
 
         setValue(property.booleanValue());

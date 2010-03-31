@@ -44,6 +44,7 @@ public class BoundTextAreaBox extends HorizontalPanel
         _caption = caption;
         _box = new TextArea();
         DOM.setElementAttribute(_box.getElement(), "id", id);
+        DOM.setElementAttribute(_box.getElement(), "name", id);
         _box.setText(StringUtils.trimToEmpty(initialValue));
         _box.setWidth("500px");
         _box.addFocusListener(new FocusListenerAdapter()

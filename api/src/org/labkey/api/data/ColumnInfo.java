@@ -199,8 +199,29 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void copyAttributesFrom(ColumnInfo col)
     {
+        setExtraAttributesFrom(col);
+
+        // and the remaining
+        setNullable(col.getNullable());
         setAutoFillValue(col.getAutoFillValue());
         setAutoIncrement(col.isAutoIncrement());
+        setScale(col.getScale());
+        setSqlTypeName(col.getSqlTypeName());
+        this.sqlTypeInt = col.sqlTypeInt;
+
+        // We intentionally do not copy "isHidden", since it is usually not applicable.
+        // URL copy/rewrite is handled separately
+
+        // Consider: it does not always make sense to preserve the "isKeyField" property.
+        setKeyField(col.isKeyField());
+    }
+
+
+    /*
+     * copy "non-core" attributes, e.g. leave key and type information alone
+     */
+    public void setExtraAttributesFrom(ColumnInfo col)
+    {
         if (col.label != null)
             setLabel(col.getLabel());
         setCssClass(col.getCssClass());
@@ -215,11 +236,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setInputType(col.inputType);
 
         setInputRows(col.getInputRows());
-        setNullable(col.getNullable());
+        if (!isKeyField() && !col.getNullable())
+            setNullable(col.getNullable());
         setDisplayColumnFactory(col.getDisplayColumnFactory());
-        setScale(col.getScale());
-        setSqlTypeName(col.getSqlTypeName());
-        this.sqlTypeInt = col.sqlTypeInt;
         setTextAlign(col.getTextAlign());
         setUserEditable(col.isUserEditable());
         setWidth(col.getWidth());
@@ -231,12 +250,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
-
-        // We intentionally do not copy "isHidden", since it is usually not applicable.
-        // URL copy/rewrite is handled separately
-
-        // Consider: it does not always make sense to preserve the "isKeyField" property.
-        setKeyField(col.isKeyField());
 
         setMvColumnName(col.getMvColumnName());
     }

@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.PreferenceService;
@@ -204,7 +205,18 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     {
         return (getPermissions() & perm) == perm;
     }
-    
+
+
+    public boolean hasPermission(Class<? extends Permission> perm) throws NotFoundException
+    {
+        SecurityPolicy policy = getContainer().getPolicy();
+        User user = getUser();
+        if (null == policy || null == user)
+            return false;
+        return policy.hasPermission(user, perm);
+    }
+
+
     /**
      * True if user has agreed to terms of use, or such agreement is not required.
      * @return true if user has agreed to terms of use for this project

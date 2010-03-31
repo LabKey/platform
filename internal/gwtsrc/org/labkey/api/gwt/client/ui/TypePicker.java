@@ -40,6 +40,7 @@ public class TypePicker extends ListBox
 
 
     static Map<String,String> synonyms = new HashMap<String,String>();
+    static Map<String,String> displayMap = new HashMap<String,String>();
 
     static
     {
@@ -65,7 +66,28 @@ public class TypePicker extends ListBox
         synonyms.put("xsd:datetime", xsdDateTime);
         synonyms.put("xsd:file", xsdFileLink);
         synonyms.put("xsd:attachment", xsdAttachment);
+
+
+        displayMap.put(xsdString, "Text (String)");
+        displayMap.put(xsdMultiLine, "Multi-Line Text");
+        displayMap.put(xsdBoolean, "Boolean");
+        displayMap.put(xsdInt, "Integer");
+        displayMap.put(xsdDouble, "Number (Double)");
+        displayMap.put(xsdDateTime, "DateTime");
+        displayMap.put(xsdFileLink, "File");
+        displayMap.put(xsdAttachment, "Attachment");
     }
+
+
+    public static String getDisplayString(String type)
+    {
+        String syn = synonyms.get(type);
+        if (null != syn)
+            type = syn;
+        String display = displayMap.get(type);
+        return null==display?type:display;
+    }
+
 
     public TypePicker(boolean allowFileLinkProperties, boolean allowAttachmentProperties)
     {
