@@ -2258,6 +2258,54 @@ public class QueryController extends SpringActionController
     }
 
 
+    @RequiresSiteAdmin
+    public class InsertMultipleExternalSchemasAction extends FormViewAction<ExternalSchemaForm>
+    {
+        public void validateCommand(ExternalSchemaForm form, Errors errors)
+        {
+			form.validate(errors);
+        }
+
+        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
+        {
+            setHelpTopic(new HelpTopic("externalSchemas"));
+            return new JspView<ExternalSchemaBean>(QueryController.class, "multipleSchemas.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
+        }
+
+        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                form.doInsert();
+            }
+            catch (SQLException e)
+            {
+                if (SqlDialect.isConstraintException(e))
+                {
+                    errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
+                    return false;
+                }
+
+                throw e;
+            }
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
+        {
+            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new AdminAction().appendNavTrail(root);
+            root.addChild("Define Multiple Schemas", new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, getContainer()));
+            return root;
+        }
+    }
+
+
     public static class ExternalSchemaBean
     {
         private final Map<DbScope, Collection<String>> _scopesAndSchemas = new LinkedHashMap<DbScope, Collection<String>>();
@@ -2279,9 +2327,12 @@ public class QueryController extends SpringActionController
                 Connection con = null;
                 ResultSet rs = null;
                 SqlDialect dialect = scope.getSqlDialect();
+                boolean isLabKeyScope = (scope.equals(DbScope.getLabkeyScope()));
 
                 try
                 {
+                    Set<String> labkeySchemaNames = DbSchema.getModuleSchemaNames();
+
                     con = scope.getConnection();
                     DatabaseMetaData dbmd = con.getMetaData();
 
@@ -2294,10 +2345,15 @@ public class QueryController extends SpringActionController
                     {
                         String schemaName = rs.getString(1).trim();
 
-                        if (!dialect.isSystemSchema(schemaName))
-                            schemaNames.add(schemaName);
-
                         schemaNamesIncludingSystem.add(schemaName);
+
+                        if (dialect.isSystemSchema(schemaName))
+                            continue;
+
+                        if (isLabKeyScope && labkeySchemaNames.contains(schemaName))
+                            continue;
+
+                        schemaNames.add(schemaName);
                     }
 
                     _scopesAndSchemas.put(scope, schemaNames);

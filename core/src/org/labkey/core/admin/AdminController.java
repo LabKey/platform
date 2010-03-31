@@ -3244,11 +3244,7 @@ public class AdminController extends SpringActionController
                 }
 
                 contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML...");
-                Set<DbSchema> schemas = new HashSet<DbSchema>();
-                List<Module> modules = ModuleLoader.getInstance().getModules();
-
-                for (Module module : modules)
-                     schemas.addAll(module.getSchemasToTest());
+                Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
                 for (DbSchema schema : schemas)
                 {

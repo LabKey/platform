@@ -23,14 +23,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.ServletContextEvent;
@@ -601,7 +600,7 @@ public class DavCrawler implements ShutdownListener
         Map m = new LinkedHashMap();
         try
         {
-            DbSchema s = DbSchema.get("search");
+            DbSchema s = ss.getSchema();
 
             Integer uniqueCollections = Table.executeSingleton(s, "SELECT count(*) FROM search.crawlcollections", null, Integer.class);
             m.put("Number of unique folders/directories", uniqueCollections);

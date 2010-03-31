@@ -17,7 +17,9 @@ package org.labkey.search.model;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -289,7 +291,7 @@ public class SavePaths implements DavCrawler.SavePaths
     public Map<Path, Pair<Date,Date>> getPaths(int limit)
     {
         Date now = new Date(System.currentTimeMillis());
-        Date awhileago = new Date(Math.max(_startupTime,now.getTime() - 30*60000));
+        Date awhileago = new Date(Math.max(_startupTime, now.getTime() - 30*60000));
 
         SqlDialect dialect = getSearchSchema().getSqlDialect();
         SQLFragment f = new SQLFragment(
@@ -431,6 +433,11 @@ public class SavePaths implements DavCrawler.SavePaths
 
     private static DbSchema getSearchSchema()
     {
-        return DbSchema.get("search");
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+        if (null != ss)
+            return ss.getSchema();
+        else
+            return null;
     }
 }

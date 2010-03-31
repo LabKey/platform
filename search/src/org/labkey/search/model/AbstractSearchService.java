@@ -23,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -970,8 +969,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final Object _categoriesLock = new Object();
     List<SearchCategory> _readonlyCategories = Collections.emptyList();
     ArrayList<SearchCategory> _searchCategories = new ArrayList<SearchCategory>();
-            
-    
+
+
+    public DbSchema getSchema()
+    {
+        return DbSchema.get("search");
+    }
+
+
     public List<SearchCategory> getSearchCategories()
     {
         synchronized (_categoriesLock)
@@ -1014,7 +1019,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         ResultSet rs = null;
         try
         {
-            rs = Table.executeQuery(DbSchema.get("search"),
+            rs = Table.executeQuery(getSchema(),
                 "SELECT Container FROM search.ParticipantIndex WHERE ParticipantID=?",
                 new Object[] {ptid});
             while (rs.next())
@@ -1069,7 +1074,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             new ColumnDescriptor("Container", String.class),
             new ColumnDescriptor("ParticipantID", String.class)
         });
-        DbSchema search = DbSchema.get("search");
+        DbSchema search = getSchema();
         Table.TempTableInfo tinfo = null;
         try
         {
@@ -1308,7 +1313,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         try
         {
-            DbSchema search = DbSchema.get("search");
+            DbSchema search = getSchema();
             Table.execute(search,
                     "DELETE FROM search.ParticipantIndex " +
                     "WHERE LastIndexed < ?",

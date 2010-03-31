@@ -59,8 +59,6 @@
         <tr><td></td><td><%= PageFlowUtil.generateSubmitButton("Get Schema Xml") %>
         <%=PageFlowUtil.generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>  </td></tr>
         <tr><td></td><td></td></tr>
-
-
     </table>
 </form><br/><br/>
 

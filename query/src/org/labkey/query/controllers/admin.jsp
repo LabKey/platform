@@ -75,7 +75,7 @@ if (null != reloadedSchema)
 <br>
 <%if (getUser().isAdministrator()) { %>
     <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/>
-    <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, getContainer())%>" text="define multiple new schemas"/><%
+    <labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, getContainer())%>" text="define multiple new schemas"/><%
 
     if (defs.length > 0)
     { %>
