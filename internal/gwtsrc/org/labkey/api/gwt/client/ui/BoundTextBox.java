@@ -100,7 +100,6 @@ public class BoundTextBox extends HorizontalPanel
 
     void _dirty()
     {
-        checkValid();
         if (_dirtyCallback != null && !_initialValue.equals(getBox().getText()))
             _dirtyCallback.setDirty(true);
     }
