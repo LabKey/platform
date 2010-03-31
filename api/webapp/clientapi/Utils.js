@@ -313,20 +313,28 @@ LABKEY.Utils.convertToExcel(
          * @param translationMap A map listing property name translations
          * @param applyOthers Set to false to prohibit application of properties
          * not explicitly mentioned in the translation map.
+         * @param applyOthers Set to false to prohibit application of properties
+         * that are functions
          */
-        applyTranslated : function(target, source, translationMap, applyOthers)
+        applyTranslated : function(target, source, translationMap, applyOthers, applyFunctions)
         {
             if(undefined === target)
                 target = {};
             if(undefined === applyOthers)
                 applyOthers = true;
+            if (undefined == applyFunctions && applyOthers)
+                applyFunctions = true;
             var targetPropName;
             for(var prop in source)
             {
+                //special case: Ext adds a "constructor" property to every object, which we don't want to apply
+                if (prop == "constructor")
+                    continue;
+                
                 targetPropName = translationMap[prop];
                 if(targetPropName)
                     target[translationMap[prop]] = source[prop];
-                else if(undefined === targetPropName && applyOthers)
+                else if(undefined === targetPropName && applyOthers && (applyFunctions || !Ext.isFunction(source[prop])))
                     target[prop] = source[prop];
             }
         },

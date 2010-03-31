@@ -115,7 +115,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         renderTo: false,
         sort: false,
         filterArray: false,
-        filters: false
+        filters: false,
+        _paramTranslationMap: false,
+        events: false,
+        filterOptRe: false
     },
 
     constructor : function(config)
@@ -166,7 +169,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //setup the params
         var params = {};
         params["webpart.name"] = "Query";
-        LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap);
+        LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap, true, false);
 
         //handle base-filters and sorts (need data region prefix)
         if(this.sort)
