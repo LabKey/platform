@@ -18,6 +18,7 @@ package org.labkey.core.search;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -317,5 +318,10 @@ public class NoopSearchService implements SearchService
     public boolean accept(WebdavResource r)
     {
         return true;
+    }
+
+    public DbSchema getSchema()
+    {
+        return null;
     }
 }
