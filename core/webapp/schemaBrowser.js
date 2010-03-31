@@ -155,9 +155,21 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
             listeners: {
                 load: {
                     fn: function(node){
-                        try {
-                            this.fireEvent("schemasloaded", node.childNodes);
-                        } catch(ignore) {}
+                        var numChildren = node.childNodes.length;
+                        var childrenLoaded = 0;
+                        //there is now a level of data sources, under which are the schema nodes
+                        for (var idx = 0; idx < numChildren; ++idx)
+                        {
+                            node.childNodes[idx].on("load", function(childNode){
+                                ++childrenLoaded;
+                                if (childrenLoaded == numChildren)
+                                {
+                                    try {
+                                        this.fireEvent("schemasloaded", childNode.childNodes);
+                                    } catch(ignore) {}
+                                }
+                            }, this);
+                        }
                     },
                     scope: this
                 }
