@@ -102,8 +102,8 @@ var schemaIndex = 3;
 
 // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
 var dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', helpPopup:{title:'Data Source', html:'<%=bean.getHelpHTML("DataSource")%>'}, value:dataSources[<%=coreIndex%>][0]});
-var includeLabel = new Ext.form.Label({text:'Show System Schemas'});
-var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem', fieldLabel:'Include System Schemas'});
+var includeLabel = new Ext.form.Label({text:'Show System Schemas', align:"middle", padding:"4"});
+var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem'});
 // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
 var dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, value:<%=q(h(def.getDbSchemaName()))%>});
 var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:'<%=bean.getHelpHTML("UserSchemaName")%>'}, value:<%=q(h(def.getUserSchemaName()))%>});
@@ -117,7 +117,7 @@ var f = new LABKEY.ext.FormPanel({
         standardSubmit:true,
         items:[
             dataSourceCombo,
-            {fieldLabel:'Database Schema Name', helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, xtype:'panel', border:false, layout:'hbox', items:[dbSchemaCombo, includeLabel, includeSystemCheckBox]},
+            {fieldLabel:'Database Schema Name', helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, xtype:'panel', border:false, layout:'hbox', items:[dbSchemaCombo, includeSystemCheckBox, includeLabel]},
             userSchemaText,
             editableCheckBox,
             metaDataTextArea

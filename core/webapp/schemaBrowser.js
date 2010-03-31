@@ -140,6 +140,7 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
 LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
     initComponent : function(){
 
+        this.rootVisible = false;
         Ext.EventManager.on(window, "beforeunload", function(evt){
             this._unloading = true
         }, this);
@@ -150,7 +151,6 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel, {
             text: 'Schemas',
             expanded: true,
             expandable: false,
-            rootVisible:false,
             draggable: false,
             listeners: {
                 load: {

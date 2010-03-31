@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -51,7 +52,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
         if ("root".equals(form.getNode()))
         {
-            Map<String, JSONArray> map = new LinkedHashMap<String, JSONArray>();
+            Map<DbScope, JSONArray> map = new LinkedHashMap<DbScope, JSONArray>();
 
             //return list of schemas grouped by datasource
             for (String name : defSchema.getUserSchemaNames())
@@ -60,13 +61,13 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 if (null == schema)
                     continue;
 
-                String dsName = schema.getDbSchema().getScope().getDataSourceName();
-                JSONArray schemas = map.get(dsName);
+                DbScope scope = schema.getDbSchema().getScope();
+                JSONArray schemas = map.get(scope);
 
                 if (null == schemas)
                 {
                     schemas = new JSONArray();
-                    map.put(dsName, schemas);
+                    map.put(scope, schemas);
                 }
 
                 JSONObject schemaProps = new JSONObject();
@@ -79,13 +80,14 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 schemas.put(schemaProps);
             }
 
-            for (Map.Entry<String, JSONArray> scope : map.entrySet())
+            for (Map.Entry<DbScope, JSONArray> entry : map.entrySet())
             {
-                String dsName = scope.getKey();
-                JSONArray schemas = scope.getValue();
+                DbScope scope = entry.getKey();
+                String dsName = scope.getDataSourceName();
+                JSONArray schemas = entry.getValue();
                 JSONObject ds = new JSONObject();
                 ds.put("id", "ds:" + dsName);
-                ds.put("text", dsName);
+                ds.put("text", "Schemas in " + scope.getDisplayName());
                 ds.put("qtip", "Schemas in data source '" + dsName + "'");
                 ds.put("expanded", true);
                 ds.put("children", schemas);
