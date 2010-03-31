@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -92,7 +93,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
     public GWTList getList(int id)
     {
-        ListDef def = ListManager.get().getList(getContainer(), id);
+        ListDefinition def =  ListService.get().getList(getContainer(), id); //ListManager.get().getList(getContainer(), id);
 
         GWTList gwt = new GWTList();
         gwt._listId(id);
@@ -101,10 +102,23 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         gwt.setAllowExport(def.getAllowExport());
         gwt.setAllowUpload(def.getAllowUpload());
         gwt.setDescription(def.getDescription());
-        gwt.setDiscussionSetting(def.getDiscussionSetting());
+        gwt.setDiscussionSetting(def.getDiscussionSetting().getValue());
         gwt.setKeyPropertyName(def.getKeyName());
-        gwt.setKeyPropertyType(def.getKeyType());
+        gwt.setKeyPropertyType(def.getKeyType().name());
         gwt.setTitleField(def.getTitleColumn());
+
+        if (StringUtils.isEmpty(gwt.getTitleField()))
+        {
+            try
+            {
+                String title = def.getTable(getUser()).getTitleColumn();
+                gwt._defaultTitleField(title);
+            }
+            catch (Exception x)
+            {
+                /* */     
+            }
+        }
         return gwt;
     }
 

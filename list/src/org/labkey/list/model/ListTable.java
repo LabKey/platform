@@ -82,7 +82,7 @@ public class ListTable extends FilteredTable
 
             if (property.getName().equalsIgnoreCase(colKey.getName()))
             {
-                colKey.copyAttributesFrom(column);
+                colKey.setExtraAttributesFrom(column);
                 continue;
             }
 

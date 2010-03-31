@@ -332,6 +332,7 @@ public class ListDefinitionImpl implements ListDefinition
         Map<String, DomainProperty> propertiesByName = getDomain().createImportMap(true);
         Map<String, DomainProperty> foundProperties = new CaseInsensitiveHashMap<DomainProperty>();
         ColumnDescriptor cdKey = null;
+        DomainProperty dpKey = null;
 
         Object errorValue = new Object(){@Override public String toString(){return "~ERROR VALUE~";}};
 
@@ -347,13 +348,34 @@ public class ListDefinitionImpl implements ListDefinition
         }
         for (ColumnDescriptor cd : columns)
         {
-            DomainProperty property = propertiesByName.get(cd.name);
+            String columnName = cd.name;
+            DomainProperty property = propertiesByName.get(columnName);
             cd.errorValues = errorValue;
 
-            if (property != null)
+            boolean isKeyField = getKeyName().equalsIgnoreCase(cd.name) || null!=property && getKeyName().equalsIgnoreCase(property.getName());
+
+            if (property == null && !isKeyField)
+            {
+                errors.add("The field '" + columnName + "' could not be matched to a field in this list.");
+                continue;
+            }
+
+            if (isKeyField)
+            {
+                if (cdKey != null)
+                {
+                    errors.add("The field '" + getKeyName() + "' appears more than once.");
+                }
+                else
+                {
+                    cdKey = cd;
+                    dpKey = property;
+                }
+            }
+            else
             {
                 // Special handling for MV indicators -- they don't have real property descriptors.
-                if (mvIndicatorColumnNames.contains(cd.name))
+                if (mvIndicatorColumnNames.contains(columnName))
                 {
                     cd.name = property.getPropertyURI();
                     cd.clazz = String.class;
@@ -363,7 +385,7 @@ public class ListDefinitionImpl implements ListDefinition
                 {
                     cd.clazz = property.getPropertyDescriptor().getPropertyType().getJavaType();
 
-                    if (foundProperties.containsKey(cd.name))
+                    if (foundProperties.containsKey(columnName))
                     {
                         errors.add("The field '" + property.getName() + "' appears more than once.");
                     }
@@ -371,27 +393,12 @@ public class ListDefinitionImpl implements ListDefinition
                     {
                         errors.add("The fields '" + property.getName() + "' and '" + property.getPropertyDescriptor().getNonBlankCaption() + "' refer to the same property.");
                     }
-                    foundProperties.put(cd.name, property);
+                    foundProperties.put(columnName, property);
                     cd.name = property.getPropertyURI();
                     if (property.isMvEnabled())
                     {
                         cd.setMvEnabled(getContainer());
                     }
-                }
-            }
-            else if (!getKeyName().equalsIgnoreCase(cd.name))
-            {
-                errors.add("The field '" + cd.name + "' could not be matched to an existing field in this list.");
-            }
-            if (getKeyName().equalsIgnoreCase(cd.name))
-            {
-                if (cdKey != null)
-                {
-                    errors.add("The field '" + getKeyName() + "' appears more than once.");
-                }
-                else
-                {
-                    cdKey = cd;
                 }
             }
         }
@@ -442,6 +449,8 @@ public class ListDefinitionImpl implements ListDefinition
             row = new CaseInsensitiveHashMap<Object>(row);
             for (DomainProperty domainProperty : domainProperties)
             {
+                if (dpKey == domainProperty)
+                    continue;
                 Object o = row.get(domainProperty.getPropertyURI());
                 boolean valueMissing;
                 if (o == null)
@@ -619,7 +628,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ActionURL urlShowDefinition()
     {
-        return urlFor(ListController.Action.showListDefinition);
+        return urlFor(ListController.Action.editListDefinition);
     }
 
     public ActionURL urlEditDefinition()

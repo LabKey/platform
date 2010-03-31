@@ -18,15 +18,14 @@ package org.labkey.list.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
-import com.google.gwt.dom.client.Element;
-import com.google.gwt.dom.client.NodeList;
-import com.google.gwt.dom.client.Node;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
@@ -47,21 +46,26 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 {
     private String _returnURL;
     private String _cancelURL;
+    private boolean _hasDesignListPermission = false;
+    private boolean _hasInsertPermission = false;
+    private boolean _hasDeleteListPermission = false;
 
     private boolean _readonly = true;
     private int _listId = 0;
     private HashSet<String> _listNames = new HashSet<String>();
     private GWTList _list;
     private GWTDomain _domain;
+
+    // internal form state 
     private BooleanProperty _importFromFile = new BooleanProperty(false);
-    
+    private int _titlePropertyId = 0;
+    private ListBox _titleListBox = null;
 
     // UI bits
     private RootPanel _root = null;
     private FlexTable _buttons = null;
     private Label _loading = null;
     private PropertiesEditor _propTable = null;
-    boolean _saved = false;
 
     private ListPropertiesPanel _propertiesPanel;
     private ListSchema _schemaPanel;
@@ -120,6 +124,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _listId = Integer.parseInt(PropertyUtil.getServerProperty("listId"));
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        _hasDesignListPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasDesignListPermission"));
+        _hasInsertPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasInsertPermission"));
+        _hasDeleteListPermission =  Boolean.valueOf(PropertyUtil.getServerProperty("hasDeleteListPermission"));
 
         _root = RootPanel.get("org.labkey.list.Designer-Root");
 
@@ -139,7 +146,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
         else
         {
-            asyncGetList(_listId);
+            asyncGetList(_listId, null);
         }
 
         Window.addWindowClosingHandler(new Window.ClosingHandler()
@@ -153,10 +160,10 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
-    public void loading()
+    public void loading(String message)
     {
         _root.clear();
-        _loading = new Label("Loading...");
+        _loading = new Label(null==message?"Loading...":message);
         _root.add(_loading);
     }
 
@@ -172,7 +179,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             _buttons.setWidget(0, col++, new ImageButton("Create List", new ClickHandler(){
                 public void onClick(ClickEvent event)
                 {
-                    if (null != _list && _list.getName() != null && _list.getName().length() > 0)
+                    if (null != _list && !isEmpty(_list.getName()))
                     {
                         _service.createList(_list, new AsyncCallback<GWTList>(){
                             public void onFailure(Throwable caught)
@@ -182,8 +189,16 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
                             public void onSuccess(GWTList result)
                             {
-                                setReadOnly(false);
-                                setList(result);
+                                if (_importFromFile.booleanValue())
+                                {
+                                    String loc = PropertyUtil.getContextPath() + "/list" + PropertyUtil.getContainerPath() + "/defineAndImportList.view";
+                                    WindowUtil.setLocation(loc + "?listId=" + result.getListId());
+                                }
+                                else
+                                {
+                                    setReadOnly(false);
+                                    setList(result);
+                                }
                             }
                         });
                     }
@@ -196,21 +211,24 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
         else
         {
-            _buttons.setWidget(0, col++, new ImageButton("Edit Design", new ClickHandler(){
-                public void onClick(ClickEvent event)
-                {
-                    setReadOnly(false);
-                }
-            }));
-
-            if (canDeleteList() && _listId != 0)
+            if (canDesignList())
             {
-                _buttons.setWidget(0, col++, (new ImageButton("Delete List", new ClickHandler(){
+                _buttons.setWidget(0, col++, new ImageButton("Edit Design", new ClickHandler(){
                     public void onClick(ClickEvent event)
                     {
-                        WindowUtil.setLocation("deleteListDefinition.view?listId=" + _listId);
+                        setReadOnly(false);
                     }
-                })));
+                }));
+
+                if (canDeleteList() && _listId != 0)
+                {
+                    _buttons.setWidget(0, col++, (new ImageButton("Delete List", new ClickHandler(){
+                        public void onClick(ClickEvent event)
+                        {
+                            WindowUtil.setLocation("deleteListDefinition.view?listId=" + _listId);
+                        }
+                    })));
+                }
             }
 
             if (canInsert() && _listId != 0)
@@ -245,6 +263,45 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
+    int fakePropertyId = -1;
+
+    void refreshTitleListBox()
+    {
+        if (null == _titleListBox)
+            return;
+        int count = _propTable.getPropertyCount();
+
+        String name = (null==_list || null==_list.getTitleField()) ? "" : _list.getTitleField();
+        int id = _titlePropertyId;
+        int titlePropByName = -1;
+        int titlePropById = -1;
+        int titlePropByRename = -1;
+        _titleListBox.clear();
+        _titleListBox.addItem("<AUTO>", "0|<AUTO>");
+        for (int i=0 ; i<count ; i++)
+        {
+            if (_propTable.isDeleted(i))
+                continue;
+            GWTPropertyDescriptor pd = _propTable.getPropertyDescriptor(i);
+            if (pd.getPropertyId() == 0)
+                pd.setPropertyId(fakePropertyId--);
+            if (!isEmpty(name))
+            {
+                if (name.equals(pd.getName()))
+                    titlePropByName = _titleListBox.getItemCount();
+                if (id != 0 && id == pd.getPropertyId())
+                    titlePropById = _titleListBox.getItemCount();
+                GWTPropertyDescriptor old = _propTable.getOriginalPropertyDescriptor(i);
+                if (null != old && name.equals(old.getName()))
+                    titlePropByRename = _titleListBox.getItemCount();
+            }
+            _titleListBox.addItem(pd.getName(), String.valueOf(pd.getPropertyId()) + "|" + pd.getName());
+        }
+        int titleProp = 0<titlePropById?titlePropById : 0<titlePropByName?titlePropByName : titlePropByRename;
+        _titleListBox.setSelectedIndex(Math.max(0,titleProp));
+    }
+
+
     private void setDirty(boolean dirty)
     {
         _dirty = dirty;
@@ -252,7 +309,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public boolean isDirty()
     {
-        return !_saved && (_dirty || _propTable.isDirty());
+        return _dirty || _propTable.isDirty();
     }
 
 
@@ -332,7 +389,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
         public void onClick(Widget sender)
         {
-            finish();
+            saveListDefinition();
         }
     }
 
@@ -366,9 +423,10 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             public void onSuccess(List<String> errors)
             {
+                _saveButton.setEnabled(true);
                 if (null == errors || errors.isEmpty())
                 {
-                    _saved = true;  // avoid popup warning
+                    setDirty(false);
                     if (listener != null)
                         listener.saveSuccessful(_list, PropertyUtil.getCurrentURL());
                 }
@@ -378,10 +436,15 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                     for (String error : errors)
                         sb.append(error).append("\n");
                     Window.alert(sb.toString());
-                    _saveButton.setEnabled(true);
                 }
             }
         };
+
+        // clear out any fake propertids
+        GWTDomain<GWTPropertyDescriptor> updates = _propTable.getUpdates();
+        for (GWTPropertyDescriptor pd : updates.getFields())
+            if (pd.getPropertyId() < 0)
+                pd.setPropertyId(0);
 
         getService().updateListDefinition(_list, _domain, _propTable.getUpdates(), callback);
     }
@@ -399,29 +462,36 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             //
             if (isDirty())
             {
-                Window.alert("dirty");
+                if (!Window.confirm("Changes have not been saved and will be discarded."))
+                    return;
             }
+            setDirty(false);
             setReadOnly(true);
-            asyncGetList(_listId);
+            asyncGetList(_listId, null);
             return;
         }
 
-        if (_cancelURL != null && _cancelURL.length() > 0)
+        if (!isEmpty(_cancelURL))
             WindowUtil.setLocation(_cancelURL);
         else
             WindowUtil.setLocation("begin.view");
     }
 
+
     public void finish()
+    {
+        saveListDefinition();
+    }
+
+
+    public void saveListDefinition()
     {
         save(new SaveListener<GWTList>()
         {
             public void saveSuccessful(GWTList list, String designerUrl)
             {
-                if (null == _returnURL || _returnURL.length() == 0)
-                    cancel();
-                else
-                    WindowUtil.setLocation(_returnURL);
+                setReadOnly(true);
+                asyncGetList(list.getListId(), "Save successful. Loading...");
             }
         });
     }
@@ -458,9 +528,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
-    void asyncGetList(int id)
+    void asyncGetList(int id, String message)
     {
-        loading();
+        loading(message);
         setDirty(false);
         _list = null;
         _domain = null;
@@ -512,16 +582,20 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
+    boolean canDesignList()
+    {
+        return _hasDesignListPermission;
+    }
+
     boolean canDeleteList()
     {
-        return true;
+        return _hasDeleteListPermission;
     }
 
     boolean canInsert()
     {
-        return true;
+        return _hasInsertPermission;
     }
-
 
 
     private class CreateListPanel extends VerticalPanel
@@ -597,36 +671,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 row++;
             }
         }
-
-
-/*
-    <form action="/labkey/list/home/newListDefinition.view?" method="POST">
-    <p>What is the name of your list?<br>
-        <input type="text" id="ff_name" name="ff_name" value=""/>
-    </p>
-    <p>
-        Every item in a list has a key value which uniquely identifies that item.
-        What is the data type of the key in your list?<br>
-        <select name="ff_keyType" >
-
-<option value="AutoIncrementInteger" selected>Auto-Increment Integer</option>
-<option value="Integer">Integer</option>
-<option value="Varchar">Text (String)</option>
-        </select>
-    </p>
-    <p>
-        What is the name of the key in your list?<br>
-        <input type="text" name="ff_keyName" value="Key"/>
-    </p>
-    <p>
-        Import from file <a href="#" tabindex="-1" onClick="return showHelpDiv(this, &#039;Import from File&#039;, &#039;Use this option if you have a spreadsheet that you would like uploaded as a list.&#039;);" onMouseOut="return hideHelpDivDelay();" onMouseOver="return showHelpDivDelay(this, &#039;Import from File&#039;, &#039;Use this option if you have a spreadsheet that you would like uploaded as a list.&#039;);"><span class="labkey-help-pop-up">?</span></a>:
-        <input type="checkbox" name="fileImport" >
-    </p>
-    <input type="submit" style="display: none;" id="8e91ea84-1a9b-102d-8214-d0d1b91d714f"><a class="labkey-button" href="#" onclick="submitForm(document.getElementById('8e91ea84-1a9b-102d-8214-d0d1b91d714f').form); return false;"  ><span>Create List</span></a>
-    <a class="labkey-button" href="/labkey/list/home/begin.view?" ><span>Cancel</span></a>
-</form>
-*/
     }
+
 
     private class ListPropertiesPanel extends VerticalPanel
     {
@@ -664,8 +710,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             // DESCRIPTION
             {
             Widget descriptionTextBox = readonly ?
-                    new Label(_list.getName()) :
-                    new BoundTextAreaBox("Description", "ff_description", _list.name, null);
+                    new Label(_list.getDescription()) :
+                    new BoundTextAreaBox("Description", "ff_description", _list.description, null);
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Description"));
             //panel.add(new HelpPopup("Name", "Name of this List"));
@@ -678,9 +724,12 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // TITLE
             {
+                String titleText = _list.getTitleField();
+                if (isEmpty(titleText))
+                    titleText = "<AUTO> (" + _list.getDefaultTitleField() + ")";
                 Widget titleListBox = readonly ?
-                        new Label(_list.getTitleField()) :
-                        new BoundListBox("ff_title", false, _list.titleField, null);
+                        new Label(titleText) :
+                        new ListBox(false);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Title Field"));
                 //panel.add(new HelpPopup("Name", "Name of this List"));
@@ -688,359 +737,91 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 cellFormatter.setStyleName(row, 0, labelStyleName);
                 _table.setWidget(row, 1, titleListBox);
                 row++;
-            }
 
+                if (!_readonly)
+                {
+                    _titleListBox = (ListBox)titleListBox;
+                    DOM.setElementProperty(_titleListBox.getElement(), "id", "ff_titleColumn");
+                    _propTable.addChangeHandler(new ChangeHandler(){
+                        public void onChange(ChangeEvent event)
+                        {
+                            refreshTitleListBox();
+                        }
+                    });
+                    _titleListBox.addChangeHandler(new ChangeHandler(){
+                        public void onChange(ChangeEvent event)
+                        {
+                            String value = _titleListBox.getValue(_titleListBox.getSelectedIndex());
+                            int split = value.indexOf('|');
+                            _titlePropertyId = Integer.parseInt(value.substring(0,split));
+                            _list.setTitleField(value.substring(split+1));
+                        }
+                    });
+                    refreshTitleListBox();
+                }
+            }
 
             // DISCUSSION LINKS
+            {
+                RadioButton none = new BoundRadioButton("ff_discussionSetting", "None", _list.discussionSetting, 0);
+                none.setEnabled(!readonly);
+                RadioButton one = new BoundRadioButton("ff_discussionSetting", "Allow one discussion per item", _list.discussionSetting, 1);
+                one.setEnabled(!readonly);
+                RadioButton multi = new BoundRadioButton("ff_discussionSetting", "Allow multiple discussions per item", _list.discussionSetting, 2);
+                multi.setEnabled(!readonly);
+                Panel radios = new VerticalPanel();
+                radios.add(none);
+                radios.add(one);
+                radios.add(multi);
 
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Discussion LInks"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, radios);
+                row++;
+            }
 
             // ALLOW
-
-
-            /*
-            BoundTextBox dsName = new BoundTextBox("dsName", _list.getName(), new WidgetUpdatable()
             {
-                public void update(Widget widget)
-                {
-                    _list.setName(((TextBox)widget).getText());
-                }
-            });
-            DOM.setElementAttribute(dsName._box.getElement(), "id", "ListDesignerName");
+            BoundCheckBox allow = new BoundCheckBox("ff_allowDelete", _list.allowDelete, null);
+            allow.setEnabled(!readonly);
             HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Name"));
-            panel.add(new HelpPopup("Name", "Short unique name, e.g. 'DEM1'"));
+            panel.add(new Label("Allow Delete"));
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, dsName);
-
-            TextBox listName = new TextBox();
-            listName.setText(Integer.toString(_list.getName()));
-            listName.setEnabled(false);
-
-            _table.setHTML(row, 2, "ID");
-            cellFormatter.setStyleName(row, 2, labelStyleName);
-            _table.setWidget(row++, 3, listName);
-
-            BoundTextBox dsLabel = new BoundTextBox("dsLabel", _list.getLabel(), new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _list.setLabel(((TextBox)widget).getText());
-                }
-            });
-            panel = new HorizontalPanel();
-            panel.add(new Label("Label"));
-            panel.add(new HelpPopup("Label", "Descriptive label, e.g. 'Demographics form 1'"));
-
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, dsLabel);
-
-            BoundTextBox dsCategory = new BoundTextBox("dsCategory", _list.getCategory(), new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _list.setCategory(((TextBox)widget).getText());
-                }
-            });
-            panel = new HorizontalPanel();
-            panel.add(new Label("Category"));
-            panel.add(new HelpPopup("List Category", "Lists with the same category name are shown together in the study navigator and list list."));
-            _table.setWidget(row, 2, panel);
-            cellFormatter.setStyleName(row, 2, labelStyleName);
-            _table.setWidget(row++, 3, dsCategory);
-
-            String selection = null;
-            if (_list.getCohortId() != null)
-                selection = _list.getCohortId().toString();
-            BoundListBox dsCohort = new BoundListBox(_list.getCohortMap(), selection, new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    ListBox lb = (ListBox)widget;
-                    if (lb.getSelectedIndex() != -1)
-                    {
-                        String value = lb.getValue(lb.getSelectedIndex());
-                        if (value.length() > 0)
-                            _list.setCohortId(Integer.valueOf(value));
-                        else
-                            _list.setCohortId(null);
-                    }
-                }
-            });
-            panel = new HorizontalPanel();
-            panel.add(new Label("Cohort Association"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-
-            if (!_list.getCohortMap().isEmpty())
-                _table.setWidget(row, 1, dsCohort);
-            else
-                _table.setWidget(row, 1, new HTMLPanel("<em>No cohorts defined</em>"));
-
-            if ("VISIT".equals(_timepointType))
-            {
-                BoundListBox dsVisitDate = new BoundListBox(_list.getVisitDateMap(), _list.getVisitDatePropertyName(), new WidgetUpdatable()
-                {
-                    public void update(Widget widget)
-                    {
-                        ListBox lb = (ListBox)widget;
-                        if (lb.getSelectedIndex() != -1)
-                        {
-                            _list.setVisitDatePropertyName(lb.getValue(lb.getSelectedIndex()));
-                        }
-                    }
-                });
-                panel = new HorizontalPanel();
-                panel.add(new Label("Visit Date Column"));
-                panel.add(new HelpPopup("Visit Date Column", "If the official 'Visit Date' for a visit can come from this list, choose the date column to represent it. Note that since lists can include data from many visits, each visit must also indicate the official 'VisitDate' list."));
-                _table.setWidget(row, 2, panel);
-                cellFormatter.setStyleName(row, 2, labelStyleName);
-                _table.setWidget(row++, 3, dsVisitDate);
+            _table.setWidget(row, 1, allow);
+            row++;
             }
-            else
-                row++;
-
-            panel = new HorizontalPanel();
-            panel.add(new Label("Additional Key Column"));
-            panel.add(new HelpPopup("Additional Key",
-                    "If list has more than one row per participant/visit, " +
-                            "an additional key field must be provided. There " +
-                            "can be at most one row in the list for each " +
-                            "combination of participant, visit and key. " +
-                            "<ul><li>None: No additional key</li>" +
-                            "<li>Data Field: A user-managed key field</li>" +
-                            "<li>Managed Field: A numeric field defined below will be managed" +
-                            "by the server to make each new entry unique</li>" +
-                            "</ul>"));
-
-            cellFormatter.setStyleName(row, 0, labelStyleName);
+            {
+            BoundCheckBox allow = new BoundCheckBox("ff_allowUpload", _list.allowUpload, null);
+            allow.setEnabled(!readonly);
+            HorizontalPanel panel = new HorizontalPanel();
+            panel.add(new Label("Allow Upload"));
             _table.setWidget(row, 0, panel);
-
-            VerticalPanel vPanel = new VerticalPanel();
-            vPanel.setSpacing(1);
-            panel = new HorizontalPanel();
-            panel.setSpacing(2);
-
-            _noneButton = new RadioButton("additionalKey", "None");
-            _noneButton.setChecked(_list.getKeyPropertyName() == null);
-            setCheckboxId(_noneButton.getElement(), "button_none");
-
-            if (fromAssay)
-                _noneButton.setEnabled(false);
-
-            panel.add(_noneButton);
-            vPanel.add(panel);
-            
-            panel = new HorizontalPanel();
-            panel.setSpacing(2);
-            panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-            final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field:");
-            setCheckboxId(dataFieldButton.getElement(), "button_dataField");
-            if (fromAssay)
-                dataFieldButton.setEnabled(false);
-            dataFieldButton.setChecked(_list.getKeyPropertyName() != null && !_list.getKeyPropertyManaged());
-            panel.add(dataFieldButton);
-
-            final BoundListBox dataFieldsBox = new BoundListBox(new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _list.setKeyPropertyManaged(false);
-                    _list.setKeyPropertyName(((BoundListBox)widget).getSelectedValue());
-                }
-            });
-            DOM.setElementAttribute(dataFieldsBox.getElement(), "id", "list_dataField");
-            dataFieldsBox.setEnabled(!fromAssay && !_list.getKeyPropertyManaged() && _list.getKeyPropertyName() != null);
-
-            panel.add(dataFieldsBox);
-            vPanel.add(panel);
-
-            panel = new HorizontalPanel();
-            panel.setSpacing(2);
-            panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-            final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field:");
-            setCheckboxId(managedButton.getElement(), "button_managedField");
-            if (fromAssay)
-                managedButton.setEnabled(false);
-            managedButton.setChecked(_list.getKeyPropertyManaged());
-            panel.add(managedButton);
-
-            final BoundListBox managedFieldsBox = new BoundListBox(new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _list.setKeyPropertyManaged(true);
-                    _list.setKeyPropertyName(((BoundListBox)widget).getSelectedValue());
-                }
-            });
-            DOM.setElementAttribute(managedFieldsBox.getElement(), "id", "list_managedField");
-            managedFieldsBox.setEnabled(_list.getKeyPropertyManaged() && !fromAssay);
-
-            panel.add(managedFieldsBox);
-            vPanel.add(panel);
-            _table.setWidget(row, 1, vPanel);
-
-            BoundTextArea description = new BoundTextArea(_list.getDescription(), new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _list.setDescription(((TextArea)widget).getText());
-                }
-            });
-            description.setName("description");
-            panel = new HorizontalPanel();
-            panel.add(new Label("Description"));
-            _table.setWidget(row, 2, panel);
-            cellFormatter.setStyleName(row, 2, labelStyleName);
-            _table.setWidget(row, 3, description);
-            
-            //noinspection UnusedAssignment
-            _table.getFlexCellFormatter().setRowSpan(row, 2, 3);
-            _table.getFlexCellFormatter().setRowSpan(row++, 3, 3);
-
-
-            // Listen to the list of properties
-            _propTable.addChangeListener(new ChangeListener()
-            {
-                public void onChange(Widget sender)
-                {
-                    resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
-                }
-            });
-
-            ClickListener buttonListener = new ClickListener()
-            {
-                public void onClick(Widget sender)
-                {
-                    if (sender == _noneButton)
-                    {
-                        _list.setKeyPropertyName(null);
-                        _list.setKeyPropertyManaged(false);
-                        dataFieldsBox.setEnabled(false);
-                        managedFieldsBox.setEnabled(false);
-                    }
-                    else if (sender == dataFieldButton)
-                    {
-                        _list.setKeyPropertyName(dataFieldsBox.getSelectedValue());
-                        _list.setKeyPropertyManaged(false);
-                        dataFieldsBox.setEnabled(true);
-                        managedFieldsBox.setEnabled(false);
-
-                    }
-                    else if (sender == managedButton)
-                    {
-                        _list.setKeyPropertyName(managedFieldsBox.getSelectedValue());
-                        _list.setKeyPropertyManaged(true);
-                        dataFieldsBox.setEnabled(false);
-                        managedFieldsBox.setEnabled(true);
-                    }
-                }
-            };
-            if (!fromAssay)
-            {
-                _noneButton.addClickListener(buttonListener);
-                dataFieldButton.addClickListener(buttonListener);
-                managedButton.addClickListener(buttonListener);
+            cellFormatter.setStyleName(row, 0, labelStyleName);
+            _table.setWidget(row, 1, allow);
+            row++;
             }
-
-            resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
-
-
-            BoundCheckBox demographicData = new BoundCheckBox("", _list.getDemographicData(), new WidgetUpdatable()
             {
-                public void update(Widget widget)
-                {
-                    _list.setDemographicData(((CheckBox)widget).isChecked());
-                }
-            });
-            demographicData.setName("demographicData");
-            if (fromAssay)
-                demographicData.setEnabled(false);
-            panel = new HorizontalPanel();
-            panel.add(new Label("Demographic Data"));
-            panel.add(new HelpPopup("Demographic Data", "Demographic data appears only once for each participant in the study."));
+            BoundCheckBox allow = new BoundCheckBox("ff_allowExport", _list.allowExport, null);
+            allow.setEnabled(!readonly);
+            HorizontalPanel panel = new HorizontalPanel();
+            panel.add(new Label("Allow Export and Print"));
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row++, 1, demographicData);
-
-            BoundCheckBox showByDefault = new BoundCheckBox("", _list.getShowByDefault(), new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    _list.setShowByDefault(((CheckBox)widget).isChecked());
-                }
-            });
-            panel = new HorizontalPanel();
-            panel.add(new Label("Show In Overview"));
-            panel.add(new HelpPopup("Show In Overview", "When this item is checked, this list will show in the overview grid by default. It can be unhidden by clicking 'Show Hidden Data.'"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row++, 1, showByDefault);
-            */
-        }
-
-        private void setCheckboxId(Element e, String id)
-        {
-            NodeList list = e.getElementsByTagName("input");
-            for (int i=0; i < list.getLength(); i++)
-            {
-                Node node = list.getItem(i);
-                ((Element)node).setId(id);
+            _table.setWidget(row, 1, allow);
+            row++;
             }
         }
 
-        private void resetKeyListBoxes(BoundListBox dataFieldsBox, BoundListBox managedFieldsBox)
-        {
-            // Need to look up what properties have been defined
-            // to populate the drop-down boxes for additional keys
-
-            List<GWTPropertyDescriptor> descriptors = new ArrayList<GWTPropertyDescriptor>();
-            for (int i=0; i<_propTable.getPropertyCount(); i++)
-            {
-                descriptors.add(_propTable.getPropertyDescriptor(i));
-            }
-            Map<String,String> fields = new HashMap<String,String>();
-            Map<String,String> numericFields = new HashMap<String,String>();
-
-            for (GWTPropertyDescriptor descriptor : descriptors)
-            {
-                // Don't add deleted properties
-                if (_propTable.getStatus(descriptor) == PropertiesEditor.FieldStatus.Deleted)
-                    continue;
-
-                String label = descriptor.getLabel();
-                String name = descriptor.getName();
-                if (name == null)
-                    name = "";
-                if (label == null || "".equals(label)) // if there's no label set, use the name for the drop-down
-                    label = name;
-                fields.put(label, name);
-
-                String rangeURI = descriptor.getRangeURI();
-                if (rangeURI.endsWith("int") || rangeURI.endsWith("double"))
-                {
-                    numericFields.put(label, name);
-                }
-            }
-            if (fields.size() == 0)
-                fields.put("","");
-            if (numericFields.size() == 0)
-                numericFields.put("","");
-
-            dataFieldsBox.setColumns(fields);
-            managedFieldsBox.setColumns(numericFields);
-
-            String keyName = _list.getKeyPropertyName();
-
-        }
 
         public void validate(List<String> errors)
         {
-            if (_list.getName() == null || _list.getName().length() == 0)
+            if (isEmpty(_list.getName()))
                 errors.add("List name cannot be empty.");
 
-            if ("".equals(_list.getKeyPropertyName()))
+            if (isEmpty(_list.getKeyPropertyName()))
                 errors.add("Please select a field name for the key column.");
         }
     }
@@ -1115,7 +896,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
 
         @Override
-        protected Image getStatusImage(String id, FieldStatus status, PropertiesEditor.Row row)
+        protected Image getDecorationImage(FieldStatus status, PropertiesEditor.Row row)
         {
             if (isKeyRow(row))
             {
@@ -1125,17 +906,22 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                     String src = PropertyUtil.getContextPath() + "/_images/key.gif";
                     Image i = new Image(src);
                     i.setPixelSize(14, 21);
-                    DOM.setElementProperty(i.getElement(), "id", id);
                     Tooltip.addTooltip(i, "primary key");
                     return i;
                 }
             }
-            return super.getStatusImage(id, status, row);    //To change body of overridden methods use File | Settings | File Templates.
+            return super.getDecorationImage(status, row);
         }
 
         protected boolean canDelete(Row row)
         {
             return !isKeyRow(row) && super.canDelete(row);
         }
+    }
+
+
+    private static boolean isEmpty(String s)
+    {
+        return null == s || s.length() == 0;
     }
 }

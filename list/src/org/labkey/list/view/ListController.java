@@ -45,7 +45,6 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -140,7 +139,7 @@ public class ListController extends SpringActionController
         }
     }
 
-
+/*
     @RequiresPermissionClass(DesignListPermission.class)
     public class NewListDefinitionAction extends FormViewAction<NewListForm>
     {
@@ -162,7 +161,6 @@ public class ListController extends SpringActionController
         public ModelAndView getView(NewListForm form, boolean reshow, BindException errors) throws Exception
         {
             getPageConfig().setFocusId("ff_name");
-                
             return FormPage.getView(ListController.class, form, errors, "newListDefinition.jsp");
         }
 
@@ -202,6 +200,18 @@ public class ListController extends SpringActionController
             return appendRootNavTrail(root).addChild("Create New List");
         }
     }
+*/
+
+    @RequiresPermissionClass(DesignListPermission.class)
+    public class NewListDefinitionAction extends SimpleRedirectAction<NewListForm>
+    {
+        @Override
+        public ActionURL getRedirectURL(NewListForm newListForm) throws Exception
+        {
+            return new ActionURL(EditListDefinitionAction.class, getContainer());
+        }
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class DefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
@@ -285,6 +295,19 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
+    public class ShowListDefinitionAction extends SimpleRedirectAction<ListDefinitionForm>
+    {
+        @Override
+        public ActionURL getRedirectURL(ListDefinitionForm listDefinitionForm) throws Exception
+        {
+            if (listDefinitionForm.getListId() == null)
+                HttpView.throwNotFound();
+            return new ActionURL(EditListDefinitionAction.class, getContainer()).addParameter("listId", listDefinitionForm.getListId().intValue());
+        }
+    }
+
+
+/*    @RequiresPermissionClass(ReadPermission.class)
     public class ShowListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
@@ -350,10 +373,11 @@ public class ListController extends SpringActionController
             return appendListNavTrail(root, _list, "Edit " + _list.getName());
         }
     }
-
+*/
+    
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class GwtEditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
+    public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
 
@@ -376,6 +400,10 @@ public class ListController extends SpringActionController
             props.put("allowFileLinkProperties", "0");
             props.put("allowAttachmentProperties", "1");
             props.put("showDefaultValueSettings", "1");
+            props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+            props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
+            // Why is this different than DesignListPermission???
+            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), AdminPermission.class) ? "true":"false");
             return new GWTView("org.labkey.list.Designer", props);
         }
 
@@ -749,7 +777,7 @@ public class ListController extends SpringActionController
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            if (getViewContext().hasPermission(ACL.PERM_UPDATE))
+            if (getViewContext().hasPermission(UpdatePermission.class))
             {
                 ActionURL updateUrl = _list.urlUpdate(tableForm.getPkVal(), getViewContext().getActionURL());
                 ActionButton editButton = new ActionButton("Edit", updateUrl);

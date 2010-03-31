@@ -29,17 +29,21 @@ import org.labkey.api.gwt.client.util.StringProperty;
  */
 public class GWTList implements IsSerializable
 {
-    private IntegerProperty _listId = new IntegerProperty(0);
     public StringProperty name = new StringProperty();
-    private StringProperty _description = new StringProperty();
+    public StringProperty description = new StringProperty();
 //    private StringProperty _getTypeURI = new StringProperty();
     public StringProperty keyPropertyName = new StringProperty();
     public StringProperty keyPropertyType = new StringProperty();
     public StringProperty titleField = new StringProperty();
-    private IntegerProperty _discussionSetting = new IntegerProperty(0); // DiscussionSetting.None
-    private BooleanProperty _allowDelete = new BooleanProperty();
-    private BooleanProperty _allowUpload = new BooleanProperty();
-    private BooleanProperty _allowExport = new BooleanProperty();
+    public IntegerProperty discussionSetting = new IntegerProperty(0); // DiscussionSetting.None
+    public BooleanProperty allowDelete = new BooleanProperty(true);
+    public BooleanProperty allowUpload = new BooleanProperty(true);
+    public BooleanProperty allowExport = new BooleanProperty(true);
+
+    // client should only read these
+    private String _defaultTitleField;
+    private IntegerProperty _listId = new IntegerProperty(0);
+
 
     public GWTList()
     {
@@ -92,12 +96,12 @@ public class GWTList implements IsSerializable
 
     public String getDescription()
     {
-        return _description.getString();
+        return description.getString();
     }
 
     public void setDescription(String description)
     {
-        _description.set(description);
+        this.description.set(description);
     }
 
     public String getKeyPropertyType()
@@ -127,42 +131,52 @@ public class GWTList implements IsSerializable
 
     public int getDiscussionSetting()
     {
-        return _discussionSetting.intValue();
+        return discussionSetting.intValue();
     }
 
     public void setDiscussionSetting(int setting)
     {
-        _discussionSetting.set(setting);
+        discussionSetting.set(setting);
     }
 
     public boolean getAllowDelete()
     {
-        return _allowDelete.booleanValue();
+        return allowDelete.booleanValue();
     }
 
     public void setAllowDelete(boolean allowDelete)
     {
-        _allowDelete.set(allowDelete);
+        this.allowDelete.set(allowDelete);
     }
 
     public boolean getAllowUpload()
     {
-        return _allowUpload.getBool();
+        return allowUpload.getBool();
     }
 
-    public void setAllowUpload(boolean allowImport)
+    public void setAllowUpload(boolean allowUpload)
     {
-        _allowUpload.set(allowImport);
+        this.allowUpload.set(allowUpload);
     }
 
     public boolean getAllowExport()
     {
-        return _allowExport.getBool();
+        return allowExport.getBool();
     }
 
     public void setAllowExport(boolean allowExport)
     {
-        _allowExport.set(allowExport);
+        this.allowExport.set(allowExport);
+    }
+
+    public void _defaultTitleField(String title)
+    {
+        _defaultTitleField = title;
+    }
+
+    public String getDefaultTitleField()
+    {
+        return _defaultTitleField;
     }
 }
 
