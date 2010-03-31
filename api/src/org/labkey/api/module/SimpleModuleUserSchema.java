@@ -240,20 +240,7 @@ public class SimpleModuleUserSchema extends UserSchema
         @Override
         public TableInfo getLookupTableInfo()
         {
-            UserSchema schema;
-
-            // If this is an external schema outside the labkey database, then lookup must be within that schema.
-            // See #9038.  This could be improved to support fks to other schemas within the same datasource, but
-            // getUserSchema() needs to take a scope so it knows where to look for that schema.
-            if (_userSchema.getDbSchema().getScope() == DbScope.getLabkeyScope())
-            {
-                schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), getLookupSchemaName());
-            }
-            else
-            {
-                assert _userSchema.getDbSchema().getName().equals(getLookupSchemaName());
-                schema = _userSchema;
-            }
+            UserSchema schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), getLookupSchemaName());
 
             return schema.getTable(getLookupTableName(), true);
         }
