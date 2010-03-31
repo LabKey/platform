@@ -118,7 +118,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         filters: false,
         _paramTranslationMap: false,
         events: false,
-        filterOptRe: false
+        filterOptRe: false,
+        userFilters: false
     },
 
     constructor : function(config)
@@ -180,6 +181,15 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             for(idx = 0; idx < this.filters.length; ++idx)
                 params[this.filters[idx].getURLParameterName(this.dataRegionName)] = this.filters[idx].getURLParameterValue();
         }
+
+        //add user filters (already in encoded form
+        if (this.userFilters)
+        {
+            for (var name in this.userFilters)
+            {
+                params[name] = this.userFilters[name];
+            }
+        }
         
         //handle aggregates separately
         if(this.aggregates)
@@ -211,6 +221,21 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 if(targetElem)
                 {
                     targetElem.update(response.responseText, true); //execute scripts
+
+                    //get the data region and subscribe to events
+                    Ext.onReady(function(){
+                        var dr = LABKEY.DataRegions[this.dataRegionName];
+                        if (!dr)
+                            throw "Couldn't get dataregion object!";
+                        dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
+                        dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
+                        dr.on("beforesortchange", this.beforeSortChange, this);
+                        dr.on("beforeclearsort", this.beforeClearSort, this);
+                        dr.on("beforefilterchange", this.beforeFilterChange, this);
+                        dr.on("beforeclearfilter", this.beforeClearFilter, this);
+                        dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
+                    }, this, {delay: 100});
+
                     if(this.successCallback)
                         Ext.onReady(function(){this.successCallback.call(this.scope || this);}, this, {delay: 100}); //8721: need to use onReady()
                     this.fireEvent("render");
@@ -223,6 +248,64 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             params: params,
             scope: this
         });
+    },
+
+    beforeOffsetChange : function(dataRegion, newoffset) {
+        this.offset = newoffset;
+        this.render();
+        return false;
+    },
+
+    beforeMaxRowsChange : function(dataRegion, newmax) {
+        this.maxRows = newmax;
+        this.offset = 0;
+        this.render();
+        return false;
+    },
+
+    beforeSortChange : function(dataRegion, columnName, sortDirection) {
+        this.sort = dataRegion.alterSortString(this.sort, columnName, sortDirection);
+        this.render();
+        return false;
+    },
+
+    beforeClearSort : function(dataRegion, columnName) {
+        this.sort = dataRegion.alterSortString(this.sort, columnName, null);
+        this.render();
+        return false;
+    },
+
+    beforeFilterChange : function(dataRegion, newFilterPairs) {
+        this.offset = 0;
+        this.userFilters = this.userFilters || {};
+        for (var idx = 0; idx < newFilterPairs.length; ++idx)
+        {
+            this.userFilters[newFilterPairs[idx][0]] = newFilterPairs[idx][1];
+        }
+        this.render();
+        return false;
+    },
+
+    beforeClearFilter : function(dataRegion, columnName) {
+        this.offset = 0;
+        var namePrefix = this.dataRegionName + "." + columnName + "~";
+        if (this.userFilters)
+        {
+            for (var name in this.userFilters)
+            {
+                if (name.indexOf(namePrefix) >= 0)
+                    delete this.userFilters[name];
+            }
+        }
+        this.render();
+        return false;
+    },
+
+    beforeClearAllFilters : function(dataRegion) {
+        this.offset = 0;
+        this.userFilters = null;
+        this.render();
+        return false;
     }
 });
 

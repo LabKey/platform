@@ -60,7 +60,13 @@ LABKEY.DataRegion = function (config)
          *     });
          *  });
          */
-         "selectchange"
+         "selectchange",
+         "beforeoffsetchange",
+         "beforemaxrowschange",
+         "beforesortchange",
+         "beforeclearsort",
+         "beforeclearfilter",
+         "beforeclearallfilters"
     );
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
@@ -271,11 +277,17 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     setOffset : function (newoffset)
     {
+        if (false === this.fireEvent("beforeoffsetchange", this, newoffset))
+            return;
+        
         this._setParam(".offset", newoffset, [".offset", ".showRows"]);
     },
 
     setMaxRows : function (newmax)
     {
+        if (false === this.fireEvent("beforemaxrowschange", this, newmax))
+            return;
+        
         this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
     },
 
@@ -286,6 +298,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     showAll : function ()
     {
+        if (false === this.fireEvent("beforemaxrowschange", this, 0))
+            return;
+        
         this._setParam(".showRows", "all", [".offset", ".maxRows", ".showRows"]);
     },
 
@@ -519,11 +534,15 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     clearFilter : function (fieldName)
     {
+        if (false === this.fireEvent("beforeclearfilter", this, fieldName))
+            return;
         this._removeParams(["." + fieldName + "~", ".offset"]);
     },
 
     clearAllFilters : function ()
     {
+        if (false === this.fireEvent("beforeclearallfilters", this))
+            return;
         this._removeParams([".", ".offset"]);
     },
 
@@ -632,6 +651,29 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 callback.call(this);
             }
         }
+    },
+
+    alterSortString : function(currentSortString, columnName, direction)
+    {
+        var newSortArray = [];
+
+        if (currentSortString != null)
+        {
+            var sortArray = currentSortString.split(",");
+            for (var j = 0; j < sortArray.length; j++)
+            {
+                if (sortArray[j] != columnName && sortArray[j] != "+" + columnName && sortArray[j] != "-" + columnName)
+                    newSortArray.push(sortArray[j]);
+            }
+        }
+
+        if (direction == "+") //Easier to read without the encoded + on the URL...
+            direction = "";
+
+        if (null !== direction)
+            newSortArray = newSortArray.concat(direction + columnName);
+        
+        return newSortArray.join(",");
     }
 
 });
@@ -1181,18 +1223,30 @@ function buildQueryString(pairs)
 
 function clearFilter()
 {
+    hideFilterDiv();
+    var dr = LABKEY.DataRegions[_tableName];
+    if (false === dr.fireEvent("beforeclearfilter", dr, _fieldName))
+        return;
+
     var newParamValPairs = getParamValPairs([_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
     setSearchString(_tableName, buildQueryString(newParamValPairs));
 }
 
 function clearAllFilters()
 {
+    hideFilterDiv();
+    var dr = LABKEY.DataRegions[_tableName];
+    if (false === dr.fireEvent("beforeclearallfilters", dr))
+        return;
+
     var newParamValPairs = getParamValPairs([_tableName + ".", _tableName + ".offset"]);
     setSearchString(_tableName, buildQueryString(newParamValPairs));
 }
 
 function doFilter()
 {
+    hideFilterDiv();
+    
     var newParamValPairs = getParamValPairs([_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
     var iNew = newParamValPairs.length;
 
@@ -1205,6 +1259,10 @@ function doFilter()
         newParamValPairs[iNew] = comparisons[i];
         iNew ++;
     }
+
+    var dr = LABKEY.DataRegions[_tableName];
+    if (false === dr.fireEvent("beforefilterchange", dr, newParamValPairs))
+        return;
 
     //alert("new: " +buildQueryString(newParamValPairs));
     setSearchString(_tableName, buildQueryString(newParamValPairs));
@@ -1386,31 +1444,16 @@ function twoDigit(num)
 
 function doSort(tableName, columnName, sortDirection)
 {
-    var newSortArray = new Array(1);
-    //sort forward
-    var sortString = getParameter(tableName + ".sort");
-    var currentSort;
+    var dr = LABKEY.DataRegions[tableName];
+    if (!dr)
+        return;
+    if (false === dr.fireEvent("beforesortchange", dr, columnName, sortDirection))
+        return;
 
-    if (sortString != null)
-    {
-        var sortArray = sortString.split(",");
-        for (var j = 0; j < sortArray.length; j++)
-        {
-            if (sortArray[j] == columnName || sortArray[j] == "+" + columnName)
-                currentSort = "+";
-            else if (sortArray[j] == "-" + columnName)
-                currentSort = "-";
-            else if (newSortArray.length <= 2)
-                newSortArray[newSortArray.length] = sortArray[j];
-        }
-    }
-
-    if (sortDirection == "+") //Easier to read without the encoded + on the URL...
-        sortDirection = "";
-    newSortArray[0] = sortDirection + columnName;
+    var newSortString = dr.alterSortString(getParameter(tableName + ".sort"), columnName, sortDirection);
 
     var paramValPairs = getParamValPairs([tableName + ".sort", tableName + ".offset"]);
-    paramValPairs[paramValPairs.length] = [tableName + ".sort", newSortArray.join(",")];
+    paramValPairs[paramValPairs.length] = [tableName + ".sort", newSortString];
 
     setSearchString(tableName, buildQueryString(paramValPairs));
 }
@@ -1420,22 +1463,17 @@ function clearSort(tableName, columnName)
     if(!tableName || !columnName)
         return;
 
-    var sortString =  getParameter(tableName + ".sort");
-    if(!sortString)
+    var dr = LABKEY.DataRegions[tableName];
+    if (!dr)
         return;
-
-    var sortArray = sortString.split(",");
-    var newSortArray = [];
-
-    for(var idx = 0; idx < sortArray.length; ++idx)
-    {
-        if(sortArray[idx] != columnName && sortArray[idx] != "-" + columnName)
-            newSortArray.push(sortArray[idx]);
-    }
+    if (false === dr.fireEvent("beforeclearsort", dr, columnName))
+        return;
+    
+    var newSortString = dr.alterSortString(getParameter(tableName + ".sort"), columnName, null);
 
     var paramValPairs = getParamValPairs([tableName + ".sort", tableName + ".offset"]);
-    if(newSortArray.length > 0)
-        paramValPairs.push([tableName + ".sort", newSortArray.join(",")]);
+    if(newSortString.length > 0)
+        paramValPairs.push([tableName + ".sort", newSortString]);
 
     setSearchString(tableName, buildQueryString(paramValPairs));
 }
