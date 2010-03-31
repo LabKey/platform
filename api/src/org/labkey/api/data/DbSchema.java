@@ -149,6 +149,31 @@ public class DbSchema
     }
 
 
+    public static Set<DbSchema> getAllSchemasToTest()
+    {
+        Set<DbSchema> schemas = new LinkedHashSet<DbSchema>();
+        List<Module> modules = ModuleLoader.getInstance().getModules();
+
+        for (Module module : modules)
+            schemas.addAll(module.getSchemasToTest());
+
+        return schemas;
+    }
+
+
+    // Get the names of all schemas claimed by modules
+    public static Set<String> getModuleSchemaNames()
+    {
+        Set<String> schemaNames = new LinkedHashSet<String>();
+
+        for (Module module : ModuleLoader.getInstance().getModules())
+            for (String schemaName : module.getSchemaNames())
+                schemaNames.add(schemaName);
+
+        return schemaNames;
+    }
+
+
     protected DbSchema(String name, DbScope scope)
     {
         _name = name;
@@ -294,11 +319,7 @@ public class DbSchema
         // Ask each module for the schemas to test, then compare XML vs. meta data
         public void testKnownSchemas() throws Exception
         {
-            Set<DbSchema> schemas = new HashSet<DbSchema>();
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-
-            for (Module module : modules)
-                schemas.addAll(module.getSchemasToTest());
+            Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
             for (DbSchema schema : schemas)
                 testSchemaXml(schema);

@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -42,7 +41,6 @@ import java.util.*;
 import java.util.concurrent.Future;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 12, 2009
  * Time: 12:54:01 PM
@@ -205,6 +203,8 @@ public interface SearchService
         public String url;
         public String navtrail;
     }
+
+    public DbSchema getSchema();
 
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink);
 
