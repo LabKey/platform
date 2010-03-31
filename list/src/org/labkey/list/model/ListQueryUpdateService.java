@@ -100,6 +100,14 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
         throw new InvalidKeyException("No value supplied for the key column '" + list.getKeyName() + "'!", map);
     }
 
+
+    private boolean isKeyProperty(DomainProperty prop)
+    {
+        // UNDONE: store keypropertyid to make this faster
+        return getList().getKeyName().equalsIgnoreCase(prop.getName());
+    }
+
+
     public Map<String, Object> mapFromBean(ListItem bean) throws QueryUpdateServiceException
     {
         //since ListItems are not really 'beans' we need to convert to a map ourselves
@@ -113,10 +121,12 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
         map.put("EntityId", bean.getEntityId());
 
         //domain properties
-        for(DomainProperty prop : listdef.getDomain().getProperties())
+        for (DomainProperty prop : listdef.getDomain().getProperties())
         {
+            if (isKeyProperty(prop))
+                continue;
             Object value = bean.getProperty(prop);
-            if(value instanceof ObjectProperty)
+            if (value instanceof ObjectProperty)
                 value = ((ObjectProperty)value).value();
                 
             map.put(prop.getName(), value);
@@ -124,6 +134,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
 
         return map;
     }
+
 
     protected void populateBean(ListItem bean, Map<String, Object> row, User user) throws QueryUpdateServiceException
     {
@@ -144,8 +155,10 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
 
         //set the domain properties, doing type coercion as necessary
         TableInfo table = listdef.getTable(user);
-        for(DomainProperty prop : listdef.getDomain().getProperties())
+        for (DomainProperty prop : listdef.getDomain().getProperties())
         {
+            if (isKeyProperty(prop))
+                continue;
             //set the prop only if it was supplied in the map
             if(row.containsKey(prop.getName()))
             {
