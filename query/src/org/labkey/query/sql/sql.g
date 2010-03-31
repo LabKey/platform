@@ -655,7 +655,7 @@ subQuery
 
 
 exprList
-	: expression ((COMMA! expression)+)?
+	: (expression (COMMA! expression)*)?
 			{ #exprList = #([EXPR_LIST,"exprList"], #exprList); }
  	;
 
