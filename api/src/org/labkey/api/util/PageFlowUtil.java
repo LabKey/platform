@@ -1557,9 +1557,9 @@ public class PageFlowUtil
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
             sb.append("/ext-3.1.1/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
-            sb.append("<link href=\"");
-            sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-3.1.1/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+//            sb.append("<link href=\"");
+//            sb.append(AppProps.getInstance().getContextPath());
+//            sb.append("/ext-3.1.1/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");
@@ -1608,7 +1608,7 @@ public class PageFlowUtil
 
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-        sb.append("LABKEY.loadedScripts('ext-3.1.1/resources/css/ext-all.css','ext-3.1.1/resources/css/ext-patches.css','stylesheet.css','printStyle.css');\n");
+        sb.append("LABKEY.loadedScripts('ext-3.1.1/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
         sb.append("</script>\n");
 
         return sb.toString();
