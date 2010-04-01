@@ -44,6 +44,14 @@ import java.util.Set;
  */
 public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements LookupListener<FieldType>
 {
+    public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>,GWTPropertyDescriptor>
+    {
+        public PD(Saveable<GWTDomain> owner, LookupServiceAsync service)
+        {
+            super(owner, service, new GWTPropertyDescriptor());
+        }
+    }
+
     public static final String currentFolder = "[current folder]";
     protected VerticalPanel _contentPanel;
     private TabPanel _extraPropertiesTabPanel = new TabPanel();
@@ -90,6 +98,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
+    FieldType _newPropertyDescriptor;
 
     protected class Row
     {
@@ -104,8 +113,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         public boolean deleted;
     }
 
+    @Deprecated
     public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service)
     {
+        this(owner, service, null);
+    }
+    
+    public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service, FieldType empty)
+    {
+        _newPropertyDescriptor = empty;
         _rows = new ArrayList<Row>();
 
         _lookupService = service;
@@ -332,14 +348,27 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _table.setVisible(true);
         _noColumnsPanel.setVisible(false);
         Row newRow = new Row(field);
+        int index = _rows.size();
         _rows.add(newRow);
-        int index = _rows.size() - 1;
         refresh();
 
         select(newRow.edit);
-        ((TextBox)_table.getWidget(index + 1, COLUMN_OF_NAMEFIELD)).setFocus(true);
+        setFocus(index);
         return newRow.edit;
     }
+
+
+    public void setFocus(int row)
+    {
+        try
+        {
+            ((TextBox)_table.getWidget(row + 1, COLUMN_OF_NAMEFIELD)).setFocus(true);
+        }
+        catch (Exception x)
+        {
+        }
+    }
+
 
     public void setPropertyDescriptors(List<FieldType> descriptors)
     {
@@ -600,7 +629,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             _table.setWidget(tableRow, col++, decorationImage);
         }
 
-        
+
         FocusHandler focusHandler = new FocusHandler()
         {
             public void onFocus(FocusEvent event)
@@ -608,6 +637,22 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 if (pd != _selectedPD)
                 {
                     select(pd);
+                }
+            }
+        };
+
+        KeyPressHandler keypressHandler = new KeyPressHandler()
+        {
+            public void onKeyPress(KeyPressEvent event)
+            {
+                if (event.getCharCode() == 13)
+                {
+                    if (index < _rows.size()-1)
+                        setFocus(index+1);
+//                    else if (null == _newPropertyDescriptor)
+//                        return;
+//                    else
+//                        addField(_newPropertyDescriptor);
                 }
             }
         };
@@ -640,6 +685,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 }
             };
             nameTextBox.addFocusHandler(focusHandler);
+            nameTextBox.addKeyPressHandler(keypressHandler);
             nameTextBox.setEnabled(!readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
             name = nameTextBox;
         }
@@ -656,6 +702,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             BoundTextBox labelTextBox = new BoundTextBox(pd, "label", "120", 200, "ff_label" + index);
             labelTextBox.addFocusHandler(focusHandler);
+            labelTextBox.addKeyPressHandler(keypressHandler);
             labelTextBox.setEnabled(!readOnly);
             label = labelTextBox;
         }

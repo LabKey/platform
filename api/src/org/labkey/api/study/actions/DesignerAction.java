@@ -94,7 +94,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 
     protected ModelAndView createGWTView(Map<String, String> properties)
     {
-        return new GWTView("org.labkey.assay.designer.AssayDesigner", properties);
+        return new GWTView("gwt.AssayDesigner", properties);
     }
 
     public NavTree appendNavTrail(NavTree root)
