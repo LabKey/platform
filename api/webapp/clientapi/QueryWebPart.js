@@ -119,7 +119,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         _paramTranslationMap: false,
         events: false,
         filterOptRe: false,
-        userFilters: false
+        userFilters: false,
+        qsParamsToIgnore: false
     },
 
     constructor : function(config)
@@ -238,6 +239,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         dr.on("beforeclearfilter", this.beforeClearFilter, this);
                         dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
                         dr.on("beforechangeview", this.beforeChangeView, this);
+                        dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
                     }, this, {delay: 100});
 
                     if(this.successCallback)
@@ -263,6 +265,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     beforeMaxRowsChange : function(dataRegion, newmax) {
         this.maxRows = newmax;
         this.offset = 0;
+        delete this.showRows;
         this.render();
         return false;
     },
@@ -313,9 +316,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     beforeChangeView : function(dataRegion, viewName) {
-        this.offset = 0;
-        this.userFilters = null;
-        this.sort = null;
+        delete this.offset;
+        delete this.userFilters;
+        delete this.sort;
         this.viewName = viewName;
         this.qsParamsToIgnore[this.getQualifiedParamName("viewName")] = true;
         this.render();
@@ -324,6 +327,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
     getQualifiedParamName : function(paramName) {
         return this.dataRegionName + "." + paramName;
+    },
+
+    beforeShowRowsChange : function(dataRegion, showRowsSetting) {
+        this.showRows = showRowsSetting;
+        delete this.offset;
+        delete this.maxRows;
+        this.render();
+        return false;
     }
 });
 

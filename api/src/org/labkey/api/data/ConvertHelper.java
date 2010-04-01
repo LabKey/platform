@@ -119,6 +119,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new URLHelper.Converter(), URLHelper.class);
         _register(new StringExpressionFactory.Converter(), StringExpression.class);
         _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
+        _register(new ShowRowsConverter(), ShowRows.class);
     }
 
 

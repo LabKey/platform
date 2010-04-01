@@ -67,7 +67,8 @@ LABKEY.DataRegion = function (config)
          "beforeclearsort",
          "beforeclearfilter",
          "beforeclearallfilters",
-         "beforechangeview"
+         "beforechangeview",
+         "beforeshowrowschange"
     );
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
@@ -294,12 +295,15 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     showPaged : function ()
     {
+        if (false === this.fireEvent("beforeshowrowschange", this, null))
+            return;
+
         this._removeParams([".showRows"]);
     },
 
     showAll : function ()
     {
-        if (false === this.fireEvent("beforemaxrowschange", this, 0))
+        if (false === this.fireEvent("beforeshowrowschange", this, "all"))
             return;
         
         this._setParam(".showRows", "all", [".offset", ".maxRows", ".showRows"]);
@@ -307,11 +311,17 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     showSelected : function ()
     {
+        if (false === this.fireEvent("beforeshowrowschange", this, "selected"))
+            return;
+
         this._setParam(".showRows", "selected", [".offset", ".maxRows", ".showRows"]);
     },
 
     showUnselected : function ()
     {
+        if (false === this.fireEvent("beforeshowrowschange", this, "unselected"))
+            return;
+
         this._setParam(".showRows", "unselected", [".offset", ".maxRows", ".showRows"]);
     },
 
