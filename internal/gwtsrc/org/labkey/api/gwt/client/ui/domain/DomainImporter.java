@@ -67,10 +67,6 @@ public class DomainImporter
     private DomainImportGrid grid;
     private ColumnMapper columnMapper;
 
-    private String cancelURL;
-    private String successURL;
-    private String typeURI;
-
     private boolean cancelRequested = false;
 
     public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
@@ -83,10 +79,6 @@ public class DomainImporter
         {
             this.baseColumnNames.add(colName.toLowerCase());
         }
-
-        successURL = PropertyUtil.getServerProperty("successURL");
-        cancelURL = PropertyUtil.getServerProperty("cancelURL");
-        typeURI = PropertyUtil.getServerProperty("typeURI");
 
         VerticalPanel panel = new VerticalPanel();
 
@@ -129,15 +121,37 @@ public class DomainImporter
         return mainPanel;
     }
 
+
+    protected String getTypeURI()
+    {
+        return PropertyUtil.getServerProperty("typeURI");
+    }
+
+
     public void finish()
     {
         if (!cancelRequested)
-            navigate(successURL);
+            onFinish();
+    }
+
+    protected void onFinish()
+    {
+        String successURL = PropertyUtil.getServerProperty("successURL");
+        navigate(successURL);
+    }
+
+    protected void onCancel()
+    {
+        String cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        if (null == cancelURL || cancelURL.length() == 0)
+            back();
+        else
+            navigate(cancelURL);
     }
 
     private void importData()
     {
-        service.getDomainDescriptor(typeURI, new AsyncCallback<GWTDomain>()
+        service.getDomainDescriptor(getTypeURI(), new AsyncCallback<GWTDomain>()
         {
             public void onFailure(Throwable caught)
             {
@@ -344,15 +358,15 @@ public class DomainImporter
     private void handleFailure(String message)
     {
         Window.alert(message);
-        navigate(cancelURL);      // This deletes the domain.  Calling cancel() will leave it in place.
+        onCancel();
     }
 
     private void cancel()
     {
-        if (null == cancelURL || cancelURL.length() == 0)
-            back();
-        else if (null == jobId)
-            navigate(cancelURL);
+        if (null == jobId)
+        {
+            onCancel();
+        }
         else
         {
             cancelRequested = true;
