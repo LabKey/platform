@@ -1,0 +1,12 @@
+<module>
+
+    <!-- Inherit the core Web Toolkit stuff.                  -->
+    <inherits name='com.google.gwt.user.User'/>
+    <inherits name="com.google.gwt.xml.XML"/>
+    <inherits name="org.labkey.api.gwt.Internal"/>
+    <inherits name="gwt.AssayDesigner"/>
+
+    <!-- Specify the app entry point class.                   -->
+    <entry-point class='gwt.client.org.labkey.assay.upload.client.ListChooser'/>
+
+</module>

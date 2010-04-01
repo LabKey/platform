@@ -16,6 +16,7 @@
 
 package org.labkey.core.webdav;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
@@ -2659,29 +2660,51 @@ public class DavController extends SpringActionController
     }
 
 
-    final static Map<Path, WebdavResource> compressedResources = Collections.synchronizedMap(new HashMap<Path, WebdavResource>());
-    boolean supportStaticGzFiles = false;
+
+    static final boolean supportStaticGzFiles = true;
 
     boolean isStaticContent(Path path)
     {
         return !path.startsWith(servletPrefix);
     }
 
-    WebdavResource getGzipResource(Path path) throws DavException
+
+    static Map<Path,Boolean> hasZipMap = Collections.synchronizedMap(new HashMap<Path,Boolean>());
+
+    InputStream getGzipStream(WebdavResource r) throws DavException, IOException
     {
-        assert isStaticContent(path);
-        WebdavResource gzResource = compressedResources.get(path);
-        if (gzResource == null)
+        // kinda hacky, but good enough for now
+        assert isStaticContent(r.getPath());
+        if (!supportStaticGzFiles || !isStaticContent(r.getPath()))
+            return null;
+        Boolean hasZip = hasZipMap.get(r.getPath());
+        if (Boolean.FALSE == hasZip)
+            return null;
+
+        File file = r.getFile();
+        if (null == file)
+            return null;
+        File fileGz = new File(file.getPath() + ".gz");
+
+        try
         {
-            Path gz = path.getParent().append(path.getName() + ".gz");
-            // TODO : causes a lot of cache misses
-            gzResource = resolvePath(gz);
-            if (null != gzResource && gzResource.exists())
-                gzResource = nullDavFileInfo;
-            compressedResources.put(path,gzResource);
+            if (Boolean.TRUE == hasZip)
+                return new FileInputStream(fileGz);
+
+            if (file.exists() && fileGz.exists() && file.lastModified() <= fileGz.lastModified())
+            {
+                InputStream ret = new FileInputStream(fileGz);
+                hasZipMap.put(r.getPath(), Boolean.TRUE);
+                return ret;
+            }
         }
-        return nullDavFileInfo == gzResource ? null : gzResource;
+        catch (FileNotFoundException x)
+        {
+        }
+        hasZipMap.put(r.getPath(), Boolean.FALSE);
+        return null;
     }
+
 
 
     Path extPath = new Path("ext-3.1.1");
@@ -2775,29 +2798,26 @@ public class DavController extends SpringActionController
                 getResponse().setContentType(contentType);
             }
 
+            InputStream is = null;
+
             // if static content look for gzip version
-            if (isStatic && supportStaticGzFiles)
+            if (isStatic && !isDevMode)
             {
                 String accept = getRequest().getHeader("accept-encoding");
                 if (null != accept && -1 != accept.indexOf("gzip"))
                 {
-                    WebdavResource gzResource = getGzipResource(resource.getPath());
-                    if (null != gzResource)
-                    {
-                        if (!isDevMode || gzResource.getLastModified() >= resource.getLastModified())
-                        {
-                            resource = gzResource;
-                            getResponse().setContentEncoding("gzip");
-                        }
-                    }
+                    is = getGzipStream(resource);
+                    if (null != is)
+                        getResponse().setContentEncoding("gzip");
                 }
             }
 
+            if (null == is)
+                is = resource.getInputStream(getUser());
             if (ostream != null)
-                copy(resource.getInputStream(getUser()), ostream);
+                copy(is, ostream);
             else
-                copy(resource.getInputStream(getUser()), writer);
-
+                copy(is, writer);
         }
         else
         {
