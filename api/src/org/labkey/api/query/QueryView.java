@@ -938,8 +938,15 @@ public class QueryView extends WebPartView<Object>
 
     protected void addGridViews(MenuButton menu, URLHelper target, String currentView)
     {
+        String changeViewScript = "LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "].changeView('<viewname>');";
+        boolean isReport = getSettings().getReportId() != null;
+
         // default grid view stays at the top level
-        NavTree item = new NavTree("default", target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString());
+        //reports don't render a DataRegion JavaScript object, so we need to use an explicit href when this is a report
+        NavTree item = new NavTree("default", (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), "").getLocalURIString() : "#"));
+        if (!isReport)
+            item.setScript(changeViewScript.replace("<viewname>", ""));
+
         item.setId("Views:default");
         if ("".equals(currentView))
             item.setHighlighted(true);
@@ -968,7 +975,9 @@ public class QueryView extends WebPartView<Object>
             if (label == null)
                 continue;
 
-            item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
+            item = new NavTree(label, (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString(): "#"));
+            if (!isReport)
+                item.setScript(changeViewScript.replace("<viewname>", label));
             item.setId("Views:" + label);
             if (label.equals(currentView))
                 item.setHighlighted(true);

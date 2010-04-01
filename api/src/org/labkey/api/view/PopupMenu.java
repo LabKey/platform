@@ -127,9 +127,24 @@ public class PopupMenu extends DisplayElement
     {
         out.append("<script type=\"text/javascript\">\n");
         out.append("Ext.onReady(function() {\n");
+        out.append(renderUnregScript(getId()));
         out.append("        new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildren(), getId()));
         out.append("         );});\n</script>");
+    }
+
+    private String renderUnregScript(String id)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("    var oldMenu = Ext.menu.MenuMgr.get(");
+        sb.append(PageFlowUtil.jsString(id));
+        sb.append(");\n");
+        sb.append("    if(oldMenu)\n");
+        sb.append("    {\n");
+        sb.append("        oldMenu.removeAll();\n");
+        sb.append("        Ext.menu.MenuMgr.unregister(oldMenu);\n");
+        sb.append("    }\n");
+        return sb.toString();
     }
 
     // UNDONE: use NavTree.toJS()

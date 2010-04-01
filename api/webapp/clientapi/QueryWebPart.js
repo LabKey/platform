@@ -133,6 +133,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         this.filters = this.filters || this.filterArray;
+        this.qsParamsToIgnore = {};
 
         /**
          * @memberOf LABKEY.QueryWebPart#
@@ -202,10 +203,12 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         }
 
         //forward query string parameters for this data region
+        //except those we should specifically ignore
         var qsParams = LABKEY.ActionURL.getParameters();
         for(var qsParam in qsParams)
         {
-            if(-1 != qsParam.indexOf(this.dataRegionName + "."))
+            if(-1 != qsParam.indexOf(this.dataRegionName + ".")
+                    && !this.qsParamsToIgnore[qsParam])
                 params[qsParam] = qsParams[qsParam];
         }
 
@@ -234,6 +237,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         dr.on("beforefilterchange", this.beforeFilterChange, this);
                         dr.on("beforeclearfilter", this.beforeClearFilter, this);
                         dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
+                        dr.on("beforechangeview", this.beforeChangeView, this);
                     }, this, {delay: 100});
 
                     if(this.successCallback)
@@ -306,6 +310,20 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         this.userFilters = null;
         this.render();
         return false;
+    },
+
+    beforeChangeView : function(dataRegion, viewName) {
+        this.offset = 0;
+        this.userFilters = null;
+        this.sort = null;
+        this.viewName = viewName;
+        this.qsParamsToIgnore[this.getQualifiedParamName("viewName")] = true;
+        this.render();
+        return false;
+    },
+
+    getQualifiedParamName : function(paramName) {
+        return this.dataRegionName + "." + paramName;
     }
 });
 

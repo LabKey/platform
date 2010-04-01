@@ -66,7 +66,8 @@ LABKEY.DataRegion = function (config)
          "beforesortchange",
          "beforeclearsort",
          "beforeclearfilter",
-         "beforeclearallfilters"
+         "beforeclearallfilters",
+         "beforechangeview"
     );
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
@@ -191,7 +192,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             skipPrefixes[i] = this.name + skipPrefixes[i];
 
         var paramValPairs = getParamValPairs(skipPrefixes);
-        if (value)
+        if (null != value)
         {
             paramValPairs[paramValPairs.length] = [this.name + param, value];
         }
@@ -674,6 +675,14 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             newSortArray = newSortArray.concat(direction + columnName);
         
         return newSortArray.join(",");
+    },
+
+    changeView : function(viewName)
+    {
+        if (false === this.fireEvent("beforechangeview", this, viewName))
+            return;
+        
+        this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName"]);
     }
 
 });
