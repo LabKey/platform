@@ -261,7 +261,6 @@ api/src/org/labkey/api/exp/api/IAssayDomainType.java -text
 api/src/org/labkey/api/exp/api/ProtocolImplementation.java -text
 api/src/org/labkey/api/exp/list/ListDefinition.java -text
 api/src/org/labkey/api/exp/list/ListImportProgress.java -text
-api/src/org/labkey/api/exp/list/ListImporterViewGetter.java -text
 api/src/org/labkey/api/exp/list/ListItem.java -text
 api/src/org/labkey/api/exp/list/ListService.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorFactorySettings.java -text
