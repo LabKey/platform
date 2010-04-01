@@ -29,6 +29,9 @@ import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.ui.domain.DomainImporter;
+import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
+import org.labkey.api.gwt.client.ui.domain.DomainImporterServiceAsync;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
@@ -191,8 +194,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                             {
                                 if (_importFromFile.booleanValue())
                                 {
-                                    String loc = PropertyUtil.getContextPath() + "/list" + PropertyUtil.getContainerPath() + "/defineAndImportList.view";
-                                    WindowUtil.setLocation(loc + "?listId=" + result.getListId());
+                                    //setList() goes to DesignerUI
+                                    _list = result;
+                                    showImporterUI();
                                 }
                                 else
                                 {
@@ -368,6 +372,28 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             refreshButtons();
         }
+    }
+
+
+    private void showImporterUI()
+    {
+        _root.clear();
+
+        VerticalPanel vPanel = new VerticalPanel();
+        _root.add(vPanel);
+
+        List<String> columnsToMap = Collections.emptyList();
+
+        Set<String> baseColumnNames = new HashSet<String>();
+        String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");
+        if (baseColNamesString == null)
+            baseColNamesString = "";
+        String[] baseColArray = baseColNamesString.split(",");
+        for (String s : baseColArray)
+            baseColumnNames.add(s);
+
+        DomainImporter domainImporter = new _DomainImporter(getImporterService(), columnsToMap, baseColumnNames);
+        vPanel.add(domainImporter.getMainPanel());
     }
 
 
@@ -581,6 +607,25 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         });
     }
 
+
+    // CONSIDER: ListEditorService could implement DomainImporterService
+    
+    private DomainImporterServiceAsync _importerService = null;
+
+    private DomainImporterServiceAsync getImporterService()
+    {
+        if (_importerService == null)
+        {
+            _importerService = (DomainImporterServiceAsync) GWT.create(DomainImporterService.class);
+            ServiceUtil.configureEndpoint(_importerService, "domainImportService");
+        }
+        return _importerService;
+    }
+
+
+    /*
+     * utils
+     */
 
     boolean canDesignList()
     {
@@ -919,6 +964,34 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
     }
 
+
+    private class _DomainImporter extends DomainImporter
+    {
+        _DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
+        {
+            super(service, columnsToMap, baseColumnNames);
+        }
+
+        @Override
+        protected void onFinish()
+        {
+            String loc = PropertyUtil.getContextPath() + "/list" + PropertyUtil.getContainerPath() + "/grid.view";
+            WindowUtil.setLocation(loc + "?listId=" + _list.getListId());
+        }
+
+        @Override
+        protected void onCancel()
+        {
+            setReadOnly(true);
+            asyncGetList(_list.getListId(), null);
+        }
+
+        @Override
+        protected String getTypeURI()
+        {
+            return _list.getTypeURI();
+        }
+    }
 
     private static boolean isEmpty(String s)
     {

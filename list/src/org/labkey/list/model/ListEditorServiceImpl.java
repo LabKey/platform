@@ -93,7 +93,12 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
     public GWTList getList(int id)
     {
+        if (id == 0)
+            return null;
+        
         ListDefinition def =  ListService.get().getList(getContainer(), id); //ListManager.get().getList(getContainer(), id);
+        if (def == null)
+            return null;
 
         GWTList gwt = new GWTList();
         gwt._listId(id);
@@ -106,6 +111,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         gwt.setKeyPropertyName(def.getKeyName());
         gwt.setKeyPropertyType(def.getKeyType().name());
         gwt.setTitleField(def.getTitleColumn());
+        gwt._typeURI(def.getDomain().getTypeURI());
 
         if (StringUtils.isEmpty(gwt.getTitleField()))
         {

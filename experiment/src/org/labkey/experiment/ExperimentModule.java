@@ -23,7 +23,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.list.ListImporterViewGetter;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -54,7 +53,6 @@ import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.DefaultRunExpansionHandler;
-import org.labkey.experiment.list.client.ListImporter;
 import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
@@ -258,9 +256,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
-
-        // TODO: Remove this hack
-        ListImporterViewGetter.setClass(ListImporter.class);
 
         initWebApplicationContext();
     }

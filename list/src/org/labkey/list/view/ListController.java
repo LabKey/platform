@@ -33,7 +33,6 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListImporterViewGetter;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -214,77 +213,6 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class DefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
-    {
-        private ListDefinition _list;
-
-        @Override
-        protected Set<Role> getContextualRoles()
-        {
-            if (getViewContext().getUser() == User.getSearchUser())
-                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
-            return null;
-        }
-        
-        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
-        {
-            _list = form.getList();
-            Map<String, String> props = new HashMap<String, String>();
-
-            props.put("typeURI", _list.getDomain().getTypeURI());
-
-            // Cancel should delete the dataset
-            ActionURL cancelURL = new ActionURL(CancelDefineAndImportListAction.class, getContainer());
-            cancelURL.addParameter("listId", _list.getListId());
-            props.put("cancelURL", cancelURL.getLocalURIString());
-
-            ActionURL successURL = _list.urlShowData();
-            props.put("successURL", successURL.getLocalURIString());
-
-            // need a comma-separated list of base columns
-            TableInfo tInfo = _list.getTable(getUser());
-
-            StringBuilder sb = new StringBuilder();
-            boolean needComma = false;
-            for (String baseColumnName : tInfo.getColumnNameSet())
-            {
-                if (needComma)
-                    sb.append(",");
-                else
-                    needComma = true;
-                sb.append(baseColumnName);
-            }
-            props.put("baseColumnNames", sb.toString());
-
-            // TODO: return new GWTView(ListImporter.class, props);
-            return ListImporterViewGetter.getView(props);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, null);
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class CancelDefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
-    {
-        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
-        {
-            // Cancelling the import just deletes the list
-            ListDefinition _list = form.getList();
-            _list.delete(getUser());
-            HttpView.throwRedirect(getBeginURL(getContainer()));
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -306,75 +234,6 @@ public class ListController extends SpringActionController
         }
     }
 
-
-/*    @RequiresPermissionClass(ReadPermission.class)
-    public class ShowListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
-    {
-        private ListDefinition _list;
-
-        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
-        {
-            _list = form.getList();
-            return FormPage.getView(ListController.class, form, "showListDefinition.jsp");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, null);
-        }
-    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class EditListDefinitionAction extends FormViewAction<EditListDefinitionForm>
-    {
-        private ListDefinition _list;
-
-        public void validateCommand(EditListDefinitionForm form, Errors errors)
-        {
-            if (null == form.ff_keyName)
-            {
-                errors.reject(ERROR_MSG, "Key name must not be blank.");
-            }
-        }
-
-        public ModelAndView getView(EditListDefinitionForm form, boolean reshow, BindException errors) throws Exception
-        {
-            if (!reshow)
-                form.setDefaults();
-
-            _list = form.getList();
-
-            return FormPage.getView(ListController.class, form, errors, "editListDefinition.jsp");
-        }
-
-        public boolean handlePost(EditListDefinitionForm form, BindException errors) throws Exception
-        {
-            _list = form.getList();
-            _list.setTitleColumn(form.ff_titleColumn);
-            _list.setKeyName(form.ff_keyName);
-            _list.setDescription(form.ff_description);
-            _list.setDiscussionSetting(form.ff_discussionSetting);
-            _list.setAllowDelete(form.ff_allowDelete);
-            _list.setAllowUpload(form.ff_allowUpload);
-            _list.setAllowExport(form.ff_allowExport);
-            _list.save(getUser());
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(EditListDefinitionForm form)
-        {
-            return _list.urlShowDefinition();
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendListNavTrail(root, _list, "Edit " + _list.getName());
-        }
-    }
-*/
-    
 
     @RequiresPermissionClass(AdminPermission.class)
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
@@ -1252,7 +1111,6 @@ public class ListController extends SpringActionController
 
     public enum Action
     {
-        defineAndImportList,
         deleteListDefinition,
         showListDefinition,
         editListDefinition,

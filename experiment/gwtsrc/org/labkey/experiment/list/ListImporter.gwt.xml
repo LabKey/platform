@@ -1,9 +1,0 @@
-<module>
-
-    <inherits name='com.google.gwt.user.User'/>
-    <inherits name="com.google.gwt.xml.XML"/>
-    <inherits name="org.labkey.api.gwt.Internal"/>
-
-    <entry-point class='org.labkey.experiment.list.client.ListImporter'/>
-
-</module>

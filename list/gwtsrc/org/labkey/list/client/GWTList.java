@@ -41,6 +41,7 @@ public class GWTList implements IsSerializable
     public BooleanProperty allowExport = new BooleanProperty(true);
 
     // client should only read these
+    private String _typeURI;
     private String _defaultTitleField;
     private IntegerProperty _listId = new IntegerProperty(0);
 
@@ -177,6 +178,16 @@ public class GWTList implements IsSerializable
     public String getDefaultTitleField()
     {
         return _defaultTitleField;
+    }
+
+    public String getTypeURI()
+    {
+        return _typeURI;
+    }
+
+    public void _typeURI(String typeURI)
+    {
+        _typeURI = typeURI;
     }
 }
 
