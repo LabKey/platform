@@ -118,6 +118,7 @@ public class ModuleQueryDef extends ResourceRef
         if (!docElem.getNodeName().equalsIgnoreCase("query"))
             return;
 
+        _name = DOMUtil.getAttributeValue(docElem, "name", _name);
         _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
         _schemaVersion = Double.parseDouble(DOMUtil.getAttributeValue(docElem, "schemaVersion", "0"));
 
