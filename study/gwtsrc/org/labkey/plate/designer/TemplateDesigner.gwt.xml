@@ -1,6 +1,0 @@
-<module>
-    <inherits name='org.labkey.api.gwt.Internal'/>
-
-    <!-- Specify the app entry point class.                   -->
-    <entry-point class='org.labkey.plate.designer.client.TemplateDesigner'/>
-</module>

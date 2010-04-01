@@ -47,11 +47,12 @@ import org.labkey.api.view.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.designer.*;
-import org.labkey.study.designer.client.model.GWTCohort;
-import org.labkey.study.designer.client.model.GWTStudyDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -217,7 +218,7 @@ public class DesignerController extends SpringActionController
             if (null != StringUtils.trimToNull(form.getFinishURL()))
                 params.put("finishURL", form.getFinishURL());
 
-            HttpView studyView = new GWTView("org.labkey.study.designer.Designer", params);
+            HttpView studyView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
             if (0 != form.getStudyId() && info != null)
             {
                 HttpView discussion = DiscussionService.get().getDisussionArea(

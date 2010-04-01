@@ -33,7 +33,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.designer.client.model.*;
+import gwt.client.org.labkey.study.designer.client.model.*;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;

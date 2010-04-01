@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.designer.client.model.GWTStudyDesignVersion;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 
 import java.util.Date;
 

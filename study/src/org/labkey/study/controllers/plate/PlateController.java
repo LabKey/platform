@@ -35,6 +35,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.plate.PlateManager;
+import org.labkey.study.view.StudyGWTView;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -127,7 +128,7 @@ public class PlateController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Plate Templates");
-        }
+        }           
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -242,7 +243,7 @@ public class PlateController extends SpringActionController
                 PlateTemplate template = templates[i];
                 properties.put("templateName[" + i + "]", template.getName());
             }
-            return new GWTView("org.labkey.plate.designer.TemplateDesigner", properties);
+            return new StudyGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlError;
-import org.labkey.study.designer.client.model.*;
+import gwt.client.org.labkey.study.designer.client.model.*;
 import org.labkey.study.xml.*;
 import org.json.JSONObject;
 

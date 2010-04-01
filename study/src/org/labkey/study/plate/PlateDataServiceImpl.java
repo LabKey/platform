@@ -16,10 +16,10 @@
 
 package org.labkey.study.plate;
 
-import org.labkey.plate.designer.client.PlateDataService;
-import org.labkey.plate.designer.client.model.GWTPlate;
-import org.labkey.plate.designer.client.model.GWTPosition;
-import org.labkey.plate.designer.client.model.GWTWellGroup;
+import gwt.client.org.labkey.plate.designer.client.PlateDataService;
+import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
+import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
+import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.study.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.gwt.client.util.ExceptionUtil;

@@ -80,7 +80,7 @@ import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
-import org.labkey.study.dataset.client.Designer;
+import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.*;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
@@ -95,6 +95,7 @@ import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.SchemaTsvWriter;
 import org.labkey.study.writer.StudyExportContext;
@@ -300,7 +301,7 @@ public class StudyController extends BaseStudyController
                     "returnURL", new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
             HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-            HttpView view = new GWTView(Designer.class, props);
+            HttpView view = new StudyGWTView(Designer.class, props);
 
             // hack for 4404 : Lookup picker performance is terrible when there are many containers
             ContainerManager.getAllChildren(ContainerManager.getRoot());
@@ -4987,7 +4988,7 @@ public class StudyController extends BaseStudyController
                         "create", "false");
 
                 HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-                HttpView view = new GWTView("org.labkey.study.dataset.Designer", props);
+                HttpView view = new StudyGWTView(gwt.client.org.labkey.study.dataset.client.Designer.class, props);
 
                 // hack for 4404 : Lookup picker performance is terrible when there are many containers
                 ContainerManager.getAllChildren(ContainerManager.getRoot());
@@ -5180,7 +5181,7 @@ public class StudyController extends BaseStudyController
 
                     HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
                             "save any changes, else click the cancel button to complete the snapshot.");
-                    HttpView view = new GWTView("org.labkey.study.dataset.Designer", props);
+                    HttpView view = new StudyGWTView("org.labkey.study.dataset.Designer", props);
 
                     // hack for 4404 : Lookup picker performance is terrible when there are many containers
                     ContainerManager.getAllChildren(ContainerManager.getRoot());

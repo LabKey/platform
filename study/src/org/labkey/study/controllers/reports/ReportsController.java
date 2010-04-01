@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.reports;
 
+import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -57,6 +58,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.*;
+import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -1850,7 +1852,7 @@ public class ReportsController extends BaseStudyController
             if (def != null)
                 props.put("datasetId", String.valueOf(_datasetId));
 
-            HttpView view = new GWTView("org.labkey.study.chart.StudyChartDesigner", props);
+            HttpView view = new StudyGWTView(StudyChartDesigner.class, props);
             return new VBox(view);
         }
 

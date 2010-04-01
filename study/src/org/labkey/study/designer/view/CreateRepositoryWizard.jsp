@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
-<%@ page import="org.labkey.study.designer.client.model.GWTCohort" %>
+<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="java.util.*" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();

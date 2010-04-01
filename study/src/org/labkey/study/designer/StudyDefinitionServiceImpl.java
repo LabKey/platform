@@ -24,10 +24,10 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.designer.DesignerController;
-import org.labkey.study.designer.client.StudyDefinitionService;
-import org.labkey.study.designer.client.model.GWTAssayDefinition;
-import org.labkey.study.designer.client.model.GWTStudyDefinition;
-import org.labkey.study.designer.client.model.GWTStudyDesignVersion;
+import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
+import gwt.client.org.labkey.study.designer.client.model.GWTAssayDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 import org.labkey.study.xml.StudyDesignDocument;
 
 import java.sql.SQLException;

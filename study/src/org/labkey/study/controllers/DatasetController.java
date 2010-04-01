@@ -35,10 +35,11 @@ import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
-import org.labkey.study.dataset.client.DatasetImporter;
+import gwt.client.org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -518,7 +519,7 @@ public class DatasetController extends BaseStudyController
             }
             props.put("baseColumnNames", sb.toString());
 
-            return new GWTView(DatasetImporter.class, props);
+            return new StudyGWTView(DatasetImporter.class, props);
         }
 
         public NavTree appendNavTrail(NavTree root)
