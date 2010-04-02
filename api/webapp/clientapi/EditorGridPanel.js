@@ -467,7 +467,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     },
 
     getDefaultRenderer : function(col, meta) {
-        if(meta.lookup && this.lookups)
+        if(meta.lookup && this.lookups && col.editable) //no need to use a lookup renderer if column is not editable
             return this.getLookupRenderer(col, meta);
 
         return function(data, cellMetaData, record, rowIndex, colIndex, store)
