@@ -682,7 +682,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             direction = "";
 
         if (null !== direction)
-            newSortArray = newSortArray.concat(direction + columnName);
+            newSortArray = [direction + columnName].concat(newSortArray);
         
         return newSortArray.join(",");
     },
