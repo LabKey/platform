@@ -1556,10 +1556,10 @@ public class PageFlowUtil
         {
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-3.1.1/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("/ext-3.2.0/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 //            sb.append("<link href=\"");
 //            sb.append(AppProps.getInstance().getContextPath());
-//            sb.append("/ext-3.1.1/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+//            sb.append("/ext-3.2.0/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");
@@ -1608,7 +1608,7 @@ public class PageFlowUtil
 
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-        sb.append("LABKEY.loadedScripts('ext-3.1.1/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
+        sb.append("LABKEY.loadedScripts('ext-3.2.0/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
         sb.append("</script>\n");
 
         return sb.toString();
@@ -1773,8 +1773,8 @@ public class PageFlowUtil
         "ext2-2/source/util/History.js",
         "ext2-2/source/debug.js"
     };
-    static String extDebug = "ext-3.1.1/ext-all-debug.js";
-    static String extMin = "ext-3.1.1/ext-all.js";
+    static String extDebug = "ext-3.2.0/ext-all-debug.js";
+    static String extMin = "ext-3.2.0/ext-all.js";
 
     static String[] clientExploded = new String[]
     {
@@ -1823,7 +1823,7 @@ public class PageFlowUtil
         scripts.add("util.js");
 
         // EXT
-        scripts.add("ext-3.1.1/adapter/ext/ext-base.js");
+        scripts.add("ext-3.2.0/adapter/ext/ext-base.js");
         for (String e : extExploded)
         {
             //included.add(e);
@@ -1834,7 +1834,7 @@ public class PageFlowUtil
             scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
         included.add(extDebug);
         included.add(extMin);
-        scripts.add("ext-3.1.1/ext-patches.js");
+        scripts.add("ext-3.2.0/ext-patches.js");
 
         // CLIENT
         for (String e : clientExploded)
@@ -1978,7 +1978,7 @@ public class PageFlowUtil
 
 
 
-    static final String extJsRoot = "ext-3.1.1";
+    static final String extJsRoot = "ext-3.2.0";
     static Integer serverHash = null;
 
     public static String extJsRoot()

@@ -13,7 +13,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
     LABKEY.yahooRoot = "_yui/build";
-    LABKEY.extJsRoot = "ext-3.1.1";
+    LABKEY.extJsRoot = "ext-3.2.0";
     LABKEY.verbose = false;
     LABKEY.widget = {};
     LABKEY.hash = 0;
