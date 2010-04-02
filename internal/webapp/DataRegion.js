@@ -692,7 +692,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         if (false === this.fireEvent("beforechangeview", this, viewName))
             return;
         
-        this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName"]);
+        this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName", ".reportId"]);
     }
 
 });
