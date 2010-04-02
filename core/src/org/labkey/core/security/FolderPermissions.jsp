@@ -42,7 +42,7 @@
 %>
 <style type="text/css">
     .x-tree-node-leaf .x-tree-node-icon{
-        background-image:url(<%=getViewContext().getContextPath()%>/ext-3.1.1/resources/images/default/tree/folder.gif);
+        background-image:url(<%=getViewContext().getContextPath()%>/ext-3.2.0/resources/images/default/tree/folder.gif);
     }
     .x-tree-node-current {
         font-weight: bold;

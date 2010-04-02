@@ -866,13 +866,13 @@ th.labkey-col-header-filter.hover, td.labkey-col-header-filter.hover, tr.labkey-
 
 .labkey-sort-asc .x-grid3-sort-icon
 {
-    background-image:url(ext-3.1.1/resources/images/default/grid/sort_asc.gif);
+    background-image:url(ext-3.2.0/resources/images/default/grid/sort_asc.gif);
     display:inline;
 }
 
 .labkey-sort-desc .x-grid3-sort-icon
 {
-    background-image:url(ext-3.1.1/resources/images/default/grid/sort_desc.gif);
+    background-image:url(ext-3.2.0/resources/images/default/grid/sort_desc.gif);
     display:inline;
 }
 
@@ -1550,7 +1550,7 @@ table.labkey-wp-link-panel
 
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 {
-    background-image: url(./ext-3.1.1/resources/images/default/form/exclamation.gif)
+    background-image: url(./ext-3.2.0/resources/images/default/form/exclamation.gif)
 }
 
 /* Module Specific */

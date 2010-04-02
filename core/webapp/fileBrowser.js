@@ -1174,11 +1174,11 @@ var FileStore = Ext.extend(Ext.data.Store,
         this.setDefaultSort("name","ASC");
     },
 
-    sortData : function(f, direction)
+    sortData : function()
     {
-        direction = direction || 'ASC';
-        var st = this.fields.get(f).sortType;
-        var d = direction=="DESC" ? -1 : 1;
+        this.sortInfo.direction = this.sortInfo.direction || 'ASC';
+        var st = this.fields.get(this.sortInfo.field).sortType;
+        var d = this.sortInfo.direction=="DESC" ? -1 : 1;
         var fn = function(r1, r2)
         {
             if (r1.data.file != r2.data.file)
@@ -1186,10 +1186,10 @@ var FileStore = Ext.extend(Ext.data.Store,
             var v1 = st(r1.data[f]), v2 = st(r2.data[f]);
             return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
         };
-        this.data.sort(direction, fn);
+        this.data.sort(this.sortInfo.direction, fn);
         if (this.snapshot && this.snapshot != this.data)
         {
-            this.snapshot.sort(direction, fn);
+            this.snapshot.sort(this.sortInfo.direction, fn);
         }
     }
 });
