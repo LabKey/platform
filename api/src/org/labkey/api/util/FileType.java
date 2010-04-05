@@ -453,6 +453,7 @@ public class FileType implements Serializable
         if (_suffixes.size() > 0)
         {
             FileType ft = new FileType(_defaultSuffix);
+            ft._dir = _dir;
             ft._supportGZ = _supportGZ.booleanValue();
             ft._preferGZ = _preferGZ.booleanValue();
             return ft;

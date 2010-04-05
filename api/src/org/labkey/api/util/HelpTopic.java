@@ -42,8 +42,7 @@ public class HelpTopic
         HELP_VERSION = Formats.f1.format(Math.floor(coreVersion * 10 + 0.1) / 10);
     }
 
-    private static final String HELP_ROOT_URL = "http://help.labkey.org/wiki/home/";
-    private static final String HELP_VERSION_URL = "/documentation/" + HELP_VERSION + "/page.view?name=";
+    private static final String HELP_ROOT_URL = "http://help.labkey.org/wiki/home/documentation/" + HELP_VERSION + "/page.view?name=";
 
     public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
 
@@ -63,6 +62,6 @@ public class HelpTopic
 
     public String getHelpTopicLink()
     {
-        return HELP_ROOT_URL + HELP_VERSION_URL + _topic;
+        return HELP_ROOT_URL + _topic;
     }
 }

@@ -17,11 +17,13 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 
+import java.io.StringWriter;
 import java.io.Writer;
 import java.io.IOException;
 import java.util.Set;
@@ -67,6 +69,23 @@ public class ContainerDisplayColumn extends DataColumn
         }
     }
 
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        // Get the container for this row; stash the path in the context so urls can use it
+        if (_entityIdColumn != null)
+        {
+            String id = (String)_entityIdColumn.getValue(ctx);
+            _c = ContainerManager.getForId(id);
+        }
+
+        if (_c == null)
+        {
+            return "<deleted>";
+        }
+        return _showPath ? _c.getPath() : _c.getName();        
+    }
+
     public void setEntityIdColumn(ColumnInfo entityIdColumn)
     {
         _entityIdColumn = entityIdColumn;
@@ -95,13 +114,8 @@ public class ContainerDisplayColumn extends DataColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        // Get the container for this row; stash the path in the context so urls can use it
-        if (_entityIdColumn != null)
-        {
-            String id = (String)_entityIdColumn.getValue(ctx);
-            _c = ContainerManager.getForId(id);
-        }
-
+        // Do this first to make sure we've looked up the container if needed
+        getDisplayValue(ctx);
         // Don't render link if container is deleted
         if (null == _c)
         {
@@ -123,6 +137,9 @@ public class ContainerDisplayColumn extends DataColumn
         {
             return PageFlowUtil.filter(_errorMessage);
         }
+        // Do this before outputting the URL as it makes sure that we've looked up the container object
+        String displayValue = getDisplayValue(ctx).toString();
+
         StringBuilder sb = new StringBuilder();
         if (_url != null)
         {
@@ -130,14 +147,7 @@ public class ContainerDisplayColumn extends DataColumn
             sb.append(_url.getLocalURIString());
             sb.append("\">");
         }
-        if (_c == null)
-        {
-            sb.append(PageFlowUtil.filter("<deleted>"));
-        }
-        else
-        {
-            sb.append(PageFlowUtil.filter(_showPath ? _c.getPath() : _c.getName()));
-        }
+        sb.append(PageFlowUtil.filter(displayValue));
         if (_url != null)
         {
             sb.append("</a>");

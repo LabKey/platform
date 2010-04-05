@@ -66,7 +66,7 @@ public class MothershipReport implements Runnable
         }
         else
         {
-            url.setContextPath("");
+            url.setContextPath("/");
             _url = new URL("https", "www.labkey.org", 443, url.toString());
         }
     }

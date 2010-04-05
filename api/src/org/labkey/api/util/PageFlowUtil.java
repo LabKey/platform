@@ -24,6 +24,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
@@ -1614,165 +1616,6 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-
-    static String[] extExploded = new String[]
-    {
-        "ext2-2/source/core/DomHelper.js",
-        "ext2-2/source/core/Template.js",
-        "ext2-2/source/core/DomQuery.js",
-        "ext2-2/source/util/Observable.js",
-        "ext2-2/source/core/EventManager.js",
-        "ext2-2/source/core/Element.js",
-        "ext2-2/source/core/Fx.js",
-        "ext2-2/source/core/CompositeElement.js",
-        "ext2-2/source/data/Connection.js",
-        "ext2-2/source/core/UpdateManager.js",
-        "ext2-2/source/util/Date.js",
-        "ext2-2/source/util/DelayedTask.js",
-        "ext2-2/source/util/TaskMgr.js",
-        "ext2-2/source/util/MixedCollection.js",
-        "ext2-2/source/util/JSON.js",
-        "ext2-2/source/util/Format.js",
-        "ext2-2/source/util/XTemplate.js",
-        "ext2-2/source/util/CSS.js",
-        "ext2-2/source/util/ClickRepeater.js",
-        "ext2-2/source/util/KeyNav.js",
-        "ext2-2/source/util/KeyMap.js",
-        "ext2-2/source/util/TextMetrics.js",
-        "ext2-2/source/dd/DDCore.js",
-        "ext2-2/source/dd/DragTracker.js",
-        "ext2-2/source/dd/ScrollManager.js",
-        "ext2-2/source/dd/Registry.js",
-        "ext2-2/source/dd/StatusProxy.js",
-        "ext2-2/source/dd/DragSource.js",
-        "ext2-2/source/dd/DropTarget.js",
-        "ext2-2/source/dd/DragZone.js",
-        "ext2-2/source/dd/DropZone.js",
-        "ext2-2/source/data/SortTypes.js",
-        "ext2-2/source/data/Record.js",
-        "ext2-2/source/data/StoreMgr.js",
-        "ext2-2/source/data/Store.js",
-        "ext2-2/source/data/SimpleStore.js",
-        "ext2-2/source/data/JsonStore.js",
-        "ext2-2/source/data/DataField.js",
-        "ext2-2/source/data/DataReader.js",
-        "ext2-2/source/data/DataProxy.js",
-        "ext2-2/source/data/MemoryProxy.js",
-        "ext2-2/source/data/HttpProxy.js",
-        "ext2-2/source/data/ScriptTagProxy.js",
-        "ext2-2/source/data/JsonReader.js",
-        "ext2-2/source/data/XmlReader.js",
-        "ext2-2/source/data/ArrayReader.js",
-        "ext2-2/source/data/Tree.js",
-        "ext2-2/source/data/GroupingStore.js",
-        "ext2-2/source/widgets/ComponentMgr.js",
-        "ext2-2/source/widgets/Component.js",
-        "ext2-2/source/widgets/Action.js",
-        "ext2-2/source/widgets/Layer.js",
-        "ext2-2/source/widgets/Shadow.js",
-        "ext2-2/source/widgets/BoxComponent.js",
-        "ext2-2/source/widgets/SplitBar.js",
-        "ext2-2/source/widgets/Container.js",
-        "ext2-2/source/widgets/layout/ContainerLayout.js",
-        "ext2-2/source/widgets/layout/FitLayout.js",
-        "ext2-2/source/widgets/layout/CardLayout.js",
-        "ext2-2/source/widgets/layout/AnchorLayout.js",
-        "ext2-2/source/widgets/layout/ColumnLayout.js",
-        "ext2-2/source/widgets/layout/BorderLayout.js",
-        "ext2-2/source/widgets/layout/FormLayout.js",
-        "ext2-2/source/widgets/layout/AccordionLayout.js",
-        "ext2-2/source/widgets/layout/TableLayout.js",
-        "ext2-2/source/widgets/layout/AbsoluteLayout.js",
-        "ext2-2/source/widgets/Viewport.js",
-        "ext2-2/source/widgets/Panel.js",
-        "ext2-2/source/widgets/Window.js",
-        "ext2-2/source/widgets/WindowManager.js",
-        "ext2-2/source/widgets/PanelDD.js",
-        "ext2-2/source/state/Provider.js",
-        "ext2-2/source/state/StateManager.js",
-        "ext2-2/source/state/CookieProvider.js",
-        "ext2-2/source/widgets/DataView.js",
-        "ext2-2/source/widgets/ColorPalette.js",
-        "ext2-2/source/widgets/DatePicker.js",
-        "ext2-2/source/widgets/TabPanel.js",
-        "ext2-2/source/widgets/Button.js",
-        "ext2-2/source/widgets/SplitButton.js",
-        "ext2-2/source/widgets/CycleButton.js",
-        "ext2-2/source/widgets/Toolbar.js",
-        "ext2-2/source/widgets/PagingToolbar.js",
-        "ext2-2/source/widgets/Resizable.js",
-        "ext2-2/source/widgets/Editor.js",
-        "ext2-2/source/widgets/MessageBox.js",
-        "ext2-2/source/widgets/tips/Tip.js",
-        "ext2-2/source/widgets/tips/ToolTip.js",
-        "ext2-2/source/widgets/tips/QuickTip.js",
-        "ext2-2/source/widgets/tips/QuickTips.js",
-        "ext2-2/source/widgets/tree/TreePanel.js",
-        "ext2-2/source/widgets/tree/TreeEventModel.js",
-        "ext2-2/source/widgets/tree/TreeSelectionModel.js",
-        "ext2-2/source/widgets/tree/TreeNode.js",
-        "ext2-2/source/widgets/tree/AsyncTreeNode.js",
-        "ext2-2/source/widgets/tree/TreeNodeUI.js",
-        "ext2-2/source/widgets/tree/TreeLoader.js",
-        "ext2-2/source/widgets/tree/TreeFilter.js",
-        "ext2-2/source/widgets/tree/TreeSorter.js",
-        "ext2-2/source/widgets/tree/TreeDropZone.js",
-        "ext2-2/source/widgets/tree/TreeDragZone.js",
-        "ext2-2/source/widgets/tree/TreeEditor.js",
-        "ext2-2/source/widgets/menu/Menu.js",
-        "ext2-2/source/widgets/menu/MenuMgr.js",
-        "ext2-2/source/widgets/menu/BaseItem.js",
-        "ext2-2/source/widgets/menu/TextItem.js",
-        "ext2-2/source/widgets/menu/Separator.js",
-        "ext2-2/source/widgets/menu/Item.js",
-        "ext2-2/source/widgets/menu/CheckItem.js",
-        "ext2-2/source/widgets/menu/Adapter.js",
-        "ext2-2/source/widgets/menu/DateItem.js",
-        "ext2-2/source/widgets/menu/ColorItem.js",
-        "ext2-2/source/widgets/menu/DateMenu.js",
-        "ext2-2/source/widgets/menu/ColorMenu.js",
-        "ext2-2/source/widgets/form/Field.js",
-        "ext2-2/source/widgets/form/TextField.js",
-        "ext2-2/source/widgets/form/TriggerField.js",
-        "ext2-2/source/widgets/form/TextArea.js",
-        "ext2-2/source/widgets/form/NumberField.js",
-        "ext2-2/source/widgets/form/DateField.js",
-        "ext2-2/source/widgets/form/Combo.js",
-        "ext2-2/source/widgets/form/Checkbox.js",
-        "ext2-2/source/widgets/form/CheckboxGroup.js",
-        "ext2-2/source/widgets/form/Radio.js",
-        "ext2-2/source/widgets/form/RadioGroup.js",
-        "ext2-2/source/widgets/form/Hidden.js",
-        "ext2-2/source/widgets/form/BasicForm.js",
-        "ext2-2/source/widgets/form/Form.js",
-        "ext2-2/source/widgets/form/FieldSet.js",
-        "ext2-2/source/widgets/form/HtmlEditor.js",
-        "ext2-2/source/widgets/form/TimeField.js",
-        "ext2-2/source/widgets/form/Label.js",
-        "ext2-2/source/widgets/form/Action.js",
-        "ext2-2/source/widgets/form/VTypes.js",
-        "ext2-2/source/widgets/grid/GridPanel.js",
-        "ext2-2/source/widgets/grid/GridView.js",
-        "ext2-2/source/widgets/grid/GroupingView.js",
-        "ext2-2/source/widgets/grid/ColumnDD.js",
-        "ext2-2/source/widgets/grid/ColumnSplitDD.js",
-        "ext2-2/source/widgets/grid/GridDD.js",
-        "ext2-2/source/widgets/grid/ColumnModel.js",
-        "ext2-2/source/widgets/grid/AbstractSelectionModel.js",
-        "ext2-2/source/widgets/grid/RowSelectionModel.js",
-        "ext2-2/source/widgets/grid/CellSelectionModel.js",
-        "ext2-2/source/widgets/grid/EditorGrid.js",
-        "ext2-2/source/widgets/grid/GridEditor.js",
-        "ext2-2/source/widgets/grid/PropertyGrid.js",
-        "ext2-2/source/widgets/grid/RowNumberer.js",
-        "ext2-2/source/widgets/grid/CheckboxSelectionModel.js",
-        "ext2-2/source/widgets/LoadMask.js",
-        "ext2-2/source/widgets/ProgressBar.js",
-        "ext2-2/source/widgets/Slider.js",
-        "ext2-2/source/widgets/StatusBar.js",
-        "ext2-2/source/util/History.js",
-        "ext2-2/source/debug.js"
-    };
     static String extDebug = "ext-3.2.0/ext-all-debug.js";
     static String extMin = "ext-3.2.0/ext-all.js";
 
@@ -1824,13 +1667,27 @@ public class PageFlowUtil
 
         // EXT
         scripts.add("ext-3.2.0/adapter/ext/ext-base.js");
-        for (String e : extExploded)
+        if (explodedExt)
         {
-            //included.add(e);
-            if (explodedExt)
-                scripts.add(e);
+            String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/ext-3.2.0/ext.jsb2")));
+            JSONObject json = new JSONObject(jsonString);
+            Map<String, JSONObject> packages = new HashMap<String, JSONObject>();
+            for (JSONObject pkgObject : json.getJSONArray("pkgs").toJSONObjectArray())
+            {
+                packages.put(pkgObject.getString("file"), pkgObject);
+            }
+            JSONObject allPackage = packages.get("ext-all.js");
+            JSONArray allPackageDeps = allPackage.getJSONArray("pkgDeps");
+            for (int i = 0; i < allPackageDeps.length(); i++)
+            {
+                JSONObject dependency = packages.get(allPackageDeps.getString(i));
+                for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
+                {
+                    scripts.add("ext-3.2.0/" + fileInclude.getString("path") + fileInclude.getString("text"));
+                }
+            }
         }
-        if (!explodedExt)
+        else
             scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
         included.add(extDebug);
         included.add(extMin);

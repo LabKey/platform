@@ -459,7 +459,7 @@ public class ActionURL extends URLHelper implements Cloneable
     {
         if (_readOnly)
             throw new java.lang.IllegalStateException();
-        Path path = Path.decode(pathStr);
+        Path path = Path.parse(pathStr);
         if (path.size() < 2)
             throw new IllegalArgumentException(pathStr);
 

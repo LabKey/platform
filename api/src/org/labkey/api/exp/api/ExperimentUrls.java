@@ -67,7 +67,7 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getShowFileURL(Container container);
 
-    ActionURL getSetFlagURL(HttpServletRequest request);
+    ActionURL getSetFlagURL(Container container);
 
     ActionURL getShowSampleSetURL(ExpSampleSet sampleSet);
 

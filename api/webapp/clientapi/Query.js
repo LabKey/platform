@@ -745,7 +745,7 @@ LABKEY.Query = new function()
          *      has the following properties:
          *          <ul>
          *              <li><b>name:</b> The name of the column</li>
-         *              <li><b>description:</b> An optonal description of the column</li>
+         *              <li><b>description:</b> An optional description of the column</li>
          *              <li><b>type:</b> The column's data type</li>
          *              <li><b>fieldKey:</b> The field key for the column. If this column comes from a foreign table, the key is a full path from the source
          *              query to this column.</li>
