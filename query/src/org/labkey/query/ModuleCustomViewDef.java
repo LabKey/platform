@@ -45,10 +45,13 @@ public class ModuleCustomViewDef extends CustomViewXmlReader
         _lastModified = sourceFile.lastModified();
 
         String fileName = _sourceFile.getName();
-        assert fileName.length() > XML_FILE_EXTENSION.length();
+        assert fileName.length() >= XML_FILE_EXTENSION.length();
 
-        // Module custom views always use the file name as the name
-        _name = fileName.substring(0, fileName.length() - XML_FILE_EXTENSION.length());
+        if (fileName.length() > XML_FILE_EXTENSION.length())
+        {
+            // Module custom views always use the file name as the name
+            _name = fileName.substring(0, fileName.length() - XML_FILE_EXTENSION.length());
+        }
     }
 
     public boolean isStale()

@@ -34,7 +34,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
 {
     public ExpProtocolApplicationTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()));
     }
 
     public ColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)

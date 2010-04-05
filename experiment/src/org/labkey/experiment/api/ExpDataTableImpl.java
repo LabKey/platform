@@ -42,9 +42,10 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
+
     public ExpDataTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoData(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, new ExpDataImpl(new Data()));
     }
 
     public void populate()
@@ -283,11 +284,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             ret = type.urlFlag(flagged);
         if (ret != null)
             return ret;
-        if (flagged)
-        {
-            return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
-        }
-        return AppProps.getInstance().getContextPath() + "/Experiment/unflagData.png";
+        return super.urlFlag(flagged);
     }
 
 

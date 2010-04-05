@@ -37,7 +37,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
 {
     public ExpSampleSetTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleSetImpl(new MaterialSource()));
     }
 
     public ColumnInfo createColumn(String alias, Column column)

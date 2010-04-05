@@ -30,7 +30,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
 {
     public ExpProtocolTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, new ExpProtocolImpl(new Protocol()));
         setTitleColumn("Name");
     }
     public ColumnInfo createColumn(String alias, Column column)

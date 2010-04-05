@@ -36,10 +36,12 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 {
     protected TableEditHelper _editHelper;
     protected final UserSchema _schema;
+    private final ExpObjectImpl _objectType;
 
-    public ExpTableImpl(String name, TableInfo rootTable, UserSchema schema)
+    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ExpObjectImpl objectType)
     {
         super(rootTable, schema.getContainer());
+        _objectType = objectType;
         setName(name);
         _schema = schema;
     }
@@ -113,7 +115,8 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public String urlFlag(boolean flagged)
     {
-        return flagged ? ExpObjectImpl.s_urlFlagged : ExpObjectImpl.s_urlUnflagged;
+        assert _objectType != null : "No ExpObject configured for ExpTable type: " + getClass();
+        return _objectType.urlFlag(flagged);
     }
 
     protected ColumnInfo getLSIDColumn()

@@ -41,7 +41,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
     public ExpMaterialTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, new ExpMaterialImpl(new Material()));
         setName(ExpSchema.TableType.Materials.name());
     }
 

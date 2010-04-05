@@ -31,7 +31,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
 {
     public ExpMaterialInputTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, null);
     }
 
     public ColumnInfo createColumn(String alias, Column column)

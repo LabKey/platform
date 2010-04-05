@@ -36,9 +36,6 @@ import java.io.Serializable;
 
 abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
-    static public final String s_urlFlagged = AppProps.getInstance().getContextPath() + "/Experiment/flagDefault.gif";
-    static public final String s_urlUnflagged = AppProps.getInstance().getContextPath() + "/Experiment/unflagDefault.gif";
-
     public String getLSIDNamespacePrefix()
     {
         return new Lsid(getLSID()).getNamespacePrefix();
@@ -146,7 +143,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
 
     public String urlFlag(boolean flagged)
     {
-        return flagged ? s_urlFlagged : s_urlUnflagged;
+        return AppProps.getInstance().getContextPath() + "/Experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
     }
 
     public Object getProperty(DomainProperty prop)

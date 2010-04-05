@@ -33,7 +33,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 {
     public ExpExperimentTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, new ExpExperimentImpl(new Experiment()));
         addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), "Hidden");
     }
 

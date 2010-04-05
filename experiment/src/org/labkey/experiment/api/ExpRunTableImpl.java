@@ -44,7 +44,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     public ExpRunTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()));
     }
 
     public ExpProtocol getProtocol()
@@ -316,12 +316,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
-    }
-
-
-    public String urlFlag(boolean flagged)
-    {
-        return flagged ? ExpRunImpl.s_urlFlagRun : ExpRunImpl.s_urlUnflagRun;
     }
 
     public void populate()

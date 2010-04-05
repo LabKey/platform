@@ -314,11 +314,6 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         dir.saveXmlBean(filename, customViewDoc);
     }
 
-    static public boolean isUnselectable(ColumnInfo column)
-    {
-        return column.isUnselectable();
-    }
-
     public boolean isNew()
     {
         return _cstmView.getCustomViewId() == 0;

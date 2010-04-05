@@ -23,7 +23,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.view.ActionURL;
-import org.labkey.query.CustomViewImpl;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -81,7 +80,7 @@ public class ChooseColumnsForm extends DesignForm
             {
                 for (ColumnInfo column : table.getColumns())
                 {
-                    if (!column.isHidden() && !CustomViewImpl.isUnselectable(column))
+                    if (!column.isHidden() && !column.isUnselectable())
                     {
                         ff_selectedColumns.add(new FieldKey(null, column.getName()));
                     }

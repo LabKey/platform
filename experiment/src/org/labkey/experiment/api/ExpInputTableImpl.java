@@ -34,9 +34,9 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     private ExpRun _run;
     private ExpProtocol.ApplicationType _type;
 
-    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema)
+    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, AbstractProtocolOutputImpl objectType)
     {
-        super(name, rootTable, schema);
+        super(name, rootTable, schema, objectType);
     }
 
     public void setRun(ExpRun run, ExpProtocol.ApplicationType type)

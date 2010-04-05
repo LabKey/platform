@@ -71,8 +71,6 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         try
         {
             tinfo = schema.getTable(form.getQueryName());
-            if (!isUserDefined && tinfo.isMetadataOverrideable())
-                resp.put("isMetadataOverrideable", true);
         }
         catch(Exception e)
         {
@@ -83,6 +81,9 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null == tinfo)
             throw new IllegalArgumentException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
+        if (!isUserDefined && tinfo.isMetadataOverrideable())
+            resp.put("isMetadataOverrideable", true);
+        
         //8649: let the table provide the view data url
         if (schema instanceof UserSchema)
         {

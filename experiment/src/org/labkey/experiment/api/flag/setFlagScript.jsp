@@ -18,9 +18,10 @@
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <% 
-    ActionURL setFlagUrl = urlProvider(ExperimentUrls.class).getSetFlagURL(request);
+    ActionURL setFlagUrl = urlProvider(ExperimentUrls.class).getSetFlagURL(getViewContext().getContainer());
 %>
 
 <script type="text/javascript">

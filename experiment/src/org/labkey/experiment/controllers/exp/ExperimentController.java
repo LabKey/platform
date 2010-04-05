@@ -3247,7 +3247,6 @@ public class ExperimentController extends SpringActionController
     public static class SetFlagForm extends LsidForm
     {
         private String _comment;
-        private String _flagSessionId;
         private boolean _redirect = true;
 
         public String getComment()
@@ -3258,16 +3257,6 @@ public class ExperimentController extends SpringActionController
         public void setComment(String comment)
         {
             _comment = comment;
-        }
-
-        public String getFlagSessionId()
-        {
-            return _flagSessionId;
-        }
-
-        public void setFlagSessionId(String flagSessionId)
-        {
-            _flagSessionId = flagSessionId;
         }
 
         public boolean isRedirect()
@@ -3281,8 +3270,8 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    /** Require only read in the current container, but later check for update on the object itself */
-    @RequiresPermissionClass(ReadPermission.class)
+    /** Check for update on the object itself */
+    @RequiresNoPermission
     public class SetFlagAction extends SimpleViewAction<SetFlagForm>
     {
         public ModelAndView getView(SetFlagForm form, BindException errors) throws Exception
@@ -3297,11 +3286,6 @@ public class ExperimentController extends SpringActionController
             if (!container.hasPermission(getUser(), UpdatePermission.class))
                 HttpView.throwUnauthorized();
 
-            String sessionId = form.getFlagSessionId();
-            if (sessionId == null)
-                throw new IllegalArgumentException("No session id");
-            if (!sessionId.equals(getViewContext().getSession().getId()))
-                throw new IllegalArgumentException("Wrong session id");
             if (!container.hasPermission(getUser(), UpdatePermission.class))
                 HttpView.throwUnauthorized();
             obj.setComment(getUser(), form.getComment());
@@ -4266,11 +4250,9 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(ShowFileAction.class, c);
         }
 
-        public ActionURL getSetFlagURL(HttpServletRequest request)
+        public ActionURL getSetFlagURL(Container container)
         {
-            ActionURL url = new ActionURL(SetFlagAction.class, ContainerManager.getRoot());
-            url.addParameter("flagSessionId", request.getSession().getId());
-            return url;
+            return new ActionURL(SetFlagAction.class, container);
         }
 
         public ActionURL getShowRunGraphURL(ExpRun run)

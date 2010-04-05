@@ -430,7 +430,7 @@ public class QueryServiceImpl extends QueryService
 
     private ColumnInfo getColumn(AliasManager manager, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, FieldKey key)
     {
-        if (key.getTable() == null)
+        if (key != null && key.getTable() == null)
         {
             String name = key.getName();
             ColumnInfo ret = table.getColumn(name);
@@ -646,7 +646,7 @@ public class QueryServiceImpl extends QueryService
             if (column.isHidden())
                 continue;
 
-            if (CustomViewImpl.isUnselectable(column))
+            if (column.isUnselectable())
                 continue;
 
             ret.add(FieldKey.fromParts(column.getName()));

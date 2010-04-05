@@ -147,18 +147,21 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public String urlFlag(boolean flagged)
     {
         String ret = null;
-        DataType type = getDataType();
-        if (type != null)
+        if (getLSID() != null)
         {
-            ret = type.urlFlag(flagged);
+            DataType type = getDataType();
+            if (type != null)
+            {
+                ret = type.urlFlag(flagged);
+            }
+            if (ret != null)
+                return ret;
         }
-        if (ret != null)
-            return ret;
         if (flagged)
         {
             return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
         }
-        return AppProps.getInstance().getContextPath() + "/Experiment/unflagData.png";
+        return AppProps.getInstance().getContextPath() + "/Experiment/images/unflagData.png";
     }
 
     public void delete(User user)

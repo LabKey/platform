@@ -162,7 +162,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                             }
                         }
                         
-                        if (null != viewDef && null != viewDef.getName())
+                        if (null != viewDef)
                             ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
                     }
                 }

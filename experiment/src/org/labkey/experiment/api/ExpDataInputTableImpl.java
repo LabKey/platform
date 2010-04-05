@@ -33,7 +33,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
 {
     public ExpDataInputTableImpl(String name, UserSchema schema)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null);
     }
 
     public ColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
