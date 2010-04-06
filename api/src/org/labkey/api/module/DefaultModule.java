@@ -504,28 +504,17 @@ public abstract class DefaultModule implements Module
     public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect)
     {
         Set<String> fileNames = new HashSet<String>();
-        File dir;
 
         String sqlScriptsPath = getSqlScriptsPath(dialect);
-        if (_loadFromSource)
-        {
-            dir = new File(_sourcePath, sqlScriptsPath);
-            if (!dir.isDirectory())
-                dir = new File(_sourcePath, "resources/" + sqlScriptsPath);
-            if (!dir.isDirectory())
-                dir = new File(_sourcePath, "src/" + sqlScriptsPath);
-        }
-        else
-            dir = new File(_explodedPath, sqlScriptsPath);
+        Resource dir = getModuleResource(sqlScriptsPath);
+        if (dir == null)
+            return Collections.emptySet();
 
-        if (dir.isDirectory())
+        for (String script : dir.listNames())
         {
-            for (File script : dir.listFiles())
-            {
-                String name = script.getName().toLowerCase();
-                if (name.endsWith(".sql") && (null == schemaName || name.startsWith(schemaName + "-")))
-                    fileNames.add(script.getName());
-            }
+            String name = script.toLowerCase();
+            if (name.endsWith(".sql") && (null == schemaName || name.startsWith(schemaName + "-")))
+                fileNames.add(script);
         }
 
         return fileNames;
