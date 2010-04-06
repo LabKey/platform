@@ -17,17 +17,17 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.CacheMap;
+import org.labkey.api.collections.TTLCacheMap;
 import org.labkey.api.resource.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: kevink
@@ -36,8 +36,7 @@ import java.util.Set;
 public class ModuleResourceResolver implements Resolver
 {
     static Logger _log = Logger.getLogger(ModuleResourceResolver.class);
-
-    Cache _resources = new Cache(1024, Cache.HOUR, "Module resources");
+    private static final TTLCacheMap<Pair<Resolver, Path>, Resource> _resources = new TTLCacheMap<Pair<Resolver, Path>, Resource>(1024, Cache.HOUR, "Module resources");
 
     Module _module;
     MergedDirectoryResource _root;
@@ -67,26 +66,8 @@ public class ModuleResourceResolver implements Resolver
             return null;
 
         Path normalized = path.normalize();
-        String cacheKey = normalized.toString();
-
-        /*
-        ResourceRef ref = lookupRef(cacheKey);
-        if (ref == null || ref.isStale())
-        {
-            Resource r = resolve(normalized);
-            if (null == r)
-                return null;
-            if (r.exists())
-            {
-                _log.debug(normalized + " -> " + r.getPath());
-                ref = new ResourceRef(r);
-                _resources.put(cacheKey, ref);
-            }
-        }
-        return ref != null ? ref.getResource() : null;
-        */
-
-        Resource r = (Resource)_resources.get(cacheKey);
+        Pair<Resolver, Path> cacheKey = new Pair<Resolver, Path>(this, normalized);
+        Resource r = _resources.get(cacheKey);
         if (r == null)
         {
             r = resolve(normalized);
