@@ -826,7 +826,7 @@ public class QueryServiceImpl extends QueryService
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
 		}
 
-		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0 || Table.ALL_ROWS == rowCount))
+		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0 || Table.NO_ROWS == rowCount))
 		{
 			sort = createDefaultSort(selectColumns);
 		}
