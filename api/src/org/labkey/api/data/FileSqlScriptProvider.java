@@ -23,6 +23,8 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Path;
+import org.labkey.api.resource.Resource;
 
 import java.io.*;
 import java.util.*;
@@ -131,18 +133,17 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     private String getContents(String filename) throws SqlScriptException
     {
         StringBuilder contents = new StringBuilder();
-        InputStream is;
         BufferedReader br = null;
 
         try
         {
-            File path = new File(_module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect()), filename);
-            is = _module.getResourceStream(path.getPath());
-            if (null == is)
-                throw new SqlScriptException("File not found: " + path.getPath(), filename);
+            Path path = Path.parse(_module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect())).append(filename);
+            Resource r = _module.getModuleResource(path);
+            if (null == r)
+                throw new SqlScriptException("File not found: " + path, filename);
 
             // TODO: use PageFlowUtil.getStreamContentsAsString()?
-            br = new BufferedReader(new InputStreamReader(is));
+            br = new BufferedReader(new InputStreamReader(r.getInputStream()));
             String line;
             while ((line = br.readLine()) != null)
             {

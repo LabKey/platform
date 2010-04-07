@@ -1691,7 +1691,7 @@ public class PageFlowUtil
             scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
         included.add(extDebug);
         included.add(extMin);
-        scripts.add("ext-3.2.0/ext-patches.js");
+//        scripts.add("ext-3.2.0/ext-patches.js");
 
         // CLIENT
         for (String e : clientExploded)
