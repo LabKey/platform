@@ -17,14 +17,13 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Collection;
+import java.net.URISyntaxException;
+import java.util.*;
 
 public class ButtonBar extends DisplayElement
 {
@@ -36,6 +35,7 @@ public class ButtonBar extends DisplayElement
 
     private List<DisplayElement> _elementList = new ArrayList<DisplayElement>();
     private Style _style = Style.toolbar;
+    private ButtonBarConfig _config = null;
 
     public static ButtonBar BUTTON_BAR_GRID = new ButtonBar();
     public static ButtonBar BUTTON_BAR_DETAILS = new ButtonBar();
@@ -117,6 +117,9 @@ public class ButtonBar extends DisplayElement
         if (!shouldRender(ctx))
             return;
 
+        if (null != _config)
+            applyConfig(_config);
+
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
         out.write("<div");
@@ -149,5 +152,38 @@ public class ButtonBar extends DisplayElement
         if (_locked)
             throw new IllegalStateException("Button bar is locked.");
         _style = style;
+    }
+
+    public ButtonBarConfig getConfig()
+    {
+        return _config;
+    }
+
+    public void setConfig(ButtonBarConfig config)
+    {
+        _config = config;
+    }
+
+    public void applyConfig(ButtonBarConfig config)
+    {
+        if (null == config.getItems() || config.getItems().size() == 0)
+            return;
+
+        _elementList = new ArrayList<DisplayElement>(_elementList);
+
+        for (Object item : config.getItems())
+        {
+            if (item instanceof ButtonConfig)
+            {
+                add(((ButtonConfig)item).createButton());
+            }
+            else if (item instanceof ButtonBarConfig.BuiltInButton)
+            {
+                //allow for names of existing buttons to use
+                
+            }
+                
+        }
+
     }
 }

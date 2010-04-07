@@ -99,6 +99,7 @@ public class Portal
         boolean permanent;
         Map<String, String> propertyMap = new HashMap<String, String>();
         String properties = null;
+        Map<String,Object> extendedProperties = null;
 
         static
         {
@@ -118,6 +119,7 @@ public class Portal
             location = copyFrom.location;
             permanent = copyFrom.permanent;
             setProperties(copyFrom.properties);
+            this.extendedProperties = copyFrom.extendedProperties;
         }
 
         public String getPageId()
@@ -197,6 +199,16 @@ public class Portal
         {
             MutablePropertyValues pvs = new MutablePropertyValues(getPropertyMap());
             return pvs;
+        }
+
+        public void setExtendedProperties(Map<String,Object> extendedProperties)
+        {
+            this.extendedProperties = extendedProperties;
+        }
+
+        public Map<String,Object> getExtendedProperties()
+        {
+            return this.extendedProperties;
         }
 
         public boolean isPermanent()

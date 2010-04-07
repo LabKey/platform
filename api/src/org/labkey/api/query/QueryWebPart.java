@@ -16,6 +16,8 @@
 
 package org.labkey.api.query;
 
+import org.json.JSONObject;
+import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.TableInfo;
@@ -32,6 +34,7 @@ public class QueryWebPart extends WebPartView
 {
     private ViewContext _context;
     private Map<String, String> _properties;
+    private Map<String, Object> _extendedProperties;
     private UserSchema _schema;
     private QuerySettings _settings;
     private String _schemaName;
@@ -41,6 +44,7 @@ public class QueryWebPart extends WebPartView
         _context = context;
         setFrame(FrameType.PORTAL);
         _properties = part.getPropertyMap();
+        _extendedProperties = part.getExtendedProperties();
         String title = _properties.get("title");
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
@@ -164,6 +168,13 @@ public class QueryWebPart extends WebPartView
                     if (queryView._buttonBarPosition == DataRegion.ButtonBarPosition.NONE)
                         queryView.setShowRecordSelectors(false);
                 }
+
+                if (null != _extendedProperties && _extendedProperties.get("buttonBar") instanceof JSONObject)
+                {
+                    ButtonBarConfig bbarConfig = new ButtonBarConfig((JSONObject)_extendedProperties.get("buttonBar"));
+                    queryView.setButtonBarConfig(bbarConfig);
+                }
+
 
                 if (null != _properties.get("showRecordSelectors"))
                     queryView.setShowRecordSelectors(Boolean.parseBoolean(_properties.get("showRecordSelectors")));

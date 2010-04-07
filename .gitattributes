@@ -113,6 +113,8 @@ api/src/org/labkey/api/data/AggregateColumnInfo.java -text
 api/src/org/labkey/api/data/AsyncQueryRequest.java -text
 api/src/org/labkey/api/data/AttachmentParentEntity.java -text
 api/src/org/labkey/api/data/BooleanFormat.java -text
+api/src/org/labkey/api/data/ButtonBarConfig.java -text
+api/src/org/labkey/api/data/ButtonConfig.java -text
 api/src/org/labkey/api/data/CacheKey.java -text
 api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedRowSetImpl.java -text

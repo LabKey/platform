@@ -92,6 +92,7 @@ public class DataRegion extends DisplayElement
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
+    private ButtonBarConfig _buttonBarConfig = null;
 
     public static final int MODE_NONE = 0;
     public static final int MODE_INSERT = 1;
@@ -258,6 +259,15 @@ public class DataRegion extends DisplayElement
             dc.setInputPrefix(_inputPrefix);
     }
 
+    public ButtonBarConfig getButtonBarConfig()
+    {
+        return _buttonBarConfig;
+    }
+
+    public void setButtonBarConfig(ButtonBarConfig buttonBarConfig)
+    {
+        _buttonBarConfig = buttonBarConfig;
+    }
 
     public void addHiddenFormField(Enum name, String value)
     {
@@ -889,6 +899,7 @@ public class DataRegion extends DisplayElement
         {
             if (_buttonBarPosition.atTop())
             {
+                _gridButtonBar.setConfig(_buttonBarConfig);
                 _gridButtonBar.render(ctx, out);
             }
         }

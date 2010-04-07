@@ -52,6 +52,7 @@ public class QueryView extends WebPartView<Object>
 {
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
+    private ButtonBarConfig _buttonBarConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
 
@@ -1156,11 +1157,22 @@ public class QueryView extends WebPartView<Object>
             rgn.setAggregates(getAggregates());
 
         rgn.setTable(getTable());
+        rgn.setButtonBarConfig(_buttonBarConfig);
     }
 
     public void setButtonBarPosition(DataRegion.ButtonBarPosition buttonBarPosition)
     {
         _buttonBarPosition = buttonBarPosition;
+    }
+
+    public void setButtonBarConfig(ButtonBarConfig buttonBarConfig)
+    {
+        _buttonBarConfig = buttonBarConfig;
+    }
+
+    public ButtonBarConfig getButtonBarConfig()
+    {
+        return _buttonBarConfig;
     }
 
     public DataView createDataView()

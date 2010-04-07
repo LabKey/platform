@@ -120,7 +120,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         events: false,
         filterOptRe: false,
         userFilters: false,
-        qsParamsToIgnore: false
+        qsParamsToIgnore: false,
+        buttonBar: false
     },
 
     constructor : function(config)
@@ -218,6 +219,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //strip it if it's there so it's not included twice (Ext always appends one)
         delete params["_dc"];
 
+        //add the button bar config if any
+        var json = {};
+        if (this.buttonBar)
+            json.buttonBar = this.buttonBar;    
+
         Ext.Ajax.request({
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
             success: function(response) {
@@ -250,8 +256,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                     Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
             },
             failure: LABKEY.Utils.getCallbackWrapper(this.errorCallback, this.scope, true),
-            method: 'GET',
+            method: 'POST',
             params: params,
+            jsonData: json,
             scope: this
         });
     },
