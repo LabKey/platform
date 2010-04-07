@@ -725,14 +725,30 @@ public class ProjectController extends SpringActionController
         _frameTypeMap.put("title", WebPartView.FrameType.TITLE);
     }
 
+    public static class GetWebPartForm implements CustomApiForm
+    {
+        private Map<String,Object> _extendedProperites;
+
+        public void bindProperties(Map<String, Object> props)
+        {
+            _extendedProperites = props;
+        }
+
+        public Map<String, Object> getExtendedProperites()
+        {
+            return _extendedProperites;
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetWebPartAction extends ApiAction
+    public class GetWebPartAction extends ApiAction<GetWebPartForm>
     {
         public static final String PARAM_WEBPART = "webpart.name";
 
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(GetWebPartForm form, BindException errors) throws Exception
         {
             HttpServletRequest request = getViewContext().getRequest();
+            String qs = request.getQueryString();
             String webPartName = request.getParameter(PARAM_WEBPART);
 
             if(null == webPartName || webPartName.length() == 0)
@@ -746,7 +762,8 @@ public class ProjectController extends SpringActionController
             if(null == part)
                 throw new RuntimeException("Couldn't create web part '" + webPartName + "'!");
 
-            part.setProperties(getViewContext().getRequest().getQueryString());
+            part.setProperties(qs);
+            part.setExtendedProperties(form.getExtendedProperites());
 
             WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
