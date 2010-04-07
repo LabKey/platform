@@ -600,7 +600,7 @@ public class Table
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)
             throws SQLException
     {
-        HashMap<String,ColumnInfo> cols = new HashMap<String,ColumnInfo>();
+        Map<String,ColumnInfo> cols = new CaseInsensitiveHashMap<ColumnInfo>();
         cols.put(col.getName(), col);
         if (filter != null || sort != null)
             ensureRequiredColumns(table, cols, filter, sort);
