@@ -140,4 +140,10 @@ public interface WebdavResource extends Resource
      * @return
      */
     boolean shouldIndex();
+
+    /**
+     * Returns custom (user configured) properties for this resource
+     * @return
+     */
+    Map<String, String> getCustomProperties(User user);
 }

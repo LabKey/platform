@@ -394,6 +394,11 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return true;
     }
 
+    public Map<String, String> getCustomProperties(User user)
+    {
+        return Collections.emptyMap();
+    }
+
     protected void setProperty(String key, String value)
     {
         if (_properties == null)

@@ -15,32 +15,42 @@
  */
 package org.labkey.api.webdav;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.search.SearchService;
-import org.labkey.api.security.User;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.audit.AuditLogService;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
-import org.apache.commons.io.IOUtils;
-import org.labkey.api.util.Path;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -68,6 +78,7 @@ public class FileSystemResource extends AbstractWebdavResource
     private boolean _dataQueried = false;
     private ExpData _data;
     private boolean _mergeFromParent;
+    private Map<String, String> _customProperties;
 
     private enum FileType { file, directory, notpresent }
 
@@ -534,5 +545,35 @@ public class FileSystemResource extends AbstractWebdavResource
         if (null != _folder)
             return _folder.shouldIndex();
         return super.shouldIndex();
+    }
+
+    @Override
+    public Map<String, String> getCustomProperties(User user)
+    {
+        if (_customProperties == null)
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
+            ExpData data = svc.getDataObject(this, getContainer());
+
+            if (dd != null)
+            {
+                _customProperties = new HashMap<String, String>();
+                Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+                if (domain != null)
+                {
+                    for (DomainProperty prop : domain.getProperties())
+                    {
+                        Object o = data.getProperty(prop);
+                        if (o != null)
+                            _customProperties.put(prop.getName(), DomainUtil.getFormattedDefaultValue(user, prop, o));
+                    }
+                }
+            }
+            else
+                _customProperties = Collections.emptyMap();
+        }
+        return _customProperties;
     }
 }

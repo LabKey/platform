@@ -16,12 +16,12 @@
 
 package org.labkey.api.files;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -118,4 +118,6 @@ public interface FileContentService
     public File getProjectDefaultRoot(Container c, boolean createDir);
 
     public String getDomainURI(String type);
+
+    public ExpData getDataObject(WebdavResource resource, Container c);
 }

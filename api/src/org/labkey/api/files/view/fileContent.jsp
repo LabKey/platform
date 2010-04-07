@@ -37,10 +37,12 @@
 <script type="text/javascript">
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresScript("applet.js");
+    LABKEY.requiresScript("StatusBar.js");
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("FileUploadField.js");
     LABKEY.requiresScript("ActionsAdmin.js");
     LABKEY.requiresScript("PipelineAction.js");
+    //LABKEY.requiresScript("FileProperties.js");
     LABKEY.requiresScript("FileContent.js");
 </script>
 
@@ -139,7 +141,41 @@ function renderBrowser(rootPath, dir, renderTo)
 
     if (!fileSystem)
         fileSystem = new LABKEY.WebdavFileSystem({
-            extraPropNames: ["actions", "description"],
+            extraPropNames: ['description', 'actions'],
+
+            // extra props should model Ext.data.Field types
+            extraDataFields: [
+                {name: 'description', mapping: 'propstat/prop/description'},
+                {name: 'actionHref', mapping: 'propstat/prop/actions', convert : function (v, rec)
+                    {
+                        var result = [];
+                        var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
+                        if (actionsElements.length > 0)
+                        {
+                            var actionElements = actionsElements[0].getElementsByTagName('action');
+                            for (var i = 0; i < actionElements.length; i++)
+                            {
+                                var action = new Object();
+                                var childNodes = actionElements[i].childNodes;
+                                for (var n = 0; n < childNodes.length; n++)
+                                {
+                                    var childNode = childNodes[n];
+                                    if (childNode.nodeName == 'message')
+                                    {
+                                        action.message = childNode.textContent || childNode.text;
+                                    }
+                                    else if (childNode.nodeName == 'href')
+                                    {
+                                        action.href = childNode.textContent || childNode.text;
+                                    }
+                                }
+                                result[result.length] = action;
+                            }
+                        }
+                        return result;
+                    }}
+            ],
+            //extraPropNames: ["actions", "description"],
             baseUrl:rootPath,
             rootName:'fileset'
         });
