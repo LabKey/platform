@@ -26,6 +26,9 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
@@ -40,6 +43,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.data.xml.ActionOptions;
 import org.labkey.data.xml.PipelineOptionsDocument;
 
@@ -609,5 +613,29 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     public String getDomainURI(String type)
     {
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type).toString();
+    }
+
+    public ExpData getDataObject(WebdavResource resource, Container c)
+    {
+        return getDataObject(resource, c, null, false);
+    }
+
+    public static ExpData getDataObject(WebdavResource resource, Container c, User user, boolean create)
+    {
+        if (resource != null)
+        {
+            File file = resource.getFile();
+            ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+
+            if (data == null && create)
+            {
+                data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                data.setName(file.getName());
+                data.setDataFileURI(file.toURI());
+                data.save(user);
+            }
+            return data;
+        }
+        return null;
     }
 }

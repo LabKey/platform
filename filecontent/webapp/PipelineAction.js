@@ -210,3 +210,121 @@ LABKEY.PipelineActionConfig.prototype = {
         return null;
     }
 };
+
+LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
+
+    actionConfig : {},              // map of actionId to PipelineActionConfig instances
+    fileFields : [],                // array of extra field information to collect/display for each file uploaded
+    filePropConfig : 'useDefault',
+
+    constructor : function(config)
+    {
+        LABKEY.FileContentConfig.superclass.constructor.call(this, config);
+
+        this.addEvents(
+            /**
+             * @event filePropConfigChanged
+             * Fires after this object is updated with a new set of file properties.
+             * @param {LABKEY.FileContentConfig} this
+             */
+            'filePropConfigChanged',
+            /**
+             * @event actionConfigChanged
+             * Fires after this object is updated with a new set of action configurations.
+             */
+            'actionConfigChanged'
+        );
+    },
+
+    /**
+     * Adds an array of action configuration objects
+     * @param{Ext.Action[]} actions
+     */
+    setActionConfigs : function(actions)
+    {
+        if (actions && actions.length)
+        {
+            this.actionConfig = {};
+
+            for (var i=0; i < actions.length; i++)
+            {
+                var action = actions[i];
+                this.actionConfig[action.id] = new LABKEY.PipelineActionConfig(action);
+            }
+            this.fireEvent('actionConfigChanged');
+        }
+    },
+
+    getActionConfig : function(id) {
+
+        return this.actionConfig[id];
+    },
+
+    getActionConfigs : function()
+    {
+        var actions = [];
+
+        for (var action in this.actionConfig)
+        {
+            var a = this.actionConfig[action];
+            if ('object' == typeof a )
+            {
+                actions.push(a);
+            }
+        }
+        return actions;
+    },
+
+    setFileFields : function(fields) {
+        if (fields && fields.length)
+        {
+            this.fileFields = fields;
+            this.fireEvent('filePropConfigChanged', this);
+        }
+    },
+
+    setFilePropConfig : function(config) {
+        this.filePropConfig = config;
+    },
+    
+    isCustomFileProperties : function() {
+        return this.filePropConfig == 'useCustom';
+    },
+
+    /**
+     * Creates column model columns from the custom file properties
+     */
+    createColumnModelColumns : function()
+    {
+        var columns = [];
+        if (this.fileFields)
+        {
+            for (var i=0; i < this.fileFields.length; i++)
+            {
+                var prop = this.fileFields[i];
+                columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: Ext.util.Format.htmlEncode});
+            }
+        }
+        return columns; 
+    },
+
+    /**
+     * Creates files system config properties so that we can request and store
+     * custom file properties through webdav
+     */
+    createFileSystemConfig : function()
+    {
+        var config = {};
+        if (this.fileFields)
+        {
+            config.extraPropNames = ['custom'];
+            config.extraDataFields = [];
+            for (var i=0; i < this.fileFields.length; i++)
+            {
+                var prop = this.fileFields[i];
+                config.extraDataFields.push({name: prop.name, mapping: 'propstat/prop/custom/' + prop.name});
+            }
+        }
+        return config;
+    }
+});

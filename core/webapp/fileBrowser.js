@@ -720,112 +720,14 @@ LABKEY.WebdavFileSystem = function(config)
         rootName : (LABKEY.serverName || "LabKey Server")
     });
     this.ready = false;
-    var prefix = this.concatPaths(this.baseUrl, this.rootPath);
-    if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
-        prefix = prefix.substring(0,prefix.length-1);
-    this.prefixUrl = prefix;
-    var prefixDecode  = decodeURIComponent(prefix);
-    LABKEY.WebdavFileSystem.superclass.constructor.call(this);
+    this.initialConfig = config;
 
-    var getURI = function(v,rec)
-    {
-        var uri = rec.uriOBJECT || new URI(v);
-        if (!Ext.isIE && !rec.uriOBJECT)
-            try {rec.uriOBJECT = uri;} catch (e) {};
-        return uri;
-    };
+    LABKEY.WebdavFileSystem.superclass.constructor.call(this);
 
     this.HistoryRecord = Ext.data.Record.create(['user', 'date', 'message', 'href']);
     this.historyReader = new Ext.data.XmlReader({record : "entry"}, this.HistoryRecord);
 
-    this.propNames = ["creationdate", "displayname", "createdby", "getlastmodified", "modifiedby", "getcontentlength",
-                 "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref"];
-    if (config.extraPropNames != undefined)
-    {
-        this.propNames = this.propNames.concat(config.extraPropNames);
-    }
-
-    this.FileRecord = Ext.data.Record.create(
-        [
-            {name: 'uri', mapping: 'href',
-                convert : function(v, rec)
-                {
-                    var uri = getURI(v,rec);
-                    return uri ? uri.href : "";
-                }
-            },
-            {name: 'path', mapping: 'href',
-                convert : function (v, rec)
-                {
-                    var uri = getURI(v,rec);
-                    var path = decodeURIComponent(uri.pathname);
-                    if (path.length >= prefixDecode.length && path.substring(0,prefixDecode.length) == prefixDecode)
-                        path = path.substring(prefixDecode.length);
-                    return path;
-                }
-            },
-            {name: 'name', mapping: 'propstat/prop/displayname', sortType:'asUCString'},
-            {name: 'file', mapping: 'href', type: 'boolean',
-                convert : function (v, rec)
-                {
-                    // UNDONE: look for <collection>
-                    var uri = getURI(v, rec);
-                    var path = uri.pathname;
-                    return path.length > 0 && path.charAt(path.length-1) != '/';
-                }
-            },
-            {name: 'created', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"},
-            {name: 'createdBy', mapping: 'propstat/prop/createdby'},
-            {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
-            {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
-            {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
-            {name: 'description', mapping: 'propstat/prop/description'},
-            {name: 'actionHref', mapping: 'propstat/prop/actions',
-                convert : function (v, rec)
-                {
-                    var result = [];
-                    var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
-                    if (actionsElements.length > 0)
-                    {
-                        var actionElements = actionsElements[0].getElementsByTagName('action');
-                        for (var i = 0; i < actionElements.length; i++)
-                        {
-                            var action = new Object();
-                            var childNodes = actionElements[i].childNodes;
-                            for (var n = 0; n < childNodes.length; n++)
-                            {
-                                var childNode = childNodes[n];
-                                if (childNode.nodeName == 'message')
-                                {
-                                    action.message = childNode.textContent || childNode.text;
-                                }
-                                else if (childNode.nodeName == 'href')
-                                {
-                                    action.href = childNode.textContent || childNode.text;
-                                }
-                            }
-                            result[result.length] = action;
-                        }
-                    }
-                    return result;
-                }
-            },
-            {name: 'iconHref'},
-            {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
-            {name: 'options'}
-        ]);
-    this.connection = new Ext.data.Connection({method: "GET", timeout: 600000, headers: {"Method" : "PROPFIND", "Depth" : "1", propname : this.propNames}});
-    this.proxy = new Ext.data.HttpProxy(this.connection);
-    this.transferReader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
-
-    this.rootRecord = new this.FileRecord({
-        id:"/",
-        path:"/",
-        name: this.rootName,
-        file:false,
-        uri:this.prefixUrl,
-        iconHref: LABKEY.contextPath + "/_images/labkey.png"
-    }, "/");
+    this.init(config);
     this.reloadFile("/", (function()
     {
         this.ready = true;
@@ -1055,6 +957,84 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             if (typeof callback == "function")
                 callback(this, success, path, listing);
         }
+    },
+
+    init : function(config)
+    {
+        var prefix = this.concatPaths(this.baseUrl, this.rootPath);
+        if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
+            prefix = prefix.substring(0,prefix.length-1);
+        this.prefixUrl = prefix;
+        var prefixDecode  = decodeURIComponent(prefix);
+
+        var getURI = function(v,rec)
+        {
+            var uri = rec.uriOBJECT || new URI(v);
+            if (!Ext.isIE && !rec.uriOBJECT)
+                try {rec.uriOBJECT = uri;} catch (e) {};
+            return uri;
+        };
+
+        this.propNames = ["creationdate", "displayname", "createdby", "getlastmodified", "modifiedby", "getcontentlength",
+                     "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref"];
+
+        if (config.extraPropNames && config.extraPropNames.length)
+            this.propNames = this.propNames.concat(config.extraPropNames);
+
+        var recordCfg = [
+            {name: 'uri', mapping: 'href',
+                convert : function(v, rec)
+                {
+                    var uri = getURI(v,rec);
+                    return uri ? uri.href : "";
+                }
+            },
+            {name: 'path', mapping: 'href',
+                convert : function (v, rec)
+                {
+                    var uri = getURI(v,rec);
+                    var path = decodeURIComponent(uri.pathname);
+                    if (path.length >= prefixDecode.length && path.substring(0,prefixDecode.length) == prefixDecode)
+                        path = path.substring(prefixDecode.length);
+                    return path;
+                }
+            },
+            {name: 'name', mapping: 'propstat/prop/displayname', sortType:'asUCString'},
+            {name: 'file', mapping: 'href', type: 'boolean',
+                convert : function (v, rec)
+                {
+                    // UNDONE: look for <collection>
+                    var uri = getURI(v, rec);
+                    var path = uri.pathname;
+                    return path.length > 0 && path.charAt(path.length-1) != '/';
+                }
+            },
+            {name: 'created', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"},
+            {name: 'createdBy', mapping: 'propstat/prop/createdby'},
+            {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
+            {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
+            {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
+            {name: 'iconHref'},
+            {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
+            {name: 'options'}
+        ];
+
+        if (config.extraDataFields && config.extraDataFields.length)
+            recordCfg = recordCfg.concat(config.extraDataFields);
+
+        this.FileRecord = Ext.data.Record.create(recordCfg);
+        this.connection = new Ext.data.Connection({method: "GET", timeout: 600000, headers: {"Method" : "PROPFIND", "Depth" : "1", propname : this.propNames}});
+        this.proxy = new Ext.data.HttpProxy(this.connection);
+        this.transferReader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
+
+        this.rootRecord = new this.FileRecord({
+            id:"/",
+            path:"/",
+            name: this.rootName,
+            file:false,
+            uri:this.prefixUrl,
+            iconHref: LABKEY.contextPath + "/_images/labkey.png"
+        }, "/");
     }
 });
 
@@ -2687,6 +2667,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 //            this.getView().colMenu.getEl().addClass("extContainer");
         }, this.grid);
 
+        // this is kind of nasty, if the column model changes, we need to re-hook all the listeners for the selection
+        // model because in the process, all listeners for each column get purged
+        this.grid.getColumnModel().on('configchange', function()
+        {
+            this.grid.getSelectionModel().on(ROWSELETION_EVENTS.rowselect, this.Grid_onRowselect, this);
+            this.grid.getSelectionModel().on(ROWSELETION_EVENTS.selectionchange, this.Grid_onSelectionChange, this);
+        }, this);
 
         //
         // TREE
@@ -2940,7 +2927,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 id: this.id ? this.id + 'Upload' : 'fileUpload',
                 buttonText: "Browse...",
                 fieldLabel: 'Choose a file',
-                width: 350
+                width: 340
             });
 
             var uploadPanel_rb1 = new Ext.form.Radio({
@@ -3002,7 +2989,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
-            this.appletStatusBar = new Ext.Panel({
+            this.appletStatusBar = new Ext.StatusBar({
                 id:'appletStatusBar', defaultText:'', busyText:'Copying...',
                 width: 200,
                 hidden: true,

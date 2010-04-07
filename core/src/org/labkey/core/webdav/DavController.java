@@ -16,11 +16,11 @@
 
 package org.labkey.core.webdav;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONWriter;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -43,9 +43,9 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
-import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
@@ -60,7 +60,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
@@ -1572,6 +1571,15 @@ public class DavController extends SpringActionController
                         {
                             StringBuilder methodsAllowed = determineMethodsAllowed(resource);
                             xml.writeProperty(null, "options", methodsAllowed.toString());
+                        }
+                        else if (property.equals("custom"))
+                        {
+                            xml.writeElement(null, "custom", XMLWriter.OPENING);
+                            for (Map.Entry<String, String> entry : resource.getCustomProperties(getUser()).entrySet())
+                            {
+                                xml.writeProperty(null, entry.getKey(), entry.getValue());
+                            }
+                            xml.writeElement(null, "custom", XMLWriter.CLOSING);
                         }
                         else
                         {

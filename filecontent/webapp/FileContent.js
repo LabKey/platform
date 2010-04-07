@@ -25,7 +25,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     path : undefined,
 
-    actionConfig : undefined,               // map of actionId to action configurations
+    adminOptions : undefined,               // LABKEY.FileContentConfig object which manages admin options
     toolbarActions : undefined,             // map of actionId to Ext.Action
     hasToolbarButtons : false,              // true if there are any pipeline actions on the toolbar
 
@@ -49,12 +49,12 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     {
         LABKEY.FilesWebPartPanel.superclass.initComponent.call(this);
 
-        this.on(BROWSER_EVENTS.directorychange,function(record){this.onDirectoryChange(record);}, this);
-        this.grid.getSelectionModel().on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
+        this.grid.store.on(STORE_EVENTS.datachanged, this.onGridDataChange, this);
+        this.grid.store.on(BROWSER_EVENTS.directorychange, function(record){this.enableImportData(false);}, this);
+        this.on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
 
         // message templates
         var typeTemplate = new Ext.XTemplate('<tpl if="icon == undefined">{type}</tpl><tpl if="icon != undefined"><img src="{icon}" alt="{type}"></tpl>').compile();
-
 
         this.shortMsg = new Ext.XTemplate('<span style="margin-left:5px;" class="labkey-mv">{msg}</span>').compile();
         this.shortMsgEnabled = new Ext.XTemplate('<span style="margin-left:5px;" class="labkey-mv">using {count} out of {total} file(s)</span>').compile();
@@ -73,6 +73,15 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.longMsgNoMultiSelect = new Ext.XTemplate('This action can only operate on one file at a time from the selected list:<br>', fileListTemplate).compile();
         this.longMsgNoMatch = new Ext.XTemplate('This action can only operate on this list of file(s):<br>', fileListTemplate).compile();
         this.longMsgNoSelection = new Ext.XTemplate('This action requires selection from this list of file(s):<br>', fileListTemplate).compile();
+
+        this.adminOptions = new LABKEY.FileContentConfig();
+        this.adminOptions.on('actionConfigChanged', this.updateToolbarButtons, this);
+        this.adminOptions.on('filePropConfigChanged', this.onFilePropConfigChanged, this);
+
+        this.on(BROWSER_EVENTS.transfercomplete, this.onCustomFileProperties, this);
+
+        // get the initial admin configuration
+        this.updateActionConfiguration(false, false);
     },
 
     /**
@@ -108,20 +117,12 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         return items;
     },
 
-    createGrid : function()
+    createDefaultColumnModel : function(sm)
     {
         // mild convolution to pass fileSystem to the _attachPreview function
         var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
-        var sm = new Ext.grid.CheckboxSelectionModel();
 
-        var grid = new Ext.grid.GridPanel(
-        {
-            store: this.store,
-            border:false,
-            selModel : sm,
-            loadMask:{msg:"Loading, please wait..."},
-            columns: [
-                sm,
+        var cm = [sm,
                 {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
                 {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Last Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
@@ -129,8 +130,23 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Description", width: 100, dataIndex: 'description', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
-            ]
+            ];
+
+        return cm;
+    },
+
+    createGrid : function()
+    {
+        var sm = new Ext.grid.CheckboxSelectionModel();
+        var grid = new Ext.grid.GridPanel(
+        {
+            store: this.store,
+            border:false,
+            selModel : sm,
+            loadMask:{msg:"Loading, please wait..."},
+            columns: this.createDefaultColumnModel(sm)
         });
+
         // hack to get the file input field to size correctly
         grid.on('render', function(c){this.fileUploadField.setSize(350);}, this);
         grid.on('dblclick', function(e){this.renderFile(e);}, this);
@@ -138,46 +154,24 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         return grid;
     },
 
-    onDirectoryChange : function(record)
+    /**
+     * Called when the list of files is reloaded or is changed
+     */
+    onGridDataChange : function()
     {
-        this.path = record.data.path;
+        this.path = this.currentDirectory.data.path;
         if (startsWith(this.path,"/"))
             this.path = this.path.substring(1);
 
-        this.enableImportData(false);
-        //this.actions.importData.disable();
-
-        if (this.isPipelineRoot)
-        {
-            if (!this.actionConfig)
-            {
-                this.grid.store.on('datachanged', function(record){
-                    Ext.Ajax.request({
-                        url:this.actionsURL + encodeURIComponent(this.path),
-                        method:'GET',
-                        disableCaching:false,
-                        success : this.updateActionConfiguration(true, true),
-                        failure: LABKEY.Utils.displayAjaxErrorResponse,
-                        updateSelection: true,
-                        scope: this
-                    });
-                }, this, {single: true});
-            }
-            else
-            {
-                this.grid.store.on('datachanged', function(record){
-                    Ext.Ajax.request({
-                        url:this.actionsURL + encodeURIComponent(this.path),
-                        method:'GET',
-                        disableCaching:false,
-                        success : this.updatePipelineActions,
-                        failure: LABKEY.Utils.displayAjaxErrorResponse,
-                        updateSelection: true,
-                        scope: this
-                    });
-                }, this, {single: true});
-            }
-        }
+        Ext.Ajax.request({
+            url:this.actionsURL + encodeURIComponent(this.path),
+            method:'GET',
+            disableCaching:false,
+            success : this.updatePipelineActions,
+            failure: LABKEY.Utils.displayAjaxErrorResponse,
+            updateSelection: true,
+            scope: this
+        });
     },
 
     updateActionConfiguration : function(updatePipelineActions, updateSelection) {
@@ -202,24 +196,24 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         // check whether the import data button is enabled
         this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
-        this.actionConfig = {};
 
+        var newActions = [];
         if ('object' == typeof config.actions)
         {
             for (var i=0; i < config.actions.length; i++)
             {
-                var action = config.actions[i];
-                this.actionConfig[action.id] = new LABKEY.PipelineActionConfig(action);
+                newActions.push(config.actions[i]);
             }
         }
-        this.updateToolbarButtons();
+        this.adminOptions.setActionConfigs(newActions);
+        this.adminOptions.setFilePropConfig(config.fileConfig);
 
-        var fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
-        var visible = fileConfig == 'useCustom';
         var filePropertiesBtn = Ext.getCmp(this.filePropertiesBtnId);
         if (filePropertiesBtn)
-            filePropertiesBtn.setVisible(visible);
-        this.filePropertiesFields = o.success ? o.fileProperties : {};
+            filePropertiesBtn.setVisible(false);//this.adminOptions.isCustomFileProperties());
+
+        if (o.success)
+            this.adminOptions.setFileFields(o.fileProperties);
 
         if (e.updatePipelineActions)
         {
@@ -273,7 +267,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
                 if (!links) continue;
 
-                var config = this.actionConfig[pUtil.getId()];
+                var config = this.adminOptions.getActionConfig(pUtil.getId());
                 for (var j=0; j < links.length; j++)
                 {
                     var link = links[j];
@@ -348,20 +342,18 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.toolbarActions = {};
         this.hasToolbarButtons = false;
 
-        for (var action in this.actionConfig)
+        var actionConfigs = this.adminOptions.getActionConfigs();
+        for (var i=0; i < actionConfigs.length; i++)
         {
-            var a = this.actionConfig[action];
-            if ('object' == typeof a )
+            var a = actionConfigs[i];
+            if (a.isDisplayOnToolbar())
             {
-                if (a.isDisplayOnToolbar())
+                var action = a.createButtonAction(this.executeToolbarAction, this);
+                if (action)
                 {
-                    var action = a.createButtonAction(this.executeToolbarAction, this);
-                    if (action)
-                    {
-                        this.toolbarActions[a.id] = action;
-                        this.hasToolbarButtons = true;
-                        buttons.push(action);
-                    }
+                    this.toolbarActions[a.id] = action;
+                    this.hasToolbarButtons = true;
+                    buttons.push(action);
                 }
             }
         }
@@ -772,35 +764,151 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
     },
 
-    onCustomFileProperties : function()
+    onCustomFileProperties : function(options)
     {
-        var panel = new LABKEY.ext.FormPanel({
-            addAllFields: true,
-            metaData: {fields: this.filePropertiesFields}
-        });
+        if (!this.adminOptions.isCustomFileProperties())
+            return;
 
-        var win = new Ext.Window({
-            title: 'Extended File Properties',
-            width: 500,
-            height: 400,
-            cls: 'extContainer',
-            autoScroll: true,
-            closeAction:'close',
-            modal: true,
-            layout: 'fit',
-            items: [panel],
-            buttons: [{
-                text: 'Submit',
-                id: 'btn_submit',
-                listeners: {click:function(button, event) {
-                    //this.saveActionConfig(store, button, event);
-                    win.close();}, scope:this}
-            },{
-                text: 'Cancel',
-                id: 'btn_cancel',
-                handler: function(){win.close();}
-            }]
-        });
-        win.show();
+        //var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields, files: options.files});
+
+        //fileDlg.on('success', function(c){this.updateActionConfiguration(true, true);}, this, {single:true});
+        //fileDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
+
+        //fileDlg.show();
+
+        // just handle single file upload case for now
+        if (options.files.length == 1 && this.adminOptions.fileFields)
+        {
+            var fopts = options.files[0];
+
+            // we only want the list of extra columns in the form
+            var columns = [];
+            for (var i=0; i < this.adminOptions.fileFields.length; i++)
+                columns.push(this.adminOptions.fileFields[i].name);
+
+            LABKEY.Query.selectRows({
+                schemaName:'exp',
+                queryName:'Datas',
+                maxRows: 1,
+                scope: this,
+                requiredVersion: '9.1',
+                columns: columns.join(','),
+                successCallback:function(data, resp){
+
+                    var fields = [];
+                    for (var i=0; i < data.metaData.fields.length; i++)
+                    {
+                        var field = data.metaData.fields[i];
+                        if (field.name != 'RowId')
+                            fields.push(field);
+                    }
+
+                    var cm = [];
+                    for (var i=0; i < data.columnModel.length; i++)
+                    {
+                        var col = data.columnModel[i];
+                        col.editable = true;
+
+                        cm.push(col);
+                    }
+                    var formPanel = new LABKEY.ext.FormPanel({
+                        addAllFields: true,
+                        border: false,
+                        flex: 1,
+//                        bodyStyle : 'padding:10px;',
+                        columnModel: cm,
+                        metaData: {fields: fields}
+                    });
+                    formPanel.add({name: 'uri', xtype: 'hidden', value: fopts.id});
+
+                    var statusPanel = new Ext.Panel({
+                        id: 'file-props-status',
+                        border: false,
+                        height: 30
+                    })
+                    var panel = new Ext.Panel({
+                        layout: 'vbox',
+                        layoutConfig: {
+                            align: 'stretch',
+                            pack: 'start'
+                        },
+                        bodyStyle : 'padding:10px;',
+                        items:[formPanel, statusPanel]
+                    });
+
+                    var win = new Ext.Window({
+                        title: 'Extended File Properties',
+                        width: 400,
+                        height: 300,
+                        cls: 'extContainer',
+                        autoScroll: true,
+                        closeAction:'close',
+                        modal: true,
+                        layout: 'fit',
+                        items: [panel],
+                        bbar: [{ xtype: 'tbtext', text: '',id:'statusTxt' }],
+                        buttons: [{
+                            text: 'Submit',
+                            id: 'btn_submit',
+                            listeners: {click:function(button, event) {
+                                var form = formPanel.getForm();
+
+                                if (form && !form.isValid())
+                                {
+                                    Ext.Msg.alert('Extended File Properties', 'Not all fields have been properly completed');
+                                    return false;
+                                }
+
+                                form.doAction('submit', {
+                                    url: LABKEY.ActionURL.buildURL("filecontent", "saveCustomFileProps"),
+                                    waitMsg:'Submiting Form...',
+                                    method: 'POST',
+                                    success: function(){
+                                        this.refreshDirectory();
+                                        win.close();
+                                    },
+                                    failure: function(form, action){
+                                        var errorTxt = 'An error occurred submitting the .';
+                                        var jsonResponse = Ext.util.JSON.decode(action.response.responseText);
+                                        if (jsonResponse && jsonResponse.errors)
+                                        {
+                                            errorTxt = '<span class="labkey-error">' + jsonResponse.errors._form + '</span>'
+                                        }
+                                        var el = Ext.get('file-props-status');
+                                        if (el)
+                                            el.update(errorTxt);
+                                        //win.getBottomToolbar().get(0).setText(errorTxt);
+                                    },
+                                    scope: this,
+                                    clientValidation: false
+                                });},
+                                scope:this}
+                        },{
+                            text: 'Cancel',
+                            id: 'btn_cancel',
+                            handler: function(){win.close();}
+                        }]
+                    });
+                    win.show();
+                }
+            });
+        }
+    },
+
+    onFilePropConfigChanged : function(config)
+    {
+        var sm = this.grid.getSelectionModel();
+        var cm = this.createDefaultColumnModel(sm);
+        
+        if (config.isCustomFileProperties())
+        {
+            cm = cm.concat(config.createColumnModelColumns());
+            this.fileSystem.init(config.createFileSystemConfig());
+        }
+        else
+            this.fileSystem.init(this.fileSystem.initialConfig);
+
+        this.grid.getColumnModel().setConfig(cm);
+        this.refreshDirectory();
     }
 });

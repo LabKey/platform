@@ -351,7 +351,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 forceFit:true
             }),
             columns: [
-                {header:'Name', dataIndex:'name', width:200},
+                {header:'Name', dataIndex:'name', width:100},
                 {header:'Type', dataIndex:'rangeURI'}
             ]
         });

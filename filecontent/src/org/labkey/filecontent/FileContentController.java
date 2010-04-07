@@ -27,6 +27,13 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.MissingRootDirectoryException;
@@ -36,6 +43,11 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.UserManager;
@@ -812,6 +824,135 @@ public class FileContentController extends SpringActionController
             return new FilePropertiesServiceImpl(getViewContext());
         }
     }
+
+    public static class CustomFilePropsForm
+    {
+        private String _uri;
+
+        public String getUri()
+        {
+            return _uri;
+        }
+
+        public void setUri(String uri)
+        {
+            _uri = uri;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class SaveCustomFilePropsAction extends ExtFormAction<CustomFilePropsForm>
+    {
+        WebdavResource _resource;
+
+        @Override
+        public void validateForm(CustomFilePropsForm form, Errors errors)
+        {
+            Path path = Path.decode(form.getUri());
+
+            if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
+            {
+                String newPath = path.toString();
+                int idx = newPath.indexOf(WebdavService.getPath().toString());
+
+                if (idx != -1)
+                {
+                    newPath = newPath.substring(idx);
+                    path = Path.parse(newPath);
+                }
+            }
+            _resource = WebdavService.get().getResolver().lookup(path);
+
+            if (_resource != null)
+            {
+                FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+                String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
+
+                if (dd != null)
+                {
+                    Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+                    if (domain != null)
+                    {
+                        ValidatorContext validatorCache = new ValidatorContext(getContainer(), getUser());
+                        List<ValidationError> validationErrors = new ArrayList<ValidationError>();
+
+                        for (DomainProperty prop : domain.getProperties())
+                        {
+                            Object o = getViewContext().get(prop.getName());
+                            if (o != null && !StringUtils.isBlank(String.valueOf(o)))
+                            {
+                                if (!validateProperty(prop, StringUtils.trimToNull(String.valueOf(o)), validationErrors, validatorCache))
+                                {
+                                    for (ValidationError ve : validationErrors)
+                                        errors.reject(ERROR_MSG, ve.getMessage());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                errors.reject("Failed trying to resolve the resource URI.");
+        }
+
+        private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
+        {
+            boolean ret = true;
+
+            //check for isRequired
+            if (prop.isRequired() && value == null)
+            {
+                errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
+                return false;
+            }
+
+            for (IPropertyValidator validator : prop.getValidators())
+            {
+                if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
+            }
+            return ret;
+        }
+
+        public ApiResponse execute(CustomFilePropsForm form, BindException errors) throws Exception
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            ExpData data = svc.getDataObject(_resource, getContainer());
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (data != null)
+            {
+                String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
+
+                if (dd != null)
+                {
+                    Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+                    if (domain != null)
+                    {
+                        try {
+                            for (DomainProperty prop : domain.getProperties())
+                            {
+                                Object o = getViewContext().get(prop.getName());
+                                if (o != null && !StringUtils.isBlank(String.valueOf(o)))
+                                {
+                                    data.setProperty(getUser(), prop.getPropertyDescriptor(), o);
+                                }
+                            }
+                            response.put("success", true);
+                        }
+                        catch (ValidationException e){}
+                    }
+                }
+            }
+            else
+                response.put("success", false);
+
+            return response;
+        }
+    }
+
 
     public static class FileContentForm
     {

@@ -17,12 +17,20 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.*;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -54,7 +62,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.Name);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
-        addColumn(Column.LSID).setHidden(true);
+        ColumnInfo lsidColumn = addColumn(Column.LSID);
+        lsidColumn.setHidden(true);
         addColumn(Column.DataFileUrl);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
@@ -79,6 +88,23 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("LSID", "LSID")));
+
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        String domainURI = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, getContainer());
+
+        if (dd != null)
+        {
+            Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+            if (domain != null)
+            {
+                for (DomainProperty prop : domain.getProperties())
+                {
+                    ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer().getId(), _schema.getUser());
+                    addColumn(projectColumn);
+                }
+            }
+        }
     }
 
 
