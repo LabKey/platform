@@ -1,7 +1,6 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,6 +17,7 @@ public class ButtonConfig
 {
     private String _text;
     private String _url;
+    private String _onClick;
 
     public String getText()
     {
@@ -39,18 +39,25 @@ public class ButtonConfig
         _url = url;
     }
 
+    public String getOnClick()
+    {
+        return _onClick;
+    }
+
+    public void setOnClick(String onClick)
+    {
+        _onClick = onClick;
+    }
 
     public ActionButton createButton()
     {
+        ActionButton btn = new ActionButton(_text);
         URLHelper url = null;
-        try
-        {
-            url = new URLHelper(_url);
-        }
-        catch(Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        return new ActionButton(_text, url);
+        if (null != _url)
+            btn.setURL(_url);
+        if (null != _onClick)
+            btn.setScript(_onClick, false);
+
+        return btn;
     }
 }

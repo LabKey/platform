@@ -221,8 +221,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
 
         //add the button bar config if any
         var json = {};
-        if (this.buttonBar)
-            json.buttonBar = this.buttonBar;    
+        if (this.buttonBar && this.buttonBar.items && this.buttonBar.items.length > 0)
+            json.buttonBar = this.processButtonBar();
 
         Ext.Ajax.request({
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
@@ -246,6 +246,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
                         dr.on("beforechangeview", this.beforeChangeView, this);
                         dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
+                        dr.on("buttonclick", this.onButtonClick, this);
                     }, this, {delay: 100});
 
                     if(this.successCallback)
@@ -261,6 +262,42 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             jsonData: json,
             scope: this
         });
+    },
+
+    processButtonBar : function() {
+        //for each item in the config that has a 'handler' function prop
+        //add an onClick script that calls the data region method that will
+        //raise an event we can catch and forward
+        var item;
+        for (var idx = 0; idx < this.buttonBar.items.length; ++idx)
+        {
+            item = this.buttonBar.items[idx];
+            if (item.handler && Ext.isFunction(item.handler))
+            {
+                item.onClick = "LABKEY.DataRegions['" + this.dataRegionName + "'].onButtonClick('"
+                        + item.text + "'); return false;";
+            }
+        }
+
+        return this.buttonBar;
+    },
+
+    onButtonClick : function(buttonText, dataRegion) {
+
+        var item;
+        for (var idx = 0; idx < this.buttonBar.items.length; ++idx)
+        {
+            item = this.buttonBar.items[idx];
+            if (item.text && item.text == buttonText && item.handler && Ext.isFunction(item.handler))
+            {
+                try
+                {
+                    return item.handler.call(item.scope || this, dataRegion);
+                }
+                catch(ignore) {}
+            }
+        }
+        return false;
     },
 
     beforeOffsetChange : function(dataRegion, newoffset) {

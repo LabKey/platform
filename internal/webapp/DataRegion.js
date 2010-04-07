@@ -68,7 +68,8 @@ LABKEY.DataRegion = function (config)
          "beforeclearfilter",
          "beforeclearallfilters",
          "beforechangeview",
-         "beforeshowrowschange"
+         "beforeshowrowschange",
+         "buttonclick"
     );
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
@@ -693,6 +694,11 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             return;
         
         this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName", ".reportId"]);
+    },
+
+    onButtonClick : function(buttonText)
+    {
+        return this.fireEvent("buttonclick", buttonText, this);
     }
 
 });
