@@ -100,6 +100,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Override
     public PageConfig defaultPageConfig()
     {
         PageConfig config = super.defaultPageConfig();
@@ -301,6 +302,7 @@ public class IssuesController extends SpringActionController
             final TSVGridWriter writer = view.getTsvWriter();
             return new HttpView()
             {
+                @Override
                 protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
                 {
                     writer.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.caption);
@@ -520,7 +522,7 @@ public class IssuesController extends SpringActionController
                 Issue orig = new Issue();
                 orig.Open(getContainer(), getUser());
 
-                Issue.Comment comment = addComment(_issue, orig, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                Issue.Comment comment = addComment(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(user, c, _issue);
                 AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
                 if (ownsTransaction)
@@ -607,6 +609,13 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, issue);
             ActionURL detailsUrl;
 
+            Issue duplicateOf = null;
+            if ("resolve".equals(form.getAction()) &&
+                    issue.getResolution().equals("Duplicate") &&
+                    issue.getDuplicate() != null &&
+                    issue.getDuplicate() != prevIssue.getDuplicate())
+                duplicateOf = IssueManager.getIssue(c, issue.getDuplicate());
+
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
             boolean ownsTransaction = !scope.isTransactionActive();
             try
@@ -624,9 +633,18 @@ public class IssuesController extends SpringActionController
                 else
                     issue.Change(user);
 
-                Issue.Comment comment = addComment(issue, prevIssue, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                Issue.Comment comment = addComment(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(user, c, issue);
                 AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
+
+                if (duplicateOf != null)
+                {
+                    HStringBuilder hsb = new HStringBuilder();
+                    hsb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this bug.</em>");
+                    Issue.Comment dupComment = duplicateOf.addComment(user, hsb.toHString());
+                    IssueManager.saveIssue(user, c, duplicateOf);
+                }
+
                 if (ownsTransaction)
                     scope.commitTransaction();
             }
@@ -803,6 +821,10 @@ public class IssuesController extends SpringActionController
         if ("resolve".equals(action))
         {
             editable.add("resolution");
+            editable.add("duplicate");
+        }
+        if ("reopen".equals(action))
+        {
             editable.add("duplicate");
         }
 
@@ -982,6 +1004,10 @@ public class IssuesController extends SpringActionController
             validateRequired("string1", newFields.get("string1"), requiredFields, requiredErrors);
         if (newFields.containsKey("string2"))
             validateRequired("string2", newFields.get("string2"), requiredFields, requiredErrors);
+
+        // When resolving Duplicate, the 'duplicate' field should be set.
+        if ("Duplicate".equals(newFields.get("resolution")))
+            validateRequired("duplicate", newFields.get("duplicate"), new HString("duplicate"), requiredErrors);
 
         errors.addAllErrors(requiredErrors);
     }
@@ -1656,7 +1682,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static Issue.Comment addComment(Issue issue, Issue previous, User user, String action, String comment, Map<String, String> customColumns, ViewContext context)
+    static Issue.Comment addComment(Issue issue, Issue previous, Issue duplicateOf, User user, String action, String comment, Map<String, String> customColumns, ViewContext context)
     {
         StringBuilder sbChanges = new StringBuilder();
         if (!action.equals("insert") && !action.equals("update"))
@@ -1667,6 +1693,8 @@ public class IssuesController extends SpringActionController
             {
                 // Add the resolution; e.g. "resolve as Fixed"
                 sbChanges.append(" as ").append(issue.getResolution());
+                if (duplicateOf != null)
+                    sbChanges.append(" of ").append(duplicateOf.getIssueId());
             }
 
             sbChanges.append("</b><br>\n");

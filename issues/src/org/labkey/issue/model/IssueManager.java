@@ -103,6 +103,13 @@ public class IssueManager
                     new SimpleFilter("issueId", new Integer(issue.getIssueId())),
                     new Sort("CommentId"), Issue.Comment.class);
             issue.setComments(new ArrayList<Issue.Comment>(Arrays.asList(comments)));
+
+            Integer[] dups = Table.executeArray(
+                    _issuesSchema.getTableInfoIssues(),
+                    "IssueId",
+                    new SimpleFilter("Duplicate", new Integer(issueId)),
+                    new Sort("IssueId"), Integer.class);
+            issue.setDuplicates(new ArrayList<Integer>(Arrays.asList(dups)));
             return issue;
         }
         catch (SQLException x)

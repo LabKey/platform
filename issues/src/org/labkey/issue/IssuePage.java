@@ -479,4 +479,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         }
         return sb.toString();
     }
+
+    public String renderDuplicates(ViewContext context, List<Integer> dups)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (Integer dup : dups)
+            sb.append("<a href='").append(IssuesController.getDetailsURL(context.getContainer(), dup, false)).append("'>").append(dup).append("</a>, ");
+        if (dups.size() > 0)
+            sb.setLength(sb.length() - 2);
+        return sb.toString();
+    }
 }

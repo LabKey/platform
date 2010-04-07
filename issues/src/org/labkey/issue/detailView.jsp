@@ -96,8 +96,16 @@
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=bean.writeInput(new HString("duplicate",false), HString.valueOf(issue.getDuplicate()))%>
+                <% if (bean.isEditable("duplicate")) { %>
+                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()))%>
+                <% } else { %>
+                    <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
+                <% } %>
                 </td></tr><%
+            }
+            if (!issue.getDuplicates().isEmpty())
+            {
+                %><tr><td class="labkey-form-label">Duplicates</td><td><%=bean.renderDuplicates(context, issue.getDuplicates())%></td></tr><%
             }
 %>
             <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE)%>

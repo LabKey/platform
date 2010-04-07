@@ -26,10 +26,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 
 public class Issue extends Entity implements Serializable, Cloneable
@@ -56,6 +53,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected Date resolved;
     protected HString resolution;
     protected Integer duplicate;
+    protected List<Integer> duplicates;
 
     protected Integer closedBy;
     protected Date closed;
@@ -335,6 +333,17 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         if (null != duplicate && duplicate.intValue() == 0) duplicate = null;
         this.duplicate = duplicate;
+    }
+
+    public List<Integer> getDuplicates()
+    {
+        return duplicates != null ? duplicates : Collections.<Integer>emptyList();
+    }
+
+    public void setDuplicates(List<Integer> dups)
+    {
+        if (dups != null)
+            duplicates = dups;
     }
 
 
