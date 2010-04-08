@@ -265,39 +265,56 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     processButtonBar : function() {
-        //for each item in the config that has a 'handler' function prop
-        //add an onClick script that calls the data region method that will
-        //raise an event we can catch and forward
-        var item;
-        for (var idx = 0; idx < this.buttonBar.items.length; ++idx)
-        {
-            item = this.buttonBar.items[idx];
-            if (item.handler && Ext.isFunction(item.handler))
-            {
-                item.onClick = "LABKEY.DataRegions['" + this.dataRegionName + "'].onButtonClick('"
-                        + item.text + "'); return false;";
-            }
-        }
-
+        this.processButtonBarItems(this.buttonBar.items);
         return this.buttonBar;
     },
 
-    onButtonClick : function(buttonText, dataRegion) {
-
+    processButtonBarItems : function(items) {
+        if (!items || !items.length || items.length <= 0)
+            return;
+        
         var item;
-        for (var idx = 0; idx < this.buttonBar.items.length; ++idx)
+        for (var idx = 0; idx < items.length; ++idx)
         {
-            item = this.buttonBar.items[idx];
-            if (item.text && item.text == buttonText && item.handler && Ext.isFunction(item.handler))
+            item = items[idx];
+            if (item.handler && Ext.isFunction(item.handler))
             {
-                try
-                {
-                    return item.handler.call(item.scope || this, dataRegion);
-                }
-                catch(ignore) {}
+                item.id = item.id || Ext.id(undefined, "");
+                item.onClick = "return LABKEY.DataRegions['" + this.dataRegionName + "'].onButtonClick('"
+                        + item.id + "');";
             }
+            if (item.items)
+                this.processButtonBarItems(item.items);
+        }
+    },
+
+    onButtonClick : function(buttonId, dataRegion) {
+        var item = this.findButtonById(this.buttonBar.items, buttonId);
+        if (item && item.handler && Ext.isFunction(item.handler))
+        {
+            try
+            {
+                return item.handler.call(item.scope || this, dataRegion);
+            }
+            catch(ignore) {}
         }
         return false;
+    },
+
+    findButtonById : function(items, id) {
+        if (!items || !items.length || items.length <= 0)
+            return null;
+
+        var ret;
+        for (var idx = 0; idx < items.length; ++idx)
+        {
+            if (items[idx].id == id)
+                return items[idx];
+            ret = this.findButtonById(items[idx].items, id);
+            if (null != ret)
+                return ret;
+        }
+        return null;
     },
 
     beforeOffsetChange : function(dataRegion, newoffset) {
@@ -381,6 +398,17 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         return false;
     }
 });
+
+LABKEY.QueryWebPart.builtInButtons = {
+    query: 'query',
+    views: 'views',
+    insertNew: 'insert new',
+    deleteRows: 'delete',
+    exportRows: 'export',
+    print: 'print',
+    pageSize: 'page size'
+};
+
 
 /**
  * @namespace A predefined set of aggregate types, for use in the config.aggregates array in the

@@ -3,6 +3,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.view.NavTree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ButtonBarConfig
     }
 
     private Position _position = null; //i.e., not specified
-    private List<Object> _items = new ArrayList<Object>();
+    private List<ButtonConfig> _items = new ArrayList<ButtonConfig>();
 
     public ButtonBarConfig()
     {
@@ -66,29 +67,63 @@ public class ButtonBarConfig
                 Object item = items.get(idx);
                 if (item instanceof String)
                 {
-                    try
-                    {
-                        _items.add(BuiltInButton.valueOf((String)item));
-
-                    }
-                    catch(Exception e)
-                    {
-                        throw new RuntimeException("'" + item + "' is not a valid built-in button name.");
-                    }
+                    _items.add(new BuiltInButtonConfig((String)item));
                 }
                 else if (item instanceof JSONObject)
                 {
+                    JSONObject obj = (JSONObject)item;
                     //new button config
-                    ButtonConfig button = new ButtonConfig();
+                    UserDefinedButtonConfig button = new UserDefinedButtonConfig();
                     try
                     {
-                        BeanUtils.populate(button, (Map)item);
+                        BeanUtils.populate(button, obj);
                     }
                     catch (Exception ignore) {}
+
+                    //if the object has an "items" prop, load those as NavTree
+                    //items recursively (for menu buttons)
+                    if (obj.has("items"))
+                        button.setMenuItems(loadMenuItems(obj.getJSONArray("items")));
+
                     _items.add(button);
                 }
             }
         }
+    }
+
+    protected List<NavTree> loadMenuItems(JSONArray items)
+    {
+        NavTree root = new NavTree();
+
+        for (int idx = 0; idx < items.length(); ++idx)
+        {
+            Object item = items.get(idx);
+
+            //item can be a string (separator), or a map (menu item)
+            // and the map may contain an items array of its own (fly-out menu)
+            if (item instanceof String)
+            {
+                String sitem = (String)item;
+                if (sitem.equals("-"))
+                    root.addSeparator();
+            }
+            else if (item instanceof JSONObject)
+            {
+                JSONObject obj = (JSONObject)item;
+                NavTree nt = new NavTree(obj.getString("text"));
+                if (obj.has("onClick"))
+                    nt.setScript(obj.getString("onClick"));
+                if (obj.has("icon"))
+                    nt.setImageSrc(obj.getString("icon"));
+
+                if (obj.has("items"))
+                    nt.addChildren(loadMenuItems(obj.getJSONArray("items")));
+
+                root.addChild(nt);
+            }
+        }
+
+        return root.hasChildren() ? root.getChildList() : null;
     }
 
     public Position getPosition()
@@ -101,12 +136,12 @@ public class ButtonBarConfig
         _position = position;
     }
 
-    public List<Object> getItems()
+    public List<ButtonConfig> getItems()
     {
         return _items;
     }
 
-    public void setItems(List<Object> items)
+    public void setItems(List<ButtonConfig> items)
     {
         _items = items;
     }

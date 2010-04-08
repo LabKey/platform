@@ -17,12 +17,10 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URISyntaxException;
 import java.util.*;
 
 public class ButtonBar extends DisplayElement
@@ -169,20 +167,14 @@ public class ButtonBar extends DisplayElement
         if (null == config.getItems() || config.getItems().size() == 0)
             return;
 
-        _elementList = new ArrayList<DisplayElement>(_elementList);
+        List<DisplayElement> originalButtons = _elementList;
+        _elementList = new ArrayList<DisplayElement>();
 
-        for (Object item : config.getItems())
+        for (ButtonConfig item : config.getItems())
         {
-            if (item instanceof ButtonConfig)
-            {
-                add(((ButtonConfig)item).createButton());
-            }
-            else if (item instanceof ButtonBarConfig.BuiltInButton)
-            {
-                //allow for names of existing buttons to use
-                
-            }
-                
+            DisplayElement elem = item.createButton(originalButtons);
+            if (null != elem)
+                add(elem);
         }
 
     }

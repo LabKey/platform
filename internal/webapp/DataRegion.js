@@ -696,9 +696,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName", ".reportId"]);
     },
 
-    onButtonClick : function(buttonText)
+    onButtonClick : function(buttonId)
     {
-        return this.fireEvent("buttonclick", buttonText, this);
+        return this.fireEvent("buttonclick", buttonId, this);
     }
 
 });
