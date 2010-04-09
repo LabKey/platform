@@ -3127,23 +3127,26 @@ public class QueryController extends SpringActionController
                 {
                     QueryDefinition qdef = entry.getValue();
                     if (!qdef.isHidden())
-                        qinfos.add(getQueryProps(qdef.getName(), qdef.getDescription(), true, uschema, form.isIncludeColumns()));
+                    {
+                        ActionURL viewDataUrl = qdef.urlFor(QueryAction.executeQuery);
+                        qinfos.add(getQueryProps(qdef.getName(), qdef.getDescription(), viewDataUrl, true, uschema, form.isIncludeColumns()));
+                    }
                 }
             }
 
             //built-in tables
             for(String qname : uschema.getTableNames())
             {
-                qinfos.add(getQueryProps(qname, null, false, uschema, form.isIncludeColumns()));
+                ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
+                qinfos.add(getQueryProps(qname, null, viewDataUrl, false, uschema, form.isIncludeColumns()));
             }
 
-            
             response.put("queries", qinfos);
 
             return response;
         }
 
-        protected Map<String,Object> getQueryProps(String name, String description, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        protected Map<String,Object> getQueryProps(String name, String description, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
         {
             Map<String,Object> qinfo = new HashMap<String,Object>();
             qinfo.put("name", name);
@@ -3185,6 +3188,9 @@ public class QueryController extends SpringActionController
                 }
                 if(cinfos.size() > 0)
                     qinfo.put("columns", cinfos);
+
+                if (viewDataUrl != null)
+                    qinfo.put("viewDataUrl", viewDataUrl);
             }
             return qinfo;
         }
@@ -3272,6 +3278,13 @@ public class QueryController extends SpringActionController
                 colInfos.add(colInfo);
             }
             viewInfo.put("columns", colInfos);
+            ActionURL viewDataUrl = view.getQueryDefinition().urlFor(QueryAction.executeQuery);
+            if (viewDataUrl != null)
+            {
+                if (view.getName() != null)
+                    viewDataUrl.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
+                viewInfo.put("viewDataUrl", viewDataUrl);
+            }
             return viewInfo;
         }
     }

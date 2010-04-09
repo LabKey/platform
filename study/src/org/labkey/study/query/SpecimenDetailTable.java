@@ -65,6 +65,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(specimenComment);
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
+        addWrapColumn(_rootTable.getColumn("AvailabilityReason"));
         addWrapColumn(_rootTable.getColumn("Requestable"));
 
         ColumnInfo siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));

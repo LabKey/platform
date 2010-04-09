@@ -2102,6 +2102,7 @@ study/resources/schemas/dbscripts/postgresql/obsolete/study-9.192-9.193.sql -tex
 study/resources/schemas/dbscripts/postgresql/obsolete/study-9.193-9.194.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-9.194-9.195.sql -text
 study/resources/schemas/dbscripts/postgresql/study-0.00-2.30.sql -text
+study/resources/schemas/dbscripts/postgresql/study-10.10-10.11.sql -text
 study/resources/schemas/dbscripts/postgresql/study-2.30-8.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.10-8.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-8.20-8.30.sql -text
@@ -2230,6 +2231,7 @@ study/resources/schemas/dbscripts/sqlserver/obsolete/study-9.192-9.193.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-9.193-9.194.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-9.194-9.195.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-0.00-2.30.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-10.10-10.11.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-2.30-8.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-8.10-8.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-8.20-8.30.sql -text
@@ -2345,6 +2347,7 @@ study/src/org/labkey/study/importer/MissingValueImporter.java -text
 study/src/org/labkey/study/importer/ParticipantCommentImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/QcStatesImporter.java -text
+study/src/org/labkey/study/importer/RequestabilityManager.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
 study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
@@ -2642,6 +2645,7 @@ study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/samples/addSamplesToRequest.jsp -text
 study/src/org/labkey/study/view/samples/autoReportList.jsp -text
+study/src/org/labkey/study/view/samples/configRequestabilityRules.jsp -text
 study/src/org/labkey/study/view/samples/configurationRequired.jsp -text
 study/src/org/labkey/study/view/samples/groupMembers.jsp -text
 study/src/org/labkey/study/view/samples/importSpecimens.jsp -text

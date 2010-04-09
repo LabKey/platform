@@ -205,6 +205,12 @@
         <td><%= textLink("Manage Notifications",
                 new ActionURL(SpecimenController.ManageNotificationsAction.class, c)) %></td>
     </tr>
+    <tr>
+        <th align="left">Requestability Rules</th>
+        <td>Manage the rules used to determine specimen availability for request</td>
+        <td><%= textLink("Manage Requestability Rules",
+                new ActionURL(SpecimenController.ConfigureRequestabilityRulesAction.class, c)) %></td>
+    </tr>
     <%
         }
         }

@@ -41,6 +41,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
+import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.SpecimenArchive;
@@ -4699,6 +4700,104 @@ public class SpecimenController extends BaseStudyController
                 }
             }
             return null;
+        }
+    }
+
+    public static class UpdateRequestabilityRulesForm implements HasViewContext
+    {
+        private ViewContext _viewContext;
+        private String[] _ruleType;
+        private String[] _ruleData;
+        private String[] _markType;
+
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
+
+        public void setViewContext(ViewContext viewContext)
+        {
+            _viewContext = viewContext;
+        }
+
+        public String[] getRuleType()
+        {
+            return _ruleType;
+        }
+
+        public void setRuleType(String[] ruleType)
+        {
+            _ruleType = ruleType;
+        }
+
+        public String[] getRuleData()
+        {
+            return _ruleData;
+        }
+
+        public void setRuleData(String[] ruleData)
+        {
+            _ruleData = ruleData;
+        }
+
+        public String[] getMarkType()
+        {
+            return _markType;
+        }
+
+        public void setMarkType(String[] markType)
+        {
+            _markType = markType;
+        }
+    }
+
+    @RequiresPermissionClass(ManageRequestSettingsPermission.class)
+    public class UpdateRequestabilityRulesAction extends ApiAction<UpdateRequestabilityRulesForm>
+    {
+        @Override
+        public ApiResponse execute(UpdateRequestabilityRulesForm form, BindException errors) throws Exception
+        {
+            final List<RequestabilityManager.RequestableRule> rules = new ArrayList<RequestabilityManager.RequestableRule>();
+            for (int i = 0; i < form.getRuleType().length; i++)
+            {
+                String typeName = form.getRuleType()[i];
+                RequestabilityManager.RuleType type = RequestabilityManager.RuleType.valueOf(typeName);
+                String dataString = form.getRuleData()[i];
+                rules.add(type.createRule(getContainer(), dataString));
+            }
+            RequestabilityManager.getInstance().saveRules(getContainer(), getUser(), rules);
+
+            return new ApiResponse()
+            {
+                public Map<String, Object> getProperties()
+                {
+                    return Collections.<String, Object>singletonMap("savedCount", rules.size());
+                }
+            };
+        }
+    }
+
+    @RequiresPermissionClass(ManageRequestSettingsPermission.class)
+    public class ConfigureRequestabilityRulesAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/study/view/samples/configRequestabilityRules.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                root.addChild(getStudy().getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
+            }
+            catch (ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+            root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
+            root.addChild("Configure Requestability Rules");
+            return root;
         }
     }
 }

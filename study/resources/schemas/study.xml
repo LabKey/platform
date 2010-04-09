@@ -537,6 +537,9 @@
         <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
         </ns:column>
+      <ns:column columnName="AvailabilityReason">
+          <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
+      </ns:column>
       </ns:columns>
     </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">
@@ -785,6 +788,9 @@
       <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
           <ns:datatype>String</ns:datatype>
+      </ns:column>
+      <ns:column columnName="AvailabilityReason">
+          <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>
@@ -1434,6 +1440,27 @@
       </ns:column>
       <ns:column columnName="ExpectedAvailableCount">
           <ns:description>The total volume of all vials from each specimen that are expected to become available for request.  This includes vials currently available as well as those not available but not yet requested.</ns:description>
+      </ns:column>
+    </ns:columns>
+  </ns:table>
+  <ns:table tableName="SampleAvailabilityRule" tableDbType="TABLE">
+    <ns:description>Contains one row per defined sample availability rule.  Containers without defined rules will use a default set.</ns:description>
+    <ns:columns>
+      <ns:column columnName="rowid">
+        <ns:description>The unique ID of the availablility rule.</ns:description>
+      </ns:column>
+      <ns:column columnName="container"/>
+      <ns:column columnName="SortOrder">
+        <ns:description>The order in which this availablility rule is run within its container.</ns:description>
+      </ns:column>
+      <ns:column columnName="RuleType">
+        <ns:description>The type the availablility rule.</ns:description>
+      </ns:column>
+      <ns:column columnName="RuleData">
+        <ns:description>The data specifying how the availablility rule should be run.</ns:description>
+      </ns:column>
+      <ns:column columnName="MarkType">
+        <ns:description>The unique ID of the availablility rule.</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>

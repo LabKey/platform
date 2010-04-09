@@ -35,6 +35,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
@@ -471,10 +472,9 @@ public class SampleManager
         for (Specimen specimen : specimens)
         {
             specimen.setLockedInRequest(lockedInRequest);
-            specimen.setAvailable(isAvailable(specimen));
             Table.update(user, StudySchema.getInstance().getTableInfoVial(), specimen, specimen.getRowId());
         }
-        updateSpecimenCounts(specimens);
+        updateRequestabilityAndCounts(specimens, user);
     }
 
     private Container getContainer(Specimen[] specimens)
@@ -523,7 +523,7 @@ public class SampleManager
                     "WHERE study.Specimen.RowId = VialCounts.SpecimenId";
 
 
-    private void updateSpecimenCounts(Container container, Specimen[] specimens) throws SQLException
+    private void updateSpecimenCounts(Container container, User user, Specimen[] specimens) throws SQLException
     {
         SQLFragment updateSql = new SQLFragment(UPDATE_SPECIMEN_COUNT_SQL_PREFIX,
                 Boolean.TRUE, // AvailableVolume
@@ -554,22 +554,30 @@ public class SampleManager
         Table.execute(StudySchema.getInstance().getSchema(), updateSql);
     }
 
-    public void updateSpecimenCounts(Container container) throws SQLException
+    public void updateSpecimenCounts(Container container, User user) throws SQLException
     {
-        updateSpecimenCounts(container, null);
+        updateSpecimenCounts(container, user, null);
     }
 
-
-    public void updateSpecimenCounts(Specimen[] specimens) throws SQLException
+    public void updateRequestabilityAndCounts(Specimen[] specimens, User user) throws SQLException
     {
         if (specimens.length == 0)
             return;
         Container container = getContainer(specimens);
+
+        // update requestable flags before updating counts, since available count could change:
         for (int start = 0; start < specimens.length; start += 1000)
         {
             Specimen[] subset = new Specimen[Math.min(1000, specimens.length - start)];
             System.arraycopy(specimens, start, subset, 0, subset.length);
-            updateSpecimenCounts(container, subset);
+            RequestabilityManager.getInstance().updateRequestability(container, user, subset);
+        }
+
+        for (int start = 0; start < specimens.length; start += 1000)
+        {
+            Specimen[] subset = new Specimen[Math.min(1000, specimens.length - start)];
+            System.arraycopy(specimens, start, subset, 0, subset.length);
+            updateSpecimenCounts(container, user, subset);
         }
     }
 
@@ -1697,6 +1705,10 @@ public class SampleManager
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenDerivative());
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenPrimaryType());
+
+        Table.delete(StudySchema.getInstance().getTableInfoSampleAvailabilityRule(), containerFilter);
+        assert set.add(StudySchema.getInstance().getTableInfoSampleAvailabilityRule());
+
 
         _requirementProvider.purgeContainer(c);
         assert set.add(StudySchema.getInstance().getTableInfoSampleRequestRequirement());

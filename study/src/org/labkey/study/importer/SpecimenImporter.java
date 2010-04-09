@@ -922,13 +922,13 @@ public class SpecimenImporter
         Map<Integer, SiteImpl> siteMap = new HashMap<Integer, SiteImpl>();
         String vialPropertiesSql = "UPDATE " + StudySchema.getInstance().getTableInfoVial() +
                 " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
-                "FirstProcessedByInitials = ?, AtRepository = ?, Available = ? WHERE RowId = ?";
+                "FirstProcessedByInitials = ?, AtRepository = ? WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
         do
         {
             if (logger != null)
-                logger.info("Determining requestability and current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
+                logger.info("Determining current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
             specimens = Table.select(StudySchema.getInstance().getTableInfoVial(), Table.ALL_COLUMNS,
                     containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
             List<List<?>> vialPropertiesParams = new ArrayList<List<?>>();
@@ -961,23 +961,16 @@ public class SpecimenImporter
                         atRepository = site.isRepository() != null && site.isRepository().booleanValue();
                 }
 
-                // note that we've already updated all specimens with whether they're in a request, so we can use 'specimen.isLockedInRequest' here.
-                // We can't use 'specimen.isAtRepository' since we've just calculated whether we're at a repository so the information in the database
-                // (and in the specimen bean) may not be correct.
-                boolean available = SampleManager.getInstance().isAvailable(specimen.isRequestable(), atRepository, specimen.isLockedInRequest());
-
                 if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
                     !safeIntegerEqual(processingLocation, specimen.getProcessingLocation()) ||
                     !safeObjectEquals(firstProcessedByInitials, specimen.getFirstProcessedByInitials()) ||
-                    atRepository != specimen.isAtRepository() ||
-                    available != specimen.isAvailable())
+                    atRepository != specimen.isAtRepository())
                 {
                     List<Object> params = new ArrayList<Object>();
                     params.add(currentLocation);
                     params.add(processingLocation);
                     params.add(firstProcessedByInitials);
                     params.add(atRepository);
-                    params.add(available);
                     params.add(specimen.getRowId());
                     vialPropertiesParams.add(params);
                 }
@@ -1017,9 +1010,10 @@ public class SpecimenImporter
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
         updateSpecimenProcessingInfo(container, logger);
 
+        RequestabilityManager.getInstance().updateRequestability(container, user, false, logger);
         if (logger != null)
             logger.info("Updating cached vial counts...");
-        SampleManager.getInstance().updateSpecimenCounts(container);
+        SampleManager.getInstance().updateSpecimenCounts(container, user);
         if (logger != null)
             logger.info("Vial count update complete.");
     }
@@ -1312,7 +1306,9 @@ public class SpecimenImporter
         insertSelectSql.append(prefix).append("study.Specimen.RowId");
         insertSelectSql.append(prefix).append("study.Specimen.SpecimenHash");
         insertSelectSql.append(prefix).append("VialList.Container");
-
+        insertSelectSql.append(prefix).append("?");
+        // Set a default value of true for the 'Available' column:
+        insertSelectSql.add(Boolean.TRUE);
 
         for (SpecimenColumn col : info.getAvailableColumns())
         {
@@ -1321,7 +1317,7 @@ public class SpecimenImporter
         }
 
         SQLFragment insertSql = new SQLFragment();
-        insertSql.append("INSERT INTO study.Vial \n(RowId, SpecimenId, SpecimenHash, Container, ");
+        insertSql.append("INSERT INTO study.Vial \n(RowId, SpecimenId, SpecimenHash, Container, Available, ");
         insertSql.append(getVialCols(info.getAvailableColumns())).append(")\n");
         insertSql.append(insertSelectSql).append(" FROM (").append(getVialListFromTempTableSql(info)).append(") VialList");
 

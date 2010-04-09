@@ -229,4 +229,9 @@ public class StudySchema
     {
         return getSchema().getTable("VialCounts");
     }
+
+    public TableInfo getTableInfoSampleAvailabilityRule()
+    {
+        return getSchema().getTable("SampleAvailabilityRule");
+    }
 }
