@@ -95,7 +95,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return _actionResolver;
     }
 
-    private static void registerAction(ActionDescriptor ad)
+    public static void registerAction(ActionDescriptor ad)
     {
         _classToDescriptor.put(ad.getActionClass(), ad);
     }
@@ -526,11 +526,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private final Class _outerClass;
         private final String _pageFlowName;
         private final Map<String, ActionDescriptor> _nameToDescriptor;
+        private final ActionResolver _resolver;
 
-        public DefaultActionResolver(Class outerClass, Class<? extends Controller>... otherClasses)
+        public DefaultActionResolver(Class outerClass,  ActionResolver resolver, Class<? extends Controller>... otherClasses)
         {
             _outerClass = outerClass;
             _pageFlowName = ViewServlet.getPageFlowName(_outerClass);
+            _resolver = resolver;
 
             Map<String, ActionDescriptor> nameToDescriptor = new HashMap<String, ActionDescriptor>();
 
@@ -542,6 +544,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 addAction(nameToDescriptor, actionClass);
 
             _nameToDescriptor = Collections.unmodifiableMap(nameToDescriptor);
+        }
+
+        public DefaultActionResolver(Class outerClass, Class<? extends Controller>... otherClasses)
+        {
+            this(outerClass, null, otherClasses);
         }
 
         private void addInnerClassActions(Map<String, ActionDescriptor> nameToDescriptor, Class outerClass)
@@ -577,7 +584,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
             ActionDescriptor ad = _nameToDescriptor.get(name);
 
             if (ad == null)
+            {
+                if(_resolver != null)
+                {
+                    return _resolver.resolveActionName(actionController, name);
+                }
                 return null;
+            }
 
             Constructor con = ad.getConstructor();
 
