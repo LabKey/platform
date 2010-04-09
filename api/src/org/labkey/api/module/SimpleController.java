@@ -20,8 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -38,7 +36,7 @@ import java.util.Collections;
  * Provides a simple Spring controller implementation that resolves action
  * names to html files in the module's views/ directory.
  */
-public class SimpleController extends SpringActionController
+public class SimpleController extends SpringActionController implements SpringActionController.ActionResolver
 {
     public static final String ACTIONS_DIRECTORY = "actions";
     public static final String ACTIONS_FILE = "actions.js";
@@ -48,7 +46,7 @@ public class SimpleController extends SpringActionController
 
     public SimpleController()
     {
-        setActionResolver(new SimpleActionResolver());
+        setActionResolver(this);
     }
 
     private static Resource getViewResource(Module module, String actionName)
@@ -57,6 +55,27 @@ public class SimpleController extends SpringActionController
             return null;
 
         return module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+    }
+
+    public Controller resolveActionName(Controller actionController, String actionName)
+    {
+        String controllerName = getViewContext().getActionURL().getPageFlow();
+        Module module = ModuleLoader.getInstance().getModuleForPageFlow(controllerName);
+
+        Resource r = getViewResource(module, actionName);
+        if (r != null)
+            return new SimpleAction(r);
+
+        return null;
+    }
+
+    public void addTime(Controller action, long elapsedTime)
+    {
+    }
+
+    public Collection<ActionDescriptor> getActionDescriptors()
+    {
+        return Collections.emptyList();
     }
 
     public static ActionURL getBeginViewUrl(Module module, Container container)
