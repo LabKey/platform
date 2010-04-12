@@ -88,9 +88,10 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 //            sql.append(" IS NOT NULL THEN 1 ELSE NULL END) AS ");
 //            sql.append(getSqlDialect().getBooleanDatatype());
 //            sql.append("))");
-            sql = new SQLFragment("(EXISTS (SELECT ExperimentId FROM ");
+            SqlDialect d = getSqlDialect();
+            sql = new SQLFragment("(CASE WHEN EXISTS (SELECT ExperimentId FROM ");
             sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId))");
+            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
         }
         else
         {
