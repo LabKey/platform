@@ -190,7 +190,7 @@ LABKEY.requiresExtJs = function(immediate)
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css', true);
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
+//    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
 
 
