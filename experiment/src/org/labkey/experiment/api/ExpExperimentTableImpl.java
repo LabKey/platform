@@ -82,12 +82,15 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         SQLFragment sql;
         if (run != null)
         {
-            sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
+//            sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
+//            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
+//            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
+//            sql.append(" IS NOT NULL THEN 1 ELSE NULL END) AS ");
+//            sql.append(getSqlDialect().getBooleanDatatype());
+//            sql.append("))");
+            sql = new SQLFragment("(EXISTS (SELECT ExperimentId FROM ");
             sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
-            sql.append(" IS NOT NULL THEN 1 ELSE NULL END) AS ");
-            sql.append(getSqlDialect().getBooleanDatatype());
-            sql.append("))");
+            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId))");
         }
         else
         {

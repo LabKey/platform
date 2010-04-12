@@ -501,12 +501,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         @Override
                         public SQLFragment getValueSql(String tableAlias)
                         {
-                            SQLFragment sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
+                            SQLFragment sql = new SQLFragment("(EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-                            sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ")");
-                            sql.append(" IS NOT NULL THEN 1 ELSE 0 END) AS ");
-                            sql.append(parent.getSqlDialect().getBooleanDatatype());
-                            sql.append("))");
+                            sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + "))");
+//                            SQLFragment sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
+//                            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
+//                            sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ")");
+//                            sql.append(" IS NOT NULL THEN 1 ELSE 0 END) AS ");
+//                            sql.append(parent.getSqlDialect().getBooleanDatatype());
+//                            sql.append("))");
                             return sql;
                         }
                     };
