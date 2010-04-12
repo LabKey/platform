@@ -78,7 +78,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.adminOptions.on('actionConfigChanged', this.updateToolbarButtons, this);
         this.adminOptions.on('filePropConfigChanged', this.onFilePropConfigChanged, this);
 
-        this.on(BROWSER_EVENTS.transfercomplete, this.onCustomFileProperties, this);
+        this.on(BROWSER_EVENTS.transferstarted, this.onCustomFileProperties, this);
 
         // get the initial admin configuration
         this.updateActionConfiguration(false, false);
@@ -103,6 +103,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             iconCls: 'iconConfigure',
             tooltip: 'Configure the buttons shown on the toolbar',
             listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
+        });
+
+        this.actions.editFileProps = new Ext.Action({
+            //text: 'Admin',
+            iconCls: 'iconEditFileProps',
+            tooltip: 'Edit properties on the selected file(s)',
+            listeners: {click:function(button, event) {this.onEditFileProps(button);}, scope:this}
         });
     },
 
@@ -377,12 +384,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     onSelectionChange : function(record)
     {
         this.enableImportData(false);
-
         if (this.pipelineActions)
         {
             var selections = this.grid.selModel.getSelections();
             var emptySelection = false;
 
+            this.actions.editFileProps.setDisabled(!selections.length);
+            
             if (!selections.length && this.grid.store.data)
             {
                 emptySelection = true;
@@ -764,135 +772,36 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
     },
 
+    onEditFileProps : function(btn)
+    {
+        // edit the file properties of the current selection
+        var selections = this.grid.selModel.getSelections();
+
+        if (selections.length && this.grid.store.data)
+        {
+            var files = [];
+
+            for (var i=0; i < selections.length; i++)
+            {
+                var selection = selections[i].data;
+                selection.id = selection.uri;
+                files.push(selection);
+            }
+            this.onCustomFileProperties({files: files});
+        }
+    },
+
     onCustomFileProperties : function(options)
     {
         if (!this.adminOptions.isCustomFileProperties())
             return;
 
-        //var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields, files: options.files});
+        var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields, files: options.files});
 
-        //fileDlg.on('success', function(c){this.updateActionConfiguration(true, true);}, this, {single:true});
+        fileDlg.on('success', function(c){this.refreshDirectory();}, this, {single:true});
         //fileDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
 
-        //fileDlg.show();
-
-        // just handle single file upload case for now
-        if (options.files.length == 1 && this.adminOptions.fileFields)
-        {
-            var fopts = options.files[0];
-
-            // we only want the list of extra columns in the form
-            var columns = [];
-            for (var i=0; i < this.adminOptions.fileFields.length; i++)
-                columns.push(this.adminOptions.fileFields[i].name);
-
-            LABKEY.Query.selectRows({
-                schemaName:'exp',
-                queryName:'Datas',
-                maxRows: 1,
-                scope: this,
-                requiredVersion: '9.1',
-                columns: columns.join(','),
-                successCallback:function(data, resp){
-
-                    var fields = [];
-                    for (var i=0; i < data.metaData.fields.length; i++)
-                    {
-                        var field = data.metaData.fields[i];
-                        if (field.name != 'RowId')
-                            fields.push(field);
-                    }
-
-                    var cm = [];
-                    for (var i=0; i < data.columnModel.length; i++)
-                    {
-                        var col = data.columnModel[i];
-                        col.editable = true;
-
-                        cm.push(col);
-                    }
-                    var formPanel = new LABKEY.ext.FormPanel({
-                        addAllFields: true,
-                        border: false,
-                        flex: 1,
-//                        bodyStyle : 'padding:10px;',
-                        columnModel: cm,
-                        metaData: {fields: fields}
-                    });
-                    formPanel.add({name: 'uri', xtype: 'hidden', value: fopts.id});
-
-                    var statusPanel = new Ext.Panel({
-                        id: 'file-props-status',
-                        border: false,
-                        height: 30
-                    })
-                    var panel = new Ext.Panel({
-                        layout: 'vbox',
-                        layoutConfig: {
-                            align: 'stretch',
-                            pack: 'start'
-                        },
-                        bodyStyle : 'padding:10px;',
-                        items:[formPanel, statusPanel]
-                    });
-
-                    var win = new Ext.Window({
-                        title: 'Extended File Properties',
-                        width: 400,
-                        height: 300,
-                        cls: 'extContainer',
-                        autoScroll: true,
-                        closeAction:'close',
-                        modal: true,
-                        layout: 'fit',
-                        items: [panel],
-                        bbar: [{ xtype: 'tbtext', text: '',id:'statusTxt' }],
-                        buttons: [{
-                            text: 'Submit',
-                            id: 'btn_submit',
-                            listeners: {click:function(button, event) {
-                                var form = formPanel.getForm();
-
-                                if (form && !form.isValid())
-                                {
-                                    Ext.Msg.alert('Extended File Properties', 'Not all fields have been properly completed');
-                                    return false;
-                                }
-
-                                form.doAction('submit', {
-                                    url: LABKEY.ActionURL.buildURL("filecontent", "saveCustomFileProps"),
-                                    waitMsg:'Submiting Form...',
-                                    method: 'POST',
-                                    success: function(){
-                                        this.refreshDirectory();
-                                        win.close();
-                                    },
-                                    failure: function(form, action){
-                                        var errorTxt = 'An error occurred submitting the .';
-                                        var jsonResponse = Ext.util.JSON.decode(action.response.responseText);
-                                        if (jsonResponse && jsonResponse.errors)
-                                        {
-                                            errorTxt = '<span class="labkey-error">' + jsonResponse.errors._form + '</span>'
-                                        }
-                                        var el = Ext.get('file-props-status');
-                                        if (el)
-                                            el.update(errorTxt);
-                                        //win.getBottomToolbar().get(0).setText(errorTxt);
-                                    },
-                                    scope: this,
-                                    clientValidation: false
-                                });},
-                                scope:this}
-                        },{
-                            text: 'Cancel',
-                            id: 'btn_cancel',
-                            handler: function(){win.close();}
-                        }]
-                    });
-                    win.show();
-                }
-            });
-        }
+        fileDlg.show();
     },
 
     onFilePropConfigChanged : function(config)

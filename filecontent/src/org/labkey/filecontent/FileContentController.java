@@ -19,6 +19,7 @@ package org.labkey.filecontent;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
@@ -34,10 +35,7 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.*;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.files.FileUrls;
-import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.files.UnsetRootDirectoryException;
+import org.labkey.api.files.*;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -50,6 +48,7 @@ import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -71,6 +70,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URI;
 import java.util.*;
 
 
@@ -837,6 +837,167 @@ public class FileContentController extends SpringActionController
         public void setUri(String uri)
         {
             _uri = uri;
+        }
+    }
+
+
+    public static class FilePropsForm implements CustomApiForm
+    {
+        private Map<String,Object> _props;
+
+        public void bindProperties(Map<String, Object> props)
+        {
+            _props = props;
+        }
+
+        public Map<String,Object> getProps()
+        {
+            return _props;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class UpdateFilePropsAction extends MutatingApiAction<FilePropsForm>
+    {
+        private List<Map<String, Object>> _files;
+        private DomainProperty[] _domainProps;
+
+        public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
+        {
+/*
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+
+            FilesAdminOptions options = FilesAdminOptions.fromJSON(container, form.getProps());
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            svc.setAdminOptions(getContainer(), options);
+*/
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            for (Map<String, Object> fileProps : _files)
+            {
+                String uri = String.valueOf(fileProps.get("id"));
+
+                if (!StringUtils.isEmpty(uri))
+                {
+                    Path path = Path.decode(uri);
+
+                    if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
+                    {
+                        String newPath = path.toString();
+                        int idx = newPath.indexOf(WebdavService.getPath().toString());
+
+                        if (idx != -1)
+                        {
+                            newPath = newPath.substring(idx);
+                            path = Path.parse(newPath);
+                        }
+                    }
+                    WebdavResource resource = WebdavService.get().getResolver().lookup(path);
+                    if (resource != null)
+                    {
+                        ExpData data = FileContentServiceImpl.getDataObject(resource, getContainer(), getUser(), true);
+                        if (data != null)
+                        {
+                            try {
+                                for (DomainProperty prop : _domainProps)
+                                {
+                                    Object o = fileProps.get(prop.getName());
+                                    if (o != null && !StringUtils.isBlank(String.valueOf(o)))
+                                    {
+                                        data.setProperty(getUser(), prop.getPropertyDescriptor(), o);
+                                    }
+                                }
+                                response.put("success", true);
+                            }
+                            catch (ValidationException e){}
+                        }
+                        else
+                            response.put("success", false);
+
+                    }
+                }
+            }
+            return response;
+        }
+
+        private static final String FILE_PROP_ERROR = "%s : %s";
+
+        @Override
+        public void validateForm(FilePropsForm form, Errors errors)
+        {
+            _files = parseFromJSON(form.getProps());
+
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
+
+            if (dd != null)
+            {
+                Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+                if (domain != null)
+                {
+                    ValidatorContext validatorCache = new ValidatorContext(getContainer(), getUser());
+                    List<ValidationError> validationErrors = new ArrayList<ValidationError>();
+                    _domainProps = domain.getProperties();
+
+                    for (Map<String, Object> fileProps : _files)
+                    {
+                        String name = String.valueOf(fileProps.get("name"));
+                        for (DomainProperty dp : _domainProps)
+                        {
+                            Object o = fileProps.get(dp.getName());
+                            if (!validateProperty(dp, String.valueOf(o), validationErrors, validatorCache))
+                            {
+                                for (ValidationError ve : validationErrors)
+                                    errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, name, ve.getMessage()));
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private List<Map<String, Object>> parseFromJSON(Map<String, Object> props)
+        {
+            List<Map<String, Object>> files = new ArrayList<Map<String, Object>>();
+
+            if (props.containsKey("files"))
+            {
+                Object fileObj = props.get("files");
+                if (fileObj instanceof JSONArray)
+                {
+                    JSONArray jarray = (JSONArray)fileObj;
+
+                    for (int i=0; i < jarray.length(); i++)
+                    {
+                        Map<String, Object> fileProps = new HashMap<String, Object>();
+
+                        JSONObject jobj = jarray.getJSONObject(i);
+                        if (jobj != null)
+                        {
+                            for (Map.Entry<String, Object> entry : jobj.entrySet())
+                            {
+                                fileProps.put(entry.getKey(), entry.getValue());
+                            }
+                        }
+                        files.add(fileProps);
+                    }
+                }
+            }
+            return files;
+        }
+
+        private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
+        {
+            boolean ret = true;
+            for (IPropertyValidator validator : prop.getValidators())
+            {
+                if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
+            }
+            return ret;
         }
     }
 
