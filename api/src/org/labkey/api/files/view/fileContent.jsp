@@ -15,23 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
-<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <script type="text/javascript">
@@ -42,7 +36,7 @@
     LABKEY.requiresScript("FileUploadField.js");
     LABKEY.requiresScript("ActionsAdmin.js");
     LABKEY.requiresScript("PipelineAction.js");
-    //LABKEY.requiresScript("FileProperties.js");
+    LABKEY.requiresScript("FileProperties.js");
     LABKEY.requiresScript("FileContent.js");
 </script>
 
@@ -107,39 +101,10 @@ var buttonActions = [];
 <%
     }
 %>
-function renderBrowser(rootPath, dir, renderTo)
+function renderBrowser(rootPath, renderTo)
 {
-    var configureAction = new Ext.Action({text: 'Configure', handler: function()
-    {
-        window.location = <%=PageFlowUtil.jsString(PageFlowUtil.urlProvider(FileUrls.class).urlShowAdmin(c).getLocalURIString())%>;
-    }});
-
-    var dropAction = new Ext.Action({text: 'Upload multiple files', scope:this, disabled:false, handler: function()
-    {
-        var dropUrl = <%=PageFlowUtil.jsString((new ActionURL("ftp","drop",c)).getEncodedLocalURIString() + (null == me.getFileSet() ? "" : "fileSetName=" + PageFlowUtil.encode(root.getLabel())))%>;
-        window.open(dropUrl, '_blank', 'height=600,width=1000,resizable=yes');
-    }});
-
-    // TODO even better just refresh/rerender the browser not the whole page
-    var combo = new Ext.form.ComboBox({
-        name: 'filesetComboBox',
-        store: fileSets,
-        typeAhead: true,
-        mode: 'local',
-        triggerAction: 'all',
-        selectOnFocus:true,
-        width:135,
-        value:selectedValue
-    });
-    combo.on("select",function(){
-        var value = combo.getValue();
-        if (value.indexOf("showAdmin.view") != -1)
-            window.location=value;
-        else
-            fileBrowser.changeDirectory(value);
-    });
-
     if (!fileSystem)
+    {
         fileSystem = new LABKEY.WebdavFileSystem({
             extraPropNames: ['description', 'actions'],
 
@@ -179,7 +144,7 @@ function renderBrowser(rootPath, dir, renderTo)
             baseUrl:rootPath,
             rootName:'fileset'
         });
-
+    }
     var prefix = undefined;
 
 <%  if (bean.getStatePrefix() != null) { %>
@@ -196,33 +161,13 @@ function renderBrowser(rootPath, dir, renderTo)
         showProperties: false,
         showDetails: <%=bean.isShowDetails()%>,
         allowChangeDirectory: true,
-        //actions: {drop:dropAction, configure:configureAction},
         tbarItems: buttonActions,
         isPipelineRoot: <%=bean.isPipelineRoot()%>,
         adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
         statePrefix: prefix
-/*
-        buttonCfg:['download','deletePath','refresh'
-        <%=c.hasPermission(context.getUser(), InsertPermission.class)?",'uploadTool'":""%>
-        ,'->'
-        , new Ext.form.Label({html:'File Set:&nbsp;'}), combo
-        <%=c.hasPermission(context.getUser(), AdminPermission.class)?",'configure'":""%>
-        ]
-*/
     });
 
     fileBrowser.height = 350;
-/*
-    fileBrowser.on("doubleclick", function(record){
-        var contentType = record.data.contentType || "attachment";
-        var location = "<%=PageFlowUtil.encodePath(request.getContextPath())%>/files<%=c.getEncodedPath()%>" + encodeURI(record.data.name) + "?renderAs=DEFAULT<%=me.getFileSet()==null ? "" : "&fileSet=" + PageFlowUtil.encode(me.getFileSet())%>";
-        if (0 == contentType.indexOf("image/") || 0 == contentType.indexOf("text/"))
-            window.open(location,"_blank");
-        else
-            window.location = location;
-        });
-*/
-
     fileBrowser.render(renderTo);
 
     var _resize = function(w,h)
@@ -262,47 +207,8 @@ function renderBrowser(rootPath, dir, renderTo)
     }
     %>
 }
-    var fileSets = [
-<%
-        boolean navigate = false;
-        String selectedValue = null;
-        ActionURL url = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c);
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        AttachmentDirectory main = svc.getMappedAttachmentDirectory(c, false);
-        if (null != main && null != main.getFileSystemDirectory())
-        {
-            String value = navigate ? url.getLocalURIString() : "/";
-            out.write("[" + q(value) + ",'Default']");
-            if (StringUtils.isEmpty(me.getFileSet()) || StringUtils.equals(me.getFileSet(),"Default"))
-                selectedValue = value;
-        }
-        for (AttachmentDirectory attDir : svc.getRegisteredDirectories(c))
-        {
-            String name = attDir.getLabel();
-            url.replaceParameter("fileSetName",name);
-            String value = navigate ? url.getLocalURIString() : "/@filesets/" + name;
-            out.write(",[" + q(value) + "," + q(name) + "]");
-            if (StringUtils.equals(me.getFileSet(),name))
-                selectedValue = value;
-        }
-        if (c.hasPermission(context.getUser(), AdminPermission.class))
-        {
-    //        out.write(",[" + q(new ActionURL(FileContentController.ShowAdminAction.class,c).getLocalURIString()) + ",'[configure]']");
-        }
-%>
-    ];
-
-    var selectedValue = <%=q(selectedValue)%>;
-<%
-    Path startDir = bean.getDirectory();
-    if (null == startDir)
-    {
-        // UNDONE: pipeline used to remember last open directory state
-        startDir = Path.rootPath;
-    }
-%>
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>
-        Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(startDir.toString())%>, <%=q(bean.getContentId())%>);});
+        Ext.onReady(function(){renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>);});
 <%  } %>
 </script>

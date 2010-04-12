@@ -2506,6 +2506,7 @@ internal/webapp/_images/downarrow.gif -text
 internal/webapp/_images/downarrow_disabled.gif -text
 internal/webapp/_images/download.png -text
 internal/webapp/_images/download_manager.png -text
+internal/webapp/_images/editprops.png -text
 internal/webapp/_images/elipsis.gif -text
 internal/webapp/_images/exclaim.gif -text
 internal/webapp/_images/expand_folders.gif -text svneol=unset#unset

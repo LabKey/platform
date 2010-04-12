@@ -164,8 +164,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
 
         if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
+        {
+            actions.add(FilesForm.actions.editFileProps);
             actions.add(FilesForm.actions.upload);
-
+        }
 
         if (canDisplayPipelineActions())
         {
@@ -353,6 +355,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             importData,
             customize,
             folderTreeToggle,
+            editFileProps,
         }
 
         public boolean isAutoResize()
