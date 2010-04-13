@@ -98,6 +98,11 @@ public class OntologyManager
 
     public static String[] insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
+        return insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, null);
+    }
+
+    public static String[] insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
+    {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
 		CPUTimer ensure = new CPUTimer("ensureObject");
@@ -201,9 +206,11 @@ public class OntologyManager
 
                     if (++batchCount % UPDATE_STATS_BATCH_COUNT == 0)
                     {
+                        if (logger != null) logger.debug("inserted row " + rowCount + "...");
                         getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObject());
                         getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObjectProperty());
                         helper.updateStatistics(rowCount);
+                        if (logger != null) logger.debug("updated statistics");
                     }
                 }
             }
@@ -215,10 +222,7 @@ public class OntologyManager
 			insertPropertiesBulk(c, propsToInsert);
             helper.afterBatchInsert(rowCount);
 			assert insert.stop();
-
-            getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObject());
-            getExpSchema().getSqlDialect().updateStatistics(OntologyManager.getTinfoObjectProperty());
-            helper.updateStatistics(rowCount);
+            if (logger != null) logger.debug("inserted row " + rowCount + ".");
 		}
 		catch (SQLException x)
 		{
@@ -442,6 +446,11 @@ public class OntologyManager
 
     public static void deleteOntologyObjects(Integer[] objectIds, Container c, boolean deleteOwnedObjects) throws SQLException
     {
+        deleteOntologyObjects(objectIds, c, deleteOwnedObjects, true);
+    }
+
+    private static void deleteOntologyObjects(Integer[] objectIds, Container c, boolean deleteOwnedObjects, boolean deleteObjects) throws SQLException
+    {
         if (objectIds.length == 0)
             return;
 
@@ -460,7 +469,7 @@ public class OntologyManager
                     System.err.println("delete " + s + "-" + end);
                     sub.clear();
                     sub.addAll(Arrays.asList(objectIds).subList(s, end));
-                    deleteOntologyObjects(sub.toArray(new Integer[sub.size()]), c, deleteOwnedObjects);
+                    deleteOntologyObjects(sub.toArray(new Integer[sub.size()]), c, deleteOwnedObjects, deleteObjects);
                 }
 
                 return;
@@ -492,13 +501,16 @@ public class OntologyManager
                 Table.execute(getExpSchema(), sqlDeleteOwnedObjects.toString(), null);
             }
 
-            deleteProperties(objectIds, c);
+            if (deleteObjects)
+            {
+                deleteProperties(objectIds, c);
 
-            StringBuilder sqlDeleteObjects = new StringBuilder();
-            sqlDeleteObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
-            sqlDeleteObjects.append(in);
-            sqlDeleteObjects.append(")");
-            Table.execute(getExpSchema(), sqlDeleteObjects.toString(), null);
+                StringBuilder sqlDeleteObjects = new StringBuilder();
+                sqlDeleteObjects.append("DELETE FROM " + getTinfoObject() + " WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
+                sqlDeleteObjects.append(in);
+                sqlDeleteObjects.append(")");
+                Table.execute(getExpSchema(), sqlDeleteObjects.toString(), null);
+            }
         }
         finally
         {
@@ -515,8 +527,15 @@ public class OntologyManager
         if (null != ontologyObject)
         {
             Integer objid = ontologyObject.getObjectId();
-            deleteOntologyObjects(new Integer[]{objid}, container, deleteOwnedObjects);
+            deleteOntologyObjects(new Integer[]{objid}, container, deleteOwnedObjects, true);
         }
+    }
+
+
+    /** Delete owned properties and objects, but not the object itself or it's properties. */
+    public static void deleteOntologyObjectChildren(Integer[] ownerIds, Container container) throws SQLException
+    {
+        deleteOntologyObjects(ownerIds, container, true, false);
     }
 
 
