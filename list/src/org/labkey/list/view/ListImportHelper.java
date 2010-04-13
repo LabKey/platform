@@ -85,7 +85,7 @@ public class ListImportHelper implements OntologyManager.ImportHelper
             }
 
             String ret = ((ListItemImpl) item).ensureOntologyObject().getObjectURI();
-            item.save(_user);
+            ((ListItemImpl)item).save(_user, false);
 
             List<AttachmentFile> attachmentFiles = new LinkedList<AttachmentFile>();
 

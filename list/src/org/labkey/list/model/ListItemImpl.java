@@ -216,6 +216,11 @@ public class ListItemImpl implements ListItem
 
     public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
     {
+        save(user, true);
+    }
+
+    public void save(User user, boolean audit) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
+    {
         boolean fTransaction = false;
         try
         {
@@ -249,7 +254,8 @@ public class ListItemImpl implements ListItem
                     throw new ValidationException(errors);
             }
 
-            oldRecord = _formatItemRecord(user, _oldProperties, dps, (_itmOld != null ? _itmOld.getKey() : null));
+            if (audit)
+                oldRecord = _formatItemRecord(user, _oldProperties, dps, (_itmOld != null ? _itmOld.getKey() : null));
             if (_oldProperties != null)
             {
                 AttachmentParent parent = new ListItemAttachmentParent(this, _list.getContainer());
@@ -307,9 +313,12 @@ public class ListItemImpl implements ListItem
                 _itmOld = null;
             }
 
-            newRecord = _formatItemRecord(user, _properties, dps, _itm.getKey());
-            addAuditEvent(user, isNew ? "A new list record was inserted" : "An existing list record was modified",
-                    _itm.getEntityId(), oldRecord, newRecord);
+            if (audit)
+            {
+                newRecord = _formatItemRecord(user, _properties, dps, _itm.getKey());
+                addAuditEvent(user, isNew ? "A new list record was inserted" : "An existing list record was modified",
+                        _itm.getEntityId(), oldRecord, newRecord);
+            }
 
             if (fTransaction)
             {

@@ -113,7 +113,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     {
         return super.getDetailsURL(columns, container);
     }
-    
+
 
     public ColumnInfo createColumn(String alias, Column column)
     {
@@ -300,6 +300,13 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     public void setDataType(DataType type)
     {
         _type = type;
+        getFilter().deleteConditions("LSID");
+        if (_type != null)
+        {
+            addCondition(new SQLFragment("LSID LIKE 'urn:lsid:%:'" +
+                    getSqlDialect().getConcatenationOperator() + "?" +
+                    getSqlDialect().getConcatenationOperator() + "'%'", _type.getNamespacePrefix()), "LSID");
+        }
     }
 
     public String urlFlag(boolean flagged)
