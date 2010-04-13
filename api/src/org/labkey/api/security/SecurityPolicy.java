@@ -83,6 +83,25 @@ public class SecurityPolicy
         }
     }
 
+    /**
+     * Creates a new policy for the same resource as the other policy, with the same role assignments
+     * @param otherPolicy A template policy
+     */
+    public SecurityPolicy(@NotNull SecurityPolicy otherPolicy)
+    {
+        _resourceId = otherPolicy._resourceId;
+        _resourceClass = otherPolicy._resourceClass;
+        _containerId = otherPolicy._containerId;
+        for(RoleAssignment assignment : otherPolicy.getAssignments())
+        {
+            RoleAssignment newAssignment = new RoleAssignment();
+            newAssignment.setResourceId(_resourceId);
+            newAssignment.setUserId(assignment.getUserId());
+            newAssignment.setRole(assignment.getRole());
+            _assignments.add(newAssignment);
+        }
+    }
+
     @NotNull
     public String getResourceId()
     {

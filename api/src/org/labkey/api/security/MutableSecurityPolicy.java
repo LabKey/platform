@@ -39,6 +39,11 @@ import java.util.*;
  */
 public class MutableSecurityPolicy extends SecurityPolicy
 {
+    public MutableSecurityPolicy(@NotNull SecurityPolicy sourcePolicy)
+    {
+        super(sourcePolicy);
+    }
+
     public MutableSecurityPolicy(@NotNull SecurableResource resource)
     {
         super(resource);
