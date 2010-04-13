@@ -576,7 +576,7 @@ public class SecurityApiActions
                 Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
                 Role fldrAdminRole = RoleManager.getRole(FolderAdminRole.class);
 
-                MutableSecurityPolicy mpolicy = new MutableSecurityPolicy(resource, policy);
+                MutableSecurityPolicy mpolicy = new MutableSecurityPolicy(policy);
                 for (RoleAssignment ra : policy.getAssignments())
                 {
                     if (ra.getRole().equals(projAdminRole))
