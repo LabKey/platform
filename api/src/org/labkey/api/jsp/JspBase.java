@@ -138,6 +138,7 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
      */
     protected String q(String str)
     {
+        if (null == str) return "null";
         str = StringUtils.replace(str, "\\", "\\\\");
         str = StringUtils.replace(str, "'", "\\'");
         str = StringUtils.replace(str, "\n", "\\n");
