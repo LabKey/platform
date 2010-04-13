@@ -197,6 +197,7 @@ else
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("applet.js",true);
     LABKEY.requiresScript("FileUploadField.js");
+    LABKEY.requiresScript("StatusBar.js");
 </script>
 <script type="text/javascript">
 var fileSystem;

@@ -5,6 +5,8 @@
  */
 
 LABKEY.requiresCss("_images/icons.css");
+LABKEY.requiresScript("StatusBar.js",true);
+
 
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
@@ -2316,9 +2318,17 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.selectFile(record);
     },
 
-    Grid_onSelectionChange : function(rowIndex, keepExisting, record)
+    // UNDONE: multiselect?
+    Grid_onSelectionChange : function(event)
     {
-        this.fireEvent(BROWSER_EVENTS.selectionchange, record);
+        if (event.selections.getCount() == 0)
+        {
+            this.fireEvent(BROWSER_EVENTS.selectionchange, null);
+        }
+        else
+        {
+            this.fireEvent(BROWSER_EVENTS.selectionchange, event.selections.itemAt(0));
+        }
     },
 
     Grid_onKeypress : function(e)
