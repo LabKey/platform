@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-ALTER TABLE study.Vial ADD AvailabilityReason VARCHAR(256);
+/* this change is conditionally handled in script 10.11-10.12
 
-CREATE TABLE study.SampleAvailabilityRule
-(
-  RowId SERIAL NOT NULL,
-  Container EntityId NOT NULL,
-  SortOrder INTEGER NOT NULL,
-  RuleType VARCHAR(50),
-  RuleData VARCHAR(250),
-  MarkType VARCHAR(30),
-  CONSTRAINT PL_SampleAvailabilityRule PRIMARY KEY (RowId)
-);
+CREATE INDEX IX_StudyData_Participant
+  ON study.StudyData
+  USING btree
+  (container, participantid);
+*/

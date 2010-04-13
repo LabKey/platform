@@ -207,7 +207,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 // import the data
                 StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), def, new TabLoader(sb, true),
-                        System.currentTimeMillis(), columnMap, errors, true, null);
+                        System.currentTimeMillis(), columnMap, errors, true, true, null, null);
 
                 if (errors.isEmpty())
                 {
@@ -305,8 +305,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     Map<String, String> columnMap = getColumnMap(d, view, def.getColumns());
 
                     // import the new data
-                    String[] newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(),
-                            columnMap, errors, true, null);
+                    String[] newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);
 
                     if (!errors.isEmpty())
                         return null;

@@ -1412,6 +1412,14 @@ public class StudyManager
 
     public int purgeDataset(Study study, DataSetDefinition dataset)
     {
+        return purgeDataset(study, dataset, null);
+    }
+
+    /**
+     * Delete all rows from a dataset or just those newer than the cutoff date.
+     */
+    public int purgeDataset(Study study, DataSetDefinition dataset, Date cutoff)
+    {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
         Container c = study.getContainer();
         int count;
@@ -1425,13 +1433,21 @@ public class StudyManager
         {
             CPUTimer time = new CPUTimer("purge");
             time.start();
+
             SQLFragment sub = new SQLFragment("SELECT LSID FROM " + data + " " + "WHERE Container = ? and DatasetId = ?",
                     c.getId(), dataset.getDataSetId());
+            if (cutoff != null)
+                sub.append(" AND _VisitDate > ?").add(cutoff);
             OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sub, c, false);
-            count = Table.execute(StudySchema.getInstance().getSchema(),
+
+            SQLFragment studyDataFrag = new SQLFragment(
                     "DELETE FROM " + data + "\n" +
                     "WHERE Container = ? and DatasetId = ?",
                     new Object[] {c.getId(), dataset.getDataSetId()});
+            if (cutoff != null)
+                studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
+            count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
+
             time.stop();
             _log.debug("purgeDataset " + dataset.getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
         }
@@ -2278,23 +2294,21 @@ public class StudyManager
         return null;
     }
 
-    public String[] importDatasetData(Study study, User user, DataSetDefinition def,
-                                      DataLoader<Map<String, Object>> loader, long lastModified,
-                                      Map<String, String> columnMap, List<String> errors,
-                                      boolean checkDuplicates,
-                                      QCState defaultQCState)
+    public String[] importDatasetData(Study study, User user, DataSetDefinition def, DataLoader<Map<String, Object>> loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
         throws IOException, ServletException, SQLException
     {
         List<Map<String, Object>> dataMaps = parseData(user, def, loader, columnMap, errors);
-        return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
+        if (logger != null) logger.debug("parsed " + dataMaps.size() + " rows");
+        String[] lsids = importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, ensureObjects, defaultQCState, logger);
+        if (logger != null) logger.debug("imported " + lsids.length + " rows");
+        return lsids;
     }
 
 
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public String[] importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String, Object>> dataMaps, long lastModified,
-                                      List<String> errors, boolean checkDuplicates, QCState defaultQCState)
+    public String[] importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String, Object>> dataMaps, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws SQLException
     {
         if (dataMaps.size() == 0)
@@ -2417,6 +2431,7 @@ public class StudyManager
             if (errors.size() > 0)
                 return imported;
         }
+        if (logger != null) logger.debug("checked for missing values");
 
         String keyPropertyURI = null;
         String keyPropertyName = def.getKeyPropertyName();
@@ -2473,6 +2488,7 @@ public class StudyManager
                     errors.add(err);
                 }
             }
+            if (logger != null) logger.debug("checked for duplicates");
         }
         if (errors.size() > 0)
             return imported;
@@ -2541,6 +2557,7 @@ public class StudyManager
                                 dataMap.put(qcStatePropertyURI, defaultQCState.getRowId());
                         }
                     }
+                    if (logger != null) logger.debug("handled qc state");
                 }
 
                 //
@@ -2563,21 +2580,25 @@ public class StudyManager
                             dataMap.put(keyPropertyURI, currentKey);
                         }
                     }
+                    if (logger != null) logger.debug("generated keys");
                 }
 
                 String typeURI = def.getTypeURI();
                 PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
                 helper = new DatasetImportHelper(user, scope.getConnection(), c, def, lastModified);
-                imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, true);
+                imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, ensureObjects, logger);
 
                 if (startedTransaction)
                 {
+                    if (logger != null) logger.debug("starting commit...");
                     scope.commitTransaction();
                     startedTransaction = false;
+                    if (logger != null) logger.debug("commit complete");
                 }
             }
 
             _dataSetHelper.clearCache(def);
+            if (logger != null) logger.debug("cleared cache and umaterialized dataset");
         }
         catch (ValidationException ve)
         {
@@ -2713,12 +2734,11 @@ public class StudyManager
      */
     private int getMaxKeyValue(DataSetDefinition dataset, User user) throws SQLException
     {
-        TableInfo tInfo = dataset.getTableInfo(user);
-
-        String keyName = tInfo.getColumn(dataset.getKeyPropertyName()).getSelectName();
+        TableInfo tInfo = StudySchema.getInstance().getTableInfoStudyData();
         Integer newKey = Table.executeSingleton(tInfo.getSchema(),
-                "SELECT COALESCE(MAX(" + keyName + "), 0) FROM " + tInfo,
-                new Object[0],
+                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo +
+                " WHERE container = ? AND datasetid = ?",
+                new Object[] { dataset.getContainer(), dataset.getDataSetId() },
                 Integer.class
                 );
         return newKey.intValue();

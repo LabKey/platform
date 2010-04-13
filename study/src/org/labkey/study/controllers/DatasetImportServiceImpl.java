@@ -86,7 +86,9 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
                 columnMap,
                 errors,
                 true,
-                StudyManager.getInstance().getDefaultQCState(study)
+                true,
+                StudyManager.getInstance().getDefaultQCState(study),
+                null
             );
         }
         catch (IOException e)

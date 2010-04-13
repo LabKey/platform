@@ -28,6 +28,7 @@ import org.labkey.api.study.StudyService;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.sql.SQLException;
 
@@ -35,9 +36,9 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 {
     private String _siteLookup = "RowId";
 
-    ParticipantImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Map<String, String> columnMap)
+    ParticipantImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
-        super(task, ds, tsv, action, deleteAfterImport, columnMap);
+        super(task, ds, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap);
     }
 
 

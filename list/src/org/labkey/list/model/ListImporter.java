@@ -111,7 +111,7 @@ public class ListImporter
                     List<String> errors = def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName), null);
 
                     for (String error : errors)
-                        log.error(error);
+                        log.error(name + ": " + error);
 
                     // TODO: Error the entire job on import error?
                 }

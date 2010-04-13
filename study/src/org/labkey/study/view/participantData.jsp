@@ -16,18 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="org.labkey.api.util.IdentifierString" %>
-<%@ page import="org.labkey.api.data.CompareType" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="org.labkey.api.data.DisplayColumn" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.query.*" %>
+<%@ page import="org.labkey.api.data.*" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     final ViewContext context = getViewContext();
@@ -44,15 +42,25 @@
         protected void setupDataView(DataView view)
         {
             view.getRenderContext().setBaseSort(new Sort("-Date"));
-
-            SimpleFilter filter = (SimpleFilter)view.getRenderContext().getBaseFilter();
-            if (filter == null)
-                filter = new SimpleFilter();
-            if (bean.getParticipantId() != null)
-                filter.addCondition("ParticipantID", bean.getParticipantId());
-            view.getRenderContext().setBaseFilter(filter);
-
             super.setupDataView(view);
+        }
+
+        @Override
+        protected TableInfo createTable()
+        {
+            TableInfo table = super.createTable();
+            if (bean.getParticipantId() != null)
+            {
+                if (table instanceof FilteredTable)
+                    ((FilteredTable)table).addCondition(new SimpleFilter("ParticipantID", bean.getParticipantId()));
+
+                // remove 'ParticipantId' from the default column list
+                List<FieldKey> visible = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
+                visible.remove(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
+                table.setDefaultVisibleColumns(visible);
+            }
+
+            return table;
         }
 
         protected ActionURL urlFor(QueryAction action)

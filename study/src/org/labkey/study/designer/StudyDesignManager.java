@@ -301,7 +301,9 @@ public class StudyDesignManager
         Table.delete(getStudyDesignTable(), deleteDesignInfoFilter);
     }
 
-    public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate, StudyDesignInfo info, List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws SQLException, XmlException, IOException, ServletException
+    public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate,
+                                         String subjectNounSingular, String subjectNounPlural, String subjectColumnName, StudyDesignInfo info,
+                                         List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws SQLException, XmlException, IOException, ServletException
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)
@@ -319,9 +321,9 @@ public class StudyDesignManager
         StudyImpl study = new StudyImpl(studyFolder, folderName + " Study");
         study.setTimepointType(TimepointType.DATE);
         study.setStartDate(startDate);
-        study.setSubjectNounSingular(def.getAnimalSpecies());
-        study.setSubjectNounPlural(def.getAnimalSpecies() + "s");
-        study.setSubjectColumnName(def.getAnimalSpecies() + "Id");
+        study.setSubjectNounSingular(subjectNounSingular);
+        study.setSubjectNounPlural(subjectNounPlural);
+        study.setSubjectColumnName(subjectColumnName);
         study = StudyManager.getInstance().createStudy(user, study);
 
         List<GWTTimepoint> timepoints = def.getAssaySchedule().getTimepoints();

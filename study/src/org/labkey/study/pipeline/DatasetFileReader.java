@@ -19,6 +19,8 @@ package org.labkey.study.pipeline;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.study.StudyImportException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -29,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -132,6 +135,8 @@ public class DatasetFileReader
         Pattern filePattern = DEFAULT_PATTERN;
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;
+        Date defaultReplaceCutoff = null;
+
         OneToOneStringMap defaultColumnMap = new OneToOneStringMap();
         // see also StudyController.handleImportDataset()
         // UNDONE: share code
@@ -161,6 +166,13 @@ public class DatasetFileReader
             else if (key.equals("default.importallmatches"))
             {
                 importAllMatches = "true".equals(value.trim().toLowerCase());
+            }
+            else if (key.equals("default.replacenewerthandate"))
+            {
+                if ("false".equalsIgnoreCase(value))
+                    defaultReplaceCutoff = null;
+                else
+                    defaultReplaceCutoff = parseDate(value, errors);
             }
             else if (key.startsWith("default.property."))
             {
@@ -193,7 +205,7 @@ public class DatasetFileReader
             DatasetImportRunnable runnable = jobMap.get(ds);
             if (null == runnable)
             {
-                runnable = newImportJob(ds, null, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+                runnable = newImportJob(ds, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             if (propertyKey.equals("file"))
@@ -204,13 +216,20 @@ public class DatasetFileReader
             {
                 runnable._action = actionForName(value);
             }
-            else if (propertyKey.equals("deleteAfterImport"))
+            else if (propertyKey.equals("deleteafterimport"))
             {
                 runnable._deleteAfterImport = "true".equals(value.trim().toLowerCase());
             }
-            else if (propertyKey.equals("visitDatePropertyName"))
+            else if (propertyKey.equals("visitdatepropertyname"))
             {
                 runnable.setVisitDatePropertyName(StringUtils.trimToNull(value));
+            }
+            else if (propertyKey.equals("replacenewerthandate"))
+            {
+                if ("false".equalsIgnoreCase(value))
+                    runnable._replaceCutoff = null;
+                else
+                    runnable._replaceCutoff = parseDate(value, errors);
             }
             else if (propertyKey.startsWith("property."))
             {
@@ -245,7 +264,7 @@ public class DatasetFileReader
             {
                 if (!importAllMatches)
                     continue;
-                runnable = newImportJob(ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+                runnable = newImportJob(ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             else if (runnable._tsv == null)
@@ -268,14 +287,33 @@ public class DatasetFileReader
         });
     }
 
+    private Date parseDate(String value, List<String> errors)
+    {
+        if (value == null)
+            return null;
 
-    private DatasetImportRunnable newImportJob(DataSetDefinition ds, File tsv, Action defaultAction, boolean defaultDeleteAfterImport, OneToOneStringMap defaultColumnMap)
+        try
+        {
+            Date d = DateUtil.parseDateTime(value, "yyyy-MM-dd");
+            d.setHours(0);
+            d.setMinutes(0);
+            d.setSeconds(0);
+            return d;
+        }
+        catch (ParseException pe)
+        {
+            errors.add("Failed to parse replaceNewerThanDate '" + value + "': " + pe.getMessage());
+            return null;
+        }
+    }
+
+    private DatasetImportRunnable newImportJob(DataSetDefinition ds, File tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
     {
         DatasetImportRunnable runnable;
         if (ds.getDataSetId() == -1 && "Participant".equals(ds.getLabel()))
-            runnable = new ParticipantImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+            runnable = new ParticipantImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
-            runnable = new DatasetImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultColumnMap);
+            runnable = new DatasetImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         return runnable;
     }
 

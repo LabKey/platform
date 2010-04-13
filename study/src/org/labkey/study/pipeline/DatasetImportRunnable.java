@@ -17,20 +17,21 @@
 package org.labkey.study.pipeline;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.Filter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DatasetImportRunnable implements Runnable
 {
@@ -39,6 +40,8 @@ public class DatasetImportRunnable implements Runnable
     protected AbstractDatasetImportTask.Action _action = null;
     protected File _tsv;
     protected boolean _deleteAfterImport = false;
+    protected Date _replaceCutoff = null;
+    protected String visitDatePropertyURI = null;
     protected String visitDatePropertyName = null;
 
     protected final DataSetDefinition _datasetDefinition;
@@ -46,12 +49,13 @@ public class DatasetImportRunnable implements Runnable
     protected final Map<String, String> _columnMap = new DatasetFileReader.OneToOneStringMap();
 
 
-    DatasetImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Map<String, String> columnMap)
+    DatasetImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
         _task = task;
         _datasetDefinition = ds;
         _action = action;
         _deleteAfterImport = deleteAfterImport;
+        _replaceCutoff = defaultReplaceCutoff;
         _columnMap.putAll(columnMap);
         _tsv = tsv;
     }
@@ -113,34 +117,70 @@ public class DatasetImportRunnable implements Runnable
         {
             scope.beginTransaction();
 
+            final String visitDatePropertyURI = getVisitDateURI(pj.getUser());
+            boolean useCutoff =
+                    _action == AbstractDatasetImportTask.Action.REPLACE &&
+                    visitDatePropertyURI != null &&
+                    _replaceCutoff != null;
+
             if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
             {
                 assert cpuDelete.start();
-                int rows = _task.getStudyManager().purgeDataset(study, _datasetDefinition);
-                if (_action == AbstractDatasetImportTask.Action.DELETE)
-                    pj.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
+                pj.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
+                int rows = _task.getStudyManager().purgeDataset(study, _datasetDefinition, useCutoff ? _replaceCutoff : null);
+                pj.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }
 
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
-                assert cpuImport.start();
+                final Integer[] skippedRowCount = new Integer[] { 0 };
+                TabLoader loader = new TabLoader(_tsv, true);
+                if (useCutoff)
+                {
+                    loader.setMapFilter(new Filter<Map<String,Object>>()
+                    {
+                        public boolean accept(Map<String, Object> row)
+                        {
+                            Object o = row.get(visitDatePropertyURI);
 
+                            // Allow rows with no Date or those that have failed conversion (e.g., value is a StudyManager.CONVERSION_ERROR)
+                            if (!(o instanceof Date))
+                                return true;
+
+                            // Allow rows after the cutoff date.
+                            if (((Date)o).compareTo(_replaceCutoff) > 0)
+                                return true;
+
+                            skippedRowCount[0]++;
+                            return false;
+                        }
+                    });
+                }
+
+                assert cpuImport.start();
+                pj.info(_datasetDefinition.getLabel() + ": Starting import");
                 String[] imported = _task.getStudyManager().importDatasetData(
                         study,
                         pj.getUser(),
                         _datasetDefinition,
-                        new TabLoader(_tsv, true),
+                        loader,
                         _tsv.lastModified(),
                         _columnMap,
                         errors,
                         false, //Set to TRUE if/when MERGE is implemented
-                        defaultQCState);
+                        false, //Set to TRUE if MERGEing
+                        defaultQCState,
+                        pj.getLogger()
+                );
                 if (errors.size() == 0)
                 {
                     assert cpuCommit.start();
                     scope.commitTransaction();
-                    pj.info(_datasetDefinition.getLabel() + ": Successfully imported " + imported.length + " rows from " + _tsv);
+                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.length + " rows from " + _tsv;
+                    if (useCutoff && skippedRowCount[0] > 0)
+                        msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
+                    pj.info(msg);
                     assert cpuCommit.stop();
                     getDatasetDefinition().unmaterialize();
                 }
@@ -213,5 +253,20 @@ public class DatasetImportRunnable implements Runnable
     public void setVisitDatePropertyName(String visitDatePropertyName)
     {
         this.visitDatePropertyName = visitDatePropertyName;
+    }
+
+    public String getVisitDateURI(User user)
+    {
+        if (visitDatePropertyURI == null)
+        {
+            for (ColumnInfo col : _datasetDefinition.getTableInfo(user, false, false).getColumns())
+            {
+                if (col.getName().equalsIgnoreCase(getVisitDatePropertyName()))
+                    visitDatePropertyURI = col.getPropertyURI();
+            }
+            if (visitDatePropertyURI == null)
+                visitDatePropertyURI = DataSetDefinition.getVisitDateURI();
+        }
+        return visitDatePropertyURI;
     }
 }

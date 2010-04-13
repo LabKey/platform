@@ -144,7 +144,7 @@ public class StudyServiceImpl implements StudyService.Service
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, newData, def);
 
             String[] result = StudyManager.getInstance().importDatasetData(
-                study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
+                study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
 
             if (errors.size() > 0)
             {
@@ -266,7 +266,7 @@ public class StudyServiceImpl implements StudyService.Service
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
 
             String[] result = StudyManager.getInstance().importDatasetData(
-                study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
+                study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
 
             if (result.length > 0)
             {

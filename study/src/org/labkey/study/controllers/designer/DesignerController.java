@@ -453,7 +453,9 @@ public class DesignerController extends SpringActionController
                         newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
                         participantMaps.add(newMap);
                     }
-                    Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()), form.getFolderName(), form.getBeginDate(), info, participantMaps, getSpecimens());
+                    Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()),
+                            form.getFolderName(), form.getBeginDate(), form.getSubjectNounSingular(), form.getSubjectNounPlural(),
+                            form.getSubjectColumnName(), info, participantMaps, getSpecimens());
                     final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
                     HttpView.throwRedirect(studyFolderUrl);
             }

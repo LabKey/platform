@@ -250,7 +250,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
             // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
             // IllegalStateException in ContainerManager.ensureContainer.
-            String[] lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, defaultQCState);
+            String[] lsids = StudyManager.getInstance().importDatasetData(targetStudy, user, dataset, convertedDataMaps, new Date().getTime(), errors, true, true, defaultQCState, null);
             if (lsids.length > 0 && protocol != null)
             {
                 for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -615,7 +615,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             QCState defaultQCState = null;
             if (defaultQCStateId != null)
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, new TabLoader(tsv, true), ul.getCreated().getTime(), columnMap, errors, true, defaultQCState);
+            lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, new TabLoader(tsv, true), ul.getCreated().getTime(), columnMap, errors, true, true, defaultQCState, null);
             if (errors.size() == 0)
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
         }
