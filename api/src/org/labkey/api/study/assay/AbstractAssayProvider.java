@@ -323,7 +323,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
         if (primaryFile != null)
         {
-            addRelatedOutputDatas(context, outputDatas, primaryFile, Collections.<AssayDataType>emptyList());
+            addRelatedOutputDatas(context.getContainer(), outputDatas, primaryFile, Collections.<AssayDataType>emptyList());
         }
     }
 
@@ -332,7 +332,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
      * @param knownRelatedDataTypes data types that should be given a particular LSID or role, others file types
      * will have them auto-generated based on their extension
      */
-    protected void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, final File primaryFile, List<AssayDataType> knownRelatedDataTypes) throws ExperimentException
+    public void addRelatedOutputDatas(Container container, Map<ExpData, String> outputDatas, final File primaryFile, List<AssayDataType> knownRelatedDataTypes) throws ExperimentException
     {
         final String baseName = getDataType().getFileType().getBaseName(primaryFile);
         if (baseName != null)
@@ -374,7 +374,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
                     dataType = RELATED_FILE_DATA_TYPE;
                 }
-                ExpData imageData = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType);
+                ExpData imageData = createData(container, relatedFile, relatedFile.getName(), dataType);
                 outputDatas.put(imageData, roleName);
             }
         }
