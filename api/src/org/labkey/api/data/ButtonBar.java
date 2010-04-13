@@ -177,5 +177,23 @@ public class ButtonBar extends DisplayElement
                 add(elem);
         }
 
+        if (config.isIncludeStandardButtons())
+        {
+            //include all buttons in the originalButtons List that
+            //are not already in the new element list
+            //match based on button caption
+            Set<String> newCaptions = new HashSet<String>();
+            for (DisplayElement elem : _elementList)
+            {
+                newCaptions.add(elem.getCaption());
+            }
+
+            for (DisplayElement elem : originalButtons)
+            {
+                if (!newCaptions.contains(elem.getCaption()))
+                    _elementList.add(elem);
+            }
+        }
+
     }
 }

@@ -22,24 +22,9 @@ import java.util.Map;
  */
 public class ButtonBarConfig
 {
-    public enum Position
-    {
-        top,
-        bottom,
-        both
-    }
-
-    public enum BuiltInButton
-    {
-        query,
-        views,
-        export,
-        pageSize,
-        print
-    }
-
-    private Position _position = null; //i.e., not specified
+    private DataRegion.ButtonBarPosition _position = null; //i.e., not specified
     private List<ButtonConfig> _items = new ArrayList<ButtonConfig>();
+    private boolean _includeStandardButtons = false;
 
     public ButtonBarConfig()
     {
@@ -47,17 +32,19 @@ public class ButtonBarConfig
     
     public ButtonBarConfig(JSONObject json)
     {
-        if (json.has("position"))
+        if (json.has("position") && null != json.getString("position"))
         {
             try
             {
-                _position = Position.valueOf(json.getString("position"));
+                _position = DataRegion.ButtonBarPosition.valueOf(json.getString("position").toUpperCase());
             }
             catch (Exception ignore)
             {
-                throw new RuntimeException("'" + json.getString("position") + "' is not a valid button bar position.");
+                throw new RuntimeException("'" + json.getString("position") + "' is not a valid button bar position (top, bottom, both, none).");
             }
         }
+
+        _includeStandardButtons = json.optBoolean("includeStandardButtons", false);
 
         if (json.has("items"))
         {
@@ -126,12 +113,12 @@ public class ButtonBarConfig
         return root.hasChildren() ? root.getChildList() : null;
     }
 
-    public Position getPosition()
+    public DataRegion.ButtonBarPosition getPosition()
     {
         return _position;
     }
 
-    public void setPosition(Position position)
+    public void setPosition(DataRegion.ButtonBarPosition position)
     {
         _position = position;
     }
@@ -144,5 +131,15 @@ public class ButtonBarConfig
     public void setItems(List<ButtonConfig> items)
     {
         _items = items;
+    }
+
+    public boolean isIncludeStandardButtons()
+    {
+        return _includeStandardButtons;
+    }
+
+    public void setIncludeStandardButtons(boolean includeStandardButtons)
+    {
+        _includeStandardButtons = includeStandardButtons;
     }
 }

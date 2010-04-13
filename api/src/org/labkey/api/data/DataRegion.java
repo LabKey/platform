@@ -897,6 +897,10 @@ public class DataRegion extends DisplayElement
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
+            //adjust position if config supplies a position value
+            if (null != _buttonBarConfig && null != _buttonBarConfig.getPosition())
+                setButtonBarPosition(_buttonBarConfig.getPosition());
+
             if (_buttonBarPosition.atTop())
             {
                 _gridButtonBar.setConfig(_buttonBarConfig);
