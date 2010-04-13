@@ -44,8 +44,7 @@
  * If not supplied in the configuration, you must call the render() method to render the part into the page.
  * @param {String} [config.title] An optional title for the web part. If not supplied, the query name will be used as the title.
  * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
- * @param {String} [config.buttonBarPosition] Specifies the button bar position for the web part.
- * This may be one of the following: 'none', 'top', 'bottom', 'both'.
+ * @param {String} [config.buttonBarPosition] DEPRECATED--see config.buttonBar.position
  * @param {boolean} [config.allowChooseQuery] If the button bar is showing, whether or not it should be include a button
  * to let the user choose a different query.
  * @param {boolean} [config.allowChooseView] If the button bar is showing, whether or not it should be include a button
@@ -60,6 +59,30 @@
  * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default true).  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
  * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
  * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
+ * @param {Object} [config.buttonBar] Optional button bar configuration. This object may contain any of the following properties:
+ * <ul>
+ *  <li><b>position</b>: Configures where the button bar will appear with respect to the data grid: legal values are 'top', 'bottom', 'none', or 'both'. Default is 'both'.</li>
+ *  <li><b>includeStandardButtons</b>: If true, all standard buttons not specifically mentioned in the items array will be included at the end of the button bar. Default is false.</li>
+ *  <li><b>items</b>: An array of button bar items. Each item may be either a reference to a standard button, or a new button configuration.
+ *                  to reference standard buttons, use one of the properties on {@link #standardButtons}, or simply include a string
+ *                  that matches the button's caption. To include a new button configuration, create an object with the following properties:
+ *      <ul>
+ *          <li><b>text</b>: The text you want displayed on the button (aka the caption).</li>
+ *          <li><b>url</b>: The URL to navigate to when the button is clicked. You may use LABKEY.ActionURL to build URLs to controller actions.
+ *                          Specify this or a handler function, but not both.</li>
+ *          <li><b>handler</b>: A reference to the JavaScript function you want called when the button is clicked.</li>
+ *          <li><b>items</b>: To create a drop-down menu button, set this to an array of menu item configurations.
+ *                          Each menu item configuration can specify any of the following properties:
+ *              <ul>
+ *                  <li><b>text</b>: The text of the menu item.</li>
+ *                  <li><b>handler</b>: A reference to the JavaScript function you want called when the menu item is clicked.</li>
+ *                  <li><b>icon</b>: A url to an image to use as the menu item's icon.</li>
+ *                  <li><b>items</b>: An array of sub-menu item configurations. Used for fly-out menus.</li>
+ *              </ul>
+ *          </li>
+ *      </ul>
+ *  </li>
+ * </ul>
  * @param {String} [config.sort] A base sort order to use. This may be a comma-separated list of column names, each of
  * which may have a - prefix to indicate a descending sort.
  * @param {Array} [config.filters] A base set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
@@ -103,7 +126,52 @@ var qwp1 = new LABKEY.QueryWebPart({
  {
     //...do something after the part has rendered...
  }
- 
+
+ ///////////////////////////////////////
+ // Custom Button Bar Example
+
+var qwp1 = new LABKEY.QueryWebPart({
+    renderTo: 'queryTestDiv1',
+    title: 'My Query Web Part',
+    schemaName: 'lists',
+    queryName: 'People',
+    buttonBar: {
+        includeStandardButtons: true,
+        items:[
+          LABKEY.QueryWebPart.standardButtons.views,
+          {text: 'Test', url: LABKEY.ActionURL.buildURL('project', 'begin')},
+          {text: 'Test Script', onClick: "alert('Hello World!'); return false;"},
+          {text: 'Test Handler', handler: onTestHandler},
+          {text: 'Test Menu', items: [
+            {text: 'Item 1', handler: onItem1Handler},
+		    {text: 'Fly Out', items: [
+              {text: 'Sub Item 1', handler: onItem1Handler}
+            ]},
+            '-', //separator
+            {text: 'Item 2', handler: onItem2Handler}
+          ]},
+          LABKEY.QueryWebPart.standardButtons.exportRows
+        ]
+    }
+});
+
+function onTestHandler(dataRegion)
+{
+    alert("onTestHandler called!");
+    return false;
+}
+
+function onItem1Handler(dataRegion)
+{
+    alert("onItem1Handler called!");
+}
+
+function onItem2Handler(dataRegion)
+{
+    alert("onItem2Handler called!");
+}
+
+&lt;/script&gt;
 */
 LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     _paramTranslationMap : {
@@ -399,7 +467,22 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     }
 });
 
-LABKEY.QueryWebPart.builtInButtons = {
+/**
+ * A read-only object that exposes properties representing standard buttons shown in LabKey data grids.
+ * These are used in conjunction with the buttonBar configuration. The following buttons are currently defined:
+ * <ul>
+ *  <li>LABKEY.QueryWebPart.standardButtons.query</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.views</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.insertNew</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.deleteRows</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.exportRows</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.print</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.pageSize</li>
+ * </ul>
+ * @name standardButtons
+ * @memberOf LABKEY.QueryWebPart#
+ */
+LABKEY.QueryWebPart.standardButtons = {
     query: 'query',
     views: 'views',
     insertNew: 'insert new',
