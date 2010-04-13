@@ -142,10 +142,10 @@ public class ExperimentRunListView extends QueryView
             addToExperimentButton.setRequiresSelection(true);
 
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), true);
-            String javascript = "javascript: " + view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +
+            String javascript = view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +
                     view.getDataRegion().getJavascriptFormReference(false) + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
                     view.getDataRegion().getJavascriptFormReference(false) + ".submit();";
-            addToExperimentButton.addMenuItem("Create new run group...", javascript);
+            addToExperimentButton.addMenuItem("Create new run group...", null, javascript);
 
             ExpExperiment[] experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
             if (experiments.length > 0)
