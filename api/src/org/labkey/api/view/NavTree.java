@@ -42,6 +42,9 @@ public class NavTree extends Pair<String, String> implements Collapsible
     static final List<NavTree> EMPTY_LIST = Collections.emptyList();
 
     String imageSrc = null;
+    int imageHeight=0;
+    int imageWidth=0;
+    
     private boolean _selected = false;
     private boolean _collapsed = false;
     private boolean _canCollapse = true;
@@ -108,6 +111,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _script = source._script;
         _id = source._id;
         _disabled = source._disabled;
+        imageHeight = source.imageHeight;
+        imageWidth = source.imageWidth;
 
         children = new ArrayList<NavTree>();
         for (NavTree child : source.children)
@@ -115,6 +120,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
             children.add(new NavTree(child));
         }
     }
+
 
     public String getEscapedKey()
     {
@@ -164,12 +170,17 @@ public class NavTree extends Pair<String, String> implements Collapsible
     }
 
 
-    public NavTree addChild(String display, String href, String imageSrc)
+    public NavTree addChild(String display, String href, String imageSrc, int width, int height)
     {
         addChild(new NavTree(display, href, imageSrc));
         return this;
     }
 
+    public NavTree addChild(String display, String href, String imageSrc)
+    {
+        addChild(new NavTree(display, href, imageSrc));
+        return this;
+    }
 
     public NavTree addChild(HString display, URLHelper urlhelp)
     {
@@ -286,6 +297,15 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return null == children ? 0 : children.size();
     }
 
+
+    public void setImage(String src, int width, int height)
+    {
+        imageSrc = src;
+        imageWidth = width;
+        imageHeight = height;
+    }
+
+
     public String getImageSrc()
     {
         return imageSrc;
@@ -296,6 +316,15 @@ public class NavTree extends Pair<String, String> implements Collapsible
         this.imageSrc = imageSrc;
     }
 
+    public int getImageHeight()
+    {
+        return imageHeight;
+    }
+
+    public int getImageWidth()
+    {
+        return imageWidth;
+    }
 
     public boolean isCollapsed()
     {

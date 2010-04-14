@@ -362,7 +362,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                         out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
                                 filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
                         String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
-                        out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                        out.printf("<img width=9 height=9 src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
 
                         out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
                                 filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
@@ -398,8 +398,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                             if (null != linkHref && 0 < linkHref.length())
                                 out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\">");
                             if (null != link.getImageSrc())
-                                out.print("<img src=\"" + link.getImageSrc() +
-                                        "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                            {
+                                if (link.getImageWidth() != 0 && link.getImageHeight() != 0)
+                                    out.print("<img height=" + link.getImageHeight() + " width=" + link.getImageWidth() + " src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                                else
+                                    out.print("<img src=\"" + link.getImageSrc() + "\" title=\"" + PageFlowUtil.filter(linkText) + "\">");
+                            }
                             else
                                 out.print(PageFlowUtil.filter(linkText));
                             if (null != linkHref && 0 < linkHref.length())
