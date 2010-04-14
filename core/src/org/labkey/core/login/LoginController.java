@@ -952,9 +952,10 @@ public class LoginController extends SpringActionController
             // Verify the old password on post
             HttpServletRequest request = getViewContext().getRequest();
             String oldPassword = request.getParameter("oldPassword");
+
             String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
 
-            if (!hash.equals(Crypt.digest(oldPassword)))
+            if (!SecurityManager.matchPassword(oldPassword, hash))
             {
                 errors.reject("password", "Incorrect old password.");
                 return false;

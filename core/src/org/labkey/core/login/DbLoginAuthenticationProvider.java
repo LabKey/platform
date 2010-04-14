@@ -77,7 +77,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             return null;
         }
 
-        if (!hash.equals(Crypt.digest(password)))
+        if (!SecurityManager.matchPassword(password,hash))
         {
             _log.error("Invalid login. name=" + email + ", incorrect password.");
             return null;
