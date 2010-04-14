@@ -98,6 +98,7 @@
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
  * @param {Function} [config.successCallback] A function to call after the part has been rendered.
  * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
+ * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
  * @example
  * &lt;div id='queryTestDiv1'/&gt;
  * &lt;script type="text/javascript"&gt;
@@ -293,6 +294,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             json.buttonBar = this.processButtonBar();
 
         Ext.Ajax.request({
+            timeout: this.timeout || 30000,
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
             success: function(response) {
                 var targetElem = Ext.get(this.renderTo);
