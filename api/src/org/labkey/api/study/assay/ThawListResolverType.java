@@ -162,7 +162,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     {
         Map<String, String> gwtProps = new HashMap<String, String>();
         gwtProps.put("dialogTitle", "Select a Thaw List");
-        GWTView listChooser = new GWTView("org.labkey.assay.upload.ListChooser", gwtProps);
+        GWTView listChooser = new GWTView("gwt.ListChooser", gwtProps);
         listChooser.getModelBean().getProperties().put("pageFlow", "assay");
         JspView<ThawListBean> view = new JspView<ThawListBean>("/org/labkey/api/study/assay/thawListSelector.jsp", new ThawListBean(ctx, listChooser));
         view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
