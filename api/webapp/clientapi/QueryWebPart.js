@@ -99,6 +99,7 @@
  * @param {Function} [config.successCallback] A function to call after the part has been rendered.
  * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
  * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
+ * @param {String} [config.containerPath] The container path in which the schema and query name are defined. If not supplied, the current container path will be used.
  * @example
  * &lt;div id='queryTestDiv1'/&gt;
  * &lt;script type="text/javascript"&gt;
