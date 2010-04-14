@@ -21,3 +21,4 @@ CREATE INDEX IX_StudyData_Participant
   USING btree
   (container, participantid);
 */
+;
