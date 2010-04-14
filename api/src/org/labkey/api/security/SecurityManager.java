@@ -849,10 +849,12 @@ public class SecurityManager
 
         try
         {
-            String crypt = Crypt.digest(tempPassword);
+            String crypt = "md5:" + Crypt.MD5.digest(tempPassword);
 
             // Don't need to set LastChanged -- it defaults to current date/time.
-            int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() + " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)", new Object[]{email.getEmailAddress(), crypt, new Date(), verification, crypt});
+            int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() +
+                    " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
+                    new Object[]{email.getEmailAddress(), crypt, new Date(), verification, crypt});
             if (1 != rowCount)
                 throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
 
@@ -870,7 +872,7 @@ public class SecurityManager
     {
         try
         {
-            String crypt = Crypt.digest(password);
+            String crypt = "salt:" + Crypt.SaltMD5.digest(password);
             List<String> history = new ArrayList<String>(getCryptHistory(email.getEmailAddress()));
             history.add(crypt);
 
@@ -909,11 +911,10 @@ public class SecurityManager
         try
         {
             List<String> history = getCryptHistory(user.getEmail());
-            String crypt = Crypt.digest(password);
 
             for (String hash : history)
             {
-                if (crypt.equals(hash))
+                if (SecurityManager.matchPassword(password, hash))
                     return true;
             }
 
@@ -950,6 +951,17 @@ public class SecurityManager
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+
+    public static boolean matchPassword(String password, String hash)
+    {
+        if (hash.startsWith("salt:"))
+            return Crypt.SaltMD5.matches(password, hash.substring(5));
+        else if (hash.startsWith("md5:"))
+            return Crypt.MD5.matches(password, hash.substring(4));
+        else
+            return Crypt.MD5.matches(password, hash);
     }
 
 

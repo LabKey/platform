@@ -128,7 +128,7 @@ public class GUID
             if (0 == sbSource.length())
                 sbSource.append(Long.toHexString(rand.nextLong()));
 
-            netDigest = Crypt.digest(sbSource.toString());
+            netDigest = Crypt.MD5.digest(sbSource.toString());
         }
 
         //
@@ -195,7 +195,7 @@ public class GUID
      */
     public static String makeHash()
     {
-        return Crypt.digest(makeGUID() + hashUniq);
+        return Crypt.MD5.digest(makeGUID() + hashUniq);
     }
 
 
