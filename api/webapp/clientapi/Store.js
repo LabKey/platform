@@ -404,6 +404,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         {
             var params = {schemaName: this.schemaName, "query.queryName": this.queryName};
 
+            if (this.columns)
+                params['query.columns'] = this.columns;
+
             if(this.sortInfo)
                 params['query.sort'] = "DESC" == this.sortInfo.direction
                         ? "-" + this.sortInfo.field

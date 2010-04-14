@@ -21,6 +21,7 @@ public enum QueryParam
     schemaName,
     queryName,
     viewName,
+    columns,
     reportId,
 
     offset,

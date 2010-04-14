@@ -44,6 +44,7 @@ public class QuerySettings
     private String _queryName;
     private String _viewName;
     private String _dataRegionName;
+    private List<FieldKey> _fieldKeys;
     private ReportIdentifier _reportId;
     private boolean _allowChooseQuery = true;
     private boolean _allowChooseView = true;
@@ -258,6 +259,15 @@ public class QuerySettings
                 setReturnURL(new URLHelper(returnURL));
             }
             catch (URISyntaxException _) { }
+        }
+
+        String columns = StringUtils.trimToNull(_getParameter(param(QueryParam.columns)));
+        if (null != columns)
+        {
+            String[] colArray = columns.split(",");
+            _fieldKeys = new ArrayList<FieldKey>();
+            for (String key : colArray)
+                _fieldKeys.add(FieldKey.fromString(key));
         }
     }
 
@@ -496,5 +506,10 @@ public class QuerySettings
     public void setAggregates(List<Aggregate> aggregates)
     {
         _aggregates = aggregates;
+    }
+
+    public List<FieldKey> getFieldKeys()
+    {
+        return _fieldKeys;
     }
 }

@@ -1139,7 +1139,33 @@ public class QueryView extends WebPartView<Object>
 
     protected void configureDataRegion(DataRegion rgn)
     {
-        rgn.setDisplayColumns(getDisplayColumns());
+        //if explicit set of fieldkeys has been set
+        //add those specifically to the region
+        if (null != getSettings().getFieldKeys())
+        {
+            rgn.clearColumns();
+            List<FieldKey> keys = getSettings().getFieldKeys();
+            FieldKey starKey = FieldKey.fromParts("*");
+            TableInfo table = getTable();
+
+            //special-case: if one of the keys is *, add all columns from the
+            //TableInfo and remove the * so that Query doesn't choke on it
+            if (keys.contains(starKey))
+            {
+                rgn.addColumns(table.getColumns());
+                keys.remove(starKey);
+            }
+
+            if (keys.size() > 0)
+            {
+                Map<FieldKey,ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
+                for (ColumnInfo col : selectedCols.values())
+                    rgn.addColumn(col);
+            }
+        }
+        else
+            rgn.setDisplayColumns(getDisplayColumns());
+
         rgn.setMaxRows(getMaxRows());
         rgn.setOffset(getOffset());
         rgn.setShowRows(getShowRows());
@@ -1411,31 +1437,6 @@ public class QueryView extends WebPartView<Object>
             _initializeButtonBar = false;
             DataView view = createDataView();
             DataRegion rgn = view.getDataRegion();
-
-            //adjust the set of display columns if the user requested a specific list
-            if (null != response.getFieldKeys() && response.getFieldKeys().size() > 0)
-            {
-                //clear the default set of columns
-                rgn.clearColumns();
-
-                List<FieldKey> keys = response.getFieldKeys();
-                FieldKey starKey = FieldKey.fromParts("*");
-
-                //special-case: if one of the keys is *, add all columns from the
-                //TableInfo and remove the * so that Query doesn't choke on it
-                if (keys.contains(starKey))
-                {
-                    rgn.addColumns(table.getColumns());
-                    keys.remove(starKey);
-                }
-
-                if (keys.size() > 0)
-                {
-                    Map<FieldKey,ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                    for (ColumnInfo col : selectedCols.values())
-                        rgn.addColumn(col);
-                }
-            }
 
             //force the pk column(s) into the default list of columns
             List<ColumnInfo> pkCols = table.getPkColumns();
