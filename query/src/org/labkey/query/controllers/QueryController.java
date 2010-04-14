@@ -1594,15 +1594,6 @@ public class QueryController extends SpringActionController
                 form.getQuerySettings().setContainerFilterName(containerFilterType.name());
             }
 
-            //split the column list into a list of field keys
-            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
-            String columns = getViewContext().getRequest().getParameter("query.columns");
-            if(null != columns && columns.length() > 0)
-            {
-                String[] cols = columns.split(",");
-                for(String col : cols)
-                    fieldKeys.add(FieldKey.fromString(col.trim()));
-            }
 
             QueryView view = QueryView.create(form);
             if(metaDataOnly)
@@ -1621,10 +1612,10 @@ public class QueryController extends SpringActionController
             //if requested version is >= 9.1, use the extended api query response
             if(getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys, metaDataOnly);
+                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
             else
                 return new ApiQueryResponse(view, getViewContext(), isEditable, true,
-                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys, metaDataOnly);
+                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), null, metaDataOnly);
         }
     }
 
