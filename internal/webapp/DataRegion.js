@@ -644,7 +644,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     this.panelButtonContents[panelButton.id].setVisible(true);
                     this.panelButtonContents[panelButton.id].getEl().slideIn();
 
-                    this.panelButtonContents[panelButton.id].syncSize();
+                    this.panelButtonContents[panelButton.id].setWidth(this.panelButtonContents[panelButton.id].getResizeEl().getWidth());
                 }
                 else
                 {
