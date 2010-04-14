@@ -1919,7 +1919,7 @@ search/src/schemas/umls.xml -text
 study/gwtsrc/gwt/AssayDesigner.gwt.xml -text
 study/gwtsrc/gwt/DatasetDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/DatasetImporter.gwt.xml_old -text
-study/gwtsrc/gwt/ListChooser.gwt.xml_old -text
+study/gwtsrc/gwt/ListChooser.gwt.xml -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
 study/gwtsrc/gwt/StudyChartDesigner.gwt.xml_old -text
 study/gwtsrc/gwt/StudyDesigner.gwt.xml_old -text

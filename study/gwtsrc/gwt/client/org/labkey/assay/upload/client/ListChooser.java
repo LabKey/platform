@@ -43,6 +43,9 @@ public class ListChooser implements EntryPoint, LookupListener<GWTPropertyDescri
     public void onModuleLoad()
     {
         RootPanel rootPanel = StudyApplication.getRootPanel();
+        if (null == rootPanel)
+            rootPanel = RootPanel.get("gwt.ListChooser-Root");
+        
         HorizontalPanel panel = new HorizontalPanel();
         rootPanel.add(panel);
         panel.setSpacing(5);
