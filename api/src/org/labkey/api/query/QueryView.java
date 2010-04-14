@@ -1438,6 +1438,30 @@ public class QueryView extends WebPartView<Object>
             DataView view = createDataView();
             DataRegion rgn = view.getDataRegion();
 
+            //since many QueryView subclasses override createDataRegion()
+            //we need to apply any explicit field keys requested here
+            List<FieldKey> fieldKeys = getSettings().getFieldKeys();
+            if (null != fieldKeys && fieldKeys.size() > 0)
+            {
+                rgn.clearColumns();
+                FieldKey starKey = FieldKey.fromParts("*");
+
+                //special-case: if one of the keys is *, add all columns from the
+                //TableInfo and remove the * so that Query doesn't choke on it
+                if (fieldKeys.contains(starKey))
+                {
+                    rgn.addColumns(table.getColumns());
+                    fieldKeys.remove(starKey);
+                }
+
+                if (fieldKeys.size() > 0)
+                {
+                    Map<FieldKey,ColumnInfo> selectedCols = QueryService.get().getColumns(table, fieldKeys);
+                    for (ColumnInfo col : selectedCols.values())
+                        rgn.addColumn(col);
+                }
+            }
+
             //force the pk column(s) into the default list of columns
             List<ColumnInfo> pkCols = table.getPkColumns();
             if (null != pkCols)
