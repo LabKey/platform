@@ -17,21 +17,14 @@
 package org.labkey.filecontent;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.property.ValidatorKind;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Jan 29, 2010
  * Time: 12:53:12 PM
- * To change this template use File | Settings | File Templates.
  */
 public class FileRootManager
 {
@@ -109,7 +102,8 @@ public class FileRootManager
 
     public FileRoot saveFileRoot(User user, FileRoot root)
     {
-        try {
+        try
+        {
             if (root.isNew())
                 return Table.insert(user, getTinfoFileRoots(), root);
             else

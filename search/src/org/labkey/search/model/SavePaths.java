@@ -127,7 +127,7 @@ public class SavePaths implements DavCrawler.SavePaths
         // However, we need this for the primary key
         int parent = _getParentId(path);
 
-        CaseInsensitiveHashMap<Object> map = new CaseInsensitiveHashMap<Object>();
+        Map<String, Object> map = new CaseInsensitiveHashMap<Object>();
         map.put("Path", toPathString(path));
         map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
         map.put("Parent", parent);
