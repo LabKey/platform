@@ -165,7 +165,7 @@ public interface TableInfo
     public String getDescription();
 
     /**
-     * Returns a QueryUpdateSerivce implementation for this TableInfo,
+     * Returns a QueryUpdateService implementation for this TableInfo,
      * or null if the table/query is not updatable.
      * @return A QueryUpdateService implementation for this table/query or null.
      */

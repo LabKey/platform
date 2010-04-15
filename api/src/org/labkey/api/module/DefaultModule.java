@@ -291,7 +291,13 @@ public abstract class DefaultModule implements Module
 
     public ActionURL getTabURL(Container c, User user)
     {
-        return new ActionURL(getPageFlowNameToClass().keySet().iterator().next(), "begin", c);
+        Map<String, Class<? extends Controller>> map = getPageFlowNameToClass();
+
+        // Handle modules that have no controllers (e.g., BigIron)
+        if (!map.isEmpty())
+            return new ActionURL(map.keySet().iterator().next(), "begin", c);
+        else
+            return null;
     }
 
     public TabDisplayMode getTabDisplayMode()

@@ -95,7 +95,7 @@ public class Table
             Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             if (null != statementRowCount)
             {
-                statement.setMaxRows(statementRowCount.intValue());
+                statement.setMaxRows(statementRowCount.intValue() == NO_ROWS ? 0 : statementRowCount.intValue());
             }
             if (asyncRequest != null)
             {

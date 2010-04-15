@@ -1341,7 +1341,7 @@ public class QueryView extends WebPartView<Object>
         return new Report.Results(ctx);
     }
 
-    public ResultSet getResultset() throws SQLException, IOException
+    public ResultSet getResultSet() throws SQLException, IOException
     {
         Report.Results r = getResults();
         return r == null ? null : r.rs;

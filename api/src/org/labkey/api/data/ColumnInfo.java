@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
@@ -1069,10 +1070,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         nonEditableColNames.add("container");
     }
 
-    public static ArrayList<ColumnInfo> createFromDatabaseMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo parentTable)
+    private static final Set<String> tables = new HashSet<String>();
+    public static Collection<ColumnInfo> createFromDatabaseMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo parentTable)
             throws SQLException
     {
-        //Use linked hash map to preserve ordering...
+         //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colList = new LinkedHashMap<String, ColumnInfo>();
         ResultSet rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);      // PostgreSQL change: query meta data with metaDataName
         SqlDialect.ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema().getScope());
@@ -1081,7 +1083,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             String metaDataName = reader.getName();
             ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
-            colList.put(col.getName(), col);
 
             col.metaDataName = metaDataName;
             col.sqlTypeName = reader.getSqlTypeName();
@@ -1090,9 +1091,37 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();
 
+            // TODO: This is a temporary hack... move to SAS dialect(s)
+            String databaseFormat = reader.getDatabaseFormat();
+
+            if (null != databaseFormat)
+            {
+                if (databaseFormat.startsWith("$"))
+                {
+                    _log.info("User-defined format: " + databaseFormat);
+                }
+                else
+                {
+                    String tableAlias = col.getTableAlias();
+                    SQLFragment sql = new SQLFragment("PUT(" + ExprColumn.STR_TABLE_ALIAS + "." + col.getName() + ", " + databaseFormat + ")");
+//                    col = new ExprColumn(col.getParentTable(), col.getName(), sql, Types.VARCHAR);
+
+                    if (!tables.contains(tableAlias))
+                    {
+                        _log.info("Table: " + tableAlias);
+                        tables.add(tableAlias);
+                    }
+                }
+            }
+
+            col.description = reader.getDescription();
+
             if (nonEditableColNames.contains(col.getPropertyName()))
                 col.setUserEditable(false);
+
+            colList.put(col.getName(), col);
         }
+
         rsCols.close();
 
         // load keys in two phases
@@ -1107,7 +1136,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
         int iFkName = findColumn(rsKeys, "FK_NAME");
         
-        ArrayList<ImportedKey> importedKeys = new ArrayList<ImportedKey>();
+        List<ImportedKey> importedKeys = new ArrayList<ImportedKey>();
         while (rsKeys.next())
         {
             String pkOwnerName = rsKeys.getString(iPkTableSchema);
@@ -1177,7 +1206,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             }
         }
 
-        return new ArrayList<ColumnInfo>(colList.values());
+        return colList.values();
     }
 
 

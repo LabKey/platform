@@ -855,7 +855,7 @@ public abstract class SqlDialect
     public static abstract class ColumnMetaDataReader
     {
         protected ResultSet _rsCols;
-        protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey;
+        protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey, _descriptionKey;
 
         public ColumnMetaDataReader(ResultSet rsCols)
         {
@@ -904,10 +904,20 @@ public abstract class SqlDialect
         }
 
         public abstract boolean isAutoIncrement() throws SQLException;
+
+        public @Nullable String getDescription() throws SQLException
+        {
+            return StringUtils.trimToNull(_rsCols.getString(_descriptionKey));
+        }
+
+        public @Nullable String getDatabaseFormat() throws SQLException
+        {
+            return null;
+        }
     }
 
 
-    // Handles standard reading of column meta data
+    // Handles standard reading of pk meta data
     public static class PkMetaDataReader
     {
         private ResultSet _rsCols;

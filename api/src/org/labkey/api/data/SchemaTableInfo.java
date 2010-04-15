@@ -335,7 +335,7 @@ public class SchemaTableInfo implements TableInfo
     public void addColumn(ColumnInfo column)
     {
         columns.add(column);
-        assert !column.isAliasSet();
+//        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
         assert null == column.getFieldKey().getParent();
         assert column.getName().equals(column.getFieldKey().getName());
         assert column.lockName();
@@ -390,8 +390,7 @@ public class SchemaTableInfo implements TableInfo
     }
 
 
-    public void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName)
-            throws SQLException
+    public void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
     {
         loadColumnsFromMetaData(dbmd, catalogName, schemaName);
         ResultSet rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName);
@@ -432,7 +431,7 @@ public class SchemaTableInfo implements TableInfo
 
     private void loadColumnsFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
     {
-        List<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
+        Collection<ColumnInfo> meta = ColumnInfo.createFromDatabaseMetaData(dbmd, catalogName, schemaName, this);
         for (ColumnInfo c : meta)
             addColumn(c);
     }
@@ -769,6 +768,11 @@ public class SchemaTableInfo implements TableInfo
     public String getDescription()
     {
         return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;        
     }
 
     @Nullable

@@ -21,11 +21,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 8, 2007
  * Time: 1:25:29 PM
  */
+
+// Not currently used.  Could be if we ever need to construct a ResultSet from scratch... as opposed to stealing
+// the meta data from a real ResultSet.
 public class ResultSetMetaDataImpl implements ResultSetMetaData
 {
     public class ColumnMetaData
@@ -172,18 +174,13 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
         return list.get(column).columnClassName;
     }
 
-
-    // The following methods are "implemented" to allow compiling and running on JDK/JRE 6.0 while still supporting
-    // JDK/JRE 5.0.  If/when we require JDK/JRE 6.0, these methods should delegate to the wrapped resultset.
-
+    public <T> T unwrap(Class<T> iface) throws SQLException
+    {
+        throw new SQLException("Not a wrapper for " + iface);
+    }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException
     {
-        throw new UnsupportedOperationException();
-    }
-
-    public <T> T unwrap(Class<T> iface) throws SQLException
-    {
-        throw new UnsupportedOperationException();
+        return false;
     }
 }

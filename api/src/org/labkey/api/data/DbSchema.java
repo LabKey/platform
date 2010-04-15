@@ -111,6 +111,9 @@ public class DbSchema
                     SchemaTableInfo ti = new SchemaTableInfo(metaDataName, schema);
                     ti.setMetaDataName(metaDataName);
                     ti.setTableType(rs.getString("TABLE_TYPE"));
+                    String description = rs.getString("REMARKS");
+                    if (null != description && !"No comments".equals(description))  // Consider: Move "No comments" exclusion to SAS dialect?
+                        ti.setDescription(description);
                     list.add(ti);
                 }
             }

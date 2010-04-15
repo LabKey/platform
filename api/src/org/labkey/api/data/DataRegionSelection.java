@@ -218,7 +218,7 @@ public class DataRegionSelection
     {
         QueryView view = new QueryView(form, null);
         TableInfo table = view.getTable();
-        ResultSet rs = view.getResultset();
+        ResultSet rs = view.getResultSet();
 
         List<String> selection = createSelectionList(rs, table);
         return setSelected(context, key, selection, true);
