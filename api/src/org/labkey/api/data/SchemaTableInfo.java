@@ -306,7 +306,7 @@ public class SchemaTableInfo implements TableInfo
 
         if (null == colMap)
         {
-            HashMap<String, ColumnInfo> m = new CaseInsensitiveHashMap<ColumnInfo>();
+            Map<String, ColumnInfo> m = new CaseInsensitiveHashMap<ColumnInfo>();
             for (ColumnInfo colInfo : columns)
             {
                 m.put(colInfo.getName(), colInfo);

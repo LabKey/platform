@@ -16,14 +16,13 @@
 
 package org.labkey.api.collections;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Collection;
 
-// This duplicates much of CaseInsensitiveHashMap (less efficiently, since it always lowercases the keys), through the wrapper aspect is unique
-// TODO: Combine with CaseInsensitiveHashMap
-public class CaseInsensitiveMapWrapper<V> implements Map<String, V>
+public class CaseInsensitiveMapWrapper<V> implements Map<String, V>, Serializable
 {
     Map<String, V> _map;
     Map<String, String> _correctCaseMap;
@@ -62,7 +61,7 @@ public class CaseInsensitiveMapWrapper<V> implements Map<String, V>
             ret = remove(correctKey);
         }
         _map.put(key, value);
-        assert !_correctCaseMap.containsKey(key.toLowerCase());
+//        assert !_correctCaseMap.containsKey(key.toLowerCase());
         _correctCaseMap.put(key.toLowerCase(), key);
         return ret;
     }

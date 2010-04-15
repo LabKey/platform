@@ -474,7 +474,6 @@ public class DbScope
 
             return schema;
         }
-
     }
 
 
