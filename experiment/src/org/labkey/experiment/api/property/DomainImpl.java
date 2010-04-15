@@ -32,11 +32,9 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.property.PropertyController;
-import org.labkey.api.exp.property.DomainAuditViewFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -332,7 +330,7 @@ public class DomainImpl implements Domain
     public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)
     {
         DomainPropertyImpl[] properties = getProperties();
-        HashMap<String, DomainProperty> m = new CaseInsensitiveHashMap<DomainProperty>(properties.length * 3);
+        Map<String, DomainProperty> m = new CaseInsensitiveHashMap<DomainProperty>(properties.length * 3);
         DomainPropertyImpl[] reversedProperties = new DomainPropertyImpl[properties.length];
         int index = 0;
         // Reverse the order of the descriptors so that we can preserve the right priority for resolving by names, aliases, etc
