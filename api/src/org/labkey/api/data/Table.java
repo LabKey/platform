@@ -716,7 +716,7 @@ public class Table
     }
 
 
-    protected static Map<String,Object> _getTableData(TableInfo table, Map<String,Object> fields, boolean insert)
+    protected static Map<String, Object> _getTableData(TableInfo table, Map<String,Object> fields, boolean insert)
     {
         if (!(fields instanceof CaseInsensitiveHashMap))
             fields = new CaseInsensitiveHashMap<Object>(fields);
@@ -865,6 +865,7 @@ public class Table
     }
 
 
+    // Returns a new Map<String, Object> if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
     public static <K> K insert(User user, TableInfo table, K fieldsIn) throws SQLException
     {
         assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
@@ -879,7 +880,7 @@ public class Table
 
         //noinspection unchecked
         Map<String, Object> fields = fieldsIn instanceof Map ?
-                _getTableData(table, (Map<String,Object>)fieldsIn, true) :
+                _getTableData(table, (Map<String, Object>)fieldsIn, true) :
                 _getTableData(table, fieldsIn, true);
         java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
         _insertSpecialFields(user, table, fields, date);

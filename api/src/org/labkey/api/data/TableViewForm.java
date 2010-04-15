@@ -137,7 +137,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (null != _tinfo.getColumn("container"))
             set("container", _c.getId());
 
-        Map newMap = Table.insert(_user, _tinfo, getTypedValues());
+        Map<String, Object> newMap = Table.insert(_user, _tinfo, getTypedValues());
         setTypedValues(newMap, false);
     }
 

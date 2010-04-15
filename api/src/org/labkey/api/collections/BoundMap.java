@@ -29,7 +29,7 @@ import java.io.Serializable;
 import java.io.IOException;
 
 
-public class BoundMap extends AbstractMap<String,Object> implements Serializable
+public class BoundMap extends AbstractMap<String, Object> implements Serializable
 {
     private static final HashMap<Class, HashMap<String,BoundProperty>> _savedPropertyMaps = new HashMap<Class, HashMap<String, BoundProperty>>();
 
