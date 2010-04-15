@@ -143,7 +143,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public NavTree  appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    public NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
         if (null == action)
             root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);

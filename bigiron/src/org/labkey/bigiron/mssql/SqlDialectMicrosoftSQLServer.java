@@ -607,6 +607,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
+            _descriptionKey = "REMARKS";          // TODO: Has a remarks column, but doesn't seem to have anything in it...
         }
 
         public boolean isAutoIncrement() throws SQLException

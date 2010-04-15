@@ -169,7 +169,6 @@ bigiron/src/org/labkey/bigiron/BigIronModule.java -text
 bigiron/src/org/labkey/bigiron/mssql/SqlDialectMicrosoftSQLServer.java -text
 bigiron/src/org/labkey/bigiron/mssql/SqlDialectMicrosoftSQLServer9.java -text
 bigiron/src/org/labkey/bigiron/sas/ExportSasScriptModel.java -text
-bigiron/src/org/labkey/bigiron/sas/SasController.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas91.java -text
@@ -1865,12 +1864,11 @@ query/webapp/reports/r.gif -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text
 search/build.xml -text
-search/lib/apache-tika-0.6-src.zip -text
 search/lib/lucene-3.0.1-src.zip -text
 search/lib/lucene-3.0.1.zip -text
 search/lib/lucene-core-3.0.1.jar -text
 search/lib/lucene-snowball-3.0.1.jar -text
-search/lib/tika-app-0.6.jar -text
+search/lib/tika-app-0.7.jar -text
 search/module.properties -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-10.10.sql -text

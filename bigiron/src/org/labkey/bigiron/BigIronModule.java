@@ -58,7 +58,6 @@ public class BigIronModule extends DefaultModule
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
         SqlDialect.register(new SqlDialectSas91());
         SqlDialect.register(new SqlDialectSas92());
-        addController("sas", SasController.class);
         QueryView.register(new SasExportScriptFactory());
     }
 

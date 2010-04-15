@@ -2650,7 +2650,7 @@ public class StudyController extends BaseStudyController
             ResultSet rs = null;
             try
             {
-                rs = queryView.getResultset();
+                rs = queryView.getResultSet();
                 while (rs.next())
                 {
                     String ptid = rs.getString(StudyService.get().getSubjectColumnName(queryView.getContainer()));

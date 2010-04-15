@@ -16,6 +16,7 @@
 package org.labkey.bigiron.sas;
 
 import junit.framework.TestSuite;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,6 +34,14 @@ import java.util.*;
  */
 public abstract class SqlDialectSas extends SqlDialect
 {
+    public SqlDialectSas()
+    {
+        // TODO: Add more keywords
+        reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
+            "LEFT", "RIGHT"
+        ));
+    }
+
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
         //To change body of implemented methods use File | Settings | File Templates.

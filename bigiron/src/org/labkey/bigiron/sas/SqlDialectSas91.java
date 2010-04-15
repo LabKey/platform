@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.sas;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.DbScope;
 
 import java.sql.ResultSet;
@@ -52,6 +53,7 @@ public class SqlDialectSas91 extends SqlDialectSas
             _scaleKey = "SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "POSITION";
+            _descriptionKey = "COMMENT";
         }
 
         @Override
@@ -63,6 +65,12 @@ public class SqlDialectSas91 extends SqlDialectSas
         public boolean isAutoIncrement() throws SQLException
         {
             return false;
+        }
+
+        @Override
+        public String getDatabaseFormat() throws SQLException
+        {
+            return StringUtils.trimToNull(_rsCols.getString("type"));
         }
     }
 

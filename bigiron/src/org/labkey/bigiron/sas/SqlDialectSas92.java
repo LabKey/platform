@@ -52,6 +52,7 @@ public class SqlDialectSas92 extends SqlDialectSas
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
+            _descriptionKey = "REMARKS";
         }
 
         @Override

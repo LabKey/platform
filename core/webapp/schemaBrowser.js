@@ -307,8 +307,14 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             else
                 container.children.push(this.formatQueryLink("viewQuerySource", params, "view source"));
         }
-        else if(queryDetails.isMetadataOverrideable && LABKEY.Security.currentUser.isAdmin)
-            container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
+        else
+        {
+            if (queryDetails.isMetadataOverrideable && LABKEY.Security.currentUser.isAdmin)
+                container.children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
+
+            if (LABKEY.devMode)
+                container.children.push(this.formatQueryLink("rawTableMetaData", params, "view raw table meta data"));
+        }
         
         return container;
     },

@@ -64,11 +64,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 public class QueryController extends SpringActionController
 {
@@ -521,6 +519,199 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RawTableMetaDataAction extends QueryViewAction
+    {
+        private String _schemaName;
+        private String _tableName;
+
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            assertQueryExists(form);
+
+            _form = form;
+
+            QueryDefinition query = form.getQueryDef();
+            if (null == query)
+            {
+                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
+                return null;
+            }
+
+            QueryView queryView = QueryView.create(form);
+            TableInfo ti = queryView.getTable();
+
+            DbSchema schema = ti.getSchema();
+            DbScope scope = schema.getScope();
+            _schemaName = schema.getName();
+            _tableName = ti.getName();
+
+            ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
+            url.addParameter("schemaName", _schemaName);
+            HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url);
+
+            Connection con = scope.getConnection();
+            DatabaseMetaData dbmd = con.getMetaData();
+            ResultSet md = dbmd.getColumns(null, _schemaName, _tableName, null);
+            ModelAndView metaDataView = new ResultSetView(md, "Table Meta Data");
+            ResultSet pk = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
+            ModelAndView pkView = new ResultSetView(pk, "Primary Key Meta Data");
+            scope.releaseConnection(con);
+
+            return new VBox(scopeInfo, metaDataView, pkView);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            (new SchemaAction(_form)).appendNavTrail(root);
+            root.addChild("JDBC Meta Data For Table \"" + _schemaName + "." + _tableName + "\"");
+            return root;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RawSchemaMetaDataAction extends SimpleViewAction
+    {
+        private String _schemaName;
+
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            _schemaName = getViewContext().getActionURL().getParameter("schemaName");
+            DbSchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(_schemaName).getDbSchema();
+            DbScope scope = schema.getScope();
+
+            HttpView scopeInfo = new ScopeView("Scope Information", scope);
+
+            Connection con = scope.getConnection();
+            DatabaseMetaData dma = con.getMetaData();
+            ResultSet rs = dma.getTables(null, _schemaName, null, null);
+            ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
+            url.addParameter("schemaName", _schemaName);
+            String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
+            ModelAndView tableInfo = new ResultSetView(rs, "Tables", 3, tableLink);
+            scope.releaseConnection(con);
+
+            return new VBox(scopeInfo, tableInfo);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("JDBC Meta Data For Schema \"" + _schemaName + "\"");
+            return root;
+        }
+    }
+
+
+    public static class ScopeView extends WebPartView
+    {
+        private final DbScope _scope;
+        private final String _schemaName;
+        private final ActionURL _url;
+
+        private ScopeView(String title, DbScope scope)
+        {
+            this(title, scope, null, null);
+        }
+
+        private ScopeView(String title, DbScope scope, String schemaName, ActionURL url)
+        {
+            _scope = scope;
+            _schemaName = schemaName;
+            _url = url;
+            setTitle(title);
+        }
+
+        @Override
+        protected void renderView(Object model, PrintWriter out) throws Exception
+        {
+            StringBuilder sb = new StringBuilder("<table>\n");
+
+            if (null != _schemaName)
+                sb.append("<tr><td>Schema:</td><td><a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a></td></tr>\n");
+
+            sb.append("<tr><td>Scope:</td><td>").append(_scope.getDisplayName()).append("</td></tr>\n");
+            sb.append("<tr><td>Dialect:</td><td>").append(_scope.getSqlDialect().getClass().getSimpleName()).append("</td></tr>\n");
+            sb.append("<tr><td>URL:</td><td>").append(_scope.getURL()).append("</td></tr>\n");
+            sb.append("</table>\n");
+
+            out.print(sb);
+        }
+    }
+
+
+    public static class ResultSetView extends WebPartView
+    {
+        private final ResultSet _rs;
+        private final int _linkColumn;
+        private final String _link;
+
+        private ResultSetView(ResultSet rs, String title) throws SQLException
+        {
+            this(rs, title, 0, null);
+        }
+
+        private ResultSetView(ResultSet rs, String title, int linkColumn, String link) throws SQLException
+        {
+            _rs = rs;
+            _linkColumn = linkColumn;
+            _link = link;
+            setTitle(title);
+        }
+
+        @Override
+        protected void renderView(Object model, PrintWriter out) throws Exception
+        {
+            out.println("<table>");
+
+            ResultSetMetaData md = _rs.getMetaData();
+            int columnCount = md.getColumnCount();
+
+            out.print("  <tr>");
+
+            for (int i = 1; i <= columnCount; i++)
+            {
+                out.print("<th>");
+                out.print(md.getColumnName(i));
+                out.print("</th>");
+            }
+
+            out.println("</tr>\n");
+
+            while (_rs.next())
+            {
+                out.print("  <tr>");
+
+                for (int i = 1; i <= columnCount; i++)
+                {
+                    Object val = _rs.getObject(i);
+
+                    out.print("<td>");
+
+                    if (null != _link && _linkColumn == i)
+                    {
+                        out.print("<a href=\"");
+                        out.print(_link);
+                        out.print(val.toString());
+                        out.print("\">");
+                    }
+
+                    out.print(null == val ? "&nbsp;" : val.toString());
+
+                    if (null != _link && _linkColumn == i)
+                        out.print("</a>");
+
+                    out.print("</td>");
+                }
+
+                out.println("</tr>\n");
+            }
+
+            out.println("</table>\n");
+            _rs.close();
+        }
+    }
 
     // for backwards compat same as _executeQuery.view ?_print=1
     @RequiresPermissionClass(ReadPermission.class)

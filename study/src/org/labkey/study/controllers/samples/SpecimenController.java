@@ -4681,7 +4681,7 @@ public class SpecimenController extends BaseStudyController
             {
                 ResultSet rs = null;
                 try {
-                    rs = queryView.getResultset();
+                    rs = queryView.getResultSet();
                     while (rs.next())
                     {
                         String lsid = rs.getString("lsid");

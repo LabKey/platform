@@ -166,5 +166,4 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         // Might have been deleted out from under us
         return tableInfo != null && tableInfo.isMetadataOverrideable();
     }
-
 }
