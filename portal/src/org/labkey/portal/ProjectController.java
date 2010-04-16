@@ -303,52 +303,7 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(MovePortletForm form, BindException errors) throws Exception
         {
-            Portal.WebPart[] parts = Portal.getParts(form.getPageId());
-            if (null == parts)
-                return true;
-
-            //Find the portlet. Theoretically index should be 1-based & consecutive, but
-            //code defensively.
-            int i;
-            int index = form.getIndex();
-            for (i = 0; i < parts.length; i++)
-                if (parts[i].getIndex() == index)
-                    break;
-
-            if (i == parts.length)
-                return true;
-
-            Portal.WebPart part = parts[i];
-            String location = part.getLocation();
-            if (form.getDirection() == Portal.MOVE_UP)
-            {
-                for (int j = i - 1; j >= 0; j--)
-                {
-                    if (location.equals(parts[j].getLocation()))
-                    {
-                        int newIndex = parts[j].getIndex();
-                        part.setIndex(newIndex);
-                        parts[j].setIndex(index);
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                for (int j = i + 1; j < parts.length; j++)
-                {
-                    if (location.equals(parts[j].getLocation()))
-                    {
-                        int newIndex = parts[j].getIndex();
-                        part.setIndex(newIndex);
-                        parts[j].setIndex(index);
-                        break;
-                    }
-                }
-            }
-
-            Portal.saveParts(form.getPageId(), parts);
-            return true;
+            return handleMoveWebPart(form.getPageId(), form.getIndex(), form.getDirection());
         }
 
         public URLHelper getSuccessURL(MovePortletForm movePortletForm)
@@ -408,6 +363,200 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    public static class CustomizePortletApiForm implements HasViewContext
+    {
+        private String _pageId;
+        private ViewContext _viewContext;
+        private int _direction;
+        private int _webPartId;
+
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
+
+        public void setViewContext(ViewContext viewContext)
+        {
+            _viewContext = viewContext;
+        }
+
+        public String getPageId()
+        {
+            // if a page ID isn't provided, assume that it's the current container's page ID.  This assumption makes
+            // sense as long as there's just one portal page per container.
+            if (_pageId != null)
+                return _pageId;
+            else
+                return getViewContext().getContainer().getId();
+        }
+
+        public void setPageId(String pageId)
+        {
+            _pageId = pageId;
+        }
+
+        public int getDirection()
+        {
+            return _direction;
+        }
+
+        public void setDirection(int direction)
+        {
+            _direction = direction;
+        }
+
+        public int getWebPartId()
+        {
+            return _webPartId;
+        }
+
+        public void setWebPartId(int webPartId)
+        {
+            _webPartId = webPartId;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
+    {
+        @Override
+        public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors) throws Exception
+        {
+            Portal.WebPart webPart = Portal.getPart(customizePortletForm.getWebPartId());
+            if (webPart != null && handleDeleteWebPart(webPart.getPageId(), webPart.getIndex()))
+                return getWebPartLayoutApiResponse(customizePortletForm.getPageId());
+            else
+                throw new RuntimeException("Unable to delete the specified web part.  Please refresh the page and try again.");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class MoveWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
+    {
+        @Override
+        public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors) throws Exception
+        {
+            Portal.WebPart webPart = Portal.getPart(movePortletForm.getWebPartId());
+            if (webPart != null && handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), movePortletForm.getDirection()))
+                 return getWebPartLayoutApiResponse(movePortletForm.getPageId());
+             else
+                 throw new RuntimeException("Unable to move the specified web part.  Please refresh the page and try again.");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetWebPartsAction extends ApiAction<CustomizePortletApiForm>
+    {
+        @Override
+        public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors) throws Exception
+        {
+             return getWebPartLayoutApiResponse(movePortletForm.getPageId());
+        }
+    }
+
+    private ApiResponse getWebPartLayoutApiResponse(String pageId)
+    {
+        Portal.WebPart[] parts = Portal.getParts(pageId);
+        final Map<String, Object> properties = new HashMap<String, Object>();
+        int lastIndex = -1;
+        for (Portal.WebPart part : parts)
+        {
+            if (part.getIndex() < lastIndex)
+                throw new IllegalStateException("Web parts should be sorted by index.");
+            lastIndex = part.getIndex();
+
+            String location = part.getLocation();
+            // Why do we have two classes called SimpleWebPartFactory?!?
+            location = org.labkey.api.module.SimpleWebPartFactory.getFriendlyLocationName(location);
+            if (location == null)
+                continue;
+            List<Map<String, Object>> partList = (List<Map<String, Object>>) properties.get(location);
+            if (partList == null)
+            {
+                partList = new ArrayList<Map<String, Object>>();
+                properties.put(location, partList);
+            }
+            Map<String, Object> webPartProperties = new HashMap<String, Object>();
+            webPartProperties.put("name", part.getName());
+            webPartProperties.put("index", part.getIndex());
+            webPartProperties.put("webPartId", part.getRowId());
+            partList.add(webPartProperties);
+        }
+
+        return new ApiResponse()
+        {
+            public Map<String, Object> getProperties()
+            {
+                return properties;
+            }
+        };
+    }
+
+    private boolean handleDeleteWebPart(String pageId, int index)
+    {
+        Portal.WebPart[] parts = Portal.getParts(pageId);
+        //Changed on us..
+        if (null == parts || parts.length == 0)
+            return true;
+
+        ArrayList<Portal.WebPart> newParts = new ArrayList<Portal.WebPart>();
+        for (Portal.WebPart part : parts)
+            if (part.getIndex() != index)
+                newParts.add(part);
+
+        Portal.saveParts(pageId, newParts.toArray(new Portal.WebPart[newParts.size()]));
+        return true;
+    }
+
+    private boolean handleMoveWebPart(String pageId, int index, int direction)
+    {
+        Portal.WebPart[] parts = Portal.getParts(pageId);
+        if (null == parts)
+            return true;
+
+        //Find the portlet. Theoretically index should be 1-based & consecutive, but
+        //code defensively.
+        int i;
+        for (i = 0; i < parts.length; i++)
+            if (parts[i].getIndex() == index)
+                break;
+
+        if (i == parts.length)
+            return true;
+
+        Portal.WebPart part = parts[i];
+        String location = part.getLocation();
+        if (direction == Portal.MOVE_UP)
+        {
+            for (int j = i - 1; j >= 0; j--)
+            {
+                if (location.equals(parts[j].getLocation()))
+                {
+                    int newIndex = parts[j].getIndex();
+                    part.setIndex(newIndex);
+                    parts[j].setIndex(index);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for (int j = i + 1; j < parts.length; j++)
+            {
+                if (location.equals(parts[j].getLocation()))
+                {
+                    int newIndex = parts[j].getIndex();
+                    part.setIndex(newIndex);
+                    parts[j].setIndex(index);
+                    break;
+                }
+            }
+        }
+
+        Portal.saveParts(pageId, parts);
+        return true;
+    }
 
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteWebPartAction extends FormViewAction<CustomizePortletForm>
@@ -425,19 +574,7 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
-            Portal.WebPart[] parts = Portal.getParts(form.getPageId());
-            //Changed on us..
-            if (null == parts || parts.length == 0)
-                return true;
-
-            ArrayList<Portal.WebPart> newParts = new ArrayList<Portal.WebPart>();
-            int index = form.getIndex();
-            for (Portal.WebPart part : parts)
-                if (part.getIndex() != index)
-                    newParts.add(part);
-
-            Portal.saveParts(form.getPageId(), newParts.toArray(new Portal.WebPart[newParts.size()]));
-            return true;
+            return handleDeleteWebPart(form.getPageId(), form.getIndex());
         }
 
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
@@ -514,6 +651,7 @@ public class ProjectController extends SpringActionController
     {
         private int index;
         private String pageId;
+        private ViewContext _viewContext;
 
         public int getIndex()
         {

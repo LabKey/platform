@@ -346,6 +346,7 @@ core/resources/schemas/dbscripts/postgresql/obsolete/prop-2.00-2.10.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/prop-2.03-2.04.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/prop-8.31-8.32.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-0.00-2.00.sql -text
+core/resources/schemas/dbscripts/postgresql/portal-10.11-10.12.sql -text
 core/resources/schemas/dbscripts/postgresql/portal-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-0.00-2.10.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-10.10-10.11.sql -text
@@ -436,6 +437,7 @@ core/resources/schemas/dbscripts/sqlserver/obsolete/prop-2.00-2.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/prop-2.03-2.04.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/prop-8.31-8.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-0.00-2.00.sql -text
+core/resources/schemas/dbscripts/sqlserver/portal-10.11-10.12.sql -text
 core/resources/schemas/dbscripts/sqlserver/portal-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-0.00-2.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-10.10-10.11.sql -text
