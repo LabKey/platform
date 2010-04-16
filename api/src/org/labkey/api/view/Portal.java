@@ -39,7 +39,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Portal
@@ -93,6 +92,7 @@ public class Portal
     public static class WebPart implements Serializable
     {
         String pageId;
+        int rowId;
         int index = 999;
         String name;
         String location = HttpView.BODY;
@@ -115,6 +115,7 @@ public class Portal
         {
             pageId = copyFrom.pageId;
             index = copyFrom.index;
+            rowId = copyFrom.rowId;
             name = copyFrom.name;
             location = copyFrom.location;
             permanent = copyFrom.permanent;
@@ -127,66 +128,55 @@ public class Portal
             return pageId;
         }
 
-
         public void setPageId(String pageId)
         {
             this.pageId = pageId;
         }
-
 
         public int getIndex()
         {
             return index;
         }
 
-
         public void setIndex(int index)
         {
             this.index = index;
         }
-
 
         public String getName()
         {
             return name;
         }
 
-
         public void setName(String name)
         {
             this.name = name;
         }
-
 
         public String getLocation()
         {
             return location;
         }
 
-
         public void setLocation(String location)
         {
             this.location = location;
         }
-
 
         public Map<String, String> getPropertyMap()
         {
             return propertyMap;
         }
 
-
         public void setProperty(String k, String v)
         {
             propertyMap.put(k, v);
         }
 
-
         public String getProperties()
         {
             return PageFlowUtil.toQueryString(propertyMap.entrySet());
         }
-
 
         public void setProperties(String query)
         {
@@ -233,8 +223,17 @@ public class Portal
         {
             return "<input type=\"hidden\" name=\"pageId\" value=\"" + getPageId() + "\">\n<input type=\"hidden\" name=\"index\" value=\"" + getIndex() + "\">";
         }
-    }
 
+        public int getRowId()
+        {
+            return rowId;
+        }
+
+        public void setRowId(int rowId)
+        {
+            this.rowId = rowId;
+        }
+    }
 
     public static class WebPartBeanLoader extends BeanObjectFactory<WebPart>
     {
@@ -283,16 +282,34 @@ public class Portal
         return parts;
     }
 
+    public static WebPart getPart(int webPartRowId)
+    {
+        return Table.selectObject(getTableInfoPortalWebParts(), webPartRowId, WebPart.class);
+    }
 
     public static WebPart getPart(String pageId, int index)
     {
-        return Table.selectObject(getTableInfoPortalWebParts(), new Object[]{pageId, index}, WebPart.class);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("PageId", pageId);
+            filter.addCondition("index", index);
+            WebPart[] webParts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, null, WebPart.class);
+            assert webParts.length == 0 || webParts.length == 1 : "Cannot have multiple web parts with the same page and index.";
+            if (webParts.length == 1)
+                return webParts[0];
+            else
+                return null;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
     public static void updatePart(User u, WebPart part) throws SQLException
     {
-        Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getPageId(), part.getIndex()});
+        Table.update(u, getTableInfoPortalWebParts(), part, new Object[]{part.getRowId()});
         _clearCache(part.getPageId());
     }
 
@@ -385,10 +402,10 @@ public class Portal
         return newPart;
     }
 
-    public static void saveParts(String id, WebPart[] parts)
+    public static void saveParts(String id, WebPart[] newParts)
     {
         // make sure indexes are unique
-        Arrays.sort(parts, new Comparator<WebPart>()
+        Arrays.sort(newParts, new Comparator<WebPart>()
         {
             public int compare(WebPart w1, WebPart w2)
             {
@@ -396,20 +413,42 @@ public class Portal
             }
         });
 
-        for (int i = 0; i < parts.length; i++)
+        for (int i = 0; i < newParts.length; i++)
         {
-            WebPart part = parts[i];
+            WebPart part = newParts[i];
             part.index = i + 1;
             part.pageId = id;
         }
 
         try
         {
+            WebPart[] oldParts = getParts(id);
+            Set<Integer> oldPartIds = new HashSet<Integer>();
+            for (WebPart oldPart : oldParts)
+                oldPartIds.add(oldPart.getRowId());
+            Set<Integer> newPartIds = new HashSet<Integer>();
+            for (WebPart newPart : newParts)
+            {
+                if (newPart.getRowId() >= 0)
+                    newPartIds.add(newPart.getRowId());
+            }
+
             getSchema().getScope().beginTransaction();
-            Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("PageId", id));
-            for (WebPart part1 : parts) {
+
+            // delete any removed webparts:
+            for (Integer oldId : oldPartIds)
+            {
+                if (!newPartIds.contains(oldId))
+                    Table.delete(getTableInfoPortalWebParts(), oldId);
+            }
+
+            for (WebPart part1 : newParts) {
                 Map m = _factory.toMap(part1, null);
-                Table.insert(null, getTableInfoPortalWebParts(), m);
+
+                if (oldPartIds.contains(part1.getRowId()))
+                    Table.update(null, getTableInfoPortalWebParts(), m, part1.getRowId());
+                else
+                    Table.insert(null, getTableInfoPortalWebParts(), m);
             }
             getSchema().getScope().commitTransaction();
         }
@@ -573,16 +612,33 @@ public class Portal
         return PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
-
+    private static final boolean USE_ASYNC_PORTAL_ACTIONS = true;
     public static String getMoveURL(ViewContext context, Portal.WebPart webPart, int direction)
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
+        if (USE_ASYNC_PORTAL_ACTIONS)
+        {
+            String methodName = direction == MOVE_UP ? "moveWebPartUp" : "moveWebPartDown";
+            return "javascript:LABKEY.Portal." + methodName + "({" +
+                    "webPartId: " + webPart.getRowId() + "," +
+                    "updateDOM: true" +
+                    "})";
+        }
+        else
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
     }
 
 
     public static String getDeleteURL(ViewContext context, Portal.WebPart webPart)
     {
-        return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
+        if (USE_ASYNC_PORTAL_ACTIONS)
+        {
+            return "javascript:LABKEY.Portal.removeWebPart({" +
+                    "webPartId: " + webPart.getRowId() + "," +
+                    "updateDOM: true" +
+                    "})";
+        }
+        else
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
 
@@ -717,6 +773,7 @@ public class Portal
         try
         {
             view = factory.getWebPartView(portalCtx, webPart);
+            view.setWebPartRowId(webPart.getRowId());
         }
         catch(Throwable t)
         {
@@ -724,6 +781,7 @@ public class Portal
             String message = "An unexpected error occurred";
             view = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
             view.setTitle(webPart.getName());
+            view.setWebPartRowId(webPart.getRowId());
         }
 
         return view;

@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -56,6 +57,10 @@ public class SpecimenService
         Set<ParticipantVisit> getSampleInfo(Container studyContainer, String participantId, Double visit) throws SQLException;
 
         String getCompletionURLBase(Container studyContainer, CompletionType type);
+
+        Set<Pair<String, Date>> getSampleInfo(Container studyContainer, boolean truncateTime) throws SQLException;
+
+        Set<Pair<String, Double>> getSampleInfo(Container studyContainer) throws SQLException;
 
         Lsid getSpecimenMaterialLsid(Container studyContainer, String id);
     }

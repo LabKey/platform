@@ -18,6 +18,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.action.RedirectAction;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ContainerFilter;
@@ -63,9 +64,22 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
             containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
 
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        String maxRowsKey = AssayService.get().getResultsTableName(form.getProtocol()) + ".maxRows";
+        applyLastFilterParameter(url, maxRowsKey);
+        String sortKey = AssayService.get().getResultsTableName(form.getProtocol()) + ".sort";
+        applyLastFilterParameter(url, sortKey);
+
         if (form.getContainerFilterName() != null)
             url.addParameter("containerFilterName", form.getContainerFilterName());
         return url;
+    }
+    
+    private void applyLastFilterParameter(ActionURL newURL, String parameterName)
+    {
+        ActionURL lastFilterURL = PageFlowUtil.getLastFilter(getViewContext(), newURL);
+        String value = lastFilterURL.getParameter(parameterName);
+        if (value != null)
+            newURL.addParameter(parameterName, value);
     }
 
     public boolean doAction(ShowSelectedForm form, BindException errors) throws Exception

@@ -26,7 +26,6 @@ import org.labkey.data.xml.webpart.AvailableEnum;
 import org.labkey.data.xml.webpart.LocationType;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.SchemaProperty;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -67,6 +66,11 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         _locationsTranslationMap.put("!content", "body");
         _locationsTranslationMap.put("right", "right");
         _locationsTranslationMap.put("menubar", "menu");
+    }
+
+    public static String getFriendlyLocationName(String internalName)
+    {
+        return _locationsTranslationMap.get(internalName);
     }
 
     public SimpleWebPartFactory(Module module, File webPartFile)
@@ -165,7 +169,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             return true;
 
         //translate internal location name to public API name
-        String publicLocName = _locationsTranslationMap.get(location);
+        String publicLocName = getFriendlyLocationName(location);
         if(null == publicLocName)
             return false;
 

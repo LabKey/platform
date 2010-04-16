@@ -1647,7 +1647,8 @@ public class PageFlowUtil
         "clientapi/PersistentToolTip.js",
         "clientapi/Message.js",
         "clientapi/FormPanel.js",
-        "clientapi/Pipeline.js"
+        "clientapi/Pipeline.js",
+        "clientapi/Portal.js"
     };
     static String clientDebug = "clientapi/clientapi.js";
     static String clientMin = "clientapi/clientapi.min.js";

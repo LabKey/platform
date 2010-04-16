@@ -42,6 +42,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
     private boolean _isEmbedded = false;
     private String _helpPopup;
     private FrameType _frame = FrameType.PORTAL;
+    private int _webPartRowId = -1;
 
     public static enum FrameType
     {
@@ -143,6 +144,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         return (String) getViewContext().get("href");
     }
 
+    public int getWebPartRowId()
+    {
+        return _webPartRowId;
+    }
+
+    public void setWebPartRowId(int webPartRowId)
+    {
+        _webPartRowId = webPartRowId;
+    }
 
     public NavTree getCustomizeLinks()
     {
@@ -333,7 +343,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             case PORTAL:
             {
                 out.println("<!--webpart-->");
-                out.println("<table class=\"labkey-wp\">");
+                out.println("<span name=\"webpart\"><table id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp\">");
 
                 Boolean collapsed = false;
 
@@ -550,7 +560,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         case LEFT_NAVIGATION:
         case PORTAL:
-            out.print("</td></tr></table><!--/webpart-->");
+            out.print("</td></tr></table></span><!--/webpart-->");
             break;
 
         case DIALOG:

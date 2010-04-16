@@ -175,7 +175,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 titleIndex = 2;
             }
 
-            ResultSet rs = Table.select(this, cols, null, null);
+            String sortStr = (titleColumn.getSortDirection() != null ? titleColumn.getSortDirection().getDir() : "") + titleColumn.getName();
+            ResultSet rs = Table.select(this, cols, null, new Sort(sortStr));
             while (rs.next())
             {
                 ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex)));

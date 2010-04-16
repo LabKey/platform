@@ -40,6 +40,7 @@ import org.labkey.api.view.DataView;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 /**
@@ -309,6 +310,26 @@ public class PublishResultsQueryView extends ResultsQueryView
             return result;
         }
 
+        private Set<Pair<String, Double>> _validPtidVisits = null;
+        private Set<Pair<String, Date>> _validPtidDates = null;
+
+        private boolean isValidPtidVisit(Container container, String participantId, Double visit) throws SQLException
+        {
+            if (_validPtidVisits == null)
+                _validPtidVisits = SpecimenService.get().getSampleInfo(container);
+            return _validPtidVisits.contains(new Pair<String, Double>(participantId, visit));
+        }
+
+        private boolean isValidPtidDate(Container container, String participantId, Date drawDate) throws SQLException
+        {
+            if (_validPtidDates == null)
+                _validPtidDates = SpecimenService.get().getSampleInfo(container, true);
+            // Timestamps and dates don't always compare correctly, so make sure we have only dates here:
+            if (drawDate instanceof Timestamp)
+                drawDate = new Date(drawDate.getTime());
+            return _validPtidDates.contains(new Pair<String, Date>(participantId, drawDate));
+        }
+
         /** @return boolean to indicate if the row is considered to match, string with a message to explain why */
         public Pair<Boolean, String> getMatchStatus(RenderContext ctx) throws IOException
         {
@@ -328,12 +349,14 @@ public class PublishResultsQueryView extends ResultsQueryView
 
             try
             {
-                Set<ParticipantVisit> pvs;
+                // See if the value in the form matches up with at least one specimen
+                boolean userInputMatchesASpecimen;
+
                 String userParticipantId = getUserParticipantId(ctx);
                 if (_timepointType == TimepointType.VISIT)
                 {
                     Double userVisitId = convertObjectToDouble(getUserVisitId(ctx));
-                    pvs = SpecimenService.get().getSampleInfo(_targetStudyContainer, userParticipantId, userVisitId);
+                    userInputMatchesASpecimen = isValidPtidVisit(_targetStudyContainer, userParticipantId, userVisitId);
                     if (_specimenVisitCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
                         // Need to grab the study specimen's participant and visit
@@ -350,7 +373,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 else
                 {
                     Date userDate = convertObjectToDate(getUserDate(ctx));
-                    pvs = SpecimenService.get().getSampleInfo(_targetStudyContainer, userParticipantId, userDate);
+                    userInputMatchesASpecimen = isValidPtidDate(_targetStudyContainer, userParticipantId, userDate);
                     if (_specimenVisitCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
                         // Need to grab the study specimen's participant and date
@@ -382,9 +405,6 @@ public class PublishResultsQueryView extends ResultsQueryView
                         userInputMatchesTargetSpecimen = null;
                     }
                 }
-                // See if the value in the form matches up with at least one specimen
-                boolean userInputMatchesASpecimen = pvs.size() > 0 && pvs.iterator().next().getSpecimenID() != null;
-
                 // Overall match is defined by either:
                 // Having no way to match to a specimen by ID and having the user's form entry match to a specimen OR
                 // having the user's form match up against the specimen pointed to by the specimen ID
