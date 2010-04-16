@@ -440,7 +440,6 @@ ALTER TABLE study.Visit DROP CONSTRAINT PK_Visit;
 ALTER TABLE study.Visit ADD CONSTRAINT PK_Visit PRIMARY KEY (Container,RowId);
 ALTER TABLE study.Visit ADD COLUMN SequenceNumMin NUMERIC(15,4) NOT NULL DEFAULT 0;
 ALTER TABLE study.Visit ADD COLUMN SequenceNumMax NUMERIC(15,4) NOT NULL DEFAULT 0;
-UPDATE study.Visit SET SequenceNumMin=VisitId, SequenceNumMax=VisitId;
 
 --
 -- fix up VisitMap
@@ -448,13 +447,6 @@ UPDATE study.Visit SET SequenceNumMin=VisitId, SequenceNumMax=VisitId;
 
 ALTER TABLE study.VisitMap DROP CONSTRAINT PK_VisitMap;
 ALTER TABLE study.VisitMap ADD COLUMN VisitRowId INT4;
-
-UPDATE study.VisitMap
-SET VisitRowId = (
-    SELECT V.RowId
-    FROM study.Visit V
-    WHERE VisitMap.Container = V.Container AND VisitMap.VisitId = V.VisitId);
-
 ALTER TABLE study.VisitMap DROP COLUMN VisitId;
 
 ALTER TABLE study.VisitMap
@@ -480,7 +472,6 @@ ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KE
 --
 
 ALTER TABLE study.StudyData ADD COLUMN SequenceNum Numeric(15,4);
-UPDATE study.StudyData SET SequenceNum=VisitId;
 --ALTER TABLE study.StudyData DROP CONSTRAINT AK_ParticipantDataset;
 ALTER TABLE study.StudyData DROP COLUMN VisitId;
 ALTER TABLE study.studydata
@@ -504,18 +495,12 @@ ALTER TABLE study.studydata
 -- rename VisitDate -> _VisitDate to avoid some confusion
 
 ALTER TABLE study.StudyData ADD _VisitDate TIMESTAMP NULL;
-
-UPDATE study.StudyData SET _VisitDate = VisitDate;
-
 ALTER TABLE study.StudyData DROP COLUMN VisitDate;
 
 /* study-1.70-2.00.sql */
 
 ALTER TABLE study.SampleRequestSpecimen
 ADD COLUMN SpecimenGlobalUniqueId VARCHAR(100);
-
-UPDATE study.SampleRequestSpecimen SET SpecimenGlobalUniqueId =
-    (SELECT GlobalUniqueId FROM study.Specimen WHERE RowId = SpecimenId);
 
 ALTER TABLE study.Specimen
     DROP COLUMN SpecimenCondition,
@@ -550,17 +535,14 @@ ALTER TABLE study.Specimen DROP CONSTRAINT FK_Specimens_Derivatives;
 ALTER TABLE study.Specimen DROP CONSTRAINT FK_Specimens_PrimaryTypes;
 
 ALTER TABLE study.SpecimenAdditive DROP CONSTRAINT UQ_Additives;
-UPDATE study.SpecimenAdditive SET ScharpId = RowId;
 CREATE INDEX IX_SpecimenAdditive_ScharpId ON study.SpecimenAdditive(ScharpId);
 ALTER TABLE study.SpecimenAdditive ADD CONSTRAINT UQ_Additives UNIQUE (ScharpId, Container);
 
 ALTER TABLE study.SpecimenDerivative DROP CONSTRAINT UQ_Derivatives;
-UPDATE study.SpecimenDerivative SET ScharpId = RowId;
 CREATE INDEX IX_SpecimenDerivative_ScharpId ON study.SpecimenDerivative(ScharpId);
 ALTER TABLE study.SpecimenDerivative ADD CONSTRAINT UQ_Derivatives UNIQUE (ScharpId, Container);
 
 ALTER TABLE study.SpecimenPrimaryType DROP CONSTRAINT UQ_PrimaryTypes;
-UPDATE study.SpecimenPrimaryType SET ScharpId = RowId;
 CREATE INDEX IX_SpecimenPrimaryType_ScharpId ON study.SpecimenPrimaryType(ScharpId);
 ALTER TABLE study.SpecimenPrimaryType ADD CONSTRAINT UQ_PrimaryTypes UNIQUE (ScharpId, Container);
 
@@ -612,24 +594,6 @@ CREATE TABLE study.StudyDesignVersion
 ALTER TABLE study.Report DROP CONSTRAINT PK_Report;
 
 ALTER TABLE study.Report ADD CONSTRAINT PK_Report PRIMARY KEY (ContainerId, ReportId);
-
-UPDATE exp.ObjectProperty SET
-    StringValue = CAST(exp.ObjectProperty.floatValue AS INTEGER),
-    TypeTag = 's',
-    floatValue = NULL
-WHERE
-    (SELECT exp.PropertyDescriptor.PropertyURI FROM exp.PropertyDescriptor
-        WHERE exp.PropertyDescriptor.PropertyId =
-        exp.ObjectProperty.PropertyId) LIKE '%StudyDataset.%NAB#FileId' AND
-    (SELECT exp.PropertyDescriptor.RangeURI FROM exp.PropertyDescriptor
-        WHERE exp.PropertyDescriptor.PropertyId = exp.ObjectProperty.PropertyId) =
-        'http://www.w3.org/2001/XMLSchema#int';
-
-UPDATE exp.PropertyDescriptor SET
-    RangeURI = 'http://www.w3.org/2001/XMLSchema#string'
-WHERE
-    exp.PropertyDescriptor.RangeURI = 'http://www.w3.org/2001/XMLSchema#int' AND
-    exp.PropertyDescriptor.PropertyURI LIKE '%StudyDataset.%NAB#FileId';
 
 CREATE INDEX IX_AssayRun_Container ON study.AssayRun(Container);
 
@@ -711,11 +675,6 @@ ALTER TABLE study.visitmap RENAME COLUMN isrequired TO required;
 -- DATASET
 
 ALTER TABLE study.dataset ADD COLUMN name VARCHAR(200);
-
-UPDATE study.dataset SET name=COALESCE(label, CAST(datasetid AS VARCHAR(20)));
-UPDATE study.dataset SET name=datasetid
-WHERE 1 < (SELECT COUNT(*) FROM study.dataset D WHERE D.container=study.dataset.container AND D.name=study.dataset.name);
-
 ALTER TABLE study.dataset ALTER name SET NOT NULL;
 ALTER TABLE study.dataset ADD CONSTRAINT UQ_DatasetName UNIQUE (container, name);
 
@@ -748,13 +707,9 @@ ALTER TABLE study.Dataset ADD COLUMN Description TEXT NULL;
 ALTER TABLE study.StudyDesign
     ADD Active boolean NOT NULL DEFAULT FALSE;
 
-UPDATE study.StudyDesign SET Active=true WHERE StudyEntityId IS NOT NULL;
-
 ALTER TABLE study.StudyDesign
     DROP StudyEntityId,
     ADD SourceContainer ENTITYID;
-
-UPDATE study.StudyDesign SET SourceContainer = Container;
 
 /* study-2.10-2.20.sql */
 
@@ -780,17 +735,11 @@ ALTER TABLE study.SpecimenEvent
     ADD fr_container VARCHAR(200),
     ADD fr_position VARCHAR(200);
 
-DELETE FROM study.study WHERE NOT EXISTS
-(SELECT Container FROM study.visit WHERE study.visit.container=study.study.Container)
-AND NOT EXISTS (Select Container FROM study.dataset WHERE study.dataset.container=study.study.Container);
-
 /* study-2.20-2.30.sql */
 
 ALTER TABLE study.Study
 ADD DateBased Boolean DEFAULT false,
 ADD StartDate TIMESTAMP;
-
-UPDATE study.Study SET DateBased=false WHERE DateBased IS NULL;
 
 ALTER TABLE study.ParticipantVisit
 ADD Day int4;
@@ -801,8 +750,4 @@ ADD StartDate TIMESTAMP;
 ALTER TABLE study.Dataset
 ADD DemographicData Boolean DEFAULT false;
 
-UPDATE study.Dataset SET DemographicData=false WHERE DemographicData IS NULL;
-
 ALTER TABLE study.Study ADD StudySecurity Boolean DEFAULT false;
-
-UPDATE study.Study SET StudySecurity=true;

@@ -205,21 +205,6 @@ ALTER TABLE core.UsersData ALTER COLUMN Pager TYPE VARCHAR(64);
 /* core-1.60-1.70.sql */
 
 ALTER TABLE core.UsersData ADD DisplayName VARCHAR(64) NULL;
-
-DELETE FROM core.UsersData
- WHERE UserID NOT IN
- 	(SELECT P1.UserId
-  	FROM core.Principals P1
-  	WHERE P1.Type = 'u');
-
-UPDATE core.UsersData
-SET DisplayName =
-	(SELECT Name
-		FROM core.Principals P1
-		WHERE P1.Type = 'u'
-		AND P1.UserId = core.UsersData.UserId
-	);
-
 ALTER TABLE core.UsersData ALTER COLUMN DisplayName SET NOT NULL;
 ALTER TABLE core.UsersData ADD CONSTRAINT UQ_DisplayName UNIQUE (DisplayName);
 
