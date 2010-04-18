@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 /* pipeline-0.00-2.00.sql */
 
 /* pipeline-0.00-1.00.sql */
@@ -24,7 +23,7 @@ GO
 
 
 CREATE TABLE pipeline.StatusFiles
-    (
+(
 	_ts TIMESTAMP,
 	CreatedBy USERID,
 	Created DATETIME DEFAULT GETDATE(),
@@ -41,12 +40,11 @@ CREATE TABLE pipeline.StatusFiles
 	Email NVARCHAR(255)
 
 	CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId)
-    )
-CREATE INDEX IX_StatusFiles_Status ON pipeline.StatusFiles (Status)
+)
 GO
 
 CREATE TABLE pipeline.PipelineRoots
-    (
+(
 	_ts TIMESTAMP,
 	CreatedBy USERID,
 	Created DATETIME DEFAULT GETDATE(),
@@ -61,7 +59,7 @@ CREATE TABLE pipeline.PipelineRoots
 	Providers VARCHAR(100),
 
 	CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
-    )
+)
 GO
 
 /* pipeline-1.00-1.10.sql */
@@ -73,16 +71,6 @@ ALTER TABLE pipeline.StatusFiles ADD
     Provider NVARCHAR(255)
 GO
 
-UPDATE pipeline.StatusFiles SET Provider = 'X!Tandem (Cluster)'
-WHERE FilePath LIKE '%/xtan/%'
-
-UPDATE pipeline.StatusFiles SET Provider = 'Comet (Cluster)'
-WHERE FilePath LIKE '%/cmt/%'
-
-UPDATE pipeline.StatusFiles SET Provider = 'msInspect (Cluster)'
-WHERE FilePath LIKE '%/inspect/%'
-GO
-
 /* pipeline-1.10-1.20.sql */
 
 ALTER TABLE pipeline.PipelineRoots ADD
@@ -90,27 +78,7 @@ ALTER TABLE pipeline.PipelineRoots ADD
 GO
 
 ALTER TABLE pipeline.StatusFiles ADD
-    HadError bit
-GO
-
-/* pipeline-1.20-1.30.sql */
-
-ALTER TABLE pipeline.StatusFiles DROP COLUMN
-    HadError
-GO
-
-ALTER TABLE pipeline.StatusFiles ADD
     HadError bit NOT NULL DEFAULT 0
-GO
-
-UPDATE pipeline.StatusFiles SET HadError = 1
-WHERE Status = 'ERROR'
-GO
-
-/* pipeline-1.50-1.60.sql */
-
-DELETE FROM pipeline.StatusFiles
-    WHERE Container NOT IN (SELECT EntityId FROM core.Containers)
 GO
 
 ALTER TABLE pipeline.StatusFiles
@@ -128,13 +96,6 @@ ALTER TABLE pipeline.StatusFiles
 GO
 
 /* pipeline-2.00-2.10.sql */
-
-EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Container'
-GO
-
--- dropping this index because it seems very nonselective and has been the cause(?) of some deadlocks
-EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Status'
-GO
 
 CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container)
 GO

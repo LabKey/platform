@@ -30,16 +30,16 @@ GO
 
 
 CREATE TABLE study.Study
-    (
+(
     Label NVARCHAR(200) NULL,
     Container ENTITYID NOT NULL
     CONSTRAINT PK_Study PRIMARY KEY (Container)
-    )
+)
 GO
 
 
 CREATE TABLE study.Site
-    (
+(
     EntityId ENTITYID NOT NULL DEFAULT NEWID(),
     Label NVARCHAR(200) NULL,
     Container ENTITYID NOT NULL,
@@ -51,37 +51,40 @@ CREATE TABLE study.Site
     IsSal Bit,
     IsRepository Bit,
     IsEndpoint Bit,
+
     CONSTRAINT PK_Site PRIMARY KEY (RowId)
-    )
+)
 GO
 
 
 CREATE TABLE study.Visit
-    (
+(
     VisitId INT NOT NULL,
     Label NVARCHAR(200) NULL,
     TypeCode CHAR(1) NULL,
     ShowByDefault BIT NOT NULL DEFAULT 1,
     DisplayOrder INT NOT NULL DEFAULT 0,
     Container ENTITYID NOT NULL
+
     CONSTRAINT PK_Visit PRIMARY KEY CLUSTERED (Container,VisitId)
-    )
+)
 GO
 
 
 CREATE TABLE study.VisitMap
-    (
+(
     Container ENTITYID NOT NULL,
     VisitId INT NOT NULL,	-- FK
     DataSetId INT NOT NULL,	-- FK
     IsRequired BIT NOT NULL DEFAULT 1
+
     CONSTRAINT PK_VisitMap PRIMARY KEY CLUSTERED (Container,VisitId,DataSetId)
-    )
+)
 GO
 
 
 CREATE TABLE study.DataSet -- AKA CRF or Assay
-   (
+(
     Container ENTITYID NOT NULL,
     DataSetId INT NOT NULL,
     TypeURI NVARCHAR(200) NULL,
@@ -89,8 +92,9 @@ CREATE TABLE study.DataSet -- AKA CRF or Assay
     ShowByDefault BIT NOT NULL DEFAULT 1,
     DisplayOrder INT NOT NULL DEFAULT 0,
     Category NVARCHAR(200) NULL
+
     CONSTRAINT PK_DataSet PRIMARY KEY CLUSTERED (Container,DataSetId)
-   )
+)
 GO
 
 
@@ -110,6 +114,7 @@ CREATE TABLE study.SampleRequestStatus
     Container ENTITYID NOT NULL,
     SortOrder INT NULL,
     Label NVARCHAR(100),
+
     CONSTRAINT PK_SampleRequestStatus PRIMARY KEY (RowId)
 )
 GO
@@ -209,6 +214,7 @@ CREATE TABLE study.StudyData
 	VisitId INT NULL,
 	DatasetId INT NOT NULL,
 	LSID VARCHAR(200) NOT NULL,
+
 	CONSTRAINT PK_ParticipantDataset PRIMARY KEY (LSID),
 	CONSTRAINT AK_ParticipantDataset UNIQUE CLUSTERED (Container, DatasetId, VisitId, ParticipantId)
 )
@@ -222,6 +228,7 @@ CREATE TABLE study.SpecimenAdditive (
     LdmsAdditiveCode NVARCHAR(3),
     LabwareAdditiveCode NVARCHAR(20),
     Additive NVARCHAR(100),
+
     CONSTRAINT PK_Additives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Additives UNIQUE (ScharpId, Container)
 )
@@ -234,6 +241,7 @@ CREATE TABLE study.SpecimenDerivative (
     LdmsDerivativeCode NVARCHAR(3),
     LabwareDerivativeCode NVARCHAR(20),
     Derivative NVARCHAR(100),
+
     CONSTRAINT PK_Derivatives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Derivatives UNIQUE (ScharpId, Container)
 )
@@ -246,6 +254,7 @@ CREATE TABLE study.SpecimenPrimaryType (
     PrimaryTypeLdmsCode NVARCHAR(5),
     PrimaryTypeLabwareCode NVARCHAR(5),
     PrimaryType NVARCHAR(100),
+
     CONSTRAINT PK_PrimaryTypes PRIMARY KEY (RowId),
     CONSTRAINT UQ_PrimaryTypes UNIQUE (ScharpId, Container)
 )
@@ -279,6 +288,7 @@ CREATE TABLE study.Specimen (
     XSampleOrigin NVARCHAR(20),
     ExternalLocation NVARCHAR(20),
     UpdateTimestamp DATETIME,
+
     CONSTRAINT PK_Specimens PRIMARY KEY (RowId),
     CONSTRAINT UQ_Specimens_GlobalId UNIQUE (GlobalUniqueId, Container),
     CONSTRAINT FK_Specimens_Additives FOREIGN KEY (AdditiveTypeId) REFERENCES study.SpecimenAdditive(RowId),
@@ -304,6 +314,7 @@ CREATE TABLE study.SpecimenEvent (
     ImportedBatchNumber INT,
     LabReceiptDate DATETIME,
     Comments NVARCHAR(30),
+
     CONSTRAINT PK_SpecimensEvents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Specimens_ScharpId UNIQUE (ScharpId, Container),
     CONSTRAINT FK_SpecimensEvents_Specimens FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId),
@@ -364,6 +375,7 @@ GO
 ALTER TABLE study.Participant ADD
     EnrollmentSiteId INT NULL,
     CurrentSiteId INT NULL,
+
 	CONSTRAINT FK_EnrollmentSiteId_Site FOREIGN KEY (EnrollmentSiteId) REFERENCES study.Site (RowId),
 	CONSTRAINT FK_CurrentSiteId_Site FOREIGN KEY (CurrentSiteId) REFERENCES study.Site (RowId)
 GO
@@ -376,16 +388,17 @@ GO
 
 CREATE TABLE study.UploadLog
 (
-  RowId INT IDENTITY NOT NULL,
-  Container ENTITYID NOT NULL,
-  Created DATETIME NOT NULL,
-  CreatedBy USERID NOT NULL,
-  Description TEXT,
-  FilePath VARCHAR(512),
-  DatasetId INT NOT NULL,
-  Status VARCHAR(20),
-  CONSTRAINT PK_UploadLog PRIMARY KEY (RowId),
-  CONSTRAINT UQ_UploadLog_FilePath UNIQUE (FilePath)
+    RowId INT IDENTITY NOT NULL,
+    Container ENTITYID NOT NULL,
+    Created DATETIME NOT NULL,
+    CreatedBy USERID NOT NULL,
+    Description TEXT,
+    FilePath VARCHAR(512),
+    DatasetId INT NOT NULL,
+    Status VARCHAR(20),
+
+    CONSTRAINT PK_UploadLog PRIMARY KEY (RowId),
+    CONSTRAINT UQ_UploadLog_FilePath UNIQUE (FilePath)
 )
 GO
 
@@ -438,7 +451,7 @@ ALTER TABLE study.DataSet ADD VisitDatePropertyName NVARCHAR(200)
 GO
 
 CREATE TABLE study.Plate
-    (
+(
     RowId INT IDENTITY(1,1),
     LSID NVARCHAR(200) NOT NULL,
     Container ENTITYID NOT NULL,
@@ -450,11 +463,11 @@ CREATE TABLE study.Plate
     Rows INT NOT NULL,
     Columns INT NOT NULL,
     CONSTRAINT PK_Plate PRIMARY KEY (RowId)
-    )
+)
 GO
 
 CREATE TABLE study.WellGroup
-    (
+(
     RowId INT IDENTITY(1,1),
     PlateId INT NOT NULL,
     LSID NVARCHAR(200) NOT NULL,
@@ -464,11 +477,11 @@ CREATE TABLE study.WellGroup
     TypeName NVARCHAR(50) NOT NULL,
     CONSTRAINT PK_WellGroup PRIMARY KEY (RowId),
     CONSTRAINT FK_WellGroup_Plate FOREIGN KEY (PlateId) REFERENCES study.Plate(RowId)
-    )
+)
 GO
 
 CREATE TABLE study.Well
-    (
+(
     RowId INT IDENTITY(1,1),
     LSID NVARCHAR(200) NOT NULL,
     Container ENTITYID NOT NULL,
@@ -479,7 +492,7 @@ CREATE TABLE study.Well
     Col INT NOT NULL,
     CONSTRAINT PK_Well PRIMARY KEY (RowId),
     CONSTRAINT FK_Well_Plate FOREIGN KEY (PlateId) REFERENCES study.Plate(RowId)
-    )
+)
 GO
 
 --
@@ -496,8 +509,6 @@ ALTER TABLE study.Visit ADD CONSTRAINT PK_Visit PRIMARY KEY (Container,RowId);
 ALTER TABLE study.Visit ADD SequenceNumMin NUMERIC(15,4) NOT NULL DEFAULT 0;
 ALTER TABLE study.Visit ADD SequenceNumMax NUMERIC(15,4) NOT NULL DEFAULT 0;
 GO
-UPDATE study.Visit SET SequenceNumMin=VisitId, SequenceNumMax=VisitId;
-GO
 
 --
 -- fix up VisitMap
@@ -505,13 +516,6 @@ GO
 
 ALTER TABLE study.VisitMap DROP CONSTRAINT PK_VisitMap;
 ALTER TABLE study.VisitMap ADD VisitRowId INT NOT NULL DEFAULT -1;
-GO
-UPDATE study.VisitMap
-SET VisitRowId = (
-    SELECT V.RowId
-    FROM study.Visit V
-    WHERE VisitMap.Container = V.Container AND VisitMap.VisitId = V.VisitId)
-FROM study.VisitMap VisitMap
 GO
 ALTER TABLE study.VisitMap DROP COLUMN VisitId;
 ALTER TABLE study.VisitMap
@@ -523,13 +527,13 @@ GO
 --
 
 CREATE TABLE study.ParticipantVisit
-    (
+(
     Container ENTITYID NOT NULL,
     ParticipantId VARCHAR(32) NOT NULL,
     VisitRowId int NULL,
     SequenceNum NUMERIC(15,4) NOT NULL,
     VisitDate DATETIME NULL
-    );
+);
 ALTER TABLE study.ParticipantVisit ADD CONSTRAINT PK_ParticipantVisit PRIMARY KEY (Container, SequenceNum, ParticipantId);
 GO
 
@@ -538,8 +542,6 @@ GO
 --
 
 ALTER TABLE study.StudyData ADD SequenceNum Numeric(15,4);
-GO
-UPDATE study.StudyData SET SequenceNum=VisitId;
 GO
 ALTER TABLE study.StudyData DROP AK_ParticipantDataset;
 ALTER TABLE study.StudyData DROP COLUMN VisitId;
@@ -571,19 +573,13 @@ GO
 
 ALTER TABLE study.StudyData ADD _VisitDate DATETIME NULL
 GO
-UPDATE study.StudyData SET _VisitDate = VisitDate
-GO
 ALTER TABLE study.StudyData DROP COLUMN VisitDate
 GO
 
 /* study-1.70-2.00.sql */
 
 ALTER TABLE study.SampleRequestSpecimen ADD
-     SpecimenGlobalUniqueId NVARCHAR(100)
-GO
-
-UPDATE study.SampleRequestSpecimen SET SpecimenGlobalUniqueId =
-    (SELECT GlobalUniqueId FROM study.Specimen WHERE RowId = SpecimenId)
+    SpecimenGlobalUniqueId NVARCHAR(100)
 GO
 
 ALTER TABLE study.Specimen DROP COLUMN
@@ -623,19 +619,16 @@ ALTER TABLE study.Specimen DROP CONSTRAINT FK_Specimens_PrimaryTypes;
 GO
 
 ALTER TABLE study.SpecimenAdditive DROP CONSTRAINT UQ_Additives;
-UPDATE study.SpecimenAdditive SET ScharpId = RowId;
 CREATE INDEX IX_SpecimenAdditive_ScharpId ON study.SpecimenAdditive(ScharpId);
 ALTER TABLE study.SpecimenAdditive ADD CONSTRAINT UQ_Additives UNIQUE (ScharpId, Container);
 GO
 
 ALTER TABLE study.SpecimenDerivative DROP CONSTRAINT UQ_Derivatives;
-UPDATE study.SpecimenDerivative SET ScharpId = RowId;
 CREATE INDEX IX_SpecimenDerivative_ScharpId ON study.SpecimenDerivative(ScharpId);
 ALTER TABLE study.SpecimenDerivative ADD CONSTRAINT UQ_Derivatives UNIQUE (ScharpId, Container);
 GO
 
 ALTER TABLE study.SpecimenPrimaryType DROP CONSTRAINT UQ_PrimaryTypes;
-UPDATE study.SpecimenPrimaryType SET ScharpId = RowId;
 CREATE INDEX IX_SpecimenPrimaryType_ScharpId ON study.SpecimenPrimaryType(ScharpId);
 ALTER TABLE study.SpecimenPrimaryType ADD CONSTRAINT UQ_PrimaryTypes UNIQUE (ScharpId, Container);
 GO
@@ -690,24 +683,6 @@ ALTER TABLE study.Report DROP CONSTRAINT PK_Report
 GO
 ALTER TABLE study.Report ADD CONSTRAINT PK_Report PRIMARY KEY (ContainerId, ReportId)
 GO
-
-UPDATE exp.ObjectProperty SET
-    StringValue = CAST(exp.ObjectProperty.floatValue AS INTEGER),
-    TypeTag = 's',
-    floatValue = NULL
-WHERE
-    (SELECT exp.PropertyDescriptor.PropertyURI FROM exp.PropertyDescriptor
-        WHERE exp.PropertyDescriptor.PropertyId =
-        exp.ObjectProperty.PropertyId) LIKE '%StudyDataset.%NAB#FileId' AND
-    (SELECT exp.PropertyDescriptor.RangeURI FROM exp.PropertyDescriptor
-        WHERE exp.PropertyDescriptor.PropertyId = exp.ObjectProperty.PropertyId) =
-        'http://www.w3.org/2001/XMLSchema#int';
-
-UPDATE exp.PropertyDescriptor SET
-    RangeURI = 'http://www.w3.org/2001/XMLSchema#string'
-WHERE
-    exp.PropertyDescriptor.RangeURI = 'http://www.w3.org/2001/XMLSchema#int' AND
-    exp.PropertyDescriptor.PropertyURI LIKE '%StudyDataset.%NAB#FileId';
 
 CREATE INDEX IX_AssayRun_Container ON study.AssayRun(Container);
 
@@ -774,29 +749,9 @@ GO
 EXEC sp_rename 'study.visitmap.isrequired', 'required', 'COLUMN';
 GO
 
-
--- VISIT
-
--- ALTER TABLE study.visit ADD name NVARCHAR(200);
--- GO
--- UPDATE study.visit SET name=COALESCE(label, CAST(rowid AS NVARCHAR(20)));
--- UPDATE study.visit SET name=rowid
--- WHERE 1 < (SELECT COUNT(*) FROM study.visit V WHERE V.container=study.visit.container AND V.name=study.visit.name)
--- GO
---
--- ALTER TABLE study.visit ALTER COLUMN name VARCHAR(200) NOT NULL
--- GO
--- ALTER TABLE study.visit ADD CONSTRAINT UQ_VisitName UNIQUE (container, name);
--- GO
-
-
 -- DATASET
 
 ALTER TABLE study.dataset ADD name VARCHAR(200);
-GO
-UPDATE study.dataset SET name=COALESCE(label, CAST(datasetid AS NVARCHAR(20)));
-UPDATE study.dataset SET name=datasetid
-WHERE 1 < (SELECT COUNT(*) FROM study.dataset D WHERE D.container=study.dataset.container AND D.name=study.dataset.name)
 GO
 
 ALTER TABLE study.dataset ALTER COLUMN name VARCHAR(200) NOT NULL
@@ -848,12 +803,8 @@ ALTER TABLE study.StudyDesign
     ADD Active BIT
 GO
 
-UPDATE study.StudyDesign SET Active=1 WHERE StudyEntityId IS NOT NULL
-UPDATE study.StudyDesign SET Active=0 WHERE StudyEntityId IS NULL
-GO
-
 ALTER TABLE study.StudyDesign
-  ADD CONSTRAINT DF_Active DEFAULT 0 FOR Active
+    ADD CONSTRAINT DF_Active DEFAULT 0 FOR Active
 GO
 
 ALTER TABLE study.StudyDesign
@@ -862,9 +813,6 @@ GO
 
 ALTER TABLE study.StudyDesign
     ADD SourceContainer ENTITYID
-GO
-
-UPDATE study.StudyDesign SET SourceContainer = Container
 GO
 
 /* study-2.10-2.20.sql */
@@ -899,43 +847,29 @@ ALTER TABLE study.SpecimenEvent ADD
     fr_position NVARCHAR(200)
 GO
 
-DELETE FROM study.study WHERE NOT EXISTS
-(SELECT Container FROM study.visit WHERE study.visit.container=study.study.Container)
-AND NOT EXISTS (Select Container FROM study.dataset WHERE study.dataset.container=study.study.Container)
-GO
-
 /* study-2.20-2.30.sql */
 
 ALTER TABLE study.Study ADD
     DateBased BIT DEFAULT 0,
     StartDate DATETIME
-  GO
-
-UPDATE study.Study SET DateBased=0 WHERE DateBased is NULL
 GO
 
 ALTER TABLE study.ParticipantVisit ADD
     Day INTEGER
-  GO
+GO
 
 ALTER TABLE study.Participant ADD
     StartDate DATETIME
 GO
 
 ALTER TABLE study.Dataset
-ADD DemographicData BIT
-GO
-
-UPDATE study.Dataset SET DemographicData=0 WHERE DemographicData IS NULL
+    ADD DemographicData BIT
 GO
 
 ALTER TABLE study.Dataset
-ADD CONSTRAINT DF_DemographicData_False
-DEFAULT 0 FOR DemographicData
+    ADD CONSTRAINT DF_DemographicData_False
+    DEFAULT 0 FOR DemographicData
 GO
 
 ALTER TABLE study.Study ADD StudySecurity BIT DEFAULT 0
-GO
-
-UPDATE study.Study SET StudySecurity=1 WHERE StudySecurity is NULL
 GO

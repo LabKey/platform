@@ -17,10 +17,9 @@
 /* issues-0.00-1.00.sql */
 
 CREATE SCHEMA issues;
-SET search_path TO issues, public;  -- include public to get ENTITYID, USERID
 
-CREATE TABLE Issues
-	(
+CREATE TABLE issues.Issues
+(
 	_ts TIMESTAMP DEFAULT now(),
 	Container ENTITYID NOT NULL,
 	IssueId SERIAL,
@@ -56,13 +55,13 @@ CREATE TABLE Issues
 	Closed TIMESTAMP,
 
 	CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
-	);
-CREATE INDEX IX_Issues_AssignedTo ON Issues (AssignedTo);
-CREATE INDEX IX_Issues_Status ON Issues (Status);
+);
+CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo);
+CREATE INDEX IX_Issues_Status ON issues.Issues (Status);
 
 
-CREATE TABLE Comments
-	(
+CREATE TABLE issues.Comments
+(
 	-- EntityId ENTITYID DEFAULT CAST(NEXTVAL('guids') AS ENTITYID),	-- used for attachments
 	CommentId SERIAL,
 	IssueId INT,
@@ -71,25 +70,18 @@ CREATE TABLE Comments
 	Comment TEXT,
 	
 	CONSTRAINT PK_Comments PRIMARY KEY (IssueId, CommentId),
-	CONSTRAINT FK_Comments_Issues FOREIGN KEY (IssueId) REFERENCES Issues(IssueId)
-	);
+	CONSTRAINT FK_Comments_Issues FOREIGN KEY (IssueId) REFERENCES issues.Issues(IssueId)
+);
 
 
-CREATE TABLE IssueKeywords
-	(
+CREATE TABLE issues.IssueKeywords
+(
 	Container ENTITYID NOT NULL,
 	Type INT NOT NULL,	-- area or milestone (or whatever)
 	Keyword VARCHAR(255) NOT NULL,
 
 	CONSTRAINT PK_IssueKeywords PRIMARY KEY (Container, Type, Keyword)
-	);
-
-/* issues-1.10-1.30.sql */
-
-INSERT INTO issues.IssueKeywords (Container, Type, Keyword)
-(SELECT DISTINCT Container, 3, Milestone
-FROM issues.Issues
-WHERE Milestone IS NOT NULL);
+);
 
 /* issues-1.50-1.60.sql */
 
@@ -105,14 +97,15 @@ ALTER TABLE issues.Issues
     ADD COLUMN NotifyList TEXT;
 
 CREATE TABLE issues.EmailPrefs
-	(
+(
 	Container ENTITYID,
 	UserId USERID,
 	EmailOption INT4 NOT NULL,
+
 	CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
 	CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
 	CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId)
-	);
+);
 
 /* issues-1.70-2.00.sql */
 

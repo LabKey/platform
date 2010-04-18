@@ -20,7 +20,7 @@ EXEC sp_addapprole 'portal', 'password'
 GO
 
 CREATE TABLE portal.PortalWebParts
-	(
+(
 	PageId ENTITYID NOT NULL,
 	[Index] INT NOT NULL,
 	Name VARCHAR(64),
@@ -29,26 +29,10 @@ CREATE TABLE portal.PortalWebParts
 	Properties VARCHAR(4000),	-- url encoded properties
 
 	CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, [Index])
-	)
+)
 GO
 
 /* portal-1.50-1.60.sql */
 
 ALTER TABLE portal.portalwebparts ADD Permanent BIT NOT NULL DEFAULT 0
-GO
-
-DELETE FROM portal.PortalWebParts
-	WHERE NOT EXISTS (SELECT EntityId FROM core.Containers C WHERE C.EntityId = PageId)
-GO
-
-/* portal-1.60-1.70.sql */
-
-UPDATE Portal.PortalWebParts
-    SET Name = 'Messages'
-    WHERE Name = 'Announcements'
-GO
-
-UPDATE Portal.PortalWebParts
-SET Properties = 'webPartContainer=' + UPPER(PageId) + '&name=default'
-WHERE (Name = 'Wiki' OR Name = 'Narrow Wiki') AND (Properties IS NULL OR Properties = '')
 GO

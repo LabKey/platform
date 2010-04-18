@@ -19,48 +19,45 @@
 /* pipeline-0.00-1.00.sql */
 
 CREATE SCHEMA pipeline;
-SET search_path TO pipeline,public;
 
-CREATE TABLE StatusFiles
-    (
-       _ts TIMESTAMP DEFAULT now(),
-       CreatedBy USERID,
-       Created TIMESTAMP DEFAULT now(),
-       ModifiedBy USERID,
-       Modified TIMESTAMP DEFAULT now(),
+CREATE TABLE pipeline.StatusFiles
+(
+     _ts TIMESTAMP DEFAULT now(),
+     CreatedBy USERID,
+     Created TIMESTAMP DEFAULT now(),
+     ModifiedBy USERID,
+     Modified TIMESTAMP DEFAULT now(),
 
-       Container ENTITYID NOT NULL,
-       EntityId ENTITYID NOT NULL,
+     Container ENTITYID NOT NULL,
+     EntityId ENTITYID NOT NULL,
 
-       RowId SERIAL,
-       Status VARCHAR(100),
-       Info VARCHAR(255),
-       FilePath VARCHAR(500),
-       Email VARCHAR(255),
+     RowId SERIAL,
+     Status VARCHAR(100),
+     Info VARCHAR(255),
+     FilePath VARCHAR(500),
+     Email VARCHAR(255),
 
-       CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId)
-    );
+     CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId)
+);
 
 
-CREATE INDEX IX_StatusFiles_Status ON StatusFiles (Status);
+CREATE TABLE pipeline.PipelineRoots
+(
+    _ts TIMESTAMP DEFAULT now(),
+    CreatedBy USERID,
+    Created TIMESTAMP DEFAULT now(),
+    ModifiedBy USERID,
+    Modified TIMESTAMP DEFAULT now(),
 
-CREATE TABLE PipelineRoots
-    (
-       _ts TIMESTAMP DEFAULT now(),
-       CreatedBy USERID,
-       Created TIMESTAMP DEFAULT now(),
-       ModifiedBy USERID,
-       Modified TIMESTAMP DEFAULT now(),
+    Container ENTITYID NOT NULL,
+    EntityId ENTITYID NOT NULL,
 
-       Container ENTITYID NOT NULL,
-       EntityId ENTITYID NOT NULL,
+    PipelineRootId SERIAL,
+    Path VARCHAR(300) NOT NULL,
+    Providers VARCHAR(100),
 
-       PipelineRootId SERIAL,
-       Path VARCHAR(300) NOT NULL,
-       Providers VARCHAR(100),
-
-       CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
-    );
+    CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
+);
 
 /* pipeline-1.00-1.10.sql */
 
@@ -69,15 +66,6 @@ ALTER TABLE pipeline.StatusFiles
     ADD DataUrl VARCHAR(255),
     ADD Job VARCHAR(36),
     ADD Provider VARCHAR(255);
-
-UPDATE pipeline.StatusFiles SET Provider = 'X!Tandem (Cluster)'
-WHERE FilePath LIKE '%/xtan/%';
-
-UPDATE pipeline.StatusFiles SET Provider = 'Comet (Cluster)'
-WHERE FilePath LIKE '%/cmt/%';
-
-UPDATE pipeline.StatusFiles SET Provider = 'msInspect (Cluster)'
-WHERE FilePath LIKE '%/inspect/%';
 
 /* pipeline-1.10-1.20.sql */
 
@@ -95,13 +83,7 @@ ALTER TABLE pipeline.StatusFiles
 ALTER TABLE pipeline.StatusFiles
     ADD HadError boolean NOT NULL DEFAULT FALSE;
 
-UPDATE pipeline.StatusFiles SET HadError = TRUE
-WHERE Status = 'ERROR';
-
 /* pipeline-1.50-1.60.sql */
-
-DELETE FROM pipeline.StatusFiles
-    WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
 
 ALTER TABLE pipeline.StatusFiles
     ADD CONSTRAINT FK_StatusFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
@@ -117,12 +99,4 @@ ALTER TABLE pipeline.StatusFiles
 
 /* pipeline-2.00-2.10.sql */
 
-SELECT core.fn_dropifexists ('StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Container')
-;
-
--- dropping this index because it seems very nonselective and has been the cause(?) of some deadlocks
-SELECT core.fn_dropifexists ('StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Status')
-;
-
-CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container)
-;
+CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container);

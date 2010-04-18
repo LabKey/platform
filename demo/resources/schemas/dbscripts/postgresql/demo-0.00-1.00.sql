@@ -15,9 +15,8 @@
  */
 
 CREATE SCHEMA demo;
-SET search_path TO demo, public;
 
-CREATE TABLE Person
+CREATE TABLE demo.Person
 (
 	-- standard fields
 	_ts TIMESTAMP DEFAULT now(),

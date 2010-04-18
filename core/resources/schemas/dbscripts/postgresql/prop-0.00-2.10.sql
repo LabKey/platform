@@ -19,7 +19,6 @@
 -- Create generic properties tables, stored procedures, etc.
 
 CREATE SCHEMA prop;
-SET search_path TO prop, public;
 
 --
 -- NOTE: Bug in PropertyManager means NULL can't be passed for ObjectId, Category, etc. right now
@@ -30,8 +29,8 @@ SET search_path TO prop, public;
 --     Category can be NULL if the Key field is reasonably unique/descriptive
 -- UserId: Modules may use NULL UserId for general configuration
 --
-CREATE TABLE PropertySets
-	(
+CREATE TABLE prop.PropertySets
+(
 	Set SERIAL,
 	ObjectId UNIQUEIDENTIFIER NULL,  -- e.g. EntityId or ContainerID
 	Category VARCHAR(255) NULL,      -- e.g. "org.labkey.api.MailingList", may be NULL
@@ -39,20 +38,20 @@ CREATE TABLE PropertySets
 
 	CONSTRAINT PK_PropertySets PRIMARY KEY (Set),
 	CONSTRAINT UQ_PropertySets UNIQUE (ObjectId, UserId, Category)
-	);
+);
 
 
-CREATE TABLE Properties
-	(
+CREATE TABLE prop.Properties
+(
 	Set INT NOT NULL,
 	Name VARCHAR(255) NOT NULL,
 	Value VARCHAR(2000) NOT NULL,
 
 	CONSTRAINT PK_Properties PRIMARY KEY (Set, Name)
-	);
+);
 
 
-CREATE FUNCTION Property_setValue(int, text, text) RETURNS void AS '
+CREATE FUNCTION prop.Property_setValue(int, text, text) RETURNS void AS '
 	DECLARE
 		propertySet ALIAS FOR $1;
 		propertyName ALIAS FOR $2;
@@ -73,12 +72,3 @@ CREATE FUNCTION Property_setValue(int, text, text) RETURNS void AS '
 		RETURN;
 	END;
 	' LANGUAGE plpgsql;
-
-/* prop-2.00-2.10.sql */
-
--- Theme updates to go with the navigation facelift in 2.1:
-UPDATE prop.properties SET VALUE = 'e1ecfc;89a1b4;ffdf8c;336699;ebf4ff;89a1b4'
-WHERE name = 'themeColors-Blue' AND value = 'e1ecfc;ffd275;ffdf8c;336699;ebf4ff;b9d1f4';
-
-UPDATE prop.properties SET VALUE = 'cccc99;929146;e1e1c4;666633;e1e1c4;929146'
-WHERE name = 'themeColors-Brown' AND value = 'cccc99;a00000;e1e1c4;666633;e1e1c4;b2b166';

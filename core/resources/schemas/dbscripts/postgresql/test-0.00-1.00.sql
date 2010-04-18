@@ -17,10 +17,9 @@
 -- Create "test" table
 
 CREATE SCHEMA test;
-SET search_path TO test, public;
 
-CREATE TABLE TestTable
-	(
+CREATE TABLE test.TestTable
+(
 	_ts TIMESTAMP DEFAULT now(),
 	EntityId ENTITYID NOT NULL,
 	RowId SERIAL,
@@ -39,4 +38,4 @@ CREATE TABLE TestTable
 	BitNotNull BOOLEAN NOT NULL,
 
 	CONSTRAINT PK_TestTable PRIMARY KEY (RowId)
-	);
+);

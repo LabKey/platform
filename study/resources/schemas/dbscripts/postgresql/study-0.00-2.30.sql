@@ -24,6 +24,7 @@ CREATE TABLE study.Study
 (
     Label VARCHAR(200) NULL,
     Container ENTITYID NOT NULL,
+
     CONSTRAINT PK_Study PRIMARY KEY (Container)
 );
 
@@ -40,6 +41,7 @@ CREATE TABLE study.Site
     IsSal Boolean,
     IsRepository Boolean,
     IsEndpoint Boolean,
+
     CONSTRAINT PK_Site PRIMARY KEY (RowId)
 );
 
@@ -52,6 +54,7 @@ CREATE TABLE study.Visit
     Container ENTITYID NOT NULL,
     ShowByDefault BOOLEAN NOT NULL DEFAULT '1',
     DisplayOrder INT NOT NULL DEFAULT 0,
+
     CONSTRAINT PK_Visit PRIMARY KEY (Container,VisitId)
 );
 
@@ -61,6 +64,7 @@ CREATE TABLE study.VisitMap
     VisitId INT NOT NULL,	-- FK
     DataSetId INT NOT NULL,	-- FK
     IsRequired BOOLEAN NOT NULL DEFAULT '1',
+
     CONSTRAINT PK_VisitMap PRIMARY KEY (Container,VisitId,DataSetId)
 );
 
@@ -73,8 +77,9 @@ CREATE TABLE study.DataSet -- AKA CRF or Assay
     Category VARCHAR(200) NULL,
     ShowByDefault BOOLEAN NOT NULL DEFAULT '1',
     DisplayOrder INT NOT NULL DEFAULT 0,
+
     CONSTRAINT PK_DataSet PRIMARY KEY (Container,DataSetId)
-   );
+);
 
 CREATE TABLE study.SampleRequestStatus
 (
@@ -82,6 +87,7 @@ CREATE TABLE study.SampleRequestStatus
     Container ENTITYID NOT NULL,
     SortOrder INT NULL,
     Label VARCHAR(100),
+
     CONSTRAINT PK_SampleRequestStatus PRIMARY KEY (RowId)
 );
 
@@ -93,6 +99,7 @@ CREATE TABLE study.SampleRequestActor
     SortOrder INT NULL,
     Label VARCHAR(100),
     PerSite Boolean NOT NULL DEFAULT '0',
+
     CONSTRAINT PK_SampleRequestActor PRIMARY KEY (RowId)
 );
 
@@ -185,6 +192,7 @@ CREATE TABLE study.StudyData
 	VisitId INT4 NULL,
 	DatasetId INT4 NOT NULL,
 	LSID VARCHAR(200) NOT NULL,
+
 	CONSTRAINT PK_StudyData PRIMARY KEY (LSID),
 	CONSTRAINT AK_StudyData UNIQUE (Container, DatasetId, VisitId, ParticipantId)
 );
@@ -200,6 +208,7 @@ CREATE TABLE study.SpecimenAdditive
     LdmsAdditiveCode VARCHAR(3),
     LabwareAdditiveCode VARCHAR(20),
     Additive VARCHAR(100),
+
     CONSTRAINT PK_Additives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Additives UNIQUE (ScharpId, Container)
 );
@@ -212,6 +221,7 @@ CREATE TABLE study.SpecimenDerivative
     LdmsDerivativeCode VARCHAR(3),
     LabwareDerivativeCode VARCHAR(20),
     Derivative VARCHAR(100),
+
     CONSTRAINT PK_Derivatives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Derivatives UNIQUE (ScharpId, Container)
 );
@@ -224,6 +234,7 @@ CREATE TABLE study.SpecimenPrimaryType
     PrimaryTypeLdmsCode VARCHAR(5),
     PrimaryTypeLabwareCode VARCHAR(5),
     PrimaryType VARCHAR(100),
+
     CONSTRAINT PK_PrimaryTypes PRIMARY KEY (RowId),
     CONSTRAINT UQ_PrimaryTypes UNIQUE (ScharpId, Container)
 );
@@ -257,6 +268,7 @@ CREATE TABLE study.Specimen
     XSampleOrigin VARCHAR(20),
     ExternalLocation VARCHAR(20),
     UpdateTimestamp TIMESTAMP,
+
     CONSTRAINT PK_Specimens PRIMARY KEY (RowId),
     CONSTRAINT UQ_Specimens_GlobalId UNIQUE (GlobalUniqueId, Container),
     CONSTRAINT FK_Specimens_Additives FOREIGN KEY (AdditiveTypeId) REFERENCES study.SpecimenAdditive(RowId),
@@ -282,6 +294,7 @@ CREATE TABLE study.SpecimenEvent
     ImportedBatchNumber INT,
     LabReceiptDate TIMESTAMP,
     Comments VARCHAR(30),
+
     CONSTRAINT PK_SpecimensEvents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Specimens_ScharpId UNIQUE (ScharpId, Container),
     CONSTRAINT FK_SpecimensEvents_Specimens FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId),
@@ -311,6 +324,7 @@ CREATE TABLE study.AssayRun
 	RowId SERIAL,
     AssayType VARCHAR(200) NOT NULL,
     Container ENTITYID NOT NULL,
+
     CONSTRAINT PK_AssayRun PRIMARY KEY (RowId)
 );
 
@@ -327,8 +341,7 @@ ALTER TABLE study.Participant
     ADD COLUMN EnrollmentSiteId INT NULL,
     ADD COLUMN CurrentSiteId INT NULL,
 	ADD CONSTRAINT FK_EnrollmentSiteId_Site FOREIGN KEY (EnrollmentSiteId) REFERENCES study.Site (RowId),
-	ADD CONSTRAINT FK_CurrentSiteId_Site FOREIGN KEY (CurrentSiteId) REFERENCES study.Site (RowId)
-;
+	ADD CONSTRAINT FK_CurrentSiteId_Site FOREIGN KEY (CurrentSiteId) REFERENCES study.Site (RowId);
 
 ALTER TABLE study.SpecimenEvent
     DROP CONSTRAINT UQ_Specimens_ScharpId;
@@ -658,18 +671,6 @@ CREATE INDEX IX_WellGroup_Container ON study.WellGroup(Container);
 -- VISITMAP
 
 ALTER TABLE study.visitmap RENAME COLUMN isrequired TO required;
-
-
--- VISIT
-
--- ALTER TABLE study.visit ADD COLUMN name VARCHAR(200);
---
--- UPDATE study.visit SET name=COALESCE(label, CAST(rowid AS VARCHAR(20)));
--- UPDATE study.visit SET name=rowid
--- WHERE 1 < (SELECT COUNT(*) FROM study.visit V WHERE V.container=study.visit.container AND V.name=study.visit.name)
---
--- ALTER TABLE study.visit ALTER name SET NOT NULL;
--- ALTER TABLE study.visit ADD CONSTRAINT UQ_VisitName UNIQUE (container, name);
 
 
 -- DATASET

@@ -21,7 +21,7 @@ EXEC sp_addapprole 'issues', 'password'
 GO
 
 CREATE TABLE issues.Issues
-	(
+(
 	_ts TIMESTAMP,
 	Container ENTITYID NOT NULL,
 	IssueId INT IDENTITY(1,1) NOT NULL,
@@ -57,14 +57,14 @@ CREATE TABLE issues.Issues
 	Closed DATETIME,
 
 	CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
-	)
+)
 CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo)
 CREATE INDEX IX_Issues_Status ON issues.Issues (Status)
 GO
 
 
 CREATE TABLE issues.Comments
-	(
+(
 	--EntityId ENTITYID DEFAULT NEWID(),
 	CommentId INT IDENTITY(1,1),
 	IssueId INT,
@@ -74,27 +74,18 @@ CREATE TABLE issues.Comments
 	
 	CONSTRAINT PK_Comments PRIMARY KEY (IssueId, CommentId),
 	CONSTRAINT FK_Comments_Issues FOREIGN KEY (IssueId) REFERENCES issues.Issues(IssueId)
-	)
+)
 GO
 
 
 CREATE TABLE issues.IssueKeywords
-	(
+(
 	Container ENTITYID NOT NULL,
 	Type INT NOT NULL,	-- area or milestone (or whatever)
 	Keyword VARCHAR(255) NOT NULL,
 
 	CONSTRAINT PK_IssueKeywords PRIMARY KEY (Container, Type, Keyword)
-	)
-GO
-
-/* issues-1.10-1.30.sql */
-
-INSERT INTO issues.IssueKeywords (Container, Type, Keyword)
-(SELECT DISTINCT Container, 3, Milestone
-FROM issues.Issues
-WHERE Milestone IS NOT NULL)
-
+)
 GO
 
 /* issues-1.50-1.60.sql */
@@ -112,14 +103,15 @@ ALTER TABLE issues.Issues
 GO
 
 CREATE TABLE issues.EmailPrefs
-	(
+(
 	Container ENTITYID,
 	UserId USERID,
 	EmailOption INT NOT NULL,
+
 	CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
 	CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
 	CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
-	)
+)
 GO
 
 /* issues-1.70-2.00.sql */

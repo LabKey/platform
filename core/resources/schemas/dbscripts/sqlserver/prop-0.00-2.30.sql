@@ -29,7 +29,7 @@ GO
 -- UserId: Modules may use NULL UserId for general configuration
 --
 CREATE TABLE prop.PropertySets
-    (
+(
     "Set" INT IDENTITY(1,1),
     ObjectId UNIQUEIDENTIFIER NULL,  -- e.g. EntityId or ContainerID
     Category VARCHAR(255) NULL,      -- e.g. "org.labkey.api.MailingList", may be NULL
@@ -37,17 +37,17 @@ CREATE TABLE prop.PropertySets
 
     CONSTRAINT PK_PropertySet PRIMARY KEY CLUSTERED ("Set"),
     CONSTRAINT UQ_PropertySet UNIQUE (ObjectId, UserId, Category)
-    )
+)
 
 
 CREATE TABLE prop.Properties
-    (
+(
     "Set" INT NOT NULL,
     Name VARCHAR(255) NOT NULL,
     Value VARCHAR(2000) NOT NULL,
 
     CONSTRAINT PK_Properties PRIMARY KEY CLUSTERED ("Set", Name)
-    )
+)
 GO
 
 
@@ -62,15 +62,4 @@ CREATE PROCEDURE prop.Property_setValue(@Set int, @Name VARCHAR(255), @Value VAR
             INSERT prop.Properties VALUES (@Set, @Name, @Value)
         END
     END
-GO
-
-/* prop-2.00-2.10.sql */
-
--- Theme updates to go with the navigation facelift in 2.1:
-UPDATE prop.properties SET VALUE = 'e1ecfc;89a1b4;ffdf8c;336699;ebf4ff;89a1b4'
-WHERE name = 'themeColors-Blue' AND value = 'e1ecfc;ffd275;ffdf8c;336699;ebf4ff;b9d1f4'
-GO
-
-UPDATE prop.properties SET VALUE = 'cccc99;929146;e1e1c4;666633;e1e1c4;929146'
-WHERE name = 'themeColors-Brown' AND value = 'cccc99;a00000;e1e1c4;666633;e1e1c4;b2b166'
 GO

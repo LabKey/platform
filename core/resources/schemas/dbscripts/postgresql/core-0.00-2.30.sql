@@ -83,17 +83,18 @@ CREATE TABLE core.UsersData
 
 	UserId USERID,
 
+    DisplayName VARCHAR(64) NOT NULL,
 	FirstName VARCHAR(64) NULL,
 	LastName VARCHAR(64) NULL,
---	Email VARCHAR(128) NULL,  from Principals table
-	Phone VARCHAR(24) NULL,
-	Mobile VARCHAR(24) NULL,
-	Pager VARCHAR(24) NULL,
+	Phone VARCHAR(64) NULL,
+	Mobile VARCHAR(64) NULL,
+	Pager VARCHAR(64) NULL,
 	IM VARCHAR(64)  NULL,
 	Description VARCHAR(255),
 	LastLogin TIMESTAMP,
 
-	CONSTRAINT PK_UsersData PRIMARY KEY (UserId)
+	CONSTRAINT PK_UsersData PRIMARY KEY (UserId),
+	CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
 );
 
 
@@ -196,18 +197,6 @@ CREATE TABLE core.UserHistory
 
 CREATE SCHEMA temp;
 
-/* core-1.50-1.60.sql */
-
-ALTER TABLE core.UsersData ALTER COLUMN Phone TYPE VARCHAR(64);
-ALTER TABLE core.UsersData ALTER COLUMN Mobile TYPE VARCHAR(64);
-ALTER TABLE core.UsersData ALTER COLUMN Pager TYPE VARCHAR(64);
-
-/* core-1.60-1.70.sql */
-
-ALTER TABLE core.UsersData ADD DisplayName VARCHAR(64) NULL;
-ALTER TABLE core.UsersData ALTER COLUMN DisplayName SET NOT NULL;
-ALTER TABLE core.UsersData ADD CONSTRAINT UQ_DisplayName UNIQUE (DisplayName);
-
 CREATE TABLE core.Report
 (
     RowId SERIAL,
@@ -224,84 +213,6 @@ CREATE TABLE core.Report
 );
 
 /* core-1.70-2.00.sql */
-
-CREATE OR REPLACE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS integer AS '
-DECLARE
-    objname ALIAS FOR $1;
-    objschema ALIAS FOR $2;
-    objtype ALIAS FOR $3;
-    subobjname ALIAS FOR $4;
-	ret_code INTEGER;
-	fullname text;
-	tempschema text;
-    BEGIN
-    ret_code := 0;
-    fullname := (LOWER(objschema)||''.''||LOWER(objname));
-	    IF (UPPER(objtype)) = ''TABLE'' THEN
-		BEGIN
-            IF EXISTS( SELECT * FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname = LOWER(objschema) )
-            THEN
-                EXECUTE ''DROP TABLE ''||fullname;
-                ret_code = 1;
-            ELSE
-                BEGIN
-                    SELECT INTO tempschema schemaname FROM pg_tables WHERE tablename = LOWER(objname) AND schemaname LIKE ''%temp%'';
-                    IF (tempschema IS NOT NULL)
-                    THEN
-                        EXECUTE ''DROP TABLE ''|| tempschema || ''.'' || objname;
-                        ret_code = 1;
-                    END IF;
-                END;
-            END IF;
-		END;
-	    ELSEIF (UPPER(objtype)) = ''VIEW'' THEN
-		BEGIN
-		    IF EXISTS( SELECT * FROM pg_views WHERE viewname = LOWER(objname) AND schemaname = LOWER(objschema) )
-		    THEN
-			EXECUTE ''DROP VIEW ''||fullname;
-			ret_code = 1;
-		    END IF;
-		END;
-	    ELSEIF (UPPER(objtype)) = ''INDEX'' THEN
-		BEGIN
-		    fullname := LOWER(objschema) || ''.'' || LOWER(subobjname);
-		    IF EXISTS( SELECT * FROM pg_indexes WHERE tablename = LOWER(objname) AND indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
-		    THEN
-			EXECUTE ''DROP INDEX ''|| fullname;
-			ret_code = 1;
-		    ELSE
-			IF EXISTS( SELECT * FROM pg_indexes WHERE indexname = LOWER(subobjname) AND schemaname = LOWER(objschema) )
-				THEN RAISE EXCEPTION ''INDEX - % defined on a different table.'', subobjname;
-			END IF;
-		    END IF;
-		END;
-	    ELSEIF (UPPER(objtype)) = ''SCHEMA'' THEN
-		BEGIN
-		    IF EXISTS( SELECT * FROM pg_namespace WHERE nspname = LOWER(objschema))
-		    THEN
-			IF objname = ''*'' THEN
-				EXECUTE ''DROP SCHEMA ''|| LOWER(objschema) || '' CASCADE'';
-				ret_code = 1;
-			ELSEIF (objname = '''' OR objname IS NULL) THEN
-				EXECUTE ''DROP SCHEMA ''|| LOWER(objschema) || '' RESTRICT'';
-				ret_code = 1;
-			ELSE
-				RAISE EXCEPTION ''Invalid objname for objtype of SCHEMA;  must be either "*" (for DROP SCHEMA CASCADE) or NULL (for DROP SCHEMA RESTRICT)'';
-			END IF;
-		    END IF;
-		END;
-	    ELSE
-		RAISE EXCEPTION ''Invalid object type - %;  Valid values are TABLE, VIEW, INDEX, SCHEMA '', objtype;
-	    END IF;
-
-	RETURN ret_code;
-	END;
-' LANGUAGE plpgsql;
-
-
-SELECT core.fn_dropifexists ('Containers', 'core', 'Index', 'IX_Containers_Parent_Entity');
-SELECT core.fn_dropifexists ('Documents', 'core', 'Index', 'IX_Documents_Container');
-SELECT core.fn_dropifexists ('Documents', 'core', 'Index', 'IX_Documents_Parent');
 
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 ALTER TABLE core.Containers ADD CONSTRAINT UQ_Containers_RowId UNIQUE (RowId);
@@ -320,13 +231,13 @@ ALTER TABLE core.Containers ADD
     CaBIGPublished BOOLEAN NOT NULL DEFAULT '0';
 
 CREATE TABLE core.ContainerAliases
-	(
+(
 	Path VARCHAR(255) NOT NULL,
 	ContainerId ENTITYID NOT NULL,
 
 	CONSTRAINT UK_ContainerAliases_Paths UNIQUE (Path),
 	CONSTRAINT FK_ContainerAliases_Containers FOREIGN KEY (ContainerId) REFERENCES core.Containers(EntityId)
-	);
+);
 
 /* core-2.10-2.20.sql */
 
@@ -344,7 +255,7 @@ CREATE TABLE core.MappedDirectories
 /* core-2.20-2.30.sql */
 
 -- Add ability to drop constraints; switch to $$ quoting for sanity
-CREATE OR REPLACE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS integer AS $$
+CREATE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS integer AS $$
 DECLARE
     objname ALIAS FOR $1;
     objschema ALIAS FOR $2;

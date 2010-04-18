@@ -176,8 +176,6 @@ CREATE TABLE mothership.SoftwareRelease
 ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowName VARCHAR(30);
 ALTER TABLE mothership.ExceptionReport ADD COLUMN PageflowAction VARCHAR(40);
 
-UPDATE mothership.serverinstallation SET serverhostname=serverip WHERE serverhostname IS NULL;
-
 DELETE FROM mothership.serverinstallation WHERE serverinstallationid NOT IN (SELECT serverinstallationid FROM mothership.serversession);
 
 CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(serverinstallationid);

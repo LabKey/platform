@@ -19,10 +19,9 @@
 -- Create "portal" table
 
 CREATE SCHEMA portal;
-SET search_path TO portal, public;
 
-CREATE TABLE PortalWebParts
-	(
+CREATE TABLE portal.PortalWebParts
+(
 	PageId ENTITYID NOT NULL,
 	Index INT NOT NULL,
 	Name VARCHAR(64),
@@ -31,21 +30,8 @@ CREATE TABLE PortalWebParts
 	Properties VARCHAR(4000),	-- url encoded properties
 
 	CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, Index)
-	);
+);
 
 /* portal-1.50-1.60.sql */
 
 ALTER TABLE portal.portalwebparts ADD Permanent Boolean NOT NULL DEFAULT FALSE;
-
-DELETE FROM portal.PortalWebParts
-	WHERE NOT EXISTS (SELECT EntityId FROM core.Containers C WHERE C.EntityId = PageId);
-
-/* portal-1.60-1.70.sql */
-
-UPDATE Portal.PortalWebParts
-    SET Name = 'Messages'
-    WHERE Name = 'Announcements';
-
-UPDATE Portal.PortalWebParts
-SET Properties = 'webPartContainer=' || PageId || '&name=default'
-WHERE (Name = 'Wiki' OR Name = 'Narrow Wiki') AND (Properties IS NULL OR Properties = '');
