@@ -26,15 +26,12 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,37 +44,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Attachment implements Serializable
 {
-/*    @DependentObject
-    public static class EntityName implements Serializable
-        {
-        String parent;
-        String name;
-
-        public String getParent()
-            {
-            return parent;
-            }
-
-        public void setParent(String parent)
-            {
-            this.parent = parent;
-            }
-
-        @Column(name="DocumentName")
-        public String getName()
-            {
-            return name;
-            }
-
-        public void setName(String name)
-            {
-            this.name = name;
-            }
-        }
-*/
-//    @Id
-//    private EntityName entityNamePK;
-
     private String parent; // entityid
     private String name;
     private String container;   // container path

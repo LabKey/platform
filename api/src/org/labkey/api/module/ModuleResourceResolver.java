@@ -17,17 +17,17 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.Cache;
-import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.TTLCacheMap;
-import org.labkey.api.resource.*;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.resource.ClassResourceCollection;
+import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.Resolver;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: kevink
@@ -128,5 +128,4 @@ public class ModuleResourceResolver implements Resolver
                 p.equals("webapp") ||
                 p.startsWith(".");
     }
-
 }

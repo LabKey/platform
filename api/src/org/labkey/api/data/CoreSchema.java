@@ -23,14 +23,11 @@ package org.labkey.api.data;
  */
 public class CoreSchema
 {
-    private static CoreSchema instance = null;
+    private static final CoreSchema instance = new CoreSchema();
     private static final String SCHEMA_NAME = "core";
 
     public static CoreSchema getInstance()
     {
-        if (null == instance)
-            instance = new CoreSchema();
-
         return instance;
     }
 
@@ -66,16 +63,6 @@ public class CoreSchema
     public TableInfo getTableInfoMembers()
     {
         return getSchema().getTable("Members");
-    }
-
-    /**
-     * Returns ACLs table info
-     * @return ACLs table
-     * @deprecated ACL have been replaced by SecurityPolicy. Use getTableInfoRoleAssignments()
-     */
-    public TableInfo getTableInfoACLs()
-    {
-        return getSchema().getTable("ACLs");
     }
 
     public TableInfo getTableInfoPolicies()
