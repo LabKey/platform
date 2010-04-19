@@ -267,7 +267,13 @@ public class QuerySettings
             String[] colArray = columns.split(",");
             _fieldKeys = new ArrayList<FieldKey>();
             for (String key : colArray)
-                _fieldKeys.add(FieldKey.fromString(key));
+            {
+                if (!(StringUtils.isEmpty(key)))
+                {
+                    _fieldKeys.add(FieldKey.fromString(StringUtils.trim(key)));
+
+                }
+            }
         }
     }
 
