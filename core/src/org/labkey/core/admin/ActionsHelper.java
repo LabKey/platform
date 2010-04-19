@@ -51,7 +51,9 @@ class ActionsHelper
                     set.addAll(ar.getActionDescriptors());
 
                     for (SpringActionController.ActionDescriptor ad : set)
-                        actionMap.put(ad.getActionClass().getSimpleName(), ad.getStats());
+                    {
+                        actionMap.put(ad.getPrimaryName(), ad.getStats());
+                    }
                 }
             }
         }
@@ -63,7 +65,7 @@ class ActionsHelper
     private static Comparator<SpringActionController.ActionDescriptor> comp = new Comparator<SpringActionController.ActionDescriptor>(){
         public int compare(SpringActionController.ActionDescriptor ad1, SpringActionController.ActionDescriptor ad2)
         {
-            return ad1.getActionClass().getSimpleName().compareTo(ad2.getActionClass().getSimpleName());
+            return ad1.getPrimaryName().compareTo(ad2.getPrimaryName());
         }
     };
 }
