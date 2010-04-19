@@ -21,9 +21,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
-import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.*;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
@@ -135,7 +134,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         String getPrimaryName();
         List<String> getAllNames();
         Class<? extends Controller> getActionClass();
-        Constructor getConstructor();
+        Controller createController(Controller actionController);
 
         void addTime(long time);
         ActionStats getStats();
@@ -520,17 +519,168 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
     }
 
+    public static abstract class BaseActionDescriptor implements ActionDescriptor
+    {
+        private long _count = 0;
+        private long _elapsedTime = 0;
+        private long _maxTime = 0;
+
+        synchronized public void addTime(long time)
+        {
+            _count++;
+            _elapsedTime += time;
+
+            if (time > _maxTime)
+                _maxTime = time;
+        }
+
+        synchronized public ActionStats getStats()
+        {
+            return new BaseActionStats(_count, _elapsedTime, _maxTime);
+        }
+
+        // Immutable stats holder to eliminate external synchronization needs
+        private class BaseActionStats implements ActionStats
+        {
+            private final long _count;
+            private final long _elapsedTime;
+            private final long _maxTime;
+
+            private BaseActionStats(long count, long elapsedTime, long maxTime)
+            {
+                _count = count;
+                _elapsedTime = elapsedTime;
+                _maxTime = maxTime;
+            }
+
+            public long getCount()
+            {
+                return _count;
+            }
+
+            public long getElapsedTime()
+            {
+                return _elapsedTime;
+            }
+
+            public long getMaxTime()
+            {
+                return _maxTime;
+            }
+        }
+    }
+
+    public static class HTMLFileActionResolver implements ActionResolver
+    {
+        public static final String VIEWS_DIRECTORY = "views";
+
+        private final Class _outerClass;
+        private Map<String, ActionDescriptor> _nameToDescriptor;
+        private final String _pageFlowName;
+
+        public HTMLFileActionResolver(Class<? extends Controller> outerClass)
+        {
+            _outerClass = outerClass;
+            _nameToDescriptor = new HashMap<String, ActionDescriptor>();
+            _pageFlowName = ViewServlet.getPageFlowName(outerClass);
+        }
+
+        public void addTime(Controller action, long elapsedTime)
+        {
+            /* Never called */
+        }        
+
+        public Controller resolveActionName(Controller actionController, String actionName)
+        {
+            if(_nameToDescriptor.get(actionName) != null)
+            {
+                return _nameToDescriptor.get(actionName).createController(actionController);
+            }
+
+            ViewContext ctx = HttpView.getRootContext();
+            String controllerName = ctx.getActionURL().getPageFlow();
+            Module module = ModuleLoader.getInstance().getModuleForPageFlow(controllerName);
+
+            Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+            if (r == null)
+            {
+                return null;
+            }
+
+            HTMLFileActionDescriptor _htmlDescriptor = new HTMLFileActionDescriptor(actionName, r);
+            _nameToDescriptor.put(actionName, _htmlDescriptor);
+            registerAction(_htmlDescriptor);
+
+            return _htmlDescriptor.createController(actionController);
+        }
+
+        private class HTMLFileActionDescriptor extends BaseActionDescriptor
+        {
+            private final String _primaryName;
+            private final List<String> _allNames;
+            private final Resource _resource;
+
+            private HTMLFileActionDescriptor(String primaryName, Resource resource)
+            {
+                _primaryName = primaryName;
+                _resource = resource;
+                _allNames = Arrays.asList(_primaryName);
+            }
+
+            public String getPageFlow()
+            {
+                return _pageFlowName;
+            }
+
+            public String getPrimaryName()
+            {
+                return _primaryName;
+            }
+
+            public List<String> getAllNames()
+            {
+                return _allNames;
+            }
+
+            public Class<? extends Controller> getActionClass()
+            {
+                // This is an HTML View so it does not have a class.
+                //return null;
+                return SimpleAction.class;
+            }
+
+            public Controller createController(Controller actionController)
+            {
+                return new SimpleAction(_resource);
+            }
+        }
+
+        // WARNING: This might not be thread safe.
+        public Collection<ActionDescriptor> getActionDescriptors()
+        {
+            return _nameToDescriptor.values();
+        }
+        
+        public ActionDescriptor getActionDescriptor(String actionName)
+        {
+            return _nameToDescriptor.get(actionName);
+        }
+    }
+
 
     public static class DefaultActionResolver implements ActionResolver
     {
         private final Class _outerClass;
         private final String _pageFlowName;
-        private final Map<String, ActionDescriptor> _nameToDescriptor;
+        //private final Map<String, ActionDescriptor> _nameToDescriptor;
+        private Map<String, ActionDescriptor> _nameToDescriptor;
+        private HTMLFileActionResolver _htmlResolver;
 
         public DefaultActionResolver(Class outerClass, Class<? extends Controller>... otherClasses)
         {
             _outerClass = outerClass;
             _pageFlowName = ViewServlet.getPageFlowName(_outerClass);
+            _htmlResolver = null; // This gets loaded if file-based actions are used.
 
             Map<String, ActionDescriptor> nameToDescriptor = new HashMap<String, ActionDescriptor>();
 
@@ -541,7 +691,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             for (Class<? extends Controller> actionClass : otherClasses)
                 addAction(nameToDescriptor, actionClass);
 
-            _nameToDescriptor = Collections.unmodifiableMap(nameToDescriptor);
+            _nameToDescriptor = nameToDescriptor;
         }
 
         private void addInnerClassActions(Map<String, ActionDescriptor> nameToDescriptor, Class outerClass)
@@ -574,35 +724,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         public Controller resolveActionName(Controller actionController, String name)
         {
-            ActionDescriptor ad = _nameToDescriptor.get(name);
+            ActionDescriptor ad;
+            synchronized (_nameToDescriptor)
+            {
+                ad = _nameToDescriptor.get(name);
+            }
 
             if (ad == null)
-                return null;
+            {
+                // Check if this action is described in the file-based action directory
+                return resolveHTMLActionName(actionController, name);
+            }
 
-            Constructor con = ad.getConstructor();
-
-            try
-            {
-                if (con.getParameterTypes().length == 1)
-                    return (Controller)con.newInstance(actionController);
-                else
-                    return (Controller)con.newInstance();
-            }
-            catch (IllegalAccessException e)
-            {
-                _log.error("unexpected error", e);
-                throw new RuntimeException(e);
-            }
-            catch (InstantiationException e)
-            {
-                _log.error("unexpected error", e);
-                throw new RuntimeException(e);
-            }
-            catch (InvocationTargetException e)
-            {
-                _log.error("unexpected error", e);
-                throw new RuntimeException(e);
-            }
+            return ad.createController(actionController);
         }
 
 
@@ -612,23 +746,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
 
-        private class DefaultActionDescriptor implements ActionDescriptor
+        private class DefaultActionDescriptor extends BaseActionDescriptor
         {
             private final Class<? extends Controller> _actionClass;
             private final Constructor _con;
             private final String _primaryName;
             private final List<String> _allNames;
 
-            private long _count = 0;
-            private long _elapsedTime = 0;
-            private long _maxTime = 0;
-
             private DefaultActionDescriptor(Class<? extends Controller> actionClass) throws ServletException
             {
                 if (actionClass.getConstructors().length == 0)
                     throw new ServletException(actionClass.getName() + " has no public constructors");
 
-                _actionClass = actionClass;
+                this._actionClass = actionClass;
 
                 // @ActionNames("name1, name2") annotation overrides default behavior of using class name to generate name
                 ActionNames actionNames = actionClass.getAnnotation(ActionNames.class);
@@ -673,9 +803,31 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return _actionClass;
             }
 
-            public Constructor getConstructor()
+            public Controller createController(Controller actionController)
             {
-                return _con;
+                try
+                {
+                    if (_con.getParameterTypes().length == 1)
+                        return (Controller)_con.newInstance(actionController);
+                    else
+                        return (Controller)_con.newInstance();
+                }
+                catch (IllegalAccessException e)
+                {
+                    _log.error("unexpected error", e);
+                    throw new RuntimeException(e);
+                }
+                catch (InstantiationException e)
+                {
+                    _log.error("unexpected error", e);
+                    throw new RuntimeException(e);
+                }
+                catch (InvocationTargetException e)
+                {
+                    _log.error("unexpected error", e);
+                    throw new RuntimeException(e);
+                }
+
             }
 
             public String getPageFlow()
@@ -693,20 +845,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return _allNames;
             }
 
-            synchronized public void addTime(long time)
-            {
-                _count++;
-                _elapsedTime += time;
-
-                if (time > _maxTime)
-                    _maxTime = time;
-            }
-
-            synchronized public ActionStats getStats()
-            {
-                return new DefaultActionStats(_count, _elapsedTime, _maxTime);
-            }
-
             private String getDefaultActionName()
             {
                 String name = _actionClass.getName();
@@ -720,42 +858,36 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 return name;
             }
-
-            // Immutable stats holder to eliminate external synchronization needs
-            private class DefaultActionStats implements ActionStats
-            {
-                private final long _count;
-                private final long _elapsedTime;
-                private final long _maxTime;
-
-                private DefaultActionStats(long count, long elapsedTime, long maxTime)
-                {
-                    _count = count;
-                    _elapsedTime = elapsedTime;
-                    _maxTime = maxTime;
-                }
-
-                public long getCount()
-                {
-                    return _count;
-                }
-
-                public long getElapsedTime()
-                {
-                    return _elapsedTime;
-                }
-
-                public long getMaxTime()
-                {
-                    return _maxTime;
-                }
-            }
         }
 
-        // Map is unmodifiable, so returning values() directly is safe.  ActionDescriptors are thread-safe as well.
+
+        private Controller resolveHTMLActionName(Controller actionController, String actionName)
+        {
+            if(_htmlResolver == null)
+            {
+                _htmlResolver = new HTMLFileActionResolver(_outerClass);
+            }
+
+            Controller thisActionsController = _htmlResolver.resolveActionName(actionController, actionName);
+
+            if (thisActionsController != null)
+            {
+                synchronized (_nameToDescriptor)
+                {
+                    // The HTMLFileResolver registers the action
+                    _nameToDescriptor.put(actionName, _htmlResolver.getActionDescriptor(actionName));
+                }
+            }
+
+            return thisActionsController;
+        }
+        
         public Collection<ActionDescriptor> getActionDescriptors()
         {
-            return _nameToDescriptor.values();
+            synchronized (_nameToDescriptor)
+            {
+                return new ArrayList<ActionDescriptor>(_nameToDescriptor.values());
+            }
         }
     }
 }

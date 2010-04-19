@@ -46,7 +46,7 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public SimpleController()
     {
-        setActionResolver(this);
+        setActionResolver(new HTMLFileActionResolver(SimpleController.class));
     }
 
     private static Resource getViewResource(Module module, String actionName)
