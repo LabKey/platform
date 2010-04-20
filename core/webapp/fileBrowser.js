@@ -1827,7 +1827,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDownloadAction : function()
     {
-        return new Ext.Action({tooltip: 'Download the selected files or folders', iconCls:'iconDownload', scope: this, handler: function()
+        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'iconDownload', scope: this, hideText: true, handler: function()
             {
                 var selections = this.grid.selModel.getSelections();
 
@@ -1854,7 +1854,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getCreateDirectoryAction : function()
     {
-        return new Ext.Action({iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, handler: function()
+        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, hideText: true, handler: function()
         {
             var p = this.currentDirectory.data.path;
             var folder = prompt( "Folder Name", "New Folder");
@@ -1887,7 +1887,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getParentFolderAction : function()
     {
-        return new Ext.Action({tooltip: 'Navigate to parent folder', iconCls:'iconUp', scope: this, handler: function()
+        return new Ext.Action({text: 'Parent Folder', tooltip: 'Navigate to parent folder', iconCls:'iconUp', scope: this, hideText: true, handler: function()
         {
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory.data.path;
@@ -1899,7 +1899,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getRefreshAction : function()
     {
-        return new Ext.Action({tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload', scope:this, handler: this.refreshDirectory});
+        return new Ext.Action({text: 'Refresh', tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload', scope:this, hideText: true, handler: this.refreshDirectory});
     },
 
 
@@ -1925,7 +1925,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({tooltip: 'Delete the selected files or folders', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
+        return new Ext.Action({text: 'Delete', tooltip: 'Delete the selected files or folders', iconCls:'iconDelete', scope:this, disabled:true, hideText: true, handler: function()
         {
             if (!this.currentDirectory || !this.selectedRecord)
                 return;
@@ -2204,7 +2204,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getUploadToolAction : function()
     {
-        return new Ext.Action({text: 'Multi-file Upload', tooltip:"Upload multiple files or folders using drag-and-drop<br>(requires Java)", scope:this, disabled:true, handler: function()
+        return new Ext.Action({text: 'Multi-file Upload', iconCls: 'iconUpload', tooltip:"Upload multiple files or folders using drag-and-drop<br>(requires Java)", scope:this, disabled:true, handler: function()
         {
             if (!this.applet || !this.appletWindow)
                 this.layoutAppletWindow();
@@ -2640,6 +2640,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         config = config || {};
         Ext.apply(this, config);
         Ext.useShims = true;     // so floating elements can appear over the applet drop target
+/*
         this.actions = Ext.apply({}, this.actions,
         {
             parentFolder: this.getParentFolderAction(),
@@ -2652,10 +2653,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             showHistory : this.getShowHistoryAction(),
             uploadTool: this.getUploadToolAction()
         });
-        delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
+*/
 
-        // add any other actions
+        // create the set of actions and initialize any configurable state
+        this.actions = this.createActions();
         this.initializeActions();
+
+        delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
 
         var me = this; // for anonymous inner functions
 
@@ -2849,7 +2853,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getTbarConfig : function()
     {
-        var tbarConfig = [];
+        var items = [];
+        var tbarConfig = {enableOverflow: true, items: items};
+
         if (!this.tbarItems)
         {
             // UNDONE: need default ordering
@@ -2860,7 +2866,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
             for (var a in this.actions)
                 if (this.actions[a] && this.actions[a].isAction)
-                    tbarConfig.push(this.actions[a]);
+                    items.push(this.actions[a]);
         }
         else
         {
@@ -2868,27 +2874,39 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             {
                 var item = this.tbarItems[i];
                 if (typeof item == "string" && typeof this.actions[item] == "object")
-                    tbarConfig.push(this.actions[item]);
+                    items.push(this.actions[item]);
                 else
-                    tbarConfig.push(item);
+                    items.push(item);
             }
         }
         return tbarConfig;
     },
 
     /**
-     * Initialize additional actions and components
+     * Create the set of available actions
      */
-    initializeActions : function()
+    createActions : function()
     {
-        this.actions.upload = new Ext.Action({
+        var actions = Ext.apply({}, this.actions, {
+            parentFolder: this.getParentFolderAction(),
+            refresh: this.getRefreshAction(),
+            createDirectory: this.getCreateDirectoryAction(),
+            download: this.getDownloadAction(),
+            deletePath: this.getDeleteAction(),
+            help: this.getHelpAction(),
+            //drop : this.getOldDropAction(),
+            showHistory : this.getShowHistoryAction(),
+            uploadTool: this.getUploadToolAction()
+        });
+
+        actions.upload = new Ext.Action({
             text: 'Upload Files',
             iconCls: 'iconUpload',
             tooltip: 'Upload files or folders from your local machine to the server',
             listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
         });
 
-        this.actions.appletFileAction = new Ext.Action({
+        actions.appletFileAction = new Ext.Action({
             text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew',
             handler:function(){
                 if (this.applet)
@@ -2899,7 +2917,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
         });
 
-        this.actions.appletDirAction = new Ext.Action({
+        actions.appletDirAction = new Ext.Action({
             text:'Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen',
             handler:function(){
                 if (this.applet)
@@ -2910,7 +2928,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
         });
 
-        this.actions.folderTreeToggle = new Ext.Action({
+        actions.folderTreeToggle = new Ext.Action({
+            text: 'Toggle Folder Tree',
             iconCls: 'iconFolderTree',
             tooltip: 'Show or hide the folder tree',
             listeners: {click:function(button, event) {
@@ -2918,8 +2937,34 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     if (this.tree.isVisible()) this.tree.collapse();
                     else                       this.tree.expand();
                 }
-            }, scope:this}
+            }, scope:this},
+            hideText: true
         })
+
+        return actions;
+    },
+    
+    /**
+     * Initialize additional actions and components
+     */
+    initializeActions : function()
+    {
+        for (var a in this.actions)
+        {
+            if (this.actions[a] && this.actions[a].isAction)
+            {
+                var action = this.actions[a];
+
+                action.initialConfig.prevText = action.initialConfig.text;
+                action.initialConfig.prevIconCls = action.initialConfig.iconCls;
+
+                if (action.initialConfig.hideText)
+                    action.setText(undefined);
+
+                if (action.initialConfig.hideIcon)
+                    action.setIconClass(undefined);
+            }
+        }
     },
 
     /**
@@ -2952,8 +2997,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 }, scope:this}
             });
 
-            this.filePropertiesBtnId = Ext.id();
-
             this.uploadPanel = new Ext.FormPanel({
                 id: 'uploadFileTab',
                 formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
@@ -2976,7 +3019,6 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     {xtype: 'textfield', name: 'description', fieldLabel: 'Description', width: 350}
                 ],
                 buttons:[
-                    {text: 'File Properties...', name:'filePropertiesBtn', id: this.filePropertiesBtnId, tooltip:'Displays a form to enter additional file properties', handler:this.onCustomFileProperties, scope:this},
                     {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
                     {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
                 ],

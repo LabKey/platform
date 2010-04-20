@@ -999,6 +999,9 @@ filecontent/webapp/FileContent.js -text
 filecontent/webapp/FileContentEx.js -text
 filecontent/webapp/FileProperties.js -text
 filecontent/webapp/PipelineAction.js -text
+filecontent/webapp/Reorderer.js -text
+filecontent/webapp/ToolbarDroppable.js -text
+filecontent/webapp/ToolbarReorderer.js -text
 issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-2.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-2.30-8.10.sql -text

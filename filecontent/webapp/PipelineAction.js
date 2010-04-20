@@ -216,6 +216,8 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     actionConfig : {},              // map of actionId to PipelineActionConfig instances
     fileFields : [],                // array of extra field information to collect/display for each file uploaded
     filePropConfig : 'useDefault',
+    inheritedFileConfig : 'useDefault',
+    tbarBtnConfig : [],             // array of toolbar btn configuration
 
     constructor : function(config)
     {
@@ -232,7 +234,12 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
              * @event actionConfigChanged
              * Fires after this object is updated with a new set of action configurations.
              */
-            'actionConfigChanged'
+            'actionConfigChanged',
+            /**
+             * @event tbarConfigChanged
+             * Fires after this object is updated with new toolbar button configurations.
+             */
+            'tbarConfigChanged'
         );
     },
 
@@ -288,7 +295,62 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     },
     
     isCustomFileProperties : function() {
-        return this.filePropConfig == 'useCustom';
+        if (this.filePropConfig == 'useCustom')
+            return true;
+        else if (this.filePropConfig == 'useParent' && this.inheritedFileConfig == 'useCustom')
+            return true;
+        return false;
+    },
+
+    setTbarBtnConfig : function(config) {
+        if (config && config.length)
+            this.tbarBtnConfig = config;
+        else
+            this.tbarBtnConfig = [];
+        this.fireEvent('tbarConfigChanged', this);
+    },
+
+    /**
+     * Merges the default set of std toolbar buttons with any available button customizations and
+     * returns an array of config objects.
+     */
+    createStandardButtons : function(defaultTbarItems)
+    {
+        var btnOptions = [];
+
+        if (defaultTbarItems && defaultTbarItems.length)
+        {
+            var i;
+            var item;
+
+            if (this.tbarBtnConfig.length)
+            {
+                var baseTbarMap = {};       // map to help determine if customized button is in the set of default buttons
+                for (i=0; i < defaultTbarItems.length; i++)
+                {
+                    item = defaultTbarItems[i];
+                    if (typeof item == 'string')
+                        baseTbarMap[item] = item;
+                }
+
+                for (i=0; i < this.tbarBtnConfig.length; i++)
+                {
+                    var config = this.tbarBtnConfig[i];
+                    if (config.id in baseTbarMap)
+                        btnOptions.push({id:config.id, hideText:config.hideText, hideIcon:config.hideIcon});
+                }
+            }
+            else
+            {
+                for (i=0; i < defaultTbarItems.length; i++)
+                {
+                    item = defaultTbarItems[i];
+                    if (typeof item == 'string')
+                       btnOptions.push({id:item});
+                }
+            }
+        }
+        return btnOptions;
     },
 
     /**

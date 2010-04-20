@@ -28,9 +28,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     adminOptions : undefined,               // LABKEY.FileContentConfig object which manages admin options
     toolbarActions : undefined,             // map of actionId to Ext.Action
     hasToolbarButtons : false,              // true if there are any pipeline actions on the toolbar
+    tbarItemsConfig : [],                   // array of config options for the standard toolbar buttons
 
     pipelineActions : undefined,            // array of labkey pipeline actions
-    actionMap : undefined,                  // map of actionId to labkey pipeline actions
+    actionMap : {},                         // map of actionId to labkey pipeline actions
 
     importDataEnabled : true,
     adminUser : false,
@@ -85,32 +86,35 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     },
 
     /**
-     * Initialize additional actions and components
+     * Create the set of available actions
      */
-    initializeActions : function()
+    createActions : function()
     {
-        LABKEY.FilesWebPartPanel.superclass.initializeActions.call(this);
+        var actions = LABKEY.FilesWebPartPanel.superclass.createActions.call(this);
 
-        this.actions.importData = new Ext.Action({
+        actions.importData = new Ext.Action({
             text: 'Import Data',
             listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
             iconCls: 'iconDBCommit',
             tooltip: 'Import data from files into the database, or analyze data files'
         });
 
-        this.actions.customize = new Ext.Action({
+        actions.customize = new Ext.Action({
             text: 'Admin',
             iconCls: 'iconConfigure',
             tooltip: 'Configure the buttons shown on the toolbar',
             listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
         });
 
-        this.actions.editFileProps = new Ext.Action({
-            //text: 'Admin',
+        actions.editFileProps = new Ext.Action({
+            text: 'Edit Properties',
             iconCls: 'iconEditFileProps',
             tooltip: 'Edit properties on the selected file(s)',
-            listeners: {click:function(button, event) {this.onEditFileProps(button);}, scope:this}
+            listeners: {click:function(button, event) {this.onEditFileProps(button);}, scope:this},
+            hideText: true
         });
+
+        return actions;
     },
 
     /**
@@ -212,12 +216,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 newActions.push(config.actions[i]);
             }
         }
-        this.adminOptions.setActionConfigs(newActions);
         this.adminOptions.setFilePropConfig(config.fileConfig);
-
-        var filePropertiesBtn = Ext.getCmp(this.filePropertiesBtnId);
-        if (filePropertiesBtn)
-            filePropertiesBtn.setVisible(false);//this.adminOptions.isCustomFileProperties());
+        this.adminOptions.setTbarBtnConfig(config.tbarActions);
+        this.adminOptions.setActionConfigs(newActions);
+        this.adminOptions.inheritedFileConfig = config.inheritedFileConfig;
 
         if (o.success)
             this.adminOptions.setFileFields(o.fileProperties);
@@ -328,20 +330,21 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         // add the standard buttons to the toolbar
         var buttons = [];
-        if (this.tbarItems && this.tbarItems.length)
+        this.tbarItemsConfig = this.adminOptions.createStandardButtons(this.tbarItems);
+
+        for (i=0; i < this.tbarItemsConfig.length; i++)
         {
-            for (var i=0; i < this.tbarItems.length; i++)
+            var cfg = this.tbarItemsConfig[i];
+            var action = this.actions[cfg.id];
+            if (typeof action == "object")
             {
-                var item = this.tbarItems[i];
-                if (typeof item == "string" && typeof this.actions[item] == "object")
+                // don't add the import data button if there are no import data actions
+                if (cfg.id == 'importData' && !this.showImportData())
                 {
-                    // don't add the import data button if there are no import data actions
-                    if (item == 'importData' && !this.showImportData())
-                    {
-                        continue;
-                    }
-                    buttons.push(this.actions[item]);
+                    continue;
                 }
+                buttons.push(action);
+                this.adjustAction(action, cfg.hideText,  cfg.hideIcon);
             }
         }
 
@@ -367,6 +370,28 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         if (toolbar && buttons.length)
             toolbar.addButton(buttons);
+    },
+
+    adjustAction : function(action, hideText, hideIcon)
+    {
+        if (hideText != undefined)
+        {
+            action.initialConfig.hideText = hideText;
+
+            if (hideText)
+                action.setText(undefined);
+            else
+                action.setText(action.initialConfig.prevText);
+        }
+
+        if (hideIcon != undefined)
+        {
+            action.initialConfig.hideIcon = hideIcon;
+            if (hideIcon)
+                action.setIconClass(undefined);
+            else
+                action.setIconClass(action.initialConfig.prevIconCls);
+        }
     },
 
     showImportData : function()
@@ -572,7 +597,12 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     onAdmin : function(btn)
     {
-        var configDlg = new LABKEY.ActionsAdminPanel({path: this.currentDirectory.data.path, isPipelineRoot : this.isPipelineRoot});
+        var configDlg = new LABKEY.ActionsAdminPanel({
+            path: this.currentDirectory.data.path,
+            isPipelineRoot : this.isPipelineRoot,
+            tbarItemsConfig: this.tbarItemsConfig,
+            actions: this.actions
+        });
 
         configDlg.on('success', function(c){this.updateActionConfiguration(true, true);}, this, {single:true});
         configDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});

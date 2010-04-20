@@ -12,6 +12,10 @@
  * runSelected : run the selected action, the data record is passed as a parameter
  *
  */
+LABKEY.requiresScript("Reorderer.js");
+LABKEY.requiresScript("ToolbarDroppable.js");
+LABKEY.requiresScript("ToolbarReorderer.js");
+
 LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
 
     constructor : function(config)
@@ -56,8 +60,11 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     isPipelineRoot : false,
     
     events : {},
-
     actionConfig : {},
+
+    tbarItemsConfig : [],   // array of config options for each standard toolbar button
+    actions: {},            // map of action names to actions of all actions available
+    newActions: {},         // map of newly customized actions
 
     constructor : function(config)
     {
@@ -90,7 +97,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         else
         {
             var win = new Ext.Window({
-                title: 'Manage Pipeline Actions',
+                title: 'Manage File Browser Configuration',
                 border: false,
                 width: 400,
                 height: 250,
@@ -197,7 +204,79 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     renderPipelineActions : function(data)
     {
-        var store = new Ext.data.GroupingStore({
+        var actionPanel = this.createActionsPropertiesPanel(data);
+        var filePanel = this.createFilePropertiesPanel();
+        var toolbarPanel = this.createToolbarPanel();
+
+        var tabPanel = new Ext.TabPanel({
+            activeTab: 'actionTab',
+            stateful: false,
+            items: [
+                actionPanel,
+                filePanel,
+                toolbarPanel
+            ]
+        });
+        tabPanel.on('tabchange', function(tp, panel){
+            this.resetToolbarBtn.setVisible(panel.getId() == 'toolbarTab');}, this);
+
+        this.resetToolbarBtn = new Ext.Button({
+            text: 'Reset to Default',
+            id: 'btn_reset',
+            tooltip: 'Reset toolbar buttons to the default.',
+            scope: this,
+            hidden: true,
+            handler: function(b, e){
+                Ext.MessageBox.confirm("Confirm reset", 'All toolbar button customizations on this page will be deleted, continue?', function(answer)
+                {
+                    if (answer == "yes")
+                    {
+                        Ext.Ajax.request({
+                            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFilesToolbarOptions'),
+                            method:'POST',
+                            disableCaching:false,
+                            success : function(){
+                                b.initialConfig.scope.fireEvent('success');
+                                win.close()},
+                            failure: LABKEY.Utils.displayAjaxErrorResponse,
+                            scope: this
+                        });
+                    }
+                });
+            }
+        });
+
+        var win = new Ext.Window({
+            title: 'Manage File Browser Configuration',
+            width: 600,
+            height: 500,
+            cls: 'extContainer',
+            autoScroll: true,
+            closeAction:'close',
+            modal: true,
+            layout: 'fit',
+            items: [tabPanel],
+            buttons: [{
+                text: 'Submit',
+                id: 'btn_submit',
+                listeners: {click:function(button, event) {
+                    this.saveActionConfig(button, event);
+                    win.close();}, scope:this}
+            },{
+                text: 'Cancel',
+                id: 'btn_cancel',
+                handler: function(){win.close();}
+            }, this.resetToolbarBtn]
+        });
+        win.show();
+    },
+
+    /**
+     * Creates the actions properties tab
+     */
+    createActionsPropertiesPanel : function(data)
+    {
+        this.actionsStore = new Ext.data.GroupingStore({
             reader: new Ext.data.JsonReader({root:'actions',id:'id'},
                     [
                         {name: 'type'},
@@ -207,7 +286,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                         {name: 'display'},
                         {name: 'enabled', type: 'boolean'},
                         {name: 'showOnToolbar', type: 'boolean'}]),
-//            proxy: new Ext.data.HttpProxy(dataConnection),
             data: data,
             sortInfo: {field:'type', direction:"ASC"},
             groupField:'type',
@@ -235,8 +313,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 columns: [
                     {header:'Type', dataIndex:'type'},
                     {header:'Action', dataIndex:'action', width:300},
-                    //{header:'Category', dataIndex:'category', width:200},
-                    //{header:'Description', dataIndex:'description', width:300},
                     enabledColumn,
                     onToolbarColumn
                 ]
@@ -245,7 +321,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         var selModel = new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false});
         var grid = new Ext.grid.EditorGridPanel({
             loadMask:{msg:"Loading, please wait..."},
-            store: store,
+            store: this.actionsStore,
             selModel: selModel,
             stripeRows: true,
             clicksToEdit: 1,
@@ -288,40 +364,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             ]
         });
 
-        var filePanel = this.createFilePropertiesPanel();
-
-        var tabPanel = new Ext.TabPanel({
-            activeTab: 'actionTab',
-            stateful: false,
-            items: [
-                actionPanel,
-                filePanel
-            ]
-        });
-
-        var win = new Ext.Window({
-            title: 'Manage Pipeline Actions',
-            width: 500,
-            height: 400,
-            cls: 'extContainer',
-            autoScroll: true,
-            closeAction:'close',
-            modal: true,
-            layout: 'fit',
-            items: [tabPanel],
-            buttons: [{
-                text: 'Submit',
-                id: 'btn_submit',
-                listeners: {click:function(button, event) {
-                    this.saveActionConfig(store, button, event);
-                    win.close();}, scope:this}
-            },{
-                text: 'Cancel',
-                id: 'btn_cancel',
-                handler: function(){win.close();}
-            }]
-        });
-        win.show();
+        return actionPanel;
     },
 
     /**
@@ -334,6 +377,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 root:'fileProperties',
                 fields: [
                     {name:'name'},
+                    {name:'label'},
                     {name:'rangeURI'}]}),
             baseParams: {fileConfig: this.fileConfig},
             proxy: new Ext.data.HttpProxy({
@@ -352,6 +396,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             }),
             columns: [
                 {header:'Name', dataIndex:'name', width:100},
+                {header:'Label', dataIndex:'label'},
                 {header:'Type', dataIndex:'rangeURI'}
             ]
         });
@@ -360,6 +405,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             text: 'Edit Properties...',
             disabled: this.fileConfig != 'useCustom',
             listeners:{click:function(button, event){
+/*
                 Ext.Ajax.request({
                     autoAbort:true,
                     url:this.actionsURL,
@@ -368,6 +414,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     success : this.editFileProperties,
                     scope: this
                 });
+*/
                 this.onEditFileProperties(button, event);
             }, scope:this}
         });
@@ -417,6 +464,199 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         return filePanel;
     },
 
+    /**
+     * Create the toolbar configuration panel
+     */
+    createToolbarPanel : function()
+    {
+        var buttons = [];
+        if (this.tbarItemsConfig && this.tbarItemsConfig.length)
+        {
+            for (var i=0; i < this.tbarItemsConfig.length; i++)
+            {
+                var cfg = this.tbarItemsConfig[i];
+                if (typeof this.actions[cfg.id] == "object")
+                {
+                    var action = this.actions[cfg.id];
+                    var newAction = this.createToolbarAction(cfg.id, action.initialConfig);
+                    this.newActions[cfg.id] = newAction;
+                    buttons.push(newAction);
+                }
+            }
+        }
+
+        this.toolbar = new Ext.Toolbar({
+            plugins: [
+                new LABKEY.ext.ux.ToolbarDroppable({
+                    canDrop: function(data) {
+                        if (data.dragData.srcComponent && data.dragData.srcComponent.initialConfig)
+                        {
+                            var config = data.dragData.srcComponent.initialConfig;
+
+                            return (!(config.actionId in this.toolbar.scope.newActions));
+                        }
+                        return false;
+                    },
+
+                    createItem: function(data) {
+                        if (data.srcComponent && data.srcComponent.initialConfig)
+                        {
+                            var config = data.srcComponent.initialConfig;
+                            var action = this.toolbar.scope.createToolbarAction(config.actionId, config);
+                            this.toolbar.scope.newActions[config.actionId] = action;
+
+                            return new Ext.Button(action);
+                        }
+                    }
+                }),
+                new LABKEY.ext.ux.ToolbarReorderer({defaultReorderable: false})
+            ],
+            items: buttons,
+            enableOverflow: true,
+            scope: this,
+            border: true
+        });
+
+        var actions = [];
+        for (var a in this.actions)
+        {
+            var action = this.actions[a];
+
+            if (action && ('object' == typeof action))
+            {
+                var config = Ext.applyIf({xtype:'button', disabled:false, actionId:a}, action.initialConfig);
+
+                config.handler = undefined;
+                config.listeners = undefined;
+                config.text = config.prevText;
+                config.iconCls = config.prevIconCls;
+
+                actions.push(config);
+            }
+        }
+
+        var panel = new Ext.Panel({
+            border: false,
+            flex: 1,
+            layout: 'table',
+            bodyStyle:'padding:30px',
+            tbar: this.toolbar,
+            layoutConfig: {columns:4},
+            items: [actions]
+        });
+
+        panel.on('render', function(v) {
+            panel.dragZone = new Ext.dd.DragZone(v.getEl(), {
+
+                getDragData: function(e) {
+                    var sourceEl = e.getTarget('table.x-btn', 10, true);
+
+                    if (sourceEl) {
+                        d = sourceEl.dom.cloneNode(true);
+                        d.id = Ext.id();
+                        var comp = v.findById(sourceEl.id);
+
+                        if (comp)
+                        {
+                            return {
+                                ddel: d,
+                                sourceEl: sourceEl,
+                                repairXY: Ext.fly(sourceEl).getXY(),
+                                srcComponent: comp
+                            };
+                        }
+                    }
+                },
+
+                getRepairXY: function() {
+                    return this.dragData.repairXY;
+                }
+            });
+        });
+
+        var toolbarPanel = new Ext.Panel({
+            id: 'toolbarTab',
+            title: 'Toolbar',
+            bodyStyle : 'padding:10px;',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: [
+                {html: '<span class="labkey-strong">Configure Toolbar</span></br>Drag the buttons on the toolbar to customize the button order. ' +
+                       'Buttons can be added by dragging from the list of available buttons below and dropping them on the toolbar. Buttons can be removed ' +
+                       'by clicking on the toolbar button and selecting "remove" from the dropdown menu.', border: false, height: 70},
+                panel
+            ]
+//                    bodyStyle : 'padding:10 10 10 0px;',
+        });
+
+        return toolbarPanel;
+    },
+
+    /**
+     * Create the toolbar action for the configurable toolbar
+     */
+    createToolbarAction : function(actionId, cfg, defaultCfg)
+    {
+        var config = Ext.applyIf({disabled:false, actionId:actionId, reorderable:true}, cfg);
+
+        config.handler = undefined;
+        config.listeners = undefined;
+
+        var items = [
+            {text:'show/hide icon', scope:this, actionId: actionId, handler: function(b){
+                var action = this.newActions[b.initialConfig.actionId];
+                if (action && ('object' == typeof action))
+                {
+                    if (action.getIconClass())
+                    {
+                        action.setIconClass(undefined);
+                        action.initialConfig.hideIcon = true;
+                    }
+                    else
+                    {
+                        action.setIconClass(action.initialConfig.prevIconCls);
+                        action.initialConfig.hideIcon = false;
+                    }
+                }
+            }},
+            {text:'show/hide text', scope:this, actionId: actionId, handler: function(b){
+                var action = this.newActions[b.initialConfig.actionId];
+                if (action && ('object' == typeof action))
+                {
+                    if (action.getText())
+                    {
+                        action.setText(undefined);
+                        action.initialConfig.hideText = true;
+                    }
+                    else
+                    {
+                        action.setText(action.initialConfig.prevText);
+                        action.initialConfig.hideText = false;
+                    }
+                }
+            }}];
+
+        // prevent removal of admin button
+        if (actionId != 'customize')
+        {
+            items.push({
+                text:'remove', scope: this, actionId: actionId, handler: function(b){
+                    var action = this.newActions[b.initialConfig.actionId];
+                    if (action && ('object' == typeof action))
+                    {
+                        action.each(function(item, idx, all){item.destroy();}, this);
+                        delete this.newActions[b.initialConfig.actionId];
+                    }
+            }});
+        }
+
+        config.menu = {cls: 'extContainer', items: items};
+        return new Ext.Action(config);
+    },
+
     onFilePropConfigChanged : function(group, rb)
     {
         this.fileConfig = rb.getGroupValue();
@@ -427,19 +667,21 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     onEditFileProperties : function(btn, evt)
     {
+        //this.saveActionConfig(btn, evt);
         window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer');
     },
 
     /**
      * Save changes to the manage action dialog
      */
-    saveActionConfig : function(store, button, event)
+    saveActionConfig : function(button, event)
     {
-        var records = store.getRange(0);//getModifiedRecords();
+        var adminOptions = {actions: []};
+        var records = this.actionsStore.getModifiedRecords();
 
+        // pipeline action configuration
         if (records && records.length)
         {
-            var adminOptions = {actions: []};
             var actionConfig = {};
 
             for (var i=0; i <records.length; i++)
@@ -476,22 +718,43 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     });
                 }
             }
-
-            adminOptions.importDataEnabled = this.importDataEnabled;
-            adminOptions.fileConfig = this.fileConfig;
-
-            Ext.Ajax.request({
-                url: this.actionsUpdateURL,
-                method : 'POST',
-                scope: this,
-                success: function(){this.fireEvent('success');},
-                failure: function(){this.fireEvent('failure');},
-                jsonData : adminOptions,
-                headers : {
-                    'Content-Type' : 'application/json'
-                }
-            });
         }
+
+        // toolbar button configuration
+        if (this.toolbar.items)
+        {
+            var tbarActions = [];
+            var items = this.toolbar.items;
+            for (var i=0; i < items.getCount(); i++)
+            {
+                var item = items.get(i);
+                var action = this.newActions[item.initialConfig.actionId];
+                if (action)
+                {
+                    tbarActions.push({
+                        id: item.initialConfig.actionId,
+                        position: i,
+                        hideText: action.initialConfig.hideText,
+                        hideIcon: action.initialConfig.hideIcon});
+                }
+            }
+            adminOptions.tbarActions = tbarActions;
+        }
+
+        adminOptions.importDataEnabled = this.importDataEnabled;
+        adminOptions.fileConfig = this.fileConfig;
+
+        Ext.Ajax.request({
+            url: this.actionsUpdateURL,
+            method : 'POST',
+            scope: this,
+            success: function(){this.fireEvent('success');},
+            failure: function(){this.fireEvent('failure');},
+            jsonData : adminOptions,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
     }
 });
 

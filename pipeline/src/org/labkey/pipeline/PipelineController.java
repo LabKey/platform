@@ -22,7 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
@@ -544,12 +547,10 @@ public class PipelineController extends SpringActionController
     {
         public ApiResponse execute(SaveOptionsForm form, BindException errors) throws Exception
         {
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
-
-            FilesAdminOptions options = FilesAdminOptions.fromJSON(container, form.getProps());
-
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FilesAdminOptions options = svc.getAdminOptions(getContainer());
+
+            options.updateFromJSON(form.getProps());
             svc.setAdminOptions(getContainer(), options);
 
             return new ApiSimpleResponse("success", true);
@@ -584,7 +585,7 @@ public class PipelineController extends SpringActionController
             }
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("config", options.toJSON());
-            resp.putBeanList("fileProperties", getFileProperties(getViewContext(), options.getFileConfig()));
+            resp.putBeanList("fileProperties", getFileProperties(getContainer(), options.getFileConfig()));
             resp.put("success", true);
 
             return resp;
@@ -599,7 +600,7 @@ public class PipelineController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             FilesAdminOptions.fileConfig config = FilesAdminOptions.fileConfig.valueOf(getViewContext().getActionURL().getParameter("fileConfig"));
 
-            resp.putBeanList("fileProperties", getFileProperties(getViewContext(), config));
+            resp.putBeanList("fileProperties", getFileProperties(getContainer(), config));
             resp.put("configOption", config.name());
             resp.put("success", true);
 
@@ -607,51 +608,64 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    private List<GWTPropertyDescriptor> getFileProperties(ViewContext context, FilesAdminOptions.fileConfig config)
+    private List<GWTPropertyDescriptor> getFileProperties(Container container, FilesAdminOptions.fileConfig config)
     {
-        PipeRoot pr = PipelineService.get().findPipelineRoot(context.getContainer());
-        if (pr == null || !URIUtil.exists(pr.getUri()))
-        {
-            HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
-            return null;
-        }
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-
         List<GWTPropertyDescriptor> properties = new ArrayList<GWTPropertyDescriptor>();
 
         switch (config) {
             case useCustom:
                 String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
-                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
 
                 if (dd != null)
                 {
+/*
                     GWTDomain domain = DomainUtil.getDomainDescriptor(context.getUser(), uri, getContainer());
                     return domain.getFields();
-/*
+*/
                     Domain domain = PropertyService.get().getDomain(dd.getDomainId());
                     if (domain != null)
                     {
                         for (DomainProperty prop : domain.getProperties())
                         {
+                            GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
+
+                            gwtProp.setName(prop.getName());
+                            gwtProp.setLabel(prop.getLabel());
+                            gwtProp.setRangeURI(prop.getType().getLabel());
+
+                            properties.add(gwtProp);
+/*
                             properties.add(PageFlowUtil.map(
                                     "name", prop.getLabel() != null ? prop.getLabel() : prop.getName(),
                                     "type", prop.getType().getLabel()));
+*/
                         }
                     }
-*/
                 }
                 break;
             case useDefault:
-            case useParent:
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
 
-                prop.setName("description");
                 prop.setLabel("Description");
+                prop.setName("description");
                 prop.setRangeURI("String");
 
                 properties.add(prop);
                 break;
+            case useParent:
+                while (container != container.getProject())
+                {
+                    container = container.getParent();
+                    FilesAdminOptions options = svc.getAdminOptions(container);
+
+                    if (options.getFileConfig() != FilesAdminOptions.fileConfig.useParent)
+                        return getFileProperties(container, options.getFileConfig());
+                }
+                FilesAdminOptions.fileConfig cfg = svc.getAdminOptions(container).getFileConfig();
+                cfg = cfg != FilesAdminOptions.fileConfig.useParent ? cfg : FilesAdminOptions.fileConfig.useDefault;
+                return getFileProperties(container, cfg);
         }
         return properties;
     }

@@ -1114,6 +1114,20 @@ public class FileContentController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ResetFilesToolbarOptionsAction extends MutatingApiAction<Object>
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            FilesAdminOptions options = svc.getAdminOptions(getContainer());
+
+            options.setTbarConfig(Collections.<FilesTbarBtnOption>emptyList());
+            svc.setAdminOptions(getContainer(), options);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
 
     public static class FileContentForm
     {
