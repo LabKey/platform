@@ -22,11 +22,13 @@ import org.apache.xmlbeans.XmlOptions;
 import org.json.JSONArray;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.ActionLink;
 import org.labkey.data.xml.ActionOptions;
 import org.labkey.data.xml.PipelineOptionsDocument;
+import org.labkey.data.xml.TbarBtnOptions;
 
 import java.io.ByteArrayOutputStream;
 import java.util.*;
@@ -40,15 +42,24 @@ import java.util.*;
 public class FilesAdminOptions
 {
     private boolean _importDataEnabled = true;
-    private List<PipelineActionConfig> _pipelineConfig = new ArrayList<PipelineActionConfig>();
     private Container _container;
-    private Map<String, PipelineActionConfig> _configMap = new HashMap<String, PipelineActionConfig>();
+    private Map<String, PipelineActionConfig> _pipelineConfig = new HashMap<String, PipelineActionConfig>();
     private fileConfig _fileConfig = fileConfig.useDefault;
+    private Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<String, FilesTbarBtnOption>();
+    private static Comparator TBAR_BTN_COMPARATOR = new TbarButtonComparator();
 
     public enum fileConfig {
         useDefault,
         useCustom,
         useParent,
+    }
+
+    public enum configProps {
+        actions,
+        fileConfig,
+        importDataEnabled,
+        tbarActions,
+        inheritedFileConfig,
     }
 
     public FilesAdminOptions(Container c, String xml)
@@ -96,7 +107,16 @@ public class FilesAdminOptions
 
                             pa.setLinks(actionLinks);
                         }
-                        _pipelineConfig.add(pa);
+                        _pipelineConfig.put(pa.getId(), pa);
+                    }
+                }
+
+                TbarBtnOptions btnOptions = pipeOptions.getTbarConfig();
+                if (btnOptions != null)
+                {
+                    for (TbarBtnOptions.TbarBtnOption o : btnOptions.getTbarBtnOptionArray())
+                    {
+                        _tbarConfig.put(o.getId(), new FilesTbarBtnOption(o.getId(), o.getPosition(), o.getHideText(), o.getHideIcon()));
                     }
                 }
             }
@@ -123,30 +143,20 @@ public class FilesAdminOptions
 
     public List<PipelineActionConfig> getPipelineConfig()
     {
-        return _pipelineConfig;
+        return new ArrayList<PipelineActionConfig>(_pipelineConfig.values());
     }
 
     public void setPipelineConfig(List<PipelineActionConfig> pipelineConfig)
     {
-        _pipelineConfig = pipelineConfig;
+        _pipelineConfig.clear();
+        for (PipelineActionConfig config : pipelineConfig)
+            _pipelineConfig.put(config.getId(), config);
     }
 
     public void addDefaultPipelineConfig(PipelineActionConfig config)
     {
-        Map<String, PipelineActionConfig> configMap = getConfigMap();
-
-        if (!configMap.containsKey(config.getId()))
-            _pipelineConfig.add(config);
-    }
-
-    private Map<String, PipelineActionConfig> getConfigMap()
-    {
-        if (_configMap.isEmpty())
-        {
-            for (PipelineActionConfig config : getPipelineConfig())
-                _configMap.put(config.getId(), config);
-        }
-        return _configMap;
+        if (!_pipelineConfig.containsKey(config.getId()))
+            _pipelineConfig.put(config.getId(), config);
     }
 
     public Container getContainer()
@@ -169,6 +179,37 @@ public class FilesAdminOptions
         _fileConfig = fileConfig;
     }
 
+    public List<FilesTbarBtnOption> getTbarConfig()
+    {
+        List<FilesTbarBtnOption> configs = new ArrayList(_tbarConfig.values());
+        Collections.sort(configs, TBAR_BTN_COMPARATOR);
+
+        return configs;
+    }
+
+    public void setTbarConfig(List<FilesTbarBtnOption> tbarConfig)
+    {
+        _tbarConfig.clear();
+        for (FilesTbarBtnOption o : tbarConfig)
+            _tbarConfig.put(o.getId(), o);
+    }
+
+    public fileConfig getInheritedFileConfig()
+    {
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        Container container = getContainer();
+        while (container != container.getProject())
+        {
+            container = container.getParent();
+            FilesAdminOptions options = svc.getAdminOptions(container);
+
+            if (options.getFileConfig() != FilesAdminOptions.fileConfig.useParent)
+                return options.getFileConfig();
+        }
+        FilesAdminOptions.fileConfig cfg = svc.getAdminOptions(container).getFileConfig();
+        return cfg != FilesAdminOptions.fileConfig.useParent ? cfg : FilesAdminOptions.fileConfig.useDefault;
+    }
+
     public String serialize()
     {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -183,7 +224,7 @@ public class FilesAdminOptions
             {
                 ActionOptions actionOptions = pipelineOptions.addNewActionConfig();
 
-                for (PipelineActionConfig ac : _pipelineConfig)
+                for (PipelineActionConfig ac : _pipelineConfig.values())
                 {
                     ActionOptions.DisplayOption displayOption = actionOptions.addNewDisplayOption();
 
@@ -202,6 +243,21 @@ public class FilesAdminOptions
                     }
                 }
             }
+
+            if (!_tbarConfig.isEmpty())
+            {
+                TbarBtnOptions tbarOptions = pipelineOptions.addNewTbarConfig();
+
+                for (FilesTbarBtnOption o : _tbarConfig.values())
+                {
+                    TbarBtnOptions.TbarBtnOption tbarOption = tbarOptions.addNewTbarBtnOption();
+
+                    tbarOption.setId(o.getId());
+                    tbarOption.setPosition(o.getPosition());
+                    tbarOption.setHideText(o.isHideText());
+                    tbarOption.setHideIcon(o.isHideIcon());
+                }
+            }
             XmlBeansUtil.validateXmlDocument(doc);
             doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
 
@@ -218,33 +274,52 @@ public class FilesAdminOptions
         }
     }
 
-    public static FilesAdminOptions fromJSON(Container c, Map<String,Object> props)
+    public void updateFromJSON(Map<String, Object> props)
     {
-        FilesAdminOptions options = new FilesAdminOptions(c);
-
-        if (props.containsKey("actions"))
+        if (props.containsKey(configProps.actions.name()))
         {
-            Object actions = props.get("actions");
+            Object actions = props.get(configProps.actions.name());
             if (actions instanceof JSONArray)
             {
-                List<PipelineActionConfig> configs = new ArrayList<PipelineActionConfig>();
                 JSONArray jarray = (JSONArray)actions;
 
                 for (int i=0; i < jarray.length(); i++)
                 {
                     PipelineActionConfig config = PipelineActionConfig.fromJSON(jarray.getJSONObject(i));
                     if (config != null)
-                        configs.add(config);
+                        _pipelineConfig.put(config.getId(), config);
                 }
-                options.setPipelineConfig(configs);
             }
         }
-        if (props.containsKey("importDataEnabled"))
-            options.setImportDataEnabled((Boolean)props.get("importDataEnabled"));
+        if (props.containsKey(configProps.importDataEnabled.name()))
+            setImportDataEnabled((Boolean)props.get(configProps.importDataEnabled.name()));
 
-        if (props.containsKey("fileConfig"))
-            options.setFileConfig(fileConfig.valueOf((String)props.get("fileConfig")));
+        if (props.containsKey(configProps.fileConfig.name()))
+            setFileConfig(fileConfig.valueOf((String)props.get(configProps.fileConfig.name())));
 
+        if (props.containsKey(configProps.tbarActions.name()))
+        {
+            Object actions = props.get(configProps.tbarActions.name());
+            if (actions instanceof JSONArray)
+            {
+                JSONArray jarray = (JSONArray)actions;
+                _tbarConfig.clear();
+
+                for (int i=0; i < jarray.length(); i++)
+                {
+                    FilesTbarBtnOption o = FilesTbarBtnOption.fromJSON(jarray.getJSONObject(i));
+                    if (o != null)
+                        _tbarConfig.put(o.getId(), o);
+                }
+            }
+        }
+    }
+
+    public static FilesAdminOptions fromJSON(Container c, Map<String,Object> props)
+    {
+        FilesAdminOptions options = new FilesAdminOptions(c);
+
+        options.updateFromJSON(props);
         return options;
     }
 
@@ -256,15 +331,41 @@ public class FilesAdminOptions
         {
             JSONArray actions = new JSONArray();
 
-            for (PipelineActionConfig config : _pipelineConfig)
+            for (PipelineActionConfig config : getPipelineConfig())
             {
                 actions.put(config.toJSON());
             }
-            props.put("actions", actions);
+            props.put(configProps.actions.name(), actions);
         }
-        props.put("importDataEnabled", isImportDataEnabled());
-        props.put("fileConfig", _fileConfig.name());
-        
+        props.put(configProps.importDataEnabled.name(), isImportDataEnabled());
+        props.put(configProps.fileConfig.name(), _fileConfig.name());
+        props.put(configProps.inheritedFileConfig.name(), getInheritedFileConfig().name());
+
+        if (!_tbarConfig.isEmpty())
+        {
+            JSONArray tbarOptions = new JSONArray();
+
+            for (FilesTbarBtnOption o : getTbarConfig())
+            {
+                tbarOptions.put(o.toJSON());
+            }
+            props.put(configProps.tbarActions.name(), tbarOptions);
+        }
         return props;
+    }
+
+    private static class TbarButtonComparator implements Comparator<FilesTbarBtnOption>
+    {
+        @Override
+        public int compare(FilesTbarBtnOption o1, FilesTbarBtnOption o2)
+        {
+            return o1.getPosition() - o2.getPosition();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return this.equals(obj);
+        }
     }
 }

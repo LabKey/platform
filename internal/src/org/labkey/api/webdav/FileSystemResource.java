@@ -557,7 +557,7 @@ public class FileSystemResource extends AbstractWebdavResource
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
             ExpData data = svc.getDataObject(this, getContainer());
 
-            if (dd != null)
+            if (dd != null && data != null)
             {
                 _customProperties = new HashMap<String, String>();
                 Domain domain = PropertyService.get().getDomain(dd.getDomainId());
