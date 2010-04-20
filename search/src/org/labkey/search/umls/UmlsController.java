@@ -15,6 +15,7 @@
  */
 package org.labkey.search.umls;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.FormViewAction;
@@ -53,31 +54,55 @@ public class UmlsController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @RequiresSiteAdmin
-    public class DebugAction extends SimpleViewAction
+    static public class PathForm
     {
-        @Override
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public String getPath()
         {
-            RRF_Reader l = new RRF_Reader(new File("/Users/Matthew/Desktop/META"));       // "/Volumes/STORAGE/UMLS/2009AB/META"));
-            Iterator<SemanticType> types = l.getTypes(null);
-            TreeMap<String, String> map = new TreeMap<String, String>();
-            while (types.hasNext())
-            {
-                SemanticType t = types.next();
-                map.put(t.STN, t.STY);
-            }
+            return path;
+        }
 
-            Writer out = getViewContext().getResponse().getWriter();
-            out.write("<pre>\n");
-            for (Map.Entry<String, String> e : map.entrySet())
+        public void setPath(String path)
+        {
+            this.path = path;
+        }
+
+        private String path;
+    }
+    
+    @RequiresSiteAdmin
+    public class DebugAction extends SimpleViewAction<PathForm>
+    {
+        public ModelAndView getView(PathForm form, BindException errors) throws Exception
+        {
+            if (StringUtils.isEmpty(form.getPath()))
+                errors.rejectValue(SpringActionController.ERROR_REQUIRED, "path");
+            else if (!(new File(form.getPath()).isDirectory()))
+                errors.rejectValue(SpringActionController.ERROR_MSG, "path", "Path not found: " + form.getPath());
+
+
+            if (errors.getErrorCount() == 0)
             {
-                out.write(e.getKey());
-                out.write("\t");
-                out.write(e.getValue());
-                out.write("\n");
+                RRF_Reader l = new RRF_Reader(new File(form.getPath()));
+                Iterator<SemanticType> types = l.getTypes(null);
+                TreeMap<String, String> map = new TreeMap<String, String>();
+                while (types.hasNext())
+                {
+                    SemanticType t = types.next();
+                    map.put(t.STN, t.STY);
+                }
+
+                Writer out = getViewContext().getResponse().getWriter();
+                out.write("<pre>\n");
+                for (Map.Entry<String, String> e : map.entrySet())
+                {
+                    out.write(e.getKey());
+                    out.write("\t");
+                    out.write(e.getValue());
+                    out.write("\n");
+                }
+                out.write("</pre>\n");
             }
-            out.write("</pre>\n");
+            
             return null;
         }
 
@@ -130,15 +155,19 @@ public class UmlsController extends SpringActionController
 
     
     @RequiresSiteAdmin
-    public class IndexAction extends FormViewAction
+    public class IndexAction extends FormViewAction<PathForm>
     {
         public PollingUtil.PollKey _key = null;
-        
-        public void validateCommand(Object target, Errors errors)
+
+        public void validateCommand(PathForm form, Errors errors)
         {
+            if (StringUtils.isEmpty(form.getPath()))
+                errors.rejectValue(SpringActionController.ERROR_REQUIRED, "path");
+            else if (!(new File(form.getPath()).isDirectory()))
+                errors.rejectValue(SpringActionController.ERROR_MSG, "path", "Path not found: " + form.getPath());
         }
 
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(PathForm o, boolean reshow, BindException errors) throws Exception
         {
             if (_key == null)
             {
@@ -153,18 +182,18 @@ public class UmlsController extends SpringActionController
             return new JspView<IndexAction>(UmlsController.class,"index.jsp",this,errors);
         }
 
-        public URLHelper getSuccessURL(Object o)
+        public URLHelper getSuccessURL(PathForm o)
         {
             return new ActionURL(IndexAction.class, getViewContext().getContainer());
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(PathForm form, BindException errors) throws Exception
         {
             synchronized (jobLock)
             {
                 if (null != job && !job.isDone())
                     return true;
-                job = new RRF_Loader(new File("/Volumes/STORAGE/UMLS/2009AB/META"));
+                job = new RRF_Loader(new File(form.getPath()));
                 JobRunner.getDefault().submit(job);
             }
             return true;

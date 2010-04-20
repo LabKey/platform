@@ -123,6 +123,10 @@ public class RRF_Loader extends Job
             load("MRDEF");
             load("MRSTY");
         }
+        catch (SQLException x)
+        {
+            ExceptionUtil.logExceptionToMothership(null, x);
+        }
         finally
         {
             try
