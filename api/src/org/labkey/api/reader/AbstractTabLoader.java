@@ -70,7 +70,6 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     protected String _strQuoteQuote = null;
     protected boolean _parseQuotes = true;
     protected boolean _unescapeBackslashes = true;
-    protected boolean _throwOnErrors = false;
     private Filter<Map<String, Object>> _mapFilter;
 
     protected AbstractTabLoader(File inputFile, Boolean hasColumnHeaders) throws IOException
@@ -342,16 +341,6 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         _unescapeBackslashes = unescapeBackslashes;
     }
 
-    public boolean isThrowOnErrors()
-    {
-        return _throwOnErrors;
-    }
-
-    public void setThrowOnErrors(boolean throwOnErrors)
-    {
-        _throwOnErrors = throwOnErrors;
-    }
-
     @Override
     public void close()
     {
@@ -435,42 +424,19 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     }
 
 
-    public class TabLoaderIterator implements CloseableIterator<Map<String, Object>>
+    public class TabLoaderIterator extends DataLoaderIterator
     {
-        private final RowMapFactory<Object> factory;
         private final BufferedReader reader;
-
-        private String[] fields = null;
-        private int lineNo = 0;
 
         protected TabLoaderIterator() throws IOException
         {
-            reader = getReader();
-
+            super(_commentLines + _skipLines, false);
             assert _skipLines != -1;
 
-            for (int i = 0; i < (_commentLines + _skipLines); i++)
+            reader = getReader();
+            for (int i = 0; i < lineNum(); i++)
                 reader.readLine();
-
-            lineNo = _commentLines + _skipLines;
-
-            Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
-            ColumnDescriptor[] columns = getColumns();
-
-            for (int i = 0; i < columns.length; i++)
-            {
-                if (columns[i].load)
-                    colMap.put(columns[i].name, i);
-            }
-
-            factory = new RowMapFactory<Object>(colMap);
-
-            // find a converter for each column type
-            for (ColumnDescriptor column : _columns)
-                if (column.converter == null)
-                    column.converter = ConvertUtils.lookup(column.clazz);
         }
-
 
         public void close()
         {
@@ -485,205 +451,12 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
             }
         }
 
-        public boolean hasNext()
+        @Override
+        protected String[] readFields()
         {
-            if (fields != null)
-                return true;    // throw illegalstate?
-
-            try
-            {
-                fields = readFields(reader);
-                if (fields == null)
-                {
-                    close();
-                    return false;
-                }
-                lineNo++;
-            }
-            catch (Exception e)
-            {
-                _log.error("unexpected io error", e);
-                throw new RuntimeException(e);
-            }
-
-            return true;
+            return AbstractTabLoader.this.readFields(reader);
         }
 
-
-        public Map<String, Object> next()
-        {
-            if (fields == null)
-                return null;    // consider: throw IllegalState
-
-            try
-            {
-                String[] fields = this.fields;
-                this.fields = null;
-                Object[] values = new Object[_columns.length];
-
-                for (int i = 0; i < _columns.length; i++)
-                {
-                    ColumnDescriptor column = _columns[i];
-                    if (!column.load)
-                        continue;
-                    String fld;
-                    if (i >= fields.length)
-                    {
-                        fld = "";
-                    }
-                    else
-                    {
-                        fld = fields[i];
-                    }
-                    try
-                    {
-                        if (column.isMvEnabled())
-                        {
-                            if (values[i] != null)
-                            {
-                                // An MV indicator column must have generated this. Set the value
-                                MvFieldWrapper mvWrapper = (MvFieldWrapper)values[i];
-                                mvWrapper.setValue(("".equals(fld)) ?
-                                    column.missingValues :
-                                    column.converter.convert(column.clazz, fld));
-                            }
-                            else
-                            {
-                                // Do we have an MV indicator column?
-                                int mvIndicatorIndex = getMvIndicatorColumnIndex(column);
-                                if (mvIndicatorIndex != -1)
-                                {
-                                    // There is such a column, so this value had better be good.
-                                    MvFieldWrapper mvWrapper = new MvFieldWrapper();
-                                    mvWrapper.setValue( ("".equals(fld)) ?
-                                        column.missingValues :
-                                        column.converter.convert(column.clazz, fld));
-                                    values[i] = mvWrapper;
-                                    values[mvIndicatorIndex] = mvWrapper;
-                                }
-                                else
-                                {
-                                    // No such column. Is this a valid MV indicator or a valid value?
-                                    if (MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
-                                    {
-                                        MvFieldWrapper mvWrapper = new MvFieldWrapper();
-                                        mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
-                                        values[i] = mvWrapper;
-                                    }
-                                    else
-                                    {
-                                        MvFieldWrapper mvWrapper = new MvFieldWrapper();
-                                        mvWrapper.setValue( ("".equals(fld)) ?
-                                            column.missingValues :
-                                            column.converter.convert(column.clazz, fld));
-                                        values[i] = mvWrapper;
-                                    }
-                                }
-                            }
-                        }
-                        else if (column.isMvIndicator())
-                        {
-                            int qcColumnIndex = getMvColumnIndex(column);
-                            if (qcColumnIndex != -1)
-                            {
-                                // There's an mv column that matches
-                                if (values[qcColumnIndex] == null)
-                                {
-                                    MvFieldWrapper mvWrapper = new MvFieldWrapper();
-                                    mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
-                                    values[qcColumnIndex] = mvWrapper;
-                                    values[i] = mvWrapper;
-                                }
-                                else
-                                {
-                                    MvFieldWrapper mvWrapper = (MvFieldWrapper)values[qcColumnIndex];
-                                    mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
-                                }
-                                if (_throwOnErrors && !MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
-                                    throw new ConversionException(fld + " is not a valid MV indicator");
-                            }
-                            else
-                            {
-                                // No matching mv column, just put in a wrapper
-                                if (!MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
-                                {
-                                    throw new ConversionException(fld + " is not a valid MV indicator");
-                                }
-                                MvFieldWrapper mvWrapper = new MvFieldWrapper();
-                                mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
-                                values[i] = mvWrapper;
-                            }
-                        }
-                        else
-                        {
-                            values[i] = ("".equals(fld)) ?
-                                    column.missingValues :
-                                    column.converter.convert(column.clazz, fld);
-                        }
-                    }
-                    catch (Exception x)
-                    {
-                        if (_throwOnErrors)
-                        {
-                            StringBuilder sb = new StringBuilder("Could not convert the ");
-                            if (fields[i] == null)
-                            {
-                                sb.append("empty value");
-                            }
-                            else
-                            {
-                                sb.append("value '");
-                                sb.append(fields[i]);
-                                sb.append("'");
-                            }
-                            sb.append(" from line #");
-                            sb.append(lineNo);
-                            sb.append(" in column #");
-                            sb.append(i + 1);
-                            sb.append(" (");
-                            if (column.name.indexOf("#") != -1)
-                            {
-                                sb.append(column.name.substring(column.name.indexOf("#") + 1));
-                            }
-                            else
-                            {
-                                sb.append(column.name);
-                            }
-                            sb.append(") to ");
-                            sb.append(column.clazz.getSimpleName());
-
-                            throw new ConversionException(sb.toString(), x);
-                        }
-
-                        values[i] = column.errorValues;
-                    }
-                }
-
-                ArrayList<Object> list = new ArrayList<Object>((int)(_columns.length * 1.2));
-                list.addAll(Arrays.asList(values));
-                return factory.getRowMap(list);
-            }
-            catch (Exception e)
-            {
-                if (_throwOnErrors)
-                {
-                    if (e instanceof ConversionException)
-                        throw ((ConversionException) e);
-                    else
-                        throw new RuntimeException(e);
-                }
-                
-                if (null != _file)
-                    _log.error("failed loading file " + _file.getName() + " at line: " + lineNo + " " + e, e);
-            }
-            return null;
-        }
-
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException("'remove()' is not defined for TabLoaderIterator");
-        }
     }
 
     public static class TabLoaderTestCase extends junit.framework.TestCase

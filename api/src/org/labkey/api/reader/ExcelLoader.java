@@ -124,7 +124,14 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
 
     public CloseableIterator<Map<String, Object>> iterator()
     {
-        return new ExcelIterator();
+        try
+        {
+            return new ExcelIterator();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void finalize() throws Throwable
@@ -138,62 +145,28 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
         workbook.close();
     }
 
-    private class ExcelIterator implements CloseableIterator<Map<String,Object>>
+    private class ExcelIterator extends DataLoaderIterator
     {
         private final Sheet sheet;
         private final int numRows;
         private final int numCols;
 
-        private int rowIndex;
-
-        private Map<String, Object> nextRow;
-
-        public ExcelIterator()
+        public ExcelIterator() throws IOException
         {
-            // find a converter for each column type
-            for (ColumnDescriptor column : _columns)
-                column.converter = ConvertUtils.lookup(column.clazz);
+            super(_skipLines == -1 ? 1 : _skipLines, true);
 
-            try
-            {
-                sheet = getSheet();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-
+            sheet = getSheet();
             numRows = sheet.getRows();
             numCols = sheet.getColumns();
-
-            rowIndex = _skipLines == -1 ? 1 : _skipLines;
-
-            nextRow = getNextRow();
         }
 
-        public boolean hasNext()
+        @Override
+        protected Object[] readFields()
         {
-            return nextRow != null;
-        }
-
-        public Map<String, Object> next()
-        {
-            if (nextRow == null || rowIndex > numRows)
-                throw new IllegalStateException("Attempt to call next() on a finished iterator");
-            Map<String, Object> row = nextRow;
-            nextRow = getNextRow();
-            return row;
-        }
-
-        public Map<String, Object> getNextRow()
-        {
-            if (rowIndex >= numRows)
+            if (lineNum() >= numRows)
                 return null;
 
-            // If this row is blank, keep going until we either find a row or hit the end
-            boolean foundData = false;
-            Map<String, Object> row = new HashMap<String, Object>();
-
+            Object[] fields = new Object[_columns.length];
             for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
             {
                 ColumnDescriptor column = _columns[columnIndex];
@@ -201,7 +174,7 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
 
                 if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
                 {
-                    Cell cell = sheet.getCell(columnIndex, rowIndex);
+                    Cell cell = sheet.getCell(columnIndex, lineNum());
                     if (column.clazz.equals(String.class))
                     {
                         contents = cell.getContents();
@@ -216,105 +189,9 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
                     contents = "";
                 }
 
-                Object value = column.missingValues;
-
-                try
-                {
-                    if (column.isMvEnabled())
-                    {
-                        MvFieldWrapper mvWrapper = (MvFieldWrapper)row.get(column.name);
-                        if (mvWrapper != null)
-                        {
-                            // We have an indicator column and it placed a qc wrapper in here for us
-                            mvWrapper.setValue(column.converter.convert(column.clazz, contents));
-                            value = mvWrapper;
-                        }
-                        else
-                        {
-                            // Do we have an MV indicator column?
-                            int mvIndicatorIndex = getMvIndicatorColumnIndex(column);
-                            if (mvIndicatorIndex != -1)
-                            {
-                                // There is such a column, so this value had better be good.
-                                mvWrapper = new MvFieldWrapper();
-                                mvWrapper.setValue(column.converter.convert(column.clazz, contents));
-                                value = mvWrapper;
-                            }
-                            else
-                            {
-                                // No such column. Is this a valid MV indicator or a valid value?
-                                if (MvUtil.isValidMvIndicator(contents.toString(), column.getMvContainer()))
-                                {
-                                    // set the MV indicator
-                                    mvWrapper = new MvFieldWrapper();
-                                    mvWrapper.setMvIndicator("".equals(contents) ? null : contents.toString());
-                                    value = mvWrapper;
-                                }
-                                else
-                                {
-                                    // set the actual value
-                                    mvWrapper = new MvFieldWrapper();
-                                    mvWrapper.setValue(column.converter.convert(column.clazz, contents));
-                                    value = mvWrapper;
-                                }
-                            }
-                        }
-                    }
-                    else if (column.isMvIndicator())
-                    {
-                        int qcColumnIndex = getMvColumnIndex(column);
-                        if (qcColumnIndex != -1)
-                        {
-                            String qcColumName = _columns[qcColumnIndex].name;
-                            // Is there a qc column that matches?
-                            MvFieldWrapper mvWrapper = (MvFieldWrapper)row.get(qcColumName);
-                            if (mvWrapper == null)
-                            {
-                                mvWrapper = new MvFieldWrapper();
-                                mvWrapper.setMvIndicator("".equals(contents) ? null : contents.toString());
-                                value = mvWrapper;
-                                row.put(qcColumName, value); // store it for the qc column's use
-                            }
-                            else
-                            {
-                                mvWrapper.setMvIndicator("".equals(contents) ? null : contents.toString());
-                                value = mvWrapper;
-                            }
-                        }
-                        else
-                        {
-                            MvFieldWrapper mvWrapper = new MvFieldWrapper();
-                            mvWrapper.setMvIndicator("".equals(contents) ? null : contents.toString());
-                            value = mvWrapper;
-                        }
-                    }
-                    else if (!"".equals(contents))
-                    {
-                        value = column.converter.convert(column.clazz, contents);
-                    }
-                }
-                catch (ConversionException ce)
-                {
-                    value = column.errorValues;
-                }
-                
-                if (value != null)
-                    foundData = true;
-
-                row.put(column.name, value);
+                fields[columnIndex] = contents;
             }
-
-            rowIndex++;
-
-            if (foundData)
-                return row;
-            else
-                return getNextRow();  // keep going until a valid row or the end of the file
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException("Please don't do that.");
+            return fields;
         }
 
         public void close() throws IOException
