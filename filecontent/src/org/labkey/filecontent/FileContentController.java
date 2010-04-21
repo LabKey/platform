@@ -802,7 +802,7 @@ public class FileContentController extends SpringActionController
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             Map<String, String> properties = new HashMap<String, String>();
 
-            properties.put("typeURI", svc.getDomainURI(FileContentService.TYPE_PROPERTIES));
+            properties.put("typeURI", svc.getDomainURI(getContainer(), FileContentService.TYPE_PROPERTIES));
             properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
             
             return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
@@ -930,7 +930,7 @@ public class FileContentController extends SpringActionController
             _files = parseFromJSON(form.getProps());
 
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+            String uri = svc.getDomainURI(getContainer(), FileContentService.TYPE_PROPERTIES);
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
 
             if (dd != null)
@@ -1027,7 +1027,7 @@ public class FileContentController extends SpringActionController
             if (_resource != null)
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-                String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+                String uri = svc.getDomainURI(getContainer(), FileContentService.TYPE_PROPERTIES);
                 DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
 
                 if (dd != null)
@@ -1084,7 +1084,7 @@ public class FileContentController extends SpringActionController
 
             if (data != null)
             {
-                String uri = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+                String uri = svc.getDomainURI(getContainer(), FileContentService.TYPE_PROPERTIES);
                 DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
 
                 if (dd != null)

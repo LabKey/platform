@@ -610,9 +610,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     private static final String NAMESPACE = "List";
     public static final String PROPERTIES_DOMAIN = "File Properties";
 
-    public String getDomainURI(String type)
+    public String getDomainURI(Container c, String type)
     {
-        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ':' + type).toString();
+        //String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":List" + ".Folder-" + container.getRowId() + ":" + name;
+
+        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ".Folder-" + c.getRowId() + ':' + type).toString();
     }
 
     public ExpData getDataObject(WebdavResource resource, Container c)

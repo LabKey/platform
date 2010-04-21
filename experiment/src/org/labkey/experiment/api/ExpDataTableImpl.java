@@ -90,7 +90,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("LSID", "LSID")));
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        String domainURI = svc.getDomainURI(FileContentService.TYPE_PROPERTIES);
+        String domainURI = svc.getDomainURI(getContainer(), FileContentService.TYPE_PROPERTIES);
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, getContainer());
 
         if (dd != null)
