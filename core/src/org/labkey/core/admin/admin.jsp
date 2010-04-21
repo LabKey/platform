@@ -80,9 +80,7 @@
     String location=null;
     try
     {
-        Connection conn = CoreSchema.getInstance().getSchema().getScope().getConnection();
-        Class cls = conn.getClass();
-        CoreSchema.getInstance().getSchema().getScope().releaseConnection(conn);
+        Class cls = CoreSchema.getInstance().getSchema().getScope().getDelegateClass();
         location = cls.getProtectionDomain().getCodeSource().getLocation().toString();
     }
     catch (Exception x)
