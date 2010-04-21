@@ -4,10 +4,10 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.util.CloseableIterator;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.*;
 
 /**
@@ -15,32 +15,35 @@ import java.util.*;
  */
 public class MapTabLoader extends DataLoader<Map<String, Object>>
 {
-    List<Map<String, String>> _rows;
+    String[] headers;
+    String[][] data;
 
     public MapTabLoader(List<Map<String, String>> rows) throws IOException
     {
-        _rows = rows;
-        _skipLines = -1;
+        convertToArrays(rows);
+        _skipLines = rows.size() > 0 ? 1 : 0;
     }
 
-    @Override
-    public String[][] getFirstNLines(int n) throws IOException
+    // Convert the list of maps.
+    // The UploadSamplesHelper changes the ColumnDescriptor.name to
+    // propertyURIs after inferring the columns but before calling load()
+    // causing the map.get(column.name) on each row to fail.
+    private void convertToArrays(List<Map<String, String>> rows)
     {
-        List<String[]> lineFields = new ArrayList<String[]>(n);
+        List<String[]> lineFields = new ArrayList<String[]>(rows.size());
 
-        int i = 0;
-
-        assert _skipLines == -1;
-        if (_rows.size() > 1)
+        if (rows.size() > 0)
         {
-            Collection<String> headers = _rows.get(0).keySet();
-            lineFields.add(headers.toArray(new String[headers.size()]));
-            _skipLines = 1;
+            Collection<String> keys = rows.get(0).keySet();
+            headers = keys.toArray(new String[keys.size()]);
+            lineFields.add(headers);
 
-            for (i = 0; i < n-1 && i < _rows.size(); i++)
+            for (Map<String, String> row : rows)
             {
-                Map<String, String> row = _rows.get(i);
-                ArrayList<String> values = new ArrayList<String>(headers.size());
+                if (!(row instanceof CaseInsensitiveMapWrapper))
+                    row = new CaseInsensitiveMapWrapper<String>(row);
+
+                ArrayList<String> values = new ArrayList<String>(headers.length);
                 for (String header : headers)
                 {
                     String value = row.get(header);
@@ -49,12 +52,15 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
                 lineFields.add(values.toArray(new String[values.size()]));
             }
         }
-        else
-        {
-            _skipLines = 0;
-        }
 
-        return lineFields.toArray(new String[i][]);
+        data = lineFields.toArray(new String[rows.size()][]);
+    }
+
+    @Override
+    public String[][] getFirstNLines(int n) throws IOException
+    {
+        String[][] first = Arrays.copyOf(data, Math.min(n, data.length), String[][].class);
+        return first;
     }
 
     @Override
@@ -86,18 +92,8 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
         @Override
         protected String[] readFields()
         {
-            int index = lineNum() - _skipLines;
-            if (index < _rows.size())
-            {
-                Map<String, String> row = _rows.get(index);
-                ArrayList<String> values = new ArrayList<String>(_columns.length);
-                for (ColumnDescriptor cd : _columns)
-                {
-                    String value = row.get(cd.name);
-                    values.add(value);
-                }
-                return values.toArray(new String[values.size()]);
-            }
+            if (lineNum() < data.length)
+                return data[lineNum()];
 
             return null;
         }
