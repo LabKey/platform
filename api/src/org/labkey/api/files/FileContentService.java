@@ -117,7 +117,7 @@ public interface FileContentService
 
     public File getProjectDefaultRoot(Container c, boolean createDir);
 
-    public String getDomainURI(String type);
+    public String getDomainURI(Container c, String type);
 
     public ExpData getDataObject(WebdavResource resource, Container c);
 }
