@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="java.sql.Connection" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -74,14 +76,30 @@
 
 <td>
 <table class="labkey-data-region">
+<%
+    String location=null;
+    try
+    {
+        Connection conn = CoreSchema.getInstance().getSchema().getScope().getConnection();
+        Class cls = conn.getClass();
+        CoreSchema.getInstance().getSchema().getScope().releaseConnection(conn);
+        location = cls.getProtectionDomain().getCodeSource().getLocation().toString();
+    }
+    catch (Exception x)
+    {
+    }
+%>
     <tr><td colspan="2"><b>Core Database Configuration</b></td></tr>
-    <tr><td>Server URL</td><td id="databaseServerURL"><%=bean.scope.getURL() %></td></tr>
+    <tr><td>Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
     <tr><td>Product Name</td><td id="databaseProductName"><%=bean.scope.getDatabaseProductName() %></td></tr>
     <tr><td>Product Version</td><td id="databaseProductVersion"><%=bean.scope.getDatabaseProductVersion() %></td></tr>
     <tr><td>JDBC Driver Name</td><td id="databaseDriverName"><%=bean.scope.getDriverName() %></td></tr>
-    <tr><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=bean.scope.getDriverVersion() %></td></tr>
-
-    <tr><td>&nbsp;</td></tr>
+    <tr><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=bean.scope.getDriverVersion() %></td></tr><%
+    if (null != location)
+    {
+        %><tr><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
+    }
+    %><tr><td>&nbsp;</td></tr>
 
     <tr><td colspan="2"><b>Runtime Information</b></td></tr>
     <tr><td>Mode</td><td><%=bean.mode%></td></tr>
