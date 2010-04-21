@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
@@ -61,13 +62,12 @@ public class UploadSamplesHelper
         {
             try
             {
-                TabLoader tl = new TabLoader(_form.getData(), true);
+                ColumnDescriptor[] cds = _form.getLoader().getColumns();
                 Map<Integer, String> ret = new LinkedHashMap<Integer, String>();
                 if (allowBlank)
                 {
                     ret.put(-1, "");
                 }
-                ColumnDescriptor[] cds = tl.getColumns();
                 for (int i = 0; i < cds.length; i ++)
                 {
                     ret.put(i, cds[i].name);
@@ -92,15 +92,12 @@ public class UploadSamplesHelper
         MaterialSource source;
         try
         {
-            String input = _form.getData();
-            TabLoader tl = new TabLoader(input, true);
-            tl.setThrowOnErrors(true);
-            tl.setScanAheadLineCount(200);
+            DataLoader loader = _form.getLoader();
             String materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
             source = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
             ExperimentService.get().getSchema().getScope().beginTransaction();
 
-            ColumnDescriptor[] columns = tl.getColumns();
+            ColumnDescriptor[] columns = loader.getColumns();
 
             Domain domain = PropertyService.get().getDomain(getContainer(), materialSourceLsid);
             if (domain == null)
@@ -149,14 +146,14 @@ public class UploadSamplesHelper
             else
             {
                 idColPropertyURIs = new ArrayList<String>();
-                idColPropertyURIs.add(tl.getColumns()[_form.getIdColumn1()].name);
+                idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
                 if (_form.getIdColumn2() >= 0)
                 {
-                    idColPropertyURIs.add(tl.getColumns()[_form.getIdColumn2()].name);
+                    idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
                 }
                 if (_form.getIdColumn3() >= 0)
                 {
-                    idColPropertyURIs.add(tl.getColumns()[_form.getIdColumn3()].name);
+                    idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
                 }
             }
             String parentColPropertyURI;
@@ -166,14 +163,14 @@ public class UploadSamplesHelper
             }
             else if (_form.getParentColumn() >= 0)
             {
-                parentColPropertyURI = tl.getColumns()[_form.getParentColumn()].name;
+                parentColPropertyURI = columns[_form.getParentColumn()].name;
             }
             else
             {
                 parentColPropertyURI = null;
             }
 
-            List<Map<String, Object>> maps = tl.load();
+            List<Map<String, Object>> maps = loader.load();
 
             if (maps.size() > 0)
             {

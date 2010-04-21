@@ -42,6 +42,7 @@ import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.*;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.MapTabLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -450,40 +451,7 @@ public class ExperimentController extends SpringActionController
             uploadForm.setImportMoreSamples(true);
             uploadForm.setParentColumn(-1);
             uploadForm.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
-            
-
-            // Okay, this is lame: we're going to create a tsv in order to reuse the existing
-            // material creation code, which uses good old tabloader
-            StringBuilder sb = new StringBuilder();
-
-            boolean needsTab = false;
-            List<Map<String,String>> allProperties = form.getMaterials();
-            // first the header
-            for (Map.Entry<String,String> entry : allProperties.get(0).entrySet())
-            {
-                if (needsTab)
-                    sb.append("\t");
-                else
-                    needsTab = true;
-                sb.append(entry.getKey());
-            }
-            sb.append("\n");
-
-            for (Map<String,String> properties : allProperties)
-            {
-                needsTab = false;
-                for (Map.Entry<String,String> entry : properties.entrySet())
-                {
-                    if (needsTab)
-                        sb.append("\t");
-                    else
-                        needsTab = true;
-                    sb.append(entry.getValue());
-                }
-                sb.append("\n");
-            }
-
-            uploadForm.setData(sb.toString());
+            uploadForm.setLoader(new MapTabLoader(form.getMaterials()));
 
             UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
             helper.uploadMaterials();

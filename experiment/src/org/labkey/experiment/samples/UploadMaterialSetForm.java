@@ -17,10 +17,13 @@
 package org.labkey.experiment.samples;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.view.ViewForm;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class UploadMaterialSetForm extends ViewForm
@@ -36,6 +39,9 @@ public class UploadMaterialSetForm extends ViewForm
     private int idColumn3;
     private int parentColumn;
     private OverwriteChoice overwriteChoice;
+
+    private DataLoader _loader;
+
     public enum OverwriteChoice
     {
         ignore,
@@ -80,6 +86,34 @@ public class UploadMaterialSetForm extends ViewForm
     public String getData()
     {
         return data;
+    }
+
+    public DataLoader getLoader()
+    {
+        if (_loader == null)
+        {
+            TabLoader tabLoader = null;
+            try
+            {
+                tabLoader = new TabLoader(data, true);
+                tabLoader.setThrowOnErrors(true);
+                tabLoader.setScanAheadLineCount(200);
+            }
+            catch (IOException ioe)
+            {
+                _log.error(ioe);
+            }
+
+            _loader = tabLoader;
+
+        }
+        return _loader;
+    }
+
+    public void setLoader(DataLoader loader)
+    {
+        assert _loader == null;
+        _loader = loader;
     }
 
     public void setIdColumn1(int idColumn)
