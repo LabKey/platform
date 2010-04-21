@@ -336,6 +336,23 @@ public class DbScope
         return delegate;
     }
 
+    
+    public Class getDelegateClass()
+    {
+        try
+        {
+            Connection conn = _dataSource.getConnection();
+            Connection delegate = getDelegate(conn);
+            conn.close();
+            return delegate.getClass();
+        }
+        catch (Exception x)
+        {
+            return null;
+        }
+    }
+
+
     Integer spidUnknown = -1;
 
     protected Connection _getConnection(Logger log) throws SQLException
