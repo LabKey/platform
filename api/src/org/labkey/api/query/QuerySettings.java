@@ -521,4 +521,9 @@ public class QuerySettings
     {
         return _fieldKeys;
     }
+
+    public void setFieldKeys(List<FieldKey> keys)
+    {
+        _fieldKeys = keys;
+    }
 }
