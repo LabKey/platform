@@ -62,7 +62,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 10.10;
+        return 10.11;
     }
 
     public boolean hasScripts()

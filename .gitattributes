@@ -1879,12 +1879,12 @@ search/resources/schemas/dbscripts/postgresql/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.00-10.10.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.02-0.03.sql -text
 search/resources/schemas/dbscripts/postgresql/search-0.03-0.04.sql -text
-search/resources/schemas/dbscripts/postgresql/umls-0.00-10.10.sql -text
+search/resources/schemas/dbscripts/postgresql/umls-10.10-10.11.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.00-0.03.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.00-10.10.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.02-0.03.sql -text
 search/resources/schemas/dbscripts/sqlserver/search-0.03-0.04.sql -text
-search/resources/schemas/dbscripts/sqlserver/umls-0.00-10.10.sql -text
+search/resources/schemas/dbscripts/sqlserver/umls-10.10-10.11.sql -text
 search/resources/schemas/search.xml -text
 search/src/META-INF/search/jars.txt -text
 search/src/org/labkey/search/Group.java.txt -text
