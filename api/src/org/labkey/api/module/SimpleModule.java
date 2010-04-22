@@ -157,6 +157,10 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         }
         ContainerManager.addContainerListener(this);
 
+        File folderTypesDir = new File(getExplodedPath(), SimpleController.FOLDER_TYPES_DIRECTORY);
+        for (FolderType folderType : SimpleFolderType.createFromDirectory(folderTypesDir))
+            ModuleLoader.getInstance().registerFolderType(folderType);
+        
         initWebApplicationContext();
     }
 

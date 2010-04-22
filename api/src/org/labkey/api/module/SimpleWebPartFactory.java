@@ -73,6 +73,17 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         return _locationsTranslationMap.get(internalName);
     }
 
+    public static String getInternalLocationName(String friendlyName)
+    {
+        for (Map.Entry<String, String> entry : _locationsTranslationMap.entrySet())
+        {
+            if (entry.getValue().equalsIgnoreCase(friendlyName))
+                return entry.getKey();
+        }
+        return null;
+    }
+
+
     public SimpleWebPartFactory(Module module, File webPartFile)
     {
         super(getNameFromFile(webPartFile));

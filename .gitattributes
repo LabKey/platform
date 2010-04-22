@@ -336,6 +336,7 @@ api/src/org/labkey/api/microarray/ExtractionException.java -text
 api/src/org/labkey/api/microarray/FeatureExtractionClient.java -text
 api/src/org/labkey/api/module/AllowedBeforeInitialUserIsSet.java -text
 api/src/org/labkey/api/module/AllowedDuringUpgrade.java -text
+api/src/org/labkey/api/module/DefaultFolderType.java -text
 api/src/org/labkey/api/module/DefaultModule.java -text
 api/src/org/labkey/api/module/FirstRequestHandler.java -text
 api/src/org/labkey/api/module/FolderType.java -text
@@ -356,6 +357,7 @@ api/src/org/labkey/api/module/ResourceFinder.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
 api/src/org/labkey/api/module/SimpleAction.java -text
 api/src/org/labkey/api/module/SimpleController.java -text
+api/src/org/labkey/api/module/SimpleFolderType.java -text
 api/src/org/labkey/api/module/SimpleModule.java -text
 api/src/org/labkey/api/module/SimpleModuleUserSchema.java -text
 api/src/org/labkey/api/module/SimpleWebPartFactory.java -text
@@ -2398,7 +2400,6 @@ internal/src/org/labkey/api/exp/property/ExperimentProperty.java -text
 internal/src/org/labkey/api/exp/property/SystemProperty.java -text
 internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
-internal/src/org/labkey/api/module/DefaultFolderType.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text

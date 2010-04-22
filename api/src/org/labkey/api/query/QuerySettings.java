@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.Aggregate;
@@ -395,6 +396,8 @@ public class QuerySettings
         if (queryName == null)
             return null;
         QueryDefinition ret = QueryService.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), queryName);
+        if (ret != null && getContainerFilterName() != null)
+            ret.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
         if (ret != null)
         {
             return ret;

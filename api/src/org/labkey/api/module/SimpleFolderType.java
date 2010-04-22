@@ -1,0 +1,191 @@
+package org.labkey.api.module;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.data.xml.folderType.FolderType;
+import org.labkey.data.xml.folderType.FolderTypeDocument;
+import org.labkey.data.xml.folderType.Property;
+import org.labkey.data.xml.folderType.WebPartDocument;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.*;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: brittp
+ * Date: Apr 19, 2010
+ * Time: 4:20:27 PM
+ */
+public class SimpleFolderType extends DefaultFolderType
+{
+    private File _folderTypeFile;
+    private long _lastModified = 0;
+    private String _name;
+    private String _description;
+    private List<Portal.WebPart> _requiredParts;
+    private List<Portal.WebPart> _preferredParts;
+    private Set<Module> _activeModules;
+    private Module _defaultModule;
+    public static final String FILE_EXTENSION = ".foldertype.xml";
+
+    //can be used to select all webpart files in a directory
+    public static final FilenameFilter folderTypeFileFilter = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return name.toLowerCase().endsWith(FILE_EXTENSION);
+        }
+    };
+
+    public SimpleFolderType(File folderTypeFile, FolderType folderType)
+    {
+        super(folderType.getName(), folderType.getDescription());
+        _folderTypeFile = folderTypeFile;
+        reload();
+    }
+
+    public static SimpleFolderType create(File folderTypeFile)
+    {
+        FolderType type = parseFile(folderTypeFile);
+        return new SimpleFolderType(folderTypeFile, type);
+    }
+
+    public static List<SimpleFolderType> createFromDirectory(File directory)
+    {
+        List<SimpleFolderType> folderTypes = new ArrayList<SimpleFolderType>();
+        if (directory.exists() && directory.isDirectory())
+        {
+            for (File file : directory.listFiles(folderTypeFileFilter))
+                folderTypes.add(create(file));
+        }
+        return folderTypes;
+    }
+
+    private static FolderType parseFile(File folderTypeFile)
+    {
+        Logger log = Logger.getLogger(SimpleFolderType.class);
+        XmlOptions xmlOptions = new XmlOptions();
+
+        Map<String,String> namespaceMap = new HashMap<String,String>();
+        namespaceMap.put("", "http://labkey.org/data/xml/folderType");
+        xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
+
+        FolderTypeDocument doc;
+        try
+        {
+            doc = FolderTypeDocument.Factory.parse(folderTypeFile, xmlOptions);
+        }
+        catch (XmlException e)
+        {
+            log.error(e);
+            throw new RuntimeException("Unable to load custom folder type from file " +
+                    folderTypeFile.getAbsolutePath() + ".", e);
+        }
+        catch (IOException e)
+        {
+            log.error(e);
+            throw new RuntimeException("Unable to load custom folder type from file " +
+                    folderTypeFile.getAbsolutePath() + ".", e);
+        }
+        if(null == doc || null == doc.getFolderType())
+        {
+            IllegalStateException error = new IllegalStateException("Folder type definition file " +
+                    folderTypeFile.getAbsolutePath() + " does not contain a root 'folderType' element!");
+            log.error(error);
+            throw error;
+        }
+        return doc.getFolderType();
+    }
+
+    private List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references)
+    {
+        List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
+        for (WebPartDocument.WebPart reference : references)
+        {
+            WebPartFactory factory = Portal.getPortalPart(reference.getName());
+            if (factory== null)
+                throw new IllegalStateException("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
+            String location = null;
+            if (reference.getLocation() != null)
+                location = SimpleWebPartFactory.getInternalLocationName(reference.getLocation().toString());
+            Portal.WebPart webPart = factory.createWebPart(location);
+            for (Property prop : reference.getPropertyArray())
+                webPart.setProperty(prop.getName(), prop.getValue());
+            parts.add(webPart);
+        }
+        return parts;
+    }
+
+    private void reload()
+    {
+        FolderType type = parseFile(_folderTypeFile);
+        _name = type.getName();
+        _description = type.getDescription();
+        _preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
+        _requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
+
+        Set<Module> activeModules = new HashSet<Module>();
+        for (String moduleName : type.getModules().getModuleNameArray())
+        {
+            Module module = getModule(moduleName);
+            if (module == null)
+                throw new IllegalStateException("Unable to load folder type: module " + moduleName + " does not exist.");
+            activeModules.add(module);
+        }
+        _activeModules = activeModules;
+        _defaultModule = getModule(type.getDefaultModule());
+        _lastModified = _folderTypeFile.lastModified();
+    }
+
+    private void reloadIfStale()
+    {
+        if (_folderTypeFile.lastModified() != _lastModified)
+            reload();
+    }
+
+    @Override
+    public Module getDefaultModule()
+    {
+        reloadIfStale();
+        return _defaultModule;
+    }
+
+    @Override
+    public List<Portal.WebPart> getRequiredWebParts()
+    {
+        reloadIfStale();
+        return _requiredParts;
+    }
+
+    @Override
+    public List<Portal.WebPart> getPreferredWebParts()
+    {
+        reloadIfStale();
+        return _preferredParts;
+    }
+
+    @Override
+    public String getName()
+    {
+        reloadIfStale();
+        return _name;
+    }
+
+    @Override
+    public String getDescription()
+    {
+        reloadIfStale();
+        return _description;
+    }
+
+    @Override
+    public Set<Module> getActiveModules()
+    {
+        reloadIfStale();
+        return _activeModules;
+    }
+}

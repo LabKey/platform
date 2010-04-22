@@ -313,7 +313,7 @@ LABKEY.Utils.convertToExcel(
          * @param translationMap A map listing property name translations
          * @param applyOthers Set to false to prohibit application of properties
          * not explicitly mentioned in the translation map.
-         * @param applyOthers Set to false to prohibit application of properties
+         * @param applyFunctions Set to false to prohibit application of properties
          * that are functions
          */
         applyTranslated : function(target, source, translationMap, applyOthers, applyFunctions)

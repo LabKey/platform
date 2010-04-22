@@ -321,8 +321,6 @@ LABKEY.Assay = new function()
                 This function will be called with the following arguments:
                 <ul>
                     <li>runs: an array of NAb run objects</li>
-                    <li>options: the options used for the AJAX request</li>
-                    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                 </ul>
         * @param {Function} [config.errorCallback] Function called when execution of the "getStudyNabRuns" function fails.
         *       This function will be called with the following arguments:
@@ -354,6 +352,95 @@ LABKEY.Assay = new function()
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params : dataObject
+            });
+        },
+
+        /**
+        * Retrieve the URL of an image that contains a graph of dilution curves for NAb results that have been copied to a study.
+         * Note that this method must be executed against the study folder containing the copied NAb summary data.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Array} config.objectIds The object Ids for the NAb data rows that have been copied to the study.
+         * This method will ignore requests to graph any object IDs that the current user does not have permission to view.
+         * @param {String} config.captionColumn The data column that should be used for per-specimen captions.  If the column
+         * doesn't exist, or if it has a null value, a sensible default will be chosen, generally specimen ID or participant/visit.
+         * @param {String} config.chartTitle Optional, defaults to no title. The desired title for the chart.
+         * @param {String} config.fitType Optional, defaults to FIVE_PARAMETER.  Allowable values are FIVE_PARAMETER,
+         * FOUR_PARAMETER, and POLYNOMIAL.
+         * @param {String} config.height Optional, defaults to 300.  Desired height of the graph image in pixels.
+         * @param {String} config.width Optional, defaults to 425.  Desired width of the graph image in pixels.
+         * @param {String} [config.containerPath] The path to the study container containing the NAb summary data,
+         *       if different than the current container. If not supplied, the current container's path will be used.
+         * @param {Function} config.successCallback
+                Function called when the "getStudyNabGraphURL" function executes successfully.
+                This function will be called with the following arguments:
+                <ul>
+                    <li>result: an object with the following properties:
+                        <ul>
+                         <li>url: a string URL of the dilution curve graph.</li>
+                         <li>objectIds: an array containing the IDs of the samples that were successfully graphed.</li>
+                        </ul>
+                    </li>
+                    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+                    <li>options: the options used for the AJAX request</li>
+                </ul>
+        * @param {Function} [config.errorCallback] Function called when execution of the "getStudyNabGraphURL" function fails.
+        *       This function will be called with the following arguments:
+                <ul>
+                    <li>responseObj: The XMLHttpRequest object containing the response data.</li>
+                    <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
+                </ul>
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
+        * @example Example:
+<pre name="code" class="xml">
+&lt;script language="javascript"&gt;
+    function showGraph(data)
+    {
+        var el = document.getElementById("graphDiv");
+        if (data.objectIds && data.objectIds.length &gt; 0)
+            el.innerHTML = '&lt;img src=\"' + data.url + '\"&gt;';
+        else
+            el.innerHTML = 'No graph available.  Insufficient permissions, ' +
+                           'or no matching results were found.';
+    }
+
+    function initiateGraph(ids)
+    {
+        LABKEY.Assay.getStudyNabGraphURL({
+            objectIds: ids,
+            successCallback: showGraph,
+            captionColumn: 'VirusName',
+            chartTitle: 'My NAb Chart',
+            height: 500,
+            width: 700,
+            fitType: 'FOUR_PARAMETER'
+        });
+    }
+
+    Ext.onReady(initiateGraph([185, 165]));
+&lt;/script&gt;
+&lt;div id="graphDiv"&gt;
+</pre>
+
+        */
+        getStudyNabGraphURL : function(config)
+        {
+            var parameters = {};
+
+            LABKEY.Utils.applyTranslated(parameters, config, {objectIds: 'id'}, true, false);
+
+            if(config.timeout)
+                Ext.Ajax.timeout = config.timeout;
+
+            if (!config.errorCallback)
+               config.errorCallback = LABKEY.Utils.displayAjaxErrorResponse;
+
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabGraphURL', config.containerPath),
+                method : 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                params : parameters
             });
         }
     };

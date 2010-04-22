@@ -42,6 +42,7 @@ public class SimpleController extends SpringActionController implements SpringAc
     public static final String ACTIONS_FILE = "actions.js";
     
     public static final String VIEWS_DIRECTORY = "views";
+    public static final String FOLDER_TYPES_DIRECTORY = "folderTypes";
     public static final String BEGIN_VIEW_NAME = "begin";
 
     public SimpleController()
