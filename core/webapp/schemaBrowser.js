@@ -1252,7 +1252,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         if (LABKEY.Security.currentUser.isAdmin)
         {
             tbar.push({
-                text: 'Define External Schemas',
+                text: 'Schema Administration',
                 handler: this.onSchemaAdminClick,
                 scope: this,
                 iconCls: 'iconFolderNew',

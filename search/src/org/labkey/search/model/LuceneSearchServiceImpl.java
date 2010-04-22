@@ -19,18 +19,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.Filter;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -66,13 +62,11 @@ import java.util.regex.Pattern;
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
-    private static final Version LUCENE_VERSION = Version.LUCENE_30;
+    static final Version LUCENE_VERSION = Version.LUCENE_30;
 
-    private static IndexWriter _iw = null;            // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexWriter()
-    private final Analyzer _analyzer = new SnowballAnalyzer(LUCENE_VERSION, "English");
-    private static LabKeyIndexSearcher _searcher = null;    // Don't use this directly -- it could be null or change out from underneath you.  Call getIndexSearcher()
-    private static Directory _directory = null;
-    private final Object _indexWriterLock = new Object();   // Single lock for now, since indexing is single-threaded.  TODO: Reference count index writers and close() at 0
+    private final Analyzer _analyzer = ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
+    private final WritableIndex _index;
+    private static ExternalIndex _externalIndex;
 
     static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
         url, container, resourceId, uniqueId, navtrail }
@@ -82,11 +76,55 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             File tempDir = new File(FileUtil.getTempDirectory(), "labkey_full_text_index");
-            _directory = FSDirectory.open(tempDir);
+            _index = new WritableIndex(tempDir, _analyzer);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public void start()
+    {
+        try
+        {
+            resetExternalIndex();
+        }
+        catch (Exception e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+    }
+
+
+    public void resetExternalIndex() throws IOException, InterruptedException
+    {
+        if (null != _externalIndex)
+        {
+            _externalIndex.close();
+            _externalIndex = null;
+        }
+
+        ExternalIndexProperties props = ExternalIndexManager.get();
+
+        if (props.hasProperties())
+        {
+            File externalIndexFile = new File(props.getExternalIndexPath());
+            Analyzer analyzer = ExternalAnalyzer.valueOf(props.getAnalyzer()).getAnalyzer();
+
+            if (externalIndexFile.exists())
+                _externalIndex = new ExternalIndex(externalIndexFile, analyzer);
+        }
+    }
+
+
+    public void swapExternalIndex() throws IOException, InterruptedException
+    {
+        if (null != _externalIndex)
+        {
+            _externalIndex.swap();
         }
     }
 
@@ -111,18 +149,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public void clearIndex()
     {
-        try
-        {
-            synchronized (_indexWriterLock)
-            {
-                getIndexWriter().deleteAll();
-                commit();
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException();
-        }
+        _index.clear();
     }
 
 
@@ -327,13 +354,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 logAsWarning(r, "Can't parse this PDF document [" + rootMessage + "]");
             }
-
-
-            /*            else if (topMessage.startsWith("Unexpected RuntimeException from org.apache.tika.parser.pdf.PDFParser"))
-            {
-                logAsWarning(r, "Can't parse this PDF document [" + rootMessage + "]");
-            }
-*/            else if (topMessage.startsWith("Unexpected RuntimeException from org.apache.tika.parser.microsoft"))
+            else if (topMessage.startsWith("Unexpected RuntimeException from org.apache.tika.parser.microsoft"))
             {
                 logAsWarning(r, "Can't parse this document [" + rootMessage + "]");
             }
@@ -597,18 +618,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void deleteDocument(String id)
     {
-        try
-        {
-            synchronized (_indexWriterLock)
-            {
-                IndexWriter iw = getIndexWriter();
-                iw.deleteDocuments(new Term(FIELD_NAMES.uniqueId.toString(), id));
-            }
-        }
-        catch(Throwable e)
-        {
-            _log.error("Indexing error deleting " + id, e);
-        }
+        _index.deleteDocument(id);
     }
 
     
@@ -617,12 +627,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
-
-            synchronized (_indexWriterLock)
-            {
-                deleteDocument(r.getDocumentId());
-                getIndexWriter().addDocument(doc);
-            }
+            _index.index(r.getDocumentId(), doc);
         }
         catch(Throwable e)
         {
@@ -651,11 +656,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 throw io;
             }
 
-            synchronized (_indexWriterLock)
-            {
-                IndexWriter w = getIndexWriter();
-                w.deleteDocuments(query);
-            }
+            _index.deleteQuery(query);
         }
         catch (IOException x)
         {
@@ -666,112 +667,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void commitIndex()
     {
-        synchronized (_indexWriterLock)
-        {
-            try
-            {
-                if (null != _iw)
-                    _iw.close();
-            }
-            catch (IOException e)
-            {
-                try
-                {
-                    _log.error("Exception closing index", e);
-                    _log.error("Attempting to index close again");
-                    _iw.close();
-                }
-                catch (IOException e2)
-                {
-                    _log.error("Exception closing index", e2);
-                }
-            }
-            finally
-            {
-                resetIndexSearcher();
-                _iw = null;
-            }
-        }
-    }
-
-
-    // Note: callers must have index writer lock
-    private IndexWriter getIndexWriter() throws IOException
-    {
-        if (!Thread.holdsLock(_indexWriterLock))
-            throw new IllegalStateException("Call to getIndexWriter() without the proper lock");
-
-        // CONSIDER: Set a large, but finite max field length if we get OutOfMemory errors during indexing
-        if (null == _iw)
-            _iw = new IndexWriter(_directory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
-
-        return _iw;
-    }
-
-
-    private synchronized void resetIndexSearcher()
-    {
-        try
-        {
-            LabKeyIndexSearcher s = _searcher;
-            _searcher = null;
-            if (null != s)
-                s.decrement();
-        }
-        catch (IOException x)
-        {
-            
-        }
-    }
-    
-
-    private synchronized LabKeyIndexSearcher getIndexSearcher() throws IOException
-    {
-        if (null == _searcher)
-            _searcher = new LabKeyIndexSearcher();
-
-        // Increment ref count
-        _searcher.increment();
-
-        return _searcher;
-    }
-
-
-    private synchronized void releaseIndexSearcher(LabKeyIndexSearcher searcher) throws IOException
-    {
-        // Decrement ref count
-        searcher.decrement();
-    }
-
-
-    // Add reference counting to IndexSearcher so we know when to safely close it.  See #9785.
-    private static class LabKeyIndexSearcher extends IndexSearcher
-    {
-        private int _references = 1;
-
-        private LabKeyIndexSearcher() throws IOException
-        {
-            super(_directory, true);
-        }
-
-        private void increment()
-        {
-            _references++;
-        }
-
-        private void decrement() throws IOException
-        {
-            _references--;
-
-            if (0 == _references)
-                close();
-        }
+        _index.commit();
     }
 
 
     public SearchHit find(String id) throws IOException
     {
-        LabKeyIndexSearcher searcher = getIndexSearcher();
+        LabKeyIndexSearcher searcher = _index.getSearcher();
 
         try
         {
@@ -784,7 +686,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
-            releaseIndexSearcher(searcher);
+            _index.releaseSearcher(searcher);
         }
     }
     
@@ -855,7 +757,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             query = bq;
         }
 
-        LabKeyIndexSearcher searcher = getIndexSearcher();
+        LabKeyIndexSearcher searcher = _index.getSearcher();
 
         try
         {
@@ -867,12 +769,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             else
                 topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
 
-            SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
-            return result;
+            return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
         }
         finally
         {
-            releaseIndexSearcher(searcher);
+            _index.releaseSearcher(searcher);
         }
     }
 
@@ -909,16 +810,68 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    public static String searchExternal(String queryString) throws IOException, ParseException
+    {
+        if (null == _externalIndex)
+            return null;
+
+        StringBuilder sb = new StringBuilder();
+        LabKeyIndexSearcher searcher = _externalIndex.getSearcher();
+
+        try
+        {
+            QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, new String[]{"content", "title"}, _externalIndex.getAnalyzer());
+            Query query = queryParser.parse(queryString);
+            TopDocs docs = searcher.search(query, 100);
+            ScoreDoc[] hits = docs.scoreDocs;
+
+            for (ScoreDoc hit : hits)
+            {
+                Document doc = searcher.doc(hit.doc);
+                String title = doc.get("title");
+                String url = doc.get("url");
+
+                sb.append("<tr><td><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(title)).append("</a></td></tr>\n");
+            }
+        }
+        finally
+        {
+            _externalIndex.releaseSearcher(searcher);
+        }
+
+        return sb.toString();
+    }
+
+
     protected void shutDown()
     {
         commit();
+
+        try
+        {
+            _index.close();
+        }
+        catch (Exception e)
+        {
+            _log.error("Closing index", e);
+        }
+
+        try
+        {
+            if (null != _externalIndex)
+                _externalIndex.close();
+        }
+        catch (Exception e)
+        {
+            _log.error("Closing external index", e);
+        }
     }
 
 
     @Override
     public Map<String, Object> getStats()
     {
-        Map<String,Object> map = new LinkedHashMap<String,Object>();
+        Map<String, Object> map = new LinkedHashMap<String,Object>();
 
         try
         {
@@ -926,13 +879,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             try
             {
-                is = getIndexSearcher();
+                is = _index.getSearcher();
                 map.put("Indexed Documents", is.getIndexReader().numDocs());
             }
             finally
             {
                 if (null != is)
-                    releaseIndexSearcher(is);
+                    _index.releaseSearcher(is);
             }
         }
         catch (IOException x)
@@ -973,18 +926,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void maintenance()
     {
         super.maintenance();
-
-        try
-        {
-            synchronized (_indexWriterLock)
-            {
-                IndexWriter iw = getIndexWriter();
-                iw.optimize();
-            }
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
+        _index.optimize();
     }
 }

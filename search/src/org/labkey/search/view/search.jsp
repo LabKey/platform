@@ -279,7 +279,14 @@ if (loginStatusChanged())
             out.write(h("Error: " + e.getMessage()));
             out.write("</div></td>");
         } %>
-        </tr></table><%
+        </tr><%
+
+        if (true)
+        { %>
+            <tr><td valign="top" align="left"><img title="" src="<%=contextPath%>/_.gif" width=200 height=1></td></tr>
+            <tr><td><%=form.searchExternalIndex(queryString)%></td></tr><%
+        } %>
+    </table><%
     }
 %>
 <%!

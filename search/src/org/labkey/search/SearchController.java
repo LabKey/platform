@@ -17,6 +17,8 @@
 package org.labkey.search;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.queryParser.ParseException;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
@@ -25,10 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HelpTopic;
@@ -37,11 +36,16 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.ExternalIndexManager;
+import org.labkey.search.model.ExternalIndexProperties;
+import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Date;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +69,7 @@ public class SearchController extends SpringActionController
     }
 
 
-    public static class AdminForm
+    public static class AdminForm implements ExternalIndexProperties
     {
         public String[] _messages = {"", "Index deleted"};
         private int msg = 0;
@@ -73,6 +77,9 @@ public class SearchController extends SpringActionController
         private boolean start;
         private boolean delete;
 
+        private int externalMsg = 0;
+        private String externalIndexPath = null;
+        private String analyzer = null;
 
         public String getMessage()
         {
@@ -82,6 +89,31 @@ public class SearchController extends SpringActionController
         public void setMsg(int m)
         {
             msg = m;
+        }
+
+        public String getExternalIndexPath()
+        {
+            return externalIndexPath;
+        }
+
+        public void setExternalIndexPath(String externalIndexPath)
+        {
+            this.externalIndexPath = externalIndexPath;
+        }
+
+        public String getAnalyzer()
+        {
+            return analyzer;
+        }
+
+        public boolean hasProperties()
+        {
+            throw new IllegalArgumentException();
+        }
+
+        public void setAnalyzer(String analyzer)
+        {
+            this.analyzer = analyzer;
         }
 
         public boolean isDelete()
@@ -127,7 +159,15 @@ public class SearchController extends SpringActionController
 
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<AdminForm>(SearchController.class, "view/admin.jsp", form, errors);
+            ExternalIndexProperties props = ExternalIndexManager.get();
+
+            WebPartView externalIndexView = new JspView<ExternalIndexProperties>(SearchController.class, "view/externalIndex.jsp", props, errors);
+            externalIndexView.setTitle("External Index Configuration");
+
+            WebPartView indexerView = new JspView<AdminForm>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
+            indexerView.setTitle("Indexer Configuration");
+
+            return new VBox(externalIndexView, indexerView);
         }
 
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -172,8 +212,103 @@ public class SearchController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Indexing Configuration", null);
+            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", null);
             return root;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class SetExternalIndexAction extends SimpleRedirectAction<AdminForm>
+    {
+        @Override
+        public ActionURL getRedirectURL(AdminForm form) throws Exception
+        {
+            ExternalIndexManager.save(form);
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            // TODO: Add to SearchService interface
+            ((LuceneSearchServiceImpl)ss).resetExternalIndex();
+
+            ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
+            url.addParameter("externalMessage", "External index set");
+            return url;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class ClearExternalIndexAction extends SimpleRedirectAction
+    {
+        @Override
+        public ActionURL getRedirectURL(Object o) throws Exception
+        {
+            ExternalIndexManager.clear();
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            // TODO: Add to SearchService interface
+            ((LuceneSearchServiceImpl)ss).resetExternalIndex();
+
+            ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
+            url.addParameter("externalMsg", "External index cleared");
+            return url;
+        }
+    }
+
+
+    public static class SwapForm
+    {
+        boolean _ui = true;
+
+        public boolean isUi()
+        {
+            return _ui;
+        }
+
+        public void setUi(boolean ui)
+        {
+            _ui = ui;
+        }
+    }
+
+
+    @RequiresNoPermission
+    public class SwapExternalIndexAction extends SimpleViewAction<SwapForm>
+    {
+        @Override
+        public ModelAndView getView(SwapForm form, BindException errors) throws Exception
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            // TODO: Add to SearchService interface
+            ((LuceneSearchServiceImpl)ss).swapExternalIndex();
+
+            String message = "External index swapped";
+
+            // If this was initiated from the UI and reload was not queued up then reshow the form and display the message
+            if (form.isUi())
+            {
+                ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
+                url.addParameter("externalMessage", message);
+
+                return HttpView.redirect(url);
+            }
+            else
+            {
+                // Plain text response for scripts
+                HttpServletResponse response = getViewContext().getResponse();
+                response.setContentType("text/plain");
+                PrintWriter out = response.getWriter();
+                out.print(message);
+                out.close();
+                response.flushBuffer();
+
+                return null;
+            }
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -207,34 +342,6 @@ public class SearchController extends SpringActionController
             {
             }
             return getSearchURL();
-        }
-    }
-
-
-    // UNDONE: remove; for testing only
-    @RequiresSiteAdmin
-    public class CommitAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            // SimpleRedirectAction doesn't take a form
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
-            if (null == ss)
-                return null;
-
-            ((AbstractSearchService)ss).commit();
-
-            try
-            {
-                String returnUrl = getViewContext().getRequest().getParameter("returnUrl");
-                if (null != returnUrl)
-                    return new ActionURL(returnUrl);
-            }
-            catch (Exception x)
-            {
-            }
-            return new ActionURL(SearchAction.class, getContainer());
         }
     }
 
@@ -295,7 +402,6 @@ public class SearchController extends SpringActionController
             else
             {
                 task = ss.indexContainer(null, getViewContext().getContainer(), null);
-                _lastIncrementalTask = task;
             }
 
             if (wait && null != task)
@@ -393,9 +499,6 @@ public class SearchController extends SpringActionController
     }
     
 
-    static SearchService.IndexTask _lastIncrementalTask = null;
-
-    
     public static ActionURL getSearchURL(Container c)
     {
         return new ActionURL(SearchAction.class, c);
@@ -500,6 +603,11 @@ public class SearchController extends SpringActionController
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
         private boolean _includeHelpLink = true;
+
+        public @Nullable String searchExternalIndex(String queryString) throws IOException, ParseException
+        {
+            return LuceneSearchServiceImpl.searchExternal(queryString);
+        }
 
         public static enum SearchScope {All, Project, Folder}
 

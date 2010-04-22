@@ -119,14 +119,14 @@ public class SearchModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        Map<String,String> m = PropertyManager.getProperties(SearchModule.class.getName());
+        Map<String, String> m = PropertyManager.getProperties(SearchModule.class.getName());
         boolean running = !AppProps.getInstance().isDevMode();
         if (m.containsKey(searchRunningState))
             running = "true".equals(m.get(searchRunningState));
 
         if (null != ss)
         {
-            AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "indexer", new ActionURL(SearchController.AdminAction.class, null));
+            AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             // don't start the crawler until all the modules are done startuping
             final boolean start = running;

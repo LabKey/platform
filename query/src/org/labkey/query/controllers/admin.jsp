@@ -65,21 +65,24 @@ if (null != reloadedSchema)
 %>
         <tr>
             <td><%=h(def.getUserSchemaName())%></td>
-            <td><labkey:link text="view" href="<%=urlView%>" /></td>
-            <td><%if (getUser().isAdministrator()) {%><labkey:link text="edit" href="<%=urlEdit%>" /><%}%></td>
+            <td><labkey:link text="view data" href="<%=urlView%>" /></td>
+            <td><%if (getUser().isAdministrator()) {%><labkey:link text="edit definition" href="<%=urlEdit%>" /><%}%></td>
             <td><labkey:link text="reload" href="<%=urlReload%>" /></td>
         </tr>
     <% } %>
     </table>
 <% } %>
 <br>
-<%if (getUser().isAdministrator()) { %>
+<%
+    if (getUser().isAdministrator())
+    { %>
     <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, getContainer())%>" text="define new schema"/>
     <labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, getContainer())%>" text="define multiple new schemas"/><%
+    }
 
-    if (defs.length > 0)
+    if (defs.length > 1)
     { %>
     <labkey:link href="<%= new ActionURL(QueryController.ReloadAllUserSchemas.class, getContainer())%>" text="reload all schemas"/><%
     }
     %>
-<%}%>
+

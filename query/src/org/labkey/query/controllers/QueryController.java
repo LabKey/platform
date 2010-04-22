@@ -2610,7 +2610,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresSiteAdmin
     public class EditExternalSchemaAction extends FormViewAction<ExternalSchemaForm>
     {
 		public void validateCommand(ExternalSchemaForm form, Errors errors)

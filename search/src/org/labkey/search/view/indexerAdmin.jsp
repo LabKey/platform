@@ -26,6 +26,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.search.model.DavCrawler" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -34,9 +35,11 @@ User user = me.getViewContext().getUser();
 SearchController.AdminForm form = me.getModelBean();
 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
-%><labkey:errors /><br>
-<span style="color:green;"><%=form.getMessage()%></span><%
-
+%><labkey:errors /><%
+    if (!StringUtils.isEmpty(form.getMessage()))
+    { %><br>
+        <span style="color:green;"><%=form.getMessage()%></span><%
+    }
 
 if (null == ss)
 {
@@ -69,14 +72,19 @@ else
         <%=PageFlowUtil.generateSubmitButton("Start")%><%
         }
     }
-    %></form></p>
+    %></form></p><%
+    if (user.isAdministrator())
+    {
+    %>
     <p><form method="POST" action="admin.view">
         Delete the search index<br>
         You shouldn't need to do this, but if something goes wrong, you can give it a try.  Note that re-indexing can be very expensive.<br>
         <input type="hidden" name="delete" value="1">
         <%=PageFlowUtil.generateSubmitButton("Delete Index")%>
     </form></p><%
+    }
     
+    WebPartView.endTitleFrame(out);
     WebPartView.startTitleFrame(out,"Statistics");
     %><table><%
     if (ss instanceof AbstractSearchService)
@@ -103,5 +111,6 @@ else
         %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
     }
     %></table><%
+    WebPartView.endTitleFrame(out);
 }
 %>
