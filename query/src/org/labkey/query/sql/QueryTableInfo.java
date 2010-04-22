@@ -16,15 +16,14 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.jetbrains.annotations.NotNull;
 
-public class QueryTableInfo extends AbstractTableInfo
+public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
     TableInfo _subquery;
     QueryRelation _relation;
+    private ContainerFilter _containerFilter;
 
     public QueryTableInfo(QueryRelation relation, TableInfo subquery, String name)
     {
@@ -53,5 +52,24 @@ public class QueryTableInfo extends AbstractTableInfo
         // Let the underlying schemas do whatever filtering they need on the data, especially since
         // after columns are part of a query we lose track of what was on the base table and what's been joined in
         return false;
+    }
+
+    public void setContainerFilter(@NotNull ContainerFilter containerFilter)
+    {
+        _containerFilter = containerFilter;
+    }
+
+    public boolean hasDefaultContainerFilter()
+    {
+        return false;
+    }
+
+    @NotNull
+    @Override
+    public ContainerFilter getContainerFilter()
+    {
+        if (_containerFilter == null)
+            return ContainerFilter.CURRENT;
+        return _containerFilter;
     }
 }

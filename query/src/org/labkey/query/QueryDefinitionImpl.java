@@ -61,6 +61,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
     private boolean _dirty;
+    private ContainerFilter _containerFilter;
 
     public QueryDefinitionImpl(QueryDef queryDef)
     {
@@ -82,8 +83,16 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return (_queryDef.getFlags() & QueryManager.FLAG_INHERITABLE) != 0;
     }
 
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        _containerFilter = containerFilter;
+    }
 
-    
+    public ContainerFilter getContainerFilter()
+    {
+        return _containerFilter;
+    }
+
     public void delete(User user) throws SQLException
     {
         if (!canEdit(user))
@@ -246,10 +255,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         return getQuery(schema, errors, null);
     }
-    
+
     public Query getQuery(QuerySchema schema, List<QueryException> errors, Query parent)
     {
         Query query = new Query(schema, parent);
+        query.setContainerFilter(getContainerFilter());
         String sql = getSql();
         if (sql != null)
         {

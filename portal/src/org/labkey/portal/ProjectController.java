@@ -418,6 +418,7 @@ public class ProjectController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
+    @ApiVersion(10.2)
     public class DeleteWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
@@ -432,6 +433,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    @ApiVersion(10.2)
     public class MoveWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override
@@ -446,6 +448,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(10.2)
     public class GetWebPartsAction extends ApiAction<CustomizePortletApiForm>
     {
         @Override

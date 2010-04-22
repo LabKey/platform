@@ -60,6 +60,7 @@ public class Query
 	private ArrayList<QueryException> _parseErrors = new ArrayList<QueryException>();
 
     private TablesDocument _metadata = null;
+    private ContainerFilter _containerFilter;
     private QueryRelation _queryRoot;
 
     private Query _parent; // only used to avoid recursion for now
@@ -120,6 +121,15 @@ public class Query
         return _metadata;
     }
 
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        _containerFilter = containerFilter;
+    }
+
+    public ContainerFilter getContainerFilter()
+    {
+        return _containerFilter;
+    }
 
     public void parse()
     {
@@ -305,7 +315,10 @@ public class Query
         {
             if (_parseErrors.size() > 0)
                 return null;
-            return _queryRoot == null ? null : _queryRoot.getTableInfo();
+            TableInfo tinfo = _queryRoot == null ? null : _queryRoot.getTableInfo();
+            if (tinfo instanceof ContainerFilterable)
+                ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
+            return tinfo;
         }
         catch (RuntimeException x)
         {
@@ -410,6 +423,9 @@ public class Query
                 t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true, _parseErrors);
             else
                 t = schema.getTable(key.getName());
+
+            if (t instanceof ContainerFilterable && getContainerFilter() != null)
+                ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
         }
         catch (UnauthorizedException ex)
         {

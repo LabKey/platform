@@ -253,6 +253,17 @@ public class QueryTable extends QueryRelation
         }
     }
 
+    public boolean setContainerFilter(ContainerFilter containerFilter)
+    {
+        if (_tableInfo instanceof ContainerFilterable)
+        {
+            ((ContainerFilterable) _tableInfo).setContainerFilter(containerFilter);
+            return true;
+        }
+        else
+            return false;
+    }
+
 //    // an unwrapped lookup column
 //    class LookupColumnInfoColumn extends TableColumn
 //    {
