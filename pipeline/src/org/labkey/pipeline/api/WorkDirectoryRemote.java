@@ -146,6 +146,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             return _tempDirectory;
         }
 
+        /** @param directoryString path of the directory to be used as scratch space */
         public void setTempDirectory(String directoryString)
         {
             _tempDirectory = directoryString;

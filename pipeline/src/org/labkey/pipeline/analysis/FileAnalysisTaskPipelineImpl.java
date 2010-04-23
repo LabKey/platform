@@ -90,22 +90,22 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (_initialFileTypes == null || _initialFileTypes.length == 0)
                 throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
 
-        // Convert any input extension heirarchy into file types.
-        Map<FileType, List<FileType>> extHeirarchy = settings.getFileExtHierarchy();
-        if (extHeirarchy != null || _typeHeirarchy == null)
+        // Convert any input extension hierarchy into file types.
+        Map<FileType, List<FileType>> extHierarchy = settings.getFileExtHierarchy();
+        if (extHierarchy != null || _typeHeirarchy == null)
             _typeHeirarchy = new HashMap<FileType, FileType[]>();
 
-        // Add the initial types to the heirarchy
+        // Add the initial types to the hierarchy
         for (FileType ft : _initialFileTypes)
             _typeHeirarchy.put(ft, new FileType[0]);
 
-        if (extHeirarchy != null)
+        if (extHierarchy != null)
         {
-            for (Map.Entry<FileType, List<FileType>> entry  : extHeirarchy.entrySet())
+            for (Map.Entry<FileType, List<FileType>> entry  : extHierarchy.entrySet())
             {
                 List<FileType> inputExtList = entry.getValue();
-                FileType[] heirarchy = inputExtList.toArray(new FileType[inputExtList.size()]);
-                _typeHeirarchy.put(entry.getKey(), heirarchy);
+                FileType[] hierarchy = inputExtList.toArray(new FileType[inputExtList.size()]);
+                _typeHeirarchy.put(entry.getKey(), hierarchy);
             }
         }
 
@@ -196,7 +196,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
      * Look at the specified type hierarchy to see if the requested file is an
      * ancestor to this processing job, residing outside the analysis directory.
      *
-     * @param dirRoot The pipeline root directoy, outside which no files can be processed.
+     * @param dirRoot The pipeline root directory, outside which no files can be processed.
      * @param dirAnalysis Default input/output directory for the current job.
      * @param name The name of the file to be located
      * @return The file location outside the analysis directory, or null, if no such match is found.

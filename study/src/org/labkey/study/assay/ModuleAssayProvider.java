@@ -27,11 +27,11 @@ import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.FileResource;
-import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -78,7 +78,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private static final String BEGIN_VIEW_FILENAME = "begin.html";
 
     private Resource basePath;
-    private Resolver resolver;
+    private Module module;
     private String name;
     private String description;
     private FileType[] inputFileSuffices = new FileType[0];
@@ -90,7 +90,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
 
-    public ModuleAssayProvider(String name, Resolver resolver, Resource basePath, ProviderType providerConfig)
+    public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
         _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey())
@@ -128,7 +128,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             }
         };
         this.name = name;
-        this.resolver = resolver;
+        this.module = module;
         this.basePath = basePath;
 
         init(providerConfig);
@@ -175,7 +175,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws IOException, XmlException
     {
-        Resource domainFile = resolver.lookup(basePath.getPath().append(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
+        Resource domainFile = module.getModuleResolver().lookup(basePath.getPath().append(ModuleAssayLoader.DOMAINS_DIR_NAME, domainType.getName().toLowerCase() + ".xml"));
         if (domainFile == null || !domainFile.exists())
             return null;
 
@@ -306,7 +306,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected boolean hasCustomView(String viewResourceName)
     {
-        return resolver.lookup(basePath.getPath().append("views", viewResourceName)) != null;
+        return module.getModuleResolver().lookup(basePath.getPath().append("views", viewResourceName)) != null;
     }
 
     @Override
@@ -317,10 +317,10 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected ModelAndView getCustomView(String viewResourceName)
     {
-        Resource viewResource = resolver.lookup(basePath.getPath().append("views", viewResourceName));
+        Resource viewResource = module.getModuleResolver().lookup(basePath.getPath().append("views", viewResourceName));
         if (viewResource != null && viewResource.exists())
         {
-            ModuleHtmlView view = new ModuleHtmlView(viewResource);
+            ModuleHtmlView view = new ModuleHtmlView(module, viewResource);
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }
@@ -521,7 +521,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
             // lazily get the validation scripts
-            Resource scriptDir = resolver.lookup(basePath.getPath().append("scripts"));
+            Resource scriptDir = module.getModuleResolver().lookup(basePath.getPath().append("scripts"));
 
             if (scriptDir != null && scriptDir.exists())
             {

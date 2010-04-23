@@ -85,7 +85,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         else
             providerConfig.setName(assayName);
 
-        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, module.getModuleResolver(), assayProviderDir, providerConfig);
+        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, module, assayProviderDir, providerConfig);
 
         AssayService.get().registerAssayProvider(assayProvider);
     }

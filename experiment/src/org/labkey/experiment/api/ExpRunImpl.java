@@ -463,7 +463,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         if (!found)
             throw new ExperimentException("Specified node not found in Experiment Run");
 
-
+        int loopCount = 0;
         while (descendantPAStack.size() > 0)
         {
             ExpProtocolApplication pa = descendantPAStack.get(0);
@@ -479,9 +479,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
             descendantPAStack.remove(pa);
             listPA.add(pa);
+            if (loopCount++ > 10000)
+            {
+                throw new IllegalStateException("Infinite loop detected for run " + getRowId());
+            }
         }
 
-
+        loopCount = 0;
         while (ancestorPAStack.size() > 0)
         {
             ExpProtocolApplication pa = ancestorPAStack.get(0);
