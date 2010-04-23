@@ -713,10 +713,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         Widget type;
         if (readOnly)
         {
+            // ConceptPicker.getDisplayString()
             type = new Label(TypePicker.getDisplayString(pd.getRangeURI()));
         }
         else
         {
+            // type = new ConceptPicker.Bound(_lookupService, pd);
             BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
             typePicker.addFocusHandler(focusHandler);
             typePicker.setRangeURI(pd.getRangeURI());

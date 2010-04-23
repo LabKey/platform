@@ -18,7 +18,7 @@ package org.labkey.api.gwt.client.ui.property;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.HelpPopup;
-import org.labkey.api.gwt.client.ui.TypePicker;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
@@ -113,10 +113,11 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
 
     private boolean canFormat(String rangeURI)
     {
+        PropertyType target = PropertyType.fromName(rangeURI);
         // for now, we only support format strings for datetime and numeric types
-        return TypePicker.xsdDateTime.equals(rangeURI) ||
-                TypePicker.xsdDouble.equals(rangeURI) ||
-                TypePicker.xsdInt.equals(rangeURI);
+        return PropertyType.xsdDateTime == target ||
+                PropertyType.xsdDouble == target ||
+                PropertyType.xsdInt == target;
     }
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
@@ -125,7 +126,8 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
         _canFormat = canFormat(field.getRangeURI());
         if (_canFormat)
         {
-            _formatHelpPopup.setBody(field.getRangeURI().equals(TypePicker.xsdDateTime) ? FORMAT_HELP_DATE : FORMAT_HELP_NUMBER);
+            PropertyType type = PropertyType.fromName(field.getRangeURI());
+            _formatHelpPopup.setBody(type == PropertyType.xsdDateTime ? FORMAT_HELP_DATE : FORMAT_HELP_NUMBER);
         }
         else
         {

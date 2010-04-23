@@ -49,8 +49,10 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             return builder.toString();
         }
     }
+
     public static class GWTViewBean
     {
+        private String _loading = "";
         private String _moduleName;
         private Map<String, String> _properties;
 
@@ -58,6 +60,8 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         {
             _moduleName = moduleName;
             _properties = new HashMap<String, String>(properties);
+            if (null != properties.get("loading"))
+                setLoading(properties.get("loading"));
         }
 
         public void init(ViewContext context)
@@ -79,6 +83,16 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         {
             return _properties;
         }
+
+        public void setLoading(String message)
+        {
+            _loading = message;
+        }
+
+        public String getLoading()
+        {
+            return _loading;
+        }
     }
 
     private static String convertClassToModuleName(Class c)
@@ -95,6 +109,11 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
     public GWTView(Class moduleClass)
     {
         this(convertClassToModuleName(moduleClass));
+    }
+
+    public GWTView(Class moduleClass, String loading)
+    {
+        this(convertClassToModuleName(moduleClass), Collections.singletonMap("loading",loading));
     }
 
     public GWTView(String moduleName)

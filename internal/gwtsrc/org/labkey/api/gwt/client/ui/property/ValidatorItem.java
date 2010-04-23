@@ -111,7 +111,8 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
         String rangeURI = field.getRangeURI();
-        _addRangeButton.setVisible(TypePicker.xsdDateTime.equals(rangeURI) || TypePicker.xsdDouble.equals(rangeURI) || TypePicker.xsdInt.equals(rangeURI));
+        PropertyType t = PropertyType.fromName(rangeURI);
+        _addRangeButton.setVisible(PropertyType.xsdDateTime == t || PropertyType.xsdDouble == t || PropertyType.xsdInt == t);
         _validators = field.getPropertyValidators();
         boolean hasLookup = field.getLookupQuery() != null && field.getLookupSchema() != null;
         boolean hasLookupValidator = false;

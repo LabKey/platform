@@ -29,78 +29,18 @@ import java.util.HashMap;
  */
 public class TypePicker extends ListBox
 {
-    public final static String xsdString = "http://www.w3.org/2001/XMLSchema#string";
-    public final static String xsdMultiLine = "http://www.w3.org/2001/XMLSchema#multiLine";
-    public final static String xsdBoolean = "http://www.w3.org/2001/XMLSchema#boolean";
-    public final static String xsdInt =  "http://www.w3.org/2001/XMLSchema#int";
-    public final static String xsdDouble = "http://www.w3.org/2001/XMLSchema#double";
-    public final static String xsdDateTime = "http://www.w3.org/2001/XMLSchema#dateTime";
-    public final static String xsdFileLink = "http://cpas.fhcrc.org/exp/xml#fileLink";
-    public final static String xsdAttachment = "http://www.labkey.org/exp/xml#attachment";
-
-
-    static Map<String,String> synonyms = new HashMap<String,String>();
-    static Map<String,String> displayMap = new HashMap<String,String>();
-
-    static
-    {
-        synonyms.put(xsdString.toLowerCase(), xsdString);
-        synonyms.put(xsdMultiLine.toLowerCase(), xsdMultiLine);
-        synonyms.put(xsdBoolean.toLowerCase(), xsdBoolean);
-        synonyms.put(xsdInt.toLowerCase(), xsdInt);
-        synonyms.put(xsdDouble.toLowerCase(), xsdDouble);
-        synonyms.put(xsdDateTime.toLowerCase(), xsdDateTime);
-        synonyms.put(xsdFileLink.toLowerCase(), xsdFileLink);
-        synonyms.put(xsdAttachment.toLowerCase(), xsdAttachment);
-        synonyms.put("string", xsdString);
-        synonyms.put("boolean", xsdBoolean);
-        synonyms.put("integer", xsdInt);
-        synonyms.put("int", xsdInt);
-        synonyms.put("double", xsdDouble);
-        synonyms.put("file", xsdFileLink);
-        synonyms.put("datetime", xsdDateTime);
-        synonyms.put("xsd:string", xsdString);
-        synonyms.put("xsd:boolean", xsdBoolean);
-        synonyms.put("xsd:int", xsdInt);
-        synonyms.put("xsd:double", xsdDouble);
-        synonyms.put("xsd:datetime", xsdDateTime);
-        synonyms.put("xsd:file", xsdFileLink);
-        synonyms.put("xsd:attachment", xsdAttachment);
-
-
-        displayMap.put(xsdString, "Text (String)");
-        displayMap.put(xsdMultiLine, "Multi-Line Text");
-        displayMap.put(xsdBoolean, "Boolean");
-        displayMap.put(xsdInt, "Integer");
-        displayMap.put(xsdDouble, "Number (Double)");
-        displayMap.put(xsdDateTime, "DateTime");
-        displayMap.put(xsdFileLink, "File");
-        displayMap.put(xsdAttachment, "Attachment");
-    }
-
-
-    public static String getDisplayString(String type)
-    {
-        String syn = synonyms.get(type);
-        if (null != syn)
-            type = syn;
-        String display = displayMap.get(type);
-        return null==display?type:display;
-    }
-
-
     public TypePicker(boolean allowFileLinkProperties, boolean allowAttachmentProperties)
     {
-        addItem("Text (String)", xsdString);
-        addItem("Multi-Line Text", xsdMultiLine);
-        addItem("Boolean", xsdBoolean);
-        addItem("Integer", xsdInt);
-        addItem("Number (Double)", xsdDouble);
-        addItem("DateTime", xsdDateTime);
+        addItem(PropertyType.xsdString);
+        addItem(PropertyType.expMultiLine);
+        addItem(PropertyType.xsdBoolean);
+        addItem(PropertyType.xsdInt);
+        addItem(PropertyType.xsdDouble);
+        addItem(PropertyType.xsdDateTime);
         if (allowFileLinkProperties)
-            addItem("File", xsdFileLink);
+            addItem(PropertyType.expFileLink);
         if (allowAttachmentProperties)
-            addItem("Attachment", xsdAttachment);
+            addItem(PropertyType.expAttachment);
     }
 
     public TypePicker(String rangeURI, boolean allowFileLinkProperties, boolean allowAttachmentProperties)
@@ -111,7 +51,8 @@ public class TypePicker extends ListBox
 
     public void setRangeURI(String uri)
     {
-        String rangeURI = (String)synonyms.get(String.valueOf(uri).toLowerCase());
+        PropertyType t = PropertyType.fromName(uri);
+        String rangeURI = null==t ? "" : t.toString();
 
         int select = 0;
         if (rangeURI != null)
@@ -133,8 +74,15 @@ public class TypePicker extends ListBox
         return getValue(getSelectedIndex());
     }
 
-    public String getDisplayText()
+    public static String getDisplayString(String type)
     {
-        return getItemText(getSelectedIndex());
+        PropertyType t = PropertyType.fromName(type);
+        return null == t ? type : t.getDisplay();
     }
+
+    private void addItem(PropertyType t)
+    {
+        addItem(t.getDisplay(), t.toString());
+    }
+
 }

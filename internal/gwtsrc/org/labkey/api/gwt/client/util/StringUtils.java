@@ -26,6 +26,11 @@ import java.util.List;
  */
 public class StringUtils
 {
+    public static boolean isEmpty(String str)
+    {
+        return null == str || str.length()==0;
+    }
+    
     public static String trimToNull(String str)
     {
         if (null == str)

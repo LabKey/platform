@@ -22,8 +22,9 @@
 <%
     HttpView me = HttpView.currentView();
     GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
+    String loading = bean.getLoading();
 %>
-<div id="<%= PageFlowUtil.filter(bean.getModuleName()) %>-Root"></div>
+<div id="<%= PageFlowUtil.filter(bean.getModuleName()) %>-Root"><%=loading%></div>
 <%
 String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";

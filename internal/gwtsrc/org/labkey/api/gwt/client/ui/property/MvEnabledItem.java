@@ -18,8 +18,7 @@ package org.labkey.api.gwt.client.ui.property;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
-import org.labkey.api.gwt.client.ui.TypePicker;
-import com.google.gwt.user.client.ui.FlexTable;
+import org.labkey.api.gwt.client.ui.PropertyType;
 
 /**
  * User: jgarms
@@ -73,9 +72,10 @@ public class MvEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     private static boolean allowsMvEnabling(String rangeURI)
     {
-        return !TypePicker.xsdAttachment.equals(rangeURI) &&
-                !TypePicker.xsdFileLink.equals(rangeURI) &&
-                !TypePicker.xsdMultiLine.equals(rangeURI);
+        PropertyType t = PropertyType.fromName(rangeURI);
+        return PropertyType.expAttachment != t &&
+               PropertyType.expFileLink != t &&
+               PropertyType.expMultiLine != t;
     }
 
     private void updateEnabledState(FieldType field)

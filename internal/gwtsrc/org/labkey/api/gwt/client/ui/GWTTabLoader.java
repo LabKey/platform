@@ -89,13 +89,13 @@ public class GWTTabLoader
         String rangeString = (String) map.get("rangeuri");
         if (rangeString != null)
         {
-            String rangeURI = TypePicker.synonyms.get(rangeString.toLowerCase());
-            if (rangeURI != null)
-                return rangeURI;
+            PropertyType t = PropertyType.fromName(rangeString);
+            if (t != null)
+                return t.toString();
         }
 
         // Default to string
-        return TypePicker.xsdString;
+        return PropertyType.xsdString.toString();
     }
 
     private List<Map<String,String>> getData()
