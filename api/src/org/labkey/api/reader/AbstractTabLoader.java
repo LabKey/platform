@@ -17,16 +17,10 @@ package org.labkey.api.reader;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
 

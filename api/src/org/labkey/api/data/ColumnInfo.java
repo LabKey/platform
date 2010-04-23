@@ -1096,7 +1096,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             if (null != databaseFormat)
             {
-                if (databaseFormat.startsWith("$"))
+                // Do nothing for now -- not implementing SAS format support at this point
+/*                if (databaseFormat.startsWith("$"))
                 {
                     _log.info("User-defined format: " + databaseFormat);
                 }
@@ -1112,6 +1113,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                         tables.add(tableAlias);
                     }
                 }
+*/
             }
 
             col.description = reader.getDescription();

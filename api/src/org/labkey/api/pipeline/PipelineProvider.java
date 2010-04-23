@@ -147,6 +147,7 @@ abstract public class PipelineProvider
                     });
                 }
             }
+
             // Sort the list of actions by size, label then first File
             Collections.sort(_actions, new Comparator<PipelineAction>()
             {

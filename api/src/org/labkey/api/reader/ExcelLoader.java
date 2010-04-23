@@ -23,11 +23,7 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CloseableIterator;
 

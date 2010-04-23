@@ -466,7 +466,12 @@ public class ModuleLoader implements Filter
     {
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
 
-        Map<String, DataSource> dataSources = new LinkedHashMap<String, DataSource>();
+        Map<String, DataSource> dataSources = new TreeMap<String, DataSource>(new Comparator<String>() {
+            public int compare(String name1, String name2)
+            {
+                return name1.compareTo(name2);
+            }
+        });
 
         try
         {

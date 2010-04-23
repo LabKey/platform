@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.SQLException;
@@ -39,10 +40,9 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
     private TableInfo _table;
     private SimpleFilter _filter;
     private Class<T> _clazz;
-    private Container _container;
     private StringBuilder _toString;
     
-    protected CacheKey(TableInfo table, Class<T> clazz, Container container)
+    protected CacheKey(TableInfo table, Class<T> clazz, @Nullable Container container)
     {
         _clazz = clazz;
         _table = table;
@@ -52,7 +52,6 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
         {
             _filter.addCondition("container", container.getId());
             addConditionToString("container", container.getId());
-            _container = container;
         }
     }
 

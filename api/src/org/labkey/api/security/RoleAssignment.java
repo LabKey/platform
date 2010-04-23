@@ -15,10 +15,7 @@
  */
 package org.labkey.api.security;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.security.roles.Role;
-
-import java.util.Comparator;
 
 /*
 * User: Dave

@@ -567,13 +567,19 @@ public class DbScope
             else
                 ensureDataBase(labkeyDsName, dataSources.get(labkeyDsName));
 
-            for (Map.Entry<String, DataSource> entry : dataSources.entrySet())
-            {
-                String dsName = entry.getKey();
+            // Put labkey data source first, followed by all others in alphabetical order
+            Set<String> dsNames = new LinkedHashSet<String>();
+            dsNames.add(labkeyDsName);
 
+            for (String dsName : dataSources.keySet())
+                if (!dsName.equals(labkeyDsName))
+                    dsNames.add(dsName);
+
+            for (String dsName : dsNames)
+            {
                 try
                 {
-                    DbScope scope = new DbScope(dsName, entry.getValue());
+                    DbScope scope = new DbScope(dsName, dataSources.get(dsName));
                     scope.getSqlDialect().prepareNewDbScope(scope);
                     _scopes.put(dsName, scope);
                 }
