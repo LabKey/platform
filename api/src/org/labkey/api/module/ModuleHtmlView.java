@@ -62,7 +62,7 @@ public class ModuleHtmlView extends HtmlView
 
     public static ModuleHtmlViewDefinition getViewDef(Module module, Resource r)
     {
-        String cacheKey = module.getName() + ":" + r.getPath().toString();
+        String cacheKey = (module == null ? "~~NoModule~~" : module.getName()) + ":" + r.getPath().toString();
         ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(cacheKey);
         if (null == viewdef || viewdef.isStale())
         {
