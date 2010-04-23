@@ -1067,6 +1067,7 @@ list/build.xml -text
 list/gwtsrc/org/labkey/list/Designer.gwt.xml -text
 list/gwtsrc/org/labkey/list/client/GWTList.java -text
 list/gwtsrc/org/labkey/list/client/ListDesigner.java -text
+list/gwtsrc/org/labkey/list/client/ListDesignerLoader.java -text
 list/gwtsrc/org/labkey/list/client/ListEditorService.java -text
 list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
 list/module.properties -text

@@ -29,7 +29,9 @@ PollingUtil.PollKey pollKey = form._key;
 String pollURL = null==pollKey ? null : pollKey.getUrl();
 
 %>
-<form action="index.post" style="display:<%=null==pollURL?"block":"none"%>" method=POST><input type="submit" name="START" value="START"></form>
+<labkey:errors></labkey:errors>
+<form action="index.post" style="display:<%=null==pollURL?"block":"none"%>" method=POST>
+    <input name="path" value="<%=h(request.getParameter("path"))%>"><input type="submit" name="START" value="START"></form>
 <div style="display:<%=null==pollURL?"none":"block"%>"><span id="status"></span></div>
 <script type="text/javascript">
 var url = <%=PageFlowUtil.jsString(pollURL)%>;

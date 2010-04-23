@@ -263,6 +263,7 @@ public class ListController extends SpringActionController
             props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
             // Why is this different than DesignListPermission???
             props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), AdminPermission.class) ? "true":"false");
+            props.put("loading", "Loading...");
             return new GWTView("org.labkey.list.Designer", props);
         }
 

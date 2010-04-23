@@ -2,6 +2,7 @@
 
     <inherits name='com.google.gwt.user.User'/>
     <inherits name="org.labkey.api.gwt.Internal"/>
+    <inherits name='com.extjs.gxt.ui.GXT'/>
 
     <entry-point class='org.labkey.query.metadata.client.MetadataEditor'/>
 
