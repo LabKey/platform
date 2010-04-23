@@ -16,6 +16,8 @@
 
 package org.labkey.query.controllers;
 
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -23,6 +25,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -32,6 +35,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -83,6 +87,11 @@ public class QueryController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "data sources", new ActionURL(DataSourceAdminAction.class, ContainerManager.getRoot()));
+    }
+
     public static class QueryUrlsImpl implements QueryUrls
     {
         public ActionURL urlCreateSnapshot(Container c)
@@ -129,6 +138,13 @@ public class QueryController extends SpringActionController
         {
             return new ActionURL(NewQueryAction.class, c);
         }
+
+        public ActionURL urlUpdateExternalSchema(Container c, ExternalSchemaDef def)
+        {
+            ActionURL url = new ActionURL(QueryController.EditExternalSchemaAction.class, c);
+            url.addParameter("dbUserSchemaId", Integer.toString(def.getDbUserSchemaId()));
+            return url;
+        }
     }
 
     protected boolean queryExists(QueryForm form)
@@ -152,6 +168,140 @@ public class QueryController extends SpringActionController
             return;
         }
     }
+
+
+    @AdminConsoleAction
+    public class DataSourceAdminAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ExternalSchemaDef[] allDefs = QueryManager.get().getExternalSchemaDefs(null);
+
+            MultiMap<String, ExternalSchemaDef> byDataSourceName = new MultiHashMap<String, ExternalSchemaDef>();
+
+            for (ExternalSchemaDef def : allDefs)
+                byDataSourceName.put(def.getDataSource(), def);
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("\n<table>\n");
+            sb.append("  <tr><td colspan=5>This page lists all the data sources defined in your labkey.xml file that were available at server startup and the external schemas defined in each.</td></tr>\n");
+            sb.append("  <tr><td colspan=5>&nbsp;</td></tr>\n");
+            sb.append("  <tr><th>Data Source</th><th>Current Status</th><th>URL</th><th>Product Name</th><th>Product Version</th></tr>\n");
+
+            for (DbScope scope : DbScope.getDbScopes())
+            {
+                sb.append("  <tr><td>");
+                sb.append(scope.getDisplayName());
+                sb.append("</td><td>");
+
+                String status;
+                Connection conn = null;
+
+                try
+                {
+                    conn = scope.getConnection();
+                    status = "connected";
+                }
+                catch (SQLException e)
+                {
+                    status = "<font class=\"labkey-error\">disconnected</font>";
+                }
+                finally
+                {
+                    if (null != conn)
+                        scope.releaseConnection(conn);
+                }
+
+                sb.append(status);
+                sb.append("</td><td>");
+                sb.append(scope.getURL());
+                sb.append("</td><td>");
+                sb.append(scope.getDatabaseProductName());
+                sb.append("</td><td>");
+                sb.append(scope.getDatabaseProductVersion());
+                sb.append("</td></tr>\n");
+
+                Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
+
+                sb.append("  <tr><td colspan=5>\n");
+                sb.append("    <table>\n");
+
+                if (null != dsDefs)
+                {
+                    MultiMap<String, ExternalSchemaDef> byContainerPath = new MultiHashMap<String, ExternalSchemaDef>();
+
+                    for (ExternalSchemaDef def : dsDefs)
+                        byContainerPath.put(def.getContainerPath(), def);
+
+                    TreeSet<String> paths = new TreeSet<String>(byContainerPath.keySet());
+                    QueryUrlsImpl urls = new QueryUrlsImpl();
+
+                    for (String path : paths)
+                    {
+                        sb.append("      <tr><td colspan=4>&nbsp;</td><td>\n");
+                        Container c = ContainerManager.getForPath(path);
+
+                        if (null != c)
+                        {
+                            Collection<ExternalSchemaDef> cDefs = byContainerPath.get(path);
+
+                            sb.append("        <table>\n        <tr><td colspan=3>");
+
+                            ActionURL schemaAdminURL = urls.urlExternalSchemaAdmin(c);
+
+                            sb.append("<a href=\"").append(PageFlowUtil.filter(schemaAdminURL)).append("\">").append(PageFlowUtil.filter(path)).append("</a>");
+                            sb.append("</td></tr>\n");
+                            sb.append("          <tr><td>&nbsp;</td><td>\n");
+                            sb.append("            <table>\n");
+
+                            for (ExternalSchemaDef def : cDefs)
+                            {
+                                ActionURL url = urls.urlUpdateExternalSchema(c, def);
+
+                                sb.append("              <tr><td>");
+                                sb.append("<a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(def.getUserSchemaName()));
+
+                                if (!def.getDbSchemaName().equals(def.getUserSchemaName()))
+                                {
+                                    sb.append(" (");
+                                    sb.append(PageFlowUtil.filter(def.getDbSchemaName()));
+                                    sb.append(")");
+                                }
+
+                                sb.append("</a></td></tr>\n");
+                            }
+
+                            sb.append("            </table>\n");
+                            sb.append("          </td></tr>\n");
+                            sb.append("        </table>\n");
+                        }
+
+                        sb.append("      </td></tr>\n");
+                    }
+                }
+                else
+                {
+                    sb.append("      <tr><td>&nbsp;</td></tr>\n");
+                }
+
+                sb.append("    </table>\n");
+                sb.append("  </td></tr>\n");
+            }
+
+            sb.append("</table>\n");
+
+            return new HtmlView(sb.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Data Source Administration ", null);
+            return root;
+        }
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class BrowseAction extends SimpleViewAction
