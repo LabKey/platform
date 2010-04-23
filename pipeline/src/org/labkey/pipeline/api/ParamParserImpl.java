@@ -16,8 +16,6 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.labkey.api.pipeline.ParamParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -28,6 +26,12 @@ import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.*;
 
@@ -114,6 +118,7 @@ public class ParamParserImpl implements ParamParser
 
             InputSource source = new InputSource(new StringReader(xml));
             _doc = db.parse(source);
+            _doc.setXmlStandalone(true);  // Added to help with new Transformer-based getXML()
             validateDocument();
         }
         catch (SAXParseException e)
@@ -145,12 +150,14 @@ public class ParamParserImpl implements ParamParser
         return _errors.toArray(new ErrorImpl[_errors.size()]);
     }
 
+/*  Old implemenation -- replaced 4/22/10 to eliminate direct Xerces dependency.  Uncomment to restore previous behavior.
+
     public String getXML()
     {
         // If nothing parsed yet, return the empty parameter set.
         if (_doc == null)
             return getXMLFromMap(new HashMap<String, String>());
-        
+
         OutputFormat format = new OutputFormat(_doc); // Serialize DOM
         format.setIndent(2);
         format.setLineSeparator(System.getProperty("line.separator"));
@@ -170,6 +177,37 @@ public class ParamParserImpl implements ParamParser
 
         return null;
     }
+
+*/
+    public String getXML()
+    {
+        // If nothing parsed yet, return the empty parameter set.
+        if (_doc == null)
+            return getXMLFromMap(new HashMap<String, String>());
+
+        try
+        {
+            TransformerFactory factory = TransformerFactory.newInstance();
+            Transformer trans = factory.newTransformer();
+            trans.setOutputProperty(OutputKeys.INDENT, "yes");
+            trans.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+            //create string from xml tree
+            StringWriter sw = new StringWriter();
+            StreamResult result = new StreamResult(sw);
+            DOMSource source = new DOMSource(_doc);
+            trans.transform(source, result);
+
+            return sw.toString();
+        }
+        catch (TransformerException e)
+        {
+            _log.error("Failure writing DOM document to string.", e);
+        }
+
+        return null;
+    }
+
 
     /**
      * Override this function to further validate specific parameters.
