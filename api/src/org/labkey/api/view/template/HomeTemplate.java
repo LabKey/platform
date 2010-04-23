@@ -175,7 +175,7 @@ public class HomeTemplate extends PrintTemplate
         String pageFlow = url.getPageFlow();
         Module curModule = page.getModuleOwner();
         if (curModule == null)
-            curModule = ModuleLoader.getInstance().getModuleForPageFlow(pageFlow);
+            curModule = ModuleLoader.getInstance().getModuleForController(pageFlow);
         NavTree[] trailExtras = null == navTrail ? new NavTree[0] : navTrail.toArray(new NavTree[navTrail.size()]);
 
         boolean singleTabFolder = FolderType.NONE.equals(folderType) && context.getContainer().getActiveModules().size() == 1;

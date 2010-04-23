@@ -21,8 +21,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.collections.Cache;
 
-import java.io.File;
-
 /*
 * User: Dave
 * Date: Jan 23, 2009
@@ -38,10 +36,10 @@ public class ModuleHtmlView extends HtmlView
 
     private ModuleHtmlViewDefinition _viewdef = null;
 
-    public ModuleHtmlView(Resource r)
+    public ModuleHtmlView(Module module, Resource r)
     {
         super(null);
-        _viewdef = getViewDef(r);
+        _viewdef = getViewDef(module, r);
         setTitle(_viewdef.getTitle());
         setHtml(replaceTokens(_viewdef.getHtml()));
         if(null != _viewdef.getFrameType())
@@ -62,9 +60,9 @@ public class ModuleHtmlView extends HtmlView
         return ret;
     }
 
-    public static ModuleHtmlViewDefinition getViewDef(Resource r)
+    public static ModuleHtmlViewDefinition getViewDef(Module module, Resource r)
     {
-        String cacheKey = r.getPath().toString();
+        String cacheKey = module.getName() + ":" + r.getPath().toString();
         ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(cacheKey);
         if (null == viewdef || viewdef.isStale())
         {

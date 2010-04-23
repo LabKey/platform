@@ -118,7 +118,7 @@ public class NavTrailView extends HttpView
         {
             String currentPageflow = context.getActionURL().getPageFlow();
             Set<Module> containerModules = container.getActiveModules();
-            Module activeModule = ModuleLoader.getInstance().getModuleForPageFlow(currentPageflow);
+            Module activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
             assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
                     "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
                     "from at least one module.";

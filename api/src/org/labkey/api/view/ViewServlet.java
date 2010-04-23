@@ -140,7 +140,7 @@ public class ViewServlet extends HttpServlet
             return;
         }
 
-        Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
+        Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
         if (module == null)
         {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -163,7 +163,7 @@ public class ViewServlet extends HttpServlet
     public static void forwardActionURL(HttpServletRequest request, HttpServletResponse response, ActionURL url)
             throws IOException, ServletException
     {
-        Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
+        Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
         if (module == null)
         {
             throw new IllegalArgumentException(url.toString());
@@ -389,7 +389,7 @@ public class ViewServlet extends HttpServlet
 
         try
         {
-            Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
+            Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
             if (module == null)
             {
                 HttpView.throwNotFound();

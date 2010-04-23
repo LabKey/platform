@@ -61,7 +61,7 @@ public class ModuleLoader implements Filter
 
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
-    private static final Map<String, Module> _pageFlowToModule = new HashMap<String, Module>();
+    private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
     private static final Map<Package, String> _packageToPageFlowURL = new HashMap<Package, String>();
     private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
     private static final Map<String, Module> _resourcePrefixToModule = new ConcurrentHashMap<String, Module>();
@@ -859,9 +859,9 @@ public class ModuleLoader implements Filter
 
     public void initPageFlowToModule()
     {
-        synchronized(_pageFlowToModule)
+        synchronized(_controllerNameToModule)
         {
-            if (!_pageFlowToModule.isEmpty())
+            if (!_controllerNameToModule.isEmpty())
                 return;
             List<Module> allModules = ModuleLoader.getInstance().getModules();
             for (Module module : allModules)
@@ -873,8 +873,8 @@ public class ModuleLoader implements Filter
                     if (!set.add(key))
                         continue;   // Avoid duplicate work
 
-                    _pageFlowToModule.put(key, module);
-                    _pageFlowToModule.put(key.toLowerCase(), module);
+                    _controllerNameToModule.put(key, module);
+                    _controllerNameToModule.put(key.toLowerCase(), module);
 
                     Class clazz = entry.getValue();
                     _packageToPageFlowURL.put(clazz.getPackage(), key);
@@ -900,22 +900,22 @@ public class ModuleLoader implements Filter
         return StringUtils.replace(pkg.getName(), ".", "-");
     }
 
-    public Module getModuleForPageFlow(String pageflow)
+    public Module getModuleForController(String controllerName)
     {
-        synchronized(_pageFlowToModule)
+        synchronized(_controllerNameToModule)
         {
-            Module module = _pageFlowToModule.get(pageflow);
+            Module module = _controllerNameToModule.get(controllerName);
             if (null != module)
                 return module;
 
-            int i = pageflow.indexOf('-');
+            int i = controllerName.indexOf('-');
             if (-1 == i)
                 return null;
 
-            String prefix = pageflow.substring(0,i);
-            module = _pageFlowToModule.get(prefix);
+            String prefix = controllerName.substring(0,i);
+            module = _controllerNameToModule.get(prefix);
             if (null != module)
-                _pageFlowToModule.put(pageflow, module);
+                _controllerNameToModule.put(controllerName, module);
             return module;
         }
     }
@@ -1047,7 +1047,7 @@ public class ModuleLoader implements Filter
 
     public Module getCurrentModule()
     {
-        return ModuleLoader.getInstance().getModuleForPageFlow(HttpView.getRootContext().getActionURL().getPageFlow());
+        return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getPageFlow());
     }
 
     public FolderType getFolderType(String name)

@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.Errors;
 
-import java.io.File;
 import java.io.IOException;
 
 /*
@@ -42,7 +41,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     public static WebPartView getModuleHtmlView(Module module, String viewName) throws IOException
     {
         Resource r = module.getModuleResource(SimpleController.VIEWS_DIRECTORY + "/" + viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        return r != null ? new ModuleHtmlView(r) : null;
+        return r != null ? new ModuleHtmlView(module, r) : null;
     }
 
     public enum Permission
@@ -71,11 +70,11 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     private ModuleHtmlView _view;
     private Exception _exception;
 
-    public SimpleAction(Resource r)
+    public SimpleAction(Module module, Resource r)
     {
         try
         {
-            _view = new ModuleHtmlView(r);
+            _view = new ModuleHtmlView(module, r);
         }
         catch(Exception e)
         {

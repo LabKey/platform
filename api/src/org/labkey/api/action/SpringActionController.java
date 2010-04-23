@@ -599,7 +599,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             ViewContext ctx = HttpView.getRootContext();
             String controllerName = ctx.getActionURL().getPageFlow();
-            Module module = ModuleLoader.getInstance().getModuleForPageFlow(controllerName);
+            Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
             Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
             if (r == null)
@@ -651,7 +651,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             public Controller createController(Controller actionController)
             {
-                return new SimpleAction(_resource);
+                Module module = ModuleLoader.getInstance().getModuleForController(_primaryName);
+                return new SimpleAction(module, _resource);
             }
         }
 

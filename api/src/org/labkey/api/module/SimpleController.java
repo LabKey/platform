@@ -18,11 +18,9 @@ package org.labkey.api.module;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -61,11 +59,11 @@ public class SimpleController extends SpringActionController implements SpringAc
     public Controller resolveActionName(Controller actionController, String actionName)
     {
         String controllerName = getViewContext().getActionURL().getPageFlow();
-        Module module = ModuleLoader.getInstance().getModuleForPageFlow(controllerName);
+        Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
         Resource r = getViewResource(module, actionName);
         if (r != null)
-            return new SimpleAction(r);
+            return new SimpleAction(module, r);
 
         return null;
     }
