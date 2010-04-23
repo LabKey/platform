@@ -49,6 +49,7 @@
 <% } %>
 </table>
 [<a href="<%=h(bean.listURL)%>Issues.Status~eq=open">view open issues</a>]
+[<a href="<%=h(bean.insertURL)%>">submit new issue</a>]
 <%
     }
     else

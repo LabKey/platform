@@ -2032,6 +2032,8 @@ public class IssuesController extends SpringActionController
 
             bean.listURL = getListURL(c).deleteParameters();
 
+            bean.insertURL = IssuesController.issueURL(context.getContainer(), "insert");
+
             try
             {
                 bean.bugs = IssueManager.getSummary(c);
@@ -2049,6 +2051,7 @@ public class IssuesController extends SpringActionController
         public boolean hasPermission;
         public Map[] bugs;
         public ActionURL listURL;
+        public ActionURL insertURL;
     }
 
 
