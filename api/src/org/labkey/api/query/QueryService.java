@@ -83,6 +83,7 @@ abstract public class QueryService
     abstract public WebPartView[] getWebParts(UserSchema schema, String location);
 
     abstract public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema);
+    abstract public UserSchema getExternalSchema(DefaultSchema folderSchema, String name);
 
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 

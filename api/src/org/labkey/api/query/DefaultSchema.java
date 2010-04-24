@@ -74,7 +74,7 @@ final public class DefaultSchema extends AbstractSchema
     private DefaultSchema(User user, Container container)
     {
         super(CoreSchema.getInstance().getSchema(), user, container);
-        _schemas = new CaseInsensitiveHashMap<QuerySchema>();
+        _schemas = new CaseInsensitiveHashMap<QuerySchema>();       // TODO: Nothing ever gets put in this map!
     }
 
     public TableInfo getTable(String name)
@@ -88,6 +88,7 @@ final public class DefaultSchema extends AbstractSchema
         if (ret != null)
             return ret;
         SchemaProvider provider = _providers.get(name);
+
         if (provider == null && name != null && name.startsWith("/"))
         {
             Container project = ContainerManager.getForPath(name);
@@ -96,9 +97,10 @@ final public class DefaultSchema extends AbstractSchema
                 return new FolderSchemaProvider.FolderSchema(getUser(), project, DefaultSchema.get(getUser(), project));
             }
         }
+
         if (provider == null)
         {
-            return QueryService.get().getExternalSchemas(this).get(name);
+            return QueryService.get().getExternalSchema(this, name);
         }
         return provider.getSchema(this);
     }

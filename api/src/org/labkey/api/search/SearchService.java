@@ -230,6 +230,8 @@ public interface SearchService
     void purgeQueues();
     void start();
     void pause();
+    void setIndexPath(String path);
+    String getIndexPath();
     boolean isRunning();
 
     
