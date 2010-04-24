@@ -280,6 +280,17 @@ public class NoopSearchService implements SearchService
         return false;
     }
 
+    @Override
+    public void setIndexPath(String path)
+    {
+    }
+
+    @Override
+    public String getIndexPath()
+    {
+        return null;
+    }
+
     public IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since)
     {
         return null==task?_dummyTask:task;

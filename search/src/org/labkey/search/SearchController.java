@@ -71,15 +71,17 @@ public class SearchController extends SpringActionController
 
     public static class AdminForm implements ExternalIndexProperties
     {
-        public String[] _messages = {"", "Index deleted"};
+        public String[] _messages = {"", "Primary index deleted", "Primary index path changed"};
         private int msg = 0;
         private boolean pause;
         private boolean start;
         private boolean delete;
+        private String mainIndexPath;
 
-        private int externalMsg = 0;
         private String externalIndexPath = null;
+        private String externalIndexDescription = null;
         private String analyzer = null;
+        private boolean _path;
 
         public String getMessage()
         {
@@ -99,6 +101,16 @@ public class SearchController extends SpringActionController
         public void setExternalIndexPath(String externalIndexPath)
         {
             this.externalIndexPath = externalIndexPath;
+        }
+
+        public String getExternalIndexDescription()
+        {
+            return externalIndexDescription;
+        }
+
+        public void setExternalIndexDescription(String externalIndexDescription)
+        {
+            this.externalIndexDescription = externalIndexDescription;
         }
 
         public String getAnalyzer()
@@ -145,6 +157,26 @@ public class SearchController extends SpringActionController
         {
             this.pause = pause;
         }
+
+        public String getMainIndexPath()
+        {
+            return mainIndexPath;
+        }
+
+        public void setMainIndexPath(String mainIndexPath)
+        {
+            this.mainIndexPath = mainIndexPath;
+        }
+
+        public boolean isPath()
+        {
+            return _path;
+        }
+
+        public void setPath(boolean path)
+        {
+            _path = path;
+        }
     }
     
 
@@ -161,13 +193,16 @@ public class SearchController extends SpringActionController
         {
             ExternalIndexProperties props = ExternalIndexManager.get();
 
+            WebPartView indexerView = new JspView<AdminForm>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
+            indexerView.setTitle("Primary Index Configuration");
+
             WebPartView externalIndexView = new JspView<ExternalIndexProperties>(SearchController.class, "view/externalIndex.jsp", props, errors);
             externalIndexView.setTitle("External Index Configuration");
 
-            WebPartView indexerView = new JspView<AdminForm>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
-            indexerView.setTitle("Indexer Configuration");
-
-            return new VBox(externalIndexView, indexerView);
+            WebPartView statsView = new JspView<AdminForm>(SearchController.class, "view/indexerStats.jsp", form, errors);
+            statsView.setTitle("Primary Index Statistics");
+            
+            return new VBox(indexerView, externalIndexView, statsView);
         }
 
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -197,6 +232,13 @@ public class SearchController extends SpringActionController
                 ss.clear();
                 _msgid = 1;
                 audit(getViewContext().getUser(), null, "(admin action)", "Index Deleted");
+            }
+            else if (form.isPath())
+            {
+                ss.setIndexPath(form.getMainIndexPath());
+                m.put(SearchModule.searchIndexPath, form.getMainIndexPath());
+                _msgid = 2;
+                audit(getViewContext().getUser(), null, "(admin action)", "Index Path Set");
             }
             PropertyManager.saveProperties(m);
             return true;
@@ -250,7 +292,7 @@ public class SearchController extends SpringActionController
             ((LuceneSearchServiceImpl)ss).resetExternalIndex();
 
             ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
-            url.addParameter("externalMsg", "External index cleared");
+            url.addParameter("externalMessage", "External index cleared");
             return url;
         }
     }
@@ -282,7 +324,7 @@ public class SearchController extends SpringActionController
             // TODO: Add to SearchService interface
             ((LuceneSearchServiceImpl)ss).swapExternalIndex();
 
-            String message = "External index swapped";
+            String message = "External index replaced";
 
             // If this was initiated from the UI and reload was not queued up then reshow the form and display the message
             if (form.isUi())

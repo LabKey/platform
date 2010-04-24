@@ -29,24 +29,35 @@ public class ExternalIndexManager
     private static final String CATEGORY = "ExternalSearchIndex";
     private static final String PATH = "path";
     private static final String ANALYZER = "analyzer";
+    private static final String DESCRIPTION = "description";
 
     public static ExternalIndexProperties get()
     {
         Map<String, String> map = PropertyManager.getProperties(CATEGORY);
         final String path = map.get(PATH);
         final String analyzer = map.get(ANALYZER);
+        final String description = map.get(DESCRIPTION);
 
         return new ExternalIndexProperties() {
+            @Override
             public String getExternalIndexPath()
             {
                 return path;
             }
 
+            @Override
             public String getAnalyzer()
             {
                 return analyzer;
             }
 
+            @Override
+            public String getExternalIndexDescription()
+            {
+                return description;
+            }
+
+            @Override
             public boolean hasProperties()
             {
                 return null != path && null != analyzer;
@@ -59,6 +70,7 @@ public class ExternalIndexManager
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
         map.put(PATH, props.getExternalIndexPath());
         map.put(ANALYZER, props.getAnalyzer());
+        map.put(DESCRIPTION, props.getExternalIndexDescription());
         PropertyManager.saveProperties(map);
     }
 

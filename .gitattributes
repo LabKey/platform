@@ -1770,6 +1770,7 @@ query/src/org/labkey/query/persist/ExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
+query/src/org/labkey/query/persist/SchemaReloadMaintenanceTask.java -text
 query/src/org/labkey/query/reports/ReportImporter.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
@@ -1925,6 +1926,7 @@ search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/customizeSearchWebPart.jsp -text
 search/src/org/labkey/search/view/externalIndex.jsp -text
 search/src/org/labkey/search/view/indexerAdmin.jsp -text
+search/src/org/labkey/search/view/indexerStats.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
 search/src/schemas/umls.xml -text

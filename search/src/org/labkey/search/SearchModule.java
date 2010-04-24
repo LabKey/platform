@@ -53,7 +53,8 @@ import java.util.*;
 public class SearchModule extends DefaultModule
 {
     public final static String searchRunningState = "runningState";
-    
+    public final static String searchIndexPath = "indexPath";
+
     
     public String getName()
     {

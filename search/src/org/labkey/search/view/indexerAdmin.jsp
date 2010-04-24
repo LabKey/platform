@@ -37,8 +37,8 @@ SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
-    { %><br>
-        <span style="color:green;"><%=form.getMessage()%></span><%
+    { %>
+        <p><table><tr><td><span style="color:green;"><%=form.getMessage()%></span></td></tr></table></p><%
     }
 
 if (null == ss)
@@ -47,70 +47,54 @@ if (null == ss)
 }
 else
 {
-    WebPartView.startTitleFrame(out,"Admin Actions");
+    %><p><form method="POST" action="admin.view">
+        <table>
+            <tr>
+                <td>Path to main index:</td>
+                <td><input name="mainIndexPath" size="80" value="<%=h(ss.getIndexPath())%>"></td>
+            </tr>
+            <tr><td colspan="2" width="500"><input type="hidden" name="path" value="1"><%=generateSubmitButton("Set Path")%></td></tr>
+        </table>
+    </form></p>
 
-    %><p><form method="POST" action="admin.view"><%
+    <p><form method="POST" action="admin.view">
+        <table><%
+
     if (ss.isRunning())
     {
-        %>The document crawler is running.<br><%
+        %><tr><td>The document crawler is running.</td></tr><%
 
         if (user.isAdministrator())
         {
         %>
-        <input type="hidden" name="pause" value="1">
-        <%=PageFlowUtil.generateSubmitButton("Pause")%><%
+        <tr><td><input type="hidden" name="pause" value="1"></td></tr>
+        <tr><td><%=PageFlowUtil.generateSubmitButton("Pause Crawler")%></td></tr><%
         }
     }
     else
     {
-        %>The document crawler is paused.<br><%
+        %><tr><td>The document crawler is paused.</td></tr><%
 
         if (user.isAdministrator())
         {
         %>
-        <input type="hidden" name="start" value="1">
-        <%=PageFlowUtil.generateSubmitButton("Start")%><%
+        <tr><td><input type="hidden" name="start" value="1"></td></tr>
+        <tr><td><%=PageFlowUtil.generateSubmitButton("Start Crawler")%></td></tr><%
         }
     }
-    %></form></p><%
+    %>
+        </table>
+    </form></p><%
     if (user.isAdministrator())
     {
     %>
     <p><form method="POST" action="admin.view">
-        Delete the search index<br>
-        You shouldn't need to do this, but if something goes wrong, you can give it a try.  Note that re-indexing can be very expensive.<br>
-        <input type="hidden" name="delete" value="1">
-        <%=PageFlowUtil.generateSubmitButton("Delete Index")%>
+        <table>
+            <tr><td>Deleting the search index isn't usually necessary.  Note that re-indexing can be very expensive.</td></tr>
+            <tr><td><input type="hidden" name="delete" value="1"></td></tr>
+            <tr><td><%=PageFlowUtil.generateSubmitButton("Delete Index")%></td></tr>
+        </table>
     </form></p><%
     }
-    
-    WebPartView.endTitleFrame(out);
-    WebPartView.startTitleFrame(out,"Statistics");
-    %><table><%
-    if (ss instanceof AbstractSearchService)
-    {
-        Map<String,Object> m = ((AbstractSearchService)ss).getStats();
-        for (Map.Entry e : m.entrySet())
-        {
-            String l = String.valueOf(e.getKey());
-            Object v = e.getValue();
-            if (v instanceof Integer || v instanceof Long)
-                v = Formats.commaf0.format(((Number)v).longValue());
-            v = null==v ? "" : String.valueOf(v);
-            %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
-        }
-    }
-    Map<String,Object> m = DavCrawler.getInstance().getStats();
-    for (Map.Entry e : m.entrySet())
-    {
-        String l = String.valueOf(e.getKey());
-        Object v = e.getValue();
-        if (v instanceof Integer || v instanceof Long)
-            v = Formats.commaf0.format(((Number)v).longValue());
-        v = null==v ? "" : String.valueOf(v);
-        %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
-    }
-    %></table><%
-    WebPartView.endTitleFrame(out);
 }
 %>

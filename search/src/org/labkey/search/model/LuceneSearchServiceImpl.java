@@ -75,13 +75,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            File tempDir = new File(FileUtil.getTempDirectory(), "labkey_full_text_index");
-            _index = new WritableIndex(tempDir, _analyzer);
+            File indexDir = new File(FileUtil.getTempDirectory(), "labkey_full_text_index");
+            _index = new WritableIndex(indexDir, _analyzer);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+    }
+
+
+    public void setIndexPath(File indexPath)
+    {
     }
 
 
@@ -96,6 +101,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
+
+        super.start();
     }
 
 

@@ -35,17 +35,24 @@ SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 String message = me.getViewContext().getActionURL().getParameter("externalMessage");
 
 %><labkey:errors /><%
-if (!StringUtils.isEmpty(message))
-{ %><br>
-    <span style="color:green;"><%=h(message)%></span><%
-}
 
 if (null != ss)
 {
     %><p><form method="POST" action="setExternalIndex.post">
-        <table>
-            <tr><td>Path to external index directory:</td><td><input name="externalIndexPath" value="<%=h(props.getExternalIndexPath())%>"/></td></tr>
-            <tr><td>Analyzer to use:</td><td>
+        <table><%
+        if (!StringUtils.isEmpty(message))
+        { %><br>
+            <tr><td colspan="2" height="30" valign="top"><span style="color:green;"><%=h(message)%></span></td></tr><%
+        } %>
+            <tr><td colspan="2" width="500">
+                You can (optionally) integrate searching of other web sites (e.g., your organization's intranet) with LabKey
+                Server's search functionality by configuring an external index.  For example, you could generate a Lucene
+                index using Nutch (an open-source web crawler), copy the index directory to a place accessible by LabKey
+                Server, and configure the index below.<br>
+            </td></tr>
+            <tr><td>Index description:</td><td><input name="externalIndexDescription" size="60" value="<%=h(props.getExternalIndexDescription())%>"/></td></tr>
+            <tr><td>Path to index directory:</td><td><input name="externalIndexPath" size="60" value="<%=h(props.getExternalIndexPath())%>"/></td></tr>
+            <tr><td>Analyzer:</td><td>
                 <select name="analyzer"><%
                     String currentAnalyzer = props.getAnalyzer();
 
@@ -55,15 +62,16 @@ if (null != ss)
                     }
                 %>
                 </select>
-            </td></tr><%
+            </td></tr>
+            <%
 
             if (user.isAdministrator())
             {
             %>
             <tr><td colspan="2" align="center">
                 <%=generateSubmitButton("Set")%>
-                <%=generateButton("Swap", SwapExternalIndexAction.class)%>
                 <%=generateButton("Clear", ClearExternalIndexAction.class)%>
+                <%=generateButton("Replace Index", SwapExternalIndexAction.class)%>
             </td></tr><%
             }
             %>

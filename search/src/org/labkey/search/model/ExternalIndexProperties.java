@@ -27,4 +27,6 @@ public interface ExternalIndexProperties
     String getAnalyzer();
 
     boolean hasProperties();
+
+    String getExternalIndexDescription();
 }

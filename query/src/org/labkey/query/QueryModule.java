@@ -32,11 +32,13 @@ import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.SchemaReloadMaintenanceTask;
 import org.labkey.query.reports.*;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
@@ -128,6 +130,8 @@ public class QueryModule extends DefaultModule
             registry.addFactories(new CustomViewWriter.Factory(), new CustomViewImporter.Factory());
             registry.addFactories(new ReportWriter.Factory(), new ReportImporter.Factory());
         }
+
+        SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());
     }
 
     public Set<String> getSchemaNames()

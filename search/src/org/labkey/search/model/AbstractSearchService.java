@@ -522,6 +522,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     boolean _threadsInitialized = false;
     volatile boolean _shuttingDown = false;
     boolean _paused = true;
+    String _path = (new File(FileUtil.getTempDirectory(), "labkey_full_text_index").getPath());
     ArrayList<Thread> _threads = new ArrayList<Thread>(10);
 
     
@@ -546,6 +547,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+
+    @Override
+    public void setIndexPath(String path)
+    {
+        _path = path;   // TODO: DO SOMETHING
+    }
+
+    @Override
+    public String getIndexPath()
+    {
+        return _path;
+    }
 
     public boolean isRunning()
     {

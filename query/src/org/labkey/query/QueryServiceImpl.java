@@ -637,6 +637,30 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
+    @Override
+    public UserSchema getExternalSchema(DefaultSchema folderSchema, String name)
+    {
+        ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(folderSchema.getContainer());
+
+        for (ExternalSchemaDef def : defs)
+        {
+            if (name.equals(def.getUserSchemaName()))
+            {
+                try
+                {
+                    return new ExternalSchema(folderSchema.getUser(), folderSchema.getContainer(), def);
+                }
+                catch (Exception e)
+                {
+                    Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource());
+                    break;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
     {
         List<FieldKey> ret = new ArrayList<FieldKey>();
