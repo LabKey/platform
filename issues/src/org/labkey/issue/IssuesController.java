@@ -27,6 +27,8 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.notification.EmailMessage;
+import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -1099,29 +1101,25 @@ public class IssuesController extends SpringActionController
     {
         try
         {
-            final String to = getEmailAddresses(issue, prevIssue, action);
-            if (to.length() > 0)
+            final String[] to = getEmailAddresses(issue, prevIssue, action);
+            if (to.length > 0)
             {
                 Issue.Comment lastComment = issue.getLastComment();
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to);
-                HttpServletRequest request = AppProps.getInstance().createMockRequest();  // Use base server url for root of links in email
-                if (m.getAllRecipients().length > 0)
-                {
-                    m.setMultipart(true);
-                    m.setSubject("Issue #" + issue.getIssueId() + ", \"" + issue.getTitle().getSource() + ",\" has been " + change);
-                    m.setHeader("References", references);
 
-                    JspView viewPlain = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true));
-                    m.setTemplateContent(request, viewPlain, "text/plain");
+                EmailService.I svc = EmailService.get();
+                String subject = "Issue #" + issue.getIssueId() + ", \"" + issue.getTitle().getSource() + ",\" has been " + change;
 
-                    JspView viewHtml = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, false));
-                    m.setTemplateContent(request, viewHtml, "text/html");
+                EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to, subject);
 
-                    MailHelper.send(m);
-                    MailHelper.addAuditEvent(getUser(), getContainer(), m);
-                }
+                msg.setHeader("References", references);
+                msg.addContent(EmailMessage.contentType.PLAIN, getViewContext(),
+                        new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true)));
+                msg.addContent(EmailMessage.contentType.HTML, getViewContext(),
+                        new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, false)));
+
+                svc.sendMessage(msg);
             }
         }
         catch (Exception e)
@@ -1134,7 +1132,7 @@ public class IssuesController extends SpringActionController
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private String getEmailAddresses(Issue issue, Issue prevIssue, String action) throws ServletException
+    private String[] getEmailAddresses(Issue issue, Issue prevIssue, String action) throws ServletException
     {
         final Set<String> emailAddresses = new HashSet<String>();
         final Container c = getContainer();
@@ -1189,17 +1187,10 @@ public class IssuesController extends SpringActionController
         boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
         if (selfSpam)
             emailAddresses.add(current);
+        else
+            emailAddresses.remove(current);
 
-        // build up the final semicolon delimited list, excluding the current user
-        for (String email : emailAddresses.toArray(new String[emailAddresses.size()]))
-        {
-            if (selfSpam || !email.equals(current))
-            {
-                sb.append(email);
-                sb.append(';');
-            }
-        }
-        return sb.toString();
+        return emailAddresses.toArray(new String[emailAddresses.size()]);
     }
 
     @RequiresPermissionClass(ReadPermission.class)

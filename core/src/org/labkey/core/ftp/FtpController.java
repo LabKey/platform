@@ -37,7 +37,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.core.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.ModelAndView;

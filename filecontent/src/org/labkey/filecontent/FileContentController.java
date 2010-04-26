@@ -29,26 +29,21 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.DomainDescriptor;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.files.*;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -67,10 +62,8 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.net.URI;
 import java.util.*;
 
 
@@ -1126,6 +1119,89 @@ public class FileContentController extends SpringActionController
             svc.setAdminOptions(getContainer(), options);
 
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetEmailPrefAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response =  new ApiSimpleResponse();
+            String pref = EmailService.get().getEmailPref(getUser(), getContainer(), new FileContentEmailPref());
+            String prefWithDefault = EmailService.get().getEmailPref(getUser(), getContainer(),
+                    new FileContentEmailPref(), new FileContentDefaultEmailPref());
+
+            response.put("emailPref", pref);
+            response.put("emailPrefDefault", prefWithDefault);
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SetEmailPrefAction extends MutatingApiAction<EmailPrefForm>
+    {
+        @Override
+        public ApiResponse execute(EmailPrefForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response =  new ApiSimpleResponse();
+
+            EmailService.get().setEmailPref(getUser(), getContainer(), new FileContentEmailPref(), String.valueOf(form.getEmailPref()));
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
+    /**
+     * Returns group default email pref settings.
+     */
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetDefaultEmailPrefAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response =  new ApiSimpleResponse();
+            String pref = EmailService.get().getDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref());
+
+            response.put("emailPref", pref);
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetDefaultEmailPrefAction extends MutatingApiAction<EmailPrefForm>
+    {
+        @Override
+        public ApiResponse execute(EmailPrefForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response =  new ApiSimpleResponse();
+
+            EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), String.valueOf(form.getEmailPref()));
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
+    public static class EmailPrefForm
+    {
+        int _emailPref;
+
+        public int getEmailPref()
+        {
+            return _emailPref;
+        }
+
+        public void setEmailPref(int emailPref)
+        {
+            _emailPref = emailPref;
         }
     }
 

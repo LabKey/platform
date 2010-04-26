@@ -26,12 +26,14 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
+import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.portal.ProjectUrls;
@@ -550,9 +552,17 @@ public class PipelineController extends SpringActionController
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
 
-            options.updateFromJSON(form.getProps());
+            Map<String, Object> props = form.getProps();
+            options.updateFromJSON(props);
             svc.setAdminOptions(getContainer(), options);
 
+            // kind of ugly, the email prefs are piggybacked on the admin panel, even through they are
+            // stored in the email service.
+            if (props.containsKey("emailPref"))
+            {
+                String pref = String.valueOf(props.get("emailPref"));
+                EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), pref);
+            }
             return new ApiSimpleResponse("success", true);
         }
     }

@@ -114,6 +114,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             hideText: true
         });
 
+        actions.emailPreferences = new Ext.Action({
+            text: 'Email Preferences',
+            iconCls: 'iconEmailSettings',
+            tooltip: 'Configure email notifications on file actions.',
+            listeners: {click:function(button, event) {this.onEmailPreferences(button);}, scope:this},
+            hideText: true
+        })
         return actions;
     },
 
@@ -832,6 +839,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         //fileDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});
 
         fileDlg.show();
+    },
+
+    onEmailPreferences : function(btn)
+    {
+        var prefDlg = new LABKEY.EmailPreferencesPanel();
+
+        prefDlg.show();
     },
 
     onFilePropConfigChanged : function(config)

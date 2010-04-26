@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.notification.EmailService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -123,6 +124,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
         AuditLogService.get().addAuditViewFactory(MessageAuditViewFactory.getInstance());
+        ServiceRegistry.get().registerService(EmailService.I.class, new EmailServiceImpl());
 
         // Editors can read and respond to secure message boards
         RoleManager.registerPermission(new SecureMessageBoardReadPermission());

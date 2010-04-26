@@ -25,7 +25,6 @@ import org.json.JSONWriter;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.DataType;
@@ -2098,7 +2097,7 @@ public class DavController extends SpringActionController
                     raf.seek(range.start);
                     bos.writeTo(raf);
                     raf.getFD().sync();
-                    audit(resource, "modified range " + range.toString());
+                    resource.notify(getViewContext(), "modified range " + range.toString());
                 }
                 else
                 {
@@ -2220,7 +2219,7 @@ public class DavController extends SpringActionController
             deleteCollection(resource, errorList);
             if (!resource.delete(getUser()))
                 errorList.put(resource.getPath(), WebdavStatus.SC_INTERNAL_SERVER_ERROR);
-            audit(resource, "deleted");
+            resource.notify(getViewContext(), "deleted");
             if (!errorList.isEmpty())
                 return sendReport(errorList);
             return WebdavStatus.SC_NO_CONTENT;
@@ -2231,13 +2230,13 @@ public class DavController extends SpringActionController
     // just add to the method bodies
     private void fireFileReplacedEvent(WebdavResource resource)
     {
-        audit(resource, "replaced");
+        resource.notify(getViewContext(), "replaced");
         updateIndexAndDataObject(resource);
     }
 
     private void fireFileCreatedEvent(WebdavResource resource)
     {
-        audit(resource, "created");
+        resource.notify(getViewContext(), "created");
         updateIndexAndDataObject(resource);
     }
 
@@ -2275,7 +2274,7 @@ public class DavController extends SpringActionController
 
     private void fireFileDeletedEvent(WebdavResource resource)
     {
-        audit(resource, "deleted");
+        resource.notify(getViewContext(), "deleted");
         removeFromIndex(resource);
 
         Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
@@ -2346,7 +2345,7 @@ public class DavController extends SpringActionController
                 boolean temp = rmTempFile(child);
                 if (!temp)
                 {
-                    audit(child, "deleted");
+                    child.notify(getViewContext(), "deleted");
                     removeFromIndex(child);
                 }
             }
@@ -2560,8 +2559,8 @@ public class DavController extends SpringActionController
 
     private void fireFileMovedEvent(WebdavResource dest, WebdavResource src)
     {
-        audit(src, null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
-        audit(dest, null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
+        src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
+        dest.notify(getViewContext(), null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
         removeFromIndex(src);
         addToIndex(dest);
 
@@ -3910,9 +3909,9 @@ public class DavController extends SpringActionController
                 boolean exists = dest.getFile().exists();
                 FileUtil.copyFile(src.getFile(), dest.getFile());
                 if (exists)
-                    audit(dest, "overwrite: copied from " + src.getFile().getPath());
+                    dest.notify(getViewContext(), "overwrite: copied from " + src.getFile().getPath());
                 else
-                    audit(dest, "create: copied from " + src.getFile().getPath());
+                    dest.notify(getViewContext(), "create: copied from " + src.getFile().getPath());
                 addToIndex(dest);
             }
             catch (IOException ex)
@@ -3932,27 +3931,6 @@ public class DavController extends SpringActionController
         }
 
         return null;
-    }
-
-
-    // UNDONE: move auditing into the Resource
-    void audit(WebdavResource resource, String message)
-    {
-        String dir;
-        String name;
-        File f = resource.getFile();
-        if (f != null)
-        {
-            dir = f.getParent();
-            name = f.getName();
-        }
-        else
-        {
-            Resource parent = resource.parent();
-            dir = parent == null ? "" : parent.getPath().toString();
-            name = resource.getName();
-        }
-        AuditLogService.get().addEvent(getViewContext(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
     }
 
 
