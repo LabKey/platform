@@ -1900,12 +1900,12 @@ public class StudyController extends BaseStudyController
                 List<String> errorList = new LinkedList<String>();
 
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-                Pair<String[], UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, tsvData, columnMap, errorList);
+                Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, tsvData, columnMap, errorList);
 
-                if (result.getKey().length > 0)
+                if (!result.getKey().isEmpty())
                 {
                     // Log the import
-                    String comment = "Dataset data imported. " + result.getKey().length + " rows imported";
+                    String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
                     StudyServiceImpl.addDatasetAuditEvent(
                             getUser(), getContainer(), dsd, comment, result.getValue());
                 }
@@ -2246,7 +2246,7 @@ public class StudyController extends BaseStudyController
                     AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
                 }
             }
-            StudyManager.getInstance().deleteDatasetRows(getStudy(), def, allLsids);
+            def.deleteRows(getUser(), allLsids);
             
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
@@ -2318,7 +2318,7 @@ public class StudyController extends BaseStudyController
                     StudyService.get().deleteDatasetRow(getUser(), getContainer(), datasetId, lsid);
                 }
 
-                if (safeEquals(datasetId, getStudy().getParticipantCohortDataSetId()))
+                if (PageFlowUtil.nullSafeEquals(datasetId, getStudy().getParticipantCohortDataSetId()))
                     CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
 
                 scope.commitTransaction();
@@ -4557,7 +4557,7 @@ public class StudyController extends BaseStudyController
                         new StudySnapshotBean(snapshotBean, form), errors);
             }
             // Actually process
-            StudyManager.getInstance().createSnapshot(getUser(), snapshotBean);
+            StudyManager.getInstance().createSnapshot(snapshotBean);
             form.setComplete(true);
 
             return new StudyJspView<StudySnapshotBean>(getStudy(), "snapshotData.jsp",

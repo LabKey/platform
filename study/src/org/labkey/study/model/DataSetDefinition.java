@@ -16,6 +16,8 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -24,14 +26,14 @@ import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -63,6 +65,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 {
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
+    private static final Object MANAGED_KEY_LOCK = new Object();
     private static Logger _log = Logger.getLogger(DataSetDefinition.class);
 
     private StudyImpl _study;
@@ -331,7 +334,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             HttpView.throwUnauthorized();
 
         if (materialized)
-            return getMaterializedTempTableInfo(user);
+            return getMaterializedTempTableInfo(user, true);
         else
             return getJoinTableInfo(user);
     }
@@ -348,7 +351,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     {
                         public void run()
                         {
-                            getMaterializedTempTableInfo(user);
+                            getMaterializedTempTableInfo(user, true);
                         }
                     });
             }
@@ -412,29 +415,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
 
-    private synchronized TableInfo getMaterializedTempTableInfo(User user)
+
+    private synchronized Table.TempTableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
     {
         String tempName = getCacheString();
 
         MaterializedLockObject mlo;
 
-        // if we're in a trasaction we don't want to pollute the cache (can't tell whether this user
-        // is changing dataset data or not)
-
-        if (getScope().isTransactionActive())
+        synchronized(materializedCache)
         {
-            mlo = new MaterializedLockObject();
-        }
-        else
-        {
-            synchronized(materializedCache)
+            mlo = materializedCache.get(tempName);
+            if (null == mlo)
             {
-                mlo = materializedCache.get(tempName);
-                if (null == mlo)
-                {
-                    mlo = new MaterializedLockObject();
-                    materializedCache.put(tempName, mlo);
-                }
+                mlo = new MaterializedLockObject();
+                materializedCache.put(tempName, mlo);
             }
         }
 
@@ -459,7 +453,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         tinfoMat = null;
                     }
                 }
-                if (tinfoMat == null)
+                if (tinfoMat == null && forceMaterialization)
                 {
                     TableInfo tinfoFrom = getJoinTableInfo(user);
                     tinfoMat = materialize(tinfoFrom, tempName);
@@ -467,7 +461,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     mlo.tinfoFrom = tinfoFrom;
                     mlo.tinfoMat = tinfoMat;
                 }
-                TempTableTracker.getLogger().debug("DataSetDefinition returning " + tinfoMat.getSelectName());
+                TempTableTracker.getLogger().debug("DataSetDefinition returning " + (tinfoMat == null ? "null" : tinfoMat.getSelectName()));
                 return tinfoMat;
             }
             catch (SQLException x)
@@ -486,8 +480,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //noinspection ConstantConditions
         assert debug=true;
 
-        Table.TempTableInfo tinfoMat;
-        tinfoMat = Table.createTempTable(tinfoFrom, tempName);
+        Table.TempTableInfo tinfoMat = Table.createTempTable(tinfoFrom, tempName);
         String fullName = tinfoMat.getTempTableName();
         String shortName = fullName.substring(1+fullName.lastIndexOf('.'));
         Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_seq ON " + fullName + "(SequenceNum)", null);
@@ -498,7 +491,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //noinspection ConstantConditions
         if (debug)
         {
-            // NOTE: any PropetyDescriptor we hold onto will look like a leak
+            // NOTE: any PropertyDescriptor we hold onto will look like a leak
             // CONSIDER: make MemTracker aware of this cache
             for (ColumnInfo col : tinfoFrom.getColumns())
             {
@@ -624,7 +617,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     /**
      * Returns the key names for display purposes.
-     * If demographic data, visit keys are supressed
+     * If demographic data, visit keys are suppressed
      */
     public String[] getDisplayKeyNames()
     {
@@ -843,8 +836,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     static ColumnInfo newDatasetColumnInfo(StudyDataTableInfo tinfo, ColumnInfo from)
     {
-        ColumnInfo c = new ColumnInfo(from, tinfo);
-        return c;
+        return new ColumnInfo(from, tinfo);
     }
 
 
@@ -988,5 +980,480 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public String toString()
     {
         return "DataSetDefinition: " + getLabel() + " " + getDataSetId();
+    }
+
+    public void deleteRows(User user, Collection<String> rowLSIDs)
+    {
+        Container c = getContainer();
+
+        TableInfo data = StudySchema.getInstance().getTableInfoStudyData();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Container", c.getId());
+        filter.addCondition("DatasetId", getDataSetId());
+        filter.addInClause("LSID", rowLSIDs);
+
+        DbScope scope =  StudySchema.getInstance().getSchema().getScope();
+        boolean startTransaction = !scope.isTransactionActive();
+        try
+        {
+            if (startTransaction)
+                scope.beginTransaction();
+
+            char sep = ' ';
+            StringBuilder sb = new StringBuilder();
+            for (int i=0; i<rowLSIDs.size(); i++)
+            {
+                sb.append(sep);
+                sb.append('?');
+                sep = ',';
+            }
+            List<Object> paramList = new ArrayList<Object>(rowLSIDs);
+            OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
+            Table.delete(data, filter);
+
+            Table.TempTableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+            if (tempTableInfo != null)
+            {
+                SimpleFilter tempTableFilter = new SimpleFilter();
+                tempTableFilter.addInClause("LSID", rowLSIDs);
+                Table.delete(tempTableInfo, tempTableFilter);
+            }
+
+            if (startTransaction)
+                scope.commitTransaction();
+        }
+        catch (SQLException s)
+        {
+            throw new RuntimeSQLException(s);
+        }
+        finally
+        {
+            if (startTransaction)
+                scope.closeConnection();
+        }
+    }
+
+    /**
+     * dataMaps have keys which are property URIs, and values which have already been converted.
+     */
+    public List<String> importDatasetData(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+            throws SQLException
+    {
+        if (dataMaps.size() == 0)
+            return Collections.emptyList();
+
+        TableInfo tinfo = getTableInfo(user, false, false);
+        Map<String, QCState> qcStateLabels = new CaseInsensitiveHashMap<QCState>();
+
+        boolean needToHandleQCState = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
+
+        if (needToHandleQCState)
+        {
+            for (QCState state : StudyManager.getInstance().getQCStates(study.getContainer()))
+                qcStateLabels.put(state.getLabel(), state);
+        }
+
+        //
+        // Try to collect errors early.
+        // Try not to be too repetitive, stop each loop after one error
+        //
+
+        // In certain cases (e.g., QC Columns), we have multiple columns with the same
+        // property URI. We don't want to complain about conversion errors multiple
+        // times, so we keep a set around in case we run into one and only report it once.
+        MultiMap<Integer, String> rowToConversionErrorURIs = new MultiHashMap<Integer, String>();
+
+        int rowNumber = 0;
+        for (Map<String, Object> dataMap : dataMaps)
+        {
+            rowNumber++;
+            if (needToHandleQCState)
+            {
+                String qcStateLabel = (String) dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                // We have a non-null QC state column value.  We need to check to see if this is a known state,
+                // and mark it for addition if not.
+                if (qcStateLabel != null && qcStateLabel.length() > 0 && !qcStateLabels.containsKey(qcStateLabel))
+                    qcStateLabels.put(qcStateLabel, null);
+            }
+
+            for (ColumnInfo col : tinfo.getColumns())
+            {
+                // lsid is generated
+                if (col.getName().equalsIgnoreCase("lsid"))
+                    continue;
+
+                Object val = dataMap.get(col.getPropertyURI());
+
+                boolean valueMissing;
+
+                if (val == null)
+                {
+                    valueMissing = true;
+                }
+                else if (val instanceof MvFieldWrapper)
+                {
+                    MvFieldWrapper mvWrapper = (MvFieldWrapper)val;
+
+                    if (mvWrapper.isEmpty())
+                    {
+                        valueMissing = true;
+                    }
+                    else
+                    {
+                        valueMissing = false;
+
+                        if (col.isMvEnabled() && !MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), getContainer()))
+                        {
+                            String columnName = col.getName() + MvColumn.MV_INDICATOR_SUFFIX;
+                            errors.add(columnName + " must be a valid MV indicator.");
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    valueMissing = false;
+                }
+
+                if (valueMissing && !col.isNullable() && col.isUserEditable())
+                {
+                    // Demographic data gets special handling for visit or date fields, depending on the type of study,
+                    // since there is usually only one entry for demographic data per dataset
+                    if (isDemographicData())
+                    {
+                        if (study.getTimepointType() != TimepointType.VISIT)
+                        {
+                            if (col.getName().equalsIgnoreCase("Date"))
+                            {
+                                dataMap.put(col.getPropertyURI(), study.getStartDate());
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (col.getName().equalsIgnoreCase("SequenceNum"))
+                            {
+                                dataMap.put(col.getPropertyURI(), 0);
+                                continue;
+                            }
+                        }
+                    }
+
+                    errors.add("Row " + rowNumber + " does not contain required field " + col.getName() + ".");
+                }
+                else if (val == StudyManager.CONVERSION_ERROR)
+                {
+                    if (!rowToConversionErrorURIs.containsValue(rowNumber - 1, col.getPropertyURI()))
+                    {
+                        // Only emit the error once for a given property uri and row
+                        errors.add("Row " + rowNumber + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
+                        rowToConversionErrorURIs.put(rowNumber - 1, col.getPropertyURI());
+                    }
+                }
+            }
+
+            if (errors.size() > 0)
+                return Collections.emptyList();
+        }
+        if (logger != null) logger.debug("checked for missing values");
+
+        String keyPropertyURI = null;
+        String keyPropertyName = getKeyPropertyName();
+
+        if (keyPropertyName != null)
+        {
+            ColumnInfo col = tinfo.getColumn(keyPropertyName);
+            if (null != col)
+                keyPropertyURI = col.getPropertyURI();
+        }
+
+        if (checkDuplicates)
+        {
+            checkForDuplicates(study, user, dataMaps, errors, logger, keyPropertyURI, keyPropertyName);
+        }
+        if (errors.size() > 0)
+            return Collections.emptyList();
+
+        if (isKeyPropertyManaged())
+        {
+            // If additional keys are managed by the server, we need to synchronize around
+            // increments, as we're imitating a sequence.
+            synchronized (MANAGED_KEY_LOCK)
+            {
+                return insertData(study, user, dataMaps, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
+            }
+        }
+        else
+        {
+            return insertData(study, user, dataMaps, lastModified, errors, ensureObjects, defaultQCState, logger, qcStateLabels, needToHandleQCState, keyPropertyURI);
+        }
+    }
+
+    private void checkForDuplicates(Study study, User user, List<Map<String, Object>> dataMaps, List<String> errors, Logger logger, String keyPropertyURI, String keyPropertyName)
+            throws SQLException
+    {
+        String participantIdURI = DataSetDefinition.getParticipantIdURI();
+        String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
+        String visitDateURI = DataSetDefinition.getVisitDateURI();
+        HashMap<String, Map> failedReplaceMap = checkAndDeleteDupes(user, study, dataMaps);
+
+        if (null != failedReplaceMap && failedReplaceMap.size() > 0)
+        {
+            StringBuilder error = new StringBuilder();
+            error.append("Only one row is allowed for each ").append(StudyService.get().getSubjectNounSingular(getContainer()));
+
+            if (!isDemographicData())
+            {
+                error.append(study.getTimepointType() != TimepointType.DATE ? "/Date" : "/Visit");
+
+                if (getKeyPropertyName() != null)
+                    error.append("/").append(getKeyPropertyName()).append(" Triple.  ");
+                else
+                    error.append(" Pair.  ");
+            }
+            else if (getKeyPropertyName() != null)
+            {
+                error.append("/").append(getKeyPropertyName()).append(" Pair.  ");
+            }
+
+            error.append("Duplicates were found in the database or imported data.");
+            errors.add(error.toString());
+
+            for (Map.Entry<String, Map> e : failedReplaceMap.entrySet())
+            {
+                Map m = e.getValue();
+                String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(getContainer()) + " = " + m.get(participantIdURI);
+                if (!isDemographicData())
+                {
+                    if (study.getTimepointType() != TimepointType.VISIT)
+                        err = err + "Date = " + m.get(visitDateURI);
+                    else
+                        err = err + ", VisitSequenceNum = " + m.get(visitSequenceNumURI);
+                }
+                if (keyPropertyURI != null)
+                    err += ", " + keyPropertyName + " = " + m.get(keyPropertyURI);
+                errors.add(err);
+            }
+        }
+        if (logger != null) logger.debug("checked for duplicates");
+    }
+
+    private List<String> insertData(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, List<String> errors, boolean ensureObjects, QCState defaultQCState, Logger logger, Map<String, QCState> qcStateLabels, boolean needToHandleQCState, String keyPropertyURI)
+            throws SQLException
+    {
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        DatasetImportHelper helper = null;
+        boolean startedTransaction = false;
+
+        try
+        {
+            if (!scope.isTransactionActive())
+            {
+                startedTransaction = true;
+                scope.beginTransaction();
+            }
+
+            if (needToHandleQCState)
+            {
+                // We first insert new QC states for any previously unknown QC labels found in the data:
+                Map<String, QCState> iterableStates = new HashMap<String, QCState>(qcStateLabels);
+
+                for (Map.Entry<String, QCState> state : iterableStates.entrySet())
+                {
+                    if (state.getValue() == null)
+                    {
+                        QCState newState = new QCState();
+                        // default to public data:
+                        newState.setPublicData(true);
+                        newState.setLabel(state.getKey());
+                        newState.setContainer(study.getContainer());
+                        newState = StudyManager.getInstance().insertQCState(user, newState);
+                        qcStateLabels.put(state.getKey(), newState);
+                    }
+                }
+
+                // All QC states should now be stored in the database.  Next we iterate the row maps,
+                // swapping in the appropriate row id for each QC label, and applying the default QC state
+                // to null QC rows if appropriate:
+                String qcStatePropertyURI = DataSetDefinition.getQCStateURI();
+
+                for (Map<String, Object> dataMap : dataMaps)
+                {
+                    // only update the QC state ID if it isn't already explicitly specified:
+                    if (dataMap.get(qcStatePropertyURI) == null)
+                    {
+                        Object currentStateObj = dataMap.get(DataSetTable.QCSTATE_LABEL_COLNAME);
+                        String currentStateLabel = currentStateObj != null ? currentStateObj.toString() : null;
+
+                        if (currentStateLabel != null)
+                        {
+                            QCState state = qcStateLabels.get(currentStateLabel);
+                            assert state != null : "QC State " + currentStateLabel + " was expected but not found.";
+                            dataMap.put(qcStatePropertyURI, state.getRowId());
+                        }
+                        else if (defaultQCState != null)
+                            dataMap.put(qcStatePropertyURI, defaultQCState.getRowId());
+                    }
+                }
+                if (logger != null) logger.debug("handled qc state");
+            }
+
+            //
+            // Use OntologyManager for bulk insert
+            //
+            // CONSIDER: it would be nice if we could use the Table/TableInfo methods here
+
+            // Need to generate keys if the server manages them
+            if (isKeyPropertyManaged())
+            {
+                int currentKey = getMaxKeyValue();
+
+                // Sadly, may have to create new maps, since TabLoader's aren't modifiable
+                for (Map<String, Object> dataMap : dataMaps)
+                {
+                    // Only insert if there isn't already a value
+                    if (dataMap.get(keyPropertyURI) == null)
+                    {
+                        currentKey++;
+                        dataMap.put(keyPropertyURI, currentKey);
+                    }
+                }
+                if (logger != null) logger.debug("generated keys");
+            }
+
+            String typeURI = getTypeURI();
+            Container c = study.getContainer();
+            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
+            helper = new DatasetImportHelper(user, scope.getConnection(), c, this, lastModified);
+            List<String> imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, ensureObjects, logger);
+
+            Table.TempTableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+            if (tempTableInfo != null)
+            {
+                SimpleFilter tempTableFilter = new SimpleFilter();
+                tempTableFilter.addInClause("LSID", imported);
+                SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
+                SQLFragment sqlSelectInto = new SQLFragment();
+                sqlSelectInto.append("INSERT INTO ").append(tempTableInfo).append(" SELECT * FROM (");
+                sqlSelectInto.append(sqlSelect);
+                sqlSelectInto.append(") x ");
+                sqlSelectInto.append(tempTableFilter.getSQLFragment(tempTableInfo.getSqlDialect()));
+
+                Table.execute(tempTableInfo.getSchema(), sqlSelectInto);
+            }
+
+            if (startedTransaction)
+            {
+                if (logger != null) logger.debug("starting commit...");
+                scope.commitTransaction();
+                startedTransaction = false;
+                if (logger != null) logger.debug("commit complete");
+            }
+            return imported;
+        }
+        catch (ValidationException ve)
+        {
+            for (ValidationError error : ve.getErrors())
+                errors.add(error.getMessage());
+            return Collections.emptyList();
+        }
+        finally
+        {
+            if (helper != null)
+                helper.done();
+            if (startedTransaction)
+            {
+                scope.closeConnection();
+            }
+        }
+    }
+
+    /**
+     * If all the dupes can be replaced, delete them. If not return the ones that should NOT be replaced
+     * and do not delete anything
+     */
+    private HashMap<String, Map> checkAndDeleteDupes(User user, Study study, List<Map<String, Object>> rows) throws SQLException
+    {
+        if (null == rows || rows.size() == 0)
+            return null;
+
+        Container c = study.getContainer();
+        DatasetImportHelper helper = new DatasetImportHelper(user, null, c, this, 0);
+
+        // duplicate keys found that should be deleted
+        Set<String> deleteSet = new HashSet<String>();
+
+        // duplicate keys found in error
+        LinkedHashMap<String,Map> noDeleteMap = new LinkedHashMap<String,Map>();
+
+        StringBuffer sbIn = new StringBuffer();
+        String sep = "";
+        Map<String, Map> uriMap = new HashMap<String, Map>();
+        for (Map m : rows)
+        {
+            String uri = helper.getURI(m);
+            if (null != uriMap.put(uri, m))
+                noDeleteMap.put(uri,m);
+            sbIn.append(sep).append("'").append(uri).append("'");
+            sep = ", ";
+        }
+
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addWhereClause("LSID IN (" + sbIn + ")", new Object[]{});
+
+        Map[] results = Table.select(tinfo, Table.ALL_COLUMNS, filter, null, Map.class);
+        for (Map orig : results)
+        {
+            String lsid = (String) orig.get("LSID");
+            Map newMap = uriMap.get(lsid);
+            boolean replace = Boolean.TRUE.equals(newMap.get("replace"));
+            if (replace)
+            {
+                deleteSet.add(lsid);
+            }
+            else
+            {
+                noDeleteMap.put(lsid, newMap);
+            }
+        }
+
+        // If we have duplicates, and we don't have an auto-keyed dataset,
+        // then we cannot proceed.
+        if (noDeleteMap.size() > 0 && !isKeyPropertyManaged())
+            return noDeleteMap;
+
+        if (deleteSet.size() == 0)
+            return null;
+
+        SimpleFilter deleteFilter = new SimpleFilter();
+        StringBuffer sbDelete = new StringBuffer();
+        sep = "";
+        for (String s : deleteSet)
+        {
+            sbDelete.append(sep).append("'").append(s).append("'");
+            sep = ", ";
+        }
+        deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
+        Table.delete(StudySchema.getInstance().getTableInfoStudyData(), deleteFilter);
+        OntologyManager.deleteOntologyObjects(c, deleteSet.toArray(new String[deleteSet.size()]));
+
+        return null;
+    }
+
+    /**
+     * Gets the current highest key value for a server-managed key field.
+     * If no data is returned, this method returns 0.
+     */
+    private int getMaxKeyValue() throws SQLException
+    {
+        TableInfo tInfo = StudySchema.getInstance().getTableInfoStudyData();
+        Integer newKey = Table.executeSingleton(tInfo.getSchema(),
+                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo +
+                " WHERE container = ? AND datasetid = ?",
+                new Object[] { getContainer(), getDataSetId() },
+                Integer.class
+                );
+        return newKey.intValue();
     }
 }

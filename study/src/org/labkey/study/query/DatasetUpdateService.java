@@ -19,11 +19,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*
 * User: Dave
@@ -38,7 +39,7 @@ import java.util.Map;
  * the QueryUpdateService directly, working with <code>Map&lt;String,Object&gt;</code>
  * collections for the row data.
  */
-public class DatasetUpdateService implements QueryUpdateService
+public class DatasetUpdateService extends AbstractQueryUpdateService
 {
     private final int _datasetId;
 
@@ -73,6 +74,50 @@ public class DatasetUpdateService implements QueryUpdateService
         //update the lsid and return
         row.put("lsid", newLsid);
         return row;
+    }
+
+    @Override
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys);
+
+        Set<Object> changedLSIDs = new HashSet<Object>();
+        // Keep track of whether LSIDs changed based on this update
+        for (Map<String, Object> oldRowKeys : oldKeys)
+        {
+            changedLSIDs.add(oldRowKeys.get("lsid"));
+        }
+        for (Map<String, Object> updatedRows : result)
+        {
+            changedLSIDs.remove(updatedRows.get("lsid"));
+        }
+
+        resyncStudy(user, container, changedLSIDs.isEmpty());
+        return result;
+    }
+
+    private void resyncStudy(User user, Container container, boolean lsidChanged)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
+                PageFlowUtil.nullSafeEquals(_datasetId, study.getParticipantCohortDataSetId()));
+
+        // If this results in a change to cohort assignments, the participant ID, or the visit,
+        // we need to recompute the participant-visit map:
+        if (recomputeCohorts || lsidChanged)
+        {
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super.insertRows(user, container, rows);
+        resyncStudy(user, container, true);
+        return result;
     }
 
     public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException

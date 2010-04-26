@@ -21,9 +21,9 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.exp.query.TableEditHelper;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
@@ -34,7 +34,6 @@ import java.util.TreeMap;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable implements ExpTable<C>
 {
-    protected TableEditHelper _editHelper;
     protected final UserSchema _schema;
     private final ExpObjectImpl _objectType;
 
@@ -155,25 +154,11 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         addCondition(sqlCondition);
     }
 
-    public void setEditHelper(TableEditHelper helper)
-    {
-        _editHelper = helper;
-    }
-
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        if (_editHelper != null)
-            return _editHelper.hasPermission(user, perm);
+        if (getUpdateService() != null)
+            return DeletePermission.class.isAssignableFrom(perm) && _schema.getContainer().hasPermission(user, perm);
         return _schema.getContainer().hasPermission(user, perm);
-    }
-
-    public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
-    {
-        if (_editHelper != null)
-        {
-            return _editHelper.delete(user, srcURL, form);
-        }
-        throw new UnsupportedOperationException();
     }
 
     public ColumnInfo addPropertyColumns(String categoryDescription, PropertyDescriptor[] pds, QuerySchema schema)

@@ -44,7 +44,7 @@ import java.util.Map;
 /**
  * Implementation of QueryUpdateService for Lists
  */
-public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem, Object>
+public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListItem, Object>
 {
     ListDefinition _list = null;
 

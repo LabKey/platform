@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * User: kevink
  */
-class ExpMaterialTableUpdateService implements QueryUpdateService
+class ExpMaterialTableUpdateService extends AbstractQueryUpdateService
 {
     private ExpMaterialTableImpl _table;
 

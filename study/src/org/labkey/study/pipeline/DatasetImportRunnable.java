@@ -160,7 +160,7 @@ public class DatasetImportRunnable implements Runnable
 
                 assert cpuImport.start();
                 pj.info(_datasetDefinition.getLabel() + ": Starting import");
-                String[] imported = _task.getStudyManager().importDatasetData(
+                List<String> imported = _task.getStudyManager().importDatasetData(
                         study,
                         pj.getUser(),
                         _datasetDefinition,
@@ -177,7 +177,7 @@ public class DatasetImportRunnable implements Runnable
                 {
                     assert cpuCommit.start();
                     scope.commitTransaction();
-                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.length + " rows from " + _tsv;
+                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsv;
                     if (useCutoff && skippedRowCount[0] > 0)
                         msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
                     pj.info(msg);

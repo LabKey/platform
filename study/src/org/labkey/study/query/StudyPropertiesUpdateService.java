@@ -32,7 +32,7 @@ import java.sql.SQLException;
  * Date: Aug 11, 2008
  * Time: 1:10:49 PM
  */
-public class StudyPropertiesUpdateService implements QueryUpdateService
+public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 {
     @SuppressWarnings("unchecked")
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException

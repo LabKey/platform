@@ -91,7 +91,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
-        if (!study.isManualCohortAssignment() && BaseStudyController.safeEquals(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+        if (!study.isManualCohortAssignment() && PageFlowUtil.nullSafeEquals(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
         {
             final Cohort[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getViewContext().getUser());
             ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
@@ -114,7 +114,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                                 for (Cohort cohort : cohorts)
                                 {
                                     out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
-                                            (BaseStudyController.safeEquals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
+                                            (PageFlowUtil.nullSafeEquals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
                                     out.write(PageFlowUtil.filter(cohort.getLabel()));
                                     out.write("</option>\n");
                                 }
@@ -276,7 +276,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
 
         boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
-                BaseStudyController.safeEquals(datasetId, study.getParticipantCohortDataSetId()));
+                PageFlowUtil.nullSafeEquals(datasetId, study.getParticipantCohortDataSetId()));
 
         // If this results in a change to cohort assignments, the participant ID, or the visit,
         // we need to recompute the participant-visit map:

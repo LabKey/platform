@@ -71,14 +71,6 @@ public class ExternalSchemaTable extends SimpleModuleUserSchema.SimpleModuleTabl
     }
 
     @Override
-    protected void addQueryFilters(SimpleFilter filter)
-    {
-        if (_containerId != null)
-            filter.addCondition("container", _containerId);
-    }
-
-
-    @Override
     public boolean hasContainerContext()
     {
         ColumnInfo colContainer = getRealTable().getColumn("container");

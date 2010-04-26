@@ -392,7 +392,7 @@ public class SpecimenController extends BaseStudyController
             String firstVisit = visitIt.next().getValue();
             while (visitIt.hasNext())
             {
-                if (!safeEquals(firstVisit, visitIt.next().getValue()))
+                if (!PageFlowUtil.nullSafeEquals(firstVisit, visitIt.next().getValue()))
                     return false;
             }
             return true;
@@ -3112,7 +3112,7 @@ public class SpecimenController extends BaseStudyController
                     _mixedFlagState = _mixedFlagState || currentFlagState != previousFlagState;
                     String currentCommentString = comment != null ? comment.getComment() : null;
                     String previousCommentString = prevComment != null ? prevComment.getComment() : null;
-                    _mixedComments = _mixedComments || !safeEquals(previousCommentString, currentCommentString);
+                    _mixedComments = _mixedComments || !PageFlowUtil.nullSafeEquals(previousCommentString, currentCommentString);
                     prevComment = comment;
                 }
                 if (!_mixedComments && prevComment != null)

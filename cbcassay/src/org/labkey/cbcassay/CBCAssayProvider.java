@@ -21,14 +21,12 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -37,7 +35,6 @@ import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.view.*;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.cbcassay.data.CBCDataProperty;
@@ -165,48 +162,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
             @Override
             public boolean hasPermission(User user, Class<? extends Permission> perm)
             {
-                return schema.getContainer().hasPermission(user, perm);
-            }
-
-            @Override
-            public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
-            {
-                Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
-                if (ids.isEmpty())
-                    return srcURL;
-                ArrayList<Integer> objectIds = new ArrayList<Integer>(ids.size());
-                for (String id : ids)
-                    objectIds.add(new Integer(id));
-                try
-                {
-                    boolean transaction = false;
-                    try
-                    {
-                        if (!ExperimentService.get().isTransactionActive())
-                        {
-                            ExperimentService.get().beginTransaction();
-                            transaction = true;
-                        }
-                        OntologyManager.deleteOntologyObjects(
-                                objectIds.toArray(new Integer[objectIds.size()]),
-                                form.getContainer(), true);
-                        if (transaction)
-                        {
-                            ExperimentService.get().commitTransaction();
-                            transaction = false;
-                        }
-                    }
-                    finally
-                    {
-                        if (transaction)
-                            ExperimentService.get().rollbackTransaction();
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
-                return srcURL;
+                if (getUpdateService() != null)
+                    return DeletePermission.class.isAssignableFrom(perm) && getContainer().hasPermission(user, perm);
+                return false;
             }
 
             @Override

@@ -89,22 +89,13 @@ public class StudyServiceImpl implements StudyService.Service
     public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors)
             throws SQLException
     {
-        return updateDatasetRow(u, c, datasetId, lsid, data, errors, null, true);
-    }
-
-    public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String, Object> data, List<String> errors, String auditComment, boolean assignDefaultQCState)
-            throws SQLException
-    {
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
         QCState defaultQCState = null;
-        if (assignDefaultQCState)
-        {
-            Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
-            if (defaultQcStateId != null)
-                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
-        }
+        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+        if (defaultQcStateId != null)
+             defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
 
         // Start a transaction, so that we can rollback if our insert fails
         boolean transactionOwner = !isTransactionActive();
@@ -132,18 +123,18 @@ public class StudyServiceImpl implements StudyService.Service
                     // if the new incoming data doesn't explicitly set a QC state, and 'assignDefaultQCState' is true,
                     // then we don't want to use the old QC state- we want to use the default instead.  This will be
                     // handled at a lower level by leaving QC state null here:
-                    if (assignDefaultQCState && oldField.getKey().equals("QCState"))
+                    if (oldField.getKey().equals("QCState"))
                         continue;
 
                     newData.put(oldField.getKey(), oldField.getValue());
                 }
             }
 
-            StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
+            def.deleteRows(u, Collections.singletonList(lsid));
 
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, newData, def);
 
-            String[] result = StudyManager.getInstance().importDatasetData(
+            List<String> result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
 
             if (errors.size() > 0)
@@ -157,11 +148,11 @@ public class StudyServiceImpl implements StudyService.Service
 
             // lsid is not in the updated map by default since it is not editable,
             // however it can be changed by the update
-            newData.put("lsid", result[0]);
+            newData.put("lsid", result.get(0));
 
-            addDatasetAuditEvent(u, c, def, oldData, newData, auditComment);
+            addDatasetAuditEvent(u, c, def, oldData, newData, null);
 
-            return result[0];
+            return result.get(0);
         }
         finally
         {
@@ -265,21 +256,20 @@ public class StudyServiceImpl implements StudyService.Service
 
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
 
-            String[] result = StudyManager.getInstance().importDatasetData(
-                study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
+            List<String> result = StudyManager.getInstance().importDatasetData(study, u, def, dataMap, System.currentTimeMillis(), errors, true, true, defaultQCState, null);
 
-            if (result.length > 0)
+            if (result.size() > 0)
             {
                 // Log to the audit log
                 Map<String, Object> auditDataMap = new HashMap<String, Object>();
                 auditDataMap.putAll(data);
-                auditDataMap.put("lsid", result[0]);
+                auditDataMap.put("lsid", result.get(0));
                 addDatasetAuditEvent(u, c, def, null, auditDataMap);
 
                 if (transactionOwner)
                     commitTransaction();
 
-                return result[0];
+                return result.get(0);
             }
 
             // Update failed
@@ -306,7 +296,7 @@ public class StudyServiceImpl implements StudyService.Service
             if (transactionOwner)
                 beginTransaction();
 
-            StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
+            def.deleteRows(u, Collections.singletonList(lsid));
 
             addDatasetAuditEvent(u, c, def, oldData, null);
 

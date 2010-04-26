@@ -16,6 +16,7 @@
 
 package org.labkey.query.controllers;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
@@ -1571,20 +1572,58 @@ public class QueryController extends SpringActionController
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
             TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
-            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext(), errors);
+
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
                 HttpView.throwUnauthorized();
             }
+
+            QueryUpdateService updateService = table.getUpdateService();
+            if (updateService == null)
+            {
+                throw new UnsupportedOperationException("Unable to delete - no QueryUpdateService registered for " + form.getSchemaName() + "." + form.getQueryName());
+            }
+
+            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
+            SimpleFilter filter = new SimpleFilter();
+            List<ColumnInfo> pks = table.getPkColumns();
+            int numPks = pks.size();
+
+            //normalize the pks to arrays of correctly-typed objects
+            List<Map<String, Object>> keyValues = new ArrayList<Map<String, Object>>(ids.size());
+            for (String id : ids)
+            {
+                String[] stringValues;
+                if (numPks > 1)
+                {
+                    stringValues = id.split(",");
+                    if (stringValues.length != numPks)
+                        throw new IllegalStateException("This table has " + numPks + " primary-key columns, but " + stringValues.length + " primary-key values were provided!");
+                }
+                else
+                    stringValues = new String[]{id};
+
+                Object[] values = new Object[numPks];
+                Map<String, Object> rowKeyValues = new HashMap<String, Object>();
+                for (int idx = 0; idx < numPks; ++idx)
+                {
+                    ColumnInfo keyColumn = pks.get(idx);
+                    Object keyValue = keyColumn.getJavaClass() == String.class ? stringValues[idx] : ConvertUtils.convert(stringValues[idx], keyColumn.getJavaClass());
+                    rowKeyValues.put(keyColumn.getName(), keyValue);
+                }
+                keyValues.add(rowKeyValues);
+            }
+
             try
             {
-                _url = table.delete(getUser(), forward, quf);
+                updateService.deleteRows(getUser(), getContainer(), keyValues);
+                _url = forward;
             }
             catch (SQLException x)
             {
                 if (!SqlDialect.isConstraintException(x))
                     throw x;
-                errors.reject(ERROR_MSG, getMessage(quf.getTable().getSchema().getSqlDialect(), x));
+                errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
                 return false;
             }
             return true;
@@ -1690,7 +1729,7 @@ public class QueryController extends SpringActionController
             {
                 if (insert)
                 {
-                    qus.insertRow(form.getUser(), form.getContainer(), values);
+                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values));
                 }
                 else
                 {
@@ -1699,7 +1738,7 @@ public class QueryController extends SpringActionController
                     {
                         oldValues = (Map<String, Object>)form.getOldValues();
                     }
-                    qus.updateRow(form.getUser(), form.getContainer(), values, oldValues);
+                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues));
                 }
             }
             catch (SQLException x)
@@ -2293,23 +2332,24 @@ public class QueryController extends SpringActionController
             response.put("command", getSaveCommandName());
             response.put("containerPath", container.getPath());
 
-            ArrayList<Object> responseRows = new ArrayList<Object>();
-            response.put("rows", responseRows);
-
             int rowsAffected = 0;
 
             try
             {
+                List<Map<String, Object>> rowsToProcess = new ArrayList<Map<String, Object>>();
                 for(int idx = 0; idx < rows.length(); ++idx)
                 {
                     JSONObject jsonObj = rows.getJSONObject(idx);
                     if(null != jsonObj)
                     {
                         CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
-                        saveRow(table, qus, rowMap, responseRows);
-                        ++rowsAffected;
+                        rowsToProcess.add(rowMap);
+                        rowsAffected++;
                     }
                 }
+
+                List<Map<String, Object>> responseRows = saveRows(table, qus, rowsToProcess);
+                response.put("rows", responseRows);
 
                 if (transacted)
                     schema.commitTransaction();
@@ -2331,8 +2371,7 @@ public class QueryController extends SpringActionController
          * Dervied classes should implement this method to do the actual save operation (insert, update or delete)
          * @param table The table
          * @param qus The QueryUpdateService
-         * @param row The row map
-         * @param responseRows The array of response row maps to append to
+         * @param rows
          * @throws InvalidKeyException Thrown if the key is invalid
          * @throws DuplicateKeyException Thrown if the key is a duplicate of an existing key (insert)
          * @throws ValidationException Thrown if the data is not valid
@@ -2340,7 +2379,7 @@ public class QueryController extends SpringActionController
          * @throws SQLException Thrown if there was a problem communicating with the database
          * @throws UnauthorizedException Thrown if the user does not have permissions to save the row
          */
-        protected abstract void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+        protected abstract List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows)
                 throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException;
 
         /**
@@ -2367,15 +2406,12 @@ public class QueryController extends SpringActionController
                 HttpView.throwUnauthorized();
         }
 
-        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows)
                 throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
-            Map<String,Object> updatedRow = qus.updateRow(getViewContext().getUser(), getViewContext().getContainer(),
-                                                            row, null);
-            if(null != updatedRow)
-                updatedRow = qus.getRow(getViewContext().getUser(), getViewContext().getContainer(), updatedRow);
-            if(null != updatedRow)
-                responseRows.add(updatedRow);
+            List<Map<String,Object>> updatedRows = qus.updateRows(getViewContext().getUser(), getViewContext().getContainer(),
+                    rows, null);
+            return qus.getRows(getViewContext().getUser(), getViewContext().getContainer(), updatedRows);
         }
 
     }
@@ -2395,17 +2431,13 @@ public class QueryController extends SpringActionController
                 HttpView.throwUnauthorized();
         }
 
-        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows)
+        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows)
                 throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
-            Map<String,Object> insertedRow = qus.insertRow(getViewContext().getUser(), getViewContext().getContainer(),
-                                                            row);
-            if(null != insertedRow)
-                insertedRow = qus.getRow(getViewContext().getUser(), getViewContext().getContainer(), insertedRow);
-            if(null != insertedRow)
-                responseRows.add(insertedRow);
+            List<Map<String,Object>> insertedRows = qus.insertRows(getViewContext().getUser(), getViewContext().getContainer(),
+                    rows);
+            return qus.getRows(getViewContext().getUser(), getViewContext().getContainer(), insertedRows);
         }
-
     }
 
     @ActionNames("deleteRows, delRows")
@@ -2424,12 +2456,9 @@ public class QueryController extends SpringActionController
                 HttpView.throwUnauthorized();
         }
 
-        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
+        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
-            Map<String,Object> deletedRow = qus.deleteRow(getViewContext().getUser(), getViewContext().getContainer(),
-                                                            row);
-            if(null != deletedRow)
-                responseRows.add(deletedRow);
+            return qus.deleteRows(getViewContext().getUser(), getViewContext().getContainer(), rows);
         }
     }
 
@@ -2445,62 +2474,102 @@ public class QueryController extends SpringActionController
             // will check below
         }
 
-        protected void saveRow(TableInfo table, QueryUpdateService qus, Map<String, Object> row, ArrayList<Object> responseRows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
+        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
         {
             User user = getViewContext().getUser();
             Container container = getViewContext().getContainer();
 
-            //for this action, the shape of the row map is a little different so as to
-            //accommodate the action and old keys and such
-            String command = (String)row.get(PROP_COMMAND);
-            Map<String,Object> values = ((JSONObject)row.get(PROP_VALUES));
-            Map<String,Object> oldKeys = row.containsKey(PROP_OLD_KEYS) ? ((JSONObject)row.get(PROP_OLD_KEYS)) : null;
-            Map<String, Object> responseRow = new HashMap<String,Object>();
+            List<Map<String, Object>> valuesToInsert = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> keysToInsert = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> valuesToUpdate = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> keysToUpdate = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> keysToDelete = new ArrayList<Map<String, Object>>();
 
-            responseRow.put(PROP_COMMAND, command);
-            if(null != oldKeys)
-                responseRow.put(PROP_OLD_KEYS, oldKeys);
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
 
-            if("insert".equalsIgnoreCase(command))
+            for (Map<String, Object> row : rows)
+            {
+                String command = (String) row.get(PROP_COMMAND);
+                Map<String,Object> values = ((JSONObject) row.get(PROP_VALUES));
+                Map<String,Object> oldKeys = row.containsKey(PROP_OLD_KEYS) ? ((JSONObject) row.get(PROP_OLD_KEYS)) : null;
+
+                if("insert".equalsIgnoreCase(command))
+                {
+                    valuesToInsert.add(values);
+                    keysToInsert.add(oldKeys);
+                }
+                else if ("update".equalsIgnoreCase(command))
+                {
+                    valuesToUpdate.add(values);
+                    keysToUpdate.add(oldKeys);
+                }
+                else if ("delete".equalsIgnoreCase(command))
+                {
+                    keysToDelete.add(oldKeys);
+                }
+                else
+                    throw new IllegalArgumentException("'" + command + "' is not a valid command name! Use 'insert', 'update', 'delete'.");
+            }
+
+            if(!valuesToInsert.isEmpty())
             {
                 if(!container.hasPermission(user, InsertPermission.class))
                     throw new UnauthorizedException("You do not have permissions to insert data into this folder.");
                 if (!table.hasPermission(user, InsertPermission.class))
                     throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-                Map<String,Object> insertedRow = qus.insertRow(user, container, values);
-                if(null != insertedRow)
-                    insertedRow = qus.getRow(user, container, insertedRow);
-                if(null != insertedRow)
+                List<Map<String,Object>> insertedRows = qus.insertRows(user, container, valuesToInsert);
+                insertedRows = qus.getRows(user, container, insertedRows);
+                for (int i = 0; i < insertedRows.size(); i++)
+                {
+                    Map<String, Object> insertedRow = insertedRows.get(i);
+                    Map<String, Object> responseRow = new HashMap<String,Object>();
+                    responseRow.put(PROP_COMMAND, "insert");
                     responseRow.put(PROP_VALUES, insertedRow);
+                    responseRow.put(PROP_OLD_KEYS, keysToInsert.get(i));
+                    result.add(responseRow);
+                }
             }
-            else if("update".equalsIgnoreCase(command))
+
+            if(!valuesToUpdate.isEmpty())
             {
+                assert valuesToUpdate.size() == keysToUpdate.size();
                 if(!container.hasPermission(user, UpdatePermission.class))
                     throw new UnauthorizedException("You do not have permissions to update data into this folder.");
                 if (!table.hasPermission(user, UpdatePermission.class))
                     throw new UnauthorizedException("You do not have permission to update data into this table.");
 
-                Map<String,Object> updatedRow = qus.updateRow(user, container, values, oldKeys);
-                if(null != updatedRow)
-                    updatedRow = qus.getRow(user, container, updatedRow);
-                if(null != updatedRow)
+                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, valuesToUpdate, keysToUpdate);
+                updatedRows = qus.getRows(user, container, updatedRows);
+                for (int i = 0; i < updatedRows.size(); i++)
+                {
+                    Map<String, Object> updatedRow = updatedRows.get(i);
+                    Map<String, Object> responseRow = new HashMap<String,Object>();
+                    responseRow.put(PROP_COMMAND, "update");
                     responseRow.put(PROP_VALUES, updatedRow);
+                    responseRow.put(PROP_OLD_KEYS, keysToUpdate.get(i));
+                    result.add(responseRow);
+                }
             }
-            else if("delete".equalsIgnoreCase(command))
+
+            if (!keysToDelete.isEmpty())
             {
                 if(!container.hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException("You do not have permissions to delete data into this folder.");
                 if (!table.hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException("You do not have permission to delete data into this table.");
 
-                qus.deleteRow(user, container, values);
+                qus.deleteRows(user, container, keysToDelete);
+                for (Map<String, Object> rowKeys : keysToDelete)
+                {
+                    Map<String, Object> responseRow = new HashMap<String,Object>();
+                    responseRow.put(PROP_COMMAND, "delete");
+                    responseRow.put(PROP_OLD_KEYS, rowKeys);
+                    result.add(responseRow);
+                }
             }
-            else
-                throw new IllegalArgumentException("'" + command + "' is not a valid command name! Use 'insert', 'update', 'delete'.");
 
-
-            responseRows.add(responseRow);
+            return result;
         }
 
         protected String getSaveCommandName()

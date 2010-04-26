@@ -41,6 +41,7 @@ public class ParticipantTable extends FilteredTable
 
         addColumn(rowIdColumn);
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
+        datasetColumn.setKeyField(false);
         datasetColumn.setIsUnselectable(true);
         datasetColumn.setLabel("DataSet");
         datasetColumn.setFk(new AbstractForeignKey()

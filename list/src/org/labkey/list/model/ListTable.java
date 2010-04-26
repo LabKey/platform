@@ -192,20 +192,6 @@ public class ListTable extends FilteredTable
         return _list.getContainer().hasPermission(user, perm);
     }
 
-    public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form)
-    {
-        Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
-        try
-        {
-            _list.deleteListItems(user, ids);
-        }
-        catch (Exception e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-        return srcURL;
-    }
-
     public String getPublicName()
     {
         return _list.getName();

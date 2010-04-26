@@ -26,6 +26,8 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import static org.labkey.api.util.PageFlowUtil.jsString;
+
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
@@ -78,15 +80,6 @@ public abstract class BaseStudyController extends SpringActionController
         if ("custom".equals(template))
             page.setTemplate(PageConfig.Template.Custom);
         return page;
-    }
-
-    protected static boolean safeEquals(Object a, Object b)
-    {
-        if (a == null && b == null)
-            return true;
-        if (a == null || b == null)
-            return false;
-        return a.equals(b);
     }
 
     protected ModelAndView getTemplate(ViewContext context, final ModelAndView mv, final Controller action, PageConfig page)

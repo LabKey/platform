@@ -15,16 +15,12 @@
  */
 package org.labkey.core.workbook;
 
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -33,10 +29,8 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.core.query.CoreQuerySchema;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.Collection;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -118,23 +112,46 @@ public class WorkbooksTableInfo extends FilteredTable
     @Override
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        return _schema.getContainer().hasPermission(user, perm);
+        if (getUpdateService() != null)
+            return DeletePermission.class.isAssignableFrom(perm) && _schema.getContainer().hasPermission(user, perm);
+        return false;
     }
 
     @Override
-    public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
+    public QueryUpdateService getUpdateService()
     {
-        if (!_schema.getContainer().hasPermission(user, DeletePermission.class))
-            throw new UnauthorizedException("You do not have permissions to delete workbooks!");
+        return new WorkbookUpdateService();
+    }
 
-        Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
-        for (String id : ids)
+    private class WorkbookUpdateService extends AbstractQueryUpdateService
+    {
+        @Override
+        public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            String id = keys.get("ID") == null ? "" : keys.get("ID").toString();
             Container workbook = ContainerManager.getForRowId(id);
             if (null == workbook || !workbook.isWorkbook())
                 throw new NotFoundException("Could not find a workbook with id '" + id + "'");
             ContainerManager.delete(workbook, user);
+            return keys;
         }
-        return _schema.getContainer().getStartURL(form.getViewContext());
     }
 }

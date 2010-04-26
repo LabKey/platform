@@ -22,7 +22,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.study.StudySchema;
@@ -39,7 +38,7 @@ import java.util.Map;
  * Date: Aug 8, 2008
  * Time: 11:24:44 AM
  */
-public class CohortUpdateService implements QueryUpdateService
+public class CohortUpdateService extends AbstractQueryUpdateService
 {
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {

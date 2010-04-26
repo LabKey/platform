@@ -16,12 +16,16 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -31,6 +35,7 @@ import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFa
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
 
@@ -576,5 +581,47 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return false;
         }
         return _experiment == null;
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new RunTableUpdateService();
+    }
+
+    private class RunTableUpdateService extends AbstractQueryUpdateService
+    {
+        @Override
+        public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            Object rowIdRaw = keys.get(Column.RowId.toString());
+            if (rowIdRaw != null)
+            {
+                Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
+                if (rowId != null)
+                {
+                    ExperimentService.get().deleteExperimentRunsByRowIds(_schema.getContainer(), user, rowId.intValue());
+                }
+            }
+            return keys;
+        }
     }
 }

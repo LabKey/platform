@@ -305,7 +305,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     Map<String, String> columnMap = getColumnMap(d, view, def.getColumns());
 
                     // import the new data
-                    String[] newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);
+                    List<String> newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);
 
                     if (!errors.isEmpty())
                         return null;
@@ -315,7 +315,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     ViewContext context = form.getViewContext();
                     StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
-                            "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.length + " rows.", null);
+                            "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
 
                     return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
                             addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());

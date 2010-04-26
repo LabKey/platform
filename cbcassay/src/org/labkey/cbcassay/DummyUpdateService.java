@@ -15,26 +15,15 @@
  */
 package org.labkey.cbcassay;
 
-import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.RunDataTable;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,23 +38,58 @@ public class DummyUpdateService implements QueryUpdateService
     {
     }
 
-    public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException("NYI");
+        throw new UnsupportedOperationException();
     }
 
-    public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException("NYI");
+        throw new UnsupportedOperationException();
     }
 
-    public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException("NYI");
+        throw new UnsupportedOperationException();
     }
 
-    public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        throw new UnsupportedOperationException("NYI");
+        List<Integer> objectIds = new ArrayList<Integer>(keys.size());
+        for (Map<String, Object> key : keys)
+        {
+            Number objectIdValue = (Number)key.get("ObjectId");
+            objectIds.add(objectIdValue.intValue());
+        }
+        try
+        {
+            boolean transaction = false;
+            try
+            {
+                if (!ExperimentService.get().isTransactionActive())
+                {
+                    ExperimentService.get().beginTransaction();
+                    transaction = true;
+                }
+                OntologyManager.deleteOntologyObjects(
+                        objectIds.toArray(new Integer[objectIds.size()]),
+                        container, true);
+                if (transaction)
+                {
+                    ExperimentService.get().commitTransaction();
+                    transaction = false;
+                }
+            }
+            finally
+            {
+                if (transaction)
+                    ExperimentService.get().rollbackTransaction();
+            }
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        return keys;
     }
 }
