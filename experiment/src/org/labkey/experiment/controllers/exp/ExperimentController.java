@@ -353,6 +353,7 @@ public class ExperimentController extends SpringActionController
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
             detailsView.setTitle("Sample Set Properties");
+            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
             if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source))
             {

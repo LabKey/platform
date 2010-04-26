@@ -37,10 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.api.*;
 import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
 
 import java.io.IOException;
@@ -50,6 +47,7 @@ import java.util.*;
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
+    public static final String PROPERTY_PREFIX = "Property_";
 
     UploadMaterialSetForm _form;
 
@@ -123,7 +121,7 @@ public class UploadSamplesHelper
                 {
                     propertyURI = ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI();
                 }
-                else if (isReservedName(cd.name))
+                else if (isReservedName(cd.name) && source != null)
                 {
                     cd.load = false;
                 }
@@ -134,7 +132,16 @@ public class UploadSamplesHelper
                     {
                         pd = domain.addProperty();
                         //todo :  name for domain?
-                        pd.setName(cd.name);
+                        if (cd.name.startsWith(PROPERTY_PREFIX))
+                        {
+                            pd.setName(cd.name);
+                            pd.setLabel(cd.name.substring(PROPERTY_PREFIX.length()));
+                        }
+                        else
+                        {
+                            pd.setName(PROPERTY_PREFIX + cd.name);
+                            pd.setLabel(cd.name);
+                        }
                         String legalName = ColumnInfo.legalNameFromName(cd.name);
                         propertyURI = materialSourceLsid + "#" + legalName;
                         pd.setPropertyURI(propertyURI);

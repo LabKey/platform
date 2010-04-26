@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -27,6 +28,15 @@
     JspView<UploadMaterialSetForm> view = (JspView<UploadMaterialSetForm>) HttpView.currentView();
     UploadMaterialSetForm form = view.getModelBean();
     ExpSampleSet sampleSet = form.getSampleSet();
+%>
+
+<%!
+    public String getLabel(DomainProperty prop)
+    {
+        if (prop.getLabel() != null)
+            return prop.getLabel();
+        return prop.getName();
+    }
 %>
 
 <form onSubmit="return validateKey();" action="showUploadMaterials.view" method="post">
@@ -71,14 +81,14 @@
         <td>
                 <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.hasIdColumns())
                 { %>
-                    <%= h(sampleSet.getIdCol1().getName()) %><%
+                    <%= h(getLabel(sampleSet.getIdCol1())) %><%
                     if (sampleSet.getIdCol2() != null)
                     {
-                        %>, <%= h(sampleSet.getIdCol2().getName()) %><%
+                        %>, <%= h(getLabel(sampleSet.getIdCol2())) %><%
                     }
                     if (sampleSet.getIdCol3() != null)
                     {
-                        %>, <%= h(sampleSet.getIdCol3().getName()) %><%
+                        %>, <%= h(getLabel(sampleSet.getIdCol3())) %><%
                     }
                 }
                 else
@@ -117,7 +127,7 @@
         <td>
             <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.getParentCol() != null)
             { %>
-                <%= h(sampleSet.getParentCol().getName())%>
+                <%= h(getLabel(sampleSet.getParentCol()))%>
             <% }
             else
             { %>
@@ -255,20 +265,20 @@ if (select1)
 }
 else
 {
-    col1Name = '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : sampleSet.getIdCol1().getName())%>';
-    col2Name = '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : sampleSet.getIdCol2().getName())%>';
-    col3Name = '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : sampleSet.getIdCol3().getName())%>';
+    col1Name = '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : getLabel(sampleSet.getIdCol1()))%>';
+    col2Name = '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : getLabel(sampleSet.getIdCol2()))%>';
+    col3Name = '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : getLabel(sampleSet.getIdCol3()))%>';
     for (var col = 0; col < fields[0].length; col++)
     {
-        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : sampleSet.getIdCol1().getName())%>')
+        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : getLabel(sampleSet.getIdCol1()))%>')
         {
             col1 = col;
         }
-        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : sampleSet.getIdCol2().getName())%>')
+        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : getLabel(sampleSet.getIdCol2()))%>')
         {
             col2 = col;
         }
-        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : sampleSet.getIdCol3().getName())%>')
+        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : getLabel(sampleSet.getIdCol3()))%>')
         {
             col3 = col;
         }

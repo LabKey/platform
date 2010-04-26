@@ -16,6 +16,8 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.view.ViewContext;
@@ -45,6 +47,10 @@ public class DefaultCustomPropertyRenderer implements CustomPropertyRenderer
 
     public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
-        return PageFlowUtil.filter(prop.getName());
+        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());
+        String name = prop.getName();
+        if (pd != null)
+            name = pd.getLabel() != null ? pd.getLabel() : pd.getName();
+        return PageFlowUtil.filter(name);
     }
 }

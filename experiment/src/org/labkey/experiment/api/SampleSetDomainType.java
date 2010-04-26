@@ -25,13 +25,14 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -100,6 +101,10 @@ public class SampleSetDomainType extends DomainKind
 
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return Collections.emptySet();
+        ExpMaterialTable.Column[] columns = ExpMaterialTable.Column.values();
+        Set<String> reserved = new HashSet<String>(columns.length);
+        for (ExpMaterialTable.Column column : columns)
+            reserved.add(column.name());
+        return reserved;
     }
 }

@@ -17,9 +17,11 @@
 package org.labkey.experiment.samples;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.view.ViewForm;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -120,6 +122,10 @@ public class UploadMaterialSetForm extends ViewForm
                 tabLoader = new TabLoader(data, true);
                 tabLoader.setThrowOnErrors(true);
                 tabLoader.setScanAheadLineCount(200);
+                ColumnDescriptor cds[] = tabLoader.getColumns();
+                for (ColumnDescriptor cd : cds)
+                    if (!cd.name.startsWith(UploadSamplesHelper.PROPERTY_PREFIX))
+                        cd.name = UploadSamplesHelper.PROPERTY_PREFIX + cd.name;
             }
             catch (IOException ioe)
             {
