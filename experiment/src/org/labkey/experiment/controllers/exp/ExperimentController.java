@@ -451,6 +451,8 @@ public class ExperimentController extends SpringActionController
             uploadForm.setImportMoreSamples(true);
             uploadForm.setParentColumn(-1);
             uploadForm.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
+            uploadForm.setCreateMissingProperties(false);
+            uploadForm.setCreateNewSampleSet(false);
             uploadForm.setLoader(new MapTabLoader(form.getMaterials()));
 
             UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
@@ -474,13 +476,13 @@ public class ExperimentController extends SpringActionController
             return jsonObj.getString("name");
         }
 
-        public List<Map<String,String>> getMaterials()
+        public List<Map<String, Object>> getMaterials()
         {
             JSONArray materials = jsonObj.getJSONArray("materials");
-            List<Map<String,String>> result = new ArrayList<Map<String,String>>();
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
             for (int i=0; i<materials.length(); i++)
             {
-                Map props = materials.getJSONObject(i).getJSONObject("properties");
+                Map<String, Object> props = materials.getJSONObject(i).getJSONObject("properties");
                 result.add(props);
             }
             return result;
@@ -2429,7 +2431,8 @@ public class ExperimentController extends SpringActionController
                     try
                     {
                         UploadSamplesHelper helper = new UploadSamplesHelper(form);
-                        MaterialSource newSource = helper.uploadMaterials();
+                        Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
+                        MaterialSource newSource = pair.first;
 
                         ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
 						ExpSampleSet newSampleSet = ExperimentService.get().getSampleSet(newSource.getRowId());

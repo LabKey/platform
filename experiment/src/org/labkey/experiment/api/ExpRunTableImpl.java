@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpRunTable;
@@ -558,6 +559,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             return result;
         }
+
+        public NamedObjectList getSelectList()
+        {
+            // XXX: NYI
+            return new NamedObjectList();
+        }
+
     }
 
     @Override

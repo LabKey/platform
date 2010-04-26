@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.samples;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.beanutils.ConversionException;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -28,12 +29,13 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
@@ -87,14 +89,18 @@ public class UploadSamplesHelper
         return _form.getContainer();
     }
 
-    public MaterialSource uploadMaterials() throws ExperimentException, ValidationException, IOException
+    public Pair<MaterialSource, List<ExpMaterial>> uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
         MaterialSource source;
+        List<ExpMaterial> materials = Collections.emptyList();
         try
         {
             DataLoader loader = _form.getLoader();
             String materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
             source = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
+            if (source == null && !_form.isCreateNewSampleSet())
+                throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
+            
             ExperimentService.get().getSchema().getScope().beginTransaction();
 
             ColumnDescriptor[] columns = loader.getColumns();
@@ -102,6 +108,8 @@ public class UploadSamplesHelper
             Domain domain = PropertyService.get().getDomain(getContainer(), materialSourceLsid);
             if (domain == null)
             {
+                if (!_form.isCreateNewSampleSet())
+                    throw new ExperimentException("Can't create new domain for Sample Set '" + _form.getName() + "'");
                 domain = PropertyService.get().createDomain(getContainer(), materialSourceLsid, _form.getName());
             }
             Map<String, DomainProperty> descriptorsByName = domain.createImportMap(true);
@@ -109,21 +117,38 @@ public class UploadSamplesHelper
             boolean addedProperty = false;
             for (ColumnDescriptor cd : columns)
             {
-                DomainProperty pd = descriptorsByName.get(cd.name);
-                if (pd == null || source == null)
+                String propertyURI = null;
+
+                if (isCommentName(cd.name))
                 {
-                    pd = domain.addProperty();
-                    //todo :  name for domain?
-                    pd.setName(cd.name);
-                    String legalName = ColumnInfo.legalNameFromName(cd.name);
-                    String propertyURI = materialSourceLsid + "#" + legalName;
-                    pd.setPropertyURI(propertyURI);
-                    pd.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
-                    //Change name to be fully qualified string for property
-                    descriptorsByName.put(pd.getName(), pd);
-                    addedProperty = true;
+                    propertyURI = ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI();
                 }
-                cd.name = pd.getPropertyURI();
+                else if (isReservedName(cd.name))
+                {
+                    cd.load = false;
+                }
+                else
+                {
+                    DomainProperty pd = descriptorsByName.get(cd.name);
+                    if ((_form.isCreateMissingProperties() && pd == null) || source == null)
+                    {
+                        pd = domain.addProperty();
+                        //todo :  name for domain?
+                        pd.setName(cd.name);
+                        String legalName = ColumnInfo.legalNameFromName(cd.name);
+                        propertyURI = materialSourceLsid + "#" + legalName;
+                        pd.setPropertyURI(propertyURI);
+                        pd.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
+                        //Change name to be fully qualified string for property
+                        descriptorsByName.put(pd.getName(), pd);
+                        addedProperty = true;
+                    }
+                    if (pd != null)
+                        propertyURI = pd.getPropertyURI();
+                }
+
+                if (propertyURI != null)
+                    cd.name = propertyURI;
             }
 
             if (addedProperty)
@@ -137,6 +162,7 @@ public class UploadSamplesHelper
             {
                 descriptors.add(property.getPropertyDescriptor());
             }
+            descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
 
             List<String> idColPropertyURIs;
             if (source != null && source.getIdCol1() != null)
@@ -212,6 +238,7 @@ public class UploadSamplesHelper
             Set<String> reusedMaterialLSIDs = new HashSet<String>();
             if (source == null)
             {
+                assert _form.isCreateNewSampleSet();
                 source = new MaterialSource();
                 String setName = PageFlowUtil.encode(_form.getName());
                 source.setContainer(_form.getContainer());
@@ -262,9 +289,6 @@ public class UploadSamplesHelper
                 }
                 else if (_form.getOverwriteChoiceEnum() == OverwriteChoice.replace)
                 {
-                    // 8309 : preserve comment property on existing materials
-                    descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
-
                     ListIterator<Map<String, Object>> li = maps.listIterator();
                     while (li.hasNext())
                     {
@@ -278,11 +302,13 @@ public class UploadSamplesHelper
                                 throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
                             }
 
-                            String comment = material.getComment();
-                            if (comment != null)
+                            // 8309 : preserve comment property on existing materials
+                            String oldComment = material.getComment();
+                            String newComment = (String)map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
+                            if (StringUtils.isEmpty(newComment) && oldComment != null)
                             {
                                 Map<String, Object> newMap = new HashMap<String, Object>(map);
-                                newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), comment);
+                                newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
                                 li.set(newMap);
                             }
 
@@ -292,7 +318,7 @@ public class UploadSamplesHelper
                     }
                 }
             }
-            insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), source, reusedMaterialLSIDs);
+            materials = insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), source, reusedMaterialLSIDs);
             _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
             ExperimentService.get().getSchema().getScope().commitTransaction();
         }
@@ -308,7 +334,28 @@ public class UploadSamplesHelper
         {
             ExperimentService.get().getSchema().getScope().closeConnection();
         }
-        return source;
+
+        return new Pair<MaterialSource, List<ExpMaterial>>(source, materials);
+    }
+
+    private boolean isCommentName(String name)
+    {
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
+    }
+
+    private boolean isReservedName(String name)
+    {
+        if ("CpasType".equalsIgnoreCase(name))
+            return true;
+        try
+        {
+            ExpMaterialTable.Column c = ExpMaterialTable.Column.valueOf(name);
+            return true;
+        }
+        catch (IllegalArgumentException _)
+        {
+            return false;
+        }
     }
 
     private List<String> getIdColPropertyURIs(MaterialSource source)
@@ -360,11 +407,11 @@ public class UploadSamplesHelper
         return ret.toString();
     }
 
-    public void insertTabDelimitedMaterial(List<Map<String, Object>> rows, PropertyDescriptor[] descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs)
+    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, PropertyDescriptor[] descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs)
             throws SQLException, ValidationException, ExperimentException
     {
         if (rows.size() == 0)
-            return;
+            return Collections.emptyList();
 
         Container c = getContainer();
 
@@ -437,6 +484,8 @@ public class UploadSamplesHelper
                 }
             }
         }
+
+        return helper._materials;
     }
 
     private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
@@ -509,7 +558,7 @@ public class UploadSamplesHelper
         private User _user;
         private MaterialSource _source;
         private final Set<String> _reusedMaterialLSIDs;
-        private List<ExpMaterialImpl> _materials = new ArrayList<ExpMaterialImpl>();
+        private List<ExpMaterial> _materials = new ArrayList<ExpMaterial>();
 
         MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
         {

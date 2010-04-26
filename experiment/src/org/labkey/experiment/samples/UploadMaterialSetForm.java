@@ -33,6 +33,8 @@ public class UploadMaterialSetForm extends ViewForm
     private String name;
     private boolean importMoreSamples;
     private boolean nameReadOnly;
+    private boolean createMissingProperties = true;
+    private boolean createNewSampleSet = true;
     private String data;
     private int idColumn1;
     private int idColumn2;
@@ -76,6 +78,26 @@ public class UploadMaterialSetForm extends ViewForm
     public boolean getNameReadOnly()
     {
         return nameReadOnly;
+    }
+
+    public boolean isCreateMissingProperties()
+    {
+        return createMissingProperties;
+    }
+
+    public void setCreateMissingProperties(boolean createMissingProperties)
+    {
+        this.createMissingProperties = createMissingProperties;
+    }
+
+    public boolean isCreateNewSampleSet()
+    {
+        return createNewSampleSet;
+    }
+
+    public void setCreateNewSampleSet(boolean createNewSampleSet)
+    {
+        this.createNewSampleSet = createNewSampleSet;
     }
 
     public void setData(String data)

@@ -16,23 +16,19 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.*;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.*;
 import java.sql.Types;
 
 public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
@@ -49,9 +45,13 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     protected ColumnInfo resolveColumn(String name)
     {
         ColumnInfo result = super.resolveColumn(name);
-        if (result == null && "CpasType".equalsIgnoreCase(name))
+        if (result == null)
         {
-            return createColumn("SampleSet", Column.SampleSet);
+            if ("CpasType".equalsIgnoreCase(name))
+                return createColumn("SampleSet", Column.SampleSet);
+
+            if ("Property".equalsIgnoreCase(name))
+                return createPropertyColumn("Property");
         }
         return result;
     }
@@ -65,7 +65,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
-                return wrapColumn(alias, _rootTable.getColumn("Name"));
+            {
+                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Name"));
+                columnInfo.setReadOnly(true);
+                columnInfo.setShownInInsertView(false);
+                return columnInfo;
+            }
             case SampleSet:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
@@ -93,12 +98,16 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), Types.VARCHAR);//, getColumn("SourceProtocolApplication"));
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
                 columnInfo.setDescription("Contains a reference to the protocol for the protocol application that created this sample");
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
                 return columnInfo;
             }
             case SourceProtocolApplication:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
                 columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
                 return columnInfo;
             }
             case Run:
@@ -108,20 +117,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setHidden(true);
+                ret.setShownInInsertView(false);
                 return ret;
             }
             case Property:
-                ColumnInfo ret = createPropertyColumn(alias);
-                if (_ss != null)
-                {
-                    Domain domain = _ss.getType();
-                    if (domain != null)
-                    {
-                        ret.setFk(new PropertyForeignKey(domain, _schema));
-                    }
-                }
-                ret.setDescription("A holder for any custom fields associated with this sample");
-                return ret;
+                return createPropertyColumn(alias);
             case Flag:
                 return createFlagColumn(alias);
             case Created:
@@ -135,6 +135,23 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
+    }
+
+    public ColumnInfo createPropertyColumn(String alias)
+    {
+        ColumnInfo ret = super.createPropertyColumn(alias);
+        ExpSampleSet ss = _ss != null ? _ss :
+            ExperimentService.get().lookupActiveSampleSet(getContainer());
+        if (ss != null)
+        {
+            Domain domain = ss.getType();
+            if (domain != null)
+            {
+                ret.setFk(new PropertyForeignKey(domain, _schema));
+            }
+        }
+        ret.setDescription("A holder for any custom fields associated with this sample");
+        return ret;
     }
 
     public void setSampleSet(ExpSampleSet ss, boolean filter)
@@ -193,14 +210,19 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
         }
 
-        addColumn(ExpMaterialTable.Column.RowId).setHidden(true);
+        addColumn(ExpMaterialTable.Column.RowId);
+        
         ColumnInfo appCol = addColumn(Column.SourceProtocolApplication);
         appCol.setHidden(true);
         ColumnInfo sourceProtocolCol = addColumn(Column.SourceProtocolLSID);
         sourceProtocolCol.setHidden(true);
         sourceProtocolCol.setLabel("Source Protocol");
+
         addColumn(ExpMaterialTable.Column.Name);
+
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
+        if (ss != null)
+            typeColumnInfo.setDefaultValue(ss.getLSID()); // used by generic input form
         typeColumnInfo.setFk(new LookupForeignKey("lsid")
         {
             public TableInfo getLookupTableInfo()
@@ -214,10 +236,18 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return super.getURL(parent, true);
             }
         });
+        typeColumnInfo.setReadOnly(true);
+
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
         addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setHidden(true);
+        colLSID.setReadOnly(true);
+        colLSID.setUserEditable(false);
+        colLSID.setShownInInsertView(false);
+        colLSID.setShownInDetailsView(false);
+        colLSID.setShownInUpdateView(false);
+
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
         addColumn(ExpMaterialTable.Column.Modified);
@@ -255,12 +285,14 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
     private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)
     {
-        addColumn(Column.Property);
+        ColumnInfo lsidColumn = getColumn(Column.LSID);
         visibleColumns.remove(FieldKey.fromParts("Run"));
-        FieldKey keyProp = new FieldKey(null, "Property");
-        for (DomainProperty pd : ss.getPropertiesForType())
+        for (DomainProperty dp : ss.getPropertiesForType())
         {
-            visibleColumns.add(new FieldKey(keyProp, pd.getName()));
+            PropertyDescriptor pd = dp.getPropertyDescriptor();
+            ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
+            addColumn(propColumn);
+            visibleColumns.add(FieldKey.fromParts(pd.getName()));
         }
         setDefaultVisibleColumns(visibleColumns);
     }
@@ -273,4 +305,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
         return super.getPublicSchemaName();
     }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new ExpMaterialTableUpdateService(this);
+    }
+
 }

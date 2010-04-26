@@ -136,6 +136,8 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
             }
         });
         ret.setDescription("Contains a reference to a user-editable comment about this row");
+        ret.setNullable(true);
+        ret.setInputType("text");
         return ret;
     }
 
@@ -162,7 +164,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     {
         if (_editHelper != null)
             return _editHelper.hasPermission(user, perm);
-        return false;
+        return _schema.getContainer().hasPermission(user, perm);
     }
 
     public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
