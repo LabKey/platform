@@ -131,20 +131,20 @@
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionSiteDefault" value="siteDefault"
                             <%="siteDefault".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
                                    onclick="updatePipelineSelection();">
-                            Use a default based on the site-level root</td>
+                            <label for="pipeOptionSiteDefault">Use a default based on the site-level root</label></td>
                         <td><input type="text" id="pipeRootPath" size="50" disabled="true" value="<%=h(projectDefaultRoot)%>"></td>
                     </tr>
                     <tr>
                         <td><input type="radio" name="pipelineRootOption" id="pipeOptionProjectSpecified" value="projectSpecified"
                             <%="projectSpecified".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
                                    onclick="updatePipelineSelection();">
-                            <%=h(folderRadioBtnLabel)%></td>
+                            <label for="pipeOptionProjectSpecified"><%=h(folderRadioBtnLabel)%></label></td>
                         <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getStrValue())%>"></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable" <%=bean.isSearchable() ? " checked" : ""%>>
-                            Allow these files to be searched.
+                            <label for="pipeOptionIndexable">Allow these files to be searched.</label>
                         </td>
                     </tr>
                 </table>
