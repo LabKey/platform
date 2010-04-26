@@ -717,11 +717,6 @@ public class SchemaTableInfo implements TableInfo
         return null;
     }
 
-    public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         return false;

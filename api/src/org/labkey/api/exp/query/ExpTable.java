@@ -48,8 +48,6 @@ abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
 
     public void setDetailsURL(DetailsURL detailsURL);
 
-    public void setEditHelper(TableEditHelper helper);
-
     /** Add the standard set of columns to the table */
     public void populate();
 

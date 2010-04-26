@@ -34,7 +34,7 @@ import java.sql.SQLException;
  * a strongly-typed int value for the <code>get()</code> and
  * <code>delete()</code> methods.
  */
-public abstract class RowIdQueryUpdateService<T> extends AbstractQueryUpdateService<T,java.lang.Integer>
+public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdateService<T, Integer>
 {
     private String _keyColumn;
     private IntegerConverter _converter = new IntegerConverter();

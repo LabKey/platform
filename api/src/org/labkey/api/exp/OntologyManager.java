@@ -96,12 +96,12 @@ public class OntologyManager
     public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
     public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
-    public static String[] insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
+    public static List<String> insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
         return insertTabDelimited(c, user, ownerObjectId, helper, descriptors, rows, ensureObjects, null);
     }
 
-    public static String[] insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
+    public static List<String> insertTabDelimited(Container c, User user, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects, Logger logger) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -110,8 +110,7 @@ public class OntologyManager
 
 		assert total.start();
 		assert getExpSchema().getScope().isTransactionActive();
-		String[] resultingLsids = new String[rows.size()];
-        int resultingLsidsIndex = 0;
+		List<String> resultingLsids = new ArrayList<String>(rows.size());
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
 
@@ -150,7 +149,7 @@ public class OntologyManager
 
 				assert before.start();
 				String lsid = helper.beforeImportObject(map);
-				resultingLsids[resultingLsidsIndex++] = lsid;
+				resultingLsids.add(lsid);
 				assert before.stop();
 
 				assert ensure.start();

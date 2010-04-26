@@ -16,7 +16,6 @@
 package org.labkey.api.query;
 
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Table;
@@ -36,7 +35,7 @@ import java.sql.SQLException;
 * Date: Jun 18, 2008
 * Time: 11:17:16 AM
 */
-public class DefaultQueryUpdateService implements QueryUpdateService
+public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 {
     private TableInfo _queryTable = null;
     private TableInfo _dbTable = null;

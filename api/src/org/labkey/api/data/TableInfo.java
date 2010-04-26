@@ -104,8 +104,8 @@ public interface TableInfo
      * Return the default query grid view URL for the table or null.
      * Instead of calling this method directly, callers should pass
      * {@link QueryAction#executeQuery} to
-     * {@link QueryView#urlFor(QueryAction)} or
-     * {@link UserSchema#urlFor(QueryAction, Container)}.
+     * {@link org.labkey.api.query.QueryView#urlFor(QueryAction)} or
+     * {@link org.labkey.api.query.UserSchema#urlFor(org.labkey.api.query.QueryAction)}.
      */
     ActionURL getGridURL(Container container);
 
@@ -115,8 +115,8 @@ public interface TableInfo
      * a default insert view will be provided.
      * Instead of calling this method directly, callers should pass
      * {@link QueryAction#insertQueryRow} to
-     * {@link QueryView#urlFor(QueryAction)} or
-     * {@link UserSchema#urlFor(QueryAction, Container)}.
+     * {@link org.labkey.api.query.QueryView#urlFor(QueryAction)} or
+     * {@link org.labkey.api.query.UserSchema#urlFor(org.labkey.api.query.QueryAction)}.
      */
     ActionURL getInsertURL(Container container);
 
@@ -126,8 +126,8 @@ public interface TableInfo
      * a default update view will be provided.
      * Instead of calling this method directly, callers should pass
      * {@link QueryAction#updateQueryRow} to
-     * {@link QueryView#urlExpr(QueryAction)} or
-     * {@link UserSchema#urlExpr(QueryAction, Container)}.
+     * {@link org.labkey.api.query.QueryView#urlFor(QueryAction)} or
+     * {@link org.labkey.api.query.UserSchema#urlFor(org.labkey.api.query.QueryAction)}.
      */
     StringExpression getUpdateURL(Set<FieldKey> columns, Container container);
 
@@ -141,8 +141,6 @@ public interface TableInfo
     StringExpression getDetailsURL(Set<FieldKey> columns, Container container);
 
     boolean hasPermission(User user, Class<? extends Permission> perm);
-
-    ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception;
 
     /**
      * Return the method of a given name.  Methods are accessible via the QueryModule's query

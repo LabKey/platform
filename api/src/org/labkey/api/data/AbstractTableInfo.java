@@ -390,11 +390,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
-    public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         return false;

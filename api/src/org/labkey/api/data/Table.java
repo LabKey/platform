@@ -1525,6 +1525,7 @@ public class Table
             columns.addAll(cols);
             if (pk != null)
                 _pkColumnNames = pk;
+            setTableType(TABLE_TYPE_TABLE);
         }
 
 

@@ -1,190 +1,91 @@
-/*
- * Copyright (c) 2008 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.labkey.api.query;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.view.NotFoundException;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-/*
- * User: Dave
- * Date: Jun 9, 2008
- * Time: 5:16:09 PM
- */
 
 /**
- * Helpful base class for implementations of QueryUpdateSerivce. This class allows
- * the derived class to work with strongly-typed beans rather than
- * the maps used in the QueryUpdateService interface.
- * <p>
- * This class is a generic with two type parameters: T and K. T is the main
- * bean type (e.g., "Visit", "ListItem"). K is the primary key type, which may
- * be a simple type like Integer, or a more complex object in the case of
- * compound primary keys.
- * </p><p>
- * This class uses BeanUtils to convert between the maps in the
- * QueryUpdateService interface to beans of type T, and keys of
- * type K.</p>
+ * User: jeckels
+ * Date: Apr 23, 2010
  */
-public abstract class AbstractQueryUpdateService<T,K> implements QueryUpdateService
+public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
-    /**
-     * Converts a bean to a map (or in Britt's elloquent parlance, 'map-ificates a T')
-     * <p>
-     * Override this method to perform your own conversion from bean to map.
-     * @param bean The bean
-     * @return A map of the bean's properties
-     * @throws QueryUpdateServiceException Thrown if there were problems converting
-     */
-    @SuppressWarnings("unchecked")
-    protected Map<String,Object> mapFromBean(T bean) throws QueryUpdateServiceException
-    {
-        if(null == bean)
-            return null;
+    public abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
-        Map<String,Object> map;
-        try
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        for (Map<String, Object> rowKeys : keys)
         {
-            map = (Map<String,Object>)BeanUtils.describe(bean);
+            Map<String, Object> row = getRow(user, container, rowKeys);
+            if (row != null)
+            {
+                result.add(row);
+            }
         }
-        catch(Exception e)
+        return result;
+    }
+
+    public abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
+            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
+        for (Map<String, Object> row : rows)
         {
-            throw new QueryUpdateServiceException(e);
+            Map<String, Object> updatedRow = insertRow(user, container, row);
+            if (updatedRow != null)
+            {
+                result.add(updatedRow);
+            }
         }
-
-        return map;
+        return result;
     }
 
-    /**
-     * Populates a newly-created bean from a map of property values.
-     * When combined with <code>createNewBean()</code> this
-     * accomplishes Britt's timeless phrase: 'T-ificates a map'.
-     * <p>
-     * Override this to perform your own population.
-     * @param bean The newly-created bean
-     * @param row The row values as a map
-     * @param user The user initiating the request
-     * @throws QueryUpdateServiceException Thrown if there's a problem
-     */
-    protected void populateBean(T bean, Map<String, Object> row, User user) throws QueryUpdateServiceException
+    public abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        try
+        if (oldKeys != null && rows.size() != oldKeys.size())
         {
-            BeanUtils.populate(bean, row);
+            throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
         }
-        catch(Exception e)
+
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
+        for (int i = 0; i < rows.size(); i++)
         {
-            throw new QueryUpdateServiceException(e);
+            Map<String, Object> updatedRow = updateRow(user, container, rows.get(i), oldKeys == null ? null : oldKeys.get(i));
+            if (updatedRow != null)
+            {
+                result.add(updatedRow);
+            }
         }
+        return result;
     }
 
-    public final Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    public abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException;
+    
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        T bean = get(user, container, keyFromMap(keys));
-        return null == bean ? null : mapFromBean(bean);
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
+        for (Map<String, Object> key : keys)
+        {
+            Map<String, Object> updatedRow = deleteRow(user, container, key);
+            if (updatedRow != null)
+            {
+                result.add(updatedRow);
+            }
+        }
+        return result;
     }
-
-    public final Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
-    {
-        T bean = createNewBean();
-        populateBean(bean, row, user);
-        return mapFromBean(insert(user, container, bean));
-    }
-
-    public final Map<String, Object> updateRow(User user, Container container, Map<String, Object> row,
-                                         Map<String,Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
-    {
-        K oldKey = null != oldKeys ? keyFromMap(oldKeys) : keyFromMap(row);
-        T bean = get(user, container, oldKey);
-        if(null == bean)
-            throw new NotFoundException("The object you are trying to update was not found in the database."); //CONSIDER: maybe we should return null for 0 rows affected instead?
-        populateBean(bean, row, user);
-        return mapFromBean(update(user, container, bean, oldKey));
-    }
-
-    public final Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
-    {
-        delete(user, container, keyFromMap(keys));
-        return keys;
-    }
-
-    /**
-     * Used to create a new instance of the bean type (T).
-     * Override this and return a new instance of your bean.
-     * @return A new instance of the bean.
-     */
-    protected abstract T createNewBean();  //CONSIDER: should this be public instead of protected?
-
-    /**
-     * Returns a key given the map of primary key values. May not return null.
-     * @param map A map of primary key values. For serial row ids, the map will contain only one entry.
-     * @return The primary key.
-     * @throws InvalidKeyException Thrown if the required key values in the map are missing or invalid.
-     */
-    public abstract K keyFromMap(Map<String,Object> map) throws InvalidKeyException;
-
-    /**
-     * Returns an instance of the main bean type corresponding to the provided key.
-     * If nothing was found for the given key, return null.
-     * @param user The current user.
-     * @param container The container in which the data should exist.
-     * @param key The primary key.
-     * @return The bean instance corresponding to the provided key.
-     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws SQLException Thrown if there is a problem communicating with the database.
-     */
-    public abstract T get(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
-
-    /**
-     * Inserts a new bean into the database.
-     * @param user The current user.
-     * @param container The container in which this data should exist.
-     * @param bean The populated bean. This cannot be null.
-     * @return The bean after insert. If the bean has a database-assigned key, they key value(s) should
-     * be set on the bean. Callers will refetch the bean if trigger-assigned values are needed.
-     * @throws ValidationException Thrown if the bean is invalid.
-     * @throws DuplicateKeyException Thrown if the key is already used in the database.
-     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws SQLException Thrown if there was a problem communicating with the database.
-     */
-    public abstract T insert(User user, Container container, T bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException;
-
-    /**
-     * Updates a bean in the database.
-     * @param user The current user.
-     * @param container The container in which this bean should exist.
-     * @param bean The bean. This cannot be null.
-     * @param oldKey If the keys are user-assignable, this will be the old key value. If not, this will be null.
-     * @return The bean after update. Callers will refetch the bean if trigger-assigned values are needed.
-     * @throws ValidationException Thrown if the bean is invalid.
-     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws SQLException Thrown if there is a problem communicating with the database.
-     */
-    public abstract T update(User user, Container container, T bean, K oldKey) throws ValidationException, QueryUpdateServiceException, SQLException;
-
-    /**
-     * Deletes a bean in the database.
-     * @param user The current user.
-     * @param container The contain in which the bean should exist.
-     * @param key The key for the bean.
-     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
-     * @throws SQLException Thrown if there is a problem communicating with the database.
-     */
-    public abstract void delete(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
 }
