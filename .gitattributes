@@ -302,6 +302,9 @@ api/src/org/labkey/api/exp/xar/LsidUtils.java -text
 api/src/org/labkey/api/exp/xar/MapReplacer.java -text
 api/src/org/labkey/api/exp/xar/Replacer.java -text
 api/src/org/labkey/api/exp/xar/XarConstants.java -text
+api/src/org/labkey/api/files/FileContentDefaultEmailPref.java -text
+api/src/org/labkey/api/files/FileContentEmailPref.java -text
+api/src/org/labkey/api/files/FileContentEmailPrefFilter.java -text
 api/src/org/labkey/api/files/FileContentService.java -text
 api/src/org/labkey/api/files/FileUrls.java -text
 api/src/org/labkey/api/files/FilesAdminOptions.java -text
@@ -367,6 +370,10 @@ api/src/org/labkey/api/ms1/MS1Urls.java -text
 api/src/org/labkey/api/ms2/MS2Service.java -text
 api/src/org/labkey/api/ms2/MS2Urls.java -text
 api/src/org/labkey/api/ms2/SearchClient.java -text
+api/src/org/labkey/api/notification/EmailMessage.java -text
+api/src/org/labkey/api/notification/EmailPref.java -text
+api/src/org/labkey/api/notification/EmailPrefFilter.java -text
+api/src/org/labkey/api/notification/EmailService.java -text
 api/src/org/labkey/api/pipeline/AbstractGlobusSettings.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactory.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactorySettings.java -text
@@ -2431,9 +2438,12 @@ internal/src/org/labkey/api/view/StatsView.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
 internal/src/org/labkey/api/webdav/ActionResource.java -text
+internal/src/org/labkey/api/webdav/FileSystemAuditViewFactory.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
+internal/src/org/labkey/api/webdav/view/fileEmailNotify.jsp -text
+internal/src/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp -text
 internal/webapp/ColumnTree.css -text
 internal/webapp/ColumnTree.js -text
 internal/webapp/DataRegion.js -text
@@ -2518,6 +2528,7 @@ internal/webapp/_images/download.png -text
 internal/webapp/_images/download_manager.png -text
 internal/webapp/_images/editprops.png -text
 internal/webapp/_images/elipsis.gif -text
+internal/webapp/_images/email.png -text
 internal/webapp/_images/exclaim.gif -text
 internal/webapp/_images/expand_folders.gif -text svneol=unset#unset
 internal/webapp/_images/favicon.ico -text

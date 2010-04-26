@@ -15,16 +15,16 @@
  */
 package org.labkey.api.webdav;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -35,22 +35,28 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.files.FileContentEmailPref;
+import org.labkey.api.files.FileContentEmailPrefFilter;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.notification.EmailMessage;
+import org.labkey.api.notification.EmailService;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -575,5 +581,81 @@ public class FileSystemResource extends AbstractWebdavResource
                 _customProperties = Collections.emptyMap();
         }
         return _customProperties;
+    }
+
+    @Override
+    public void notify(ViewContext context, String message)
+    {
+        String dir;
+        String name;
+        File f = getFile();
+        if (f != null)
+        {
+            dir = f.getParent();
+            name = f.getName();
+        }
+        else
+        {
+            Resource parent = parent();
+            dir = parent == null ? "" : parent.getPath().toString();
+            name = getName();
+        }
+        AuditLogService.get().addEvent(context, FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
+        sendNotificationEmail(context, message);
+    }
+
+    private void sendNotificationEmail(ViewContext context, String message)
+    {
+        try {
+            EmailService.I svc = EmailService.get();
+            User[] users = svc.getUsersWithEmailPref(getContainer(), new FileContentEmailPrefFilter(FileContentEmailPref.INDIVIDUAL));
+
+            if (users != null && users.length > 0)
+            {
+                FileEmailForm form = new FileEmailForm(this, message);
+                List<String> recipients = new ArrayList<String>();
+                for (User user : users)
+                {
+                    recipients.add(user.getEmail());
+                }
+
+                EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(),
+                        recipients.toArray(new String[recipients.size()]), "File Management Tool notification");
+
+                msg.addContent(EmailMessage.contentType.HTML, context,
+                        new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));
+                msg.addContent(EmailMessage.contentType.PLAIN, context,
+                        new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp", form));
+
+                svc.sendMessage(msg);
+             }
+       }
+        catch (Exception e)
+        {
+            // Don't fail the request because of this error
+            _log.warn("Unable to send email for the file notification: " + e.getMessage());
+        }
+    }
+
+    public static class FileEmailForm
+    {
+        private String _action;
+        private WebdavResource _resource;
+
+        public FileEmailForm(WebdavResource resource, String action)
+        {
+            _resource = resource;
+            _action = action;
+        }
+
+        public String getAction()
+        {
+            return _action;
+        }
+
+        public WebdavResource getResource()
+        {
+            return _resource;
+        }
     }
 }

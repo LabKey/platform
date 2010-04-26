@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2010 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.notification;
+
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
+
+import javax.mail.MessagingException;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: Apr 21, 2010
+ * Time: 12:04:33 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class EmailService
+{
+    public static final String EMAIL_PREF_CATEGORY = "EmailService.emailPrefs";
+
+    static public synchronized I get()
+    {
+        return ServiceRegistry.get().getService(EmailService.I.class);
+    }
+
+    public interface I
+    {
+        EmailMessage createMessage(String from, String[] to, String subject);
+        EmailMessage createMessage(String from, String[] to, String subject, String message);
+
+        void sendMessage(EmailMessage msg) throws MessagingException;
+        void sendMessage(EmailMessage[] msgs);
+
+        /**
+         * Returns the email configuration for the user/container combination as described by
+         * the EmailPref object.
+         */
+        String getEmailPref(User user, Container container, EmailPref pref);
+
+        /**
+         * Returns the email configuration for the user/container combination, a separate EmailPref
+         * object can be passed in to describe a configurable default preference for the container.
+         */
+        String getEmailPref(User user, Container container, EmailPref pref, EmailPref defaultPref);
+
+        void setEmailPref(User user, Container container, EmailPref pref, String value);
+
+        String getDefaultEmailPref(Container container, EmailPref pref);
+        void setDefaultEmailPref(Container container, EmailPref pref, String value);
+
+        /**
+         * Returns the array of users that match the criteria in the EmailPrefFilter. The
+         * filter handles creating the initial list of users to be considered as well as
+         * whether a users preference setting matches the filter criteria.
+         */
+        User[] getUsersWithEmailPref(Container container, EmailPrefFilter filter);
+    }
+}

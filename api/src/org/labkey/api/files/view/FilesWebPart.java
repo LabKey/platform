@@ -177,6 +177,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 actions.add(FilesForm.actions.importData);
             }
         }
+        // users can manage their email notification settings
+        if (!context.getUser().isGuest())
+            actions.add(FilesForm.actions.emailPreferences);
+
         if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
             actions.add(FilesForm.actions.customize);
 
@@ -356,6 +360,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             customize,
             folderTreeToggle,
             editFileProps,
+            emailPreferences,
         }
 
         public boolean isAutoResize()

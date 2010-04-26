@@ -19,6 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -397,6 +398,10 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public Map<String, String> getCustomProperties(User user)
     {
         return Collections.emptyMap();
+    }
+
+    public void notify(ViewContext context, String message)
+    {
     }
 
     protected void setProperty(String key, String value)

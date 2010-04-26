@@ -361,11 +361,5 @@ public class FilesAdminOptions
         {
             return o1.getPosition() - o2.getPosition();
         }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            return this.equals(obj);
-        }
     }
 }

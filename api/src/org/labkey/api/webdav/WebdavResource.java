@@ -146,4 +146,6 @@ public interface WebdavResource extends Resource
      * @return
      */
     Map<String, String> getCustomProperties(User user);
+
+    void notify(ViewContext context, String message);
 }
