@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.StringExpression;
 
 /**
@@ -45,6 +46,9 @@ public interface ForeignKey
      * constructed knowing only the foreign key value, as other columns may not be available in the ResultSet.
      */
     StringExpression getURL(ColumnInfo parent);
+
+    /** Convenience for getLookupTableInfo.getSelectList(getLookupColumnName()) */
+    NamedObjectList getSelectList();
 
     /**
      * @return The container id of the foreign user schema table.  Null means current container.

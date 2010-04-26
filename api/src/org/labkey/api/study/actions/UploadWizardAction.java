@@ -490,7 +490,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             out.write("</td>");
         }
 
-        public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException, SQLException
+        public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
         {
             super.renderDetailsData(ctx, out, 1);
         }

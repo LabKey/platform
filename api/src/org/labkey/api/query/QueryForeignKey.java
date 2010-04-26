@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
@@ -107,4 +108,15 @@ public class QueryForeignKey implements ForeignKey
     {
         return _lookupKey;
     }
+
+    public NamedObjectList getSelectList()
+    {
+        NamedObjectList ret = new NamedObjectList();
+        TableInfo lookupTable = getLookupTableInfo();
+        if (lookupTable == null)
+            return ret;
+
+        return lookupTable.getSelectList(getLookupColumnName());
+    }
+
 }

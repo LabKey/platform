@@ -92,6 +92,19 @@ public class InsertView extends DataView
             form = new TableViewForm(getTable());
         }
 
+        if (null == _initialValues)
+        {
+            Map<String, Object> initialValues = new HashMap<String, Object>();
+            for (ColumnInfo col : getTable().getColumns())
+            {
+                Object defaultValue = col.getDefaultValue();
+                if (defaultValue != null)
+                    initialValues.put(col.getName(), defaultValue);
+            }
+            if (!initialValues.isEmpty())
+                _initialValues = initialValues;
+        }
+
         if (null != _initialValues)
             form.setTypedValues(_initialValues, false);
 

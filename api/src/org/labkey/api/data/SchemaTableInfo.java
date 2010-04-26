@@ -234,21 +234,41 @@ public class SchemaTableInfo implements TableInfo
         _tableType = tableType;
     }
 
+    public NamedObjectList getSelectList(String columnName)
+    {
+        if (columnName == null)
+            return getSelectList();
+        
+        ColumnInfo column = getColumn(columnName);
+        if (column == null /*|| column.isKeyField()*/)
+            return new NamedObjectList();
+
+        return getSelectList(Collections.<String>singletonList(column.getName()));
+    }
+
+
     public NamedObjectList getSelectList()
     {
-        NamedObjectList list = (NamedObjectList) DbCache.get(this, "selectArray");
+        return getSelectList(getPkColumnNames());
+    }
+
+    private NamedObjectList getSelectList(List<String> columnNames)
+    {
+        StringBuffer pkColumnSelect = new StringBuffer();
+        String sep = "";
+        for (String columnName : columnNames)
+        {
+            pkColumnSelect.append(sep);
+            pkColumnSelect.append(columnName);
+            sep = "+','+";
+        }
+
+        String cacheKey = "selectArray:" + pkColumnSelect;
+        NamedObjectList list = (NamedObjectList) DbCache.get(this, cacheKey);
         if (null != list)
             return list;
 
         String titleColumn = getTitleColumn();
-        StringBuffer pkColumnSelect = new StringBuffer();
-        String sep = "";
-        for (String pkColumnName : getPkColumnNames())
-        {
-            pkColumnSelect.append(sep);
-            pkColumnSelect.append(pkColumnName);
-            sep = "+','+";
-        }
 
         ResultSet rs = null;
         list = new NamedObjectList();
@@ -282,7 +302,7 @@ public class SchemaTableInfo implements TableInfo
                 }
         }
 
-        DbCache.put(this, "selectArray", list);
+        DbCache.put(this, cacheKey, list);
         return list;
     }
 

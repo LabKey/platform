@@ -722,7 +722,7 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException, SQLException
+    public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
     {
         if (null == _caption)
             out.write("<td colspan=" + (span + 1) + ">");
@@ -772,7 +772,44 @@ public abstract class DisplayColumn extends RenderColumn
 
     public String getFormFieldName(RenderContext ctx)
     {
-        return ctx.getForm().getFormFieldName(getColumnInfo());
+        if (ctx.getForm() != null && getColumnInfo() != null)
+            return ctx.getForm().getFormFieldName(getColumnInfo());
+        return getName();
+    }
+
+    protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
+    {
+        out.write(" name='");
+        out.write(getInputPrefix());
+        out.write(formFieldName);
+        out.write("'");
+
+        String setFocusId = (String)ctx.get("setFocusId");
+        if (null != setFocusId)
+        {
+            out.write(" id='" + setFocusId + "'");
+            ctx.remove("setFocusId");
+        }
+    }
+
+    public void renderHiddenFormInput(RenderContext ctx, Writer out) throws IOException
+    {
+        renderHiddenFormInput(ctx, out, getFormFieldName(ctx), getInputValue(ctx));
+    }
+
+    protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
+    {
+        out.write("<input type=hidden");
+        outputName(ctx, out, formFieldName);
+        out.write(" value=\"");
+        if (null != value)
+        {
+            // it's important to use ConvertUtils here, since 'value' might be a string (if populated via
+            // an initial values map), or it might be an array containing a single string (if populated via
+            // request.getParameterMap() during an error reshow).  ConvertUtils normalizes these values.
+            out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
+        }
+        out.write("\">");
     }
 
     public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException

@@ -152,16 +152,32 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public NamedObjectList getSelectList()
     {
-        NamedObjectList ret = new NamedObjectList();
         List<ColumnInfo> pkColumns = getPkColumns();
         if (pkColumns.size() != 1)
+            return new NamedObjectList();
+
+        return getSelectList(pkColumns.get(0));
+    }
+
+    public NamedObjectList getSelectList(String columnName)
+    {
+        if (columnName == null)
+            return getSelectList();
+        
+        ColumnInfo column = getColumn(columnName);
+        return getSelectList(column);
+    }
+
+    public NamedObjectList getSelectList(ColumnInfo firstColumn)
+    {
+        NamedObjectList ret = new NamedObjectList();
+        if (firstColumn == null)
             return ret;
         ColumnInfo titleColumn = getColumn(getTitleColumn());
         if (titleColumn == null)
             return ret;
         try
         {
-            ColumnInfo firstColumn = pkColumns.get(0);
             List<ColumnInfo> cols;
             int titleIndex;
             if (firstColumn == titleColumn)

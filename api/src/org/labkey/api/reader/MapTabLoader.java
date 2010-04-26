@@ -31,9 +31,9 @@ import java.util.*;
 public class MapTabLoader extends DataLoader<Map<String, Object>>
 {
     String[] headers;
-    String[][] data;
+    Object[][] data;
 
-    public MapTabLoader(List<Map<String, String>> rows) throws IOException
+    public MapTabLoader(List<Map<String, Object>> rows) throws IOException
     {
         convertToArrays(rows);
         _skipLines = rows.size() > 0 ? 1 : 0;
@@ -43,9 +43,9 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
     // The UploadSamplesHelper changes the ColumnDescriptor.name to
     // propertyURIs after inferring the columns but before calling load()
     // causing the map.get(column.name) on each row to fail.
-    private void convertToArrays(List<Map<String, String>> rows)
+    private void convertToArrays(List<Map<String, Object>> rows)
     {
-        List<String[]> lineFields = new ArrayList<String[]>(rows.size());
+        List<Object[]> lineFields = new ArrayList<Object[]>(rows.size());
 
         if (rows.size() > 0)
         {
@@ -53,29 +53,38 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
             headers = keys.toArray(new String[keys.size()]);
             lineFields.add(headers);
 
-            for (Map<String, String> row : rows)
+            for (Map<String, Object> row : rows)
             {
                 if (!(row instanceof CaseInsensitiveMapWrapper))
-                    row = new CaseInsensitiveMapWrapper<String>(row);
+                    row = new CaseInsensitiveMapWrapper<Object>(row);
 
-                ArrayList<String> values = new ArrayList<String>(headers.length);
+                ArrayList<Object> values = new ArrayList<Object>(headers.length);
                 for (String header : headers)
                 {
-                    String value = row.get(header);
+                    Object value = row.get(header);
                     values.add(value);
                 }
-                lineFields.add(values.toArray(new String[values.size()]));
+                lineFields.add(values.toArray(new Object[values.size()]));
             }
         }
 
-        data = lineFields.toArray(new String[rows.size()][]);
+        data = lineFields.toArray(new Object[rows.size()][]);
     }
 
     @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
-        String[][] first = Arrays.copyOf(data, Math.min(n, data.length), String[][].class);
-        return first;
+        n = Math.min(n, data.length);
+        String[][] firstLines = new String[n][];
+        for (int i = 0; i < n; i++)
+        {
+            Object[] row = data[i];
+            String[] line = new String[row.length];
+            for (int j = 0; j < row.length; j++)
+                line[j] = String.valueOf(row[j]);
+            firstLines[i] = line;
+        }
+        return firstLines;
     }
 
     @Override
@@ -105,7 +114,7 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
         }
 
         @Override
-        protected String[] readFields()
+        protected Object[] readFields()
         {
             if (lineNum() < data.length)
                 return data[lineNum()];
@@ -137,22 +146,22 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
 
         public void testLoad() throws Exception
         {
-            Map<String, String> row1 = new LinkedHashMap<String, String>();
+            Map<String, Object> row1 = new LinkedHashMap<String, Object>();
             row1.put("name", "bob");
             row1.put("date", "1/2/2006");
             row1.put("number", "1.1");
 
-            Map<String, String> row2 = new HashMap<String, String>();
+            Map<String, Object> row2 = new HashMap<String, Object>();
             row2.put("name", "jim");
             row2.put("date", "");
             row2.put("number", "");
 
-            Map<String, String> row3 = new CaseInsensitiveHashMap<String>();
+            Map<String, Object> row3 = new CaseInsensitiveHashMap<Object>();
             row3.put("Name", "sally");
             row3.put("Date", "2-Jan-06");
-            row3.put("Number", "1.2");
+            row3.put("Number", 1.2); // NOTE: not a String!
 
-            List<Map<String, String>> rows = Arrays.asList(row1, row2, row3);
+            List<Map<String, Object>> rows = Arrays.asList(row1, row2, row3);
             MapTabLoader loader = new MapTabLoader(rows);
 
             ColumnDescriptor[] cd = loader.getColumns();
@@ -164,6 +173,7 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
             assertEquals("bob", data.get(0).get("name"));
             assertEquals(new GregorianCalendar(2006, 0, 2).getTime(), data.get(0).get("date"));
             assertEquals(1.1, data.get(0).get("number"));
+            assertEquals(1.2, data.get(2).get("number"));
         }
     }
 }

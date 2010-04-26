@@ -1655,14 +1655,17 @@ public class DataRegion extends DisplayElement
             out.write(error);
     }
 
-    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws SQLException, IOException
+    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
     {
         int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size());
         renderInputError(ctx, out, span, renderer);
         out.write("  <tr>\n    ");
         renderer.renderDetailsCaptionCell(ctx, out);
         if (!renderer.isEditable())
+        {
             renderer.renderDetailsData(ctx, out, span);
+            renderer.renderHiddenFormInput(ctx, out);
+        }
         else
             renderer.renderInputCell(ctx, out, span);
         out.write("  </tr>\n");
@@ -1699,7 +1702,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private boolean renderExtForm(RenderContext ctx, Writer out) throws SQLException, IOException
+    private boolean renderExtForm(RenderContext ctx, Writer out) throws IOException
     {
         int action = ctx.getMode();
         Map valueMap = ctx.getRow();
@@ -1943,7 +1946,7 @@ public class DataRegion extends DisplayElement
     }
 
     
-    private void renderForm(RenderContext ctx, Writer out) throws SQLException, IOException
+    private void renderForm(RenderContext ctx, Writer out) throws IOException
     {
         if (false)
         {

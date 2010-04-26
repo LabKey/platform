@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.collections.NamedObjectList;
+
 import java.util.List;
 
 /**
@@ -116,4 +118,15 @@ public abstract class AbstractForeignKey implements ForeignKey
             }
         }
     }
+
+    public NamedObjectList getSelectList()
+    {
+        NamedObjectList ret = new NamedObjectList();
+        TableInfo lookupTable = getLookupTableInfo();
+        if (lookupTable == null)
+            return ret;
+
+        return lookupTable.getSelectList(getLookupColumnName());
+    }
+
 }

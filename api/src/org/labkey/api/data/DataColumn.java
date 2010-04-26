@@ -343,21 +343,6 @@ public class DataColumn extends DisplayColumn
         return formatted;
     }
 
-    private void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
-    {
-        out.write("<input type=hidden");
-        outputName(ctx, out, formFieldName);
-        out.write(" value=\"");
-        if (null != value)
-        {
-            // it's important to use ConvertUtils here, since 'value' might be a string (if populated via
-            // an initial values map), or it might be an array containing a single string (if populated via
-            // request.getParameterMap() during an error reshow).  ConvertUtils normalizes these values. 
-            out.write(PageFlowUtil.filter(ConvertUtils.convert(value)));
-        }
-        out.write("\">");
-    }
-
     protected boolean isDisabledInput()
     {
         return _boundColumn.getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE ||
@@ -403,7 +388,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.equalsIgnoreCase("select"))
         {
-            NamedObjectList entryList = _boundColumn.getFkTableInfo().getSelectList();
+            NamedObjectList entryList = _boundColumn.getFk().getSelectList();
             NamedObject[] entries = entryList.toArray();
             String valueStr = ConvertUtils.convert(value);
 
@@ -513,21 +498,6 @@ public class DataColumn extends DisplayColumn
     protected String getAutoCompleteURLPrefix()
     {
         return null;
-    }
-
-    protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
-    {
-        out.write(" name='");
-        out.write(getInputPrefix());
-        out.write(formFieldName);
-        out.write("'");
-
-        String setFocusId = (String)ctx.get("setFocusId");
-        if (null != setFocusId)
-        {
-            out.write(" id='" + setFocusId + "'");
-            ctx.remove("setFocusId");
-        }
     }
 
     /**

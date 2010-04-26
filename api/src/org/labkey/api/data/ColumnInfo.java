@@ -20,9 +20,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
@@ -552,7 +552,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             }
             if (lookupTable == null)
             {
-                if (isStringType() && scale > 255)
+                if (isStringType() && scale > 300) // lsidtype is 255 characters
                     inputType = "textarea";
                 else if ("image".equalsIgnoreCase(getSqlDataTypeName()))
                     inputType = "file";
@@ -1042,6 +1042,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         public String getLookupSchemaName()
         {
             return _dbSchemaName;
+        }
+
+        public NamedObjectList getSelectList()
+        {
+            NamedObjectList ret = new NamedObjectList();
+            TableInfo lookupTable = getLookupTableInfo();
+            if (lookupTable == null)
+                return ret;
+
+            return lookupTable.getSelectList(getLookupColumnName());
         }
     }
 
