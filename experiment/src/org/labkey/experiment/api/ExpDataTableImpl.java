@@ -100,7 +100,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             {
                 for (DomainProperty prop : domain.getProperties())
                 {
-                    ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer().getId(), _schema.getUser());
+                    // don't set container on property column so that inherited domain properties work
+                    ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, null, /*getContainer().getId(),*/ _schema.getUser());
                     addColumn(projectColumn);
                 }
             }

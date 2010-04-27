@@ -625,7 +625,7 @@ public class PipelineController extends SpringActionController
 
         switch (config) {
             case useCustom:
-                String uri = svc.getDomainURI(container, FileContentService.TYPE_PROPERTIES);
+                String uri = svc.getDomainURI(container, FileContentService.TYPE_PROPERTIES, config);
                 DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
 
                 if (dd != null)

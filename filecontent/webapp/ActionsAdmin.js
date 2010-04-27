@@ -423,16 +423,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             text: 'Edit Properties...',
             disabled: this.fileConfig != 'useCustom',
             listeners:{click:function(button, event){
-/*
-                Ext.Ajax.request({
-                    autoAbort:true,
-                    url:this.actionsURL,
-                    method:'GET',
-                    disableCaching:false,
-                    success : this.editFileProperties,
-                    scope: this
-                });
-*/
                 this.onEditFileProperties(button, event);
             }, scope:this}
         });

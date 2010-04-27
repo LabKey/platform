@@ -833,7 +833,9 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (!this.adminOptions.isCustomFileProperties())
             return;
 
-        var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields, files: options.files});
+        var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields,
+            files: options.files,
+            containerPath: this.adminOptions.getFilePropContainerPath()});
 
         fileDlg.on('success', function(c){this.refreshDirectory();}, this, {single:true});
         //fileDlg.on('failure', function(){Ext.Msg.alert("Update Action Config", "Update Failed")});

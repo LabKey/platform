@@ -18,9 +18,10 @@
  */
 LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
 
-    fileFields : [],    // array of extra field information to collect/display for each file uploaded
-    files : [],         // array of file information for each file being transferred
+    fileFields : [],            // array of extra field information to collect/display for each file uploaded
+    files : [],                 // array of file information for each file being transferred
     fileIndex : 0,
+    containerPath : undefined,  // the effective container custom file properties originate from (may be a parent if inherited)
 
     constructor : function(config)
     {
@@ -58,6 +59,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             queryName:'Datas',
             maxRows: 0,
             scope: this,
+            containerPath: this.containerPath,
             requiredVersion: '9.1',
             columns: columns.join(','),
             successCallback: this.createFormPanel
@@ -76,7 +78,11 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         {
             var field = data.metaData.fields[i];
             if (field.name != 'RowId')
+            {
+                if (field.lookup)
+                    field.lookup.container = this.containerPath; 
                 fields.push(field);
+            }
         }
 
         var cm = [];

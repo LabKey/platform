@@ -216,7 +216,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     actionConfig : {},              // map of actionId to PipelineActionConfig instances
     fileFields : [],                // array of extra field information to collect/display for each file uploaded
     filePropConfig : 'useDefault',
-    inheritedFileConfig : 'useDefault',
+    inheritedFileConfig : {},//'useDefault',
     tbarBtnConfig : [],             // array of toolbar btn configuration
 
     constructor : function(config)
@@ -297,9 +297,13 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     isCustomFileProperties : function() {
         if (this.filePropConfig == 'useCustom')
             return true;
-        else if (this.filePropConfig == 'useParent' && this.inheritedFileConfig == 'useCustom')
+        else if (this.filePropConfig == 'useParent' && this.inheritedFileConfig.fileConfig == 'useCustom')
             return true;
         return false;
+    },
+
+    getFilePropContainerPath : function() {
+        return this.inheritedFileConfig.containerPath;    
     },
 
     setTbarBtnConfig : function(config) {
