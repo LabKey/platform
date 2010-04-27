@@ -689,7 +689,7 @@ public class ModuleLoader implements Filter
                 }
 
                 //call the module resource loaders
-                for(ModuleResourceLoader resLoader : _resourceLoaders)
+                for (ModuleResourceLoader resLoader : _resourceLoaders)
                 {
                     try
                     {
