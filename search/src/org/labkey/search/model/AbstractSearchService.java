@@ -27,11 +27,13 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.search.SearchModule;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
@@ -50,7 +52,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 12, 2009
  * Time: 12:58:21 PM
@@ -91,10 +92,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         addSearchCategory(fileCategory);
         addSearchCategory(navigationCategory);
-        synchronized (_runningLock)
-        {
-            startThreads();
-        }
     }
     
 
@@ -522,7 +519,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     boolean _threadsInitialized = false;
     volatile boolean _shuttingDown = false;
     boolean _paused = true;
-    String _path = (new File(FileUtil.getTempDirectory(), "labkey_full_text_index").getPath());
     ArrayList<Thread> _threads = new ArrayList<Thread>(10);
 
     
@@ -530,10 +526,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         synchronized (_runningLock)
         {
-            _paused = false;
-            startThreads();
-            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath(), null);
-            _runningLock.notifyAll();
+            Map<String, String> m = PropertyManager.getProperties(SearchModule.class.getName());
+            boolean running = !AppProps.getInstance().isDevMode();
+            if (m.containsKey(SearchModule.searchRunningState))
+                running = "true".equals(m.get(SearchModule.searchRunningState));
+
+            if (running)
+            {
+                _paused = false;
+                startThreads();
+                DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath(), null);
+                _runningLock.notifyAll();
+            }
         }
     }
 
@@ -549,15 +553,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     @Override
-    public void setIndexPath(String path)
+    public void updatePrimaryIndex()
     {
-        _path = path;   // TODO: DO SOMETHING
+        // Consider: move property setting out of controller and into here for consistency.
+        // Subclasses should switch out the index at this point.
     }
 
     @Override
-    public String getIndexPath()
+    public File getPrimaryIndexDirectory()
     {
-        return _path;
+        Map<String, String> props = PropertyManager.getProperties(SearchModule.class.getName());
+        String path = props.get(SearchModule.primaryIndexPath);
+
+        // Use path if set, otherwise fall back to temp directory.
+        return (null != path ? new File(path) : new File(FileUtil.getTempDirectory(), "labkey_full_text_index"));
     }
 
     public boolean isRunning()

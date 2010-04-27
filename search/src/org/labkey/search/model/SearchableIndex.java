@@ -33,7 +33,7 @@ abstract class SearchableIndex
 
     // A read-only Lucene index.  This class guarantees a single IndexSearcher is used across multiple threads; when
     // that searcher is closed, the directory is no longer in use.  Subclasses can behave differently -- they may
-    // had out different instances of IndexSearcher, e.g., to accommodate writes, commits and optimization.
+    // hand out different instances of IndexSearcher, e.g., to accommodate writes, commits and optimization.
     public SearchableIndex(File indexPath, Analyzer analyzer) throws IOException
     {
         openDirectory(indexPath);

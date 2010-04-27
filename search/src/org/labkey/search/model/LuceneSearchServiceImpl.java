@@ -38,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -65,18 +66,22 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     static final Version LUCENE_VERSION = Version.LUCENE_30;
 
     private final Analyzer _analyzer = ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
-    private final WritableIndex _index;
+
+    // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
+    // all threads immediately.
+    private volatile WritableIndex _index;
+
     private static ExternalIndex _externalIndex;
 
     static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
         url, container, resourceId, uniqueId, navtrail }
 
-    public LuceneSearchServiceImpl()
+
+    private void initializeIndex()
     {
         try
         {
-            File indexDir = new File(FileUtil.getTempDirectory(), "labkey_full_text_index");
-            _index = new WritableIndex(indexDir, _analyzer);
+            _index = new WritableIndex(getPrimaryIndexDirectory(), _analyzer);
         }
         catch (IOException e)
         {
@@ -85,16 +90,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    public void setIndexPath(File indexPath)
+    @Override
+    public void updatePrimaryIndex()
     {
+        super.updatePrimaryIndex();
+        initializeIndex();
+        clearLastIndexed();
     }
-
 
     @Override
     public void start()
     {
         try
         {
+            initializeIndex();
             resetExternalIndex();
         }
         catch (Exception e)

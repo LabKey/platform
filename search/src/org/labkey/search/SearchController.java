@@ -76,7 +76,7 @@ public class SearchController extends SpringActionController
         private boolean pause;
         private boolean start;
         private boolean delete;
-        private String mainIndexPath;
+        private String primaryIndexPath;
 
         private String externalIndexPath = null;
         private String externalIndexDescription = null;
@@ -158,14 +158,14 @@ public class SearchController extends SpringActionController
             this.pause = pause;
         }
 
-        public String getMainIndexPath()
+        public String getPrimaryIndexPath()
         {
-            return mainIndexPath;
+            return primaryIndexPath;
         }
 
-        public void setMainIndexPath(String mainIndexPath)
+        public void setPrimaryIndexPath(String primaryIndexPath)
         {
-            this.mainIndexPath = mainIndexPath;
+            this.primaryIndexPath = primaryIndexPath;
         }
 
         public boolean isPath()
@@ -215,16 +215,19 @@ public class SearchController extends SpringActionController
             }
 
             Map<String, String> m = PropertyManager.getWritableProperties(SearchModule.class.getName(), true);
+
             if (form.isStart())
             {
                 ss.start();
                 m.put(SearchModule.searchRunningState, "true");
+                PropertyManager.saveProperties(m);
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
                 ss.pause();
                 m.put(SearchModule.searchRunningState, "false");
+                PropertyManager.saveProperties(m);
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Paused");
             }
             else if (form.isDelete())
@@ -235,12 +238,13 @@ public class SearchController extends SpringActionController
             }
             else if (form.isPath())
             {
-                ss.setIndexPath(form.getMainIndexPath());
-                m.put(SearchModule.searchIndexPath, form.getMainIndexPath());
+                m.put(SearchModule.primaryIndexPath, form.getPrimaryIndexPath());
+                PropertyManager.saveProperties(m);
+                ss.updatePrimaryIndex();
                 _msgid = 2;
                 audit(getViewContext().getUser(), null, "(admin action)", "Index Path Set");
             }
-            PropertyManager.saveProperties(m);
+
             return true;
         }
         
@@ -254,6 +258,7 @@ public class SearchController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic(new HelpTopic("searchAdmin"));
             PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", null);
             return root;
         }

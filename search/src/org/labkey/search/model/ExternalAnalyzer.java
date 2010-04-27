@@ -26,17 +26,17 @@ import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
  */
 public enum ExternalAnalyzer
 {
-    SnowballAnalyzer {
-        @Override
-        Analyzer getAnalyzer()
-        {
-            return new SnowballAnalyzer(LuceneSearchServiceImpl.LUCENE_VERSION, "English");
-        }},
     KeywordAnalyzer {
         @Override
         Analyzer getAnalyzer()
         {
             return new KeywordAnalyzer();
+        }},
+    SnowballAnalyzer {
+        @Override
+        Analyzer getAnalyzer()
+        {
+            return new SnowballAnalyzer(LuceneSearchServiceImpl.LUCENE_VERSION, "English");
         }};
 
     abstract Analyzer getAnalyzer();

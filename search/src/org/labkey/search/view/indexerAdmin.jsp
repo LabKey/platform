@@ -15,18 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.search.SearchController" %>
-<%@ page import="org.labkey.search.model.AbstractSearchService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.search.model.DavCrawler" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.search.SearchController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -38,7 +34,7 @@ SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 %><labkey:errors /><%
     if (!StringUtils.isEmpty(form.getMessage()))
     { %>
-        <p><table><tr><td><span style="color:green;"><%=form.getMessage()%></span></td></tr></table></p><%
+        <table><tr><td><span style="color:green;"><br><%=form.getMessage()%><br></span></td></tr></table><%
     }
 
 if (null == ss)
@@ -50,10 +46,12 @@ else
     %><p><form method="POST" action="admin.view">
         <table>
             <tr>
-                <td>Path to main index:</td>
-                <td><input name="mainIndexPath" size="80" value="<%=h(ss.getIndexPath())%>"></td>
+                <td>Path to primary full-text search index:</td>
+                <td><input name="primaryIndexPath" size="80" value="<%=h(ss.getPrimaryIndexDirectory().getPath())%>"></td>
             </tr>
-            <tr><td colspan="2" width="500"><input type="hidden" name="path" value="1"><%=generateSubmitButton("Set Path")%></td></tr>
+            <tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
+            <tr><td><input type="hidden" name="path" value="1"></td></tr>
+            <tr><td colspan="2" width="500"><%=generateSubmitButton("Set Path")%></td></tr>
         </table>
     </form></p>
 
@@ -90,7 +88,7 @@ else
     %>
     <p><form method="POST" action="admin.view">
         <table>
-            <tr><td>Deleting the search index isn't usually necessary.  Note that re-indexing can be very expensive.</td></tr>
+            <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
             <tr><td><%=PageFlowUtil.generateSubmitButton("Delete Index")%></td></tr>
         </table>

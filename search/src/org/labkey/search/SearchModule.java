@@ -28,7 +28,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
@@ -53,9 +52,9 @@ import java.util.*;
 public class SearchModule extends DefaultModule
 {
     public final static String searchRunningState = "runningState";
-    public final static String searchIndexPath = "indexPath";
+    public final static String primaryIndexPath = "primaryIndexPath";
 
-    
+
     public String getName()
     {
         return "Search";
@@ -120,22 +119,16 @@ public class SearchModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-        Map<String, String> m = PropertyManager.getProperties(SearchModule.class.getName());
-        boolean running = !AppProps.getInstance().isDevMode();
-        if (m.containsKey(searchRunningState))
-            running = "true".equals(m.get(searchRunningState));
 
         if (null != ss)
         {
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             // don't start the crawler until all the modules are done startuping
-            final boolean start = running;
             ContextListener.addStartupListener(new StartupListener(){
                 public void moduleStartupComplete(ServletContext servletContext)
                 {
-                    if (start)
-                        ss.start();
+                    ss.start();
                     DavCrawler.getInstance().start();
                 }
             });

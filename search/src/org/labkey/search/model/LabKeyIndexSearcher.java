@@ -15,6 +15,8 @@
  */
 package org.labkey.search.model;
 
+import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 
@@ -33,7 +35,23 @@ class LabKeyIndexSearcher extends IndexSearcher
 
     LabKeyIndexSearcher(Directory directory) throws IOException
     {
-        super(directory, true);
+        super(ensureIndexCreated(directory));
+    }
+
+    // IndexSearcher() will throw if the directory is empty or non-existent... opening an IndexWriter first ensures
+    // that the directory is ready.
+    private static Directory ensureIndexCreated(Directory directory)
+    {
+        try
+        {
+            IndexWriter iw = new IndexWriter(directory, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+            iw.close();
+            return directory;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Couldn't open an IndexWriter on " + directory, e);
+        }
     }
 
     synchronized void increment()

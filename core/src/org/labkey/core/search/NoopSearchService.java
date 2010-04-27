@@ -29,6 +29,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.data.Container;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.ResultSet;
@@ -281,12 +282,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void setIndexPath(String path)
+    public void updatePrimaryIndex()
     {
     }
 
     @Override
-    public String getIndexPath()
+    public File getPrimaryIndexDirectory()
     {
         return null;
     }
