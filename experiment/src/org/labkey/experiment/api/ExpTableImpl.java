@@ -158,7 +158,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     {
         if (getUpdateService() != null)
             return DeletePermission.class.isAssignableFrom(perm) && _schema.getContainer().hasPermission(user, perm);
-        return _schema.getContainer().hasPermission(user, perm);
+        return false;
     }
 
     public ColumnInfo addPropertyColumns(String categoryDescription, PropertyDescriptor[] pds, QuerySchema schema)

@@ -24,6 +24,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.query.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -312,4 +314,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         return new ExpMaterialTableUpdateService(this);
     }
 
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    {
+        return _schema.getContainer().hasPermission(user, perm);
+    }
 }
