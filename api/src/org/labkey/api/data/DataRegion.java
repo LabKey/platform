@@ -1662,10 +1662,7 @@ public class DataRegion extends DisplayElement
         out.write("  <tr>\n    ");
         renderer.renderDetailsCaptionCell(ctx, out);
         if (!renderer.isEditable())
-        {
             renderer.renderDetailsData(ctx, out, span);
-            renderer.renderHiddenFormInput(ctx, out);
-        }
         else
             renderer.renderInputCell(ctx, out, span);
         out.write("  </tr>\n");
