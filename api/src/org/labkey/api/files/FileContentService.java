@@ -119,5 +119,7 @@ public interface FileContentService
 
     public String getDomainURI(Container c, String type);
 
+    public String getDomainURI(Container c, String type, FilesAdminOptions.fileConfig config);
+
     public ExpData getDataObject(WebdavResource resource, Container c);
 }

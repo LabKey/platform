@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.services.ServiceRegistry;
@@ -194,20 +195,43 @@ public class FilesAdminOptions
             _tbarConfig.put(o.getId(), o);
     }
 
-    public fileConfig getInheritedFileConfig()
+    public JSONObject getInheritedFileConfig()
     {
+        JSONObject o = new JSONObject();
+
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         Container container = getContainer();
-        while (container != container.getProject())
-        {
-            container = container.getParent();
-            FilesAdminOptions options = svc.getAdminOptions(container);
+        FilesAdminOptions options = svc.getAdminOptions(container);
 
-            if (options.getFileConfig() != FilesAdminOptions.fileConfig.useParent)
-                return options.getFileConfig();
+        if (options.getFileConfig() == FilesAdminOptions.fileConfig.useParent)
+        {
+            while (container != container.getProject())
+            {
+                container = container.getParent();
+                options = svc.getAdminOptions(container);
+
+                if (options.getFileConfig() != FilesAdminOptions.fileConfig.useParent)
+                {
+                    o.put(configProps.fileConfig.name(), options.getFileConfig().name());
+                    o.put("containerPath", container.getPath());
+
+                    return o;
+                }
+            }
+            FilesAdminOptions.fileConfig cfg = svc.getAdminOptions(container).getFileConfig();
+            if (cfg != FilesAdminOptions.fileConfig.useParent)
+                o.put(configProps.fileConfig.name(), cfg.name());
+            else
+                o.put(configProps.fileConfig.name(), FilesAdminOptions.fileConfig.useDefault.name());
+
+            o.put("containerPath", container.getPath());
         }
-        FilesAdminOptions.fileConfig cfg = svc.getAdminOptions(container).getFileConfig();
-        return cfg != FilesAdminOptions.fileConfig.useParent ? cfg : FilesAdminOptions.fileConfig.useDefault;
+        else
+        {
+            o.put(configProps.fileConfig.name(), options.getFileConfig().name());
+            o.put("containerPath", container.getPath());
+        }
+        return o;
     }
 
     public String serialize()
@@ -339,7 +363,7 @@ public class FilesAdminOptions
         }
         props.put(configProps.importDataEnabled.name(), isImportDataEnabled());
         props.put(configProps.fileConfig.name(), _fileConfig.name());
-        props.put(configProps.inheritedFileConfig.name(), getInheritedFileConfig().name());
+        props.put(configProps.inheritedFileConfig.name(), getInheritedFileConfig());
 
         if (!_tbarConfig.isEmpty())
         {
