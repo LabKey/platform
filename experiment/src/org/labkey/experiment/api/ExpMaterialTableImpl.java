@@ -223,8 +223,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addColumn(ExpMaterialTable.Column.Name);
 
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
-        if (ss != null)
-            typeColumnInfo.setDefaultValue(ss.getLSID()); // used by generic input form
         typeColumnInfo.setFk(new LookupForeignKey("lsid")
         {
             public TableInfo getLookupTableInfo()
@@ -311,7 +309,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new ExpMaterialTableUpdateService(this);
+        if (_ss != null)
+            return new ExpMaterialTableUpdateService(this, _ss);
+        return null;
     }
 
     public boolean hasPermission(User user, Class<? extends Permission> perm)

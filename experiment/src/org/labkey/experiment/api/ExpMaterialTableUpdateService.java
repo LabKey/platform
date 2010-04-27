@@ -7,6 +7,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.*;
 import org.labkey.api.reader.MapTabLoader;
@@ -17,6 +18,7 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,13 +26,18 @@ import java.util.Map;
 /**
  * User: kevink
  */
-class ExpMaterialTableUpdateService extends AbstractQueryUpdateService
+class ExpMaterialTableUpdateService implements QueryUpdateService
 {
     private ExpMaterialTableImpl _table;
+    private ExpSampleSet _ss;
 
-    public ExpMaterialTableUpdateService(ExpMaterialTableImpl table)
+    public ExpMaterialTableUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
     {
+        if (ss == null)
+            throw new IllegalArgumentException("Can't insert or update without a Sample Set.");
+
         _table = table;
+        _ss = ss;
     }
 
     private String getMaterialLsid(Map<String, Object> row)
@@ -54,32 +61,13 @@ class ExpMaterialTableUpdateService extends AbstractQueryUpdateService
         return null;
     }
 
-    private String getSampleSetLsid(Map<String, Object> row)
+    private List<ExpMaterial> insertOrUpdate(User user, Container container, List<Map<String, Object>> rows)
+            throws QueryUpdateServiceException, ValidationException
     {
-        Object o = row.get(ExpMaterialTable.Column.SampleSet.name());
-        if (o instanceof String)
-            return (String)o;
-
-        o = row.get("CpasType");
-        if (o instanceof String)
-            return (String)o;
-
-        return null;
-    }
-
-    private List<ExpMaterial> insertOrUpdate(User user, Container container, String sampleSetLsid, Map<String, Object> row) throws QueryUpdateServiceException, ValidationException
-    {
-        if (sampleSetLsid == null)
-            throw new QueryUpdateServiceException("Can't insert or update without a Sample Set LSID.");
-
-        MaterialSource source = ExperimentServiceImpl.get().getMaterialSource(sampleSetLsid);
-        if (source == null)
-            throw new QueryUpdateServiceException("Can't find Sample Set for lsid '" + sampleSetLsid + "'");
-
         UploadMaterialSetForm form = new UploadMaterialSetForm();
         form.setContainer(container);
         form.setUser(user);
-        form.setName(source.getName());
+        form.setName(_ss.getName());
         form.setImportMoreSamples(true);
         form.setParentColumn(-1);
         form.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
@@ -88,7 +76,7 @@ class ExpMaterialTableUpdateService extends AbstractQueryUpdateService
 
         try
         {
-            form.setLoader(new MapTabLoader(Collections.<Map<String, Object>>singletonList(row)));
+            form.setLoader(new MapTabLoader(rows));
 
             UploadSamplesHelper helper = new UploadSamplesHelper(form);
             Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
@@ -104,7 +92,8 @@ class ExpMaterialTableUpdateService extends AbstractQueryUpdateService
         }
     }
 
-    private Map<String, Object> getMaterialMap(Integer rowId, String lsid) throws QueryUpdateServiceException, SQLException
+    private Map<String, Object> getMaterialMap(Integer rowId, String lsid)
+            throws QueryUpdateServiceException, SQLException
     {
         Filter filter;
         if (rowId != null)
@@ -118,43 +107,66 @@ class ExpMaterialTableUpdateService extends AbstractQueryUpdateService
         return Table.selectObject(_table, Table.ALL_COLUMNS, filter, null, Map.class);
     }
 
-    public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys));
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
+        for (Map<String, Object> k : keys)
+        {
+            result.add(getMaterialMap(getMaterialRowId(k), getMaterialLsid(k)));
+        }
+        return result;
     }
 
-    public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows)
+            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        List<ExpMaterial> materials = insertOrUpdate(user, container, getSampleSetLsid(row), row);
-        if (materials.size() > 0)
-            return getMaterialMap(materials.get(0).getRowId(), materials.get(0).getLSID());
-
-        return null;
+        List<ExpMaterial> materials = insertOrUpdate(user, container, rows);
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
+        for (ExpMaterial material : materials)
+        {
+            result.add(getMaterialMap(material.getRowId(), material.getLSID()));
+        }
+        return result;
     }
 
-    public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    @Override
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        List<ExpMaterial> materials = insertOrUpdate(user, container, getSampleSetLsid(oldKeys), row);
-        if (materials.size() > 0)
-            return getMaterialMap(materials.get(0).getRowId(), materials.get(0).getLSID());
-
-        return null;
+        List<ExpMaterial> materials = insertOrUpdate(user, container, rows);
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
+        for (ExpMaterial material : materials)
+        {
+            result.add(getMaterialMap(material.getRowId(), material.getLSID()));
+        }
+        return result;
     }
 
-    public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        Integer rowId = getMaterialRowId(keys);
+        int[] ids = new int[keys.size()];
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
+        for (Map<String, Object> k : keys)
+        {
+            Integer rowId = getMaterialRowId(k);
+            Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
+            if (map == null)
+                throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
 
-        Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(keys));
-        if (map == null)
-            throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
+            if (rowId == null)
+                rowId = getMaterialRowId(map);
+            if (rowId == null)
+                throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
 
-        if (rowId == null)
-            rowId = getMaterialRowId(map);
-        if (rowId == null)
-            throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
+            result.add(map);
+        }
 
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(container, rowId.intValue());
-        return map;
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(container, ids);
+        return result;
     }
+
 }
