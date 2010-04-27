@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -47,7 +48,7 @@ else
         <table>
             <tr>
                 <td>Path to primary full-text search index:</td>
-                <td><input name="primaryIndexPath" size="80" value="<%=h(ss.getPrimaryIndexDirectory().getPath())%>"></td>
+                <td><input name="primaryIndexPath" size="80" value="<%=h(SearchPropertyManager.getPrimaryIndexDirectory().getPath())%>"></td>
             </tr>
             <tr><td colspan="2">Note: Changing the primary index path requires re-indexing all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="path" value="1"></td></tr>

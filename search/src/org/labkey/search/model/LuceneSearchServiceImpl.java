@@ -38,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -81,7 +80,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            _index = new WritableIndex(getPrimaryIndexDirectory(), _analyzer);
+            File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
+            _index = new WritableIndex(indexDir, _analyzer);
         }
         catch (IOException e)
         {
@@ -123,12 +123,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _externalIndex = null;
         }
 
-        ExternalIndexProperties props = ExternalIndexManager.get();
+        ExternalIndexProperties props = SearchPropertyManager.getExternalIndexProperties();
 
-        if (props.hasProperties())
+        if (props.hasExternalIndex())
         {
             File externalIndexFile = new File(props.getExternalIndexPath());
-            Analyzer analyzer = ExternalAnalyzer.valueOf(props.getAnalyzer()).getAnalyzer();
+            Analyzer analyzer = ExternalAnalyzer.valueOf(props.getExternalIndexAnalyzer()).getAnalyzer();
 
             if (externalIndexFile.exists())
                 _externalIndex = new ExternalIndex(externalIndexFile, analyzer);

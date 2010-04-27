@@ -24,9 +24,9 @@ public interface ExternalIndexProperties
 {
     String getExternalIndexPath();
 
-    String getAnalyzer();
+    String getExternalIndexAnalyzer();
 
-    boolean hasProperties();
+    boolean hasExternalIndex();
 
     String getExternalIndexDescription();
 }

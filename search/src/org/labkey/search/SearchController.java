@@ -25,7 +25,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -36,9 +35,9 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.ExternalIndexManager;
 import org.labkey.search.model.ExternalIndexProperties;
 import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -48,7 +47,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Date;
 import java.util.List;
-import java.util.Map;
 
 public class SearchController extends SpringActionController
 {
@@ -80,7 +78,7 @@ public class SearchController extends SpringActionController
 
         private String externalIndexPath = null;
         private String externalIndexDescription = null;
-        private String analyzer = null;
+        private String externalIndexAnalyzer = null;
         private boolean _path;
 
         public String getMessage()
@@ -113,19 +111,19 @@ public class SearchController extends SpringActionController
             this.externalIndexDescription = externalIndexDescription;
         }
 
-        public String getAnalyzer()
+        public String getExternalIndexAnalyzer()
         {
-            return analyzer;
+            return externalIndexAnalyzer;
         }
 
-        public boolean hasProperties()
+        public boolean hasExternalIndex()
         {
             throw new IllegalArgumentException();
         }
 
-        public void setAnalyzer(String analyzer)
+        public void setExternalIndexAnalyzer(String externalIndexAnalyzer)
         {
-            this.analyzer = analyzer;
+            this.externalIndexAnalyzer = externalIndexAnalyzer;
         }
 
         public boolean isDelete()
@@ -191,7 +189,7 @@ public class SearchController extends SpringActionController
 
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
-            ExternalIndexProperties props = ExternalIndexManager.get();
+            ExternalIndexProperties props = SearchPropertyManager.getExternalIndexProperties();
 
             WebPartView indexerView = new JspView<AdminForm>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
             indexerView.setTitle("Primary Index Configuration");
@@ -214,20 +212,16 @@ public class SearchController extends SpringActionController
                 return false;
             }
 
-            Map<String, String> m = PropertyManager.getWritableProperties(SearchModule.class.getName(), true);
-
             if (form.isStart())
             {
                 ss.start();
-                m.put(SearchModule.searchRunningState, "true");
-                PropertyManager.saveProperties(m);
+                SearchPropertyManager.setCrawlerRunningState(true);
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
                 ss.pause();
-                m.put(SearchModule.searchRunningState, "false");
-                PropertyManager.saveProperties(m);
+                SearchPropertyManager.setCrawlerRunningState(false);
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Paused");
             }
             else if (form.isDelete())
@@ -238,8 +232,7 @@ public class SearchController extends SpringActionController
             }
             else if (form.isPath())
             {
-                m.put(SearchModule.primaryIndexPath, form.getPrimaryIndexPath());
-                PropertyManager.saveProperties(m);
+                SearchPropertyManager.setPrimaryIndexPath(form.getPrimaryIndexPath()); 
                 ss.updatePrimaryIndex();
                 _msgid = 2;
                 audit(getViewContext().getUser(), null, "(admin action)", "Index Path Set");
@@ -271,7 +264,7 @@ public class SearchController extends SpringActionController
         @Override
         public ActionURL getRedirectURL(AdminForm form) throws Exception
         {
-            ExternalIndexManager.save(form);
+            SearchPropertyManager.saveExternalIndexProperties(form);
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
             // TODO: Add to SearchService interface
@@ -290,7 +283,7 @@ public class SearchController extends SpringActionController
         @Override
         public ActionURL getRedirectURL(Object o) throws Exception
         {
-            ExternalIndexManager.clear();
+            SearchPropertyManager.clearExternalIndexProperties();
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
             // TODO: Add to SearchService interface

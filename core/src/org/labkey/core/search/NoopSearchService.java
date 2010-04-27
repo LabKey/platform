@@ -43,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 18, 2009
  * Time: 1:10:55 PM
@@ -284,12 +283,6 @@ public class NoopSearchService implements SearchService
     @Override
     public void updatePrimaryIndex()
     {
-    }
-
-    @Override
-    public File getPrimaryIndexDirectory()
-    {
-        return null;
     }
 
     public IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since)

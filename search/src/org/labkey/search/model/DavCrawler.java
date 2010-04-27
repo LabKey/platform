@@ -591,13 +591,13 @@ public class DavCrawler implements ShutdownListener
     }
 
 
-    public Map getStats()
+    public Map<String, Object> getStats()
     {
         SearchService ss = getSearchService();
         boolean paused = !ss.isRunning();
         long now = System.currentTimeMillis();
 
-        Map m = new LinkedHashMap();
+        Map<String, Object> m = new LinkedHashMap<String, Object>();
         try
         {
             DbSchema s = ss.getSchema();
@@ -618,7 +618,7 @@ public class DavCrawler implements ShutdownListener
             m.put("File I/O limiter", (_fileIORateLimiter.getTarget().getRate(TimeUnit.SECONDS)/1000000) + " MB/sec");
 
             String activity = getActivityHtml();
-            m.put("Recent crawler activity", activity.toString());
+            m.put("Recent crawler activity", activity);
         }
         catch (SQLException x)
         {

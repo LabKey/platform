@@ -1900,12 +1900,12 @@ search/src/org/labkey/search/model/CrawlerTest.java -text
 search/src/org/labkey/search/model/DavCrawler.java -text
 search/src/org/labkey/search/model/ExternalAnalyzer.java -text
 search/src/org/labkey/search/model/ExternalIndex.java -text
-search/src/org/labkey/search/model/ExternalIndexManager.java -text
 search/src/org/labkey/search/model/ExternalIndexProperties.java -text
 search/src/org/labkey/search/model/HTMLContentExtractor.java -text
 search/src/org/labkey/search/model/LabKeyIndexSearcher.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
 search/src/org/labkey/search/model/SavePaths.java -text
+search/src/org/labkey/search/model/SearchPropertyManager.java -text
 search/src/org/labkey/search/model/SearchableIndex.java -text
 search/src/org/labkey/search/model/SecurityFilter.java -text
 search/src/org/labkey/search/model/SolrSearchServiceImpl.java -text

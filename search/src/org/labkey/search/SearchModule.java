@@ -44,17 +44,11 @@ import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.util.*;
 
 
 public class SearchModule extends DefaultModule
 {
-    public final static String searchRunningState = "runningState";
-    public final static String primaryIndexPath = "primaryIndexPath";
-
-
     public String getName()
     {
         return "Search";
@@ -147,19 +141,6 @@ public class SearchModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
-    }
-
-
-    @Override
-    // Custom filter to avoid flagging Bouncy Castle jar
-    protected FilenameFilter getJarFilenameFilter()
-    {
-        return new FilenameFilter() {
-            public boolean accept(File dir, String name)
-            {
-                return name.endsWith(".jar") && !name.startsWith("bcmail-jdk15");
-            }
-        };
     }
 
 

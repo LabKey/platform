@@ -27,7 +27,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
@@ -526,10 +525,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         synchronized (_runningLock)
         {
-            Map<String, String> m = PropertyManager.getProperties(SearchModule.class.getName());
-            boolean running = !AppProps.getInstance().isDevMode();
-            if (m.containsKey(SearchModule.searchRunningState))
-                running = "true".equals(m.get(SearchModule.searchRunningState));
+            boolean running = SearchPropertyManager.getCrawlerRunningState();
 
             if (running)
             {
@@ -555,18 +551,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void updatePrimaryIndex()
     {
-        // Consider: move property setting out of controller and into here for consistency.
         // Subclasses should switch out the index at this point.
-    }
-
-    @Override
-    public File getPrimaryIndexDirectory()
-    {
-        Map<String, String> props = PropertyManager.getProperties(SearchModule.class.getName());
-        String path = props.get(SearchModule.primaryIndexPath);
-
-        // Use path if set, otherwise fall back to temp directory.
-        return (null != path ? new File(path) : new File(FileUtil.getTempDirectory(), "labkey_full_text_index"));
     }
 
     public boolean isRunning()

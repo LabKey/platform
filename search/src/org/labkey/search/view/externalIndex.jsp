@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.search.SearchController.ClearExternalIndexAction" %>
 <%@ page import="org.labkey.search.SearchController.SwapExternalIndexAction" %>
@@ -48,8 +48,8 @@ if (null != ss)
             <tr><td colspan="2" width="500">
                 You can (optionally) integrate searching of other web sites (e.g., your organization's intranet) with LabKey
                 Server's search functionality by configuring an external index.  For example, you could generate a Lucene
-                index using Nutch (an open-source web crawler), copy the index directory to a location accessible to your
-                LabKey Server, and configure searching of that index below.<br><br>
+                index using Nutch (an open-source web crawler), copy the index to a location accessible to your LabKey
+                Server, and configure searching of that index below.<br><br>
             </td></tr>
             <tr><td colspan="2" width="500">
                 See the <a href="<%=h(new HelpTopic("searchAdmin").getHelpTopicLink())%>">Search Administration documentation</a> for more details about configuring and updating an external index.<br><br>
@@ -57,8 +57,8 @@ if (null != ss)
             <tr><td>External index description:</td><td><input name="externalIndexDescription" size="60" value="<%=h(props.getExternalIndexDescription())%>"/></td></tr>
             <tr><td>Path to external index directory:</td><td><input name="externalIndexPath" size="60" value="<%=h(props.getExternalIndexPath())%>"/></td></tr>
             <tr><td>Analyzer:</td><td>
-                <select name="analyzer"><%
-                    String currentAnalyzer = props.getAnalyzer();
+                <select name="externalIndexAnalyzer"><%
+                    String currentAnalyzer = props.getExternalIndexAnalyzer();
 
                     for (ExternalAnalyzer a : ExternalAnalyzer.values())
                     { %>
@@ -74,7 +74,7 @@ if (null != ss)
             %>
             <tr><td colspan="2">
                 <%=generateSubmitButton("Set")%>
-                <% if (props.hasProperties())
+                <% if (props.hasExternalIndex())
                 { %>
                 <%=generateButton("Clear", ClearExternalIndexAction.class)%>
                 <%=generateButton("Update Index", SwapExternalIndexAction.class)%>

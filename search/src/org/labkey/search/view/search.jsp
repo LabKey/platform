@@ -40,7 +40,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.search.model.ExternalIndexManager" %>
+<%@ page import="org.labkey.search.model.SearchPropertyManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -284,7 +284,7 @@ if (loginStatusChanged())
 
         if (true)
         { %>
-            <tr><td><%=ExternalIndexManager.get().getExternalIndexDescription()%></td></tr>
+            <tr><td><%=SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription()%></td></tr>
             <tr><td><%=form.searchExternalIndex(queryString)%></td></tr><%
         } %>
     </table><%
