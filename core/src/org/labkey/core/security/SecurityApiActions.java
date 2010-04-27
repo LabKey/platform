@@ -591,8 +591,12 @@ public class SecurityApiActions
 
             if (container.isRoot())
             {
-                // Troubleshooter is the only role assignable at the root
-                relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
+                if (resource.equals(container))
+                    // Troubleshooter is the only role assignable in the root container
+                    relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
+                else
+                    // ExternalIndex case    
+                    relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
             }
             else
             {

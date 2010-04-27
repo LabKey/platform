@@ -282,7 +282,7 @@ if (loginStatusChanged())
         } %>
         </tr><%
 
-        if (true)
+        if (form.hasExternalIndexPermission(user))
         { %>
             <tr><td><%=SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription()%></td></tr>
             <tr><td><%=form.searchExternalIndex(queryString)%></td></tr><%

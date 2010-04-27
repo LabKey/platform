@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -29,7 +30,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.data.Container;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.ResultSet;
@@ -276,6 +276,18 @@ public class NoopSearchService implements SearchService
     }
 
     public boolean isRunning()
+    {
+        return false;
+    }
+
+    @Override
+    public List<SecurableResource> getSecurableResources(User user)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public boolean hasExternalIndexPermission(User user)
     {
         return false;
     }

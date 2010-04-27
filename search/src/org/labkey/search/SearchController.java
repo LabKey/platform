@@ -33,11 +33,9 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.search.model.AbstractSearchService;
-import org.labkey.search.model.ExternalIndexProperties;
-import org.labkey.search.model.LuceneSearchServiceImpl;
-import org.labkey.search.model.SearchPropertyManager;
+import org.labkey.search.model.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -353,6 +351,49 @@ public class SearchController extends SpringActionController
     }
 
 
+    @RequiresSiteAdmin
+    public class PermissionsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            String message;
+
+            if (null != ss)
+            {
+                List<SecurableResource> resources = ss.getSecurableResources(getViewContext().getUser());
+
+                if (resources.size() < 0)
+                {
+                    message = "No securable resources found";
+                }
+                else if (resources.size() > 1)
+                {
+                    message = "Multiple securable resources found";
+                }
+                else
+                {
+                    return new JspView<SecurableResource>(SearchController.class, "view/externalIndexPermissions.jsp", resources.get(0));
+                }
+            }
+            else
+            {
+                message = "Search service is not running";
+            }
+
+            throw new IllegalStateException(message);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
     public class CancelAction extends SimpleRedirectAction
@@ -647,6 +688,13 @@ public class SearchController extends SpringActionController
         public @Nullable String searchExternalIndex(String queryString) throws IOException, ParseException
         {
             return LuceneSearchServiceImpl.searchExternal(queryString);
+        }
+
+        public boolean hasExternalIndexPermission(User user)
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            return (null != ss && ss.hasExternalIndexPermission(user));
         }
 
         public static enum SearchScope {All, Project, Folder}

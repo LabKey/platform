@@ -19,16 +19,29 @@ import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.store.Directory;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.search.SearchModule;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
  * Date: Apr 19, 2010
  * Time: 3:33:05 PM
  */
-public class ExternalIndex extends SearchableIndex
+public class ExternalIndex extends SearchableIndex implements SecurableResource
 {
     private final Object _swapLock = new Object();
     private final File _indexRoot;
@@ -106,5 +119,69 @@ public class ExternalIndex extends SearchableIndex
         }
 
         return current;
+    }
+
+    @NotNull
+    @Override
+    public String getResourceId()
+    {
+        // Unique enough, since there's only one external index
+        return getResourceName();
+    }
+
+    @NotNull
+    @Override
+    public String getResourceName()
+    {
+        return "ExternalIndex";
+    }
+
+    @NotNull
+    @Override
+    public String getResourceDescription()
+    {
+        return "External Index";
+    }
+
+    @NotNull
+    @Override
+    public Set<Class<? extends Permission>> getRelevantPermissions()
+    {
+        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        perms.add(ReadPermission.class);
+        return perms;
+    }
+
+    @NotNull
+    @Override
+    public Module getSourceModule()
+    {
+        return ModuleLoader.getInstance().getModule(SearchModule.class);
+    }
+
+    @Override
+    public SecurableResource getParentResource()
+    {
+        return ContainerManager.getRoot();
+    }
+
+    @NotNull
+    @Override
+    public Container getResourceContainer()
+    {
+        return ContainerManager.getRoot();
+    }
+
+    @NotNull
+    @Override
+    public List<SecurableResource> getChildResources(User user)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public boolean mayInheritPolicy()
+    {
+        return false;
     }
 }

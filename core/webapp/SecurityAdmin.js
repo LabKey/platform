@@ -1302,6 +1302,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     saveButton : true,      // overloaded
     isSiteAdmin : false,
     isProjectAdmin : false,
+    canInherit : true,
 
     // components, internal
     inheritedCheckbox : null,
@@ -1341,7 +1342,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     setInheritedPolicy : function(policy)
     {
         this.inheritedPolicy = policy;
-        if (this.inheritedCheckbox && this.inheritedCheckbox.getValue())
+        if (this.getInheritCheckboxValue())
             this._redraw();
         if (this.inheritedCheckbox)
             this.inheritedCheckbox.enable();
@@ -1386,7 +1387,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     getPolicy : function()
     {
-        if (this.inheritedCheckbox.getValue())
+        if (this.getInheritCheckboxValue())
             return null;
         var policy = this.policy.copy();
         if (policy.isEmpty())
@@ -1463,8 +1464,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             var html = [];
 
-            var label = "Inherit permissions from " + (this.parentName || 'parent') + "<br>";
-            html.push('<table><tr><td id=checkboxTD></td><td>&nbsp;' + label + '</td></tr></table>');
+            if (this.canInherit)
+            {
+                var label = "Inherit permissions from " + (this.parentName || 'parent') + "<br>";
+                html.push('<table><tr><td id=checkboxTD></td><td>&nbsp;' + label + '</td></tr></table>');
+            }
 
             html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><td></td><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>']);
             var spacerRow = ''; // '<tr class="spacerTR"><td><img src="' + Ext.BLANK_IMAGE_URL + '"></td></tr>';
@@ -1479,12 +1483,15 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             this.body.update("",false);
             this.table = this.body.insertHtml('beforeend', m, true);
 
-            this.inheritedCheckbox = new Ext.form.Checkbox({id:'inheritedCheckbox', style:{display:'inline'}, disabled:(!this.inheritedPolicy), checked:this.inheritedOriginally});
-            this.inheritedCheckbox.render('checkboxTD');
-            this.inheritedCheckbox.on("check", this.Inherited_onChange, this);
-            this.add(this.inheritedCheckbox);
+            if (this.canInherit)
+            {
+                this.inheritedCheckbox = new Ext.form.Checkbox({id:'inheritedCheckbox', style:{display:'inline'}, disabled:(!this.inheritedPolicy), checked:this.inheritedOriginally});
+                this.inheritedCheckbox.render('checkboxTD');
+                this.inheritedCheckbox.on("check", this.Inherited_onChange, this);
+                this.add(this.inheritedCheckbox);
+            }
 
-            if (this.saveButton) // check if caller want's to omit the button
+            if (this.saveButton) // check if caller wants to omit the button
             {
                 this.saveButton = new Ext.Button({text:'Save', handler:this.SaveButton_onClick, scope:this, style:{margin:'5px'}});
                 this.saveButton.render(this.body);
@@ -1547,7 +1554,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         }
 
         // render security policy
-        var policy = this.inheritedCheckbox.getValue() ? this.inheritedPolicy : this.policy;
+        var policy = this.getInheritCheckboxValue() ? this.inheritedPolicy : this.policy;
         if (policy)
         {
             // render the security policy buttons
@@ -1582,17 +1589,21 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             if (!$('policyRendered'))
                 $dom.insertHtml('beforeend', document.body, '<input type=hidden id="policyRendered" value="1">');
         }
-        if (this.inheritedCheckbox.getValue())
+        if (this.getInheritCheckboxValue())
             this.disable();
         else
             this.enable();
     },
 
 
+    getInheritCheckboxValue : function() {
+        return this.canInherit && this.inheritedCheckbox.getValue();
+    },
+
     // expects button to have roleId and groupId attribute
     Button_onClose : function(btn,event)
     {
-        if (!this.inheritedCheckbox.getValue())
+        if (!this.getInheritCheckboxValue())
             this.removeRoleAssignment(btn.groupId, btn.roleId);
     },
 
@@ -1600,7 +1611,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     Button_onClick : function(btn,event)
     {
         var id = btn.groupId;
-        var policy = this.inheritedCheckbox.getValue() ? this.inheritedPolicy : this.policy;
+        var policy = this.getInheritCheckboxValue() ? this.inheritedPolicy : this.policy;
         // is this a user or a group
         var principal = this.cache.getPrincipal(id);
         // can edit?
@@ -1628,7 +1639,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         Ext.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
 
-        var inh = this.inheritedCheckbox.getValue();
+        var inh = this.getInheritCheckboxValue();
         if (inh && !this.inheritedPolicy)
         {
             // UNDONE: use blank if we don't know the inherited policy

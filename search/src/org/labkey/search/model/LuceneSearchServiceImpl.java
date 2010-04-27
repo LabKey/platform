@@ -37,7 +37,10 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -826,6 +829,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
+    public boolean hasExternalIndexPermission(User user)
+    {
+        if (null == _externalIndex)
+            return false;
+
+        SecurityPolicy policy = SecurityManager.getPolicy(_externalIndex);
+
+        return policy.hasPermission(user, ReadPermission.class);
+    }
+
     public static String searchExternal(String queryString) throws IOException, ParseException
     {
         if (null == _externalIndex)
@@ -943,5 +957,18 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         super.maintenance();
         _index.optimize();
+    }
+
+    @Override
+    public List<SecurableResource> getSecurableResources(User user)
+    {
+        if (null != _externalIndex)
+        {
+            SecurityPolicy policy = org.labkey.api.security.SecurityManager.getPolicy(_externalIndex);
+            if (policy.hasPermission(user, AdminPermission.class))
+                return Collections.singletonList((SecurableResource)_externalIndex);
+        }
+
+        return Collections.emptyList();
     }
 }

@@ -24,6 +24,7 @@ import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -32,7 +33,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.search.SearchModule;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
@@ -552,6 +552,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void updatePrimaryIndex()
     {
         // Subclasses should switch out the index at this point.
+    }
+
+    @Override
+    public boolean hasExternalIndexPermission(User user)
+    {
+        return false;
     }
 
     public boolean isRunning()
@@ -1358,5 +1364,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (null != ss)
                 ss.maintenance();
         }
+    }
+
+
+    @Override
+    public List<SecurableResource> getSecurableResources(User user)
+    {
+        return Collections.emptyList();
     }
 }

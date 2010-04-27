@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.search.SearchController.PermissionsAction" %>
 <%@ page import="org.labkey.search.SearchController.ClearExternalIndexAction" %>
 <%@ page import="org.labkey.search.SearchController.SwapExternalIndexAction" %>
 <%@ page import="org.labkey.search.model.ExternalAnalyzer" %>
@@ -78,6 +79,7 @@ if (null != ss)
                 { %>
                 <%=generateButton("Clear", ClearExternalIndexAction.class)%>
                 <%=generateButton("Update Index", SwapExternalIndexAction.class)%>
+                <%=generateButton("Set Permissions", PermissionsAction.class)%>
                 <% } %>
             </td></tr><%
             }
