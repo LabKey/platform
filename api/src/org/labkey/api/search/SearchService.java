@@ -32,7 +32,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -232,7 +231,6 @@ public interface SearchService
     void start();
     void pause();
     void updatePrimaryIndex();
-    File getPrimaryIndexDirectory();
     boolean isRunning();
 
     
