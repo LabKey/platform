@@ -28,11 +28,13 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.PageFlowUtil;
@@ -391,7 +393,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         ret.addAll(StudyService.get().getSecurableResources(this, user));
 
         //add report descriptors
-        //this seems much more cumbersome that it should be
+        //this seems much more cumbersome than it should be
         try
         {
             Report[] reports = ReportService.get().getReports(user, this);
@@ -416,6 +418,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 ret.add(root);
         }
 
+        if (isRoot())
+        {
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+            if (null != ss)
+            {
+                ret.addAll(ss.getSecurableResources(user));
+            }
+        }
+
         return ret;
     }
 
@@ -423,7 +435,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      * Finds a securable resource within this container or child containers with the same id
      * as the given resource id.
      * @param resourceId The resource id to find
-     * @param user The current user (searches only reousrces that user can see)
+     * @param user The current user (searches only resources that user can see)
      * @return The resource or null if not found
      */
     @Nullable

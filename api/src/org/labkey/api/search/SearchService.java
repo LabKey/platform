@@ -232,8 +232,9 @@ public interface SearchService
     void pause();
     void updatePrimaryIndex();
     boolean isRunning();
+    boolean hasExternalIndexPermission(User user);
 
-    
+    List<SecurableResource> getSecurableResources(User user);    
     IndexTask defaultTask();
     IndexTask createTask(String description);
 
