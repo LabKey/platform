@@ -20,6 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.script.ScriptService;
+import org.labkey.api.services.ServiceRegistry;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -48,10 +50,33 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         disabled,
     }
 
+    ScriptEngineFactory rhino = null;
+
+    public LabkeyScriptEngineManager()
+    {
+        super();
+
+        // replace the JDK bundled ScriptEngineFactory with the full, non-JDK version.
+        rhino = ServiceRegistry.get().getService(ScriptService.class);
+        assert rhino != null : "RhinoScriptEngineFactory not found";
+        if (rhino != null)
+        {
+            for (String name : rhino.getNames())
+                registerEngineName(name, rhino);
+
+            for (String type : rhino.getMimeTypes())
+                registerEngineMimeType(type, rhino);
+
+            for (String extension : rhino.getExtensions())
+                registerEngineExtension(extension, rhino);
+        }
+    }
+
     @Override
     public ScriptEngine getEngineByName(String shortName)
     {
         ScriptEngine engine = super.getEngineByName(shortName);
+        assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
 
         if (engine == null)
         {
@@ -73,7 +98,13 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     @Override
     public List<ScriptEngineFactory> getEngineFactories()
     {
-        List<ScriptEngineFactory> factories = new ArrayList(super.getEngineFactories());
+        List<ScriptEngineFactory> factories = new ArrayList<ScriptEngineFactory>();
+        // XXX: disallow JDK Rhino engine
+        //for (ScriptEngineFactory factory : super.getEngineFactories())
+        //    if (!factory.getClass().getName().equalsIgnoreCase("com.sun.script.javascript.RhinoScriptEngineFactory"))
+        //        factories.add(factory);
+        if (rhino != null)
+            factories.add(rhino);
         for (ExternalScriptEngineDefinition def : getEngineDefinitions())
         {
             factories.add(new ExternalScriptEngineFactory(def));
@@ -87,6 +118,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         if (!StringUtils.isBlank(extension))
         {
             ScriptEngine engine = super.getEngineByExtension(extension);
+            assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
 
             if (engine == null)
             {

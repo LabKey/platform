@@ -20,6 +20,18 @@
     </orderEntry>
     <orderEntry type="module" module-name="API" exported="" />
     <orderEntry type="module" module-name="InternalGWT" />
+    <orderEntry type="module-library">
+      <library name="rhino">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/js.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/js-engine.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/rhino1_7R2.zip!/rhino1_7R2/src" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
 

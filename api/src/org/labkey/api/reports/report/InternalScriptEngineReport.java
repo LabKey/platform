@@ -92,16 +92,18 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             StringWriter consoleOut = new StringWriter();
             try
             {
+                PrintWriter consolePw = new PrintWriter(consoleOut);
                 engine.getContext().setErrorWriter(errors);
-                engine.getContext().setWriter(consoleOut);
+                engine.getContext().setWriter(consolePw);
 
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
                 bindings.put("viewContext", context);
-                bindings.put("consoleOut", consoleOut);
+                bindings.put("consoleOut", consolePw);
 
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
                 Object output = engine.eval(createScript(context, outputSubst, inputDataTsv));
+                consolePw.flush();
                 String consoleString = consoleOut.toString();
 
                 // render the output into the console
