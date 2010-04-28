@@ -31,6 +31,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.MapTabLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.script.ScriptServiceImpl;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationManager.Priority;
@@ -124,6 +125,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
+        ScriptServiceImpl.register();
 
         DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
         {
