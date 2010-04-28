@@ -531,6 +531,10 @@ font-weight:normal;
 	background-color: #<%= fullScreenBorder %>;
 }
 
+.x-panel-body {
+    border-color: #<%= wpHeaderPanelBorder %>;
+}
+
 .x-tab-panel-body {
     border-color: #<%= wpHeaderPanelBorder %>;
 }
