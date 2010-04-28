@@ -40,6 +40,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private User _impersonatingUser = null;
     private Container _impersonationProject = null;
     private boolean _active = false;
+    private String _phone;
 
     public static final User guest = new GuestUser("guest");
     static final User search = new GuestUser("search");
@@ -279,5 +280,15 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public static User getSearchUser()
     {
         return search;
+    }
+
+    public String getPhone()
+    {
+        return _phone;
+    }
+
+    public void setPhone(String phone)
+    {
+        _phone = phone;
     }
 }
