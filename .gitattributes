@@ -2417,7 +2417,7 @@ internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text
-internal/src/org/labkey/api/script/ScriptServiceImpl.java -text
+internal/src/org/labkey/api/script/RhinoService.java -text
 internal/src/org/labkey/api/security/UserDisplayNameComparator.java -text
 internal/src/org/labkey/api/security/UserEmailComparator.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text

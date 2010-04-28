@@ -29,14 +29,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ScriptServiceImpl extends RhinoScriptEngineFactory implements ScriptService
+public final class RhinoService
 {
     public static void register()
     {
         SandboxContextFactory.initGlobal();
-        ServiceRegistry.get().registerService(ScriptService.class, new ScriptServiceImpl());
+        ServiceRegistry.get().registerService(ScriptService.class, new RhinoFactory());
     }
+}
 
+class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
+{
     @Override
     public ScriptEngine getScriptEngine()
     {

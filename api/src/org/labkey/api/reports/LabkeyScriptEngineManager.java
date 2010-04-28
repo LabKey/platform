@@ -99,10 +99,6 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     public List<ScriptEngineFactory> getEngineFactories()
     {
         List<ScriptEngineFactory> factories = new ArrayList<ScriptEngineFactory>();
-        // XXX: disallow JDK Rhino engine
-        //for (ScriptEngineFactory factory : super.getEngineFactories())
-        //    if (!factory.getClass().getName().equalsIgnoreCase("com.sun.script.javascript.RhinoScriptEngineFactory"))
-        //        factories.add(factory);
         if (rhino != null)
             factories.add(rhino);
         for (ExternalScriptEngineDefinition def : getEngineDefinitions())
