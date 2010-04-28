@@ -17,7 +17,6 @@
 package org.labkey.search;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.queryParser.ParseException;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -29,13 +28,17 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.search.model.*;
+import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.ExternalIndexProperties;
+import org.labkey.search.model.LuceneSearchServiceImpl;
+import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -580,23 +583,9 @@ public class SearchController extends SpringActionController
     }
     
 
-    public static ActionURL getSearchURL(Container c)
+    private abstract class AbstractSearchAction extends SimpleViewAction<SearchForm>
     {
-        return new ActionURL(SearchAction.class, c);
-    }
-
-    private ActionURL getSearchURL()
-    {
-        return getSearchURL(getContainer());
-    }
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SearchAction extends SimpleViewAction<SearchForm>
-    {
-        private String _category = null;
-        private SearchForm.SearchScope _scope = null;
-
-        public ModelAndView getView(SearchForm form, BindException errors) throws Exception
+        public ModelAndView getView(SearchForm form, BindException errors, boolean external) throws Exception
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 
@@ -607,10 +596,8 @@ public class SearchController extends SpringActionController
             }
 
             form.setPrint(isPrint());
-            _category = form.getCategory();
-            _scope = form.getSearchScope(getViewContext().getContainer());
 
-            audit(form);
+            audit(form, external);
 
             // reenable caching for search results page (fast browser back button)
             HttpServletResponse response = getViewContext().getResponse();
@@ -621,8 +608,114 @@ public class SearchController extends SpringActionController
             getPageConfig().setMetaTag("robots", "noindex");
             getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 
-            HttpView search= new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
-            return search;
+            return new JspView<SearchForm>("/org/labkey/search/view/search.jsp", form);
+        }
+    }
+
+
+    public static ActionURL getSearchURL(Container c)
+    {
+        return new ActionURL(SearchAction.class, c);
+    }
+
+    private ActionURL getSearchURL()
+    {
+        return getSearchURL(getContainer());
+    }
+
+    private static ActionURL getSearchURL(Container c, String queryString)
+    {
+        ActionURL url = getSearchURL(c);
+        url.addParameter("q", queryString);
+        return url;
+
+    }
+
+    // This interface hides all the specifics of internal vs. external index search, allowing keeping search.jsp
+    // reasonably generic.
+    public interface SearchParameters
+    {
+        ActionURL getPostURL(Container c);
+        ActionURL getSecondarySearchURL(Container c, String queryString); // TODO: Need other params? (category, scope)
+        String getPrimaryDescription(Container c);
+        String getSecondaryDescription(Container c);
+        SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
+        SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
+        boolean hasSecondaryPermissions(User user);
+        boolean includeAdvancedUI();
+    }
+
+
+    public static class InternalSearchParameters implements SearchParameters
+    {
+        private final SearchService _ss = ServiceRegistry.get(SearchService.class);
+
+        private InternalSearchParameters()
+        {
+        }
+
+        @Override
+        public ActionURL getPostURL(Container c)
+        {
+            return getSearchURL(c);
+        }
+
+        @Override
+        public ActionURL getSecondarySearchURL(Container c, String queryString)
+        {
+            return getSearchExternalURL(c, queryString);
+        }
+
+        @Override
+        public String getPrimaryDescription(Container c)
+        {
+            return LookAndFeelProperties.getInstance(c).getShortName();
+        }
+
+        @Override
+        public String getSecondaryDescription(Container c)
+        {
+            return SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription();
+        }
+
+        @Override
+        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        {
+            return _ss.search(queryString, _ss.getCategory(category), user, root, recursive, offset, limit);
+        }
+
+        @Override
+        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        {
+            return _ss.searchExternal(queryString, offset, limit);
+        }
+
+        @Override
+        public boolean hasSecondaryPermissions(User user)
+        {
+            return _ss.hasExternalIndexPermission(user);
+        }
+
+        @Override
+        public boolean includeAdvancedUI()
+        {
+            return true;
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SearchAction extends AbstractSearchAction
+    {
+        private String _category = null;
+        private SearchForm.SearchScope _scope = null;
+
+        public ModelAndView getView(SearchForm form, BindException errors) throws Exception
+        {
+            _category = form.getCategory();
+            _scope = form.getSearchScope(getViewContext().getContainer());
+
+            return super.getView(form, errors, false);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -647,6 +740,110 @@ public class SearchController extends SpringActionController
     }
 
 
+    public static ActionURL getSearchExternalURL(Container c)
+    {
+        return new ActionURL(SearchExternalAction.class, c);
+    }
+
+
+    public static ActionURL getSearchExternalURL(Container c, String queryString)
+    {
+        ActionURL url = getSearchExternalURL(c);
+        url.addParameter("q", queryString);
+        return url;
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SearchExternalAction extends AbstractSearchAction
+    {
+        String _description;
+
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+
+            // Show results page only if user has permission to see external index results.
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+
+            if (!ss.hasExternalIndexPermission(getUser()))
+                HttpView.throwUnauthorized();
+        }
+
+        public ModelAndView getView(SearchForm form, BindException errors) throws Exception
+        {
+            SearchParameters params = new ExternalSearchParameters();
+            form.setParameters(params);
+            _description = params.getPrimaryDescription(getContainer());
+            return super.getView(form, errors, true);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Search " + _description);
+        }
+    }
+
+
+    public class ExternalSearchParameters implements SearchParameters
+    {
+        private final SearchService _ss = ServiceRegistry.get(SearchService.class);
+
+        private ExternalSearchParameters()
+        {
+        }
+
+        @Override
+        public ActionURL getPostURL(Container c)
+        {
+            return getSearchExternalURL(c);
+        }
+
+        @Override
+        public ActionURL getSecondarySearchURL(Container c, String queryString)
+        {
+            return getSearchURL(c, queryString);
+        }
+
+        @Override
+        public String getPrimaryDescription(Container c)
+        {
+            return SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription();
+        }
+
+        @Override
+        public String getSecondaryDescription(Container c)
+        {
+            return LookAndFeelProperties.getInstance(c).getShortName();
+        }
+
+        @Override
+        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        {
+            return _ss.searchExternal(queryString, offset, limit);
+        }
+
+        @Override
+        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        {
+            return _ss.search(queryString, _ss.getCategory(category), user, root, recursive, offset, limit);
+        }
+
+        @Override
+        public boolean hasSecondaryPermissions(User user)
+        {
+            return true;
+        }
+
+        @Override
+        public boolean includeAdvancedUI()
+        {
+            return false;
+        }
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class CommentAction extends FormHandlerAction<SearchForm>
     {
@@ -658,7 +855,7 @@ public class SearchController extends SpringActionController
         @Override
         public boolean handlePost(SearchForm searchForm, BindException errors) throws Exception
         {
-            audit(searchForm);
+            audit(searchForm, false);
             return true;
         }
 
@@ -684,17 +881,16 @@ public class SearchController extends SpringActionController
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
         private boolean _includeHelpLink = true;
+        private SearchParameters _params = new InternalSearchParameters();    // Assume internal search (for webparts, etc.)
 
-        public @Nullable String searchExternalIndex(String queryString) throws IOException, ParseException
+        public void setParameters(SearchParameters params)
         {
-            return LuceneSearchServiceImpl.searchExternal(queryString);
+            _params = params;
         }
 
-        public boolean hasExternalIndexPermission(User user)
+        public SearchParameters getParams()
         {
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-
-            return (null != ss && ss.hasExternalIndexPermission(user));
+            return _params;
         }
 
         public static enum SearchScope {All, Project, Folder}
@@ -847,10 +1043,22 @@ public class SearchController extends SpringActionController
     }
 
     
-    protected void audit(SearchForm form)
+    protected void audit(SearchForm form, boolean external)
     {
-        ViewContext c = getViewContext();
-        audit(c.getUser(), c.getContainer(), form.getQueryString(), form.getComment());
+        ViewContext ctx = getViewContext();
+        String comment = form.getComment();
+
+        if (external)
+        {
+            String prefix = "Searched against " + form.getParams().getPrimaryDescription(ctx.getContainer());
+
+            if (StringUtils.isBlank(comment))
+                comment = prefix;
+            else
+                comment = prefix + ": " + comment;
+        }
+
+        audit(ctx.getUser(), ctx.getContainer(), form.getQueryString(), comment);
     }
 
     
@@ -864,7 +1072,7 @@ public class SearchController extends SpringActionController
             return;
 
         if (query.length() > 200)
-            query = query.substring(0,197) + "...";
+            query = query.substring(0, 197) + "...";
 
         audit.addEvent(user, c, SearchModule.EVENT_TYPE, query, comment);
     }

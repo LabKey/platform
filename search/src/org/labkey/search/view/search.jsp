@@ -38,9 +38,8 @@
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.search.model.SearchPropertyManager" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -62,6 +61,8 @@ if (loginStatusChanged())
     boolean wideView = true;
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
 
+    SearchController.SearchParameters params = form.getParams();
+
     if (form.isAdvanced())
     {
 %>
@@ -69,7 +70,7 @@ if (loginStatusChanged())
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
 %>
-<form class="labkey-search-form" id=searchForm name="search" action="<%=SearchController.getSearchURL(c)%>">
+<form class="labkey-search-form" id=searchForm name="search" action="<%=h(params.getPostURL(c))%>">
     <table><tr><td><%
     if (form.isPrint())
     {
@@ -108,7 +109,7 @@ if (loginStatusChanged())
     ActionURL scopeResearchURL = ctx.cloneActionURL().deleteParameter("includeSubfolders").deleteParameter("container");
     String queryString = form.getQueryString();
 
-    if (null != StringUtils.trimToNull(queryString))
+    if (params.includeAdvancedUI() && null != StringUtils.trimToNull(queryString))
     {
         %><tr><td colspan=1>
         <table width=100% cellpadding="0" cellspacing="0"><tr>
@@ -151,13 +152,26 @@ if (loginStatusChanged())
 
         try
         {
-            long start = System.nanoTime();
-            SearchService.SearchResult result = ss.search(queryString, ss.getCategory(category), user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
-            long time = (System.nanoTime() - start)/1000000;
+            SearchService.SearchResult result = params.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
+
             int totalHits = result.totalHits;
             int pageCount = (int)Math.ceil((double)totalHits / hitsPerPage);
 
-            %><table cellspacing=0 cellpadding=0 width=100%><tr><td align=left>Found <%=Formats.commaf0.format(totalHits)%> result<%=totalHits != 1 ? "s" : ""%> in <%=Formats.commaf0.format(time)%>ms.</td><%
+            %>
+            <table cellspacing=0 cellpadding=0 width=100%><%
+               boolean includesSecondarySearch = false;
+
+               if (params.hasSecondaryPermissions(user))
+               {
+                   includesSecondarySearch = true;
+                   SearchService.SearchResult secondaryResult = params.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
+
+                   %>
+               <tr><td align=left colspan="2"><a href="<%=h(params.getSecondarySearchURL(c, queryString))%>">Found <%=Formats.commaf0.format(secondaryResult.totalHits)%> <%=params.getSecondaryDescription(c)%> result<%=secondaryResult.totalHits != 1 ? "s" : ""%> (click to view)</a></td></tr><%
+               }
+               %>
+               <tr><td align=left colspan="2">&nbsp;</td>
+               <tr><td align=left>Found <%=Formats.commaf0.format(totalHits)%> <%=h(params.getPrimaryDescription(c))%> result<%=(totalHits != 1 ? "s" : "") + (includesSecondarySearch ? " (shown below)" : "")%></td><%
 
             if (hitsPerPage < totalHits)
             {
@@ -190,7 +204,9 @@ if (loginStatusChanged())
                     //
                 }
 
-                %><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
+                %>
+
+<a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
                 if (null != summary)
                 {
                     %><%=PageFlowUtil.filter(summary, false)%><br><%
@@ -258,7 +274,7 @@ if (loginStatusChanged())
                 {
                     %><td valign="top" align="left"><img title="" src="<%=contextPath%>/_.gif" width=200 height=1><%
                     %><div id="navigationResults" class="labkey-search-navresults"><h3>Folders</h3><%
-                    //WebPartView.startTitleFrame(out, "Quick Links");
+
                     for (SearchService.SearchHit hit : result.hits)
                     {
                         %><table><tr><td><img src="<%=contextPath%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a></td></tr></table><%
@@ -268,8 +284,8 @@ if (loginStatusChanged())
                             %><div style="margin-left:10px;"><%=PageFlowUtil.filter(summary, false)%></div><%
                         }
                     }
+
                     %><br><%
-                    //WebPartView.endTitleFrame(out);
                     %></div><%
                     %></td><%
                 }
@@ -280,13 +296,7 @@ if (loginStatusChanged())
             out.write(h("Error: " + e.getMessage()));
             out.write("</div></td>");
         } %>
-        </tr><%
-
-        if (form.hasExternalIndexPermission(user))
-        { %>
-            <tr><td><%=SearchPropertyManager.getExternalIndexProperties().getExternalIndexDescription()%></td></tr>
-            <tr><td><%=form.searchExternalIndex(queryString)%></td></tr><%
-        } %>
+        </tr>
     </table><%
     }
 %>
@@ -356,7 +366,7 @@ List<NavTree> parseNavTrail(String s)
 Collection<NavTree> getActions(SearchService.SearchHit hit)
 {
     String docid = hit.docid;
-    if (!docid.startsWith("dav:"))
+    if (null == docid || !docid.startsWith("dav:"))
         return null;
     Path p = Path.parse(docid.substring(4));
     WebdavResource r = WebdavService.get().getResolver().lookup(p);
@@ -365,7 +375,6 @@ Collection<NavTree> getActions(SearchService.SearchHit hit)
     Collection<NavTree> nav = r.getActions(HttpView.currentContext().getUser());
     return nav.isEmpty() ? null : nav;
 }
-
 
 Path files = new Path("@files");
 Path pipeline = new Path("@pipeline");

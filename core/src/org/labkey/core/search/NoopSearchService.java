@@ -205,6 +205,12 @@ public class NoopSearchService implements SearchService
         return null;
     }
 
+    @Override
+    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
+    {
+        return null;
+    }
+
     public boolean isParticipantId(User user, String ptid)
     {
         return false;

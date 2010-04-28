@@ -75,9 +75,7 @@ var policyEditor = null;
 <%--
     TABS
 --%>
-<% if (!c.isRoot()) { %>
-<div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(c.getPath())%></div>
-<% } %>
+<div id="titleDiv" class="labkey-nav-page-header" style="padding: 5px">Permissions for <%=h(resource.getResourceDescription())%></div>
 <div id="buttonDiv" style="padding:5px;"></div>
 <div id="tabBoxDiv" class="extContainer"><i>Loading...</i></div>
 <script type="text/javascript">

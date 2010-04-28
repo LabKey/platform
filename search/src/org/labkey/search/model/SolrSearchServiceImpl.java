@@ -17,6 +17,7 @@ package org.labkey.search.model;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
@@ -51,6 +52,12 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     }
 
     public SearchResult search(String queryString, SearchCategory category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+    {
+        return null;
+    }
+
+    @Override
+    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
     {
         return null;
     }

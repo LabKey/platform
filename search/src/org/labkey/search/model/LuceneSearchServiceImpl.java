@@ -813,10 +813,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.container = doc.get(FIELD_NAMES.container.toString());
             hit.docid = doc.get(FIELD_NAMES.uniqueId.toString());
             hit.summary = doc.get(FIELD_NAMES.summary.toString());
-            String url = doc.get(FIELD_NAMES.url.toString());
-            String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
-            hit.url = url + (-1==url.indexOf("?") ? "?" : "&") + docid;
+            hit.url = doc.get(FIELD_NAMES.url.toString());
+
+            if (null != hit.docid)
+            {
+                String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
+                hit.url = hit.url + (-1 == hit.url.indexOf("?") ? "?" : "&") + docid;
+            }
+
             hit.displayTitle = doc.get(FIELD_NAMES.displayTitle.toString());
+
+            // No display title, try title
+            if (StringUtils.isBlank(hit.displayTitle))
+                hit.displayTitle = doc.get(FIELD_NAMES.title.toString());
+
+            // No title at all... just use URL
+            if (StringUtils.isBlank(hit.displayTitle))
+                hit.displayTitle = hit.url;
+
             // UNDONE FIELD_NAMES.navtree
             hit.navtrail = doc.get(FIELD_NAMES.navtrail.toString());
             ret.add(hit);
@@ -840,6 +854,35 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return policy.hasPermission(user, ReadPermission.class);
     }
 
+
+    @Override
+    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
+    {
+        if (null == _externalIndex)
+            throw new IllegalStateException("External index is not defined");
+
+        int hitsToRetrieve = offset + limit;
+        LabKeyIndexSearcher searcher = _externalIndex.getSearcher();
+
+        try
+        {
+            QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, new String[]{"content", "title"}, _externalIndex.getAnalyzer());
+            Query query = queryParser.parse(queryString);
+            TopDocs docs = searcher.search(query, hitsToRetrieve);
+            return createSearchResult(offset, hitsToRetrieve, docs, searcher);
+        }
+        catch (ParseException x)
+        {
+            throw new IOException(x.getMessage());
+        }
+        finally
+        {
+            _externalIndex.releaseSearcher(searcher);
+        }
+    }
+
+
+    @Deprecated
     public static String searchExternal(String queryString) throws IOException, ParseException
     {
         if (null == _externalIndex)
@@ -854,6 +897,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Query query = queryParser.parse(queryString);
             TopDocs docs = searcher.search(query, 100);
             ScoreDoc[] hits = docs.scoreDocs;
+
+            sb.append("<tr><td>").append(hits.length).append(" hits<br></td></tr>\n");
 
             for (ScoreDoc hit : hits)
             {
