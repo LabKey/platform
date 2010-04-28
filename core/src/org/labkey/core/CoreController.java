@@ -211,7 +211,7 @@ public class CoreController extends SpringActionController
                 view.setFrame(WebPartView.FrameType.NONE);
                 content = PageFlowUtil.getViewContent(view, request, response);
                 content.dependencies = dependsOn;
-                content.encoded = compressCSS(content.content);
+                content.compressed = compressCSS(content.content);
                 _themeStylesheetCache.put(c, content);
             }
             return content;
