@@ -2494,6 +2494,8 @@ li.x-menu-item-active a.x-menu-item {
 	background:white url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid white;}
 .x-tab-scroller-right-over { background-position: -139px -96px; }
 .x-tab-scroller-right-disabled {background:white;opacity:1;}
+/* fix up spacer since the tabs no longer within a panel with background and border */
+.x-tab-panel-header-plain .x-tab-strip-spacer, .x-tab-panel-footer-plain .x-tab-strip-spacer {border-left-width:0; border-right-width:0; height:4px;}
 
 /* Ghosting */
 .x-panel-ghost {
