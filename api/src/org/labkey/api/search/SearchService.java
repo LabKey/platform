@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Future;
 
@@ -212,6 +213,9 @@ public interface SearchService
 
     // Search using no offset, default page size, and recursive.
     public SearchResult search(String queryString, @Nullable SearchCategory category, User user, Container root) throws IOException;
+
+    // Search the external index.
+    public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException;
 
     public String escapeTerm(String term);
     
