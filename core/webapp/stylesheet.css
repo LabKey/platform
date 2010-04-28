@@ -240,11 +240,13 @@ table.labkey-no-spacing
 {
     background-color: #FFC5AA;
     border: 1px solid #FF0000;
+    background-image: none;
 }
 
 .labkey-textbox-warning
 {
     background-color: #FFF8C6;
+    background-image: none;
 }
 
 /* Used for button bars across the site */
