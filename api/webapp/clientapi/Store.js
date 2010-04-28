@@ -402,16 +402,31 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
         else
         {
-            var params = {schemaName: this.schemaName, "query.queryName": this.queryName};
+            var params = {
+                schemaName: this.schemaName,
+                "query.queryName": this.queryName,
+                "query.containerFilterName": this.containerFilter
+            };
 
             if (this.columns)
                 params['query.columns'] = this.columns;
 
+            // These are filters that are custom created (aka not from a defined view).
+            if (this.filterArray)
+            {
+                for (var i = 0; i < this.filterArray.length; i++)
+                {
+                    var filter = this.filterArray[i];
+                    params[filter.getURLParameterName()] = filter.getURLParameterValue();
+                }
+            }
+            
             if(this.sortInfo)
                 params['query.sort'] = "DESC" == this.sortInfo.direction
                         ? "-" + this.sortInfo.field
                         : this.sortInfo.field;
 
+            // These are filters that are defined by the view.
             var userFilters = this.getUserFilters();
             if (userFilters)
             {
