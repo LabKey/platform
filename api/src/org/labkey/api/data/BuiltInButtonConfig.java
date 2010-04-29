@@ -48,7 +48,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         _caption = caption;
     }
 
-    public DisplayElement createButton(List<DisplayElement> originalButtons)
+    public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
     {
         if (null == _caption)
             return null;

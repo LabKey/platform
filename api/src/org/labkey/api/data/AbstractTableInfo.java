@@ -50,6 +50,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected DetailsURL _gridURL;
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
+    protected ButtonBarConfig _buttonBarConfig;
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(0);
 
     public List<ColumnInfo> getPkColumns()
@@ -421,6 +422,11 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         _updateURL = updateURL;
     }
 
+    public ButtonBarConfig getButtonBarConfig()
+    {
+        return _buttonBarConfig;
+    }
+
     public void setDefaultVisibleColumns(Iterable<FieldKey> list)
     {
         _defaultVisibleColumns = list;
@@ -551,6 +557,9 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 }
             }
         }
+
+        if (xbTable.getButtonBarOptions() != null)
+            _buttonBarConfig = new ButtonBarConfig(xbTable.getButtonBarOptions());
     }
 
     /**

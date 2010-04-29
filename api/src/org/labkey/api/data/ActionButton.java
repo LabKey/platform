@@ -407,7 +407,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
         else
         {
-            out.write(PageFlowUtil.generateButton(getCaption(ctx), "/",
+            out.write(PageFlowUtil.generateButton(getCaption(ctx), "#",
                     (_appendScript ? renderDefaultScript(ctx) : "") + getScript(ctx), attributes.toString()));
         }
     }

@@ -115,9 +115,12 @@ public class NavTree extends Pair<String, String> implements Collapsible
         imageWidth = source.imageWidth;
 
         children = new ArrayList<NavTree>();
-        for (NavTree child : source.children)
+        if (source.children != null)
         {
-            children.add(new NavTree(child));
+            for (NavTree child : source.children)
+            {
+                children.add(new NavTree(child));
+            }
         }
     }
 

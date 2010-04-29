@@ -116,7 +116,7 @@ public class ButtonBar extends DisplayElement
             return;
 
         if (null != _config)
-            applyConfig(_config);
+            applyConfig(ctx, _config);
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
@@ -162,7 +162,7 @@ public class ButtonBar extends DisplayElement
         _config = config;
     }
 
-    public void applyConfig(ButtonBarConfig config)
+    public void applyConfig(RenderContext ctx, ButtonBarConfig config)
     {
         if (null == config.getItems() || config.getItems().size() == 0)
             return;
@@ -172,7 +172,7 @@ public class ButtonBar extends DisplayElement
 
         for (ButtonConfig item : config.getItems())
         {
-            DisplayElement elem = item.createButton(originalButtons);
+            DisplayElement elem = item.createButton(ctx, originalButtons);
             if (null != elem)
                 add(elem);
         }

@@ -98,6 +98,8 @@ public interface TableInfo
 
     void setDefaultVisibleColumns(Iterable<FieldKey> keys);
 
+    ButtonBarConfig getButtonBarConfig();
+
     String getSequence();
 
     /**

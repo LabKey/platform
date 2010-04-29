@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 
 import java.util.List;
@@ -33,5 +32,5 @@ import java.util.List;
  */
 public interface ButtonConfig
 {
-    public DisplayElement createButton(List<DisplayElement> originalButtons);
+    public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons);
 }

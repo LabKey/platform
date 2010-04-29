@@ -52,6 +52,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _rootTable = table;
         _name = _rootTable.getName();
         _description = _rootTable.getDescription();
+        _buttonBarConfig = _rootTable.getButtonBarConfig();
         setTitleColumn(table.getTitleColumn());
     }
 

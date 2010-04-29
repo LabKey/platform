@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -65,7 +66,7 @@ public class SchemaTableInfo implements TableInfo
     private DetailsURL _insertURL;
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
-
+    private ButtonBarConfig _buttonBarConfig;
 
     protected SchemaTableInfo(DbSchema parentSchema)
     {
@@ -559,6 +560,9 @@ public class SchemaTableInfo implements TableInfo
                 colInfo.loadFromXml(xmlColumn, false);
             }
         }
+
+        if (xmlTable.getButtonBarOptions() != null)
+            _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
     }
 
 
@@ -770,6 +774,11 @@ public class SchemaTableInfo implements TableInfo
     public boolean isMetadataOverrideable()
     {
         return true;
+    }
+
+    public ButtonBarConfig getButtonBarConfig()
+    {
+        return _buttonBarConfig;
     }
 
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name)

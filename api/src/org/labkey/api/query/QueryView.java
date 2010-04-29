@@ -610,6 +610,14 @@ public class QueryView extends WebPartView<Object>
         {
             addButton(bar, createPageSizeMenuButton());
         }
+
+        ButtonBarConfig bbarConfig = getTable().getButtonBarConfig();
+        if (bbarConfig != null)
+        {
+            bar.applyConfig(view.getRenderContext(), bbarConfig);
+            if (bbarConfig.getPosition() != null)
+                setButtonBarPosition(bbarConfig.getPosition());
+        }
     }
 
     public ActionButton createDeleteButton(ButtonBar bar)

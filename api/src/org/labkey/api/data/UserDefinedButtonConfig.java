@@ -17,6 +17,9 @@ package org.labkey.api.data;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
@@ -75,14 +78,36 @@ public class UserDefinedButtonConfig implements ButtonConfig
         _menuItems = items;
     }
 
-    public DisplayElement createButton(List<DisplayElement> originalButtons)
+    private String processURL(RenderContext ctx, String url)
+    {
+        StringExpression urlExpr = StringExpressionFactory.createURL(url);
+        if (urlExpr != null)
+        {
+            if (urlExpr instanceof DetailsURL)
+                ((DetailsURL) urlExpr).setContainer(ctx.getContainer());
+            url = urlExpr.eval(ctx);
+        }
+        return url;
+    }
+
+    private void processURLs(RenderContext ctx, NavTree tree)
+    {
+        if (tree.getValue() != null)
+            tree.setValue(processURL(ctx, tree.getValue()));
+        for (NavTree child : tree.getChildList())
+            processURLs(ctx, child);
+    }
+
+    public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
     {
         if (null != _menuItems)
         {
             MenuButton btn = new MenuButton(_text);
             for (NavTree item : _menuItems)
             {
-                btn.addMenuItem(item);
+                NavTree toAdd = new NavTree(item);
+                processURLs(ctx, toAdd);
+                btn.addMenuItem(toAdd);
             }
             return btn;
         }
@@ -90,7 +115,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         {
             ActionButton btn = new ActionButton(_text);
             if (null != _url)
-                btn.setURL(_url);
+                btn.setURL(processURL(ctx, _url));
             if (null != _onClick)
                 btn.setScript(_onClick, false);
 

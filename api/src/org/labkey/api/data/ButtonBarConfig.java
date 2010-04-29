@@ -18,11 +18,13 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.data.xml.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,16 +50,7 @@ public class ButtonBarConfig
     public ButtonBarConfig(JSONObject json)
     {
         if (json.has("position") && null != json.getString("position"))
-        {
-            try
-            {
-                _position = DataRegion.ButtonBarPosition.valueOf(json.getString("position").toUpperCase());
-            }
-            catch (Exception ignore)
-            {
-                throw new RuntimeException("'" + json.getString("position") + "' is not a valid button bar position (top, bottom, both, none).");
-            }
-        }
+            _position = getPosition(json.getString("position"));
 
         _includeStandardButtons = json.optBoolean("includeStandardButtons", false);
 
@@ -90,6 +83,64 @@ public class ButtonBarConfig
                     _items.add(button);
                 }
             }
+        }
+    }
+
+    public ButtonBarConfig(ButtonBarOptions buttonBarOptions)
+    {
+        _position = getPosition(buttonBarOptions.getPosition().toString());
+        _includeStandardButtons = buttonBarOptions.getIncludeStandardButtons();
+        ButtonBarItem[] items = buttonBarOptions.getItemArray();
+        if (items != null && items.length > 0)
+        {
+            _items = new ArrayList<ButtonConfig>();
+            for (ButtonBarItem item : items)
+                _items.add(loadButtonConfig(item));
+        }
+    }
+
+    protected ButtonConfig loadButtonConfig(ButtonBarItem item)
+    {
+        UserDefinedButtonConfig buttonConfig = new UserDefinedButtonConfig();
+        buttonConfig.setText(item.getText());
+        buttonConfig.setUrl(item.getUrl());
+        buttonConfig.setOnClick(item.getOnClick());
+
+        ButtonBarItem[] subItems = item.getItemArray();
+        if (subItems != null && subItems.length > 0)
+        {
+            List<NavTree> menuItems = new ArrayList<NavTree>();
+            for (ButtonBarItem subItem : subItems)
+                menuItems.add(loadNavTree(subItem));
+            buttonConfig.setMenuItems(menuItems);
+        }
+        return buttonConfig;
+    }
+
+    private NavTree loadNavTree(ButtonBarItem item)
+    {
+        NavTree tree = new NavTree(item.getText(), item.getUrl());
+        if (item.getOnClick() != null && item.getOnClick().length() > 0)
+            tree.setScript(item.getOnClick());
+        if (item.getIcon() != null && item.getIcon().length() > 0)
+            tree.setImageSrc(item.getIcon());
+        if (item.getItemArray() != null && item.getItemArray().length > 0)
+        {
+            for (ButtonBarItem child : item.getItemArray())
+                tree.addChild(loadNavTree(child));
+        }
+        return tree;
+    }
+
+    private DataRegion.ButtonBarPosition getPosition(String position)
+    {
+        try
+        {
+            return DataRegion.ButtonBarPosition.valueOf(position.toUpperCase());
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("'" + position + "' is not a valid button bar position (top, bottom, both, none).");
         }
     }
 
