@@ -210,7 +210,7 @@ public class NavTrailView extends HttpView
         //
 
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(context.getContainer());
-        _out.print("<table class=\"labkey-tab-strip\">\n");
+        _out.print("<table class=\"labkey-nav-trail\">\n");
         boolean hasCrumbTrail = null != _crumbTrail && _crumbTrail.size() > 1;
         _out.print("<tr><td colspan=");
         _out.print(hasCrumbTrail ? "1" : "2");

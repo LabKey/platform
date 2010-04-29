@@ -31,7 +31,7 @@
     String tabId = view.getSelectedTabId();
 %>
 
-<div class="labkey-tab-strip">
+<div>
     <ul class="labkey-tab-strip">
     <%
         for (NavTree tab : tabs)
@@ -45,17 +45,18 @@
             }
             else if (tab.getScript() == null)
             {
-                %><a class="labkey-tab-strip" href="<%=h(tab.getValue())%>"><%=h(tab.getKey())%>&nbsp;</a><%
+                %><a href="<%=h(tab.getValue())%>"><%=h(tab.getKey())%>&nbsp;</a><%
             }
             else
             {
                 String href = StringUtils.defaultString(tab.getValue(), "javascript:void(0);");
-                %><a class="labkey-tab-strip" href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getKey())%>&nbsp;</a><%
+                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getKey())%>&nbsp;</a><%
             }
             %></li><%
         }
     %>
     </ul>
+    <div class="labkey-tab-strip-spacer"></div>
     <div class="labkey-tab-strip-content">
         <div id="<%=view._prefix%>tabContent"><%
             ModelAndView tabView = view.getTabView(tabId);

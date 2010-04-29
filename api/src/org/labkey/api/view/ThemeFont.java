@@ -24,10 +24,10 @@ import java.util.*;
 
 public class ThemeFont
 {
-    //protected final static ThemeFont VERYSMALL = new ThemeFont("Very small", "7pt", "13pt", "10pt", "18pt", "9pt", "9pt", "10", "11");
-    protected final static ThemeFont _SMALL  = new ThemeFont("Small (10.1)",  "8pt", "10pt", "14pt", "14pt", "19pt", "10pt", "10pt", "11", "12");
-    protected final static ThemeFont _MEDIUM = new ThemeFont("Medium (10.1)","10pt", "10pt", "16pt", "13pt", "21pt", "12pt", "12pt", "13", "14");
-    protected final static ThemeFont _LARGE  = new ThemeFont("Large (10.1)", "12pt", "12pt", "18pt", "15pt", "23pt", "14pt", "14pt", "15", "16");
+//    protected final static ThemeFont VERYSMALL = new ThemeFont("Very small", "7pt", "13pt", "10pt", "18pt", "9pt", "9pt", "10", "11");
+//    protected final static ThemeFont _SMALL  = new ThemeFont("Small (10.1)",  "8pt", "10pt", "14pt", "14pt", "19pt", "10pt", "10pt", "11", "12");
+//    protected final static ThemeFont _MEDIUM = new ThemeFont("Medium (10.1)","10pt", "10pt", "16pt", "13pt", "21pt", "12pt", "12pt", "13", "14");
+//    protected final static ThemeFont _LARGE  = new ThemeFont("Large (10.1)", "12pt", "12pt", "18pt", "15pt", "23pt", "14pt", "14pt", "15", "16");
 
     protected final static ThemeFont XSMALL   = new ThemeFont("Smallest",  "11px", "13px", "18px", "18px", "25px", "13px", "13px", "11", "12");
     protected final static ThemeFont SMALL   = new ThemeFont("Small",      "12px", "13px", "18px", "18px", "25px", "13px", "13px", "12", "13");
@@ -131,10 +131,9 @@ public class ThemeFont
         webThemeFontMap.put(MEDIUM.getFriendlyName(), MEDIUM);
         webThemeFontMap.put(LARGE.getFriendlyName(), LARGE);
 //        webThemeFontMap.put(XLARGE.getFriendlyName(), XLARGE);
-
-        webThemeFontMap.put(_SMALL.getFriendlyName(), _SMALL);
-        webThemeFontMap.put(_MEDIUM.getFriendlyName(), _MEDIUM);
-        webThemeFontMap.put(_LARGE.getFriendlyName(), _LARGE);
+//        webThemeFontMap.put(_SMALL.getFriendlyName(), _SMALL);
+//        webThemeFontMap.put(_MEDIUM.getFriendlyName(), _MEDIUM);
+//        webThemeFontMap.put(_LARGE.getFriendlyName(), _LARGE);
     }
 
     public static ThemeFont getThemeFont(Container c)
