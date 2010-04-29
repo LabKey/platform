@@ -258,7 +258,6 @@ public class SequenceVisitManager extends VisitManager
 
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
                     "FROM " + tableParticipantVisit + "\n"+

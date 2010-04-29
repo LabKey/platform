@@ -32,6 +32,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -112,8 +113,8 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         if (errors.isEmpty())
         {
             deleteImportFile();
-            StudyManager.getInstance().recomputeStudyDataVisitDate(study);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser());
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singleton(def));
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser(), Collections.singleton(def));
         }
 
         ImportStatus status = new ImportStatus();

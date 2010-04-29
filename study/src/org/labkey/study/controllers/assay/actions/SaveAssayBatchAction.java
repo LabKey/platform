@@ -35,13 +35,14 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.study.assay.ModuleRunUploadContext;
+import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.TsvDataHandler;
-import org.labkey.study.assay.ModuleAssayProvider;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
@@ -67,6 +68,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if (batchJsonObject == null)
         {
             throw new IllegalArgumentException("No batch object found");
+        }
+
+        if (!(provider instanceof TsvAssayProvider))
+        {
+            throw new IllegalArgumentException("SaveAssayBatch is not supported for assay provider: " + provider);
         }
 
         ExpExperiment batch;
@@ -131,7 +137,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (!runJsonObject.has(DATA_ROWS))
             {
                 // Client didn't post the rows so reuse the values that are currently attached to the run
-                // Ineffecient but easy
+                // Inefficient but easy
                 dataRows = serializeRun(run, provider, protocol).getJSONArray(DATA_ROWS);
             }
             else
@@ -142,7 +148,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (!runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
             {
                 // Client didn't post the inputs so reuse the values that are currently attached to the run
-                // Ineffecient but easy
+                // Inefficient but easy
                 dataInputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
             }
             else
@@ -258,11 +264,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 throw new NotFoundException("Data with row id " + dataId + " is not in folder " + getViewContext().getContainer());
             }
         }
-        else if (dataObject.has(ExperimentJSONConverter.PIPELINE_PATH))
+        else if (dataObject.has(ExperimentJSONConverter.PIPELINE_PATH) && dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH) != null)
         {
             String pipelinePath = dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH);
-            String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
-            DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
             //check to see if this is already an ExpData
             File file = new File(pipelineRoot.getRootPath(), pipelinePath);
@@ -272,14 +276,49 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             if (null == data)
             {
                 //create a new one
-                String lsid = expSvc.generateLSID(container, type, pipelinePath);
+                String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
+                DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                String lsid = expSvc.generateLSID(container, type, name);
+                data = expSvc.createData(container, name, lsid);
+                data.setDataFileURI(uri);
+                data.save(getViewContext().getUser());
+            }
+        }
+        else if (dataObject.has(ExperimentJSONConverter.DATA_FILE_URL) && dataObject.getString(ExperimentJSONConverter.DATA_FILE_URL) != null)
+        {
+            String dataFileURL = dataObject.getString(ExperimentJSONConverter.DATA_FILE_URL);
+            //check to see if this is already an ExpData
+            data = expSvc.getExpDataByURL(dataFileURL, container);
+
+            if (null == data)
+            {
+                throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
+            }
+        }
+        else if (dataObject.has(ExperimentJSONConverter.ABSOLUTE_PATH) && dataObject.get(ExperimentJSONConverter.ABSOLUTE_PATH) != null)
+        {
+            String absolutePath = dataObject.getString(ExperimentJSONConverter.ABSOLUTE_PATH);
+            File f = new File(absolutePath);
+            URI uri = f.toURI();
+            if (!URIUtil.isDescendant(pipelineRoot.getUri(), uri))
+            {
+                throw new IllegalArgumentException("File with path " + absolutePath + " is not under the pipeline root for this folder");
+            }
+            //check to see if this is already an ExpData
+            data = expSvc.getExpDataByURL(f, container);
+
+            if (null == data)
+            {
+                String name = dataObject.optString(ExperimentJSONConverter.NAME, f.getName());
+                DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
                 data.setDataFileURI(uri);
                 data.save(getViewContext().getUser());
             }
         }
         else
-            throw new IllegalArgumentException("Data input must have an id proeprty or a pipelinePath property.");
+            throw new IllegalArgumentException("Data input must have an id, pipelinePath, dataFileURL, or absolutePath property.");
 
         saveProperties(data, new DomainProperty[0], dataObject);
         return data;

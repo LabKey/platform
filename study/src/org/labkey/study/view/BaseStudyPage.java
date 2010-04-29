@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.*;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: brittp
@@ -45,7 +46,7 @@ public abstract class BaseStudyPage extends JspBase
         return getStudy().getVisits(order);
     }
 
-    protected DataSetDefinition[] getDataSets()
+    protected List<DataSetDefinition> getDataSets()
     {
         return getStudy().getDataSets();
     }

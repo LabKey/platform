@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortManager;
@@ -98,6 +99,8 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 List<DatasetImportRunnable> runnables = reader.getRunnables();
                 pj.info("Start batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
 
+                List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
+
                 for (DatasetImportRunnable runnable : runnables)
                 {
                     String validate = runnable.validate();
@@ -108,6 +111,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                         continue;
                     }
                     String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
+                    datasets.add(runnable._datasetDefinition);
                     if (runnable._tsv != null)
                         statusMsg += " using file " + runnable._tsv.getName();
                     pj.setStatus(statusMsg);
@@ -127,18 +131,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
                 pj.setStatus("UPDATE participants");
                 pj.info("Updating participant visits");
-                getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser());
-
-                try
-                {
-                    pj.info("Updating participant cohorts");
-                    getCohortManager().updateParticipantCohorts(pj.getUser(), getStudy());
-                }
-                catch (SQLException e)
-                {
-                    // rethrow and catch below for central logging
-                    throw new RuntimeException(e);
-                }
+                getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser(), datasets);
 
                 // materialize datasets only AFTER all other work has been completed; otherwise the background thread
                 // materializing datasets will fight with other operations that may try to clear the materialized cache.

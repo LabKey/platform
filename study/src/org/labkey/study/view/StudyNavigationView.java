@@ -23,10 +23,12 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * User: matthewb
@@ -59,7 +61,7 @@ public class StudyNavigationView extends JspView<NavTree>
 //        NavTree ntDatasets = new NavTree("Datasets", new ActionURL("project","getWebPart",_study.getContainer()).addParameter("webpart.name","Datasets"));
         NavTree ntDatasets = new NavTree("Datasets", new ActionURL(StudyController.DatasetsAction.class,_study.getContainer()));
         ntRoot.addChild(ntDatasets);
-        DataSet defs[] = _study.getDataSets();
+        List<DataSetDefinition> defs = _study.getDataSets();
 //        for (DataSetDefinition def : defs)
 //        {
 //            ntDatasets.addChild(def.getDisplayString(), _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",def.getDataSetId()));

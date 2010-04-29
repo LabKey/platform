@@ -1330,6 +1330,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             Table.TempTableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
             if (tempTableInfo != null)
             {
+                // Update the materialized temp table if it's still around
                 SimpleFilter tempTableFilter = new SimpleFilter();
                 tempTableFilter.addInClause("LSID", imported);
                 SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
@@ -1455,5 +1456,27 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 Integer.class
                 );
         return newKey.intValue();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DataSetDefinition that = (DataSetDefinition) o;
+
+        if (_dataSetId != that._dataSetId) return false;
+        if (_study != null ? !_study.equals(that._study) : that._study != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _study != null ? _study.hashCode() : 0;
+        result = 31 * result + _dataSetId;
+        return result;
     }
 }

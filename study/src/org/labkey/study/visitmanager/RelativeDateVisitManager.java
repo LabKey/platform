@@ -285,7 +285,7 @@ public class RelativeDateVisitManager extends VisitManager
                 Table.execute(schema, "DELETE FROM " + tableVisit + " WHERE Container=?", new Object[]{c});
 
                 //Now recompute everything
-                updateParticipantVisits(user);
+                updateParticipantVisits(user, _study.getDataSets());
             }
         }
     }

@@ -42,9 +42,7 @@
 
     String cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer()).getLocalURIString();
 
-    DataSet[] datasets = study.getDataSets();
-
-    for (DataSet def : datasets)
+    for (DataSet def : study.getDataSets())
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
         detailsURL.addParameter("datasetId", def.getDataSetId());

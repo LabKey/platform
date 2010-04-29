@@ -144,8 +144,7 @@ else
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
     }
     %></tr><%
-    DataSet[] datasets = study.getDataSets();
-    for (DataSet ds : datasets)
+    for (DataSet ds : study.getDataSets())
     {
         SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
 

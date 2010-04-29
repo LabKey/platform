@@ -4088,8 +4088,8 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy());
-            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser());
+            StudyManager.getInstance().recomputeStudyDataVisitDate(getStudy(), getStudy().getDataSets());
+            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getUser(), getStudy().getDataSets());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             Integer visitDates = Table.executeSingleton(StudySchema.getInstance().getSchema(),
@@ -4261,8 +4261,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
             Map<Integer, DatasetVisibilityData> bean = new HashMap<Integer,DatasetVisibilityData>();
-            DataSet[] defs = getStudy().getDataSets();
-            for (DataSet def : defs)
+            for (DataSet def : getStudy().getDataSets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();

@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -46,7 +47,7 @@
 <%
     Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
 
-    DataSet[] datasets = study.getDataSets();
+    List<? extends DataSet> datasets = study.getDataSets();
     int countUndefined = 0;
     for (DataSet def : datasets) {
         if (def.getTypeURI() == null)
@@ -112,7 +113,7 @@
             <td><%= textLink("Define Dataset Schemas", "manageUndefinedTypes.view")%></td>
         </tr><%
     }
-    if (datasets.length > 0)
+    if (!datasets.isEmpty())
     {
     %><tr>
         <td>Datasets can be displayed in any order.</td>

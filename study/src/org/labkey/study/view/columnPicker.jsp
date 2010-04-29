@@ -32,7 +32,6 @@
 //    ReportsController.ColumnPickerForm form;
 
 ReportsController.DataPickerBean bean = (ReportsController.DataPickerBean)HttpView.currentModel();
-DataSetDefinition[] datasets = bean.study.getDataSets();
 DataSetDefinition selectedDataset = null;
 PropertyDescriptor[] pds = null;
 String error = null;
@@ -43,7 +42,7 @@ String error = null;
 <tr><td>Dataset</td><td><select name="<%=DataSetDefinition.DATASETKEY%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
     <option value="-1"></option>
 <%
-for (DataSetDefinition ds : datasets)
+for (DataSetDefinition ds : bean.study.getDataSets())
 {
     boolean selected = bean.form.getDatasetId().intValue() == ds.getDataSetId();
     if (selected)

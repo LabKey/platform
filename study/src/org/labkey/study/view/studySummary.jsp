@@ -71,7 +71,7 @@ if (null == getStudy())
 <table width="100%">
     <tr><td valign="top">This study defines
 <ul>
-    <li><%= getDataSets().length %> Datasets (Forms and Assays)&nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
+    <li><%= getDataSets().size() %> Datasets (Forms and Assays)&nbsp;<%= isAdmin ? textLink("Manage Datasets", url.setAction(StudyController.ManageTypesAction.class)) : "&nbsp;" %></li>
     <% if (timepointType != TimepointType.CONTINUOUS) { %>
     <li><%= getVisits(Visit.Order.DISPLAY).length %> <%=visitLabel%>&nbsp;<%=timepointType == TimepointType.VISIT && isAdmin && getVisits(Visit.Order.DISPLAY).length < 0 ?
                         textLink("Import Visit Map", url.setAction(StudyController.UploadVisitMapAction.class)) : "" %><%=

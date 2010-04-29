@@ -146,7 +146,6 @@ public class ExportExcelReport extends RedirectReport
         boolean checkUserPermissions = true;//mustCheckDatasetPermissions(user, ACL.PERM_READ);
 
         StudySchema studySchema = StudySchema.getInstance();
-        DataSetDefinition[] defs = study.getDataSets();
 
         //
         // DATASETS
@@ -164,7 +163,7 @@ public class ExportExcelReport extends RedirectReport
         WritableWorkbook workbook = ExcelWriter.getWorkbook(outputStream);
         ExcelWriter writer = new ExcelWriter();
 
-        for (DataSetDefinition def : defs)
+        for (DataSetDefinition def : study.getDataSets())
         {
             if (def.getTypeURI() == null)
                 continue;

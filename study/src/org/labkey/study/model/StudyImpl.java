@@ -101,12 +101,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
-        List<SecurableResource> ret = new ArrayList<SecurableResource>();
-
-        //add all datasets the user has admin perms on
-        Collections.addAll(ret, getDataSets());
-
-        return ret;
+        return new ArrayList<SecurableResource>(getDataSets());
     }
 
     @NotNull
@@ -141,9 +136,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public DataSetDefinition[] getDataSets()
+    public List<DataSetDefinition> getDataSets()
     {
-        return StudyManager.getInstance().getDataSetDefinitions(this);
+        return Arrays.asList(StudyManager.getInstance().getDataSetDefinitions(this));
     }
 
     public PropertyDescriptor[] getSharedProperties()
@@ -472,5 +467,22 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         // normalize on 'set' to ensure good names:
         _subjectColumnName = ColumnInfo.legalNameFromName(subjectColumnName);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StudyImpl study = (StudyImpl) o;
+
+        return !(getContainer() != null ? !getContainer().equals(study.getContainer()) : study.getContainer() != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getContainer() != null ? getContainer().hashCode() : 0;
     }
 }

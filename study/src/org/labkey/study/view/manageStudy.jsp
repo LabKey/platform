@@ -102,7 +102,7 @@
 
     <tr>
         <th align="left">Datasets</th>
-        <td>This study defines <%= getDataSets().length %> Datasets</td>
+        <td>This study defines <%= getDataSets().size() %> Datasets</td>
         <td><%= textLink("Manage Datasets", "manageTypes.view") %></td>
     </tr>
     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>

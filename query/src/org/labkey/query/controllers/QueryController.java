@@ -2368,7 +2368,7 @@ public class QueryController extends SpringActionController
         protected abstract void checkTablePermission(User user, TableInfo table);
 
         /**
-         * Dervied classes should implement this method to do the actual save operation (insert, update or delete)
+         * Derived classes should implement this method to do the actual save operation (insert, update or delete)
          * @param table The table
          * @param qus The QueryUpdateService
          * @param rows

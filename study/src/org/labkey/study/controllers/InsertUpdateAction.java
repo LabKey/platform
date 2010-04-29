@@ -43,10 +43,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -282,8 +279,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         // we need to recompute the participant-visit map:
         if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
         {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(study);
-            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getViewContext().getUser());
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singleton(ds));
+            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getViewContext().getUser(), Collections.singleton(ds));
         }
 
         return true;

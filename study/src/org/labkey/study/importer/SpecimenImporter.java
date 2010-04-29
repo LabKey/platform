@@ -32,6 +32,7 @@ import org.labkey.api.util.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
+import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -534,7 +535,7 @@ public class SpecimenImporter
 
             StudyImpl study = StudyManager.getInstance().getStudy(container);
 
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptyList());
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
@@ -598,7 +599,7 @@ public class SpecimenImporter
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
             StudyImpl study = StudyManager.getInstance().getStudy(container);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, study.getDataSets());
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
@@ -1238,9 +1239,11 @@ public class SpecimenImporter
     private void populateSpecimens(SpecimenLoadInfo info) throws SQLException
     {
         SQLFragment insertSql = new SQLFragment();
-        insertSql.append("INSERT INTO study.Specimen \n(").append("Container, SpecimenHash, ");
+        insertSql.append("INSERT INTO study.Specimen \n(").append("ParticipantSequenceKey, Container, SpecimenHash, ");
         insertSql.append(getSpecimenCols(info.getAvailableColumns())).append(")\n");
-        insertSql.append("SELECT Container, SpecimenHash, ");
+        insertSql.append("SELECT ");
+        insertSql.append(VisitManager.getParticipantSequenceKeyExpr(info._schema, "PTID", "VisitValue"));
+        insertSql.append(", Container, SpecimenHash, ");
         insertSql.append(getSpecimenCols(info.getAvailableColumns())).append(" FROM (\n");
         insertSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
         insertSql.append("GROUP BY ").append("Container, SpecimenHash, ");

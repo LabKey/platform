@@ -20,6 +20,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -107,8 +108,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // we need to recompute the participant-visit map:
         if (recomputeCohorts || lsidChanged)
         {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(study);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
+            DataSetDefinition dataset = study.getDataSet(_datasetId);
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singletonList(dataset));
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(dataset));
         }
     }
 

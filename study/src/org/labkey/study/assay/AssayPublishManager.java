@@ -275,8 +275,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 }
             }
             //Make sure that the study is updated with the correct timepoints.
-            StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user);
-            CohortManager.getInstance().updateParticipantCohorts(user, targetStudy);
+            StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, targetContainer);
             url.addParameter(DataSetDefinition.DATASETKEY, dataset.getRowId());
@@ -617,7 +616,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
             lsids = StudyManager.getInstance().importDatasetData(study, user, dsd, new TabLoader(tsv, true), ul.getCreated().getTime(), columnMap, errors, true, true, defaultQCState, null);
             if (errors.size() == 0)
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user);
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
         }
         catch (IOException x)
         {

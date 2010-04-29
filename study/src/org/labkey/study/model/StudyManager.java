@@ -485,7 +485,7 @@ public class StudyManager
             for (DataSetDefinition def : getDataSetDefinitions(study))
                 def.unmaterialize();
 
-            getVisitManager(study).updateParticipantVisits(user);
+            getVisitManager(study).updateParticipantVisits(user, study.getDataSets());
         }
         finally
         {
@@ -1483,9 +1483,9 @@ public class StudyManager
 
         // Before we delete any data, we need to go fetch the Dataset definitions.
         StudyImpl study = StudyManager.getInstance().getStudy(c);
-        DataSetDefinition[] dsds;
+        List<DataSetDefinition> dsds;
         if (study == null) // no study in this folder
-            dsds = new DataSetDefinition[0];
+            dsds = Collections.emptyList();
         else
             dsds = study.getDataSets();
 
@@ -1856,8 +1856,7 @@ public class StudyManager
                 return;
 
             Map<String,TableSnapshotInfo> datasetSnapshotInfo = new HashMap<String, TableSnapshotInfo>();
-            DataSetDefinition [] datasets = study.getDataSets();
-            for (DataSetDefinition dsd : datasets)
+            for (DataSetDefinition dsd : study.getDataSets())
                 datasetSnapshotInfo.put(dsd.getName(), new TableSnapshotInfo(dsd.getTableInfo(user, true, false)));
 
             tableSnapshotInfo.put("Datasets", datasetSnapshotInfo);
@@ -2259,52 +2258,47 @@ public class StudyManager
         return new DatasetDomainKind().generateDomainURI(c, name);
     }
 
-    /** NOTE: this is usually handled at import time, this is only useful
-     * if DataSetDefinition.visitDatePropertyName changes
-     *
-     * @param study
-     */
-    public void recomputeStudyDataVisitDate(StudyImpl study)
+    /** NOTE: this is usually handled at import time, this is only useful if DataSetDefinition.visitDatePropertyName changes */
+    public void recomputeStudyDataVisitDate(StudyImpl study, Collection<DataSetDefinition> changedDatasets)
     {
-        DataSetDefinition[] defs = study.getDataSets();
-        for (DataSetDefinition def : defs)
-            recomputeStudyDataVisitDate(study, def);
-    }
-
-
-    private void recomputeStudyDataVisitDate(Study study, DataSetDefinition def)
-    {
-        String propertyName = StringUtils.trimToNull(def.getVisitDatePropertyName());
-        if (null == propertyName)
-            return;
-        if (null == StringUtils.trimToNull(def.getTypeURI()))
-            return;
-        PropertyDescriptor pds[] = OntologyManager.getPropertiesForType(def.getTypeURI(), study.getContainer());
-        if (pds == null)
-            return;
-        PropertyDescriptor pdVisitDate = null;
-        for (PropertyDescriptor pd : pds)
+        for (DataSetDefinition def : changedDatasets)
         {
-            if (propertyName.equalsIgnoreCase(pd.getName()))
+            String propertyName = StringUtils.trimToNull(def.getVisitDatePropertyName());
+            if (null == propertyName)
+                continue;
+            if (null == StringUtils.trimToNull(def.getTypeURI()))
+                continue;
+            PropertyDescriptor pds[] = OntologyManager.getPropertiesForType(def.getTypeURI(), study.getContainer());
+            if (pds == null)
+                continue;
+            PropertyDescriptor pdVisitDate = null;
+            for (PropertyDescriptor pd : pds)
             {
-                pdVisitDate = pd;
-                break;
+                if (propertyName.equalsIgnoreCase(pd.getName()))
+                {
+                    pdVisitDate = pd;
+                    break;
+                }
             }
-        }
-        if (pdVisitDate == null)
-            return;
-
-        try
-        {
-            DbSchema schema = StudySchema.getInstance().getSchema();
-            String sqlUpdate =
-                    "UPDATE study.StudyData SET _VisitDate=(SELECT datetimevalue FROM exp.Object O JOIN exp.ObjectProperty OP ON O.ObjectId=OP.ObjectId WHERE O.Container=? AND O.ObjectURI=LSID AND OP.PropertyId=?)\n" +
-                    "WHERE Container=? AND DataSetId=?";
-            Table.execute(schema, sqlUpdate, new Object[] {study.getContainer(), pdVisitDate.getPropertyId(), study.getContainer(), def.getDataSetId()} );
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
+            if (pdVisitDate != null)
+            {
+                try
+                {
+                    DbSchema schema = StudySchema.getInstance().getSchema();
+                    String sqlUpdate =
+                            "UPDATE study.StudyData SET _VisitDate=(SELECT datetimevalue FROM exp.Object O JOIN exp.ObjectProperty OP ON O.ObjectId=OP.ObjectId WHERE O.Container=? AND O.ObjectURI=LSID AND OP.PropertyId=?)\n" +
+                            "WHERE Container=? AND DataSetId=?";
+                    int count = Table.execute(schema, sqlUpdate, new Object[] {study.getContainer(), pdVisitDate.getPropertyId(), study.getContainer(), def.getDataSetId()} );
+                    if (count > 0)
+                    {
+                        def.unmaterialize();
+                    }
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            }
         }
     }
 
