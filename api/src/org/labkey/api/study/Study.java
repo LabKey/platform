@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * User: kevink
@@ -31,7 +32,7 @@ public interface Study extends StudyEntity
 
     DataSet getDataSet(int id);
 
-    DataSet[] getDataSets();
+    List<? extends DataSet> getDataSets();
 
     Site[] getSites();
 

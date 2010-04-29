@@ -20,7 +20,11 @@ import org.json.JSONArray;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.URIUtil;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
@@ -43,6 +47,7 @@ public class ExperimentJSONConverter
     public static final String PROPERTIES = "properties";
     public static final String COMMENT = "comment";
     public static final String DATA_FILE_URL = "dataFileURL";
+    public static final String ABSOLUTE_PATH = "absolutePath";
     public static final String PIPELINE_PATH = "pipelinePath"; //path relative to pipeline root
 
     // Run properties
@@ -129,6 +134,17 @@ public class ExperimentJSONConverter
     public static JSONObject serializeData(ExpData data)
     {
         JSONObject jsonObject = serializeStandardProperties(data, null);
+        jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
+        File f = data.getFile();
+        if (f != null)
+        {
+            jsonObject.put(ABSOLUTE_PATH, f.getAbsolutePath());
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(data.getContainer());
+            if (pipeRoot != null)
+            {
+                jsonObject.put(PIPELINE_PATH, URIUtil.relativize(pipeRoot.getUri(), f.toURI()));
+            }
+        }
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
         return jsonObject;
     }

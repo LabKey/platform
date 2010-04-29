@@ -17,6 +17,7 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.UnauthorizedException;
 import org.jetbrains.annotations.Nullable;
