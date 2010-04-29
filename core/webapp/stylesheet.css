@@ -2739,7 +2739,8 @@ ul.labkey-tab-strip a
 
 li.labkey-tab-active a
 {
-    border-bottom : 1px solid #ffffff;
+    background-color : #E1ECFC;
+    border-bottom : 1px solid #E1ECFC;
     font-weight: bold;
 }
 

@@ -518,10 +518,11 @@ boolean shadeSelectedTab = true;
 }
 
 /* everwhere else */
-.labkey-tab-selected, td.labkey-tab-selected, li.labkey-tab-active, li.labkey-tab-active a
+.labkey-tab-selected, td.labkey-tab-selected, ul.labkey-tab-strip li.labkey-tab-active a
 {
     color: #<%=tabFontColor%>;
     background-color: #<%=tabSelectedColor%>;
+    border-bottom-color: #<%=tabSelectedColor%>;
 }
 
 .labkey-tab-strip,
