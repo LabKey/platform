@@ -710,7 +710,7 @@ table.labkey-pad-cells
 
 .labkey-pad-cells td
 {
-    padding:5px;
+    padding:2px;
 }
 
 table.labkey-fixed-width-columns
@@ -732,8 +732,8 @@ table.labkey-show-borders
     the borders usually win bottom and right over top and left (It is supposed to be
     the opposite, which is how Firefox correctly does it. So we use a
     combination of table borders and cell borders for Safari and Firefox*/
-    border-top: 0px;
-    border-left: 0px;
+    border-top: 0;
+    border-left: 0;
     border-right: solid 1px #DDDDDD;
     border-bottom: solid 1px #DDDDDD;
     /* Part of a hack for IE 7 and below since IE gives precendence to table borders over cell borders */
@@ -747,7 +747,7 @@ in the table tag.  They are necessary so that the borders take precedence correc
     /* Firefox and Safari use column and row borders along with table borders, since
     we want the bold borders for the column and row header and totals and stat titles
     to take precedence over them */
-    border: 0px;
+    border: 0;
     /* Again, IE 7 and below gives precendence to table borders over cell borders, also it doesn't do
     column or row borders, but it does do correct precedence for cells
      (top and left over bottom and right) so we can use cell borders */
@@ -2905,9 +2905,19 @@ ul.x-tab-strip-top li {
 .x-tab-scroller-right-disabled {background:white;opacity:1;}
 
 /* fix up spacer since the tabs no longer within a panel with background and border */
-.x-tab-panel-header-plain .x-tab-strip-spacer, .x-tab-panel-footer-plain .x-tab-strip-spacer
+.x-tab-panel-header-plain .x-tab-strip-spacer,
+.x-tab-panel-footer-plain .x-tab-strip-spacer,
+.x-tab-panel-header .x-tab-strip-spacer
 {
-    height:4;
+    height:4px;
+    border:1px solid #89A1B4;
+    font-size:1px;
+    line-height:1px;
+}
+.x-tab-panel-header-plain .x-tab-strip-spacer,
+.x-tab-panel-header .x-tab-strip-spacer
+{
+    border-top-width:0;
 }
 
 .x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner{
