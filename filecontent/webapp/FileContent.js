@@ -78,6 +78,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.adminOptions = new LABKEY.FileContentConfig();
         this.adminOptions.on('actionConfigChanged', this.updateToolbarButtons, this);
         this.adminOptions.on('filePropConfigChanged', this.onFilePropConfigChanged, this);
+        this.adminOptions.on('gridConfigChanged', this.onGridConfigChanged, this);
 
         this.on(BROWSER_EVENTS.transferstarted, this.onCustomFileProperties, this);
 
@@ -120,6 +121,13 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             tooltip: 'Configure email notifications on file actions.',
             listeners: {click:function(button, event) {this.onEmailPreferences(button);}, scope:this},
             hideText: true
+        })
+
+        actions.auditLog = new Ext.Action({
+            text: 'Audit History',
+            iconCls: 'iconAuditLog',
+            tooltip: 'View the files audit log for this folder.',
+            listeners: {click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory');}}
         })
         return actions;
     },
@@ -229,7 +237,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.adminOptions.inheritedFileConfig = config.inheritedFileConfig;
 
         if (o.success)
+        {
             this.adminOptions.setFileFields(o.fileProperties);
+            this.adminOptions.setGridConfig(config.gridConfig);
+        }
 
         if (e.updatePipelineActions)
         {
@@ -604,11 +615,19 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     onAdmin : function(btn)
     {
+        var sm = new Ext.grid.CheckboxSelectionModel();
+        var cm = this.createDefaultColumnModel(sm);
+
+        if (this.adminOptions.isCustomFileProperties())
+            cm = cm.concat(this.adminOptions.createColumnModelColumns());
+
         var configDlg = new LABKEY.ActionsAdminPanel({
             path: this.currentDirectory.data.path,
             isPipelineRoot : this.isPipelineRoot,
             tbarItemsConfig: this.tbarItemsConfig,
-            actions: this.actions
+            actions: this.actions,
+            columnModel : cm, //this.grid.getColumnModel().config
+            gridConfig : this.adminOptions.getGridConfig() 
         });
 
         configDlg.on('success', function(c){this.updateActionConfiguration(true, true);}, this, {single:true});
@@ -858,12 +877,22 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (config.isCustomFileProperties())
         {
             cm = cm.concat(config.createColumnModelColumns());
-            this.fileSystem.init(config.createFileSystemConfig());
+            this.fileSystem.init(config.createFileSystemConfig(this.fileSystem.initialConfig));
         }
         else
             this.fileSystem.init(this.fileSystem.initialConfig);
 
         this.grid.getColumnModel().setConfig(cm);
+        this.grid.getView().refresh(true);
         this.refreshDirectory();
+    },
+
+    onGridConfigChanged : function(config)
+    {
+        if (config.getGridConfig())
+        {
+            this.grid.applyState(config.getGridConfig());
+            this.grid.getView().refresh(true);            
+        }
     }
 });

@@ -28,6 +28,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
@@ -53,6 +54,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.FileSystemAuditViewFactory;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
@@ -894,14 +896,19 @@ public class FileContentController extends SpringActionController
                         if (data != null)
                         {
                             try {
+                                StringBuilder sb = new StringBuilder("annotations updated: ");
+                                String delim = "";
                                 for (DomainProperty prop : _domainProps)
                                 {
                                     Object o = fileProps.get(prop.getName());
                                     if (o != null && !StringUtils.isBlank(String.valueOf(o)))
                                     {
                                         data.setProperty(getUser(), prop.getPropertyDescriptor(), o);
+                                        sb.append(delim).append(prop.getLabel()).append('=').append(String.valueOf(o));
+                                        delim = ",";
                                     }
                                 }
+                                resource.notify(getViewContext(), sb.toString());
                                 response.put("success", true);
                             }
                             catch (ValidationException e){}
@@ -1108,7 +1115,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ResetFilesToolbarOptionsAction extends MutatingApiAction<Object>
+    public class ResetFilesUIOptionsAction extends MutatingApiAction<Object>
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
@@ -1116,6 +1123,7 @@ public class FileContentController extends SpringActionController
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
 
             options.setTbarConfig(Collections.<FilesTbarBtnOption>emptyList());
+            options.setGridConfig(null);
             svc.setAdminOptions(getContainer(), options);
 
             return new ApiSimpleResponse("success", true);
@@ -1187,6 +1195,20 @@ public class FileContentController extends SpringActionController
             response.put("success", true);
 
             return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ShowFilesHistoryAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return FileSystemAuditViewFactory.getInstance().createFileContentView(getViewContext());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("File History");
         }
     }
 

@@ -218,6 +218,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     filePropConfig : 'useDefault',
     inheritedFileConfig : {},//'useDefault',
     tbarBtnConfig : [],             // array of toolbar btn configuration
+    gridConfig : {},                // grid column model config
 
     constructor : function(config)
     {
@@ -239,7 +240,9 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
              * @event tbarConfigChanged
              * Fires after this object is updated with new toolbar button configurations.
              */
-            'tbarConfigChanged'
+            'tbarConfigChanged',
+
+            'gridConfigChanged'
         );
     },
 
@@ -284,16 +287,23 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
 
     setFileFields : function(fields) {
         if (fields && fields.length)
-        {
             this.fileFields = fields;
-            this.fireEvent('filePropConfigChanged', this);
-        }
+        this.fireEvent('filePropConfigChanged', this);
     },
 
     setFilePropConfig : function(config) {
         this.filePropConfig = config;
     },
-    
+
+    setGridConfig : function(config) {
+        this.gridConfig = config;
+        this.fireEvent('gridConfigChanged', this);
+    },
+
+    getGridConfig : function() {
+        return this.gridConfig;
+    },
+
     isCustomFileProperties : function() {
         if (this.filePropConfig == 'useCustom')
             return true;
@@ -378,13 +388,20 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
      * Creates files system config properties so that we can request and store
      * custom file properties through webdav
      */
-    createFileSystemConfig : function()
+    createFileSystemConfig : function(initialConfig)
     {
-        var config = {};
+        var config = {extraPropNames:[], extraDataFields:[]};
+
+        // if there were also extra file system fields specified in the initial configuration, fold these in as well
+        if (initialConfig)
+        {
+            Ext.apply(config.extraPropNames, initialConfig.extraPropNames);
+            Ext.apply(config.extraDataFields, initialConfig.extraDataFields);
+        }
+
         if (this.fileFields)
         {
-            config.extraPropNames = ['custom'];
-            config.extraDataFields = [];
+            config.extraPropNames.push('custom');
             for (var i=0; i < this.fileFields.length; i++)
             {
                 var prop = this.fileFields[i];

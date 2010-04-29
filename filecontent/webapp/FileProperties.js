@@ -118,6 +118,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             metaData: {fields: fields}
         });
         this.formPanel.add({name: 'uri', xtype: 'hidden', value: 0});
+        this.formPanel.getForm().setValues(this.files[this.fileIndex]);
 
         var titlePanel = new Ext.Panel({
             id: 'file-props-title',
@@ -129,7 +130,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             id: 'file-props-status',
             border: false,
             height: 40
-        })
+        });
 
         var panelItems = [titlePanel, this.formPanel];
         if (this.applyCheckbox)

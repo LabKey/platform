@@ -630,10 +630,6 @@ public class PipelineController extends SpringActionController
 
                 if (dd != null)
                 {
-/*
-                    GWTDomain domain = DomainUtil.getDomainDescriptor(context.getUser(), uri, getContainer());
-                    return domain.getFields();
-*/
                     Domain domain = PropertyService.get().getDomain(dd.getDomainId());
                     if (domain != null)
                     {
@@ -646,16 +642,12 @@ public class PipelineController extends SpringActionController
                             gwtProp.setRangeURI(prop.getType().getLabel());
 
                             properties.add(gwtProp);
-/*
-                            properties.add(PageFlowUtil.map(
-                                    "name", prop.getLabel() != null ? prop.getLabel() : prop.getName(),
-                                    "type", prop.getType().getLabel()));
-*/
                         }
                     }
                 }
                 break;
             case useDefault:
+/*
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
 
                 prop.setLabel("Description");
@@ -663,6 +655,7 @@ public class PipelineController extends SpringActionController
                 prop.setRangeURI("String");
 
                 properties.add(prop);
+*/
                 break;
             case useParent:
                 while (container != container.getProject())

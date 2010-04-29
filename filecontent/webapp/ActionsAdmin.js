@@ -66,6 +66,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     actions: {},            // map of action names to actions of all actions available
     newActions: {},         // map of newly customized actions
 
+    columnModel: {},        // the current file browser grid column model
+    gridConfig: {},         // the saved grid column header configuration
+
     constructor : function(config)
     {
         Ext.apply(this, config);
@@ -245,12 +248,12 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             scope: this,
             hidden: true,
             handler: function(b, e){
-                Ext.MessageBox.confirm("Confirm reset", 'All toolbar button customizations on this page will be deleted, continue?', function(answer)
+                Ext.MessageBox.confirm("Confirm reset", 'All grid and toolbar button customizations on this page will be deleted, continue?', function(answer)
                 {
                     if (answer == "yes")
                     {
                         Ext.Ajax.request({
-                            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFilesToolbarOptions'),
+                            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFilesUIOptions'),
                             method:'POST',
                             disableCaching:false,
                             success : function(){
@@ -266,7 +269,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         var win = new Ext.Window({
             title: 'Manage File Browser Configuration',
-            width: 600,
+            width: 750,
             height: 500,
             cls: 'extContainer',
             autoScroll: true,
@@ -437,7 +440,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     columns: 1,
                     labelSeparator: '',
                     items: [
-                        {boxLabel:'Use Default File Properties', name: 'fileOption', inputValue: 'useDefault', checked: this.fileConfig == 'useDefault'},
+                        {boxLabel:'Use Default (none)', name: 'fileOption', inputValue: 'useDefault', checked: this.fileConfig == 'useDefault'},
                         {boxLabel:'Use Same Settings as Parent', name: 'fileOption', inputValue: 'useParent', checked: this.fileConfig == 'useParent'},
                         {boxLabel:'Use Custom File Properties',
                             name: 'fileOption',
@@ -548,8 +551,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             flex: 1,
             layout: 'table',
             bodyStyle:'padding:30px',
-            tbar: this.toolbar,
-            layoutConfig: {columns:4},
+            //tbar: this.toolbar,
+            layoutConfig: {columns:5},
             items: [actions]
         });
 
@@ -582,9 +585,53 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             });
         });
 
+        var data = [];
+        var sampleStore = new Ext.data.ArrayStore({
+            fields: [
+                {name: 'name'},
+                {name: 'modified'},
+                {name: 'size'},
+                {name: 'createdBy'},
+                {name: 'description'}
+            ],
+            data: [
+                ['file1.xls', '4/15/2010', 10150, 'test user', 'first file'],
+                ['file2.xls', '4/16/2010', 13155, 'administrator', 'second file']
+            ]
+        })
+
+        // substitute in some renderers
+        for (var i=0; i < this.columnModel.length; i++)
+        {
+            var col = this.columnModel[i];
+
+            if (col.dataIndex == 'modified')
+                col.renderer = Ext.util.Format.dateRenderer("Y-m-d H:i:s");
+            if (col.dataIndex == 'iconHref')
+                col.renderer = function(){
+                    var img = {tag:'img', width:16, height:16, src:LABKEY.contextPath + "/_icons/xls.gif"};
+                    return Ext.DomHelper.markup(img);
+                };
+            else if (col.renderer)
+                col.renderer = undefined;
+        }
+
+        this.grid = new Ext.grid.GridPanel(
+        {
+            tbar: this.toolbar,
+            layout: 'fit',
+            store: sampleStore,
+            border:true,
+            //loadMask:{msg:"Loading, please wait..."},
+            height: 150,
+            columns: this.columnModel
+        });
+        if (this.gridConfig)
+            this.grid.applyState(this.gridConfig);
+
         var toolbarPanel = new Ext.Panel({
             id: 'toolbarTab',
-            title: 'Toolbar',
+            title: 'UI Settings',
             bodyStyle : 'padding:10px;',
             layout: 'vbox',
             layoutConfig: {
@@ -592,10 +639,13 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             },
             items: [
-                {html: '<span class="labkey-strong">Configure Toolbar</span></br>Drag the buttons on the toolbar to customize the button order. ' +
+                {html: '<span class="labkey-strong">Configure Grid columns and Toolbar</span></br>Drag the buttons on the toolbar to customize the button order. ' +
                        'Buttons can be added by dragging from the list of available buttons below and dropping them on the toolbar. Buttons can be removed ' +
-                       'by clicking on the toolbar button and selecting "remove" from the dropdown menu.', border: false, height: 70},
-                panel
+                       'by clicking on the toolbar button and selecting "remove" from the dropdown menu.</br></br>' +
+                       'Grid columns can be customized by dragging to reorder, adjusting the width, and controlling the sort or show state using the drop down ' +
+                       'menus on each column.', border: false, height: 90},
+                panel,
+                this.grid
             ]
 //                    bodyStyle : 'padding:10 10 10 0px;',
         });
@@ -706,7 +756,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             height: 150,
             border: false,
             defaultType: 'radio',
-            items: radioGroup
+            items: [radioGroup]
         });
 
         var emailPanel = new Ext.Panel({
@@ -719,6 +769,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 pack: 'start'
             },
             items: [
+                {html: '<span class="labkey-strong">Configure Email defaults</span></br>Select the default email notification options to apply ' +
+                       'to this folder. Project users will have the option to override or accept folder defaults.', border: false, height: 40},
                 panel
             ]
         });
@@ -820,6 +872,9 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         adminOptions.fileConfig = this.fileConfig;
         adminOptions.emailPref = this.emailPref;
 
+        // grid column model changes
+        adminOptions.gridConfig = this.grid.getState();
+        
         Ext.Ajax.request({
             url: this.actionsUpdateURL,
             method : 'POST',

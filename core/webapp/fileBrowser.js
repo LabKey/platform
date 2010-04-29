@@ -978,7 +978,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         };
 
         this.propNames = ["creationdate", "displayname", "createdby", "getlastmodified", "modifiedby", "getcontentlength",
-                     "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref"];
+                     "getcontenttype", "getetag", "resourcetype", "source", "path", "iconHref", "options"];
 
         if (config.extraPropNames && config.extraPropNames.length)
             this.propNames = this.propNames.concat(config.extraPropNames);
@@ -1159,7 +1159,8 @@ var FileStore = Ext.extend(Ext.data.Store,
     sortData : function()
     {
         this.sortInfo.direction = this.sortInfo.direction || 'ASC';
-        var st = this.fields.get(this.sortInfo.field).sortType;
+        var f = this.sortInfo.field;
+        var st = this.fields.get(f).sortType;
         var d = this.sortInfo.direction=="DESC" ? -1 : 1;
         var fn = function(r1, r2)
         {
