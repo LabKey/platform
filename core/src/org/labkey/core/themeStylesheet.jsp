@@ -606,10 +606,11 @@ td.labkey-wiki-tab, .labkey-wiki-tab
 
 ul.x-tab-strip span.x-tab-strip-text { color: #<%= tabFontColor %>; font-size: <%= tabFontSize %>; }
 
-ul.x-tab-strip-top .x-tab-strip-active .x-tab-right { background-color:#<%= tabSelectedColor %>;}
+ul.x-tab-strip-top .x-tab-strip-active .x-tab-right, ul.x-tab-strip-top .x-tab-strip-active .x-tab-close
+{ background-color:#<%= tabSelectedColor%>; border-bottom-color:#<%=tabSelectedColor%>;}
 
 ul.x-tab-strip-top { border-bottom-color:#<%=tabBorderColor%>;}
 
 ul.x-tab-strip-top li { border-color:<%=tabBorderColor%>; }
 
-.x-tab-panel-header-plain .x-tab-strip-spacer { border-color:<%=tabBorderColor%>; }
+.x-tab-panel-header-plain .x-tab-strip-spacer { border-color:#<%=tabBorderColor%>; background-color:#<%=tabSelectedColor%>}
