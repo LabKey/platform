@@ -224,7 +224,7 @@
         <ns:description>The description of each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="DemographicData">
-        <ns:description>Whether each dataset contains demographic data, which is keyed only on Subjetc ID (versus non-demographic data keyed on Subject ID and visit).</ns:description>
+        <ns:description>Whether each dataset contains demographic data, which is keyed only on Subject ID (versus non-demographic data keyed on Subject ID and visit).</ns:description>
       </ns:column>
       <ns:column columnName="cohortid">
         <ns:description>The ID of each dataset's cohort, if it is cohort specific.</ns:description>
@@ -235,7 +235,7 @@
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequest" tableDbType="TABLE">
-    <ns:description>Contains one row per speicmen request.</ns:description>
+    <ns:description>Contains one row per specimen request.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="CreatedBy">
