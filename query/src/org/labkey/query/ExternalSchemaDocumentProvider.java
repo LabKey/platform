@@ -1,7 +1,6 @@
 package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -31,7 +30,6 @@ import java.util.Set;
  */
 public class ExternalSchemaDocumentProvider implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = Logger.getLogger(ExternalSchemaDocumentProvider.class);
     public static final SearchService.SearchCategory externalTableCategory = new SearchService.SearchCategory("externalTable", "External Table");
 
     public void enumerateDocuments(SearchService.IndexTask t, final @NotNull Container c, Date since)
@@ -67,12 +65,6 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                         if (!StringUtils.isEmpty(table.getDescription()))
                             body.append(table.getDescription()).append("\n");
 
-                        ActionURL url = QueryService.get().urlFor(user, c, QueryAction.executeQuery, schemaName, tableName);
-
-                        // TODO: table.isPublic() ??
-                        if (!table.isPublic())
-                            LOG.info("I'm not public: " + schemaName + "." + tableName);
-
                         String sep = "";
 
                         for (ColumnInfo column : table.getColumns())
@@ -89,6 +81,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                             sep = ",\n";
                         }
 
+                        ActionURL url = QueryService.get().urlFor(user, c, QueryAction.executeQuery, schemaName, tableName);
                         String documentId = "externalTable:" + c.getId() + ":" + schemaName + "." + tableName;
                         SimpleDocumentResource r = new SimpleDocumentResource(
                                 new Path(documentId),

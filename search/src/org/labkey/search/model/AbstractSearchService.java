@@ -517,7 +517,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     final Object _runningLock = new Object();
     boolean _threadsInitialized = false;
     volatile boolean _shuttingDown = false;
-    boolean _paused = true;
+    boolean _crawlerPaused = true;
     ArrayList<Thread> _threads = new ArrayList<Thread>(10);
 
     
@@ -525,12 +525,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         synchronized (_runningLock)
         {
-            boolean running = SearchPropertyManager.getCrawlerRunningState();
+            startThreads();
 
-            if (running)
+            if (SearchPropertyManager.getCrawlerRunningState())
             {
-                _paused = false;
-                startThreads();
+                _crawlerPaused = false;
                 DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath(), null);
                 _runningLock.notifyAll();
             }
@@ -543,7 +542,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         synchronized (_runningLock)
         {
-            _paused = true;
+            _crawlerPaused = true;
         }
     }
 
@@ -562,7 +561,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isRunning()
     {
-        return !_paused;
+        return !_crawlerPaused;
     }
 
 
@@ -587,7 +586,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         synchronized (_runningLock)
         {
-            while (_paused && !_shuttingDown)
+            while (_crawlerPaused && !_shuttingDown)
             {
                 try
                 {
@@ -667,7 +666,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;
-        _paused = true;
+        _crawlerPaused = true;
         _runQueue.clear();
         _itemQueue.clear();
         if (null != _indexQueue)
