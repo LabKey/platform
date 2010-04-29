@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.List;
  * Date: Mar 7, 2010
  * Time: 6:20:24 PM
  */
-public class StringUtils
+public class StringUtilsLabKey
 {
     // Finds the longest common prefix of the passed in string collection.  In other words, the longest string (prefix)
     // such that, for all s in strings, s.startsWith(prefix).  An empty collection returns the empty string and a single
@@ -51,5 +52,25 @@ public class StringUtils
             i++;
 
         return first.substring(0, i);
+    }
+
+
+    // Joins provided strings, separating with separator but skipping any strings that are null, blank, or all whitespace.
+    public static String joinNonBlank(String separator, String... stringsToJoin)
+    {
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+
+        for (String s : stringsToJoin)
+        {
+            if (StringUtils.isNotBlank(s))
+            {
+                sb.append(sep);
+                sb.append(s);
+                sep = separator;
+            }
+        }
+
+        return sb.toString();
     }
 }

@@ -449,7 +449,7 @@ public class QueryProfiler
 
             if (set.size() > 1)
             {
-                String commonPrefix = StringUtils.findCommonPrefix(_stackTraces.keySet());
+                String commonPrefix = StringUtilsLabKey.findCommonPrefix(_stackTraces.keySet());
                 commonLength = commonPrefix.lastIndexOf('\n');
                 formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
             }
