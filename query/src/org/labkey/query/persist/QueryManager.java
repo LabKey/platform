@@ -22,7 +22,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.query.view.ExternalSchema;
+import org.labkey.query.ExternalSchema;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;

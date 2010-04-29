@@ -30,6 +30,7 @@ import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.*;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
@@ -132,6 +133,8 @@ public class QueryModule extends DefaultModule
         }
 
         SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());
+        ServiceRegistry.get(SearchService.class).addDocumentProvider(new ExternalSchemaDocumentProvider());
+        ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
     }
 
     public Set<String> getSchemaNames()

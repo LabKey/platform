@@ -1712,6 +1712,8 @@ query/src/org/labkey/query/CustomViewImporter.java -text
 query/src/org/labkey/query/CustomViewInfoImpl.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
+query/src/org/labkey/query/ExternalSchema.java -text
+query/src/org/labkey/query/ExternalSchemaDocumentProvider.java -text
 query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text
 query/src/org/labkey/query/ModuleCustomViewDef.java -text
@@ -1849,7 +1851,6 @@ query/src/org/labkey/query/sql/sql.g -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text
-query/src/org/labkey/query/view/ExternalSchema.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/webapp/query/columnPicker.js -text

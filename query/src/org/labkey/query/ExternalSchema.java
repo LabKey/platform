@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.query.view;
+package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;

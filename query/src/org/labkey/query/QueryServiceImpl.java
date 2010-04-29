@@ -41,7 +41,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.*;
 import org.labkey.query.sql.Query;
-import org.labkey.query.view.ExternalSchema;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;

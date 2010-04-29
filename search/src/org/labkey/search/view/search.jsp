@@ -40,6 +40,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -154,8 +155,8 @@ if (loginStatusChanged())
         {
             SearchService.SearchResult result = params.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
 
-            int totalHits = result.totalHits;
-            int pageCount = (int)Math.ceil((double)totalHits / hitsPerPage);
+            int primaryHits = result.totalHits;
+            int pageCount = (int)Math.ceil((double)primaryHits / hitsPerPage);
 
             %>
             <table cellspacing=0 cellpadding=0 width=100%><%
@@ -167,17 +168,29 @@ if (loginStatusChanged())
                    SearchService.SearchResult secondaryResult = params.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
 
                    %>
-               <tr><td align=left colspan="2"><a href="<%=h(params.getSecondarySearchURL(c, queryString))%>">Found <%=Formats.commaf0.format(secondaryResult.totalHits)%> <%=params.getSecondaryDescription(c)%> result<%=secondaryResult.totalHits != 1 ? "s" : ""%> (click to view)</a></td></tr><%
+               <tr><td align=left colspan="2"><%
+                   if (secondaryResult.totalHits > 0)
+                   { %>
+                   <a href="<%=h(params.getSecondarySearchURL(c, queryString))%>"><%
+                   }
+
+                   out.print(getResultsSummary(secondaryResult.totalHits, params.getSecondaryDescription(c), "click to view"));
+
+                   if (secondaryResult.totalHits > 0)
+                   { %>
+                   </a><%
+                   } %>
+               </td></tr><%
                }
                %>
                <tr><td align=left colspan="2">&nbsp;</td>
-               <tr><td align=left>Found <%=Formats.commaf0.format(totalHits)%> <%=h(params.getPrimaryDescription(c))%> result<%=(totalHits != 1 ? "s" : "") + (includesSecondarySearch ? " (shown below)" : "")%></td><%
+               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? params.getPrimaryDescription(c) : null, includesSecondarySearch ? "shown below" : null)%></td><%
 
-            if (hitsPerPage < totalHits)
+            if (hitsPerPage < primaryHits)
             {
                 %><td align=right>Displaying page <%=Formats.commaf0.format(pageNo)%> of <%=Formats.commaf0.format(pageCount)%></td><%
             }
-            else
+            else if (primaryHits > 0)
             {
                 %><td align=right>Displaying all results</td><%
             }
@@ -416,5 +429,32 @@ NavTree getDocumentContext(org.labkey.api.search.SearchService.SearchHit hit)
 
     NavTree ret = new NavTree(text, url);
     return ret;
+}
+
+
+String getResultsSummary(int totalHits, @Nullable String description, @Nullable String nonZeroInstruction)
+{
+    StringBuilder sb = new StringBuilder("Found ");
+    sb.append(Formats.commaf0.format(totalHits));
+
+    if (null != description)
+    {
+        sb.append(" ");
+        sb.append(h(description));
+    }
+
+    sb.append(" result");
+
+    if (totalHits != 1)
+        sb.append("s");
+
+    if (null != nonZeroInstruction && totalHits > 0)
+    {
+        sb.append(" (");
+        sb.append(nonZeroInstruction);
+        sb.append(")");
+    }
+
+    return sb.toString();
 }
 %>

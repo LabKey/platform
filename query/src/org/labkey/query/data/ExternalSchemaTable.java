@@ -24,7 +24,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
-import org.labkey.query.view.ExternalSchema;
+import org.labkey.query.ExternalSchema;
 
 import java.util.*;
 
