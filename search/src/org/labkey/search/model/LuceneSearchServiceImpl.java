@@ -36,6 +36,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -272,6 +273,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if (StringUtils.isBlank(searchTitle))
                 searchTitle = displayTitle;
+
+            // Add all container path parts to search keywords
+            Container c = ContainerManager.getForId(r.getContainerId());
+
+            for (String part : c.getParsedPath())
+                searchTitle = searchTitle + " " + part;
 
             String summary = extractSummary(body, displayTitle);
             // Split the category string by whitespace, index each without stemming
