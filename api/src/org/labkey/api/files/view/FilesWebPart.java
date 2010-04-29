@@ -182,7 +182,10 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             actions.add(FilesForm.actions.emailPreferences);
 
         if (context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
+        {
+            actions.add(FilesForm.actions.auditLog);
             actions.add(FilesForm.actions.customize);
+        }
 
         form.setButtonConfig(actions.toArray(new FilesForm.actions[actions.size()]));
 
@@ -361,6 +364,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             folderTreeToggle,
             editFileProps,
             emailPreferences,
+            auditLog,
         }
 
         public boolean isAutoResize()

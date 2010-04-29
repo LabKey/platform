@@ -418,7 +418,12 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public boolean canDelete(User user)
     {
-        return super.canDelete(user) && hasFileSystem();
+        if (super.canDelete(user) && hasFileSystem())
+        {
+            // can't delete if already processed
+            return getActions(user).isEmpty();
+        }
+        return false;
     }
 
 
@@ -573,7 +578,12 @@ public class FileSystemResource extends AbstractWebdavResource
                     {
                         Object o = data.getProperty(prop);
                         if (o != null)
-                            _customProperties.put(prop.getName(), DomainUtil.getFormattedDefaultValue(user, prop, o));
+                        {
+                            try {
+                                _customProperties.put(prop.getName(), DomainUtil.getFormattedDefaultValue(user, prop, o));
+                            }
+                            catch (Exception e){}
+                        }
                     }
                 }
             }
@@ -600,7 +610,7 @@ public class FileSystemResource extends AbstractWebdavResource
             dir = parent == null ? "" : parent.getPath().toString();
             name = getName();
         }
-        AuditLogService.get().addEvent(context, FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
+        AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
         sendNotificationEmail(context, message);
     }
 

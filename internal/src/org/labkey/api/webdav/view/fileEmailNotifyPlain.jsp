@@ -19,16 +19,16 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.webdav.FileSystemResource" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     FileSystemResource.FileEmailForm bean = ((JspView<FileSystemResource.FileEmailForm>)HttpView.currentView()).getModelBean();
-    User user = HttpView.currentContext().getUser();
+    ViewContext context = HttpView.currentContext();
+    User user = context.getUser();
 %>
 
-<table>
-    <tr><td>User: <%=user.getDisplayName(HttpView.currentContext())%>, performed this action:<br/><%=bean.getAction()%><br/>
-        On the file: <%=bean.getResource().getName()%>.
-    </td></tr>
-</table>
+User: <%=user.getDisplayName(context)%>
+File: <%=bean.getResource().getName()%>
+Action: <%=bean.getAction()%>

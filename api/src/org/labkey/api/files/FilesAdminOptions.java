@@ -48,6 +48,7 @@ public class FilesAdminOptions
     private fileConfig _fileConfig = fileConfig.useDefault;
     private Map<String, FilesTbarBtnOption> _tbarConfig = new HashMap<String, FilesTbarBtnOption>();
     private static Comparator TBAR_BTN_COMPARATOR = new TbarButtonComparator();
+    private String _gridConfig;
 
     public enum fileConfig {
         useDefault,
@@ -61,6 +62,7 @@ public class FilesAdminOptions
         importDataEnabled,
         tbarActions,
         inheritedFileConfig,
+        gridConfig,
     }
 
     public FilesAdminOptions(Container c, String xml)
@@ -120,6 +122,8 @@ public class FilesAdminOptions
                         _tbarConfig.put(o.getId(), new FilesTbarBtnOption(o.getId(), o.getPosition(), o.getHideText(), o.getHideIcon()));
                     }
                 }
+
+                _gridConfig = pipeOptions.getGridConfig();
             }
         }
         catch (XmlValidationException e)
@@ -193,6 +197,16 @@ public class FilesAdminOptions
         _tbarConfig.clear();
         for (FilesTbarBtnOption o : tbarConfig)
             _tbarConfig.put(o.getId(), o);
+    }
+
+    public String getGridConfig()
+    {
+        return _gridConfig;
+    }
+
+    public void setGridConfig(String gridConfig)
+    {
+        _gridConfig = gridConfig;
     }
 
     public JSONObject getInheritedFileConfig()
@@ -282,6 +296,10 @@ public class FilesAdminOptions
                     tbarOption.setHideIcon(o.isHideIcon());
                 }
             }
+
+            if (_gridConfig != null)
+                pipelineOptions.setGridConfig(_gridConfig);
+
             XmlBeansUtil.validateXmlDocument(doc);
             doc.save(output, XmlBeansUtil.getDefaultSaveOptions());
 
@@ -337,6 +355,9 @@ public class FilesAdminOptions
                 }
             }
         }
+
+        if (props.containsKey(configProps.gridConfig.name()))
+            _gridConfig = String.valueOf(props.get(configProps.gridConfig.name()));
     }
 
     public static FilesAdminOptions fromJSON(Container c, Map<String,Object> props)
@@ -375,6 +396,10 @@ public class FilesAdminOptions
             }
             props.put(configProps.tbarActions.name(), tbarOptions);
         }
+
+        if (_gridConfig != null)
+            props.put(configProps.gridConfig.name(), new JSONObject(_gridConfig));
+
         return props;
     }
 

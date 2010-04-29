@@ -22,6 +22,7 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -143,4 +144,17 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
         view.setVisibleColumns(new String[]{"Date", "CreatedBy", "Comment"});
         return view;
     }
+
+    public AuditLogQueryView createFileContentView(ViewContext context)
+    {
+        SimpleFilter filter = new SimpleFilter("ContainerId", context.getContainer().getId());
+        filter.addCondition("EventType", EVENT_TYPE);
+
+        AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
+        view.setSort(new Sort("-Date"));
+        view.setVisibleColumns(new String[]{"Date", "Key2", "Key1", "CreatedBy", "Comment"});
+
+        return view;
+    }
+
 }

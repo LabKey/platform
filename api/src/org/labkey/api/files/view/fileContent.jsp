@@ -167,8 +167,21 @@ function renderBrowser(rootPath, renderTo)
         statePrefix: prefix
     });
 
-    fileBrowser.height = 350;
-    fileBrowser.render(renderTo);
+    //fileBrowser.height = 350;
+    //fileBrowser.render(renderTo);
+
+    var panel = new Ext.Panel({
+        layout: 'fit',
+        renderTo: renderTo,
+        border: false,
+/*
+        layoutConfig: {
+            columns: 1
+        },
+*/
+        items: [fileBrowser],
+        height: 350
+    });
 
     var _resize = function(w,h)
     {
