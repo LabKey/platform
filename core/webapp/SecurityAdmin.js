@@ -1442,7 +1442,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     roleTemplate : new Ext.Template(
             '<tr id="$tr${uniqueName}" class="permissionsTR">'+
             '<td><img height=50 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td height=44 width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
-            '<td class="groupsTD" width=100%><table><tr><td><img height=22 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td valign=top id="$buttons${uniqueName}"><span id="$br${uniqueName}"></span></td></tr><tr><td><img height=22 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td id="$combo${uniqueName}"></td></tr></table></td>'+
+            '<td class="groupsTD" width=100%><table><tr><td><img height=24 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td valign=top id="$buttons${uniqueName}"><span id="$br${uniqueName}"></span></td></tr><tr><td><img height=22 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td id="$combo${uniqueName}"></td></tr></table></td>'+
             '</tr>\n'),
 
     _redraw : function()
