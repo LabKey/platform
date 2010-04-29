@@ -43,6 +43,13 @@
     String navBackground       = theme.getNavBarColor();
     String linkAndHeaderText   = theme.getTitleColorString();
 
+    boolean testBorders = false;
+    if (testBorders)
+    {
+        wpHeaderPanelBorder = "ff0000";
+        navBorder           = "00ff00";
+    }
+
     /*
 
     index:
@@ -276,48 +283,6 @@ div.labkey-status-info, .labkey-status-info
     border-color: #<%=navBorder%>;
 }
 
-td.labkey-tab-selected
-{
-    border-top-color: #<%= navBorder %>;
-    border-left-color: #<%= navBorder %>;
-    border-right-color: #<%= navBorder %>;
-    color: #<%=linkAndHeaderText%>;
-}
-
-td.labkey-tab
-{
-    border-color: #<%= navBorder %>;
-    color: #<%=linkAndHeaderText%>;
-}
-
-td.labkey-tab-inactive
-{
-    border-color: #<%= navBorder %>;
-}
-
-td.labkey-tab-space
-{
-    border-bottom-color: #<%= navBorder %>;
-}
-
-td.labkey-tab-shaded
-{
-    background-color: #<%= navBackground %>;
-}
-
-td.labkey-tab-content
-{
-    border-left-color: #<%= navBorder %>;
-    border-right-color: #<%= navBorder %>;
-    border-bottom-color: #<%= navBorder %>;
-}
-
-td.labkey-wiki-tab-content
-{
-    border-left-color: #<%=navBorder%>;
-    border-right-color: #<%=navBorder%>;
-    border-bottom-color: #<%=navBorder%>;
-}
 
 td.labkey-main-menu
 {
@@ -333,10 +298,6 @@ td.labkey-main-menu
 }
 
 .gwt-MenuBar .gwt-MenuItem {
-  font-size: <%=themeFont.getNormalSize()%>;
-}
-
-.gwt-TabBar {
   font-size: <%=themeFont.getNormalSize()%>;
 }
 
@@ -373,22 +334,6 @@ td.labkey-main-menu
 
 .gwt-MenuBar .gwt-MenuItem-selected {
   background-color: #<%=navBorder%>;
-}
-
-.gwt-TabPanelBottom {
-  border-color: #<%=navBorder%>;
-}
-
-.gwt-TabBar .gwt-TabBarRest {
-  border-color: #<%=navBorder%>;
-}
-
-.gwt-TabBar .gwt-TabBarItem {
-  border-color: #<%=navBorder%>;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected {
-  border-color: #<%=navBorder%>;
 }
 
 .gwt-StackPanel .gwt-StackPanelItem {
@@ -445,6 +390,7 @@ div.yuimenubar li.selected a.selected {
 
 .x-panel-header {
 	background-color: #<%= wpHeaderPanel %>;
+	border-color: #<%= wpHeaderPanelBorder %>;
 }
 
 .x-grid3-hd-inner {
@@ -535,23 +481,134 @@ font-weight:normal;
     border-color: #<%= wpHeaderPanelBorder %>;
 }
 
-.x-tab-panel-body {
-    border-color: #<%= wpHeaderPanelBorder %>;
-}
-
-.x-tab-panel-header, .x-tab-panel-footer {
-	background-color: #<%= navBackground %>;
-	border-color: #<%= wpHeaderPanelBorder %>;
-}
-
-.x-tab-strip span.x-tab-strip-text { color: #<%= linkAndHeaderText %>; }
-
-.x-tab-strip-top .x-tab-right { background-color:#<%= navBackground %>;}
-
-.x-tab-strip-top .x-tab-strip-active  .x-tab-right { background-color:#<%= navBackground %>;}
-
-
 body .x-grid3 .x-grid3-row-selected {
     border-color: #<%= fullScreenBorder %>;
     background: #<%= navBackground %> !important;
 }
+
+
+
+/*****     TAB STRIPS     *****/
+
+<%
+String tabBorderColor = wpHeaderPanelBorder;
+String tabSelectedColor = wpHeaderPanel;
+String tabFontColor = linkAndHeaderText;
+String tabFontSize = themeFont.getNormalSize();
+boolean shadeSelectedTab = true;
+%>
+
+/* labkey */
+
+/* for navbar area */
+.labkey-proj-nav-panel td.labkey-tab-selected
+{
+    color: #<%=tabFontColor%>;
+    background-color:#ffffff;
+    border-top-color: #<%= navBorder %>;
+    border-left-color: #<%= navBorder %>;
+    border-right-color: #<%= navBorder %>;
+}
+.labkey-proj-nav-panel .labkey-tab-strip,
+.labkey-proj-nav-panel .labkey-tab-strip .labkey-tab-space,
+.labkey-proj-nav-panel .labkey-tab-strip .labkey-tab,
+.labkey-proj-nav-panel .labkey-tab-strip a
+{
+    border-color: #<%= navBorder %>;
+}
+
+/* everwhere else */
+.labkey-tab-selected, td.labkey-tab-selected, li.labkey-tab-active, li.labkey-tab-active a
+{
+    color: #<%=tabFontColor%>;
+    background-color: #<%=tabSelectedColor%>;
+}
+
+.labkey-tab-strip,
+ul.labkey-tab-strip,
+.labkey-tab-strip .labkey-tab,
+.labkey-tab-strip-content,
+ul.labkey-tab-strip a,
+.labkey-tab-strip a,
+.labkey-tab-strip li,
+.labkey-tab-strip .labkey-tab-space
+{
+   border-color: #<%= tabBorderColor %>;
+   color: #<%=tabFontColor%>;
+}
+.labkey-tab-strip-spacer
+{
+    background-color:#<%=tabSelectedColor%>;
+	border-color: #<%=tabBorderColor%>;
+}
+td.labkey-tab-content
+{
+   border-left-color: #<%= tabBorderColor %>;
+   border-right-color: #<%= tabBorderColor %>;
+   border-bottom-color: #<%= tabBorderColor %>;
+}
+
+td.labkey-wiki-tab-content
+{
+   border-left-color: #<%=tabBorderColor%>;
+   border-right-color: #<%=tabBorderColor%>;
+   border-bottom-color: #<%=tabBorderColor%>;
+}
+td.labkey-wiki-tab, .labkey-wiki-tab
+{
+    color: #<%=tabFontColor%>;
+}
+
+
+/* gwt */
+
+.gwt-TabBar {
+  font-size: <%=tabFontSize%>;
+}
+
+.gwt-TabBar .gwt-TabBarRest {
+  border-color: #<%=tabBorderColor%>;
+}
+
+.gwt-TabBar .gwt-TabBarItem, .gwt-TabBar .gwt-TabBarItem-selected {
+  border-color: #<%=tabBorderColor%>;
+  color: #<%= tabFontColor %>;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  border-color: #<%=tabBorderColor%>;
+  background-color:#<%= tabSelectedColor %>;
+  color: #<%= tabFontColor %>;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  border-bottom:0;
+}
+
+.gwt-TabBar .gwt-TabBarItem .gwt-Label, .gwt-TabBar .gwt-TabBarItem-selected .gwt-Label {
+  color: #<%= tabFontColor %>;
+  font-size: <%= tabFontSize %>;
+}
+
+.gwt-TabPanelBottom { border: solid 1px #<%= tabBorderColor %>; }
+
+/* ext */
+
+.x-tab-panel-body {
+    border-color: #<%= tabBorderColor %>;
+}
+
+.x-tab-panel-header, .x-tab-panel-footer {
+	background-color: #<%= tabSelectedColor %>;
+	border-color: #<%= tabBorderColor %>;
+}
+
+ul.x-tab-strip span.x-tab-strip-text { color: #<%= tabFontColor %>; font-size: <%= tabFontSize %>; }
+
+ul.x-tab-strip-top .x-tab-strip-active .x-tab-right { background-color:#<%= tabSelectedColor %>;}
+
+ul.x-tab-strip-top { border-bottom-color:#<%=tabBorderColor%>;}
+
+ul.x-tab-strip-top li { border-color:<%=tabBorderColor%>; }
+
+.x-tab-panel-header-plain .x-tab-strip-spacer { border-color:<%=tabBorderColor%>; }

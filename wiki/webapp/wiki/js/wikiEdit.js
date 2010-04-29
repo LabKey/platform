@@ -513,7 +513,7 @@ function userSwitchToSource()
 function switchToSource()
 {
     setTabStripVisible(true);
-    document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab labkey-tab-shaded";
+    document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab";
     document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab-selected";
     if(tinyMCE.get(_idPrefix + "body"))
         tinyMCE.execCommand('mceRemoveControl', false, _idPrefix + "body");
@@ -547,7 +547,7 @@ function switchToVisual(confirmOverride, savePreference)
     {
         setTabStripVisible(true);
         document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab-selected";
-        document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab labkey-tab-shaded";
+        document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab";
         if(!tinyMCE.get(_idPrefix + "body"))
             tinyMCE.execCommand('mceAddControl', false, _idPrefix + "body");
         _editor = "visual";

@@ -464,13 +464,12 @@ div.labkey-pagination
     text-align: left;
 }
 
-/* Used for tabs */
-table.labkey-tab-strip
+
+table.labkey-nav-trail
 {
     width: 100%;
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
-
 
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
@@ -1297,140 +1296,10 @@ table.labkey-nav-tree-child
     background-image: url('./_.gif');
 }
 
-/* This tab has no bottom border so it looks like it is forward */
-td.labkey-tab-selected, .labkey-tab-selected
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border-top:solid 1px #89A1B4;
-    border-left:solid 1px #89A1B4;
-    border-right:solid 1px #89A1B4;
-    border-bottom:solid 1px #ffffff;
-    background-color:white;
-    color: #003399;
-    text-decoration: none;
-    white-space:nowrap;
-    font-weight: bold;
-    cursor: pointer;
-}
 
-/* This tab has a bottom border so it looks like it is back */
-td.labkey-tab, .labkey-tab
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border:solid 1px #89A1B4;
-    background-color:white;
-    color: #003399;
-    text-decoration: none;
-    vertical-align:bottom;
-    white-space:nowrap;
-    cursor: pointer;
-}
-
-/* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
-td.labkey-tab-inactive
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border:solid 1px #89A1B4;
-    text-decoration: none;
-    color: #444444;
-}
-
-td.labkey-tab-content, .labkey-tab-content
-{
-    padding-top:0.1em;
-    padding-bottom:0.1em;
-    padding-left:0.5em;
-    padding-right:0.5em;
-    border-left: solid 1px #89A1B4;
-    border-right: solid 1px #89A1B4;
-    border-bottom: solid 1px #89A1B4;
-    color: #003399;
-    background-color:white;
-    vertical-align:bottom;
-}
-
-/* This tab is shaded so its looks like it is back */
-td.labkey-tab-shaded, .labkey-tab-shaded
-{
-    background-color: #E1ECFC;
-}
-
-.labkey-tab-selected a, .labkey-tab a, .labkey-tab-inactive a
-{
-    outline: none;
-}
-
-/* This is used for breaks in between tabs */
-td.labkey-tab-space, .labkey-tab-space
-{
-    border-top: 0px;
-    border-left: 0px;
-    border-right: 0px;
-    border-bottom: 1px solid #89A1B4;
-}
-
-/* styles used for TabStripView tabs */
-ul.labkey-tab-strip
-{
-    border-bottom : 1px solid #89A1B4;
-    margin : 0;
-    padding-bottom : 19px;
-    padding-left : 10px;
-}
-
-ul.labkey-tab-strip li
-{
-    display : inline;
-    list-style-type : none;
-    margin : 0;
-    padding : 0;
-}
-
-a.labkey-tab-strip
-{
-    border : 1px solid #89A1B4;
-    float : left;
-    line-height : 14px;
-    margin-right : 8px;
-    padding : 2px 10px 2px 10px;
-    text-decoration : none;
-}
-
-li.labkey-tab-active a
-{
-    border-bottom : 1px solid #fff;
-    font-weight: bold;
-}
-
-.labkey-tab-strip-content
-{
-	background : #fff;
-	border : 1px solid #89A1B4;
-	border-top : none;
-	clear : both;
-	margin : 0px;
-	padding : 15px;
-}
-
-table#navBar td.labkey-tab-space
+table#navBar
 {
     background-color:#ffffff;
-}
-
-/* This is used as the final tab in a tab strip */
-#labkey-end-tab-space
-{
-    padding-right: 5px;
-    white-space: nowrap;
 }
 
 /* This is used for the links at the top of the project area to the containing folders  */
@@ -1701,19 +1570,6 @@ table.labkey-manage-default-reqs
 
 /* Wiki */
 
-td.labkey-wiki-tab, .labkey-wiki-tab
-{
-    color: #000000;
-    padding: 4px 8px 4px 8px;
-}
-
-td.labkey-wiki-tab-content
-{
-    border-left: 1px solid #89A1B4;
-    border-right: 1px solid #89A1B4;
-    border-bottom: 1px solid #89A1B4;
-}
-
 /* R reports */
 table.labkey-r-tsvout
 {
@@ -1827,41 +1683,6 @@ table.labkey-r-tsvout
 	opacity: 0.5;
 }
 
-.gwt-TabPanelBottom {
-  border: 1px solid #89A1B4;
-}
-
-.gwt-TabBar {
-  font-size: 8pt;
-}
-
-.gwt-TabBar .gwt-TabBarFirst {
-  padding-left: 3px;
-}
-
-.gwt-TabBar .gwt-TabBarRest {
-  padding-right: 3px;
-}
-
-.gwt-TabBar .gwt-TabBarItem {
-  border-top: 1px solid #89A1B4;
-  border-left: 1px solid #89A1B4;
-  border-right: 1px solid #89A1B4;
-  margin-right: 6px;
-  padding: 2px;
-  cursor: pointer;
-  cursor: hand;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected {
-  padding: 2px;
-  margin-right: 6px;
-  cursor: default;
-}
-
-.gwt-TabBar .gwt-TabBarItem-selected div {
-  font-weight: bold;
-}
 
 .gwt-Tree {
 }
@@ -2485,18 +2306,6 @@ li.x-menu-item-active a.x-menu-item {
 .x-panel-collapsed .x-tool-toggle {	background-position:-60px -20px; }
 .x-panel-collapsed .x-tool-toggle-over {	background-position:-60px -20px; }
 
-.x-tab-scroller-left {
-	background:white url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid white; }
-.x-tab-scroller-left-over { background-position: -160px -96px; }
-.x-tab-scroller-left-disabled {background:white;opacity:1;}
-
-.x-tab-scroller-right {
-	background:white url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid white;}
-.x-tab-scroller-right-over { background-position: -139px -96px; }
-.x-tab-scroller-right-disabled {background:white;opacity:1;}
-/* fix up spacer since the tabs no longer within a panel with background and border */
-.x-tab-panel-header-plain .x-tab-strip-spacer, .x-tab-panel-footer-plain .x-tab-strip-spacer {border-left-width:0; border-right-width:0; height:4px;}
-
 /* Ghosting */
 .x-panel-ghost {
     background:#e0e0e0;
@@ -2742,56 +2551,6 @@ body .x-window .x-window-tl .x-window-header {
     border-width:0;
 }
 
-.x-tab-panel-noborder .x-tab-panel-body-noborder {
-	border-width:0;
-}
-
-.x-tab-panel-noborder .x-tab-panel-header-noborder {
-	border-top-width:0;
-	border-left-width:0;
-	border-right-width:0;
-}
-
-.x-tab-panel-noborder .x-tab-panel-footer-noborder {
-	border-bottom-width:0;
-	border-left-width:0;
-	border-right-width:0;
-}
-
-.x-tab-panel-body {
-    border-color: #89A1B4;
-}
-
-.x-tab-panel-bbar-noborder .x-toolbar {
-    border-width:0;
-    border-top:1px solid #d0d0d0;
-}
-
-.x-tab-panel-tbar-noborder .x-toolbar {
-    border-width:0;
-    border-bottom:1px solid #d0d0d0;
-}
-
-.x-tab-panel-header, .x-tab-panel-footer {
-	background-color: #E1ECFC;
-	border-color: #89A1B4;
-	border-top: none;
-	border-left: none;
-	border-right: none;
-	padding-bottom: 3px;
-}
-
-ul.x-tab-strip-top { background: #FFF none; border-bottom:none; padding-top:3px; }
-ul.x-tab-strip li {margin-left:3px; }
-
-.x-tab-strip span.x-tab-strip-text { color: #003399; }
-
-.x-tab-strip-top .x-tab-right { background:#E1ECFC  none;}
-.x-tab-strip-top .x-tab-left {background:transparent none;}
-.x-tab-strip-top .x-tab-strip-inner {background:transparent none;}
-
-.x-tab-strip-top .x-tab-strip-active  .x-tab-right { background:#E1ECFC none; color: white;}
-.x-tab-strip-active span.x-tab-strip-text {color:black;}
 
 /* SHADOWS */
 /*
@@ -2861,4 +2620,298 @@ td.labkey-export-tab-buttons
 .labkey-file-browser-elem
 {
     border: 1px solid #999999;
+}
+
+
+
+/*****     TAB STRIPS     *****/
+
+
+/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> TODO pick one! */
+
+table.labkey-tab-strip
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse; *border-spacing: expression(cellSpacing=0);
+}
+
+/* This tab has no bottom border so it looks like it is forward */
+td.labkey-tab-selected, .labkey-tab-selected
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border-top:solid 1px #89A1B4;
+    border-left:solid 1px #89A1B4;
+    border-right:solid 1px #89A1B4;
+    border-bottom:solid 1px #ffffff;
+    background-color:white;
+    color: #003399;
+    text-decoration: none;
+    white-space:nowrap;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* This tab has a bottom border so it looks like it is back */
+td.labkey-tab, .labkey-tab
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border:solid 1px #89A1B4;
+    background-color:white;
+    color: #003399;
+    text-decoration: none;
+    vertical-align:bottom;
+    white-space:nowrap;
+    cursor: pointer;
+}
+
+/* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
+td.labkey-tab-inactive
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border:solid 1px #89A1B4;
+    text-decoration: none;
+    color: #444444;
+}
+
+td.labkey-tab-content, .labkey-tab-content
+{
+    padding-top:0.1em;
+    padding-bottom:0.1em;
+    padding-left:0.5em;
+    padding-right:0.5em;
+    border-left: solid 1px #89A1B4;
+    border-right: solid 1px #89A1B4;
+    border-bottom: solid 1px #89A1B4;
+    color: #003399;
+    background-color:white;
+    vertical-align:bottom;
+}
+
+.labkey-tab-selected a, .labkey-tab a, .labkey-tab-inactive a
+{
+    outline: none;
+}
+
+/* This is used for breaks in between tabs */
+td.labkey-tab-space, .labkey-tab-space
+{
+    border-top: 0px;
+    border-left: 0px;
+    border-right: 0px;
+    border-bottom: 1px solid #89A1B4;
+}
+
+/* styles used for TabStripView tabs */
+ul.labkey-tab-strip
+{
+    border-bottom : 1px solid #89A1B4;
+    margin : 0;
+    padding-bottom : 19px;
+    padding-left : 10px;
+}
+
+ul.labkey-tab-strip li
+{
+    display : inline;
+    list-style-type : none;
+    margin : 0;
+    padding : 0;
+}
+
+ul.labkey-tab-strip a
+{
+    border : 1px solid #89A1B4;
+    float : left;
+    line-height : 14px;
+    margin-right : 8px;
+    padding : 2px 6px 2px 6px;
+    text-decoration : none;
+}
+
+li.labkey-tab-active a
+{
+    border-bottom : 1px solid #ffffff;
+    font-weight: bold;
+}
+
+.labkey-tab-strip-spacer
+{
+    height:4px;
+    background-color:#E1ECFC;
+	border-left : 1px solid #89A1B4;
+	border-right : 1px solid #89A1B4;
+	border-bottom : 1px solid #89A1B4;
+    font-size:1px;
+    line-height:1px;
+}
+
+.labkey-tab-strip-content
+{
+	background : #ffffff;
+	border : 1px solid #89A1B4;
+	border-top : none;
+	clear : both;
+	margin : 0px;
+	padding : 15px;
+}
+
+/* This is used as the final tab in a tab strip */
+#labkey-end-tab-space
+{
+    padding-right: 5px;
+    white-space: nowrap;
+}
+
+td.labkey-tab-space
+{
+    background-color:#ffffff;
+}
+
+td.labkey-wiki-tab, .labkey-wiki-tab
+{
+    color: #000000;
+    padding: 4px 8px 4px 8px;
+}
+
+td.labkey-wiki-tab-content
+{
+    border-left: 1px solid #89A1B4;
+    border-right: 1px solid #89A1B4;
+    border-bottom: 1px solid #89A1B4;
+}
+
+/* gwt */
+
+.gwt-TabPanelBottom { border: 1px solid #89A1B4; }
+
+.gwt-TabBar {
+  font-size: 8pt;
+}
+
+.gwt-TabBar .gwt-TabBarFirst {
+  padding-left: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarRest {
+  padding-right: 3px;
+}
+
+.gwt-TabBar .gwt-TabBarItem {
+  border-top: 1px solid #89A1B4;
+  border-left: 1px solid #89A1B4;
+  border-right: 1px solid #89A1B4;
+  margin-right: 6px;
+  padding: 2px;
+  cursor: pointer;
+  cursor: hand;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected {
+  padding: 2px;
+  margin-right: 6px;
+  cursor: default;
+}
+
+.gwt-TabBar .gwt-TabBarItem-selected div {
+  font-weight: bold;
+}
+
+.gwt-TabBar .gwt-TabBarItem {padding:2px 6px 2px 6px;}
+
+/* ext */
+
+.x-tab-panel-noborder .x-tab-panel-body-noborder {
+	border-width:0;
+}
+
+.x-tab-panel-noborder .x-tab-panel-header-noborder {
+	border-top-width:0;
+	border-left-width:0;
+	border-right-width:0;
+}
+
+.x-tab-panel-noborder .x-tab-panel-footer-noborder {
+	border-bottom-width:0;
+	border-left-width:0;
+	border-right-width:0;
+}
+
+.x-tab-panel-body {
+    border-color: #89A1B4;
+}
+
+.x-tab-panel-bbar-noborder .x-toolbar {
+    border-width:0;
+    border-top:1px solid #d0d0d0;
+}
+
+.x-tab-panel-tbar-noborder .x-toolbar {
+    border-width:0;
+    border-bottom:1px solid #d0d0d0;
+}
+
+.x-tab-panel-header, .x-tab-panel-footer {
+	background-color: #E1ECFC;
+	border-color: #89A1B4;
+	border: none;
+	border-left: none;
+	border-right: none;
+	padding-bottom: 3px;
+}
+
+ul.x-tab-strip-top { background: none; }
+ul.x-tab-strip-top { background: #ffffff none; padding-top:3px;}
+ul.x-tab-strip-top li {
+    margin-left:6px;
+    border-top:1px solid #89A1B4;
+    border-right:1px solid #89A1B4;
+    border-left:1px solid #89A1B4
+}
+.x-tab-strip-top .x-tab-strip-active .x-tab-right, .x-tab-strip-top .x-tab-strip-active .x-tab-close {
+    margin-bottom:-1px;
+}
+.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-close {
+    border-bottom:1px solid #E1ECFC;
+}
+
+.x-tab-strip span.x-tab-strip-text { color: #003399; }
+
+.x-tab-strip-top .x-tab-right { background:transparent none;}
+.x-tab-strip-top .x-tab-left { background:transparent none;}
+.x-tab-strip-top .x-tab-strip-inner {background:transparent none;}
+
+/* .x-tab-strip-top .x-tab-strip-active  .x-tab-right { background:#E1ECFC none; color: white;} */
+.x-tab-strip-active span.x-tab-strip-text {color:black;}
+
+
+.x-tab-scroller-left {
+	background:white url(./gtheme/img/icons7.png) no-repeat scroll -160px -76px;	border-bottom:1px solid white; }
+.x-tab-scroller-left-over { background-position: -160px -96px; }
+.x-tab-scroller-left-disabled {background:white;opacity:1;}
+
+.x-tab-scroller-right {
+	background:white url(./gtheme/img/icons7.png) no-repeat scroll -139px -76px;	border-bottom:1px solid white;}
+.x-tab-scroller-right-over { background-position: -139px -96px; }
+.x-tab-scroller-right-disabled {background:white;opacity:1;}
+
+/* fix up spacer since the tabs no longer within a panel with background and border */
+.x-tab-panel-header-plain .x-tab-strip-spacer, .x-tab-panel-footer-plain .x-tab-strip-spacer
+{
+    height:4;
+}
+
+.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner{
+	background-image: none;
+}
+.x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner{
+	background-image: none;
 }

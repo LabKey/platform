@@ -155,21 +155,21 @@
                     </td>
                     <td width="99%">
                         <table class="labkey-no-spacing" width="99%">
-                            <tr id="wiki-tab-strip" style="display:none">
+                            <tr id="wiki-tab-strip" style="display:none"><td>
+                             <table class="labkey-no-spacing"><tr>
                                 <td class="labkey-tab-space">&nbsp;</td>
                                 <td class="labkey-tab-space">&nbsp;</td>
                                 <td id="wiki-tab-visual" class="labkey-wiki-tab labkey-tab-selected" onclick="userSwitchToVisual()">Visual</td>
                                 <td class="labkey-tab-space">&nbsp;</td>
-                                <td id="wiki-tab-source" class="labkey-wiki-tab labkey-tab labkey-tab-shaded" onclick="userSwitchToSource()">Source</td>
+                                <td id="wiki-tab-source" class="labkey-wiki-tab labkey-tab" onclick="userSwitchToSource()">Source</td>
                                 <td class="labkey-tab-space" style="width:100%">&nbsp;</td>
+                             </tr></table></td>
                             </tr>
-                            <tr><td colspan="6" style="padding:0px"></td></tr>
-                        </table>
-                        <table class="labkey-no-spacing" width="99%">
+                            <tr><td class="labkey-tab-strip-spacer">&nbsp;</td></tr>
                             <tr>
                                 <td id="wiki-tab-content">
                                     <form action="">
-                                    <textarea rows="30" cols="80" style="width:100%" id="<%=ID_PREFIX%>body"
+                                    <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
                                               name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
                                         <script type="text/javascript">
                                             Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', handleTabsInTextArea);

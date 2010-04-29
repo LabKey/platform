@@ -410,7 +410,7 @@ function toggleSelected(select)
 {
     if (_id(select)) _id(select).className="labkey-tab-selected";
     for (var i=1 ; i<arguments.length ; i++)
-        if (_id(arguments[i])) _id(arguments[i]).className="labkey-tab labkey-tab-shaded";
+        if (_id(arguments[i])) _id(arguments[i]).className="labkey-tab";
 }
 
 function showConsole()

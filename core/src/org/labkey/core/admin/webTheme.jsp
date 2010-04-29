@@ -71,7 +71,7 @@ function updateNavigationColor ()
     var cssName=cssRules[i].selectorText.toLowerCase();
     if ((cssName.indexOf('labkey-frame')!=-1)
       || (cssName.indexOf('labkey-site-nav-panel')!=-1)
-      || (cssName.indexOf('labkey-tab-shaded')!=-1)
+      || (cssName.indexOf('labkey-tab-selected')!=-1)
       || (cssName.indexOf('labkey-nav-tree-row:hover')!=-1)
       )
     {
