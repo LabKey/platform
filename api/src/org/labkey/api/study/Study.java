@@ -16,7 +16,6 @@
 
 package org.labkey.api.study;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.Date;
@@ -49,4 +48,6 @@ public interface Study extends StudyEntity
     String getSubjectNounPlural();
 
     String getSubjectColumnName();
+
+    String getSearchKeywords();
 }

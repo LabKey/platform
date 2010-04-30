@@ -164,5 +164,4 @@ public class StudyService
             throw new IllegalStateException("Service has not been set.");
         return _serviceImpl;
     }
-
 }
