@@ -18,6 +18,7 @@ package gwt.client.org.labkey.study.designer.client;
 
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,13 +29,13 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public interface StudyDefinitionServiceAsync
 {
 
-    void save(GWTStudyDefinition def, AsyncCallback async);
+    void save(GWTStudyDefinition def, AsyncCallback<GWTStudyDesignVersion> async);
 
-    void getBlank(AsyncCallback async);
+    void getBlank(AsyncCallback<GWTStudyDefinition> async);
 
-    void getRevision(int studyId, int revision, AsyncCallback async);
+    void getRevision(int studyId, int revision, AsyncCallback<GWTStudyDefinition> async);
 
-    void getVersions(int studyId, AsyncCallback async);
+    void getVersions(int studyId, AsyncCallback<GWTStudyDesignVersion[]> async);
 
-    void getTemplate(AsyncCallback async);
+    void getTemplate(AsyncCallback<GWTStudyDefinition> async);
 }

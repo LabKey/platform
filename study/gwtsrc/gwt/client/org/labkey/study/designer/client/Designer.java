@@ -18,6 +18,8 @@ package gwt.client.org.labkey.study.designer.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.*;
@@ -37,8 +39,6 @@ import java.util.List;
 public class Designer implements EntryPoint
 {
     final Label label = new Label();
-    int groupIndex;
-    int visitIndex;
     private boolean readOnly;
 
     private boolean dirty;
@@ -74,16 +74,16 @@ public class Designer implements EntryPoint
         readOnly = !"true".equals(PropertyUtil.getServerProperty("edit"));
         if (0 == studyId)
         {
-            getService().getBlank(new AsyncCallback(){
+            getService().getBlank(new AsyncCallback<GWTStudyDefinition>(){
 
                 public void onFailure(Throwable caught)
                 {
                     Window.alert("Couldn't get blank protocol: " + caught.getMessage());
                 }
 
-                public void onSuccess(Object result)
+                public void onSuccess(GWTStudyDefinition result)
                 {
-                    showStudy((GWTStudyDefinition) result);
+                    showStudy(result);
                 }
             }
             );
@@ -93,18 +93,12 @@ public class Designer implements EntryPoint
             showStudy(studyId, revision);
         }
 
-        Window.addWindowCloseListener(new WindowCloseListener()
+        Window.addWindowClosingHandler(new Window.ClosingHandler()
         {
-            public void onWindowClosed()
-            {
-            }
-
-            public String onWindowClosing()
+            public void onWindowClosing(Window.ClosingEvent event)
             {
                 if (dirty)
-                    return "Changes have not been saved and will be discarded.";
-                else
-                    return null;
+                    event.setMessage("Changes have not been saved and will be discarded.");
             }
         });
 
@@ -120,15 +114,15 @@ public class Designer implements EntryPoint
 
     void showStudy(final int studyId, final int revision)
     {
-        getService().getRevision(studyId, revision, new AsyncCallback(){
+        getService().getRevision(studyId, revision, new AsyncCallback<GWTStudyDefinition>(){
             public void onFailure(Throwable caught)
             {
                 Window.alert("Couldn't get protocol " + studyId + ", revision " + revision + " : " + caught.getMessage());
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(GWTStudyDefinition result)
             {
-                showStudy((GWTStudyDefinition) result);
+                showStudy(result);
             }
         }
         );
@@ -167,9 +161,9 @@ public class Designer implements EntryPoint
 
                 if ("true".equals(PropertyUtil.getServerProperty("canCreateRepository")))
                 {
-                    Widget createRepositoryButton = new ImageButton("Create Study Folder", new ClickListener()
+                    Widget createRepositoryButton = new ImageButton("Create Study Folder", new ClickHandler()
                     {
-                        public void onClick(Widget sender)
+                        public void onClick(ClickEvent event)
                         {
                             createRepository();
                         }
@@ -181,9 +175,9 @@ public class Designer implements EntryPoint
         }
         else
         {
-            buttonPanel.add(new ImageButton("Finished", new ClickListener()
+            buttonPanel.add(new ImageButton("Finished", new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent event)
                 {
                     if (isDirty())
                     {
@@ -209,8 +203,8 @@ public class Designer implements EntryPoint
 
             }));
 
-            saveButton = new ImageButton("Save", new ClickListener() {
-                public void onClick(Widget sender)
+            saveButton = new ImageButton("Save", new ClickHandler() {
+                public void onClick(ClickEvent event)
                 {
                     new Saver().save();
             }
@@ -237,7 +231,7 @@ public class Designer implements EntryPoint
                 return;
             }
 
-            getService().save(definition, new AsyncCallback()
+            getService().save(definition, new AsyncCallback<GWTStudyDesignVersion>()
             {
                 public void onFailure(Throwable caught)
                 {
@@ -245,9 +239,8 @@ public class Designer implements EntryPoint
 
                 }
 
-                public void onSuccess(Object result)
+                public void onSuccess(GWTStudyDesignVersion info)
                 {
-                    final GWTStudyDesignVersion info = (GWTStudyDesignVersion) result;
                     if (info.isSaveSuccessful())
                     {
                         setDirty(false);
@@ -292,11 +285,11 @@ public class Designer implements EntryPoint
         boolean assaysScheduled = false;
 
         GWTAssaySchedule schedule = definition.getAssaySchedule();
-        List/*<GWTAssayDefinition>*/ assays = schedule.getAssays();
-        List/*<GWTTimepoint>*/ timepoints = schedule.getTimepoints();
+        List<GWTAssayDefinition> assays = schedule.getAssays();
+        List<GWTTimepoint> timepoints = schedule.getTimepoints();
         for (int itp = 0; itp < schedule.getTimepoints().size(); itp++)
             for (int iassay = 0; iassay < schedule.getAssays().size(); iassay++)
-                if (schedule.isAssayPerformed((GWTAssayDefinition) assays.get(iassay), (GWTTimepoint) timepoints.get(itp)))
+                if (schedule.isAssayPerformed(assays.get(iassay), timepoints.get(itp)))
                 {
                     assaysScheduled = true;
                     break;

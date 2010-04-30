@@ -416,7 +416,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
 
 
-    private synchronized Table.TempTableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
+    public synchronized Table.TempTableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
     {
         String tempName = getCacheString();
 
@@ -446,7 +446,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     TableInfo tinfoFrom = getJoinTableInfo(user);
                     if (!tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet()))
                     {
-                        StringBuilder msg = new StringBuilder("unexpected difference in columns sets\n");
+                        StringBuilder msg = new StringBuilder("unexpected difference in columns sets for dataset " + getName() + " in " + getContainer().getPath() + "\n");
                         msg.append("  tinfoProp: ").append(StringUtils.join(tinfoProp.getColumnNameSet(),",")).append("\n");
                         msg.append("  tinfoFrom: ").append(StringUtils.join(tinfoFrom.getColumnNameSet(), ",")).append("\n");
                         _log.error(msg);

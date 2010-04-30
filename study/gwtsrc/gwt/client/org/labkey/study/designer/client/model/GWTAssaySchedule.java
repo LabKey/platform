@@ -95,7 +95,7 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
         assaySchedule.remove(ad);
     }
 
-    public List/*<AssayDefinition>*/ getAssays()
+    public List<GWTAssayDefinition> getAssays()
     {
         return assays;
     }

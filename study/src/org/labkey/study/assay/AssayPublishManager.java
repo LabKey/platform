@@ -235,6 +235,15 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
 
             List<PropertyDescriptor> types = createTargetPropertyDescriptors(dataset, columns, errors);
+            boolean schemaChanged = false;
+            for (PropertyDescriptor type : types)
+            {
+                if (type.getPropertyId() == 0)
+                {
+                    schemaChanged = true;
+                    break;
+                }
+            }
             if (!errors.isEmpty())
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(targetContainer, user, dataset, dataMaps, types);
@@ -242,6 +251,10 @@ public class AssayPublishManager implements AssayPublishService.Service
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
             dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
+            if (schemaChanged)
+            {
+                dataset.unmaterialize();
+            }
             if (ownsTransaction)
                 scope.commitTransaction();
             Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();

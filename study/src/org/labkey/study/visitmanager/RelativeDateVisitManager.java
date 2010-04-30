@@ -173,6 +173,14 @@ public class RelativeDateVisitManager extends VisitManager
             String sqlStartDate = "(SELECT StartDate FROM " + tableParticipant + " WHERE " + tableParticipant + ".ParticipantId=" + tableParticipantVisit + ".ParticipantId AND " + tableParticipant + ".Container=" + tableParticipantVisit + ".Container)";
             String sqlUpdateDays = "UPDATE " + tableParticipantVisit + " SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE " + schema.getSqlDialect().getDateDiff(Calendar.DATE, "VisitDate", sqlStartDate) + " END WHERE Container=? AND NOT VisitDate IS NULL";
             Table.execute(schema, sqlUpdateDays, new Object[] {VisitImpl.DEMOGRAPHICS_VISIT, _study.getContainer()});
+            for (DataSetDefinition dataSet : _study.getDataSets())
+            {
+                Table.TempTableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
+                if (tempTableInfo != null)
+                {
+                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " t SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = t.ParticipantSequenceKey)"));
+                }
+            }
 
             StringBuilder participantSequenceKey = new StringBuilder("(ParticipantId");
             participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
