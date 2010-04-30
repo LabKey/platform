@@ -50,7 +50,7 @@ import java.util.*;
  * Date: Mar 6, 2006
  * Time: 8:18:58 PM
  */
-public class ReportManager implements StudyManager.UnmaterializeListener
+public class ReportManager implements StudyManager.DataSetListener
 {
     private static final String SCHEMA_NAME = "study";
     private static final String TABLE_NAME = "Report";
@@ -70,7 +70,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
 
     private ReportManager()
     {
-        StudyManager.addUnmaterializeListener(this);
+        StudyManager.addDataSetListener(this);
     }
 
     private DbSchema getSchema()
@@ -517,9 +517,8 @@ public class ReportManager implements StudyManager.UnmaterializeListener
         public String getContainerId(){return _containerId;}
     }
 
-    public void dataSetUnmaterialized(final DataSet def)
+    public void dataSetChanged(final DataSet def)
     {
-//            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, id);
         if (def != null)
         {
             _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());

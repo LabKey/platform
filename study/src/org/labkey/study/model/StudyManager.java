@@ -483,7 +483,10 @@ public class StudyManager
             schema.getSchema().getScope().commitTransaction();
 
             for (DataSetDefinition def : getDataSetDefinitions(study))
+            {
                 def.unmaterialize();
+                StudyManager.fireDataSetChanged(def);
+            }
 
             getVisitManager(study).updateParticipantVisits(user, study.getDataSets());
         }
@@ -1385,6 +1388,7 @@ public class StudyManager
         finally
         {
             dataset.unmaterialize();
+            StudyManager.fireDataSetChanged(dataset);
         }
         return count;
     }
@@ -1571,6 +1575,7 @@ public class StudyManager
             for (DataSetDefinition dsd : dsds)
             {
                 dsd.unmaterialize();
+                fireDataSetChanged(dsd);
             }
 
             if (localTransaction)
@@ -2292,6 +2297,7 @@ public class StudyManager
                     if (count > 0)
                     {
                         def.unmaterialize();
+                        StudyManager.fireDataSetChanged(def);
                     }
                 }
                 catch (SQLException x)
@@ -2570,40 +2576,31 @@ public class StudyManager
         return new BaseStudyController.StudyJspView<ParticipantViewConfig>(getStudy(container), "participantCharacteristics.jsp", config, errors);
     }
 
-    public interface UnmaterializeListener
+    public interface DataSetListener
     {
-        void dataSetUnmaterialized(DataSet def);
+        void dataSetChanged(DataSet def);
     }
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
-    private static final List<UnmaterializeListener> _listeners = new CopyOnWriteArrayList<UnmaterializeListener>();
+    private static final List<DataSetListener> _listeners = new CopyOnWriteArrayList<DataSetListener>();
 
-    public static void addUnmaterializeListener(UnmaterializeListener listener)
+    public static void addDataSetListener(DataSetListener listener)
     {
         _listeners.add(listener);
     }
 
-
-    private static List<UnmaterializeListener> getListeners()
+    public static void fireDataSetChanged(DataSet def)
     {
-        return _listeners;
-    }
-    
-
-    public static void fireUnmaterialized(DataSet def)
-    {
-        List<UnmaterializeListener> list = getListeners();
-        for (UnmaterializeListener l : list)
+        for (DataSetListener l : _listeners)
             try
             {
-                l.dataSetUnmaterialized(def);
+                l.dataSetChanged(def);
             }
             catch (Throwable t)
             {
-                _log.error("fireUnmaterialized", t);
+                _log.error("fireDataSetChanged", t);
             }
     }
-
 
     public void reindex(Container c)
     {

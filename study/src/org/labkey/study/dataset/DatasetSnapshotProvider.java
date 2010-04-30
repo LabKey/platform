@@ -52,15 +52,12 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Time: 4:57:40 PM
  */
 
-public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.UnmaterializeListener
+public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, StudyManager.DataSetListener
 {
     private static final DatasetSnapshotProvider _instance = new DatasetSnapshotProvider();
     private static final Logger _log = Logger.getLogger(DatasetSnapshotProvider.class);
     private static final BlockingQueue<DataSet> _queue = new LinkedBlockingQueue<DataSet>(1000);
     private static final QuerySnapshotDependencyThread _dependencyThread = new QuerySnapshotDependencyThread();
-
-    // map of property uri to dataset id
-    private static final Map<String, Map<String, Integer>> _datasetPropertyMap = new HashMap<String, Map<String, Integer>>();
 
     static {
         _dependencyThread.start();
@@ -68,51 +65,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private DatasetSnapshotProvider()
     {
-        StudyManager.addUnmaterializeListener(this);
-    }
-
-    private void generateDependencies(int snapshotId, QueryView view)
-    {
-        _log.info("Creating dependency tree for snapshot: " + snapshotId);
-        Map<String, Integer> props;
-
-        synchronized(_datasetPropertyMap)
-        {
-            if (!_datasetPropertyMap.containsKey(view.getContainer().getId()))
-            {
-                props = new HashMap<String, Integer>();
-                _datasetPropertyMap.put(view.getContainer().getId(), props);
-                Study study = StudyManager.getInstance().getStudy(view.getContainer());
-
-                if (study != null)
-                {
-                    for (DataSet dsDef : StudyManager.getInstance().getDataSetDefinitions(study))
-                    {
-                        Domain d = PropertyService.get().getDomain(view.getContainer(), dsDef.getTypeURI());
-                        if (d != null)
-                        {
-                            for (DomainProperty dp : d.getProperties())
-                                props.put(dp.getPropertyURI(), dsDef.getDataSetId());
-                        }
-                    }
-                }
-            }
-            else
-                props = _datasetPropertyMap.get(view.getContainer().getId());
-        }
-
-        for (DisplayColumn dc : view.getDisplayColumns())
-        {
-            ColumnInfo info = dc.getColumnInfo();
-            if (info != null)
-            {
-                if (props.containsKey(info.getPropertyURI()))
-                {
-                    int dsId = props.get(info.getPropertyURI());
-                    _log.info("This view dependent on dataset: " + dsId);
-                }
-            }
-        }
+        StudyManager.addDataSetListener(this);
     }
 
     public static DatasetSnapshotProvider getInstance()
@@ -127,7 +80,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public List<DisplayColumn> getDisplayColumns(QueryForm form) throws Exception
     {
-        Study study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
         QueryView view = QueryView.create(form);
         List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
 
@@ -491,7 +443,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
-    public void dataSetUnmaterialized(final DataSet def)
+    public void dataSetChanged(final DataSet def)
     {
         _queue.add(def);
     }

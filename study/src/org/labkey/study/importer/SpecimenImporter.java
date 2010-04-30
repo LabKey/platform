@@ -599,7 +599,7 @@ public class SpecimenImporter
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
             StudyImpl study = StudyManager.getInstance().getStudy(container);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, study.getDataSets());
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptySet());
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around

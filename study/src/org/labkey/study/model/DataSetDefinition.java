@@ -523,7 +523,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         TempTableTracker.getLogger().debug("DataSetDefinition unmaterialize(" + mlo.tinfoMat.getTempTableName() + ")");
                     mlo.tinfoFrom = null;
                     mlo.tinfoMat = null;
-                    StudyManager.fireUnmaterialized(DataSetDefinition.this);
                 }
             }
         };
@@ -1021,6 +1020,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (startTransaction)
                 scope.commitTransaction();
+
+            StudyManager.fireDataSetChanged(this);
         }
         catch (SQLException s)
         {
@@ -1350,6 +1351,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 startedTransaction = false;
                 if (logger != null) logger.debug("commit complete");
             }
+            StudyManager.fireDataSetChanged(this);
             return imported;
         }
         catch (ValidationException ve)
