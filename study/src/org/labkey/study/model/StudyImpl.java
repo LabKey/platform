@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -26,9 +27,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
+import org.labkey.api.study.*;
 import org.labkey.api.util.GUID;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
@@ -467,6 +466,43 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         // normalize on 'set' to ensure good names:
         _subjectColumnName = ColumnInfo.legalNameFromName(subjectColumnName);
+    }
+
+    @Override
+    public String getSearchKeywords()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        appendKeyword(sb, getLabel());
+        appendKeyword(sb, getSubjectNounSingular());
+
+        for (DataSetDefinition dataset : getDataSets())
+        {
+            appendKeyword(sb, dataset.getName());
+            appendKeyword(sb, dataset.getLabel());
+            appendKeyword(sb, dataset.getDescription());
+        }
+
+        /*
+           Per Sarah, leave cohort labels out for now... to re-enable, uncomment and special case
+           the search user in getCohorts()
+        for (Cohort cohort : getCohorts(User.getSearchUser()))
+            appendKeyword(sb, cohort.getLabel());
+        */
+
+        for (Site site : getSites())
+            appendKeyword(sb, site.getLabel());
+
+        return sb.toString();
+    }
+
+    private void appendKeyword(StringBuilder sb, String s)
+    {
+        if (!StringUtils.isBlank(s))
+        {
+            sb.append(s);
+            sb.append(" ");
+        }
     }
 
     @Override

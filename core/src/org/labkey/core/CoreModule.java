@@ -541,35 +541,46 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         if (null == c || c.isRoot())
             return;
         Container p = c.getProject();
-        String title;
+        String displayTitle;
+        String searchTitle = null;
         String body;
 
         // UNDONE: generalize to other folder types
         Study study = StudyService.get().getStudy(c);
         if (null != study)
         {
-            title = "Study -- " + study.getLabel();
-            body = "Study Folder " + c.getName() + " in Project " + p.getName();
+            displayTitle = "Study -- " + study.getLabel();
+
+            if (p.equals(c))
+                body = "Study Project " + p.getName();
+            else
+                body = "Study Folder " + c.getName() + " in Project " + p.getName();
+
+            searchTitle = study.getSearchKeywords();
         }
         else if (c.isProject())
         {
-            title = "Project -- " + c.getName();
+            displayTitle = "Project -- " + c.getName();
             body = "";
             body += "\n" + StringUtils.trimToEmpty(c.getDescription());
         }
         else if (c.isWorkbook())
         {
-            title = "Workbook -- " + c.getName();
+            displayTitle = "Workbook -- " + c.getName();
             body = "Workbook " + c.getName() + " in Project " + p.getName();
         }
         else
         {
-            title = "Folder -- " + c.getName();
+            displayTitle = "Folder -- " + c.getName();
             body = "Folder " + c.getName() + " in Project " + p.getName();
             body += "\n" + StringUtils.trimToEmpty(c.getDescription());
         }
-        Map<String,Object> properties = new HashMap<String,Object>();
-        properties.put(SearchService.PROPERTY.displayTitle.toString(), title);
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+
+        if (null != searchTitle)
+            properties.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+        properties.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
         WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
                 "link:" + c.getId(),
