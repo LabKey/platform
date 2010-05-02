@@ -40,6 +40,11 @@ import java.util.Map;
  */
 public class CohortUpdateService extends AbstractQueryUpdateService
 {
+    public CohortUpdateService(TableInfo queryTable)
+    {
+        super(queryTable);
+    }
+
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         Map<String,Object> oldRow = getRow(user, container, keys);

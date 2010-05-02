@@ -283,7 +283,7 @@ public class DataSetTable extends FilteredTable
         DataSet def = getDatasetDefinition();
         if (!def.canWrite(user))
             return null;
-        return new DatasetUpdateService(def.getDataSetId());
+        return new DatasetUpdateService(this, def.getDataSetId());
     }
 
     @Override

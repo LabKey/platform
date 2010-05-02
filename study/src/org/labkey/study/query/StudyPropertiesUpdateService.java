@@ -34,6 +34,11 @@ import java.sql.SQLException;
  */
 public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 {
+    public StudyPropertiesUpdateService(TableInfo table)
+    {
+        super(table);
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {

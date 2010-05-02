@@ -42,6 +42,9 @@ import org.labkey.api.module.*;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.script.ScriptReference;
+import org.labkey.api.script.ScriptService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -420,6 +423,7 @@ public class AdminController extends SpringActionController
 
             views.addView(new CreditsView("/core/META-INF/core/common_jars.txt", getCreditsFile(core, "common_jars.txt"), getCommonJars(), "Common JAR", "/external/lib/common directory", null, jarRegEx));
             views.addView(new CreditsView("/core/META-INF/core/scripts.txt", getCreditsFile(core, "scripts.txt"), null, "JavaScript and Icons", null, null, null));
+            views.addView(new CreditsView("/core/META-INF/core/source.txt", getCreditsFile(core, "source.txt"), null, "Java Source Code", null, null, null));
             views.addView(new CreditsView("/core/META-INF/core/executables.txt", getCreditsFile(core, "executables.txt"), getBinFilenames(), "Executable", "/external/bin directory", null, "([\\w\\.]+\\.(exe|dll|manifest|jar))"));
             views.addView(new CreditsView("/core/META-INF/core/installer.txt", getCreditsFile(core, "installer.txt"), null, "Executable", null, "the Graphical Windows Installer", null));
 

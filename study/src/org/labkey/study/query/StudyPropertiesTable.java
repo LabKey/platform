@@ -92,6 +92,6 @@ public class StudyPropertiesTable extends BaseStudyTable
         User user = _schema.getUser();
         if (!getContainer().getPolicy().hasPermission(user, AdminPermission.class))
             return null;
-        return new StudyPropertiesUpdateService();
+        return new StudyPropertiesUpdateService(this);
     }
 }

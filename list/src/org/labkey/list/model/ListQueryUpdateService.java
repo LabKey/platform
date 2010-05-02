@@ -48,8 +48,9 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
 {
     ListDefinition _list = null;
 
-    public ListQueryUpdateService(ListDefinition list)
+    public ListQueryUpdateService(ListTable queryTable, ListDefinition list)
     {
+        super(queryTable);
         _list = list;
     }
 

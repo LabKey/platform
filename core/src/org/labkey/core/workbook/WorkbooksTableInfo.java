@@ -120,11 +120,16 @@ public class WorkbooksTableInfo extends FilteredTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new WorkbookUpdateService();
+        return new WorkbookUpdateService(this);
     }
 
     private class WorkbookUpdateService extends AbstractQueryUpdateService
     {
+        WorkbookUpdateService(TableInfo queryTable)
+        {
+            super(queryTable);
+        }
+
         @Override
         public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {

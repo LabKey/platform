@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -44,8 +45,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 {
     private final int _datasetId;
 
-    public DatasetUpdateService(int datasetId)
+    public DatasetUpdateService(TableInfo table, int datasetId)
     {
+        super(table);
         _datasetId = datasetId;
     }
 

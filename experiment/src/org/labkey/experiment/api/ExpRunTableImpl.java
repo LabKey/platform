@@ -586,11 +586,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new RunTableUpdateService();
+        return new RunTableUpdateService(this);
     }
 
     private class RunTableUpdateService extends AbstractQueryUpdateService
     {
+        RunTableUpdateService(TableInfo queryTable)
+        {
+            super(queryTable);
+        }
+
         @Override
         public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {

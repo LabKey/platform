@@ -211,6 +211,6 @@ public class ListTable extends FilteredTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new ListQueryUpdateService(getList());
+        return new ListQueryUpdateService(this, getList());
     }
 }
