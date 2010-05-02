@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -803,5 +802,19 @@ public class SchemaTableInfo implements TableInfo
     public QueryUpdateService getUpdateService()
     {
         return null;
+    }
+
+    @Override
+    public boolean fireRowTrigger(TriggerType type, boolean before,
+                                  Map<String, Object> oldRow, Map<String, Object> newRow, Map<String, String> errors) throws ValidationException
+    {
+        return false;
+    }
+
+    @Override
+    public boolean fireBatchTrigger(TriggerType type, boolean before,
+                                    List<Map<String, Object>> rows, Map<Integer, Map<String, String>> errors) throws ValidationException
+    {
+        return false;
     }
 }

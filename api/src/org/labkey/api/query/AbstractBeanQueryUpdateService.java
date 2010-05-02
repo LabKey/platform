@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NotFoundException;
 
@@ -44,6 +45,11 @@ import java.util.Map;
  */
 public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryUpdateService
 {
+    public AbstractBeanQueryUpdateService(TableInfo queryTable)
+    {
+        super(queryTable);
+    }
+
     /**
      * Converts a bean to a map (or in Britt's elloquent parlance, 'map-ificates a T')
      * <p>

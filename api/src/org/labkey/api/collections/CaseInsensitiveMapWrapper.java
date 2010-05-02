@@ -119,4 +119,10 @@ public class CaseInsensitiveMapWrapper<V> implements Map<String, V>, Serializabl
     {
         return _map.values();
     }
+
+    @Override
+    public String toString()
+    {
+        return _map.toString();
+    }
 }

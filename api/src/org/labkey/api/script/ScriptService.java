@@ -15,8 +15,24 @@
  */
 package org.labkey.api.script;
 
+import org.labkey.api.module.Module;
+import org.labkey.api.resource.Resource;
+
 import javax.script.ScriptEngineFactory;
+import javax.script.ScriptException;
 
 public interface ScriptService extends ScriptEngineFactory
 {
+    /**
+     * Compiles the Resource into a script and caches the result.
+     * This is mostly equivalent to calling <code>getScriptEngine().compile()</code>
+     * except the {@link javax.script.CompiledScript} will be cached on your behalf.
+     * Each call to compile() returns a new {@link ScriptReference} and contains
+     * it's own execution context while sharing the same {@link javax.script.CompiledScript}.
+     * 
+     * @param m module
+     * @param r resource
+     * @return The compiled script.
+     */
+    ScriptReference compile(Module m, Resource r) throws ScriptException;
 }

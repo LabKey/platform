@@ -62,7 +62,7 @@ public class FileResource extends AbstractResource
 
     public InputStream getInputStream() throws IOException
     {
-        assert isFile();
+        assert isFile() : _file.toString() + " is not a file";
         if (isFile())
             return new FileInputStream(_file);
         return null;

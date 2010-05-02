@@ -627,6 +627,7 @@ api/src/org/labkey/api/resource/MergedDirectoryResource.java -text
 api/src/org/labkey/api/resource/Resolver.java -text
 api/src/org/labkey/api/resource/Resource.java -text
 api/src/org/labkey/api/resource/ResourceRef.java -text
+api/src/org/labkey/api/script/ScriptReference.java -text
 api/src/org/labkey/api/script/ScriptService.java -text
 api/src/org/labkey/api/search/SearchService.java -text
 api/src/org/labkey/api/security/ActionNames.java -text
@@ -2417,7 +2418,13 @@ internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/pipeline/PipelineRootContainerTree.java -text
 internal/src/org/labkey/api/query/ComparisonCrosstabView.java -text
 internal/src/org/labkey/api/query/TempQuerySettings.java -text
+internal/src/org/labkey/api/script/ExternalScriptable.java -text
+internal/src/org/labkey/api/script/RhinoCompiledScript.java -text
+internal/src/org/labkey/api/script/RhinoScriptEngine.java -text
 internal/src/org/labkey/api/script/RhinoService.java -text
+internal/src/org/labkey/api/script/ScriptUtils.java -text
+internal/src/org/labkey/api/script/ScriptableList.java -text
+internal/src/org/labkey/api/script/ScriptableMap.java -text
 internal/src/org/labkey/api/security/UserDisplayNameComparator.java -text
 internal/src/org/labkey/api/security/UserEmailComparator.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text

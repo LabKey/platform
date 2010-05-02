@@ -19,10 +19,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryUpdateForm;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
@@ -30,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -175,4 +173,33 @@ public interface TableInfo
      */
     @Nullable
     QueryUpdateService getUpdateService();
+
+    public enum TriggerType
+    {
+        INSERT, UPDATE, DELETE, SELECT
+    }
+
+    /**
+     * Fire trigger for a set of rows.
+     * @param type The TriggerType for the event.
+     * @param before true if the trigger is before the event.
+     * @param rows The rows affected.
+     * @param errors Errors found when processing the rows.  The key of the map is the row index of the error.  The value of the map is a map from column name to error message.
+     * @return return value from the trigger function || errors were added to the error map
+     */
+    public boolean fireBatchTrigger(TriggerType type, boolean before,
+                                    List<Map<String, Object>> rows, Map<Integer, Map<String, String>> errors) throws ValidationException;
+
+    /**
+     * Fire trigger for a single row.
+     * @param type The TriggerType for the event.
+     * @param before true if the trigger is before the event.
+     * @param oldRow The previous row for UPDATE and DELETE
+     * @param newRow The new row for INSERT and UPDATE.
+     * @param errors A map from column name to error message.
+     * @return return value from the trigger function || errors were added to the error map
+     */
+    public boolean fireRowTrigger(TriggerType type, boolean before,
+                                  Map<String, Object> oldRow, Map<String, Object> newRow, Map<String, String> errors) throws ValidationException;
+
 }

@@ -83,7 +83,7 @@ public class Path implements Serializable, Iterable<String>
     }
 
 
-    // create a Path from an unencoded string
+    /** create a Path from an unencoded string */
     public static Path parse(String path)
     {
         String strip = StringUtils.strip(path,"/");
@@ -96,7 +96,7 @@ public class Path implements Serializable, Iterable<String>
     }
 
     
-    // create a path from a url encode string
+    /** create a path from a url encode string */
     public static Path decode(String path)
     {
         String[] arr = StringUtils.strip(path,"/").split("/");

@@ -75,10 +75,19 @@ public class ModuleResourceResolver implements Resolver
                 return null;
             if (r.exists())
             {
-                _log.debug(normalized + " -> " + r.getPath());
+                _log.debug("resolved resource: " + r.getPath() + " -> " + normalized);
                 _resources.put(cacheKey, r);
+                return r;
             }
         }
+        else if (!r.exists())
+        {
+            // remove cached resource and try again
+            _log.debug("removed resource: " + r.getPath());
+            _resources.remove(cacheKey);
+            return lookup(path);
+        }
+
         return r;
     }
 

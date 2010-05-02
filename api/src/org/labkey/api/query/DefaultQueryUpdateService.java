@@ -37,18 +37,12 @@ import java.sql.SQLException;
 */
 public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 {
-    private TableInfo _queryTable = null;
     private TableInfo _dbTable = null;
 
     public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
     {
-        _queryTable = queryTable;
+        super(queryTable);
         _dbTable = dbTable;
-    }
-
-    protected TableInfo getQueryTable()
-    {
-        return _queryTable;
     }
 
     protected TableInfo getDbTable()

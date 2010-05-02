@@ -1,12 +1,11 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -14,6 +13,20 @@ import java.util.Map;
  */
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
+    private TableInfo _queryTable = null;
+
+    protected AbstractQueryUpdateService(TableInfo queryTable)
+    {
+        if (queryTable == null)
+            throw new IllegalArgumentException();
+        _queryTable = queryTable;
+    }
+
+    protected TableInfo getQueryTable()
+    {
+        return _queryTable;
+    }
+
     public abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
@@ -37,15 +50,35 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        Map<Integer, Map<String, String>> errors = new LinkedHashMap<Integer, Map<String, String>>();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, rows, errors);
+
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
-        for (Map<String, Object> row : rows)
+        for (int i = 0; i < rows.size(); i++)
         {
-            Map<String, Object> updatedRow = insertRow(user, container, row);
-            if (updatedRow != null)
+            Map<String, Object> row = rows.get(i);
+            Map<String, String> rowErrors = new HashMap<String, String>();
+            if (getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, null, row, rowErrors))
             {
-                result.add(updatedRow);
+                errors.put(i, rowErrors);
+                continue;
             }
+
+            row = insertRow(user, container, row);
+            if (row == null)
+                continue;
+
+            if (getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, null, row, rowErrors))
+            {
+                errors.put(i, rowErrors);
+                continue;
+            }
+
+            result.add(row);
         }
+
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, result, errors);
+
         return result;
     }
 

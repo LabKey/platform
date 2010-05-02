@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
@@ -39,8 +40,9 @@ public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdate
     private String _keyColumn;
     private IntegerConverter _converter = new IntegerConverter();
 
-    public RowIdQueryUpdateService(String keyColumn)
+    public RowIdQueryUpdateService(TableInfo table, String keyColumn)
     {
+        super(table);
         assert null != keyColumn;
         _keyColumn = keyColumn;
     }

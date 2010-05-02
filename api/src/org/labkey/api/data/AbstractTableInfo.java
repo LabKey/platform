@@ -19,18 +19,22 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.script.ScriptReference;
+import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.SimpleNamedObject;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
+import javax.script.ScriptException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -645,4 +649,98 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         return null;
     }
+
+
+    ScriptReference tableScript;
+
+    protected ScriptReference getTableScript() throws ScriptException
+    {
+        if (tableScript != null)
+            return tableScript;
+
+        ScriptService svc = ServiceRegistry.get().getService(ScriptService.class);
+        assert svc != null;
+        if (svc == null)
+            return null;
+
+        Module m = ModuleLoader.getInstance().getModuleForSchemaName(getSchema().getName());
+        String filename = getPublicSchemaName() + "_" + getName();
+        // replace non-word characters
+        filename = filename.replaceAll("\\W", "_") + ".js";
+        Path p = new Path("schemas", filename);
+        Resource r = m.getModuleResource(p);
+        if (r == null)
+            return null;
+        tableScript = svc.compile(m, r);
+        return tableScript;
+    }
+
+    protected <T> T invokeTableScript(Class<T> resultType, String methodName, Object... args)
+    {
+        try
+        {
+            ScriptReference script = getTableScript();
+            if (script == null)
+                return null;
+
+            if (script.hasFn(methodName))
+                return script.invokeFn(resultType, methodName, args);
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new UnexpectedException(e);
+        }
+        catch (ScriptException e)
+        {
+            throw new UnexpectedException(e);
+        }
+
+        return null;
+    }
+
+    private Object[] EMPTY_ARGS = new Object[0];
+
+    @Override
+    public boolean fireBatchTrigger(TriggerType type, boolean before,
+                                    List<Map<String, Object>> rows, Map<Integer, Map<String, String>> errors)
+            throws ValidationException
+    {
+        assert errors != null;
+        String triggerMethod = (before ? "init_" : "complete_") + type.name().toLowerCase();
+        Boolean hasErrors = invokeTableScript(Boolean.class, triggerMethod, rows, errors);
+        return (hasErrors != null && hasErrors.booleanValue()) || !errors.isEmpty();
+    }
+
+    @Override
+    public boolean fireRowTrigger(TriggerType type, boolean before,
+                                  Map<String, Object> oldRow, Map<String, Object> newRow, Map<String, String> errors)
+            throws ValidationException
+    {
+        assert errors != null;
+        String triggerMethod = (before ? "before_" : "after_") + type.name().toLowerCase();
+        Object[] args = EMPTY_ARGS;
+        if (before)
+        {
+            switch (type)
+            {
+                case SELECT: args = new Object[] { oldRow, errors };         break;
+                case INSERT: args = new Object[] { newRow, errors };         break;
+                case UPDATE: args = new Object[] { oldRow, newRow, errors }; break;
+                case DELETE: args = new Object[] { oldRow, errors };         break;
+            }
+        }
+        else
+        {
+            switch (type)
+            {
+                case SELECT: args = new Object[] { newRow, errors };         break;
+                case INSERT: args = new Object[] { newRow, errors };         break;
+                case UPDATE: args = new Object[] { oldRow, newRow, errors }; break;
+                case DELETE: args = new Object[] { oldRow, errors };         break;
+            }
+        }
+        Boolean hasErrors = invokeTableScript(Boolean.class, triggerMethod, args);
+        return (hasErrors != null && hasErrors.booleanValue()) || !errors.isEmpty();
+    }
+
 }
