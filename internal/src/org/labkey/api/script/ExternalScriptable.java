@@ -40,6 +40,7 @@ import java.util.Map;
  * @author A. Sundararajan
  * @since 1.6
  */
+// kevink: changes marked
 final class ExternalScriptable implements Scriptable
 {
     /* Underlying ScriptContext that we use to store
@@ -116,7 +117,8 @@ final class ExternalScriptable implements Scriptable
                 int scope = context.getAttributesScope(name);
                 if (scope != -1) {
                     Object value = context.getAttribute(name, scope);
-                    return Context.javaToJS(value, this);
+                    // kevink: use our converter
+                    return ScriptUtils.javaToJS(value, this);
                 } else {
                     return NOT_FOUND;
                 }
@@ -440,36 +442,38 @@ final class ExternalScriptable implements Scriptable
     * and hence the following function is used.
     */
     private Object jsToJava(Object jsObj) {
-        if (jsObj instanceof Wrapper) {
-            Wrapper njb = (Wrapper) jsObj;
-            /* importClass feature of ImporterTopLevel puts
-             * NativeJavaClass in global scope. If we unwrap
-             * it, importClass won't work.
-             */
-            if (njb instanceof NativeJavaClass) {
-                return njb;
-            }
-
-            /* script may use Java primitive wrapper type objects
-             * (such as java.lang.Integer, java.lang.Boolean etc)
-             * explicitly. If we unwrap, then these script objects
-             * will become script primitive types. For example,
-             *
-             *    var x = new java.lang.Double(3.0); print(typeof x);
-             *
-             * will print 'number'. We don't want that to happen.
-             */
-            Object obj = njb.unwrap();
-            if (obj instanceof Number || obj instanceof String ||
-                obj instanceof Boolean || obj instanceof Character) {
-                // special type wrapped -- we just leave it as is.
-                return njb;
-            } else {
-                // return unwrapped object for any other object.
-                return obj;
-            }
-        } else { // not-a-Java-wrapper
-            return jsObj;
-        }
+       // kevink: use our converter
+       return ScriptUtils.jsToJava(jsObj, ScriptRuntime.ObjectClass);
+//        if (jsObj instanceof Wrapper) {
+//            Wrapper njb = (Wrapper) jsObj;
+//            /* importClass feature of ImporterTopLevel puts
+//             * NativeJavaClass in global scope. If we unwrap
+//             * it, importClass won't work.
+//             */
+//            if (njb instanceof NativeJavaClass) {
+//                return njb;
+//            }
+//
+//            /* script may use Java primitive wrapper type objects
+//             * (such as java.lang.Integer, java.lang.Boolean etc)
+//             * explicitly. If we unwrap, then these script objects
+//             * will become script primitive types. For example,
+//             *
+//             *    var x = new java.lang.Double(3.0); print(typeof x);
+//             *
+//             * will print 'number'. We don't want that to happen.
+//             */
+//            Object obj = njb.unwrap();
+//            if (obj instanceof Number || obj instanceof String ||
+//                obj instanceof Boolean || obj instanceof Character) {
+//                // special type wrapped -- we just leave it as is.
+//                return njb;
+//            } else {
+//                // return unwrapped object for any other object.
+//                return obj;
+//            }
+//        } else { // not-a-Java-wrapper
+//            return jsObj;
+//        }
     }
 }

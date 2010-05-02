@@ -66,14 +66,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         Map<Integer, Map<String, String>> errors = new LinkedHashMap<Integer, Map<String, String>>();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, rows, errors);
+        if (!getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, rows, errors))
+            throwValidationException(rows.size(), errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
             Map<String, String> rowErrors = new HashMap<String, String>();
-            if (getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, null, row, rowErrors))
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, null, row, rowErrors))
             {
                 errors.put(i, rowErrors);
                 continue;
@@ -83,7 +84,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             if (row == null)
                 continue;
 
-            if (getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, null, row, rowErrors))
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, null, row, rowErrors))
             {
                 errors.put(i, rowErrors);
                 continue;
@@ -92,7 +93,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             result.add(row);
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, result, errors);
+        if (!errors.isEmpty())
+            throwValidationException(rows.size(), errors);
+
+        if (!getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, result, errors))
+            throwValidationException(rows.size(), errors);
 
         return result;
     }
@@ -136,4 +141,34 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
         return result;
     }
+
+
+    protected void throwValidationException(int rowCount, Map<Integer, Map<String, String>> errors) throws ValidationException
+    {
+        List<ValidationError> list = new ArrayList<ValidationError>(errors.size());
+        for (Map.Entry<Integer, Map<String, String>> entry : errors.entrySet())
+        {
+            int row = entry.getKey() == null ? -1 : entry.getKey().intValue();
+            Map<String, String> rowErrors = entry.getValue();
+            for (Map.Entry<String, String> fields : rowErrors.entrySet())
+            {
+                String property = fields.getKey();
+                StringBuilder message = new StringBuilder();
+                if (rowCount > 1 && row > -1)
+                    message.append("Row ").append(row).append(" has error: ");
+
+                if (property != null)
+                    message.append(String.valueOf(property)).append(": ");
+
+                message.append(fields.getValue());
+
+                if (property != null)
+                    list.add(new PropertyValidationError(message.toString(), property));
+                else
+                    list.add(new SimpleValidationError(message.toString()));
+            }
+        }
+        throw new ValidationException(list);
+    }
+
 }

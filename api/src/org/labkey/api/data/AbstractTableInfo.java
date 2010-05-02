@@ -707,8 +707,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         assert errors != null;
         String triggerMethod = (before ? "init_" : "complete_") + type.name().toLowerCase();
-        Boolean hasErrors = invokeTableScript(Boolean.class, triggerMethod, rows, errors);
-        return (hasErrors != null && hasErrors.booleanValue()) || !errors.isEmpty();
+        Boolean success = invokeTableScript(Boolean.class, triggerMethod, rows, errors);
+        if (success != null && !success.booleanValue())
+            errors.put(null, Collections.singletonMap((String)null, triggerMethod + " validation failed"));
+        return errors.isEmpty();
     }
 
     @Override
@@ -739,8 +741,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                 case DELETE: args = new Object[] { oldRow, errors };         break;
             }
         }
-        Boolean hasErrors = invokeTableScript(Boolean.class, triggerMethod, args);
-        return (hasErrors != null && hasErrors.booleanValue()) || !errors.isEmpty();
+        Boolean success = invokeTableScript(Boolean.class, triggerMethod, args);
+        if (success != null && !success.booleanValue())
+            errors.put(null, triggerMethod + " validation failed");
+        return errors.isEmpty();
     }
 
 }

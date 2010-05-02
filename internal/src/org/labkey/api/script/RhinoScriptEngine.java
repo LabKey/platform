@@ -129,7 +129,8 @@ public class RhinoScriptEngine extends AbstractScriptEngine
                     if (desiredType == Void.TYPE) {
                         return null;
                     } else {
-                        return Context.jsToJava(res, desiredType);
+                        // kevink: use our converter
+                        return ScriptUtils.jsToJava(res, desiredType);
                     }
                 }
         };

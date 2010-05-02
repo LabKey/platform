@@ -18,6 +18,7 @@ package org.labkey.api.script;
 
 import org.mozilla.javascript.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,67 @@ public class ScriptUtils {
         } else {
             return Context.javaToJS(obj, scope);
         }
+    }
+
+    public static Object jsToJava(Object jsObj, Class<?> desiredType) {
+        Object convertedValue = Context.jsToJava(jsObj, desiredType);
+        if (convertedValue instanceof ScriptableObject)
+        {
+            return scriptableToJava((ScriptableObject)convertedValue);
+        }
+        return convertedValue;
+    }
+
+    public static Object scriptableToJava(ScriptableObject jsObj)
+    {
+        if (ScriptRuntime.isArrayObject(jsObj))
+        {
+            // unpack native java array
+            final Object[] array = Context.getCurrentContext().getElements(jsObj);
+            final Object[] ids = jsObj.getIds();
+            if (ids.length == 0 || array.length == ids.length)
+            {
+                // Array is an associative array if the length is 0 or is the same length as the script object.
+                for (int i = 0; i < array.length; i++)
+                    array[i] = jsToJava(array[i], ScriptRuntime.ObjectClass);
+                return array;
+            }
+            else
+            {
+                Map<String, Object> map = new LinkedHashMap<String, Object>();
+                for (Object id : ids)
+                {
+                    String key = id.toString();
+                    Object value = jsObj.get(key, jsObj);
+                    if (value == UniqueTag.NOT_FOUND)
+                    {
+                        // try again with an integer index
+                        value = jsObj.get(Integer.parseInt(key), jsObj);
+                    }
+                    map.put(key, jsToJava(value, ScriptRuntime.ObjectClass));
+                }
+                return map;
+            }
+        }
+        else
+        {
+            final String jsClass = jsObj.getClassName();
+
+            // Plain 'ol JavaScript Object.  Convert to a map.
+            if ("Object".equals(jsClass))
+            {
+                final Object[] ids = jsObj.getIds();
+                Map<String, Object> map = new LinkedHashMap<String, Object>();
+                for (Object id : ids)
+                {
+                    String key = id.toString();
+                    Object value = jsObj.get(key, jsObj);
+                    map.put(key, jsToJava(value, ScriptRuntime.ObjectClass));
+                }
+                return map;
+            }
+        }
+        return jsObj;
     }
 
     /**

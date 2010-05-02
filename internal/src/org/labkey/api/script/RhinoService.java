@@ -169,7 +169,7 @@ class ScriptReferenceImpl implements ScriptReference
             Object result = eval(map);
             if (result == null)
                 return null;
-            return (T)Context.jsToJava(result, resultType);
+            return (T)ScriptUtils.jsToJava(result, resultType);
         }
         finally
         {
@@ -229,7 +229,7 @@ class ScriptReferenceImpl implements ScriptReference
             Object result = invokeFn(name, args);
             if (result == null)
                 return null;
-            return (T)Context.jsToJava(result, resultType);
+            return (T)ScriptUtils.jsToJava(result, resultType);
         }
         finally
         {
