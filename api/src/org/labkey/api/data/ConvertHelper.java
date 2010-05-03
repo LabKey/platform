@@ -26,6 +26,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleConverter;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.util.*;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
@@ -120,6 +121,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new StringExpressionFactory.Converter(), StringExpression.class);
         _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
         _register(new ShowRowsConverter(), ShowRows.class);
+        _register(new EnumConverter(), DataSet.KeyManagementType.class);
     }
 
 

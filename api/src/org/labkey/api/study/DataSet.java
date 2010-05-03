@@ -60,4 +60,56 @@ public interface DataSet extends StudyEntity
     public boolean canRead(User user);
 
     public boolean canWrite(User user);
+
+    enum KeyManagementType
+    {
+        // Don't rename enums without updating the values in the database too
+        None(""), RowId("rowid", "true"), GUID("entityid", "guid");
+
+        private String _serializationName;
+        private String[] _serializationAliases;
+
+        private KeyManagementType(String serializationName, String... serializationAliases)
+        {
+            _serializationName = serializationName;
+            _serializationAliases = serializationAliases;
+        }
+
+        public String getSerializationName()
+        {
+            return _serializationName;
+        }
+
+        public boolean matches(String name)
+        {
+            if (_serializationName.equalsIgnoreCase(name))
+            {
+                return true;
+            }
+            for (String alias : _serializationAliases)
+            {
+                if (alias.equalsIgnoreCase(name))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static KeyManagementType findMatch(String name)
+        {
+            if (name == null)
+            {
+                return KeyManagementType.None;
+            }
+            for (KeyManagementType type : KeyManagementType.values())
+            {
+                if (type.matches(name))
+                {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("No match for '" + name + "'");
+        }
+    }
 }

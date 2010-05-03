@@ -294,7 +294,20 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         //build the json to send to the server
         var record;
-        var rows = [];
+        var insertCommand =
+        {
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            command: "insertWithKeys",
+            rows: []
+        };
+        var updateCommand =
+        {
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            command: "updateChangingKeys",
+            rows: []
+        };
         for(var idx = 0; idx < records.length; ++idx)
         {
             record = records[idx];
@@ -307,15 +320,35 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 continue;
 
             record.saveOperationInProgress = true;
-            rows.push({
-                command: (record.isNew ? "insert" : "update"),
-                values: this.getRowData(record),
-                oldKeys : this.getOldKeys(record)
-            });
+            if (record.isNew)
+            {
+                insertCommand.rows.push({
+                    values: this.getRowData(record),
+                    oldKeys : this.getOldKeys(record)
+                });
+            }
+            else
+            {
+                updateCommand.rows.push({
+                    values: this.getRowData(record),
+                    oldKeys : this.getOldKeys(record)
+                });
+            }
         }
 
-        if(false === this.fireEvent("beforecommit", records, rows))
+        if((insertCommand.rows.length > 0 && false === this.fireEvent("beforecommit", records, insertCommand.rows)) ||
+           (updateCommand.rows.length > 0 && false === this.fireEvent("beforecommit", records, updateCommand.rows)))
             return;
+
+        var commands = [];
+        if (insertCommand.rows.length > 0)
+        {
+            commands.push(insertCommand);
+        }
+        if (updateCommand.rows.length > 0)
+        {
+            commands.push(updateCommand);
+        }
 
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", "saveRows", this.containerPath),
@@ -324,10 +357,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             failure: this.getOnCommitFailure(records),
             scope: this,
             jsonData : {
-                schemaName: this.schemaName,
-                queryName: this.queryName,
                 containerPath: this.containerPath,
-                rows: rows
+                commands: commands
             },
             headers : {
                 'Content-Type' : 'application/json'
@@ -338,7 +369,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     /**
      * Returns true if the given record is currently being updated on the server, false if not.
      * @param {Ext.data.Record} record The record.
-     * @returns {boolea} true if the record is currently being updated, false if not.
+     * @returns {boolean} true if the record is currently being updated, false if not.
      * @name isUpdateInProgress
      * @function
      * @memberOf LABKEY.ext.Store#
@@ -446,54 +477,58 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
     onCommitSuccess : function(response, options) {
         var json = this.getJson(response);
-        if(!json || !json.rows)
+        if(!json || !json.result)
             return;
 
         var idCol = this.reader.jsonData.metaData.id;
         var row;
         var record;
-        for(var idx = 0; idx < json.rows.length; ++idx)
+        for(var commandIdx = 0; commandIdx < json.result.length; ++commandIdx)
         {
-            row = json.rows[idx];
-            if(!row || !row.values)
-                continue;
-
-            //find the record using the id sent to the server
-            record = this.getById(row.oldKeys[this.reader.meta.id]);
-            if(!record)
-                continue;
-
-            //apply values from the result row to the sent record
-            for(var col in record.data)
+            var commandJson = json.result[commandIdx];
+            for(var idx = 0; idx < commandJson.rows.length; ++idx)
             {
-                //since the sent record might contain columns form a related table,
-                //ensure that a value was actually returned for that column before trying to set it
-                if(undefined !== row.values[col])
-                    record.set(col, record.fields.get(col).convert(row.values[col], row.values));
+                row = commandJson.rows[idx];
+                if(!row || !row.values)
+                    continue;
 
-                //clear any displayValue there might be in the extended info
-                if(record.json && record.json[col])
-                    delete record.json[col].displayValue;
+                //find the record using the id sent to the server
+                record = this.getById(row.oldKeys[this.reader.meta.id]);
+                if(!record)
+                    continue;
+
+                //apply values from the result row to the sent record
+                for(var col in record.data)
+                {
+                    //since the sent record might contain columns form a related table,
+                    //ensure that a value was actually returned for that column before trying to set it
+                    if(undefined !== row.values[col])
+                        record.set(col, record.fields.get(col).convert(row.values[col], row.values));
+
+                    //clear any displayValue there might be in the extended info
+                    if(record.json && record.json[col])
+                        delete record.json[col].displayValue;
+                }
+
+                //if the id changed, fixup the keys and map of the store's base collection
+                //HACK: this is using private data members of the base Store class. Unfortunately
+                //Ext Store does not have a public API for updating the key value of a record
+                //after it has been added to the store. This might break in future versions of Ext.
+                if(record.id != row.values[idCol])
+                {
+                    record.id = row.values[idCol];
+                    this.data.keys[this.data.indexOf(record)] = row.values[idCol];
+
+                    delete this.data.map[record.id];
+                    this.data.map[row.values[idCol]] = record;
+                }
+
+                //reset transitory flags and commit the record to let
+                //bound controls know that it's now clean
+                delete record.saveOperationInProgress;
+                delete record.isNew;
+                record.commit();
             }
-
-            //if the id changed, fixup the keys and map of the store's base collection
-            //HACK: this is using private data members of the base Store class. Unfortunately
-            //Ext Store does not have a public API for updating the key value of a record
-            //after it has been added to the store. This might break in future versions of Ext.
-            if(record.id != row.values[idCol])
-            {
-                record.id = row.values[idCol];
-                this.data.keys[this.data.indexOf(record)] = row.values[idCol];
-
-                delete this.data.map[record.id];
-                this.data.map[row.values[idCol]] = record;
-            }
-
-            //reset transitory flags and commit the record to let
-            //bound controls know that it's now clean
-            delete record.saveOperationInProgress;
-            delete record.isNew;
-            record.commit();
         }
         this.fireEvent("commitcomplete");
     },
