@@ -222,13 +222,6 @@ public abstract class VisitManager
                 Table.execute(schema, datasetParticipantsSQL);
             }
             Table.execute(schema,
-                    "INSERT INTO " + tableParticipant + " (container, participantid)\n" +
-                    "SELECT DISTINCT ?, ptid AS participantid\n" +
-                    "FROM " + tableSpecimen + "\n"+
-                    "WHERE container = ? AND ptid IS NOT NULL AND " +
-                    "ptid NOT IN (select participantid from " + tableParticipant + " where container = ?)",
-                    new Object[] {c, c, c});
-            Table.execute(schema,
                     "DELETE FROM " + tableParticipant  + "\n" +
                     "WHERE container = ? AND participantid NOT IN (select participantid from " + tableStudyData  + " where container = ?) AND " +
                              "participantid NOT IN (select ptid from " + tableSpecimen  + " where container = ?)",

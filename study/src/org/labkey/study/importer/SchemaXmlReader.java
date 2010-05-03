@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.Type;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.study.StudyImportException;
 import org.labkey.api.util.XmlBeansUtil;
@@ -109,6 +110,11 @@ public class SchemaXmlReader implements SchemaReader
 
                 String dataType = columnXml.getDatatype();
                 Type t = Type.getTypeBySqlTypeName(dataType);
+                if ("entityid".equalsIgnoreCase(dataType))
+                {
+                    // Special case handling for GUID keys
+                    t = Type.StringType;
+                }
 
                 if (t == null)
                     throw new IllegalStateException("Unknown property type '" + dataType + "' for property '" + columnXml.getColumnName() + "' in dataset '" + datasetName + "'.");
@@ -164,7 +170,9 @@ public class SchemaXmlReader implements SchemaReader
                     info.keyPropertyName = columnName;
 
                     if (columnXml.getIsAutoInc())
-                        info.keyManaged = true;
+                        info.keyManagementType = DataSet.KeyManagementType.RowId;
+                    if ("entityid".equalsIgnoreCase(columnXml.getDatatype()))
+                        info.keyManagementType = DataSet.KeyManagementType.GUID;
                 }
 
                 if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getPropertyURI()))

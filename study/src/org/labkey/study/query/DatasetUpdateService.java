@@ -142,6 +142,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return row;
     }
 
+    @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super.deleteRows(user, container, keys);
+        resyncStudy(user, container, true);
+        return result;
+    }
+
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         StudyService.get().deleteDatasetRow(user, container, getDatasetId(), keyFromMap(keys));

@@ -533,9 +533,7 @@ public class SpecimenImporter
             cpuCurrentLocations.stop();
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
-            StudyImpl study = StudyManager.getInstance().getStudy(container);
-
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptyList());
+            resyncStudy(user, container);
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
@@ -558,6 +556,23 @@ public class SpecimenImporter
             SampleManager.getInstance().clearCaches(container);
         }
         dumpTimers();
+    }
+
+    private void resyncStudy(User user, Container container) throws SQLException
+    {
+        TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+        TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
+
+        Table.execute(tableParticipant.getSchema(),
+                "INSERT INTO " + tableParticipant + " (container, participantid)\n" +
+                "SELECT DISTINCT ?, ptid AS participantid\n" +
+                "FROM " + tableSpecimen + "\n"+
+                "WHERE container = ? AND ptid IS NOT NULL AND " +
+                "ptid NOT IN (select participantid from " + tableParticipant + " where container = ?)",
+                new Object[] {container, container, container});
+
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptyList());
     }
 
     private boolean updateStatistics(TableInfo tinfo) throws SQLException
@@ -598,8 +613,7 @@ public class SpecimenImporter
             cpuCurrentLocations.stop();
             info("Time to determine locations: " + cpuCurrentLocations.toString());
 
-            StudyImpl study = StudyManager.getInstance().getStudy(container);
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.<DataSetDefinition>emptySet());
+            resyncStudy(user, container);
 
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around

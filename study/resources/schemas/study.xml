@@ -214,8 +214,8 @@
       <ns:column columnName="KeyPropertyName">
         <ns:description>The name of the property/field identifying the additional key column of each dataset.</ns:description>
       </ns:column>
-      <ns:column columnName="KeyPropertyManaged">
-        <ns:description>Whether the additional key column of each dataset is managed by the server (versus provided during import).</ns:description>
+      <ns:column columnName="KeyManagementType">
+        <ns:description>Whether the additional key column of each dataset is managed by the server (either as RowId or GUID/EntityId, versus provided during import), or is None.</ns:description>
       </ns:column>
       <ns:column columnName="name">
         <ns:description>The long/friendly name of each dataset.</ns:description>

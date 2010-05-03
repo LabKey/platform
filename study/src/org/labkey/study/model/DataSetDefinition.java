@@ -41,6 +41,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.*;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
@@ -75,7 +76,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private String _category;
     private String _visitDatePropertyName;
     private String _keyPropertyName;
-    private boolean _keyPropertyManaged; // if true, the extra key is a sequence, managed by the server
+    private @NotNull KeyManagementType _keyManagementType = KeyManagementType.None;
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
     private transient TableInfo _tableInfoProperties;
@@ -642,14 +643,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _keyPropertyName = keyPropertyName;
     }
 
-    public boolean isKeyPropertyManaged()
+    public void setKeyManagementType(@NotNull KeyManagementType type)
     {
-        return _keyPropertyManaged;
+        _keyManagementType = type;
     }
 
-    public void setKeyPropertyManaged(boolean keyPropertyManaged)
+    @NotNull
+    public KeyManagementType getKeyManagementType()
     {
-        _keyPropertyManaged = keyPropertyManaged;
+        return _keyManagementType;
     }
 
     public String getDescription()
@@ -776,7 +778,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columns.add(visitRowId);
 
             // If we have an extra key, and it's server-managed, make it non-editable
-            if (def.isKeyPropertyManaged())
+            if (def.getKeyManagementType() != KeyManagementType.None)
             {
                 for (ColumnInfo col : columns)
                 {
@@ -1175,7 +1177,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (errors.size() > 0)
             return Collections.emptyList();
 
-        if (isKeyPropertyManaged())
+        if (getKeyManagementType() == KeyManagementType.RowId)
         {
             // If additional keys are managed by the server, we need to synchronize around
             // increments, as we're imitating a sequence.
@@ -1305,7 +1307,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // CONSIDER: it would be nice if we could use the Table/TableInfo methods here
 
             // Need to generate keys if the server manages them
-            if (isKeyPropertyManaged())
+            if (getKeyManagementType() == KeyManagementType.RowId)
             {
                 int currentKey = getMaxKeyValue();
 
@@ -1317,6 +1319,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     {
                         currentKey++;
                         dataMap.put(keyPropertyURI, currentKey);
+                    }
+                }
+                if (logger != null) logger.debug("generated keys");
+            }
+            else if (getKeyManagementType() == KeyManagementType.GUID)
+            {
+                // Sadly, may have to create new maps, since TabLoader's aren't modifiable
+                for (Map<String, Object> dataMap : dataMaps)
+                {
+                    // Only insert if there isn't already a value
+                    if (dataMap.get(keyPropertyURI) == null)
+                    {
+                        dataMap.put(keyPropertyURI, GUID.makeGUID());
                     }
                 }
                 if (logger != null) logger.debug("generated keys");
@@ -1423,7 +1438,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         // If we have duplicates, and we don't have an auto-keyed dataset,
         // then we cannot proceed.
-        if (noDeleteMap.size() > 0 && !isKeyPropertyManaged())
+        if (noDeleteMap.size() > 0 && getKeyManagementType() == KeyManagementType.None)
             return noDeleteMap;
 
         if (deleteSet.size() == 0)

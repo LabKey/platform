@@ -229,7 +229,8 @@ public class StudyServiceImpl implements StudyService.Service
                 if (col.getName().equals("lsid") ||
                         col.getName().equals("sourcelsid") ||
                         col.getName().equals("QCState") ||
-                        col.isKeyField())
+                        col.isKeyField() ||
+                        col.getName().equalsIgnoreCase(def.getKeyPropertyName()))
                 {
                     continue;
                 }

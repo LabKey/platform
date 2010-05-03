@@ -2223,7 +2223,7 @@ public class StudyManager
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
                         def.setCategory(info.category);
-                        def.setKeyPropertyManaged(info.keyManaged);
+                        def.setKeyManagementType(info.keyManagementType);
                         def.setDemographicData(info.demographicData);
                         manager.createDataSetDefinition(user, def);
                     }
@@ -2238,7 +2238,7 @@ public class StudyManager
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
                         def.setCategory(info.category);
-                        def.setKeyPropertyManaged(info.keyManaged);
+                        def.setKeyManagementType(info.keyManagementType);
                         def.setDemographicData(info.demographicData);
                         manager.updateDataSetDefinition(user, def);
                     }

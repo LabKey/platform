@@ -3514,7 +3514,7 @@ public class StudyController extends BaseStudyController
                 else // DATE or NONE
                     ignoreColumns.add("Date");
             }
-            if (def.isKeyPropertyManaged())
+            if (def.getKeyManagementType() == DataSet.KeyManagementType.None)
             {
                 // Do not include a server-managed key field
                 ignoreColumns.add(def.getKeyPropertyName());
@@ -4825,7 +4825,7 @@ public class StudyController extends BaseStudyController
                         if (jdataset.has("keyPropertyManaged") && jdataset.getBoolean("keyPropertyManaged"))
                         {
                             dataset = dataset.createMutable();
-                            dataset.setKeyPropertyManaged(true);
+                            dataset.setKeyManagementType(DataSet.KeyManagementType.RowId);
                             StudyManager.getInstance().updateDataSetDefinition(getUser(), dataset);
                         }
 
@@ -5025,7 +5025,7 @@ public class StudyController extends BaseStudyController
                 // if this snapshot is being created from an existing dataset, copy key field settings
                 int datasetId = NumberUtils.toInt(getViewContext().getActionURL().getParameter(DataSetDefinition.DATASETKEY), -1);
                 String additionalKey = null;
-                boolean isKeyManaged = false;
+                DataSetDefinition.KeyManagementType keyManagementType = DataSet.KeyManagementType.None;
                 boolean isDemographicData = false;
 
                 if (datasetId != -1)
@@ -5034,7 +5034,7 @@ public class StudyController extends BaseStudyController
                     if (sourceDef != null)
                     {
                         additionalKey = sourceDef.getKeyPropertyName();
-                        isKeyManaged = sourceDef.isKeyPropertyManaged();
+                        keyManagementType = sourceDef.getKeyManagementType();
                         isDemographicData = sourceDef.isDemographicData();
                     }
                 }
@@ -5043,10 +5043,10 @@ public class StudyController extends BaseStudyController
                 if (def != null)
                 {
                     form.setSnapshotDatasetId(def.getDataSetId());
-                    if (isKeyManaged)
+                    if (keyManagementType != DataSet.KeyManagementType.None)
                     {
                         def = def.createMutable();
-                        def.setKeyPropertyManaged(true);
+                        def.setKeyManagementType(keyManagementType);
 
                         StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
                     }

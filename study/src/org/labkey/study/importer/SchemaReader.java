@@ -15,6 +15,9 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.study.DataSet;
+import org.labkey.study.model.DataSetDefinition;
+
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +51,7 @@ public interface SchemaReader
         public String startDatePropertyName;
         public boolean isHidden;
         public String keyPropertyName;
-        public boolean keyManaged;
+        public DataSetDefinition.KeyManagementType keyManagementType = DataSet.KeyManagementType.None;
         public String category;
         public boolean demographicData;
     }

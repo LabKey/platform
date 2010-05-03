@@ -102,9 +102,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
                 if (col.getName().equals(def.getKeyPropertyName()))
                 {
                     writer.print("1");
-
-                    if (def.isKeyPropertyManaged())
-                        writer.print("\ttrue");
+                    writer.print("\t" + def.getKeyManagementType().getSerializationName());
                 }
 
                 // TODO: Category?

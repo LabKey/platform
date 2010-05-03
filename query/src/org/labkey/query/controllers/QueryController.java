@@ -23,6 +23,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -2264,11 +2265,100 @@ public class QueryController extends SpringActionController
         }
     }
 
-    protected enum SaveTarget
+    private enum CommandType
     {
-        List,
-        DbUserSchema,
-        StudyDataset
+        insert(InsertPermission.class)
+        {
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+            {
+                List<Map<String,Object>> insertedRows = qus.insertRows(user, container, rows);
+                return qus.getRows(user, container, insertedRows);
+            }
+        },
+        insertWithKeys(InsertPermission.class)
+        {
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+            {
+                List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
+                for (Map<String, Object> row : rows)
+                {
+                    newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
+                    oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
+                }
+                List<Map<String,Object>> updatedRows = qus.insertRows(user, container, newRows);
+                updatedRows = qus.getRows(user, container, updatedRows);
+                List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+                for (int i = 0; i < updatedRows.size(); i++)
+                {
+                    Map<String, Object> result = new HashMap<String, Object>();
+                    result.put(SaveRowsAction.PROP_VALUES, updatedRows.get(i));
+                    result.put(SaveRowsAction.PROP_OLD_KEYS, oldKeys.get(i));
+                    results.add(result);
+                }
+                return results;
+            }
+        },
+        update(UpdatePermission.class)
+        {
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+            {
+                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, rows, null);
+                return qus.getRows(user, container, updatedRows);
+            }
+        },
+        updateChangingKeys(UpdatePermission.class)
+        {
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+            {
+                List<Map<String, Object>> newRows = new ArrayList<Map<String, Object>>();
+                List<Map<String, Object>> oldKeys = new ArrayList<Map<String, Object>>();
+                for (Map<String, Object> row : rows)
+                {
+                    newRows.add((Map<String, Object>)row.get(SaveRowsAction.PROP_VALUES));
+                    oldKeys.add((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS));
+                }
+                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys);
+                updatedRows = qus.getRows(user, container, updatedRows);
+                List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+                for (int i = 0; i < updatedRows.size(); i++)
+                {
+                    Map<String, Object> result = new HashMap<String, Object>();
+                    result.put(SaveRowsAction.PROP_VALUES, updatedRows.get(i));
+                    result.put(SaveRowsAction.PROP_OLD_KEYS, oldKeys.get(i));
+                    results.add(result);
+                }
+                return results;
+            }
+        },
+        delete(DeletePermission.class)
+        {
+            @Override
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
+            {
+                return qus.deleteRows(user, container, rows);
+            }
+        };
+
+        private final Class<? extends Permission> _permission;
+
+        private CommandType(Class<? extends Permission> permission)
+        {
+            _permission = permission;
+        }
+
+        public Class<? extends Permission> getPermission()
+        {
+            return _permission;
+        }
+
+        public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
+                throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException;
     }
 
     /**
@@ -2276,31 +2366,92 @@ public class QueryController extends SpringActionController
      */
     public abstract class BaseSaveRowsAction extends ApiAction<ApiSaveRowsForm>
     {
-        private static final String PROP_SCHEMA_NAME = "schemaName";
-        private static final String PROP_QUERY_NAME = "queryName";
+        public static final String PROP_SCHEMA_NAME = "schemaName";
+        public static final String PROP_QUERY_NAME = "queryName";
+        public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
-        public ApiResponse execute(ApiSaveRowsForm form, BindException errors) throws Exception
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction) throws Exception
         {
-            //TODO: when we add XML support, we'll need to conditionalize this based on getRequestFormat()
-            return executeJson(form);
-        }
-
-        protected ApiResponse executeJson(ApiSaveRowsForm form) throws Exception
-        {
-            JSONObject json = form.getJsonObject();
-            ApiSimpleResponse response = new ApiSimpleResponse();
+            JSONObject response = new JSONObject();
             Container container = getViewContext().getContainer();
             User user = getViewContext().getUser();
-
-            String schemaName = json.getString(PROP_SCHEMA_NAME);
-            String queryName = json.getString(PROP_QUERY_NAME);
-            if(null == schemaName || null == queryName)
-                throw new IllegalArgumentException("You must supply a schemaName and queryName!");
 
             JSONArray rows = json.getJSONArray(PROP_ROWS);
             if(null == rows || rows.length() < 1)
                 throw new IllegalArgumentException("No 'rows' array supplied!");
+
+            String schemaName = json.getString(PROP_SCHEMA_NAME);
+            String queryName = json.getString(PROP_QUERY_NAME);
+            TableInfo table = getTableInfo(container, user, schemaName, queryName);
+
+            if (table.getPkColumns().size() == 0)
+                throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." +
+                        table.getPublicName() + "' cannot be updated because it has no primary key defined!");
+
+            QueryUpdateService qus = table.getUpdateService();
+            if (null == qus)
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName +
+                        "' is not updatable via the HTTP-based APIs.");
+
+            int rowsAffected = 0;
+
+            List<Map<String, Object>> rowsToProcess = new ArrayList<Map<String, Object>>();
+            for(int idx = 0; idx < rows.length(); ++idx)
+            {
+                JSONObject jsonObj = rows.getJSONObject(idx);
+                if(null != jsonObj)
+                {
+                    CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
+                    rowsToProcess.add(rowMap);
+                    rowsAffected++;
+                }
+            }
+
+            if (!table.hasPermission(user, commandType.getPermission()))
+                HttpView.throwUnauthorized();
+
+
+            //we will transact operations by default, but the user may
+            //override this by sending a "transacted" property set to false
+            boolean transacted = allowTransaction && json.optBoolean("transacted", true);
+            if (transacted)
+                table.getSchema().getScope().beginTransaction();
+
+            //setup the response, providing the schema name, query name, and operation
+            //so that the client can sort out which request this response belongs to
+            //(clients often submit these async)
+            response.put(PROP_SCHEMA_NAME, schemaName);
+            response.put(PROP_QUERY_NAME, queryName);
+            response.put("command", commandType.name());
+            response.put("containerPath", container.getPath());
+
+            try
+            {
+                List<Map<String, Object>> responseRows =
+                        commandType.saveRows(qus, rowsToProcess, getViewContext().getUser(), getViewContext().getContainer());
+
+                response.put("rows", responseRows);
+
+                if (transacted)
+                    table.getSchema().getScope().commitTransaction();
+            }
+            finally
+            {
+                if (transacted)
+                    table.getSchema().getScope().closeConnection();
+            }
+
+            response.put("rowsAffected", rowsAffected);
+
+            return response;
+        }
+
+        @NotNull
+        protected TableInfo getTableInfo(Container container, User user, String schemaName, String queryName)
+        {
+            if(null == schemaName || null == queryName)
+                throw new IllegalArgumentException("You must supply a schemaName and queryName!");
 
             UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
             if (null == schema)
@@ -2309,134 +2460,29 @@ public class QueryController extends SpringActionController
             TableInfo table = schema.getTable(queryName);
             if (table == null)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
-
-            if (table.getPkColumns().size() == 0)
-                throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." + table.getPublicName() + "' cannot be updated because it has no primary key defined!");
-
-            checkTablePermission(user, table);
-            QueryUpdateService qus = table.getUpdateService();
-            if (null == qus)
-                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updatable via the HTTP-based APIs.");
-
-            //we will transact operations by default, but the user may
-            //override this by sending a "transacted" property set to false
-            boolean transacted = json.optBoolean("transacted", true);
-            if (transacted)
-                schema.beginTransaction();
-
-            //setup the response, providing the schema name, query name, and operation
-            //so that the client can sort out which request this response belongs to
-            //(clients often submit these async)
-            response.put(PROP_SCHEMA_NAME, schemaName);
-            response.put(PROP_QUERY_NAME, queryName);
-            response.put("command", getSaveCommandName());
-            response.put("containerPath", container.getPath());
-
-            int rowsAffected = 0;
-
-            try
-            {
-                List<Map<String, Object>> rowsToProcess = new ArrayList<Map<String, Object>>();
-                for(int idx = 0; idx < rows.length(); ++idx)
-                {
-                    JSONObject jsonObj = rows.getJSONObject(idx);
-                    if(null != jsonObj)
-                    {
-                        CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
-                        rowsToProcess.add(rowMap);
-                        rowsAffected++;
-                    }
-                }
-
-                List<Map<String, Object>> responseRows = saveRows(table, qus, rowsToProcess);
-                response.put("rows", responseRows);
-
-                if (transacted)
-                    schema.commitTransaction();
-            }
-            finally
-            {
-                if (transacted && schema.isTransactionActive())
-                    schema.rollbackTransaction();
-            }
-
-            response.put("rowsAffected", rowsAffected);
-
-            return response;
+            return table;
         }
-
-        protected abstract void checkTablePermission(User user, TableInfo table);
-
-        /**
-         * Derived classes should implement this method to do the actual save operation (insert, update or delete)
-         * @param table The table
-         * @param qus The QueryUpdateService
-         * @param rows
-         * @throws InvalidKeyException Thrown if the key is invalid
-         * @throws DuplicateKeyException Thrown if the key is a duplicate of an existing key (insert)
-         * @throws ValidationException Thrown if the data is not valid
-         * @throws QueryUpdateServiceException Thrown if there is a implementation-specific error
-         * @throws SQLException Thrown if there was a problem communicating with the database
-         * @throws UnauthorizedException Thrown if the user does not have permissions to save the row
-         */
-        protected abstract List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows)
-                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException;
-
-        /**
-         * Returns the name of the dervied class's command. This will be returned to
-         * the client in the 'command' property.
-         * @return The name of the derived class's command
-         */
-        protected abstract String getSaveCommandName(); //unfortunatley, getCommandName() is already defined in Spring action classes
-
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
     @ApiVersion(8.3)
     public class UpdateRowsAction extends BaseSaveRowsAction
     {
-        protected String getSaveCommandName()
+        @Override
+        public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            return "update";
+            return new ApiSimpleResponse(executeJson(apiSaveRowsForm.getJsonObject(), CommandType.update, true));
         }
-
-        protected void checkTablePermission(User user, TableInfo table)
-        {
-            if (!table.hasPermission(user, UpdatePermission.class))
-                HttpView.throwUnauthorized();
-        }
-
-        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows)
-                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
-        {
-            List<Map<String,Object>> updatedRows = qus.updateRows(getViewContext().getUser(), getViewContext().getContainer(),
-                    rows, null);
-            return qus.getRows(getViewContext().getUser(), getViewContext().getContainer(), updatedRows);
-        }
-
     }
 
     @RequiresPermissionClass(InsertPermission.class)
     @ApiVersion(8.3)
     public class InsertRowsAction extends BaseSaveRowsAction
     {
-        protected String getSaveCommandName()
+        @Override
+        public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            return "insert";
-        }
-
-        protected void checkTablePermission(User user, TableInfo table)
-        {
-            if (!table.hasPermission(user, InsertPermission.class))
-                HttpView.throwUnauthorized();
-        }
-
-        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows)
-                throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
-        {
-            List<Map<String,Object>> insertedRows = qus.insertRows(getViewContext().getUser(), getViewContext().getContainer(),
-                    rows);
-            return qus.getRows(getViewContext().getUser(), getViewContext().getContainer(), insertedRows);
+            return new ApiSimpleResponse(executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true));
         }
     }
 
@@ -2445,136 +2491,75 @@ public class QueryController extends SpringActionController
     @ApiVersion(8.3)
     public class DeleteRowsAction extends BaseSaveRowsAction
     {
-        protected String getSaveCommandName()
+        @Override
+        public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            return "delete";
-        }
-
-        protected void checkTablePermission(User user, TableInfo table)
-        {
-            if (!table.hasPermission(user, DeletePermission.class))
-                HttpView.throwUnauthorized();
-        }
-
-        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
-        {
-            return qus.deleteRows(getViewContext().getUser(), getViewContext().getContainer(), rows);
+            return new ApiSimpleResponse(executeJson(apiSaveRowsForm.getJsonObject(), CommandType.delete, true));
         }
     }
 
     @RequiresNoPermission //will check below
     public class SaveRowsAction extends BaseSaveRowsAction
     {
-        private static final String PROP_VALUES = "values";
-        private static final String PROP_OLD_KEYS = "oldKeys";
-        private static final String PROP_COMMAND = "command";
+        public static final String PROP_VALUES = "values";
+        public static final String PROP_OLD_KEYS = "oldKeys";
 
-        protected void checkTablePermission(User user, TableInfo table)
+        @Override
+        public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            // will check below
-        }
-
-        protected List<Map<String, Object>> saveRows(TableInfo table, QueryUpdateService qus, List<Map<String, Object>> rows) throws InvalidKeyException, DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException, UnauthorizedException
-        {
-            User user = getViewContext().getUser();
-            Container container = getViewContext().getContainer();
-
-            List<Map<String, Object>> valuesToInsert = new ArrayList<Map<String, Object>>();
-            List<Map<String, Object>> keysToInsert = new ArrayList<Map<String, Object>>();
-            List<Map<String, Object>> valuesToUpdate = new ArrayList<Map<String, Object>>();
-            List<Map<String, Object>> keysToUpdate = new ArrayList<Map<String, Object>>();
-            List<Map<String, Object>> keysToDelete = new ArrayList<Map<String, Object>>();
-
-            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
-
-            for (Map<String, Object> row : rows)
+            JSONObject json = apiSaveRowsForm.getJsonObject();
+            JSONArray commands = (JSONArray)json.get("commands");
+            JSONArray result = new JSONArray();
+            if (commands.length() == 0)
             {
-                String command = (String) row.get(PROP_COMMAND);
-                Map<String,Object> values = ((JSONObject) row.get(PROP_VALUES));
-                Map<String,Object> oldKeys = row.containsKey(PROP_OLD_KEYS) ? ((JSONObject) row.get(PROP_OLD_KEYS)) : null;
-
-                if("insert".equalsIgnoreCase(command))
-                {
-                    valuesToInsert.add(values);
-                    keysToInsert.add(oldKeys);
-                }
-                else if ("update".equalsIgnoreCase(command))
-                {
-                    valuesToUpdate.add(values);
-                    keysToUpdate.add(oldKeys);
-                }
-                else if ("delete".equalsIgnoreCase(command))
-                {
-                    keysToDelete.add(oldKeys);
-                }
-                else
-                    throw new IllegalArgumentException("'" + command + "' is not a valid command name! Use 'insert', 'update', 'delete'.");
+                throw new NotFoundException("Empty request");
             }
 
-            if(!valuesToInsert.isEmpty())
+            boolean transacted = json.optBoolean("transacted", true);
+            DbScope scope = null;
+            if (transacted)
             {
-                if(!container.hasPermission(user, InsertPermission.class))
-                    throw new UnauthorizedException("You do not have permissions to insert data into this folder.");
-                if (!table.hasPermission(user, InsertPermission.class))
-                    throw new UnauthorizedException("You do not have permission to insert data into this table.");
-
-                List<Map<String,Object>> insertedRows = qus.insertRows(user, container, valuesToInsert);
-                insertedRows = qus.getRows(user, container, insertedRows);
-                for (int i = 0; i < insertedRows.size(); i++)
+                for (int i = 0; i < commands.length(); i++)
                 {
-                    Map<String, Object> insertedRow = insertedRows.get(i);
-                    Map<String, Object> responseRow = new HashMap<String,Object>();
-                    responseRow.put(PROP_COMMAND, "insert");
-                    responseRow.put(PROP_VALUES, insertedRow);
-                    responseRow.put(PROP_OLD_KEYS, keysToInsert.get(i));
-                    result.add(responseRow);
+                    JSONObject commandJSON = commands.getJSONObject(i);
+                    String schemaName = commandJSON.getString(PROP_SCHEMA_NAME);
+                    String queryName = commandJSON.getString(PROP_QUERY_NAME);
+                    TableInfo tableInfo = getTableInfo(getContainer(), getUser(), schemaName, queryName);
+                    if (scope == null)
+                    {
+                        scope = tableInfo.getSchema().getScope();
+                    }
+                    else if (scope != tableInfo.getSchema().getScope())
+                    {
+                        throw new IllegalArgumentException("All queries must be from the same source database");
+                    }
                 }
+                scope.beginTransaction();
             }
 
-            if(!valuesToUpdate.isEmpty())
+            try
             {
-                assert valuesToUpdate.size() == keysToUpdate.size();
-                if(!container.hasPermission(user, UpdatePermission.class))
-                    throw new UnauthorizedException("You do not have permissions to update data into this folder.");
-                if (!table.hasPermission(user, UpdatePermission.class))
-                    throw new UnauthorizedException("You do not have permission to update data into this table.");
-
-                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, valuesToUpdate, keysToUpdate);
-                updatedRows = qus.getRows(user, container, updatedRows);
-                for (int i = 0; i < updatedRows.size(); i++)
+                for (int i = 0; i < commands.length(); i++)
                 {
-                    Map<String, Object> updatedRow = updatedRows.get(i);
-                    Map<String, Object> responseRow = new HashMap<String,Object>();
-                    responseRow.put(PROP_COMMAND, "update");
-                    responseRow.put(PROP_VALUES, updatedRow);
-                    responseRow.put(PROP_OLD_KEYS, keysToUpdate.get(i));
-                    result.add(responseRow);
+                    JSONObject commandObject = commands.getJSONObject(i);
+                    String commandName = commandObject.getString(PROP_COMMAND);
+                    CommandType command = CommandType.valueOf(commandName);
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted);
+                    result.put(commandResponse);
+                }
+                if (transacted)
+                {
+                    scope.commitTransaction();
                 }
             }
-
-            if (!keysToDelete.isEmpty())
+            finally
             {
-                if(!container.hasPermission(user, DeletePermission.class))
-                    throw new UnauthorizedException("You do not have permissions to delete data into this folder.");
-                if (!table.hasPermission(user, DeletePermission.class))
-                    throw new UnauthorizedException("You do not have permission to delete data into this table.");
-
-                qus.deleteRows(user, container, keysToDelete);
-                for (Map<String, Object> rowKeys : keysToDelete)
+                if (transacted)
                 {
-                    Map<String, Object> responseRow = new HashMap<String,Object>();
-                    responseRow.put(PROP_COMMAND, "delete");
-                    responseRow.put(PROP_OLD_KEYS, rowKeys);
-                    result.add(responseRow);
+                    scope.closeConnection();
                 }
             }
-
-            return result;
-        }
-
-        protected String getSaveCommandName()
-        {
-            return "save";
+            return new ApiSimpleResponse("result", result);
         }
     }
 

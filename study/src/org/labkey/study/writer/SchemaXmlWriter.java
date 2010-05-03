@@ -18,6 +18,7 @@ package org.labkey.study.writer;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoWriter;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -103,8 +104,10 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
             {
                 columnXml.setIsKeyField(true);
 
-                if (_def.isKeyPropertyManaged())
+                if (_def.getKeyManagementType() == DataSet.KeyManagementType.RowId)
                     columnXml.setIsAutoInc(true);
+                else if (_def.getKeyManagementType() == DataSet.KeyManagementType.GUID)
+                    columnXml.setDatatype("entityid");
             }
         }
 

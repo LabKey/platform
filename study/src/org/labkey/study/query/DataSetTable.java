@@ -30,7 +30,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
@@ -239,7 +238,7 @@ public class DataSetTable extends FilteredTable
     private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("VisitRowId", "Created", "Modified", "lsid", "SourceLsid");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
-        if (_dsd.isKeyPropertyManaged() && col.getName().equals(_dsd.getKeyPropertyName()))
+        if (_dsd.getKeyManagementType() != DataSet.KeyManagementType.None && col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
         return (!col.isHidden() && !col.isUnselectable() && !defaultHiddenCols.contains(col.getName()));
     }

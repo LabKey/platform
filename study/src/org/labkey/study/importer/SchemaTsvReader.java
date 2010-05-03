@@ -15,10 +15,10 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.study.model.DataSetDefinition;
 import org.springframework.validation.BindException;
@@ -160,13 +160,12 @@ public class SchemaTsvReader implements SchemaReader
                 }
 
                 // Deal with managed key field
-                BooleanConverter booleanConverter = new BooleanConverter(false);
-                Boolean managedKey = (Boolean)booleanConverter.convert(Boolean.class, props.get("AutoKey"));
-
-                if (managedKey.booleanValue())
+                String keyTypeName = props.get("AutoKey") == null ? null : props.get("AutoKey").toString();
+                DataSetDefinition.KeyManagementType keyType = DataSet.KeyManagementType.findMatch(keyTypeName);
+                if (keyType != DataSet.KeyManagementType.None)
                 {
-                    if (!info.keyManaged)
-                        info.keyManaged = true;
+                    if (info.keyManagementType == DataSet.KeyManagementType.None)
+                        info.keyManagementType = keyType;
                     else
                     {
                         // It's already been set
