@@ -28,8 +28,8 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
         //NOTE: all props in this second argument to Ext.extend become prototype props,
         // so any instance properties (such as this ready flag), should be set via code
         // in the constructor
-        this.ready = false; 
-        
+        this.ready = false;
+
         // consider the component 'ready' after first successful load
         this.on("load", function()
         {
@@ -101,7 +101,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     resourcesReady : false,
     resources : null,
     resourceMap : {},
-    
+
     /*
      * config just takes a project path/id, folder path/id, and root container id
      *
@@ -244,7 +244,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
 
-    // non-recursive, return objects                                                    
+    // non-recursive, return objects
     getMembersOf : function(principal)
     {
         if (principal == this.groupUsers)
@@ -264,7 +264,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return users;
     },
 
-    
+
     // recursive, returns objects
     getEffectiveMembers : function(principal, users, set)
     {
@@ -365,7 +365,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         }
         return false;
     },
-    
+
     addMembership : function(groupid, userid, callback, scope)
     {
         //if already a member, just return
@@ -447,7 +447,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     {
         var groups = {};
         var members = {};
-        
+
         this.membershipStore.each(function(item){
             var uid = item.data.UserId;
             var gid = item.data.GroupId;
@@ -465,7 +465,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
     ready : false,
-    
+
     checkReady : function()
     {
         if (this.principalsStore.ready
@@ -510,7 +510,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         var minor = (data.Name||'').toLowerCase();
         data.sortOrder = major + "." + minor;
     },
-                              
+
     _errorCallback: function(e,resp,req)
     {
         console.error(e.exception);
@@ -566,7 +566,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         c.project = c.path != '/' && 0 == c.path.lastIndexOf('/');
         return new this.ContainerRecord(c,c.id);
     },
-            
+
     _errorContainersCallback : function(e,resp,req)
     {
         alert(e.exception);
@@ -624,7 +624,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             map[c.id] = c;
             this._mapContainers(c, c.children, map);
         }
-        return map;                                                                                 
+        return map;
     }
 });
 
@@ -638,7 +638,7 @@ function _link(text,href)
 }
 function $open(href)
 {
-    window.open(href+'&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500');    
+    window.open(href+'&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500');
 }
 function _open(text,href)
 {
@@ -706,7 +706,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         this.body.update('',false);
 
         var isGroup = this.user.Type == 'g' || this.user.Type == 'r';
-        
+
         var html = ["<table width=100%><tr><td align=left valign=middle><h3 style='display:inline'>" + (isGroup?'Group ':'User ') + this.user.Name + "</h3></td><td align=right valign=middle>"];
 
         // links
@@ -764,7 +764,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         var principalWrapper = null;
         var removeWrapper;
         var deleteGroup;
-        
+
         // users
         if (isGroup)
         {
@@ -787,7 +787,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     principalWrapper = '$p$' + id;
                     html.push("<tr><td colspan=3 id=" + principalWrapper + "></td></tr>");
                     if (users.length == 0 && this.userId > 0)
-                    {                                                                                                      
+                    {
                         deleteGroup = '$delete$' + id;
                         html.push('<tr><td colspan=3><a id="' + deleteGroup + '" class="labkey-button" href="#""><span>Delete Empty Group</span></a></td></tr>');
                     }
@@ -856,7 +856,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         combo.selectText();
         combo.clearValue();
     },
-    
+
     Combo_onChange : function(combo,email)
     {
         if (!email)
@@ -1084,7 +1084,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     constructor : function(config)
     {
         var i;
-        
+
         var a = config.excludedPrincipals || [];
         a.push(SecurityCache.prototype.groupDevelopers);
         a.push(SecurityCache.prototype.groupAdmin);
@@ -1092,7 +1092,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         this.excludedPrincipals = {};
         for (i=0 ; i<a.length ; i++)
             this.excludedPrincipals[a[i]] = true;
-        
+
         config = Ext.apply({}, config, {
             store : config.cache.principalsStore,
             mode : 'local',
@@ -1162,13 +1162,8 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 var GroupPicker = Ext.extend(Ext.Panel,{
     constructor : function(config)
     {
-        config = Ext.apply({}, config, {
-            cls : 'x-combo-list',
-            displayField : 'Name',
-            borders : false
-        });
+        config = Ext.applyIf(config, { borders : false });
         GroupPicker.superclass.constructor.call(this,config);
-        this.tpl.cache = this.cache;
     },
 
     projectId : null,
@@ -1176,24 +1171,16 @@ var GroupPicker = Ext.extend(Ext.Panel,{
     cls : 'x-combo-list',
     selectedClass : 'x-combo-selected',
 
-    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values)]}" style="cursor:pointer;"><table cellspacing=0 cellpadding=0 width=100%><tr><td align=left>{Name}</td><td align=right>{[this.count(values)]}</td></tr></table></div></tpl>',
+    extraClass : function(values)
     {
-        extraClass : function(values)
-        {
-            var c = 'pGroup';
-            if (values.Type == 'u')
-                c = 'pUser';
-            else if (values.Type == 's')
-                c = 'pSite';
-            return c;
-        },
-        count : function(values)
-        {
-            var m = this.cache.getMembersOf(values.UserId);
-            return m.length;
-        }
-    }),
-    
+        var c = 'pGroup';
+        if (values.Type == 'u')
+            c = 'pUser';
+        else if (values.Type == 's')
+            c = 'pSite';
+        return c;
+    },
+
     initComponent : function()
     {
         GroupPicker.superclass.initComponent.call(this);
@@ -1209,12 +1196,23 @@ var GroupPicker = Ext.extend(Ext.Panel,{
         this.cache.membershipStore.on("remove",this.onDataChanged, this);
         this.cache.membershipStore.on("update",this.onDataUpdated, this);
 
-        this.view = new Ext.DataView({
-            tpl: this.tpl,
-            singleSelect: true,
-            selectedClass: this.selectedClass,
-            borders : false,
-            itemSelector: this.itemSelector || '.' + this.cls + '-item'
+        this.updateStore();
+        this.view = new Ext.list.ListView({
+            store:this.store,
+            emptyText: this.emptyText||'No groups defined',
+            reserveScrollOffset: true,
+            columns: [{
+                header: 'Group',
+                width: .65,
+                dataIndex: 'name',
+                tpl:'<div class="{extraClass}" style="cursor:pointer;">{name}</div>'
+            },{
+                header: 'Members',
+                width: .35,
+                dataIndex: 'count',
+                align:'right'
+            }
+            ]
         });
         this.view.on('click', this.onViewClick, this);
     },
@@ -1223,35 +1221,49 @@ var GroupPicker = Ext.extend(Ext.Panel,{
 
     onDataUpdated : function(s, record, type)
     {
-        if (this.store && this.view)
-            this.view.refresh(this.body);
+//        if (this.store && this.view)
+//            this.view.refresh(this.body);
+        this.onDataChanged();
     },
 
     onDataChanged : function()
     {
-        this.store = filterPrincipalsStore(this.cache.principalsStore, (this.projectId ? 'project' : 'site'), this.projectId, {});
-        if (this.view)
+        this.updateStore();
+        this.view.setStore(this.store);
+        if (this.selectedGroup)
         {
-            this.view.setStore(this.store);
-            if (this.selectedGroup)
-            {
-                var index = this.store.indexOfId(this.selectedGroup.UserId);
-                if (index >= 0)
-                    this.view.select(index);
-            }
+            var index = this.store.indexOfId(this.selectedGroup.UserId);
+            if (index >= 0)
+                this.view.select(index);
         }
+    },
+
+    updateStore : function()
+    {
+        var principalsStore = filterPrincipalsStore(this.cache.principalsStore, (this.projectId ? 'project' : 'site'), this.projectId, {});
+        var data = [];
+        principalsStore.each(function(r){
+            var name = r.data.Name;
+            var count = this.cache.getMembersOf(r.data.UserId).length;
+            var extraCls = this.extraClass(r.data);
+            data.push([name,count,r.data.Type,extraCls,r.data.UserId]);
+        }, this);
+        this.store = new Ext.data.ArrayStore({data:data, fields:['name','count','type','extraClass','id']});
     },
 
     onViewClick : function(view,index,item,e)
     {
         var record = this.store.getAt(index);
-        var group = record.data;
-        this.selectedGroup = group;
-        this.fireEvent('select', this, group);
+        var group = this.cache.getPrincipal(record.data.id);
+        if (group)
+        {
+            this.selectedGroup = group;
+            this.fireEvent('select', this, group);
+        }
     },
-    
+
     onRender : function(ct,position)
-    {   
+    {
         GroupPicker.superclass.onRender.call(this,ct,position);
         this.view.render(this.body);
         this.cache.onReady(this.onDataChanged,this);
@@ -1268,7 +1280,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
  * isSiteAdmin
  * isProjectAdministrator
  * saveButton (true/false)
- */                 
+ */
 var PolicyEditor = Ext.extend(Ext.Panel, {
 
     constructor : function(config)
@@ -1315,7 +1327,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     roles : null,
     inheritedPolicy : null,
     buttonGroups : {},
-    
+
 
     doLayout : function()
     {
@@ -1347,7 +1359,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         if (this.inheritedCheckbox)
             this.inheritedCheckbox.enable();
     },
-    
+
 
     setPolicy : function(policy, roles)
     {
@@ -1454,7 +1466,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             this.body.update("<i>Loading...</i>");
             return;
         }
-        
+
         var r, role, ct;
 
         this.removeAllButtons();
@@ -1497,7 +1509,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
                 this.saveButton.render(this.body);
                 this.add(this.saveButton);
             }
-            
+
             for (r=0 ; r<this.roles.length ; r++)
             {
                 // add role combo
@@ -1653,7 +1665,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this._redraw();
     },
 
-    
+
     addButton : function(group, role, animate, animEl)
     {
         if (typeof group != 'object')
@@ -1674,10 +1686,10 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             style = 'pSite';
 
         var btnId = roleId+'$'+groupId;
-        var btnEl = Ext.fly(btnId);
-
+        var btnEl = Ext.get(btnId);
         var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
-        if (typeof animate == 'boolean' && animate && !Ext.isSafari)
+
+        if (typeof animate == 'boolean' && animate) // && !Ext.isSafari)
         {
             if (!animEl)
                 animEl = this.getComponent('$add$' + roleId).el;
@@ -1691,7 +1703,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             }, scope:this});
             return;
         }
-        
+
         if (btnEl)
         {
             btnEl.frame();
@@ -1703,7 +1715,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var ct = Ext.fly(roleId);
         b = new CloseButton({text:groupName, id:btnId, groupId:groupId, roleId:roleId, tooltip:tooltip, closeTooltip:'Remove ' + groupName + ' from' + (roleName ? (' ' + roleName) : '') + ' role'});
         b.addClass(style);
-        b.on("close", this.Button_onClose, this);                                       
+        b.on("close", this.Button_onClose, this);
         b.on("click", this.Button_onClick, this);
         b.render(ct, br);
         br.insertHtml("beforebegin"," ");
@@ -1723,7 +1735,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         for (var i ; i<btns.length ; i++)
             btns[i].el.frame();
     },
-    
+
     getButtonsForGroup : function(groupId)
     {
         var btns = [];
@@ -1755,7 +1767,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             this.remove(button);
         }
     },
-    
+
     addRoleAssignment : function(group, role, animEl)
     {
         var groupId = group;
@@ -1786,7 +1798,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     /*
      * SAVE
      */
-    
+
     SaveButton_onClick : function(e)
     {
         this.save(false);
