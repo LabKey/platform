@@ -320,7 +320,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         Resource viewResource = module.getModuleResolver().lookup(basePath.getPath().append("views", viewResourceName));
         if (viewResource != null && viewResource.exists())
         {
-            ModuleHtmlView view = new ModuleHtmlView(module, viewResource);
+            ModuleHtmlView view = new ModuleHtmlView(viewResource);
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }
