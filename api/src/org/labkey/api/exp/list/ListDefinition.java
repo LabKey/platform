@@ -212,4 +212,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     boolean getAllowExport();
     void setAllowExport(boolean allowExport);
+
+    boolean getIndexMetaData();
+    void setIndexMetaData(boolean indexMetaData);
 }
