@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.query.controllers.dbuserschema;
+package org.labkey.query.controllers.externalschema;
 
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SpringActionController;
@@ -31,7 +31,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 
-public class DbUserSchemaController extends SpringActionController
+public class ExternalSchemaController extends SpringActionController
 {
     public enum Action
     {
@@ -40,9 +40,9 @@ public class DbUserSchemaController extends SpringActionController
         details,
     }
 
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(DbUserSchemaController.class);
+    static DefaultActionResolver _actionResolver = new DefaultActionResolver(ExternalSchemaController.class);
 
-    public DbUserSchemaController() throws Exception
+    public ExternalSchemaController() throws Exception
     {
         super();
         setActionResolver(_actionResolver);

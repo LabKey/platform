@@ -108,11 +108,12 @@ var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'m
 var dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, value:<%=q(h(def.getDbSchemaName()))%>});
 var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:'<%=bean.getHelpHTML("UserSchemaName")%>'}, value:<%=q(h(def.getUserSchemaName()))%>});
 var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:'<%=bean.getHelpHTML("Editable")%>'}});
+var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:'<%=bean.getHelpHTML("Indexable")%>'}, checked:<%=def.isIndexable()%>});
 var metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:800, height:400, resizable:true, autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"}, helpPopup:{title:'Meta Data', html:'<%=bean.getHelpHTML("MetaData")%>'}, value:<%=PageFlowUtil.jsString(def.getMetaData())%>});
 
 var f = new LABKEY.ext.FormPanel({
-        width:950,
-        labelWidth:145,
+        width:955,
+        labelWidth:150,
         border:false,
         standardSubmit:true,
         items:[
@@ -120,6 +121,7 @@ var f = new LABKEY.ext.FormPanel({
             {fieldLabel:'Database Schema Name', helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, xtype:'panel', border:false, layout:'hbox', items:[dbSchemaCombo, includeSystemCheckBox, includeLabel]},
             userSchemaText,
             editableCheckBox,
+            indexableCheckBox,
             metaDataTextArea
         ],
         buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
