@@ -592,11 +592,12 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 {name: 'modified'},
                 {name: 'size'},
                 {name: 'createdBy'},
-                {name: 'description'}
+                {name: 'description'},
+                {name: 'fileExt'}
             ],
             data: [
-                ['file1.xls', '4/15/2010', 10150, 'test user', 'first file'],
-                ['file2.xls', '4/16/2010', 13155, 'administrator', 'second file']
+                ['file1.xls', '4/15/2010', 10150, 'test user', 'first file', 'xls'],
+                ['file2.xls', '4/16/2010', 13155, 'administrator', 'second file', 'xls']
             ]
         })
 

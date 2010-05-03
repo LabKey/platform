@@ -1002,6 +1002,18 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                 }
             },
             {name: 'name', mapping: 'propstat/prop/displayname', sortType:'asUCString'},
+            {name: 'fileExt', mapping: 'propstt/prop/displayname', type: 'asUCString',
+                convert : function (v, rec)
+                {
+                    // UNDONE: look for <collection>
+                    var uri = getURI(v, rec);
+                    var idx = uri.pathname.lastIndexOf('.');
+                    if (idx != -1)
+                        return uri.pathname.substring(idx+1);
+                    return '';
+                }
+            },
+                
             {name: 'file', mapping: 'href', type: 'boolean',
                 convert : function (v, rec)
                 {

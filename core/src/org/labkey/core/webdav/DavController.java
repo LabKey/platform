@@ -1971,6 +1971,8 @@ public class DavController extends SpringActionController
             }
             else
             {
+                updateDataObject(resource);
+                resource.notify(getViewContext(), "folder created");
                 // Removing any lock-null resource which would be present
                 lockNullResources.remove(path);
                 return WebdavStatus.SC_CREATED;
@@ -2217,6 +2219,7 @@ public class DavController extends SpringActionController
             LinkedHashMap<Path,WebdavStatus> errorList = new LinkedHashMap<Path,WebdavStatus>();
 
             deleteCollection(resource, errorList);
+            removeFromDataObject(resource);
             if (!resource.delete(getUser()))
                 errorList.put(resource.getPath(), WebdavStatus.SC_INTERNAL_SERVER_ERROR);
             resource.notify(getViewContext(), "deleted");
@@ -2243,7 +2246,11 @@ public class DavController extends SpringActionController
     private void updateIndexAndDataObject(WebdavResource resource)
     {
         addToIndex(resource);
+        updateDataObject(resource);
+    }
 
+    private void updateDataObject(WebdavResource resource)
+    {
         File file = resource.getFile();
         if (file != null)
         {
@@ -2276,7 +2283,11 @@ public class DavController extends SpringActionController
     {
         resource.notify(getViewContext(), "deleted");
         removeFromIndex(resource);
+        removeFromDataObject(resource);
+    }
 
+    private void removeFromDataObject(WebdavResource resource)
+    {
         Container c = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
         File file = resource.getFile();
         if (c != null && file != null)
@@ -2334,6 +2345,7 @@ public class DavController extends SpringActionController
 
                 try
                 {
+                    removeFromDataObject(child);
                     if (!child.delete(getUser()))
                         errorList.put(childName, WebdavStatus.SC_INTERNAL_SERVER_ERROR);
                 }

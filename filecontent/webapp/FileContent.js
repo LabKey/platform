@@ -147,7 +147,6 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     {
         // mild convolution to pass fileSystem to the _attachPreview function
         var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
-
         var cm = [sm,
                 {header: "", width:20, dataIndex: 'iconHref', sortable: false, hidden:false, renderer:iconRenderer},
                 {header: "Name", width: 250, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
@@ -155,7 +154,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize},
                 {header: "Created By", width: 100, dataIndex: 'createdBy', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Description", width: 100, dataIndex: 'description', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage}
+                {header: "Usages", width: 100, dataIndex: 'actionHref', sortable: true, hidden:false, renderer:renderUsage},
+                {header: "File Extension", width: 80, dataIndex: 'fileExt', sortable: true, hidden:true, renderer:Ext.util.Format.htmlEncode}
             ];
 
         return cm;
