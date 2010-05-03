@@ -584,26 +584,26 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         getService().getDomainDescriptor(_list, new AsyncCallback<GWTDomain>()
         {
-                public void onFailure(Throwable caught)
+            public void onFailure(Throwable caught)
+            {
+                Window.alert(caught.getMessage());
+                _loading.setText("ERROR: " + caught.getMessage());
+            }
+
+            public void onSuccess(GWTDomain result)
+            {
+                GWTDomain domain = result;
+                if (null == domain)
                 {
-                    Window.alert(caught.getMessage());
-                    _loading.setText("ERROR: " + caught.getMessage());
+                    domain = new GWTDomain();
+                    Window.alert("Error editing list: " + _list.getName());
                 }
 
-                public void onSuccess(GWTDomain result)
-                {
-                    GWTDomain domain = result;
-                    if (null == domain)
-                    {
-                        domain = new GWTDomain();
-                        Window.alert("Error editing list: " + _list.getName());
-                    }
+                setDomain(domain);
 
-                    setDomain(domain);
-
-                    if (saveListener != null)
-                        saveListener.saveSuccessful(domain, PropertyUtil.getCurrentURL());
-                }
+                if (saveListener != null)
+                    saveListener.saveSuccessful(domain, PropertyUtil.getCurrentURL());
+            }
         });
     }
 
@@ -664,14 +664,14 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // NAME
             {
-            Widget listNameTextBox = new _ListNameTextBox("Name", "ff_name", _list.name);
-            HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Name"));
-            panel.add(new HelpPopup("Name", "Name of new list"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, listNameTextBox);
-            row++;
+                Widget listNameTextBox = new _ListNameTextBox("Name", "ff_name", _list.name);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Name"));
+                panel.add(new HelpPopup("Name", "Name of new list"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, listNameTextBox);
+                row++;
             }
 
             // PK NAME
@@ -740,30 +740,30 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // NAME
             {
-            Widget listNameTextBox = readonly ?
-                    new Label(_list.getName()) :
-                    new _ListNameTextBox("Name", "ff_name", _list.name);
-            HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Name"));
-            //panel.add(new HelpPopup("Name", "Name of this List"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, listNameTextBox);
-            row++;
+                Widget listNameTextBox = readonly ?
+                        new Label(_list.getName()) :
+                        new _ListNameTextBox("Name", "ff_name", _list.name);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Name"));
+                //panel.add(new HelpPopup("Name", "Name of this List"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, listNameTextBox);
+                row++;
             }
 
             // DESCRIPTION
             {
-            Widget descriptionTextBox = readonly ?
-                    new Label(_list.getDescription()) :
-                    new BoundTextAreaBox("Description", "ff_description", _list.description, null);
-            HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Description"));
-            //panel.add(new HelpPopup("Name", "Name of this List"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, descriptionTextBox);
-            row++;
+                Widget descriptionTextBox = readonly ?
+                        new Label(_list.getDescription()) :
+                        new BoundTextAreaBox("Description", "ff_description", _list.description, null);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Description"));
+                //panel.add(new HelpPopup("Name", "Name of this List"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, descriptionTextBox);
+                row++;
             }
 
 
@@ -829,34 +829,47 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // ALLOW
             {
-            BoundCheckBox allow = new BoundCheckBox("ff_allowDelete", _list.allowDelete, null);
-            allow.setEnabled(!readonly);
-            HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Allow Delete"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, allow);
-            row++;
+                BoundCheckBox allow = new BoundCheckBox("ff_allowDelete", _list.allowDelete, null);
+                allow.setEnabled(!readonly);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Allow Delete"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, allow);
+                row++;
             }
+
             {
-            BoundCheckBox allow = new BoundCheckBox("ff_allowUpload", _list.allowUpload, null);
-            allow.setEnabled(!readonly);
-            HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Allow Upload"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, allow);
-            row++;
+                BoundCheckBox allow = new BoundCheckBox("ff_allowUpload", _list.allowUpload, null);
+                allow.setEnabled(!readonly);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Allow Upload"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, allow);
+                row++;
             }
+
             {
-            BoundCheckBox allow = new BoundCheckBox("ff_allowExport", _list.allowExport, null);
-            allow.setEnabled(!readonly);
-            HorizontalPanel panel = new HorizontalPanel();
-            panel.add(new Label("Allow Export and Print"));
-            _table.setWidget(row, 0, panel);
-            cellFormatter.setStyleName(row, 0, labelStyleName);
-            _table.setWidget(row, 1, allow);
-            row++;
+                BoundCheckBox allow = new BoundCheckBox("ff_allowExport", _list.allowExport, null);
+                allow.setEnabled(!readonly);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Allow Export and Print"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, allow);
+                row++;
+            }
+
+            {
+                BoundCheckBox index = new BoundCheckBox("ff_indexMetaData", _list.indexMetaData, null);
+                index.setEnabled(!readonly);
+                HorizontalPanel panel = new HorizontalPanel();
+                panel.add(new Label("Index list meta data"));
+                _table.setWidget(row, 0, panel);
+                cellFormatter.setStyleName(row, 0, labelStyleName);
+                _table.setWidget(row, 1, index);
+                row++;
             }
         }
 

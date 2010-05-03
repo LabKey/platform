@@ -71,7 +71,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private final Analyzer _analyzer = ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
-    // all threads immediately.
+    // other threads immediately.
     private volatile WritableIndex _index;
 
     private static ExternalIndex _externalIndex;

@@ -39,6 +39,7 @@ public class GWTList implements IsSerializable
     public BooleanProperty allowDelete = new BooleanProperty(true);
     public BooleanProperty allowUpload = new BooleanProperty(true);
     public BooleanProperty allowExport = new BooleanProperty(true);
+    public BooleanProperty indexMetaData = new BooleanProperty(true);
 
     // client should only read these
     private String _typeURI;
@@ -168,6 +169,16 @@ public class GWTList implements IsSerializable
     public void setAllowExport(boolean allowExport)
     {
         this.allowExport.set(allowExport);
+    }
+
+    public boolean getIndexMetaData()
+    {
+        return indexMetaData.getBool();
+    }
+
+    public void setIndexMetaData(boolean shouldIndexMetaData)
+    {
+        this.indexMetaData.set(shouldIndexMetaData);
     }
 
     public void _defaultTitleField(String title)

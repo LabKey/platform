@@ -50,6 +50,7 @@ public class ListDef extends Entity implements Cloneable
     private boolean allowDelete = true;
     private boolean allowUpload = true;
     private boolean allowExport = true;
+    private boolean indexMetaData = true;
 
     public int getRowId()
     {
@@ -169,6 +170,16 @@ public class ListDef extends Entity implements Cloneable
     public void setAllowExport(boolean allowExport)
     {
         this.allowExport = allowExport;
+    }
+
+    public boolean getIndexMetaData()
+    {
+        return indexMetaData;
+    }
+
+    public void setIndexMetaData(boolean indexMetaData)
+    {
+        this.indexMetaData = indexMetaData;
     }
 
     protected ListDef clone()

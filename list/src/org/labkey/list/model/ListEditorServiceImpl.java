@@ -106,6 +106,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         gwt.setAllowDelete(def.getAllowDelete());
         gwt.setAllowExport(def.getAllowExport());
         gwt.setAllowUpload(def.getAllowUpload());
+        gwt.setIndexMetaData(def.getIndexMetaData());
         gwt.setDescription(def.getDescription());
         gwt.setDiscussionSetting(def.getDiscussionSetting().getValue());
         gwt.setKeyPropertyName(def.getKeyName());
@@ -135,6 +136,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         def.setAllowDelete(gwt.getAllowDelete());
         def.setAllowExport(gwt.getAllowExport());
         def.setAllowUpload(gwt.getAllowUpload());
+        def.setIndexMetaData(gwt.getIndexMetaData());
         def.setDescription(gwt.getDescription());
         def.setDiscussionSetting(gwt.getDiscussionSetting());
         def.setKeyName(gwt.getKeyPropertyName());
@@ -148,6 +150,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         def.setAllowDelete(gwt.getAllowDelete());
         def.setAllowExport(gwt.getAllowExport());
         def.setAllowUpload(gwt.getAllowUpload());
+        def.setIndexMetaData(gwt.getIndexMetaData());
         def.setDescription(gwt.getDescription());
         def.setDiscussionSetting(ListDefinition.DiscussionSetting.getForValue(gwt.getDiscussionSetting()));
         def.setKeyName(gwt.getKeyPropertyName());

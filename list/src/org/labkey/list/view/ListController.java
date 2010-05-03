@@ -45,14 +45,10 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -73,7 +69,10 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -138,74 +137,12 @@ public class ListController extends SpringActionController
         }
     }
 
-/*
-    @RequiresPermissionClass(DesignListPermission.class)
-    public class NewListDefinitionAction extends FormViewAction<NewListForm>
-    {
-        private ListDefinition _list;
-
-        public void validateCommand(NewListForm form, Errors errors)
-        {
-            if (null == form.ff_name)
-            {
-                errors.reject(ERROR_MSG, "List name must not be blank.");
-            }
-            if (null == form.ff_keyName)
-            {
-                errors.reject(ERROR_MSG, "Key name must not be blank.");
-            }
-            // TODO: More validation -- combine with UpdateListDefinition validation?
-        }
-
-        public ModelAndView getView(NewListForm form, boolean reshow, BindException errors) throws Exception
-        {
-            getPageConfig().setFocusId("ff_name");
-            return FormPage.getView(ListController.class, form, errors, "newListDefinition.jsp");
-        }
-
-        public boolean handlePost(NewListForm form, BindException errors) throws Exception
-        {
-            try
-            {
-                _list = ListService.get().createList(getContainer(), form.ff_name);
-                _list.setKeyName(form.ff_keyName);
-                _list.setKeyType(ListDefinition.KeyType.valueOf(form.ff_keyType));
-                _list.save(getUser());
-                return true;
-            }
-            // Domain.save() throws RuntimeSQLException instead of SQLException... unwrap to detect constraint
-            // violation and provide a better error message.  TODO: Domain.save() should throw SQLException instead
-            catch (RuntimeSQLException e)
-            {
-                if (SqlDialect.isConstraintException(e.getSQLException()))
-                    errors.reject(ERROR_MSG, "A list with this name already exists; please choose a different name.");
-                else
-                    throw e;
-            }
-
-            return false;
-        }
-
-        public ActionURL getSuccessURL(NewListForm form)
-        {
-            if (!form.isFileImport())
-                return _list.urlShowDefinition();
-            else
-                return _list.urlFor(Action.defineAndImportList);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendRootNavTrail(root).addChild("Create New List");
-        }
-    }
-*/
 
     @RequiresPermissionClass(DesignListPermission.class)
-    public class NewListDefinitionAction extends SimpleRedirectAction<NewListForm>
+    public class NewListDefinitionAction extends SimpleRedirectAction
     {
         @Override
-        public ActionURL getRedirectURL(NewListForm newListForm) throws Exception
+        public ActionURL getRedirectURL(Object o) throws Exception
         {
             return new ActionURL(EditListDefinitionAction.class, getContainer());
         }
@@ -264,6 +201,7 @@ public class ListController extends SpringActionController
             // Why is this different than DesignListPermission???
             props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), AdminPermission.class) ? "true":"false");
             props.put("loading", "Loading...");
+
             return new GWTView("org.labkey.list.Designer", props);
         }
 

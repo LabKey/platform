@@ -201,6 +201,7 @@
           <ns:column columnName="AllowDelete" />
           <ns:column columnName="AllowUpload" />
           <ns:column columnName="AllowExport" />
+          <ns:column columnName="IndexMetaData" />
       </ns:columns>
   </ns:table>
     <ns:table tableName="IndexInteger" tableDbType="TABLE">

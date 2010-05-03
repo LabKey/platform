@@ -174,6 +174,18 @@ public class ListDefinitionImpl implements ListDefinition
         _def.setAllowExport(allowExport);
     }
 
+    @Override
+    public boolean getIndexMetaData()
+    {
+        return _def.getIndexMetaData();
+    }
+
+    @Override
+    public void setIndexMetaData(boolean indexMetaData)
+    {
+        _def.setIndexMetaData(indexMetaData);
+    }
+
     public void save(User user) throws Exception
     {
         boolean fTransaction = false;

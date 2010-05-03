@@ -28,6 +28,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.list.view.ListController;
@@ -132,8 +133,11 @@ public class ListManager implements SearchService.DocumentProvider
                 Map<String, ListDefinition> lists = ListService.get().getLists(c);
                 for (ListDefinition list : lists.values())
                 {
+                    if (!list.getIndexMetaData())
+                        continue;
+
                     StringBuilder body = new StringBuilder();
-                    Map<String,Object> props = new HashMap<String,Object>();
+                    Map<String, Object> props = new HashMap<String, Object>();
 
                     props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
                     props.put(SearchService.PROPERTY.displayTitle.toString(), "List " + list.getName());
@@ -146,13 +150,16 @@ public class ListManager implements SearchService.DocumentProvider
                     url.addParameter("listId",list.getListId());
 
                     Domain domain = list.getDomain();
+                    String sep = "";
+
                     for (DomainProperty property : domain.getProperties())
                     {
                         String n = StringUtils.trimToEmpty(property.getName());
                         String l = StringUtils.trimToEmpty(property.getLabel());
                         if (n.equals(l))
                             l = "";
-                        body.append(n).append(" ").append(l).append(",\n");
+                        body.append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
+                        sep = ",\n";
                     }
 
                     String documentId = "list:" + ((ListDefinitionImpl)list).getEntityId();

@@ -612,6 +612,7 @@ experiment/module.properties -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
 experiment/resources/schemas/dbscripts/postgresql/exp-0.00-2.30.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-10.10-10.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-2.30-8.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-8.10-8.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-8.20-8.30.sql -text
@@ -705,6 +706,7 @@ experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-9.11-9.12.sql -te
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp_drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/findOrphans.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-0.00-2.30.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-10.10-10.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-2.30-8.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-8.10-8.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-8.20-8.30.sql -text
@@ -1093,7 +1095,6 @@ list/src/org/labkey/list/model/ListWriter.java -text
 list/src/org/labkey/list/model/StudyListImporter.java -text
 list/src/org/labkey/list/model/StudyListWriter.java -text
 list/src/org/labkey/list/view/AttachmentDisplayColumn.java -text
-list/src/org/labkey/list/view/EditListDefinitionForm.java -text
 list/src/org/labkey/list/view/ListController.java -text
 list/src/org/labkey/list/view/ListDefinitionForm.java -text
 list/src/org/labkey/list/view/ListImportHelper.java -text
@@ -1102,18 +1103,13 @@ list/src/org/labkey/list/view/ListItemAttachmentParent.java -text
 list/src/org/labkey/list/view/ListQueryForm.java -text
 list/src/org/labkey/list/view/ListQueryView.java -text
 list/src/org/labkey/list/view/ListWebPart.java -text
-list/src/org/labkey/list/view/NewListForm.java -text
 list/src/org/labkey/list/view/SingleListWebPartFactory.java -text
 list/src/org/labkey/list/view/UploadListItemsForm.java -text
 list/src/org/labkey/list/view/begin.jsp -text
 list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
-list/src/org/labkey/list/view/editListDefinition.jsp -text
 list/src/org/labkey/list/view/historyDetail.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
-list/src/org/labkey/list/view/insert.jsp -text
-list/src/org/labkey/list/view/newListDefinition.jsp -text
-list/src/org/labkey/list/view/showListDefinition.jsp -text
 list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-2.30.sql -text
