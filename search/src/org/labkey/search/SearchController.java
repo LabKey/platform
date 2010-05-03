@@ -967,6 +967,9 @@ public class SearchController extends SpringActionController
         {
             Container searchContainer = getSearchContainer();
 
+            if (null == searchContainer)
+                return SearchScope.All;
+                
             if (ContainerManager.getRoot().equals(searchContainer) && getIncludeSubfolders())
                 return SearchScope.All;
 

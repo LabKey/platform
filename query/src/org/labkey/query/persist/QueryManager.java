@@ -246,7 +246,7 @@ public class QueryManager
 
     public ExternalSchemaDef getExternalSchemaDef(int id)
     {
-        return Table.selectObject(getTableInfoDbUserSchema(), id, ExternalSchemaDef.class);
+        return Table.selectObject(getTableInfoExternalSchema(), id, ExternalSchemaDef.class);
     }
 
     public ExternalSchemaDef[] getExternalSchemaDefs(Container container)
@@ -283,18 +283,18 @@ public class QueryManager
 
     public ExternalSchemaDef insert(User user, ExternalSchemaDef def) throws Exception
     {
-        return Table.insert(user, getTableInfoDbUserSchema(), def);
+        return Table.insert(user, getTableInfoExternalSchema(), def);
     }
 
     public ExternalSchemaDef update(User user, ExternalSchemaDef def) throws Exception
     {
-        ExternalSchemaDef ret = Table.update(user, getTableInfoDbUserSchema(), def, def.getDbUserSchemaId());
+        ExternalSchemaDef ret = Table.update(user, getTableInfoExternalSchema(), def, def.getExternalSchemaId());
         return ret;
     }
 
     public void delete(User user, ExternalSchemaDef def) throws Exception
     {
-        Table.delete(getTableInfoDbUserSchema(), def.getDbUserSchemaId());
+        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
     }
 
 
@@ -390,9 +390,9 @@ public class QueryManager
         return getDbSchema().getTable("CustomView");
     }
 
-    public TableInfo getTableInfoDbUserSchema()
+    public TableInfo getTableInfoExternalSchema()
     {
-        return getDbSchema().getTable("DbUserSchema");
+        return getDbSchema().getTable("ExternalSchema");
     }
 
     public void containerDeleted(Container c) throws SQLException
@@ -402,7 +402,7 @@ public class QueryManager
         Table.delete(getTableInfoQuerySnapshotDef(), filter);
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);
-        Table.delete(getTableInfoDbUserSchema(), filter);
+        Table.delete(getTableInfoExternalSchema(), filter);
     }
 
     public void addQueryListener(QueryService.QueryListener listener)

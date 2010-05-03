@@ -30,7 +30,7 @@ public class ExternalSchema extends SimpleModuleUserSchema
 {
     private ExternalSchemaDef _def;
 
-    public ExternalSchema(User user, Container container, ExternalSchemaDef def)
+    public  ExternalSchema(User user, Container container, ExternalSchemaDef def)
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def));
         _def = def;
@@ -83,5 +83,10 @@ public class ExternalSchema extends SimpleModuleUserSchema
     public boolean areTablesEditable()
     {
         return _def.isEditable();
+    }
+
+    public boolean shouldIndexMetaData()
+    {
+        return _def.isIndexable();
     }
 }

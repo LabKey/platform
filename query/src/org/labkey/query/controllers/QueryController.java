@@ -144,7 +144,7 @@ public class QueryController extends SpringActionController
         public ActionURL urlUpdateExternalSchema(Container c, ExternalSchemaDef def)
         {
             ActionURL url = new ActionURL(QueryController.EditExternalSchemaAction.class, c);
-            url.addParameter("dbUserSchemaId", Integer.toString(def.getDbUserSchemaId()));
+            url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
             return url;
         }
     }
@@ -2767,7 +2767,7 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            TableInfo ti = QueryManager.get().getTableInfoDbUserSchema();
+            TableInfo ti = QueryManager.get().getTableInfoExternalSchema();
 
             for (ColumnInfo ci : ti.getColumns())
                 if (null != ci.getDescription())
@@ -2804,7 +2804,7 @@ public class QueryController extends SpringActionController
 
         public ActionURL getDeleteURL()
         {
-            return getDeleteExternalSchemaURL(_c, _def.getDbUserSchemaId());
+            return getDeleteExternalSchemaURL(_c, _def.getExternalSchemaId());
         }
 
         public String getHelpHTML(String fieldName)
@@ -2830,7 +2830,7 @@ public class QueryController extends SpringActionController
             if (reshow)
             {
                 def = form.getBean();
-                ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getDbUserSchemaId());
+                ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getExternalSchemaId());
                 defContainer = fromDb.lookupContainer();               
             }
             else
@@ -2850,7 +2850,7 @@ public class QueryController extends SpringActionController
         public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
         {
             ExternalSchemaDef def = form.getBean();
-            ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getDbUserSchemaId());
+            ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getExternalSchemaId());
 
             // Unauthorized if def in the database reports a different container
             if (!fromDb.lookupContainer().equals(getContainer()))
@@ -2890,7 +2890,7 @@ public class QueryController extends SpringActionController
     public static ActionURL getDeleteExternalSchemaURL(Container c, int schemaId)
     {
         ActionURL url = new ActionURL(DeleteExternalSchemaAction.class, c);
-        url.addParameter("dbUserSchemaId", schemaId);
+        url.addParameter("externalSchemaId", schemaId);
         return url;
     }
 

@@ -37,7 +37,7 @@ import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.query.controllers.QueryController;
-import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
+import org.labkey.query.controllers.externalschema.ExternalSchemaController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.SchemaReloadMaintenanceTask;
 import org.labkey.query.reports.*;
@@ -63,14 +63,14 @@ public class QueryModule extends DefaultModule
 
     public double getVersion()
     {
-        return 10.10;
+        return 10.11;
     }
 
     protected void init()
     {
         addController("query", QueryController.class);
         addController("reports", ReportsController.class);
-        addController("dbuserschema", DbUserSchemaController.class);
+        addController("externalschema", ExternalSchemaController.class);
 
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);

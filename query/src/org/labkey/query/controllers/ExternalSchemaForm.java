@@ -33,7 +33,7 @@ public class ExternalSchemaForm extends BeanViewForm<ExternalSchemaDef>
 {
     public ExternalSchemaForm()
     {
-        super(ExternalSchemaDef.class, QueryManager.get().getTableInfoDbUserSchema());
+        super(ExternalSchemaDef.class, QueryManager.get().getTableInfoExternalSchema());
     }
 
     public void validate(Errors errors)

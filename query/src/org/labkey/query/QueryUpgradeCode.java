@@ -72,7 +72,8 @@ public class QueryUpgradeCode implements UpgradeCode
             String dataSourceName = DbScope.getLabkeyScope().getDataSourceName();
 
             // Update all existing DbUserSchema rows with labkey DataSource name
-            SQLFragment sql = new SQLFragment("UPDATE " + QueryManager.get().getTableInfoDbUserSchema() + " SET DataSource = ?", Collections.<Object>singletonList(dataSourceName));
+            // NOTE: Use old name for this table, since we're in the middle of upgrading
+            SQLFragment sql = new SQLFragment("UPDATE query.DbUserSchema SET DataSource = ?", Collections.<Object>singletonList(dataSourceName));
             Table.execute(QueryManager.get().getDbSchema(), sql);
         }
     }

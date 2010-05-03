@@ -23,7 +23,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.data.xml.TableType;
-import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
+import org.labkey.query.controllers.externalschema.ExternalSchemaController;
 import org.labkey.query.ExternalSchema;
 
 import java.util.*;
@@ -87,7 +87,7 @@ public class ExternalSchemaTable extends SimpleModuleUserSchema.SimpleModuleTabl
     }
 
 
-    public ActionURL urlFor(DbUserSchemaController.Action action)
+    public ActionURL urlFor(ExternalSchemaController.Action action)
     {
         ActionURL url = getUserSchema().getContainer().urlFor(action);
         url.addParameter(QueryParam.schemaName.toString(), getUserSchema().getSchemaName());

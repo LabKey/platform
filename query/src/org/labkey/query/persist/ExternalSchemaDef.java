@@ -31,7 +31,7 @@ public class ExternalSchemaDef extends Entity
     {
         public Key(Container container)
         {
-            super(QueryManager.get().getTableInfoDbUserSchema(), ExternalSchemaDef.class, container);
+            super(QueryManager.get().getTableInfoExternalSchema(), ExternalSchemaDef.class, container);
         }
         public void setUserSchemaName(String name)
         {
@@ -39,21 +39,22 @@ public class ExternalSchemaDef extends Entity
         }
     }
 
-    private int _dbUserSchemaId;
+    private int _externalSchemaId;
     private String _userSchemaName;
     private String _dbSchemaName;
     private boolean _editable;
     private String _metaData;
     private String _dataSource;
+    private boolean _indexable;
 
-    public int getDbUserSchemaId()
+    public int getExternalSchemaId()
     {
-        return _dbUserSchemaId;
+        return _externalSchemaId;
     }
 
-    public void setDbUserSchemaId(int id)
+    public void setExternalSchemaId(int id)
     {
-        _dbUserSchemaId = id;
+        _externalSchemaId = id;
     }
 
     public String getUserSchemaName()
@@ -103,7 +104,7 @@ public class ExternalSchemaDef extends Entity
 
         ExternalSchemaDef that = (ExternalSchemaDef) o;
 
-        if (_dbUserSchemaId != that._dbUserSchemaId) return false;
+        if (_externalSchemaId != that._externalSchemaId) return false;
         if (_dbSchemaName != null ? !_dbSchemaName.equals(that._dbSchemaName) : that._dbSchemaName != null)
             return false;
         if (_metaData != null ? !_metaData.equals(that._metaData) : that._metaData != null) return false;
@@ -116,7 +117,7 @@ public class ExternalSchemaDef extends Entity
     public int hashCode()
     {
         int result;
-        result = _dbUserSchemaId;
+        result = _externalSchemaId;
         result = 31 * result + (_userSchemaName != null ? _userSchemaName.hashCode() : 0);
         result = 31 * result + (_dbSchemaName != null ? _dbSchemaName.hashCode() : 0);
         result = 31 * result + (_metaData != null ? _metaData.hashCode() : 0);
@@ -131,5 +132,15 @@ public class ExternalSchemaDef extends Entity
     public void setEditable(boolean editable)
     {
         _editable = editable;
+    }
+
+    public boolean isIndexable()
+    {
+        return _indexable;
+    }
+
+    public void setIndexable(boolean indexable)
+    {
+        _indexable = indexable;
     }
 }

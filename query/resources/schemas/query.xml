@@ -54,9 +54,9 @@
         <ns:column columnName="Flags"/>
       </ns:columns>
     </ns:table>
-    <ns:table tableName="DbUserSchema" tableDbType="TABLE">
+    <ns:table tableName="ExternalSchema" tableDbType="TABLE">
         <ns:columns>
-            <ns:column columnName="DbUserSchemaId" />
+            <ns:column columnName="ExternalSchemaId" />
             <ns:column columnName="EntityId" />
             <ns:column columnName="Created" />
             <ns:column columnName="CreatedBy" />
@@ -78,6 +78,9 @@
             </ns:column>
             <ns:column columnName="Editable">
                 <ns:description>Allows insert/update/delete. Caveat: This setting only works if you have a single primary key in your table.</ns:description>
+            </ns:column>
+            <ns:column columnName="Indexable">
+                <ns:description>Determines whether the schema should be indexed for full-text searching.</ns:description>
             </ns:column>
             <ns:column columnName="MetaData">
                 <ns:description>You can use a specialized XML format to specify which columns are look-ups, formats, captions, etc.</ns:description>
