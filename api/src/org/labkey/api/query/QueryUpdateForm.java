@@ -76,7 +76,7 @@ public class QueryUpdateForm extends TableViewForm
 
     public String getFormFieldName(ColumnInfo column)
     {
-        // 6962 : DbUserSchema update problems on PostgreSQL 8.3
+        // 6962 : ExternalSchema update problems on PostgreSQL 8.3
         // Some controllers depend on this form's TableViewForm.getPkNamesList() matching the
         // primary key column names.
 //        if (column.isKeyField())
