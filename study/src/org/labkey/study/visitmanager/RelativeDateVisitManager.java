@@ -178,7 +178,7 @@ public class RelativeDateVisitManager extends VisitManager
                 Table.TempTableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
                 if (tempTableInfo != null)
                 {
-                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " t SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = t.ParticipantSequenceKey)"));
+                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = " + tempTableInfo + ".ParticipantSequenceKey)"));
                 }
             }
 
