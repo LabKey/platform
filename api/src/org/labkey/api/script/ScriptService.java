@@ -30,9 +30,8 @@ public interface ScriptService extends ScriptEngineFactory
      * Each call to compile() returns a new {@link ScriptReference} and contains
      * it's own execution context while sharing the same {@link javax.script.CompiledScript}.
      * 
-     * @param m module
      * @param r resource
      * @return The compiled script.
      */
-    ScriptReference compile(Module m, Resource r) throws ScriptException;
+    ScriptReference compile(Resource r) throws ScriptException;
 }

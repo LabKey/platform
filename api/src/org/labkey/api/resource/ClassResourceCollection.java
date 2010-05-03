@@ -20,7 +20,6 @@ import org.labkey.api.util.Path;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * User: kevink
@@ -30,14 +29,14 @@ public class ClassResourceCollection extends AbstractResourceCollection
 {
     private Class clazz;
 
-    public ClassResourceCollection(Class clazz)
+    public ClassResourceCollection(Class clazz, Resolver resolver)
     {
-        this(Path.parse("/" + clazz.getPackage().getName().replaceAll("\\.", "/")), clazz);
+        this(Path.parse("/" + clazz.getPackage().getName().replaceAll("\\.", "/")), clazz, resolver);
     }
 
-    public ClassResourceCollection(Path path, Class clazz)
+    public ClassResourceCollection(Path path, Class clazz, Resolver resolver)
     {
-        super(path);
+        super(path, resolver);
         this.clazz = clazz;
     }
 
@@ -73,7 +72,7 @@ public class ClassResourceCollection extends AbstractResourceCollection
     {
         URL url = clazz.getResource(name);
         if (url != null)
-            return new ClassResource(this, name);
+            return new ClassResource(this, name, _resolver);
         return null;
     }
 

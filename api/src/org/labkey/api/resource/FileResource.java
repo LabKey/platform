@@ -30,13 +30,11 @@ import java.io.InputStream;
  */
 public class FileResource extends AbstractResource
 {
-    Resolver _resolver;
     File _file;
 
-    FileResource(Resolver resolver, Path path, File file)
+    FileResource(Path path, File file, Resolver resolver)
     {
-        super(path);
-        _resolver = resolver;
+        super(path, resolver);
         _file = file;
     }
 

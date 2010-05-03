@@ -36,9 +36,6 @@ import java.util.Collections;
  */
 public class SimpleController extends SpringActionController implements SpringActionController.ActionResolver
 {
-    public static final String ACTIONS_DIRECTORY = "actions";
-    public static final String ACTIONS_FILE = "actions.js";
-    
     public static final String VIEWS_DIRECTORY = "views";
     public static final String FOLDER_TYPES_DIRECTORY = "folderTypes";
     public static final String BEGIN_VIEW_NAME = "begin";
@@ -63,7 +60,7 @@ public class SimpleController extends SpringActionController implements SpringAc
 
         Resource r = getViewResource(module, actionName);
         if (r != null)
-            return new SimpleAction(module, r);
+            return new SimpleAction(r);
 
         return null;
     }

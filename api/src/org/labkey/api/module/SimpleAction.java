@@ -41,7 +41,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     public static WebPartView getModuleHtmlView(Module module, String viewName) throws IOException
     {
         Resource r = module.getModuleResource(SimpleController.VIEWS_DIRECTORY + "/" + viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
-        return r != null ? new ModuleHtmlView(module, r) : null;
+        return r != null ? new ModuleHtmlView(r) : null;
     }
 
     public enum Permission
@@ -70,11 +70,11 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     private ModuleHtmlView _view;
     private Exception _exception;
 
-    public SimpleAction(Module module, Resource r)
+    public SimpleAction(Resource r)
     {
         try
         {
-            _view = new ModuleHtmlView(module, r);
+            _view = new ModuleHtmlView(r);
         }
         catch(Exception e)
         {

@@ -51,9 +51,9 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
         return engine;
     }
 
-    public ScriptReference compile(Module m, Resource r) throws ScriptException
+    public ScriptReference compile(Resource r) throws ScriptException
     {
-        return new ScriptReferenceImpl(m, r, getScriptEngine());
+        return new ScriptReferenceImpl(r, getScriptEngine());
     }
 
 }
@@ -80,22 +80,15 @@ class ScriptReferenceImpl implements ScriptReference
 {
     private static Cache _scriptCache = new Cache(1024, Cache.HOUR, "Module JavaScript cache");
 
-    private static String getCacheKey(Module module, Resource r)
-    {
-        return (module == null ? "~~NoModule~~" : module.getName()) + ":" + r.getPath().toString();
-    }
-    
     private ScriptResourceRef ref;
-    private Module m;
     private Resource r;
     private RhinoEngine engine;
     private ScriptContext context; // context to eval and invoke in, not compile.
     private boolean evaluated = false;
 
-    ScriptReferenceImpl(Module m, Resource r, RhinoEngine engine) throws ScriptException
+    ScriptReferenceImpl(Resource r, RhinoEngine engine) throws ScriptException
     {
         assert MemTracker.put(this);
-        this.m = m;
         this.r = r;
         this.engine = engine;
 
@@ -112,7 +105,7 @@ class ScriptReferenceImpl implements ScriptReference
 
     private CompiledScript compile(Context ctx) throws ScriptException
     {
-        String cacheKey = getCacheKey(m, r);
+        String cacheKey = r.toString();
         CompiledScript script = null;
         int opt = ctx.getOptimizationLevel();
         if (ref == null && opt > -1)

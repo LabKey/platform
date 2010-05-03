@@ -20,9 +20,6 @@ import org.labkey.api.util.FileStream;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * User: kevink
@@ -32,9 +29,9 @@ public class ClassResource extends AbstractResource
 {
     private ClassResourceCollection parent;
 
-    public ClassResource(ClassResourceCollection parent, String name)
+    public ClassResource(ClassResourceCollection parent, String name, Resolver resolver)
     {
-        super(parent, name);
+        super(parent, name, resolver);
         this.parent = parent;
     }
 

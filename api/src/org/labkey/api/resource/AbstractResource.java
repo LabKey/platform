@@ -15,17 +15,12 @@
  */
 package org.labkey.api.resource;
 
-import org.labkey.api.security.User;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
-import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.webdav.WebdavService;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * User: kevink
@@ -34,30 +29,32 @@ import java.util.List;
 abstract public class AbstractResource implements Resource
 {
     private Path _path;
+    Resolver _resolver;
 
-    protected AbstractResource(Path path)
+    protected AbstractResource(Path path, Resolver resolver)
     {
-        this._path = path;
+        _path = path;
+        _resolver = resolver;
     }
 
-    protected AbstractResource(Path folder, String name)
+    protected AbstractResource(Path folder, String name, Resolver resolver)
     {
-        this(folder.append(name));
+        this(folder.append(name), resolver);
     }
 
-    protected AbstractResource(Resource folder, String name)
+    protected AbstractResource(Resource folder, String name, Resolver resolver)
     {
-        this(folder.getPath().append(name));
+        this(folder.getPath().append(name), resolver);
+    }
+
+    public Resolver getResolver()
+    {
+        return _resolver;
     }
 
     public Path getPath()
     {
         return _path;
-    }
-
-    protected void setPath(Path path)
-    {
-        _path = path;
     }
 
     public String getName()
@@ -108,5 +105,11 @@ abstract public class AbstractResource implements Resource
     public InputStream getInputStream() throws IOException
     {
         return null;
+    }
+
+    public String toString()
+    {
+        Resolver r = getResolver();
+        return (r == null ? "[]" : "[" + r.toString() + "]") + getPath().toString();
     }
 }

@@ -36,10 +36,10 @@ public class ModuleHtmlView extends HtmlView
 
     private ModuleHtmlViewDefinition _viewdef = null;
 
-    public ModuleHtmlView(Module module, Resource r)
+    public ModuleHtmlView(Resource r)
     {
         super(null);
-        _viewdef = getViewDef(module, r);
+        _viewdef = getViewDef(r);
         setTitle(_viewdef.getTitle());
         setHtml(replaceTokens(_viewdef.getHtml()));
         if(null != _viewdef.getFrameType())
@@ -60,9 +60,9 @@ public class ModuleHtmlView extends HtmlView
         return ret;
     }
 
-    public static ModuleHtmlViewDefinition getViewDef(Module module, Resource r)
+    public static ModuleHtmlViewDefinition getViewDef(Resource r)
     {
-        String cacheKey = (module == null ? "~~NoModule~~" : module.getName()) + ":" + r.getPath().toString();
+        String cacheKey = r.toString();
         ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(cacheKey);
         if (null == viewdef || viewdef.isStale())
         {

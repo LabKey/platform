@@ -16,17 +16,11 @@
 package org.labkey.api.resource;
 
 import org.labkey.api.collections.CacheMap;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -37,7 +31,6 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 {
     private static final CacheMap<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = new CacheMap<Pair<Resolver, Path>, Map<String, Resource>>(50, "MergedDirectoryResourceCache");
 
-    Resolver _resolver;
     List<File> _dirs;
     Resource[] _additional;
     long versionStamp;
@@ -61,8 +54,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
     {
-        super(path);
-        _resolver = resolver;
+        super(path, resolver);
         _dirs = dirs;
         _additional = children;
     }
@@ -112,7 +104,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                     Path path = getPath().append(e.getKey());
                     ArrayList<File> files = e.getValue();
                     Resource r = files.size() == 1 && files.get(0).isFile() ?
-                            new FileResource(_resolver, path, files.get(0)) :
+                            new FileResource(path, files.get(0), _resolver) :
                             new MergedDirectoryResource(_resolver, path, files);
                     children.put(e.getKey(), r);
                 }
@@ -151,7 +143,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                 // might not be case sensitive, but this is just devmode
                 File f = new File(dir,name);
                 if (f.exists())
-                    return new FileResource(_resolver, getPath().append(f.getName()), f);
+                    return new FileResource(getPath().append(f.getName()), f, _resolver);
             }
         }
         return r;

@@ -15,17 +15,12 @@
  */
 package org.labkey.api.resource;
 
-import org.labkey.api.security.User;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.Path;
-import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: kevink
@@ -33,14 +28,14 @@ import java.util.List;
  */
 public abstract class AbstractResourceCollection extends AbstractResource
 {
-    protected AbstractResourceCollection(Path path)
+    protected AbstractResourceCollection(Path path, Resolver resolver)
     {
-        super(path);
+        super(path, resolver);
     }
 
-    protected AbstractResourceCollection(Path parent, String name)
+    protected AbstractResourceCollection(Path parent, String name, Resolver resolver)
     {
-        super(parent, name);
+        super(parent, name, resolver);
     }
 
     public abstract Resource parent();

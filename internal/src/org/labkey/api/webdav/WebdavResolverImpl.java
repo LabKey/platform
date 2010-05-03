@@ -112,8 +112,13 @@ public class WebdavResolverImpl implements WebdavResolver
         return _root;
     }
 
+    @Override
+    public String toString()
+    {
+        return "webdav";
+    }
 
-    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
+// Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
     // end up with just one of these.
     private class FolderCache extends TTLCacheMap<Path, WebdavResource> implements ContainerManager.ContainerListener
     {
@@ -335,7 +340,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         WebFolderResource(WebdavResolver resolver, Container c)
         {
-            super(resolver.getRootPath().append(c.getParsedPath()));
+            super(resolver.getRootPath().append(c.getParsedPath()), resolver);
             _resolver = resolver;
             _c = c;
             _containerId = c.getId();

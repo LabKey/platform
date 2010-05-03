@@ -48,8 +48,7 @@ public class ModuleResourceResolver implements Resolver
 
         List<ClassResourceCollection> additional = new ArrayList<ClassResourceCollection>(classes.length);
         for (Class clazz : classes)
-            additional.add(new ClassResourceCollection(clazz));
-
+            additional.add(new ClassResourceCollection(clazz, this));
 
         _root = new MergedDirectoryResource(this, Path.emptyPath, dirs);
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
@@ -136,5 +135,10 @@ public class ModuleResourceResolver implements Resolver
                 p.equals("web") ||
                 p.equals("webapp") ||
                 p.startsWith(".");
+    }
+
+    public String toString()
+    {
+        return _module.getName();
     }
 }

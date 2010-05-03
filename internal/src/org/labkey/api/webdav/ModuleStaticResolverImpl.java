@@ -182,9 +182,16 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
             roots.add(ModuleLoader.getInstance().getWebappDir());
 
+            // This is so '_webdav' shows up as a child when someone does a propfind on '/'
             _root = new StaticResource(Path.emptyPath, roots, new SymbolicLink(WebdavResolverImpl.get().getRootPath(), WebdavResolverImpl.get()));
             initialized.set(true);
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return "static";
     }
 
     private class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
@@ -205,6 +212,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         protected _PublicResource(Path path)
         {
             super(path);
+        }
+
+        @Override
+        public WebdavResolver getResolver()
+        {
+            return ModuleStaticResolverImpl.this;
         }
 
         @Override
@@ -264,6 +277,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             super(path);
             this._files = files;
             _additional = addl;
+        }
+
+        @Override
+        public WebdavResolver getResolver()
+        {
+            return ModuleStaticResolverImpl.this;
         }
 
         @Override
@@ -446,6 +465,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             _url = getResource(path);
         }
 
+        @Override
+        public WebdavResolver getResolver()
+        {
+            return ModuleStaticResolverImpl.this;
+        }
+
         public boolean exists()
         {
             return _url != null;
@@ -507,27 +532,24 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     public class SymbolicLink extends AbstractWebdavResourceCollection
     {
-        final WebdavResolver _resolver;
         final Path _target;
 
-        SymbolicLink(Path path, WebdavResolver r)
+        SymbolicLink(Path path, WebdavResolver resolver)
         {
-            super(path);
-            _resolver = r;
+            super(path, resolver);
             _target = null;
         }
 
         SymbolicLink(Path path, Path target)
         {
-            super(path);
+            super(path, (WebdavResolver)null);
             _target = target;
-            _resolver = null;
         }
         
         public WebdavResource lookup(Path relpath)
         {
             Path full = null==_target ? getPath().append(relpath) : _target.append(relpath);
-            WebdavResolver resolver = null == _resolver ? ModuleStaticResolverImpl.this : _resolver;
+            WebdavResolver resolver = null == getResolver() ? ModuleStaticResolverImpl.this : getResolver();
             return resolver.lookup(full);
         }
 
@@ -543,7 +565,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public Collection<String> listNames()
         {
-            return _resolver.lookup(getPath()).listNames();
+            return getResolver().lookup(getPath()).listNames();
         }
     }
 

@@ -19,7 +19,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -56,17 +55,33 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     protected AbstractWebdavResource(Path path)
     {
-        super(path);
+        this(path, WebdavService.get().getResolver());
+    }
+
+    protected AbstractWebdavResource(Path path, WebdavResolver resolver)
+    {
+        super(path, resolver);
     }
 
     protected AbstractWebdavResource(Path folder, String name)
     {
-        super(folder, name);
+        this(folder, name, WebdavService.get().getResolver());
+    }
+
+    protected AbstractWebdavResource(Path folder, String name, WebdavResolver resolver)
+    {
+        super(folder, name, resolver);
     }
 
     protected AbstractWebdavResource(Resource folder, String name)
     {
-        super(folder, name);
+        super(folder, name, WebdavService.get().getResolver());
+    }
+
+    @Override
+    public WebdavResolver getResolver()
+    {
+        return (WebdavResolver)super.getResolver();
     }
 
     public WebdavResource parent()

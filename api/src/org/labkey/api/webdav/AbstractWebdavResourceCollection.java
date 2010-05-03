@@ -41,10 +41,20 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
     {
         super(path);
     }
+
+    protected AbstractWebdavResourceCollection(Path path, WebdavResolver resolver)
+    {
+        super(path, resolver);
+    }
     
     protected AbstractWebdavResourceCollection(Path parent, String name)
     {
         super(parent, name);
+    }
+
+    protected AbstractWebdavResourceCollection(Path parent, String name, WebdavResolver resolver)
+    {
+        super(parent, name, resolver);
     }
 
     public boolean isCollection()

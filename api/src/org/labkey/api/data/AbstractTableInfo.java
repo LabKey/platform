@@ -671,7 +671,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         Resource r = m.getModuleResource(p);
         if (r == null)
             return null;
-        tableScript = svc.compile(m, r);
+        tableScript = svc.compile(r);
         return tableScript;
     }
 

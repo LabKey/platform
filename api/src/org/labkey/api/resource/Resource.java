@@ -27,6 +27,9 @@ import java.util.Collection;
  */
 public interface Resource
 {
+    /** Get the resolver that found this Resource. */
+    Resolver getResolver();
+
     Path getPath();
 
     String getName();
@@ -59,4 +62,10 @@ public interface Resource
     long getLastModified();
 
     InputStream getInputStream() throws IOException;
+
+    /**
+     * The String returned can be used as a cache key in TTLCaches and,
+     * unlike getPath(), will be unique across all resolvers.
+     */
+    String toString();
 }

@@ -651,8 +651,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             public Controller createController(Controller actionController)
             {
-                Module module = ModuleLoader.getInstance().getModuleForController(_primaryName);
-                return new SimpleAction(module, _resource);
+                return new SimpleAction(_resource);
             }
         }
 
