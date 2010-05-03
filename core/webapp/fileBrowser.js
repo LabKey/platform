@@ -1467,6 +1467,7 @@ if (LABKEY.Applet)
                     text : params.text,
                     allowDirectoryUpload : params.allowDirectoryUpload,
                     overwrite : "true",
+                    autoStart : "false",
                     enabled : !('enabled' in params) || params.enabled,
                     dropFileLimit : 5000
                 }
@@ -1544,6 +1545,7 @@ if (LABKEY.Applet)
 
 
         TransferRecord : Ext.data.Record.create([
+            {name:'transferId', mapping:'id'},
             {name:'src'},
             {name:'uri', mapping:'target'},
             {name:'name'},
@@ -1857,12 +1859,14 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, hideText: true, handler: function()
         {
-            var p = this.currentDirectory.data.path;
-            var folder = prompt( "Folder Name", "New Folder");
-            if (!folder)
-                return;
-            var path = this.fileSystem.concatPaths(p, folder);
-            this.fileSystem.createDirectory(path, this._refreshOnCallbackSelectPath.createDelegate(this));
+            Ext.MessageBox.prompt('Create Folder', 'Folder Name:', function(btn, folder){
+                if (btn == 'ok')
+                {
+                    var p = this.currentDirectory.data.path;
+                    var path = this.fileSystem.concatPaths(p, folder);
+                    this.fileSystem.createDirectory(path, this._refreshOnCallbackSelectPath.createDelegate(this));
+                }
+            }, this, false, 'New Folder');
         }.createDelegate(this)});
     },
 
@@ -2152,6 +2156,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var incompleteCount = 0;
         var newlyAdded = [];
         var newlyComplete = [];
+        var pending = [];                   // files and folders just dropped that need to be checked for overwrite
 
         //Try to notify in batches.
         //If new files are added fire a transferstarted event
@@ -2165,26 +2170,71 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var state = record.get("state");
 
             var notifyInfo =  this.notifyStates[id];
-            if (null == notifyInfo)
+            if (!notifyInfo)
             {
-                notifyInfo = {current:state, notified:null, name:name};
-                if (state == TRANSFER_STATES.info || state == TRANSFER_STATES.success)
-                    newlyAdded.push({id:id, name:name});
-
-                if (state == TRANSFER_STATES.success)
-                    newlyComplete.push({id:id, name:name});
-
+                notifyInfo = {notified:null, name:name};
                 this.notifyStates[id] = notifyInfo;
             }
-            else
-            {
-                notifyInfo.current = state;
-                if (state == TRANSFER_STATES.success && notifyInfo.notified != TRANSFER_STATES.success)
-                    newlyComplete.push({id:id, name:name});
-            }
+            notifyInfo.current = state;
+
+            if (state == TRANSFER_STATES.info || state == TRANSFER_STATES.success)
+                newlyAdded.push({id:id, name:name});
+            else if (state == TRANSFER_STATES.retryable)
+                pending.push({id:id, name:name, recordId:record.id});
+
+            if (state == TRANSFER_STATES.success && notifyInfo.notified != TRANSFER_STATES.success)
+                newlyComplete.push({id:id, name:name});
+
+            if (state != TRANSFER_STATES.retryable)
+                this.notifyStates[id] = notifyInfo;
 
             if (state == TRANSFER_STATES.info)
                 incompleteCount++;
+        }
+
+        if (pending.length != 0)
+        {
+            var conflicted = [];
+            for (i=0; i < pending.length; i++)
+            {
+                var rec = pending[i];
+                var target = rec.id.substring(this.fileSystem.prefixUrl.length);
+
+                if (this.fileSystem.recordFromCache(decodeURIComponent(target)))
+                {
+                    target = target.substring(1);
+                    conflicted.push({idx:i, name:decodeURIComponent(target), id:rec.id});
+                }
+            }
+
+            if (conflicted.length != 0)
+            {
+                var txt = this.fileReplaceTemplate.apply({files:conflicted});
+
+                Ext.MessageBox.confirm('Confirm replacement', txt, function(btn){
+                    if (btn == 'yes')
+                    {
+                        this.doStartTransfer(transfers, pending);
+                    }
+                    else
+                    {
+                        for (i=0; i < pending.length; i++)
+                        {
+                            var item = pending[i];
+                            var tr = transfers.getById(item.recordId);
+                            if (tr)
+                            {
+                                transfers.remove(tr);
+                                var idx = this.applet.getApplet().transfer_getIndex(tr.get('transferId'));
+                                if (idx != -1)
+                                    this.applet.getApplet().transfer_removeFile(idx);
+                            }
+                        }
+                    }
+                }, this);
+            }
+            else
+                this.doStartTransfer(transfers, pending);
         }
 
         if (newlyAdded.length != 0)
@@ -2200,6 +2250,25 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"applet", files:newlyComplete});
             for (var i = 0; i < newlyComplete.length; i++)
                 this.notifyStates[newlyComplete[i].id].notified = TRANSFER_STATES.success;
+        }
+    },
+
+    /**
+     * Initiate file upload for pending dropped files
+     */
+    doStartTransfer : function(transfers, pendingFiles)
+    {
+        for (var i=0; i < pendingFiles.length; i++)
+        {
+            var item = pendingFiles[i];
+            var record = transfers.getById(item.recordId);
+            if (record)
+            {
+                record.state = TRANSFER_STATES.info;
+                var idx = this.applet.getApplet().transfer_getIndex(record.get('transferId'));
+                if (idx != -1)
+                    this.applet.getApplet().transfer_overwrite(idx);
+            }
         }
     },
 
@@ -2822,6 +2891,15 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }, this);
 
         this.on(BROWSER_EVENTS.transferstarted, function(result) {this.showProgressBar();}, this);
+        this.fileReplaceTemplate = new Ext.XTemplate('The following files(s) already exist, do you want to replace them?<br>',
+                '<tpl for="files">' +
+                    '<tpl if="xindex &lt; 11">' +
+                        '<span style="margin-left:8px;">{name}</span><br>' +
+                    '</tpl>' +
+                    '<tpl if="xindex == 11">' +
+                        '<span style="margin-left:8px;">... too many files to display</span><br>' +
+                    '</tpl>' +
+                '</tpl>').compile();
     },
 
     showProgressBar : function()

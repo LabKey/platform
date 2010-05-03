@@ -80,7 +80,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.adminOptions.on('filePropConfigChanged', this.onFilePropConfigChanged, this);
         this.adminOptions.on('gridConfigChanged', this.onGridConfigChanged, this);
 
-        this.on(BROWSER_EVENTS.transferstarted, this.onCustomFileProperties, this);
+        this.on(BROWSER_EVENTS.transfercomplete, this.onCustomFileProperties, this);
 
         // get the initial admin configuration
         this.updateActionConfiguration(false, false);
