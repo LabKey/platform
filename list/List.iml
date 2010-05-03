@@ -11,6 +11,7 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module" module-name="ExperimentGWT" />
+    <orderEntry type="module" module-name="ListGWT" />
   </component>
 </module>
 

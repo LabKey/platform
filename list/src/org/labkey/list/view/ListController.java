@@ -138,17 +138,6 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(DesignListPermission.class)
-    public class NewListDefinitionAction extends SimpleRedirectAction
-    {
-        @Override
-        public ActionURL getRedirectURL(Object o) throws Exception
-        {
-            return new ActionURL(EditListDefinitionAction.class, getContainer());
-        }
-    }
-
-
     @RequiresPermissionClass(AdminPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
@@ -172,7 +161,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(DesignListPermission.class)
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;

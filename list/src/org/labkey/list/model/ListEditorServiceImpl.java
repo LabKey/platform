@@ -16,7 +16,6 @@
 package org.labkey.list.model;
 
 import org.apache.axis.utils.StringUtils;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlDialect;
@@ -37,10 +36,12 @@ import org.labkey.list.client.GWTList;
 import org.labkey.list.client.ListEditorService;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 23, 2010
  * Time: 1:15:41 PM

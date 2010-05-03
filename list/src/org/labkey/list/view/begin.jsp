@@ -25,7 +25,6 @@
 <%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
     Map<String, ListDefinition> map = ListService.get().getLists(getContainer());
     User user = getViewContext().getUser();
@@ -83,7 +82,7 @@
 
     if (policy.hasPermission(user, DesignListPermission.class))
     { %>
-        <labkey:button text="Create New List" href="<%=h(urlFor(ListController.NewListDefinitionAction.class))%>" />
+        <labkey:button text="Create New List" href="<%=h(urlFor(ListController.EditListDefinitionAction.class))%>" />
         <labkey:button text="Import List Archive" href="<%=h(urlFor(ListController.ImportListArchiveAction.class))%>" /><%
         if (!map.isEmpty())
         { %>
