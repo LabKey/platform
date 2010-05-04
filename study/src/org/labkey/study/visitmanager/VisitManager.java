@@ -222,10 +222,11 @@ public abstract class VisitManager
                 Table.execute(schema, datasetParticipantsSQL);
             }
             Table.execute(schema,
-                    "DELETE FROM " + tableParticipant  + "\n" +
-                    "WHERE container = ? AND participantid NOT IN (select participantid from " + tableStudyData  + " where container = ?) AND " +
-                             "participantid NOT IN (select ptid from " + tableSpecimen  + " where container = ?)",
-                    new Object[] {c, c, c});
+                    "DELETE FROM " + tableParticipant + " WHERE participantid IN (SELECT p.participantid FROM " +
+                            tableParticipant + " p LEFT OUTER JOIN " + tableStudyData + " sd ON p.container = sd.container " +
+                            "AND p.participantid = sd.participantid LEFT OUTER JOIN " + tableSpecimen + " s ON " +
+                            "p.container = s.container AND s.ptid = p.participantid WHERE sd.participantid IS NULL AND " +
+                            "s.ptid IS NULL AND p.container = ?) AND container = ?", new Object[] {c, c});
 
             updateStartDates(user);
         }

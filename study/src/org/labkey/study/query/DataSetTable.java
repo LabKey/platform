@@ -253,7 +253,7 @@ public class DataSetTable extends FilteredTable
         return _fromTable;
     }
 
-    public DataSet getDatasetDefinition()
+    public DataSetDefinition getDatasetDefinition()
     {
         return _dsd;
     }
@@ -282,7 +282,7 @@ public class DataSetTable extends FilteredTable
         DataSet def = getDatasetDefinition();
         if (!def.canWrite(user))
             return null;
-        return new DatasetUpdateService(this, def.getDataSetId());
+        return new DatasetUpdateService(this);
     }
 
     @Override

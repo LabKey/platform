@@ -16,7 +16,9 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -43,29 +45,24 @@ import java.util.*;
  */
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
-    private final int _datasetId;
+    private final DataSetTable _table;
 
-    public DatasetUpdateService(TableInfo table, int datasetId)
+    public DatasetUpdateService(DataSetTable table)
     {
         super(table);
-        _datasetId = datasetId;
-    }
-
-    public int getDatasetId()
-    {
-        return _datasetId;
+        _table = table;
     }
 
     public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         String lsid = keyFromMap(keys);
-        return StudyService.get().getDatasetRow(user, container, getDatasetId(), lsid);
+        return StudyService.get().getDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), lsid);
     }
 
     public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
-        String newLsid = StudyService.get().insertDatasetRow(user, container, getDatasetId(), row, errors);
+        String newLsid = StudyService.get().insertDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), row, errors);
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -104,13 +101,13 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
-                PageFlowUtil.nullSafeEquals(_datasetId, study.getParticipantCohortDataSetId()));
+                PageFlowUtil.nullSafeEquals(_table.getDatasetDefinition().getDataSetId(), study.getParticipantCohortDataSetId()));
 
         // If this results in a change to cohort assignments, the participant ID, or the visit,
         // we need to recompute the participant-visit map:
         if (recomputeCohorts || lsidChanged)
         {
-            DataSetDefinition dataset = study.getDataSet(_datasetId);
+            DataSetDefinition dataset = _table.getDatasetDefinition();
             StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singletonList(dataset));
             StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(dataset));
         }
@@ -128,7 +125,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         List<String> errors = new ArrayList<String>();
         String lsid = null != oldKeys ? keyFromMap(oldKeys) : keyFromMap(row);
-        String newLsid = StudyService.get().updateDatasetRow(user, container, getDatasetId(), lsid, row, errors);
+        String newLsid = StudyService.get().updateDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), lsid, row, errors);
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -152,15 +149,46 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        StudyService.get().deleteDatasetRow(user, container, getDatasetId(), keyFromMap(keys));
+        StudyService.get().deleteDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), keyFromMap(keys));
         return keys;
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
-        Object key = map.get("lsid");
-        if(null == key)
+        Object lsid = map.get("lsid");
+        if(null == lsid && _table.getDatasetDefinition().getKeyManagementType() != DataSetDefinition.KeyManagementType.None)
+        {
+            Object id = map.get(_table.getDatasetDefinition().getKeyPropertyName());
+            if (id == null)
+            {
+                id = map.get("Key");
+            }
+            if (id != null)
+            {
+                try
+                {
+                    String[] lsids = Table.executeArray(_table, _table.getColumn("LSID"), new SimpleFilter(_table.getDatasetDefinition().getKeyPropertyName(), id), null, String.class);
+                    if (lsids.length == 1)
+                    {
+                        map.put("lsid", lsids[0]);
+                        return lsids[0];
+                    }
+                    if (lsids.length > 1)
+                    {
+                        throw new IllegalStateException("More than one row matched for key '" + id + "' in column " +
+                                _table.getDatasetDefinition().getKeyPropertyName() + " in dataset " +
+                                _table.getDatasetDefinition().getName() + " in folder " +
+                                _table.getDatasetDefinition().getContainer().getPath());
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+        }
+        if (null == lsid)
             throw new InvalidKeyException("No value provided for 'lsid' key column!", map);
-        return key.toString();
+        return lsid.toString();
     }
 }

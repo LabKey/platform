@@ -1586,7 +1586,6 @@ public class QueryController extends SpringActionController
             }
 
             Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
-            SimpleFilter filter = new SimpleFilter();
             List<ColumnInfo> pks = table.getPkColumns();
             int numPks = pks.size();
 
@@ -1604,7 +1603,6 @@ public class QueryController extends SpringActionController
                 else
                     stringValues = new String[]{id};
 
-                Object[] values = new Object[numPks];
                 Map<String, Object> rowKeyValues = new HashMap<String, Object>();
                 for (int idx = 0; idx < numPks; ++idx)
                 {
@@ -2306,7 +2304,7 @@ public class QueryController extends SpringActionController
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, ValidationException, DuplicateKeyException
             {
-                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, rows, null);
+                List<Map<String,Object>> updatedRows = qus.updateRows(user, container, rows, rows);
                 return qus.getRows(user, container, updatedRows);
             }
         },
@@ -2510,7 +2508,7 @@ public class QueryController extends SpringActionController
             JSONObject json = apiSaveRowsForm.getJsonObject();
             JSONArray commands = (JSONArray)json.get("commands");
             JSONArray result = new JSONArray();
-            if (commands.length() == 0)
+            if (commands == null || commands.length() == 0)
             {
                 throw new NotFoundException("Empty request");
             }
