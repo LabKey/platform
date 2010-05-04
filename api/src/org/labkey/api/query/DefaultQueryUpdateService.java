@@ -22,6 +22,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.apache.commons.beanutils.ConvertUtils;
 
@@ -107,11 +108,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         {
             Map<String, Object> oldValues = getRow(user, container, null == oldKeys ? row : oldKeys);
             if (oldValues == null)
-                throw new QueryUpdateServiceException("The existing row was not found.");
+                throw new NotFoundException("The existing row was not found.");
 
             Object oldContainer = new CaseInsensitiveHashMap(oldValues).get("container");
             if (null != oldContainer && !rowContainer.equals(oldContainer))
-                throw new QueryUpdateServiceException("The row is from the wrong container.");
+                throw new UnauthorizedException("The row is from the wrong container.");
         }
 
         Map<String,Object> updatedRow = Table.update(user, getDbTable(), rowStripped, null == oldKeys ? getKeys(row) : getKeys(oldKeys));
@@ -139,7 +140,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             // UNDONE: 9077: check container permission on each row before delete
             Object oldContainer = new CaseInsensitiveHashMap(oldValues).get("container");
             if (null != oldContainer && !container.getId().equals(oldContainer))
-                throw new QueryUpdateServiceException("The row is from the wrong container.");
+                throw new UnauthorizedException("The row is from the wrong container.");
         }
 
         Table.delete(getDbTable(), getKeys(keys));
