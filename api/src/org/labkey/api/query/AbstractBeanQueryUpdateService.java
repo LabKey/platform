@@ -51,7 +51,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
     }
 
     /**
-     * Converts a bean to a map (or in Britt's elloquent parlance, 'map-ificates a T')
+     * Converts a bean to a map (or in Britt's eloquent parlance, 'map-ificates a T')
      * <p>
      * Override this method to perform your own conversion from bean to map.
      * @param bean The bean

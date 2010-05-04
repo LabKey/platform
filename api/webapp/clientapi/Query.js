@@ -19,7 +19,7 @@
  */
 
 /**
- * @namespace Query static class to programmatically retrieve, insert, update and 
+ * @namespace Query static class to programmatically retrieve, insert, update and
  *		delete data from LabKey public queries. <p/>
  *		{@link LABKEY.Query.selectRows} works for all LabKey public queries.  However,
  *		{@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} and
@@ -50,7 +50,8 @@ LABKEY.Query = new function()
         var dataObject = {
             schemaName : config.schemaName,
             queryName : config.queryName,
-            rows : config.rowDataArray
+            rows : config.rowDataArray,
+            transacted : config.transacted
         };
 
         Ext.Ajax.request({
@@ -440,15 +441,16 @@ LABKEY.Query = new function()
                 the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                 (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
         * @param {Function} [config.errorCallback] Function called when execution of the "updateRows" function fails.
-         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
+        *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
         *               other columns you wish to update.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
-         *              If not supplied, the current container path will be used.
+        *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {boolean} [config.transacted] Whether all of the updates should be done in a single transaction, so they all succeed or all fail. Defaults to true
+        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */
@@ -458,6 +460,55 @@ LABKEY.Query = new function()
                 config = configFromArgs(arguments);
             config.action = "updateRows";
             sendJsonQueryRequest(config);
+        },
+
+        /**
+        * Save inserts, updates, and/or deletes to potentially multiple tables with a single request.
+        * @param {Object} config An object which contains the following configuration properties.
+        * @param {Array} config.commands An array of all of the update/insert/delete operations to be performed.
+        * Each command has the following structure:
+        * @param {String} config.commands[].schemaName Name of a schema defined within the current container. See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} config.commands[].queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
+					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					How To Find schemaName, queryName &amp; viewName</a>.
+        * @param {String} config.commands[].command Name of the command to be performed. Must be one of "insert", "update", or "delete".
+        * @param {Array} config.commands[].rows An array of data for each row to be changed. See {@link LABKEY.Query.insertRows},
+        * {@link LABKEY.Query.updateRows}, or {@link LABKEY.Query.deleteRows} for requirements of what data must be included for each row. 
+        * @param {Function} config.successCallback Function called when the "saveRows" function executes successfully.
+        	    Will be called with arguments:
+                an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request), 
+                the XMLHttpRequest object and (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
+        * @param {Function} [config.errorCallback] Function called if execution of the "saveRows" function fails.
+        *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
+        * @param {String} [config.containerPath] The container path in which the changes are to be performed.
+        *              If not supplied, the current container path will be used.
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
+        * @param {boolean} [config.transacted] Whether all of the row changes for all of the tables
+        * should be done in a single transaction, so they all succeed or all fail. Defaults to true
+        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+		* @see LABKEY.Query.ModifyRowsResults
+		* @see LABKEY.Query.ModifyRowsOptions
+        */
+        saveRows : function(config)
+        {
+            if(config.length > 1)
+                config = configFromArgs(arguments);
+            if(config.timeout)
+                Ext.Ajax.timeout = config.timeout;
+
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL("query", "saveRows", config.containerPath),
+                method : 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData : config,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
         },
 
         /**
@@ -474,7 +525,7 @@ LABKEY.Query = new function()
                         the parsed response data ({@link LABKEY.Query.ModifyRowsResults}), the XMLHttpRequest object and
                         (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
 		* @param {Function} [config.errorCallback]  Function called when execution of the "insertRows" function fails.
-         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
+        *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
         *                  However, you will need to include the primary key column values if you defined
@@ -483,6 +534,7 @@ LABKEY.Query = new function()
         *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
+        * @param {boolean} [config.transacted] Whether all of the inserts should be done in a single transaction, so they all succeed or all fail. Defaults to true
         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
         * @example Example, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestForm">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a>: <pre name="code" class="xml">
          // This snippet inserts data from the ReagentReqForm into a list.
@@ -536,10 +588,11 @@ LABKEY.Query = new function()
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
-         *              If not supplied, the current container path will be used.
+        *              If not supplied, the current container path will be used.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+        * @param {boolean} [config.transacted] Whether all of the deletes should be done in a single transaction, so they all succeed or all fail. Defaults to true
+        * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
 		* @see LABKEY.Query.ModifyRowsResults
 		* @see LABKEY.Query.ModifyRowsOptions
         */

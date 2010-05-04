@@ -77,7 +77,7 @@ public class StudyService
          * @return the new lsid for the updated row
          * @param u the user performing the update
          * @param c container the dataset is in
-         * @param datasetId the dataset defition id
+         * @param datasetId the dataset definition id
          * @param lsid the lsid of the dataset row
          * @param data the data to be updated
          * @param errors any errors during update will be added to this list
@@ -90,7 +90,7 @@ public class StudyService
          * @return the lsid for the new dataset row
          * @param u the user performing the insert
          * @param c container the dataset is in
-         * @param datasetId the dataset defition id
+         * @param datasetId the dataset definition id
          * @param data the data to be updated
          * @param errors any errors during update will be added to this list
          */

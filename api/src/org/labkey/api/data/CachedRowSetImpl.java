@@ -460,6 +460,8 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
             return null;
         if (o instanceof java.sql.Date)
             return (java.sql.Date) o;
+        if (o instanceof Timestamp)
+            return new java.sql.Date(((Timestamp)o).getTime());
         throwConversionError();
         return null;
     }
