@@ -33,7 +33,6 @@ public interface FileContentService
     public static final String FILES_LINK = "@files";
     public static final String FILE_SETS_LINK = "@filesets";
     public static final String PIPELINE_LINK = "@pipeline";
-    public static final String TYPE_PROPERTIES = "FileProperties";
 
     File getFileRoot(Container c);
     void setFileRoot(Container c, File root);
@@ -117,9 +116,9 @@ public interface FileContentService
 
     public File getProjectDefaultRoot(Container c, boolean createDir);
 
-    public String getDomainURI(Container c, String type);
+    public String getDomainURI(Container c);
 
-    public String getDomainURI(Container c, String type, FilesAdminOptions.fileConfig config);
+    public String getDomainURI(Container c, FilesAdminOptions.fileConfig config);
 
     public ExpData getDataObject(WebdavResource resource, Container c);
 }

@@ -564,7 +564,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (_customProperties == null)
         {
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            String uri = svc.getDomainURI(getContainer(), FileContentService.TYPE_PROPERTIES);
+            String uri = svc.getDomainURI(getContainer());
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
             ExpData data = svc.getDataObject(this, getContainer());
 
