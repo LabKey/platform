@@ -58,25 +58,24 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     filePropsGrid : undefined,
 
     isPipelineRoot : false,
-    
     events : {},
-    actionConfig : {},
-
-    tbarItemsConfig : [],   // array of config options for each standard toolbar button
-    actions: {},            // map of action names to actions of all actions available
-    newActions: {},         // map of newly customized actions
-
-    columnModel: {},        // the current file browser grid column model
-    gridConfig: {},         // the saved grid column header configuration
 
     constructor : function(config)
     {
+        this.actionConfig = {};
+
+        this.tbarItemsConfig = [];  // array of config options for each standard toolbar button
+        this.actions = {};          // map of action names to actions of all actions available
+        this.newActions = {};       // map of newly customized actions
+
+        this.columnModel = {};      // the current file browser grid column model
+        this.gridConfig = {};       // the saved grid column header configuration
+
         Ext.apply(this, config);
         Ext.util.Observable.prototype.constructor.call(this, config);
 
         if (config.path)
         {
-            config.path;
             if (startsWith(config.path,"/"))
                 config.path = config.path.substring(1);
 
@@ -238,33 +237,66 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 emailPanel
             ]
         });
+
+        var tbarResetHandler = function(b){
+            Ext.MessageBox.confirm("Confirm reset", 'All grid and toolbar button customizations on this page will be deleted, continue?', function(answer)
+            {
+                if (answer == "yes")
+                {
+                    Ext.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions', null, {type:'tbar'}),
+                        method:'POST',
+                        disableCaching:false,
+                        success : function(){
+                            b.initialConfig.scope.fireEvent('success');
+                            win.close()},
+                        failure: LABKEY.Utils.displayAjaxErrorResponse,
+                        scope: this
+                    });
+                }
+            });
+        };
+        var actionResetHandler = function(b){
+            Ext.MessageBox.confirm("Confirm reset", 'All action customizations on this page will be deleted, continue?', function(answer)
+            {
+                if (answer == "yes")
+                {
+                    Ext.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions', null, {type:'actions'}),
+                        method:'POST',
+                        disableCaching:false,
+                        success : function(){
+                            b.initialConfig.scope.fireEvent('success');
+                            win.close()},
+                        failure: LABKEY.Utils.displayAjaxErrorResponse,
+                        scope: this
+                    });
+                }
+            });
+        };
+
         tabPanel.on('tabchange', function(tp, panel){
-            this.resetToolbarBtn.setVisible(panel.getId() == 'toolbarTab');}, this);
+            if (panel.getId() == 'toolbarTab') {
+
+                this.resetToolbarBtn.setVisible(true);
+                this.resetToolbarBtn.setHandler(tbarResetHandler);
+            }
+            else if (panel.getId() == 'actionTab') {
+
+                this.resetToolbarBtn.setVisible(true);
+                this.resetToolbarBtn.setHandler(actionResetHandler);
+            }
+            else
+                this.resetToolbarBtn.setVisible(false);
+        }, this);
+
 
         this.resetToolbarBtn = new Ext.Button({
             text: 'Reset to Default',
             id: 'btn_reset',
-            tooltip: 'Reset toolbar buttons to the default.',
+            tooltip: 'Reset options to the default.',
             scope: this,
-            hidden: true,
-            handler: function(b, e){
-                Ext.MessageBox.confirm("Confirm reset", 'All grid and toolbar button customizations on this page will be deleted, continue?', function(answer)
-                {
-                    if (answer == "yes")
-                    {
-                        Ext.Ajax.request({
-                            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFilesUIOptions'),
-                            method:'POST',
-                            disableCaching:false,
-                            success : function(){
-                                b.initialConfig.scope.fireEvent('success');
-                                win.close()},
-                            failure: LABKEY.Utils.displayAjaxErrorResponse,
-                            scope: this
-                        });
-                    }
-                });
-            }
+            hidden: true
         });
 
         var win = new Ext.Window({

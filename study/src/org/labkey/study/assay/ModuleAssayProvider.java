@@ -38,6 +38,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayPipelineProvider;
@@ -559,7 +560,21 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public PipelineProvider getPipelineProvider()
     {
-        return new AssayPipelineProvider(StudyModule.class,
+        return new ModuleAssayPipelineProvider(StudyModule.class,
                 new PipelineProvider.FileTypesEntryFilter(inputFileSuffices), this, "Import " + getName());
+    }
+
+    static class ModuleAssayPipelineProvider extends AssayPipelineProvider
+    {
+        public ModuleAssayPipelineProvider(Class<? extends Module> moduleClass, FileEntryFilter filter, AssayProvider assayProvider, String actionDescription)
+        {
+            super(moduleClass, filter, assayProvider, actionDescription);
+        }
+
+        @Override
+        protected String getFilePropertiesId()
+        {
+            return super.getFilePropertiesId() + ':' + this.getName();
+        }
     }
 }

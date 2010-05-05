@@ -100,7 +100,7 @@ if (null == getStudy())
     {
         out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
         out.write("&nbsp;");
-        out.write(textLink("Data Pipeline", url.setPageFlow("Pipeline").setAction("begin.view")));
+        out.write(textLink("Manage Files", url.setPageFlow("Pipeline").setAction("begin.view")));
     }
     else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
             getStudy().getRepositorySettings().isEnableRequests())

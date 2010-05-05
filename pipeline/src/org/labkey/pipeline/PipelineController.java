@@ -514,7 +514,6 @@ public class PipelineController extends SpringActionController
             // keep actions in consistent order for display
             entry.orderActions();
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            FilesAdminOptions options = svc.getAdminOptions(c);
 
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())

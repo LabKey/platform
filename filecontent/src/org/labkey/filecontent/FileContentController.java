@@ -38,6 +38,7 @@ import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.PropertyValidationError;
@@ -1116,16 +1117,37 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ResetFilesUIOptionsAction extends MutatingApiAction<Object>
+    public static class ResetType
     {
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        private String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ResetFileOptionsAction extends MutatingApiAction<ResetType>
+    {
+        public ApiResponse execute(ResetType form, BindException errors) throws Exception
         {
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             FilesAdminOptions options = svc.getAdminOptions(getContainer());
 
-            options.setTbarConfig(Collections.<FilesTbarBtnOption>emptyList());
-            options.setGridConfig(null);
+            if (form.getType().equalsIgnoreCase("tbar"))
+            {
+                options.setTbarConfig(Collections.<FilesTbarBtnOption>emptyList());
+                options.setGridConfig(null);
+            }
+            else if (form.getType().equalsIgnoreCase("actions"))
+                options.setPipelineConfig(Collections.<PipelineActionConfig>emptyList());
+
             svc.setAdminOptions(getContainer(), options);
 
             return new ApiSimpleResponse("success", true);

@@ -556,7 +556,7 @@ public class StudyController extends BaseStudyController
                 List<?> list = (List<?>)datasetKeyObject;
                 datasetKeyObject = list.get(0);
             }
-            _datasetId = NumberUtils.toInt(datasetKeyObject.toString(), 0);
+            _datasetId = NumberUtils.toInt(String.valueOf(datasetKeyObject), 0);
 
             // if the view name refers to a report id (legacy style), redirect to use the newer report id parameter
             if (NumberUtils.isDigits(viewName))
