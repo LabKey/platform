@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.query.controllers.QueryController.*" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="java.util.*" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <p>
@@ -32,32 +33,42 @@
 </p>
 <%
     Container c = getContainer();
-    ExternalSchemaDef[] defs = QueryManager.get().getExternalSchemaDefs(c);
+    List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
 
-    if (defs.length == 0) { %>
+    if (defs.isEmpty()) { %>
 <p>There are no database user schemas defined in this folder.</p>
 <% }
 else
 {
-String reloadedSchema = StringUtils.trimToNull(request.getParameter("reloadedSchema"));
-if (null != reloadedSchema)
-{
-    %>
-    <div class="labkey-error"><%
+    Collections.sort(defs, new Comparator<ExternalSchemaDef>()
+    {
+        @Override
+        public int compare(ExternalSchemaDef def1, ExternalSchemaDef def2)
+        {
+            return def1.getUserSchemaName().compareToIgnoreCase(def2.getUserSchemaName());
+        }
+    });
 
-    if ("ALL".equals(reloadedSchema))
-    { %>
-        All schemas in this folder were reloaded successfully.<%
-    }
-    else
-    { %>
-        Schema <%=h(reloadedSchema)%> was reloaded successfully.<%
+    String reloadedSchema = StringUtils.trimToNull(request.getParameter("reloadedSchema"));
+
+    if (null != reloadedSchema)
+    {
+        %>
+        <div class="labkey-error"><%
+
+        if ("ALL".equals(reloadedSchema))
+        { %>
+            All schemas in this folder were reloaded successfully.<%
+        }
+        else
+        { %>
+            Schema <%=h(reloadedSchema)%> was reloaded successfully.<%
+        } %>
+        </div><br>
+        <%
     } %>
-    </div><br>
-    <%
-}
-    %>
-<table>
+
+    <table>
     <%
     QueryUrlsImpl urls = new QueryUrlsImpl();
 
@@ -67,17 +78,17 @@ if (null != reloadedSchema)
         ActionURL urlView = new ActionURL(QueryController.SchemaAction.class, c);
         urlView.addParameter("schemaName", def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction(QueryController.ReloadExternalSchemaAction.class);
-%>
+        urlReload.setAction(QueryController.ReloadExternalSchemaAction.class); %>
+
         <tr>
             <td><%=h(def.getUserSchemaName())%></td>
             <td><labkey:link text="view data" href="<%=h(urlView)%>" /></td>
             <td><%if (getUser().isAdministrator()) {%><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /><%}%></td>
             <td><labkey:link text="reload" href="<%=h(urlReload)%>" /></td>
-        </tr>
-    <% } %>
-    </table>
-<% } %>
+        </tr><%
+    } %>
+    </table><%
+} %>
 <br>
 <%
     if (getUser().isAdministrator())
@@ -86,7 +97,7 @@ if (null != reloadedSchema)
     <!--TODO: Enable bulk publish/unpublish labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, c)%>" text="define multiple new schemas"/--><%
     }
 
-    if (defs.length > 1)
+    if (defs.size() > 1)
     { %>
     <labkey:link href="<%= new ActionURL(QueryController.ReloadAllUserSchemas.class, c)%>" text="reload all schemas"/><%
     }

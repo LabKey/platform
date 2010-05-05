@@ -45,7 +45,7 @@ public class ExternalSchemaDef extends Entity
     private boolean _editable;
     private String _metaData;
     private String _dataSource;
-    private boolean _indexable;
+    private boolean _indexable = true;
     private String _tables = "*";
 
     public int getExternalSchemaId()

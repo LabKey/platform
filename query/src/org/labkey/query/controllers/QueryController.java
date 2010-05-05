@@ -2926,19 +2926,13 @@ public class QueryController extends SpringActionController
 
             Collections.sort(tableNames);
 
-            final Map<String, Object> properties = new HashMap<String, Object>();
+            Map<String, Object> properties = new HashMap<String, Object>();
             List<Map<String, Object>> rows = new LinkedList<Map<String, Object>>();
-
-            boolean sel = true;
 
             for (String tableName : tableNames)
             {
                 Map<String, Object> row = new LinkedHashMap<String, Object>();
-               
                 row.put("table", tableName);
-                row.put("selected", sel);
-                sel = !sel;
-
                 rows.add(row);
             }
 

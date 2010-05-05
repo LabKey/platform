@@ -123,13 +123,16 @@ var tableText = new Ext.form.TextField({name:'tables', hidden:true});
     });
 
     var selModel = new Ext.grid.CheckboxSelectionModel();
+    selModel.addListener('rowselect', updateTableTitle);
+    selModel.addListener('rowdeselect', updateTableTitle);
 
     var initialTables = '<%=def.getTables()%>';
 
     // create the Grid
     var grid = new Ext.grid.GridPanel({
         fieldLabel:'Tables',
-        title:'All tables in this schema will be published; click + to select a subset',
+        helpPopup:{title:'Tables', html:'<%=bean.getHelpHTML("Tables")%>'},
+        title:'&nbsp;',
         store: tableStore,
         columns: [
             selModel,
@@ -238,8 +241,6 @@ function tablesLoaded()
         grid.selModel.selectRecords(recordArray);
         initialTables = '*';
     }
-
-    updateTableTitle();
 }
 
 function submit()
