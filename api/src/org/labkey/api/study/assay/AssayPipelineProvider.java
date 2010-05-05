@@ -59,6 +59,11 @@ public class AssayPipelineProvider extends PipelineProvider
         setShowActionsIfModuleInactive(true);
     }
 
+    protected String getFilePropertiesId()
+    {
+        return _assayProvider.getClass().getName();
+    }
+
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
@@ -69,7 +74,7 @@ public class AssayPipelineProvider extends PipelineProvider
         {
             List<ExpProtocol> assays = AssayService.get().getAssayProtocols(context.getContainer());
             Collections.sort(assays);
-            String id = _assayProvider.getClass().getName();
+            String id = getFilePropertiesId();
             NavTree navTree = new NavTree(_actionDescription);
             navTree.setId(id);
             for (ExpProtocol protocol : assays)
