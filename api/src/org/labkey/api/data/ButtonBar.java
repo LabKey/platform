@@ -33,7 +33,9 @@ public class ButtonBar extends DisplayElement
 
     private List<DisplayElement> _elementList = new ArrayList<DisplayElement>();
     private Style _style = Style.toolbar;
-    private ButtonBarConfig _config = null;
+    // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
+    // that's partially overridden by a 
+    private List<ButtonBarConfig> _configs = null;
 
     public static ButtonBar BUTTON_BAR_GRID = new ButtonBar();
     public static ButtonBar BUTTON_BAR_DETAILS = new ButtonBar();
@@ -115,8 +117,12 @@ public class ButtonBar extends DisplayElement
         if (!shouldRender(ctx))
             return;
 
-        if (null != _config)
-            applyConfig(ctx, _config);
+        if (_configs != null)
+        {
+            for (ButtonBarConfig config : _configs)
+                applyConfig(ctx, config);
+        }
+        renderIncludes(out);
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
@@ -140,6 +146,42 @@ public class ButtonBar extends DisplayElement
         out.write("</div>");
     }
 
+    private void renderIncludes(Writer out) throws IOException
+    {
+        if (_configs != null && !_configs.isEmpty())
+        {
+            Set<String> allScriptIncludes = new HashSet<String>();
+            for (ButtonBarConfig config : _configs)
+            {
+                String[] scriptIncludes = config.getScriptIncludes();
+                if (scriptIncludes != null && scriptIncludes.length > 0)
+                {
+                    for (String scriptInclude : scriptIncludes)
+                        allScriptIncludes.add(scriptInclude);
+                }
+            }
+
+            if (allScriptIncludes.size() > 0)
+            {
+                out.write("<script type=\"text/javascript\">\n");
+                for (String script : allScriptIncludes)
+                {
+                    out.write("LABKEY.requiresScript('");
+                    out.write(script);
+                    out.write("');\n");
+                }
+                out.write("</script>");
+            }
+        }
+    }
+
+    public DataRegion.ButtonBarPosition getConfiguredPosition()
+    {
+        if (_configs.size() > 0)
+            return _configs.get(_configs.size() - 1).getPosition();
+        return null;
+    }
+
     public Style getStyle()
     {
         return _style;
@@ -152,19 +194,14 @@ public class ButtonBar extends DisplayElement
         _style = style;
     }
 
-    public ButtonBarConfig getConfig()
+    public void setConfigs(List<ButtonBarConfig> configs)
     {
-        return _config;
+        _configs = configs;
     }
 
-    public void setConfig(ButtonBarConfig config)
+    private void applyConfig(RenderContext ctx, ButtonBarConfig config)
     {
-        _config = config;
-    }
-
-    public void applyConfig(RenderContext ctx, ButtonBarConfig config)
-    {
-        if (null == config.getItems() || config.getItems().size() == 0)
+        if (config == null || null == config.getItems() || config.getItems().size() == 0)
             return;
 
         List<DisplayElement> originalButtons = _elementList;

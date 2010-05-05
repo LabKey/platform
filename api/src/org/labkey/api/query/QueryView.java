@@ -610,14 +610,6 @@ public class QueryView extends WebPartView<Object>
         {
             addButton(bar, createPageSizeMenuButton());
         }
-
-        ButtonBarConfig bbarConfig = getTable().getButtonBarConfig();
-        if (bbarConfig != null)
-        {
-            bar.applyConfig(view.getRenderContext(), bbarConfig);
-            if (bbarConfig.getPosition() != null)
-                setButtonBarPosition(bbarConfig.getPosition());
-        }
     }
 
     public ActionButton createDeleteButton(ButtonBar bar)
@@ -1165,7 +1157,15 @@ public class QueryView extends WebPartView<Object>
             rgn.setAggregates(getAggregates());
 
         rgn.setTable(getTable());
-        rgn.setButtonBarConfig(_buttonBarConfig);
+
+
+        // We first apply the button bar config from the table:
+        ButtonBarConfig tableBarConfig = getTable().getButtonBarConfig();
+        if (tableBarConfig != null)
+            rgn.addButtonBarConfig(tableBarConfig);
+        // Then any overriding button bar config (from javascript) is applied:
+        if (_buttonBarConfig != null)
+            rgn.addButtonBarConfig(_buttonBarConfig);
     }
 
     public void setButtonBarPosition(DataRegion.ButtonBarPosition buttonBarPosition)

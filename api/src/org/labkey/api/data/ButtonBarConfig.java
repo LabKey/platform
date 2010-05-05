@@ -18,8 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.*;
 
@@ -42,6 +40,7 @@ public class ButtonBarConfig
     private DataRegion.ButtonBarPosition _position = null; //i.e., not specified
     private List<ButtonConfig> _items = new ArrayList<ButtonConfig>();
     private boolean _includeStandardButtons = false;
+    private String[] _scriptIncludes;
 
     public ButtonBarConfig()
     {
@@ -90,6 +89,7 @@ public class ButtonBarConfig
     {
         _position = getPosition(buttonBarOptions.getPosition().toString());
         _includeStandardButtons = buttonBarOptions.getIncludeStandardButtons();
+        _scriptIncludes = buttonBarOptions.getIncludeScriptArray();
         ButtonBarItem[] items = buttonBarOptions.getItemArray();
         if (items != null && items.length > 0)
         {
@@ -103,30 +103,46 @@ public class ButtonBarConfig
     {
         UserDefinedButtonConfig buttonConfig = new UserDefinedButtonConfig();
         buttonConfig.setText(item.getText());
-        buttonConfig.setUrl(item.getUrl());
+        if (item.getTarget() != null && item.getTarget().getStringValue() != null)
+        {
+            buttonConfig.setUrl(item.getTarget().getStringValue());
+            ActionButton.Action method = ActionButton.Action.GET;
+            try
+            {
+                if (item.getTarget().getMethod() != null)
+                    method = ActionButton.Action.valueOf(item.getTarget().getMethod().toString());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Unfortunately, XMLBeans throws an XmlValueOutOfRangeException on access of getMethod if the user
+                // has provided an invalid enum value for the method.
+            }
+            buttonConfig.setAction(method);
+        }
         buttonConfig.setOnClick(item.getOnClick());
+        buttonConfig.setRequiresSelection(item.getRequiresSelection());
 
-        ButtonBarItem[] subItems = item.getItemArray();
+        ButtonMenuItem[] subItems = item.getItemArray();
         if (subItems != null && subItems.length > 0)
         {
             List<NavTree> menuItems = new ArrayList<NavTree>();
-            for (ButtonBarItem subItem : subItems)
+            for (ButtonMenuItem subItem : subItems)
                 menuItems.add(loadNavTree(subItem));
             buttonConfig.setMenuItems(menuItems);
         }
         return buttonConfig;
     }
 
-    private NavTree loadNavTree(ButtonBarItem item)
+    private NavTree loadNavTree(ButtonMenuItem item)
     {
-        NavTree tree = new NavTree(item.getText(), item.getUrl());
+        NavTree tree = new NavTree(item.getText(), item.getTarget());
         if (item.getOnClick() != null && item.getOnClick().length() > 0)
             tree.setScript(item.getOnClick());
         if (item.getIcon() != null && item.getIcon().length() > 0)
             tree.setImageSrc(item.getIcon());
         if (item.getItemArray() != null && item.getItemArray().length > 0)
         {
-            for (ButtonBarItem child : item.getItemArray())
+            for (ButtonMenuItem child : item.getItemArray())
                 tree.addChild(loadNavTree(child));
         }
         return tree;
@@ -207,5 +223,15 @@ public class ButtonBarConfig
     public void setIncludeStandardButtons(boolean includeStandardButtons)
     {
         _includeStandardButtons = includeStandardButtons;
+    }
+
+    public String[] getScriptIncludes()
+    {
+        return _scriptIncludes;
+    }
+
+    public void setScriptIncludes(String[] scriptIncludes)
+    {
+        _scriptIncludes = scriptIncludes;
     }
 }

@@ -65,7 +65,7 @@ public class SchemaTableInfo implements TableInfo
     private DetailsURL _insertURL;
     private DetailsURL _updateURL;
     private DetailsURL _detailsURL;
-    private ButtonBarConfig _buttonBarConfig;
+    protected ButtonBarConfig _buttonBarConfig;
 
     protected SchemaTableInfo(DbSchema parentSchema)
     {

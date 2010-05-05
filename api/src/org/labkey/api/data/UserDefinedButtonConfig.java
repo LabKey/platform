@@ -20,9 +20,13 @@ import org.json.JSONObject;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +45,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
     private String _text;
     private String _url;
     private String _onClick;
+    private ActionButton.Action _action;
+    private boolean _requiresSelection = false;
     private List<NavTree> _menuItems;
 
     public String getText()
@@ -78,6 +84,26 @@ public class UserDefinedButtonConfig implements ButtonConfig
         _menuItems = items;
     }
 
+    public ActionButton.Action getAction()
+    {
+        return _action;
+    }
+
+    public void setAction(ActionButton.Action action)
+    {
+        _action = action;
+    }
+
+    public boolean isRequiresSelection()
+    {
+        return _requiresSelection;
+    }
+
+    public void setRequiresSelection(boolean requiresSelection)
+    {
+        _requiresSelection = requiresSelection;
+    }
+
     private String processURL(RenderContext ctx, String url)
     {
         StringExpression urlExpr = StringExpressionFactory.createURL(url);
@@ -92,7 +118,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
 
     private void processURLs(RenderContext ctx, NavTree tree)
     {
-        if (tree.getValue() != null)
+        if (tree.getValue() != null && tree.getValue().length() > 0)
             tree.setValue(processURL(ctx, tree.getValue()));
         for (NavTree child : tree.getChildList())
             processURLs(ctx, child);
@@ -109,16 +135,21 @@ public class UserDefinedButtonConfig implements ButtonConfig
                 processURLs(ctx, toAdd);
                 btn.addMenuItem(toAdd);
             }
+            btn.setRequiresSelection(_requiresSelection);
             return btn;
         }
         else
         {
-            ActionButton btn = new ActionButton(_text);
-            if (null != _url)
-                btn.setURL(processURL(ctx, _url));
+            // An ActionButton must have a valid URL, even if that URL doesn't go anywhere (as in the case of
+            // a button with only an onClick handler.
+            ActionButton btn = new ActionButton();
+            btn.setCaption(_text);
+            btn.setURL(_url != null ? processURL(ctx, _url) : "#");
             if (null != _onClick)
                 btn.setScript(_onClick, false);
-
+            if (_action != null)
+                btn.setActionType(_action);
+            btn.setRequiresSelection(_requiresSelection);
             return btn;
         }
     }

@@ -1528,6 +1528,10 @@ public class Table
             setTableType(TABLE_TYPE_TABLE);
         }
 
+        public void setButtonBarConfig(ButtonBarConfig bbarConfig)
+        {
+            _buttonBarConfig = bbarConfig;
+        }
 
         public String getSelectName()
         {

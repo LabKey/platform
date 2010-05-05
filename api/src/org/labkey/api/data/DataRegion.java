@@ -92,7 +92,7 @@ public class DataRegion extends DisplayElement
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
-    private ButtonBarConfig _buttonBarConfig = null;
+    private List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<ButtonBarConfig>();
 
     public static final int MODE_NONE = 0;
     public static final int MODE_INSERT = 1;
@@ -259,14 +259,10 @@ public class DataRegion extends DisplayElement
             dc.setInputPrefix(_inputPrefix);
     }
 
-    public ButtonBarConfig getButtonBarConfig()
+    public void addButtonBarConfig(ButtonBarConfig buttonBarConfig)
     {
-        return _buttonBarConfig;
-    }
-
-    public void setButtonBarConfig(ButtonBarConfig buttonBarConfig)
-    {
-        _buttonBarConfig = buttonBarConfig;
+        assert buttonBarConfig != null : "Cannot add a null ButtonBarConfig";
+        _buttonBarConfigs.add(buttonBarConfig);
     }
 
     public void addHiddenFormField(Enum name, String value)
@@ -777,6 +773,8 @@ public class DataRegion extends DisplayElement
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
             //TODO: Fix this so form is rendered AFTER all rows. (Does this change layoout?)
             boolean renderButtons = _gridButtonBar.shouldRender(ctx);
+            if (renderButtons)
+                _gridButtonBar.setConfigs(_buttonBarConfigs);
             String filterErrorMsg = getFilterErrorMessage(ctx);
             String filterDescription =  isShowFilterDescription() ? getFilterDescription(ctx) : null;
             if (filterErrorMsg != null && filterErrorMsg.length() > 0)
@@ -897,15 +895,12 @@ public class DataRegion extends DisplayElement
         out.write("<tr><td nowrap>\n");
         if (renderButtons)
         {
-            //adjust position if config supplies a position value
-            if (null != _buttonBarConfig && null != _buttonBarConfig.getPosition())
-                setButtonBarPosition(_buttonBarConfig.getPosition());
+            //adjust position if bbar supplies a position value
+            if (_gridButtonBar.getConfiguredPosition() != null)
+                setButtonBarPosition(_gridButtonBar.getConfiguredPosition());
 
             if (_buttonBarPosition.atTop())
-            {
-                _gridButtonBar.setConfig(_buttonBarConfig);
                 _gridButtonBar.render(ctx, out);
-            }
         }
         out.write("</td>");
 

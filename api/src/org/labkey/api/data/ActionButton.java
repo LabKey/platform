@@ -127,6 +127,10 @@ public class ActionButton extends DisplayElement implements Cloneable
     private String _confirmText;
     private String _encodedSubmitForm;
 
+    public ActionButton()
+    {
+
+    }
 
     public ActionButton(String actionName)
     {
@@ -342,8 +346,11 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
         else
         {
+            String action = getActionName(ctx);
+            if (action == null)
+                action = getURL(ctx);
             return "this.form.action=\"" +
-                    getActionName(ctx) +
+                    action +
                     "\";this.form.method=\"" +
                     _actionType.toString() + "\";";
         }
