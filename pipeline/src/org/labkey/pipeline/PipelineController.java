@@ -625,24 +625,15 @@ public class PipelineController extends SpringActionController
 
         switch (config) {
             case useCustom:
-                String uri = svc.getDomainURI(container, FileContentService.TYPE_PROPERTIES, config);
-                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
+                String uri = svc.getDomainURI(container, config);
+                GWTDomain domain = DomainUtil.getDomainDescriptor(getUser(), uri, container);
 
-                if (dd != null)
+                if (domain != null)
                 {
-                    Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-                    if (domain != null)
+                    for (Object o : domain.getFields())
                     {
-                        for (DomainProperty prop : domain.getProperties())
-                        {
-                            GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
-
-                            gwtProp.setName(prop.getName());
-                            gwtProp.setLabel(prop.getLabel());
-                            gwtProp.setRangeURI(prop.getType().getLabel());
-
-                            properties.add(gwtProp);
-                        }
+                        if (o instanceof GWTPropertyDescriptor)
+                            properties.add((GWTPropertyDescriptor)o);
                     }
                 }
                 break;

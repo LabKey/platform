@@ -22,6 +22,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
     files : [],                 // array of file information for each file being transferred
     fileIndex : 0,
     containerPath : undefined,  // the effective container custom file properties originate from (may be a parent if inherited)
+    defaults : {},              // contains any default values set on the domain
 
     constructor : function(config)
     {
@@ -118,7 +119,15 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             metaData: {fields: fields}
         });
         this.formPanel.add({name: 'uri', xtype: 'hidden', value: 0});
-        this.formPanel.getForm().setValues(this.files[this.fileIndex]);
+
+        for (var i=0; i < this.fileFields.length; i++)
+        {
+            var field = this.fileFields[i];
+            if (field.defaultValue)
+                this.defaults[field.name] = field.defaultDisplayValue;
+        }
+        var values = this.applyDefaults(this.files[this.fileIndex], this.defaults);
+        this.formPanel.getForm().setValues(values);
 
         var titlePanel = new Ext.Panel({
             id: 'file-props-title',
@@ -204,9 +213,36 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         this.win.show();
     },
 
+    applyDefaults : function(a, c)
+    {
+        // make a copy first
+        var o = {};
+        Ext.apply(o, a);
+
+        if(o){
+            for(var p in c){
+                if(!Ext.isDefined(o[p]) || Ext.isEmpty(o[p])){
+                    o[p] = c[p];
+                }
+            }
+        }
+        return o;
+    },
+
     onDone : function()
     {
+        // perform client side validation before submitting
         this.saveFormValues();
+        for (this.fileIndex = 0; this.fileIndex < this.files.length; this.fileIndex++)
+        {
+            this.formPanel.getForm().setValues(this.files[this.fileIndex]);
+            if (!this.formPanel.getForm().isValid())
+            {
+                Ext.Msg.alert('Form Invalid', 'Correct the errors on this form before submitting.');
+                this.updateFormState();
+                return;
+            }
+        }
         var data = {files: this.files};
 
         Ext.Ajax.request({
@@ -288,6 +324,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             this.nextButton.setDisabled(this.fileIndex == this.files.length -1);
         }
         this.formPanel.getForm().reset();
-        this.formPanel.getForm().setValues(file);
+        var values = this.applyDefaults(file, this.defaults);
+        this.formPanel.getForm().setValues(values);
     }
 });

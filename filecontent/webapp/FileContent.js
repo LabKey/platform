@@ -432,7 +432,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             var selections = this.grid.selModel.getSelections();
             var emptySelection = false;
 
-            this.actions.editFileProps.setDisabled(!selections.length);
+            if (this.adminOptions.isCustomFileProperties())
+                this.actions.editFileProps.setDisabled(!selections.length);
+            else
+                this.actions.editFileProps.setDisabled(true);
             
             if (!selections.length && this.grid.store.data)
             {

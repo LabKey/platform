@@ -378,7 +378,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             for (var i=0; i < this.fileFields.length; i++)
             {
                 var prop = this.fileFields[i];
-                columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: Ext.util.Format.htmlEncode});
+                columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: Ext.util.Format.htmlEncode, sortable:true});
             }
         }
         return columns; 

@@ -15,10 +15,12 @@
  */
 package org.labkey.filecontent;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
@@ -39,6 +41,26 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
     public FilePropertiesServiceImpl(ViewContext context)
     {
         super(context);
+    }
+
+    @Override
+    public GWTDomain getDomainDescriptor(String typeURI)
+    {
+        GWTDomain domain = super.getDomainDescriptor(typeURI);
+        if (domain != null)
+            domain.setDefaultValueOptions(new DefaultValueType[]
+                    { DefaultValueType.FIXED_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+        return domain;
+    }
+
+    @Override
+    protected GWTDomain getDomainDescriptor(String typeURI, Container domainContainer)
+    {
+        GWTDomain domain = super.getDomainDescriptor(typeURI, domainContainer);
+        if (domain != null)
+            domain.setDefaultValueOptions(new DefaultValueType[]
+                    { DefaultValueType.FIXED_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+        return domain;
     }
 
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)

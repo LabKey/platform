@@ -19,6 +19,7 @@ package org.labkey.filecontent;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.issues.IssuesSchema;
@@ -53,6 +54,7 @@ public class FileContentModule extends DefaultModule
     protected void init()
     {
         addController("filecontent", FileContentController.class);
+        PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
