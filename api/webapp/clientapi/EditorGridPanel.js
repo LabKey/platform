@@ -444,9 +444,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         //if a sel model has been set, and if it needs to be added as a column,
         //add it to the front of the list.
-        //CheckBoxSelectionModel needs to be added to the selection model for
+        //CheckBoxSelectionModel needs to be added to the column model for
         //the check boxes to show up.
-        //(not sure why its constructor doesn't do this autmatically).
+        //(not sure why its constructor doesn't do this automatically).
         if(this.getSelectionModel() && this.getSelectionModel().renderer)
             this.columns = [this.getSelectionModel()].concat(this.columns);
 

@@ -405,6 +405,7 @@ public class ContainerManager
     {
         Set<Container> result = new HashSet<Container>();
         Container[] containers = getAllChildren(parent);
+
         for (Container container : containers)
         {
             if (container.hasPermission(u, perm))

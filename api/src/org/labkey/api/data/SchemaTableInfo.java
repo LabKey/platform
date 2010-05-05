@@ -426,6 +426,22 @@ public class SchemaTableInfo implements TableInfo
         {
             String colName = reader.getName();
             ColumnInfo colInfo = getColumn(colName);
+
+            if (null == colInfo)
+            {
+                // TODO: Temp hack for PostgreSQL 9.0 bug with renamed columns
+                if ("dbuserschemaid".equals(colName))
+                    colName = "externalschemaid";
+
+                if ("databaseid".equals(colName))
+                    colName = "fastaid";
+
+                colInfo = getColumn(colName);
+
+                if (null == colInfo)
+                    colInfo = colInfo;
+            }
+
             colInfo.setKeyField(true);
             int keySeq = reader.getKeySeq();
 

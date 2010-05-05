@@ -16,17 +16,18 @@
 
 package org.labkey.api.module;
 
-import org.labkey.api.query.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.Filter;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -38,18 +39,24 @@ public class SimpleModuleUserSchema extends UserSchema
 
     public SimpleModuleUserSchema(String name, String description, User user, Container container, DbSchema dbschema)
     {
+        this(name, description, user, container, dbschema, null);
+    }
+
+    public SimpleModuleUserSchema(String name, String description, User user, Container container, DbSchema dbschema, @Nullable Filter<TableInfo> filter)
+    {
         super(name, description, user, container, dbschema);
         _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
         if (_dbSchema != null)
         {
             for (SchemaTableInfo table : _dbSchema.getTables())
-                _tables.put(table.getName(), table);
+                if (null == filter || filter.accept(table))
+                    _tables.put(table.getName(), table);
         }
     }
 
     protected TableInfo createTable(String name)
     {
-        SchemaTableInfo schematable = getDbSchema().getTable(name);
+        SchemaTableInfo schematable = _tables.get(name);
         if (schematable == null)
             return null;
         return createTable(name, schematable);

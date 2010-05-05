@@ -23,8 +23,8 @@ import java.io.Writer;
 import java.util.Stack;
 
 /**
- * Used by API actions to writer various types of objects to the response stream.
- * Note that this class is abstract--use the dervied classes to writer objects
+ * Used by API actions to write various types of objects to the response stream.
+ * Note that this class is abstract--use the derived classes to write objects
  * in various formats (JSON, XML, etc.)
  *
  * Created by IntelliJ IDEA.

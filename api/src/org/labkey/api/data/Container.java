@@ -54,13 +54,12 @@ import java.util.*;
  */
 public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext
 {
-    static Logger _log = Logger.getLogger(Container.class);
+    private static final Logger _log = Logger.getLogger(Container.class);
 
-    String _id;
-    Path _path;
-    Date _created;
-
-    int _rowId; //Unique for this installation
+    private String _id;
+    private Path _path;
+    private Date _created;
+    private int _rowId; //Unique for this installation
 
     /** Used to arbitrarily reorder siblings within a container. */
     private int _sortOrder;
@@ -69,8 +68,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private transient Module _defaultModule;
     private transient Set<Module> _activeModules;
 
-    boolean _inheritedAcl;
-    transient WeakReference<Container> _parent;
+    private transient WeakReference<Container> _parent;
 
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
     private transient FolderType _folderType;
