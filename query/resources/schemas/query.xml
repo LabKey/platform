@@ -82,6 +82,9 @@
             <ns:column columnName="Indexable">
                 <ns:description>Determines whether the schema should be indexed for full-text searching.</ns:description>
             </ns:column>
+            <ns:column columnName="Tables">
+                <ns:description>Allows exposing selected tables in the schema.</ns:description>
+            </ns:column>
             <ns:column columnName="MetaData">
                 <ns:description>You can use a specialized XML format to specify which columns are look-ups, formats, captions, etc.</ns:description>
             </ns:column>

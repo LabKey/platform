@@ -16,9 +16,9 @@
 
 package org.labkey.query.persist;
 
-import org.labkey.api.data.Entity;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.CacheKey;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Entity;
 
 public class ExternalSchemaDef extends Entity
 {
@@ -46,6 +46,7 @@ public class ExternalSchemaDef extends Entity
     private String _metaData;
     private String _dataSource;
     private boolean _indexable;
+    private String _tables = "*";
 
     public int getExternalSchemaId()
     {
@@ -142,5 +143,15 @@ public class ExternalSchemaDef extends Entity
     public void setIndexable(boolean indexable)
     {
         _indexable = indexable;
+    }
+
+    public String getTables()
+    {
+        return _tables;
+    }
+
+    public void setTables(String tables)
+    {
+        _tables = tables;
     }
 }

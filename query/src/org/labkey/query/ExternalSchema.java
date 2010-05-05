@@ -16,26 +16,57 @@
 
 package org.labkey.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Filter;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.ExternalSchemaTable;
 import org.labkey.query.persist.ExternalSchemaDef;
 
+import java.util.Arrays;
+import java.util.Set;
+
 public class ExternalSchema extends SimpleModuleUserSchema
 {
-    private ExternalSchemaDef _def;
+    private final ExternalSchemaDef _def;
 
-    public  ExternalSchema(User user, Container container, ExternalSchemaDef def)
+    public ExternalSchema(User user, Container container, ExternalSchemaDef def)
     {
-        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def));
+        super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def), new ExternalSchemaFilter(def));
         _def = def;
 
         assert _dbSchema != null;
+    }
+
+    private static class ExternalSchemaFilter implements Filter<TableInfo>
+    {
+        private final Set<String> _tableNameSet;
+
+        private ExternalSchemaFilter(ExternalSchemaDef def)
+        {
+            String allowedTables = def.getTables();
+
+            if ("*".equals(allowedTables))
+            {
+                _tableNameSet = null;
+            }
+            else
+            {
+                _tableNameSet = new CaseInsensitiveHashSet(Arrays.asList(StringUtils.split(allowedTables, ",")));
+            }
+        }
+
+        @Override
+        public boolean accept(TableInfo table)
+        {
+            return null == _tableNameSet || _tableNameSet.contains(table.getName());
+        }
     }
 
     public static DbSchema getDbSchema(ExternalSchemaDef def)

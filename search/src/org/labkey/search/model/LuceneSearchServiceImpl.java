@@ -788,8 +788,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, recursive);
-
             TopDocs topDocs;
+
             if (null == sort)
                 topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
             else

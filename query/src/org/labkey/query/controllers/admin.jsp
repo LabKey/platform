@@ -83,7 +83,7 @@ if (null != reloadedSchema)
     if (getUser().isAdministrator())
     { %>
     <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, c)%>" text="define new schema"/>
-    <labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, c)%>" text="define multiple new schemas"/><%
+    <!--TODO: Enable bulk publish/unpublish labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, c)%>" text="define multiple new schemas"/--><%
     }
 
     if (defs.length > 1)

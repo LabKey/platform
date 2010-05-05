@@ -2885,6 +2885,70 @@ public class QueryController extends SpringActionController
     }
 
 
+    public static class GetTablesForm
+    {
+        private String _dataSource;
+        private String _schemaName;
+
+        public String getDataSource()
+        {
+            return _dataSource;
+        }
+
+        public void setDataSource(String dataSource)
+        {
+            _dataSource = dataSource;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class GetTablesAction extends ApiAction<GetTablesForm>
+    {
+        @Override
+        public ApiResponse execute(GetTablesForm form, BindException errors) throws Exception
+        {
+            DbScope scope = DbScope.getDbScope(form.getDataSource());
+            DbSchema schema = scope.getSchema(form.getSchemaName());
+            List<String> tableNames = new ArrayList<String>();
+
+            for (TableInfo table : schema.getTables())
+                tableNames.add(table.getName());
+
+            Collections.sort(tableNames);
+
+            final Map<String, Object> properties = new HashMap<String, Object>();
+            List<Map<String, Object>> rows = new LinkedList<Map<String, Object>>();
+
+            boolean sel = true;
+
+            for (String tableName : tableNames)
+            {
+                Map<String, Object> row = new LinkedHashMap<String, Object>();
+               
+                row.put("table", tableName);
+                row.put("selected", sel);
+                sel = !sel;
+
+                rows.add(row);
+            }
+
+            properties.put("rows", rows);
+
+            return new ApiSimpleResponse(properties);
+        }
+    }
+
+
     public static ActionURL getDeleteExternalSchemaURL(Container c, int schemaId)
     {
         ActionURL url = new ActionURL(DeleteExternalSchemaAction.class, c);

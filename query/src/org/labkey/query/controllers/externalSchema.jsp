@@ -110,8 +110,41 @@ var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'
 var editableCheckBox = new LABKEY.ext.Checkbox({name:'editable', id:'myeditable', fieldLabel:'Editable', helpPopup:{title:'Editable', html:'<%=bean.getHelpHTML("Editable")%>'}});
 var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myeditable',*/ fieldLabel:'Index Schema Meta Data', helpPopup:{title:'Index Schema Meta Data', html:'<%=bean.getHelpHTML("Indexable")%>'}, checked:<%=def.isIndexable()%>});
 var metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:800, height:400, resizable:true, autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"}, helpPopup:{title:'Meta Data', html:'<%=bean.getHelpHTML("MetaData")%>'}, value:<%=PageFlowUtil.jsString(def.getMetaData())%>});
+var tableText = new Ext.form.TextField({name:'tables', hidden:true});
 
-var f = new LABKEY.ext.FormPanel({
+    // create the data store
+    var tableStore = new Ext.data.JsonStore({
+        url: 'getTables.api',
+        autoDestroy: true,
+        storeId: 'tables',
+        idProperty: 'table',
+        root: 'rows',
+        fields: ['table']
+    });
+
+    var selModel = new Ext.grid.CheckboxSelectionModel();
+
+    var initialTables = '<%=def.getTables()%>';
+
+    // create the Grid
+    var grid = new Ext.grid.GridPanel({
+        fieldLabel:'Tables',
+        title:'All tables in this schema will be published; click + to select a subset',
+        store: tableStore,
+        columns: [
+            selModel,
+            {id:'table', width: 160, sortable: false, dataIndex: 'table'}
+        ],
+        stripeRows: true,
+        collapsed: true,
+        collapsible: true,
+        autoExpandColumn: 'table',
+        height: 500,
+        width: 600,
+        selModel: selModel
+    });
+
+    var f = new LABKEY.ext.FormPanel({
         width:955,
         labelWidth:150,
         border:false,
@@ -122,9 +155,11 @@ var f = new LABKEY.ext.FormPanel({
             userSchemaText,
             editableCheckBox,
             indexableCheckBox,
-            metaDataTextArea
+            grid,
+            metaDataTextArea,
+            tableText
         ],
-        buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:function() {f.getForm().submit();}}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
+        buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
         buttonAlign:'left'
     });
 
@@ -136,6 +171,7 @@ Ext.onReady(function()
     includeSystemCheckBox.on('check', includeSystemCheckBox_onCheck);
     dbSchemaCombo.on('select', dbSchemaCombo_onSelect);
     initEditable(<%=def.isEditable()%>, <%=initialScope.getSqlDialect().isEditable()%>);
+    loadTables();
 });
 
 // Populate the "Database Schema Name" combobox with new data source's schemas
@@ -161,11 +197,90 @@ function dbSchemaCombo_onSelect()
     var dataSourceIndex = store.find("value", dataSourceCombo.getValue());
     initEditable(false, dataSources[dataSourceIndex][2]);
     metaDataTextArea.setValue("");
+    loadTables();
 }
 
 function initEditable(value, enabled)
 {
     editableCheckBox.setValue(value);
     editableCheckBox.setDisabled(!enabled);
+}
+
+function loadTables()
+{
+    var dataSource = dataSourceCombo.getValue();
+    var schemaName = dbSchemaCombo.getValue();
+
+    // Don't bother loading tables if either is empty (e.g., insert case)
+    if (dataSource && schemaName)
+    {
+        tableStore.load({
+            params: {dataSource: dataSource, schemaName: schemaName},
+            callback: tablesLoaded
+        });
+    }
+}
+
+function tablesLoaded()
+{
+    if ('*' == initialTables)
+    {
+        grid.selModel.selectAll();
+    }
+    else
+    {
+        var tableNames = initialTables.split(',');
+        var recordArray = [];
+
+        for (var i = 0; i < tableNames.length; i++)
+            recordArray.push(tableStore.getById(tableNames[i]));
+
+        grid.selModel.selectRecords(recordArray);
+        initialTables = '*';
+    }
+
+    updateTableTitle();
+}
+
+function submit()
+{
+    if (grid.selModel.getCount() == tableStore.getCount())
+    {
+        tableText.setValue('*');
+    }
+    else
+    {
+        var value = '';
+        var sep = '';
+        grid.selModel.each(function(record) {
+                value = value + sep + record.get('table');
+                sep = ',';
+            });
+        tableText.setValue(value);
+    }
+
+    f.getForm().submit();
+}
+
+function updateTableTitle()
+{
+    var selectedCount = grid.selModel.getCount();
+    var title;
+
+    if (selectedCount == tableStore.getCount())
+    {
+        title = "All (" + selectedCount + ") tables";
+    }
+    else
+    {
+        if (0 == selectedCount)
+            title = "No tables";
+        else if (1 == selectedCount)
+            title = "1 table";
+        else
+            title = selectedCount + " tables";
+    }
+
+    grid.setTitle(title + " in this schema will be published; click + to change the selected tables");
 }
 </script>
