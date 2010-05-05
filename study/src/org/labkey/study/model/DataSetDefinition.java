@@ -458,6 +458,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     TableInfo tinfoFrom = getJoinTableInfo(user);
                     tinfoMat = materialize(tinfoFrom, tempName);
+                    tinfoMat.setButtonBarConfig(tinfoFrom.getButtonBarConfig());
 
                     mlo.tinfoFrom = tinfoFrom;
                     mlo.tinfoMat = tinfoMat;
@@ -695,14 +696,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private static class StudyDataTableInfo extends SchemaTableInfo
     {
+        private Container _container;
+        private User _user;
         int _datasetId;
         SQLFragment _fromSql;
 
         StudyDataTableInfo(DataSetDefinition def, final User user)
         {
             super(def.getLabel(), StudySchema.getInstance().getSchema());
-            final Container c = def.getContainer();
-            Study study = StudyManager.getInstance().getStudy(c);
+            _container = def.getContainer();
+            _user = user;
+            Study study = StudyManager.getInstance().getStudy(_container);
             _datasetId = def.getDataSetId();
 
             TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData();
@@ -718,14 +722,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 ColumnInfo wrapped = newDatasetColumnInfo(this, col);
                 if (ptid)
                 {
-                    wrapped.setName(StudyService.get().getSubjectColumnName(c));
-                    wrapped.setLabel(StudyService.get().getSubjectColumnName(c));
-                    wrapped.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(c, SpecimenService.CompletionType.ParticipantId));
+                    wrapped.setName(StudyService.get().getSubjectColumnName(_container));
+                    wrapped.setLabel(StudyService.get().getSubjectColumnName(_container));
+                    wrapped.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.ParticipantId));
                 }
                 columns.add(wrapped);
             }
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
-            sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(c, SpecimenService.CompletionType.VisitId));
+            sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
 
             if (study.getTimepointType() != TimepointType.VISIT)
             {
@@ -770,7 +774,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columns.add(qcStateCol);
 
             // Property columns
-            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, c, user);
+            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, _container, _user);
             columns.addAll(Arrays.asList(columnsLookup));
             ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
             visitRowId.setHidden(true);
@@ -791,14 +795,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // Add the dataset table via a foreign key lookup
             String datasetSql = "(SELECT D.entityid FROM " + datasetTable + " D WHERE " +
-                    "D.container ='" + c.getId() + "' AND D.datasetid = " + _datasetId + ")";
+                    "D.container ='" + _container.getId() + "' AND D.datasetid = " + _datasetId + ")";
 
             ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment(datasetSql), Types.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    return new DataSetsTable(new StudyQuerySchema(StudyManager.getInstance().getStudy(c), user, true));
+                    return new DataSetsTable(new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), user, true));
                 }
             };
             datasetColumn.setFk(datasetFk);
@@ -813,11 +817,35 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
             _fromSql = new SQLFragment(
-                    "SELECT SD.container, SD.lsid, SD.ParticipantId AS " + StudyService.get().getSubjectColumnName(c) + ", SD.ParticipantSequenceKey, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
+                    "SELECT SD.container, SD.lsid, SD.ParticipantId AS " + StudyService.get().getSubjectColumnName(_container) + ", SD.ParticipantSequenceKey, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
                     "  FROM " + studyData.getSelectName() + " SD LEFT OUTER JOIN " + participantVisit.getSelectName() + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+
                     "  WHERE SD.container=? AND SD.datasetid=?");
-            _fromSql.add(c);
+            _fromSql.add(_container);
             _fromSql.add(_datasetId);
+        }
+
+        @Override
+        public ButtonBarConfig getButtonBarConfig()
+        {
+            // Check first to see if this table has explicit button configuration.  This currently will
+            // never be the case, since dataset tableinfo's don't have a place to declare button config,
+            // but future changes to enable hard dataset tables may enable this.
+            ButtonBarConfig config = super.getButtonBarConfig();
+            if (config != null)
+                return config;
+
+            // If no button config was found for this dataset, fall back to the button config on StudyData.  This
+            // lets users configure buttons that should appear on all datasets.
+            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), _user, true);
+            try
+            {
+                TableInfo studyData = schema.getTable(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
+                return studyData.getButtonBarConfig();
+            }
+            catch (UnauthorizedException e)
+            {
+                return null;
+            }
         }
 
         @Override

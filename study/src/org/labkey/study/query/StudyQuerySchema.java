@@ -44,6 +44,7 @@ public class StudyQuerySchema extends UserSchema
 
     private Map<Integer, List<Double>> _datasetSequenceMap;
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
+    public static final String STUDY_DATA_TABLE_NAME = "StudyData";
 
     public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
@@ -85,7 +86,7 @@ public class StudyQuerySchema extends UserSchema
         if (_study != null)
         {
             // All these require studies defined
-            ret.add("StudyData");
+            ret.add(STUDY_DATA_TABLE_NAME);
             ret.add(StudyService.get().getSubjectTableName(getContainer()));
             ret.add("Site");
             if (_study.getTimepointType() != TimepointType.CONTINUOUS)
@@ -196,7 +197,7 @@ public class StudyQuerySchema extends UserSchema
         if (_study == null)
             return null;
 
-        if ("StudyData".equalsIgnoreCase(name))
+        if (STUDY_DATA_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyDataTable ret = new StudyDataTable(this);
             return ret;
