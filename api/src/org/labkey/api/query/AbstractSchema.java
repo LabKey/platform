@@ -118,5 +118,4 @@ abstract public class AbstractSchema implements QuerySchema
             t.afterConstruct();
         }
     }
-
 }
