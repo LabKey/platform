@@ -368,7 +368,7 @@ public class SearchController extends SpringActionController
             {
                 List<SecurableResource> resources = ss.getSecurableResources(getViewContext().getUser());
 
-                if (resources.size() < 0)
+                if (resources.size() < 1)
                 {
                     message = "No securable resources found";
                 }

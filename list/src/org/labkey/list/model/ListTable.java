@@ -17,16 +17,17 @@
 package org.labkey.list.model;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.*;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.view.ListController;
 
@@ -173,12 +174,12 @@ public class ListTable extends FilteredTable
                 return titleColumn.getName();
         }
 
-        // Title column setting is <AUTO> -- select the first string column
+        // Title column setting is <AUTO> -- select the first string column that's not a lookup (see #9114)
         for (ColumnInfo column : getColumns())
-            if (column.isStringType())
+            if (column.isStringType() && null == column.getFk())
                 return column.getName();
 
-        // No string columns -- fall back to pk (see issue #5452)
+        // No non-FK string columns -- fall back to pk (see issue #5452)
         return colKey.getName();
     }
 

@@ -54,6 +54,11 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         {
             Map<DbScope, JSONArray> map = new LinkedHashMap<DbScope, JSONArray>();
 
+            // Initialize a JSONArray for each scope; later, we'll enumerate and skip the scopes that aren't actually
+            // used in this folder.  This approach ensures we order the scopes naturally (i.e., labkey scope first).
+            for (DbScope scope : DbScope.getDbScopes())
+                map.put(scope, new JSONArray());
+
             //return list of schemas grouped by datasource
             for (String name : defSchema.getUserSchemaNames())
             {
@@ -63,12 +68,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
 
                 DbScope scope = schema.getDbSchema().getScope();
                 JSONArray schemas = map.get(scope);
-
-                if (null == schemas)
-                {
-                    schemas = new JSONArray();
-                    map.put(scope, schemas);
-                }
 
                 JSONObject schemaProps = new JSONObject();
                 schemaProps.put("id", "s:" + name);
@@ -83,17 +82,21 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
             for (Map.Entry<DbScope, JSONArray> entry : map.entrySet())
             {
                 DbScope scope = entry.getKey();
-                String dsName = scope.getDataSourceName();
                 JSONArray schemas = entry.getValue();
-                JSONObject ds = new JSONObject();
-                ds.put("id", "ds:" + dsName);
-                ds.put("text", "Schemas in " + scope.getDisplayName());
-                ds.put("qtip", "Schemas in data source '" + dsName + "'");
-                ds.put("expanded", true);
-                ds.put("children", schemas);
-                ds.put("dataSourceName", dsName);
 
-                respArray.put(ds);
+                if (schemas.length() > 0)
+                {
+                    String dsName = scope.getDataSourceName();
+                    JSONObject ds = new JSONObject();
+                    ds.put("id", "ds:" + dsName);
+                    ds.put("text", "Schemas in " + scope.getDisplayName());
+                    ds.put("qtip", "Schemas in data source '" + dsName + "'");
+                    ds.put("expanded", true);
+                    ds.put("children", schemas);
+                    ds.put("dataSourceName", dsName);
+
+                    respArray.put(ds);
+                }
             }
         }
         else
