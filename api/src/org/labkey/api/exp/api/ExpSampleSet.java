@@ -41,16 +41,24 @@ public interface ExpSampleSet extends ExpObject
      */
     public boolean canImportMoreSamples();
 
+    /** @return true if either using 'Name' as the Id column or uses at least one property for the unique id column. */
     public boolean hasIdColumns();
 
-    /** @return property that determines the first part of the sample set's sample's keys */
+    /** @return true if using 'Name' as the Id column.  getIdCol1(), getIdCol2() and getIdCol3() will all be null. */
+    public boolean hasNameAsIdCol();
+
+    /** @return property that determines the first part of the sample set's sample's keys.  Will be null if using 'Name' as the Id column. */
+    @Nullable
     public DomainProperty getIdCol1();
+
     /** @return property that determines the second part of the sample set's sample's keys */
     @Nullable
     public DomainProperty getIdCol2();
+
     /** @return property that determines the third part of the sample set's sample's keys */
     @Nullable
     public DomainProperty getIdCol3();
+
     /** @return column that contains parent sample names */
     @Nullable
     public DomainProperty getParentCol();
@@ -60,6 +68,4 @@ public interface ExpSampleSet extends ExpObject
     void setMaterialLSIDPrefix(String s);
 
     List<DomainProperty> getIdCols();
-
-    void setIdCols(List<PropertyDescriptor> pds);
 }
