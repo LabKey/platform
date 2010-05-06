@@ -275,6 +275,10 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             setSampleSet(ss, filter);
             addSampleSetColumns(ss, defaultCols);
             setName(_ss.getName());
+
+            ActionURL gridUrl = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
+            gridUrl.addParameter("rowId", ss.getRowId());
+            setGridURL(new DetailsURL(gridUrl));
         }
         else
         {
@@ -285,8 +289,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
         }
 
-        ActionURL url = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        setDetailsURL(new DetailsURL(url, Collections.singletonMap("rowId", "RowId")));
+        ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
+        setDetailsURL(new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId")));
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
