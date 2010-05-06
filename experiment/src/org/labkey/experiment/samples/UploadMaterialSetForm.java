@@ -35,12 +35,11 @@ public class UploadMaterialSetForm extends ViewForm
     private String name;
     private boolean importMoreSamples;
     private boolean nameReadOnly;
-    private boolean createMissingProperties = true;
     private boolean createNewSampleSet = true;
     private String data;
-    private int idColumn1;
-    private int idColumn2;
-    private int idColumn3;
+    private int idColumn1 = -1;
+    private int idColumn2 = -1;
+    private int idColumn3 = -1;
     private int parentColumn;
     private OverwriteChoice overwriteChoice;
 
@@ -82,16 +81,6 @@ public class UploadMaterialSetForm extends ViewForm
         return nameReadOnly;
     }
 
-    public boolean isCreateMissingProperties()
-    {
-        return createMissingProperties;
-    }
-
-    public void setCreateMissingProperties(boolean createMissingProperties)
-    {
-        this.createMissingProperties = createMissingProperties;
-    }
-
     public boolean isCreateNewSampleSet()
     {
         return createNewSampleSet;
@@ -122,10 +111,6 @@ public class UploadMaterialSetForm extends ViewForm
                 tabLoader = new TabLoader(data, true);
                 tabLoader.setThrowOnErrors(true);
                 tabLoader.setScanAheadLineCount(200);
-                ColumnDescriptor cds[] = tabLoader.getColumns();
-                for (ColumnDescriptor cd : cds)
-                    if (!cd.name.startsWith(UploadSamplesHelper.PROPERTY_PREFIX))
-                        cd.name = UploadSamplesHelper.PROPERTY_PREFIX + cd.name;
             }
             catch (IOException ioe)
             {

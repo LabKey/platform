@@ -16,9 +16,9 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -29,6 +29,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -87,7 +88,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public boolean canImportMoreSamples()
     {
-        return getIdCol1() != null;        
+        return hasNameAsIdCol() || getIdCol1() != null;        
     }
 
     private DomainProperty getDomainProperty(String uri)
@@ -110,6 +111,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public List<DomainProperty> getIdCols()
     {
         List<DomainProperty> result = new ArrayList<DomainProperty>();
+        if (hasNameAsIdCol())
+            return result;
+
         result.add(getIdCol1());
         DomainProperty idCol2 = getIdCol2();
         if (idCol2 != null)
@@ -124,24 +128,22 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return result;
     }
 
-    public void setIdCols(List<PropertyDescriptor> pds)
-    {
-        if (pds.size() > 3)
-        {
-            throw new IllegalArgumentException("A maximum of three id columns is supported, but tried to set " + pds.size() + " of them");
-        }
-        _object.setIdCol1(pds.size() > 0 ? pds.get(0).getPropertyURI() : null);
-        _object.setIdCol2(pds.size() > 1 ? pds.get(1).getPropertyURI() : null);
-        _object.setIdCol3(pds.size() > 2 ? pds.get(2).getPropertyURI() : null);
-    }
-
     public boolean hasIdColumns()
     {
         return _object.getIdCol1() != null;
     }
 
+    public boolean hasNameAsIdCol()
+    {
+        return ExpMaterialTable.Column.Name.name().equals(_object.getIdCol1());
+    }
+
+    @Nullable
     public DomainProperty getIdCol1()
     {
+        if (hasNameAsIdCol())
+            return null;
+
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {

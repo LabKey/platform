@@ -53,7 +53,7 @@ public class MaterialSource extends IdentifiableEntity
         this.description = description;
     }
 
-    /** @return PropertyURI for first id column */
+    /** @return PropertyURI or 'Name' for first id column */
     public String getIdCol1()
     {
         return _idCol1;

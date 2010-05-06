@@ -86,7 +86,6 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
         form.setImportMoreSamples(true);
         form.setParentColumn(-1);
         form.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
-        form.setCreateMissingProperties(false);
         form.setCreateNewSampleSet(false);
 
         try

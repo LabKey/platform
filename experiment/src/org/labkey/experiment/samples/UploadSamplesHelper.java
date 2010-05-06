@@ -47,7 +47,6 @@ import java.util.*;
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
-    public static final String PROPERTY_PREFIX = "Property_";
 
     UploadMaterialSetForm _form;
 
@@ -115,51 +114,50 @@ public class UploadSamplesHelper
             boolean addedProperty = false;
             for (ColumnDescriptor cd : columns)
             {
-                String propertyURI = null;
-
-                if (isCommentName(cd.name))
+                if (isReservedHeader(cd.name))
                 {
-                    propertyURI = ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI();
-                }
-                else if (isReservedName(cd.name) && source != null)
-                {
-                    cd.load = false;
+                    // Allow 'Name' and 'Comment' to be loaded by the TabLoader.
+                    // Skip over other reserved names 'RowId', 'Run', etc.
+                    if (isCommentHeader(cd.name))
+                    {
+                        cd.name = ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI();
+                    }
+                    else if (isNameHeader(cd.name))
+                    {
+                        cd.name = ExpMaterialTable.Column.Name.name();
+                    }
+                    else
+                    {
+                        cd.load = false;
+                    }
                 }
                 else
                 {
                     DomainProperty pd = descriptorsByName.get(cd.name);
-                    if ((_form.isCreateMissingProperties() && pd == null) || source == null)
+                    if (pd == null && source == null)
                     {
                         pd = domain.addProperty();
                         //todo :  name for domain?
-                        if (cd.name.startsWith(PROPERTY_PREFIX))
-                        {
-                            pd.setName(cd.name);
-                            pd.setLabel(cd.name.substring(PROPERTY_PREFIX.length()));
-                        }
-                        else
-                        {
-                            pd.setName(PROPERTY_PREFIX + cd.name);
-                            pd.setLabel(cd.name);
-                        }
+                        pd.setName(cd.name);
                         String legalName = ColumnInfo.legalNameFromName(cd.name);
-                        propertyURI = materialSourceLsid + "#" + legalName;
+                        String propertyURI = materialSourceLsid + "#" + legalName;
                         pd.setPropertyURI(propertyURI);
                         pd.setRangeURI(PropertyType.getFromClass(cd.clazz).getTypeUri());
                         //Change name to be fully qualified string for property
                         descriptorsByName.put(pd.getName(), pd);
                         addedProperty = true;
                     }
-                    if (pd != null)
-                        propertyURI = pd.getPropertyURI();
-                }
 
-                if (propertyURI != null)
-                    cd.name = propertyURI;
+                    if (pd != null)
+                        cd.name = pd.getPropertyURI();
+                    else
+                        cd.load = false;
+                }
             }
 
             if (addedProperty)
             {
+                assert source == null : "Can only add new columns if no sample set already exists";
                 // Need to save the domain - it has at least one new property
                 domain.save(_form.getUser());
             }
@@ -171,22 +169,32 @@ public class UploadSamplesHelper
             }
             descriptors.add(ExperimentProperty.COMMENT.getPropertyDescriptor());
 
-            List<String> idColPropertyURIs;
+
+            boolean usingNameAsUniqueColumn = false;
+            List<String> idColPropertyURIs = new ArrayList<String>();
             if (source != null && source.getIdCol1() != null)
             {
-                idColPropertyURIs = getIdColPropertyURIs(source);
+                usingNameAsUniqueColumn = getIdColPropertyURIs(source, idColPropertyURIs);
             }
             else
             {
                 idColPropertyURIs = new ArrayList<String>();
-                idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
-                if (_form.getIdColumn2() >= 0)
+                if (isNameHeader(columns[_form.getIdColumn1()].name))
                 {
-                    idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
+                    idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
+                    usingNameAsUniqueColumn = true;
                 }
-                if (_form.getIdColumn3() >= 0)
+                else
                 {
-                    idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
+                    idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
+                    if (_form.getIdColumn2() >= 0)
+                    {
+                        idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
+                    }
+                    if (_form.getIdColumn3() >= 0)
+                    {
+                        idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
+                    }
                 }
             }
             String parentColPropertyURI;
@@ -253,7 +261,7 @@ public class UploadSamplesHelper
                 Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
                 source.setLSID(lsid.toString());
                 source.setName(_form.getName());
-                setCols(idColPropertyURIs, parentColPropertyURI, source);
+                setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, source);
                 source.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
                 ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(source);
                 sampleSet.save(_form.getUser());
@@ -266,7 +274,7 @@ public class UploadSamplesHelper
                 {
                     assert source.getName().equals(_form.getName());
                     assert source.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
-                    setCols(idColPropertyURIs, parentColPropertyURI, source);
+                    setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, source);
                     ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(source);
                     sampleSet.save(_form.getUser());
                     source = sampleSet.getDataObject();
@@ -345,51 +353,69 @@ public class UploadSamplesHelper
         return new Pair<MaterialSource, List<ExpMaterial>>(source, materials);
     }
 
-    private boolean isCommentName(String name)
+    private boolean isNameHeader(String name)
+    {
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.Name.name());
+    }
+
+    private boolean isCommentHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
     }
 
-    private boolean isReservedName(String name)
+    private boolean isReservedHeader(String name)
     {
-        if ("CpasType".equalsIgnoreCase(name))
+        if (isNameHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name))
             return true;
-        try
+        for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
         {
-            ExpMaterialTable.Column c = ExpMaterialTable.Column.valueOf(name);
-            return true;
+            if (name.equalsIgnoreCase(column.name()))
+                return true;
         }
-        catch (IllegalArgumentException _)
-        {
-            return false;
-        }
+        return false;
     }
 
-    private List<String> getIdColPropertyURIs(MaterialSource source)
+    private boolean getIdColPropertyURIs(MaterialSource source, List<String> idColNames)
     {
-        List<String> idColNames = new ArrayList<String>();
-        idColNames.add(source.getIdCol1());
-        if (source.getIdCol2() != null)
+        boolean usingNameAsUniqueColumn = false;
+        if (isNameHeader(source.getIdCol1()))
         {
-            idColNames.add(source.getIdCol2());
+            idColNames.add(source.getIdCol1());
+            usingNameAsUniqueColumn = true;
         }
-        if (source.getIdCol3() != null)
+        else
         {
-            idColNames.add(source.getIdCol3());
-        }
-        return idColNames;
-    }
-
-    private void setCols(List<String> idColPropertyURIs, String parentColPropertyURI, MaterialSource source)
-    {
-        assert idColPropertyURIs.size() <= 3 : "Found " + idColPropertyURIs.size() + " id cols but 3 is the limit";
-        source.setIdCol1(idColPropertyURIs.get(0));
-        if (idColPropertyURIs.size() > 1)
-        {
-            source.setIdCol2(idColPropertyURIs.get(1));
-            if (idColPropertyURIs.size() > 2)
+            idColNames.add(source.getIdCol1());
+            if (source.getIdCol2() != null)
             {
-                source.setIdCol3(idColPropertyURIs.get(2));
+                idColNames.add(source.getIdCol2());
+            }
+            if (source.getIdCol3() != null)
+            {
+                idColNames.add(source.getIdCol3());
+            }
+        }
+        return usingNameAsUniqueColumn;
+    }
+
+    private void setCols(boolean usingNameAsUniqueColumn, List<String> idColPropertyURIs, String parentColPropertyURI, MaterialSource source)
+    {
+        if (usingNameAsUniqueColumn)
+        {
+            assert idColPropertyURIs.size() == 1 && idColPropertyURIs.get(0).equals(ExpMaterialTable.Column.Name.name()) : "Expected a single 'Name' id column";
+            source.setIdCol1(ExpMaterialTable.Column.Name.name());
+        }
+        else
+        {
+            assert idColPropertyURIs.size() <= 3 : "Found " + idColPropertyURIs.size() + " id cols but 3 is the limit";
+            source.setIdCol1(idColPropertyURIs.get(0));
+            if (idColPropertyURIs.size() > 1)
+            {
+                source.setIdCol2(idColPropertyURIs.get(1));
+                if (idColPropertyURIs.size() > 2)
+                {
+                    source.setIdCol3(idColPropertyURIs.get(2));
+                }
             }
         }
         if (parentColPropertyURI != null)
@@ -570,7 +596,8 @@ public class UploadSamplesHelper
         MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
         {
             _container = container;
-            _idCols = getIdColPropertyURIs(source);
+            _idCols = new ArrayList<String>();
+            getIdColPropertyURIs(source, _idCols);
             _source = source;
             _user = user;
             _reusedMaterialLSIDs = reusedMaterialLSIDs;

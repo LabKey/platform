@@ -30,6 +30,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 import java.sql.Types;
 
@@ -69,8 +71,6 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             case Name:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Name"));
-                columnInfo.setReadOnly(true);
-                columnInfo.setShownInInsertView(false);
                 return columnInfo;
             }
             case SampleSet:
@@ -220,7 +220,17 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         sourceProtocolCol.setHidden(true);
         sourceProtocolCol.setLabel("Source Protocol");
 
-        addColumn(ExpMaterialTable.Column.Name);
+        ColumnInfo nameCol = addColumn(ExpMaterialTable.Column.Name);
+        if (ss != null && ss.hasNameAsIdCol())
+        {
+            nameCol.setNullable(false);
+            nameCol.setDisplayColumnFactory(new IdColumnRendererFactory());
+        }
+        else
+        {
+            nameCol.setReadOnly(true);
+            nameCol.setShownInInsertView(false);
+        }
 
         ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
         typeColumnInfo.setFk(new LookupForeignKey("lsid")
@@ -291,10 +301,54 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
             ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
+            if (isIdCol(ss, pd))
+            {
+                propColumn.setNullable(false);
+                propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
+            }
             addColumn(propColumn);
             visibleColumns.add(FieldKey.fromParts(pd.getName()));
         }
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    private boolean isIdCol(ExpSampleSet ss, PropertyDescriptor pd)
+    {
+        for (DomainProperty dp : ss.getIdCols())
+            if (dp.getPropertyDescriptor() == pd)
+                return true;
+        return false;
+    }
+
+    private class IdColumnRendererFactory implements DisplayColumnFactory
+    {
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            return new IdColumnRenderer(colInfo);
+        }
+    }
+
+    private class IdColumnRenderer extends DataColumn
+    {
+        public IdColumnRenderer(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        @Override
+        public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+        {
+            if (ctx.getMode() == DataRegion.MODE_INSERT)
+            {
+                super.renderInputCell(ctx, out, span);
+            }
+            else
+            {
+                super.renderHiddenFormInput(ctx, out);
+                super.renderDetailsData(ctx, out, span);
+            }
+        }
     }
 
     public String getPublicSchemaName()

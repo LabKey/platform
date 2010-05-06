@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
+<%@ page import="org.labkey.api.exp.query.ExpMaterialTable" %>
 
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -31,11 +32,47 @@
 %>
 
 <%!
-    public String getLabel(DomainProperty prop)
+    public String getDisplayName(DomainProperty prop)
     {
         if (prop.getLabel() != null)
             return prop.getLabel();
         return prop.getName();
+    }
+
+    public String dumpDomainProperty(DomainProperty dp)
+    {
+        if (dp == null)
+            return "null";
+
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("name : ").append(q(dp.getName())).append(",\n");
+        if (dp.getLabel() != null)
+            sb.append("label : ").append(q(dp.getLabel())).append(",\n");
+        sb.append("displayName : ").append(q(getDisplayName(dp))).append("\n");
+        sb.append("}");
+        return sb.toString();
+    }
+
+    public String dumpSampleSet(ExpSampleSet ss)
+    {
+        if (ss == null)
+            return "null";
+
+        StringBuilder sb = new StringBuilder("{");
+        if (ss.hasNameAsIdCol())
+        {
+            sb.append("col1 : {name: '" + ExpMaterialTable.Column.Name + "'},\n");
+            sb.append("col2 : null,\n");
+            sb.append("col3 : null\n");
+        }
+        else
+        {
+            sb.append("col1 : ").append(dumpDomainProperty(ss.getIdCol1())).append(",\n");
+            sb.append("col2 : ").append(dumpDomainProperty(ss.getIdCol2())).append(",\n");
+            sb.append("col3 : ").append(dumpDomainProperty(ss.getIdCol3())).append("\n");
+        }
+        sb.append("}");
+        return sb.toString();
     }
 %>
 
@@ -60,8 +97,8 @@
         <tr>
             <td class="labkey-form-label">Update Options</td>
             <td>This sample set already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
-                <labkey:radio name="overwriteChoice" id="ignoreOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.ignore%>" currentValue="<%=form.getOverwriteChoice()%>" /> Skip new samples that already exist.<br>
-                <labkey:radio name="overwriteChoice" id="replaceOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.replace%>" currentValue="<%=form.getOverwriteChoice()%>" /> Replace existing samples with new ones.<br>
+                <labkey:radio name="overwriteChoice" id="ignoreOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.ignore%>" currentValue="<%=form.getOverwriteChoice()%>" /> <label for="ignoreOverwriteChoice">Skip new samples that already exist.</label><br>
+                <labkey:radio name="overwriteChoice" id="replaceOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.replace%>" currentValue="<%=form.getOverwriteChoice()%>" /> <label for="replaceOverwriteChoice">Replace existing samples with new ones.</label><br>
             </td>
         </tr>
     <% } %>
@@ -69,7 +106,10 @@
         <td class="labkey-form-label">Sample Set Data</td>
         <td>
             Sample set uploads must formatted as tab separated values (TSV). Copy/paste from Microsoft Excel works well.<br>
-            The first row should contain column names, and subsequent rows should contain the data.<br>
+            The first row should contain column names, and subsequent rows should contain the data.
+            <br>
+            <b>Note:</b> If there is a column <em>'Name'</em>, it will be chosen as the unique identifier for the sample set.
+            <br>
             <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
             <script type="text/javascript">
                 Ext.EventManager.on('textbox', 'keydown', handleTabsInTextArea);
@@ -80,15 +120,22 @@
         <td class="labkey-form-label">Id Columns<%= helpPopup("Id Columns", "Id columns must form a unique key for every row.")%></td>
         <td>
                 <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.hasIdColumns())
-                { %>
-                    <%= h(getLabel(sampleSet.getIdCol1())) %><%
-                    if (sampleSet.getIdCol2() != null)
+                {
+                    if (sampleSet.hasNameAsIdCol())
                     {
-                        %>, <%= h(getLabel(sampleSet.getIdCol2())) %><%
+                        %><%=ExpMaterialTable.Column.Name%><%
                     }
-                    if (sampleSet.getIdCol3() != null)
+                    else
                     {
-                        %>, <%= h(getLabel(sampleSet.getIdCol3())) %><%
+                        %><%= h(getDisplayName(sampleSet.getIdCol1())) %><%
+                        if (sampleSet.getIdCol2() != null)
+                        {
+                            %>, <%= h(getDisplayName(sampleSet.getIdCol2())) %><%
+                        }
+                        if (sampleSet.getIdCol3() != null)
+                        {
+                            %>, <%= h(getDisplayName(sampleSet.getIdCol3())) %><%
+                        }
                     }
                 }
                 else
@@ -127,7 +174,7 @@
         <td>
             <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.getParentCol() != null)
             { %>
-                <%= h(getLabel(sampleSet.getParentCol()))%>
+                <%= h(getDisplayName(sampleSet.getParentCol()))%>
             <% }
             else
             { %>
@@ -149,7 +196,10 @@
 <div style="display:none" id="uploading"><blink>Please wait while data is uploaded.</blink></div>
 </form>
 <script type="text/javascript">
-var fields = new Array();
+var fields = [];
+var header = [];
+var nameColIndex = -1;
+var sampleSet = <%=dumpSampleSet(sampleSet)%>;
 
 function updateIdSelect(select, header, allowBlank)
 {
@@ -163,6 +213,7 @@ function updateIdSelect(select, header, allowBlank)
     {
         var option = new Option("<Paste sample set data, then choose a field>", 0);
         select.options[select.options.length] = option;
+        select.disabled = false;
         return;
     }
     if (allowBlank)
@@ -170,8 +221,18 @@ function updateIdSelect(select, header, allowBlank)
         var option = new Option("", -1);
         select.options[select.options.length] = option;
     }
+
     for (var i = 0; i < header.length; i ++)
     {
+        if (header[i].toLowerCase() == "name")
+        {
+            // Select the 'Name' column for idCol1, unselect for idCol2 and idCol3
+            if (select.id == "idCol1")
+                selectedIndex = select.options.length;
+            else if (select.id == "idCol2" || select.name == "idCol3")
+                selectedIndex = -1;
+        }
+
         var option = new Option(header[i] == "" ? "column" + i : header[i], i);
         select.options[select.options.length] = option;
     }
@@ -179,26 +240,40 @@ function updateIdSelect(select, header, allowBlank)
     {
         select.selectedIndex = selectedIndex;
     }
+
+    // Enable/disable idCol1, idCol2, and idCol3 if "Name" column is present
+    if (select.id in {idCol1:true, idCol2:true, idCol3:true})
+        select.disabled = nameColIndex != -1;
 }
 function updateIds(textbox)
 {
-var txt = textbox.value.trim();
-var rows = txt.split("\n");
-var header = [];
-fields = new Array();
-if (rows.length >= 2)
-  {
-  for (var i = 0; i < rows.length; i++)
+    var txt = textbox.value.trim();
+    var rows = txt.split("\n");
+    header = [];
+    fields = new Array();
+    if (rows.length >= 2)
     {
-    fields[i] = rows[i].split("\t");
+        for (var i = 0; i < rows.length; i++)
+        {
+            fields[i] = rows[i].split("\t");
+        }
+        header = fields[0];
     }
-    header = fields[0];
-  }
 
-updateIdSelect(document.getElementById("idCol1"), header, false);
-updateIdSelect(document.getElementById("idCol2"), header, true);
-updateIdSelect(document.getElementById("idCol3"), header, true);
-updateIdSelect(document.getElementById("parentCol"), header, true);
+    nameColIndex = -1;
+    for (var i = 0; i < header.length; i++)
+    {
+        if (header[i].toLowerCase() == "name")
+        {
+            nameColIndex = i;
+            break;
+        }
+    }
+
+    updateIdSelect(document.getElementById("idCol1"), header, false);
+    updateIdSelect(document.getElementById("idCol2"), header, true);
+    updateIdSelect(document.getElementById("idCol3"), header, true);
+    updateIdSelect(document.getElementById("parentCol"), header, true);
 }
 
 function clearValues()
@@ -210,136 +285,148 @@ function clearValues()
 
 function validateKey()
 {
-var name = document.getElementById("name").value;
-if (!(name != null && name.trim().length > 0))
-{
-    alert("Name is required");
-    return false;
-}
+    var name = document.getElementById("name").value;
+    if (!(name != null && name.trim().length > 0))
+    {
+        alert("Name is required");
+        return false;
+    }
 
-var text = document.getElementById("textbox");
-if (text.value.match("/^\\s*\$/"))
-{
-    alert("Please paste data in text field.");
-    return false;
-}
-if (fields == null || fields.length < 2)
-{
-    alert("Please paste data with at least a header and one row of data.");
-    return false;
-}
-var select1 = document.getElementById("idCol1");
-var col1 = -1;
-var col2 = -1;
-var col3 = -1;
-var col1Name;
-var col2Name;
-var col3Name;
-if (select1)
-{
-    col1 = parseInt(select1.options[select1.selectedIndex].value);
-    col1Name = select1.options[select1.selectedIndex].text;
+    var ignoreOverwriteChoice = document.getElementById("ignoreOverwriteChoice");
+    var replaceOverwriteChoice = document.getElementById("replaceOverwriteChoice");
+    if (ignoreOverwriteChoice && replaceOverwriteChoice)
+    {
+        if (!ignoreOverwriteChoice.checked && !replaceOverwriteChoice.checked)
+        {
+            alert("Please select how to deal with duplicates by selecting one of the update options.");
+            return false;
+        }
+    }
+
+    var text = document.getElementById("textbox");
+    if (text.value.match("/^\\s*\$/"))
+    {
+        alert("Please paste data in text field.");
+        return false;
+    }
+    if (fields == null || fields.length < 2)
+    {
+        alert("Please paste data with at least a header and one row of data.");
+        return false;
+    }
+    var select1 = document.getElementById("idCol1");
     var select2 = document.getElementById("idCol2");
-    col2 = parseInt(select2.options[select2.selectedIndex].value);
-    col2Name = select2.options[select2.selectedIndex].text;
     var select3 = document.getElementById("idCol3");
-    col3 = parseInt(select3.options[select3.selectedIndex].value);
-    col3Name = select3.options[select3.selectedIndex].text;
-
-    if (col2 != -1 && col1 == col2)
+    var colIndex = [ -1, -1, -1 ];
+    var colNames = [ '', '', '' ];
+    if (select1)
     {
-        alert("You cannot use the same id column twice.");
-        return false;
-    }
-    if (col3 != -1 && (col1 == col3 || col2 == col3))
-    {
-        alert("You cannot use the same id column twice.");
-        return false;
-    }
-    // Check if they selected a column 3 but not a column 2
-    if (col3 != -1 && col2 == -1)
-    {
-        col2 = col3;
-        col3 = -1;
-    }
-}
-else
-{
-    col1Name = '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : getLabel(sampleSet.getIdCol1()))%>';
-    col2Name = '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : getLabel(sampleSet.getIdCol2()))%>';
-    col3Name = '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : getLabel(sampleSet.getIdCol3()))%>';
-    for (var col = 0; col < fields[0].length; col++)
-    {
-        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : getLabel(sampleSet.getIdCol1()))%>')
+        if (nameColIndex != -1)
         {
-            col1 = col;
+            colIndex[0] = nameColIndex;
+            colNames[0] = header[nameColIndex];
         }
-        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : getLabel(sampleSet.getIdCol2()))%>')
+        else
         {
-            col2 = col;
-        }
-        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : getLabel(sampleSet.getIdCol3()))%>')
-        {
-            col3 = col;
-        }
-    }
-    if (col1Name != '' && col1 == -1)
-    {
-        alert("You must include the Id column '" + col1Name + "' in your data.");
-        return false;
-    }
-    if (col2Name != '' && col2 == -1)
-    {
-        alert("You must include the Id column '" + col2Name + "' in your data.");
-        return false;
-    }
-    if (col3Name != '' && col3 == -1)
-    {
-        alert("You must include the Id column '" + col3Name + "' in your data.");
-        return false;
-    }
-}
+            colIndex[0] = parseInt(select1.options[select1.selectedIndex].value);
+            colNames[0] = select1.options[select1.selectedIndex].text;
 
-var hash = new Object();
-for (var i = 1; i < fields.length; i++)
-{
-    var val1 = fields[i][col1];
-    if (!val1 || "" == val1)
-    {
-        alert("All samples must include a value in the '" + col1Name + "' column.");
-        return false;
-    }
+            colIndex[1] = parseInt(select2.options[select2.selectedIndex].value);
+            colNames[1] = select2.options[select2.selectedIndex].text;
 
-    var val = "" + val1;
-    if (col2 >= 0)
-    {
-        var val2 = fields[i][col2];
-        if (!val2 || "" == val2)
+            colIndex[2] = parseInt(select3.options[select3.selectedIndex].value);
+            colNames[2] = select3.options[select3.selectedIndex].text;
+        }
+
+        if (colIndex[1] != -1 && colIndex[0] == colIndex[1])
         {
-            alert("All samples must include a value in the '" + col2Name + "' column.");
+            alert("You cannot use the same id column twice.");
             return false;
         }
-        val = val + "-" + val2;
-    }
-    if (col3 >= 0)
-    {
-        var val3 = fields[i][col3];
-        if (!val3 || "" == val3)
+        if (colIndex[2] != -1 && (colIndex[0] == colIndex[2] || colIndex[1] == colIndex[2]))
         {
-            alert("All samples must include a value in the '" + col3Name + "' column.");
+            alert("You cannot use the same id column twice.");
             return false;
         }
-        val = val + "-" + val3;
+        // Check if they selected a column 3 but not a column 2
+        if (colIndex[2] != -1 && colIndex[1] == -1)
+        {
+            colIndex[1] = colIndex[2];
+            colIndex[2] = -1;
+        }
     }
-    if (hash[val])
+    else
     {
-        alert("The ID columns chosen do not form a unique key. The key " + val + " is used more than once.");
-        return false;
+        if (sampleSet != null)
+        {
+            for (var colNum = 0; colNum < 3; colNum++)
+            {
+                var sampleSetCol = sampleSet["col" + (colNum+1)];
+                if (!sampleSetCol)
+                    continue;
+
+                colNames[colNum] = sampleSetCol.displayName;
+
+                for (var col = 0; col < header.length; col++)
+                {
+                    var heading = header[col];
+                    if (!heading)
+                        continue;
+                    heading = heading.toLowerCase();
+                    if (sampleSetCol.name.toLowerCase() == heading || (sampleSetCol.label && sampleSetCol.label.toLowerCase() == heading))
+                    {
+                        colIndex[colNum] = col;
+                        break;
+                    }
+                }
+
+                if (colIndex[colNum] == -1)
+                {
+                    alert("You must include the Id column '" + colNames[colNum] + "' in your data.");
+                    return false;
+                }
+            }
+        }
     }
-    hash[val]= true;
-}
-document.getElementById("uploading").style.display = "";
-return true;
+
+    var hash = new Object();
+    for (var i = 1; i < fields.length; i++)
+    {
+        var val = undefined;
+        for (var colNum = 0; colNum < 3; colNum++)
+        {
+            var index = colIndex[colNum];
+            if (colNum > 0 && index == -1)
+                continue;
+            var colVal = fields[i][index];
+            if (!colVal || "" == colVal)
+            {
+                alert("All samples must include a value in the '" + colNames[colNum] + "' column.");
+                return false;
+            }
+
+            val = (colNum == 0 ? colVal : val + "-" + colVal);
+        }
+
+        if (hash[val])
+        {
+            alert("The ID columns chosen do not form a unique key. The key " + val + " is on rows " + hash[val] + " and " + i + ".");
+            return false;
+        }
+        hash[val] = i;
+    }
+
+    // As the last step, make sure we don't post the select2 and select3 values
+    if (select1 && nameColIndex > -1)
+    {
+        select1.selectedIndex = nameColIndex;
+        select1.disabled = false; // disabled inputs don't post values
+        if (select2) select2.selectedIndex = -1;
+        if (select3) select3.selectedIndex = -1;
+    }
+
+    document.getElementById("uploading").style.display = "";
+    return true;
 }
 updateIds(document.getElementById("textbox"));
 </script>

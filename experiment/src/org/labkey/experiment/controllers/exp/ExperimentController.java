@@ -452,7 +452,6 @@ public class ExperimentController extends SpringActionController
             uploadForm.setImportMoreSamples(true);
             uploadForm.setParentColumn(-1);
             uploadForm.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
-            uploadForm.setCreateMissingProperties(false);
             uploadForm.setCreateNewSampleSet(false);
             uploadForm.setLoader(new MapTabLoader(form.getMaterials()));
 
