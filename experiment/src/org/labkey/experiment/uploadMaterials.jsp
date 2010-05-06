@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.exp.query.ExpMaterialTable" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -36,7 +37,7 @@
     {
         if (prop.getLabel() != null)
             return prop.getLabel();
-        return prop.getName();
+        return ColumnInfo.labelFromName(prop.getName());
     }
 
     public String dumpDomainProperty(DomainProperty dp)
@@ -44,11 +45,20 @@
         if (dp == null)
             return "null";
 
+        String displayName = getDisplayName(dp);
+
         StringBuilder sb = new StringBuilder("{");
         sb.append("name : ").append(q(dp.getName())).append(",\n");
-        if (dp.getLabel() != null)
-            sb.append("label : ").append(q(dp.getLabel())).append(",\n");
-        sb.append("displayName : ").append(q(getDisplayName(dp))).append("\n");
+        sb.append("label : ").append(q(displayName)).append(",\n");
+
+        sb.append("aliases : [");
+        sb.append(q(dp.getName())).append(", ");
+        sb.append(q(displayName)).append(", ");
+        for (String alias : dp.getImportAliasSet())
+            sb.append(alias).append(", ");
+        sb.append(q(dp.getPropertyURI()));
+        sb.append("]");
+
         sb.append("}");
         return sb.toString();
     }
@@ -365,7 +375,7 @@ function validateKey()
                 if (!sampleSetCol)
                     continue;
 
-                colNames[colNum] = sampleSetCol.displayName;
+                colNames[colNum] = sampleSetCol.label;
 
                 for (var col = 0; col < header.length; col++)
                 {
@@ -373,10 +383,14 @@ function validateKey()
                     if (!heading)
                         continue;
                     heading = heading.toLowerCase();
-                    if (sampleSetCol.name.toLowerCase() == heading || (sampleSetCol.label && sampleSetCol.label.toLowerCase() == heading))
+                    for (var aliasIndex = 0; aliasIndex < sampleSetCol.aliases.length; aliasIndex++)
                     {
-                        colIndex[colNum] = col;
-                        break;
+                        var alias = sampleSetCol.aliases[aliasIndex];
+                        if (alias && alias.toLowerCase() == heading)
+                        {
+                            colIndex[colNum] = col;
+                            break;
+                        }
                     }
                 }
 
