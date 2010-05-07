@@ -17,6 +17,7 @@ package org.labkey.search.model;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.SimpleAnalyzer;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 
 /**
@@ -24,8 +25,15 @@ import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
  * Date: Apr 19, 2010
  * Time: 9:02:20 PM
  */
+@SuppressWarnings({"UnusedDeclaration"})
 public enum ExternalAnalyzer
 {
+    SimpleAnalyzer {
+        @Override
+        Analyzer getAnalyzer()
+        {
+            return new SimpleAnalyzer();
+        }},
     KeywordAnalyzer {
         @Override
         Analyzer getAnalyzer()
