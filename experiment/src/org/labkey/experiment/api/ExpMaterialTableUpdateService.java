@@ -164,8 +164,9 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
     {
         int[] ids = new int[keys.size()];
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
-        for (Map<String, Object> k : keys)
+        for (int i = 0; i < keys.size(); i++)
         {
+            Map<String, Object> k = keys.get(i);
             Integer rowId = getMaterialRowId(k);
             Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
             if (map == null)
@@ -176,6 +177,7 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
             if (rowId == null)
                 throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
 
+            ids[i] = rowId.intValue();
             result.add(map);
         }
 

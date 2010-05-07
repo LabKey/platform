@@ -71,7 +71,12 @@
         StringBuilder sb = new StringBuilder("{");
         if (ss.hasNameAsIdCol())
         {
-            sb.append("col1 : {name: '" + ExpMaterialTable.Column.Name + "'},\n");
+            sb.append("col1 : {");
+            sb.append("name: '").append(ExpMaterialTable.Column.Name).append("',\n");
+            sb.append("label: '").append(ExpMaterialTable.Column.Name).append("',\n");
+            sb.append("aliases: [ '").append(ExpMaterialTable.Column.Name).append("' ]");
+            sb.append("},\n");
+
             sb.append("col2 : null,\n");
             sb.append("col3 : null\n");
         }
