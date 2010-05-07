@@ -34,9 +34,10 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.experiment.samples.UploadMaterialSetForm.*;
 
 /**
  * User: kevink
@@ -76,7 +77,7 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
         return null;
     }
 
-    private List<ExpMaterial> insertOrUpdate(User user, Container container, List<Map<String, Object>> rows)
+    private List<ExpMaterial> insertOrUpdate(InsertUpdateChoice insertUpdate, User user, Container container, List<Map<String, Object>> rows)
             throws QueryUpdateServiceException, ValidationException
     {
         UploadMaterialSetForm form = new UploadMaterialSetForm();
@@ -85,7 +86,7 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
         form.setName(_ss.getName());
         form.setImportMoreSamples(true);
         form.setParentColumn(-1);
-        form.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
+        form.setInsertUpdateChoice(insertUpdate.name());
         form.setCreateNewSampleSet(false);
 
         try
@@ -136,7 +137,7 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        List<ExpMaterial> materials = insertOrUpdate(user, container, rows);
+        List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows);
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
         for (ExpMaterial material : materials)
         {
@@ -149,7 +150,7 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        List<ExpMaterial> materials = insertOrUpdate(user, container, rows);
+        List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows);
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(materials.size());
         for (ExpMaterial material : materials)
         {

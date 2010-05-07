@@ -69,7 +69,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -451,7 +450,7 @@ public class ExperimentController extends SpringActionController
             uploadForm.setName(form.getName());
             uploadForm.setImportMoreSamples(true);
             uploadForm.setParentColumn(-1);
-            uploadForm.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
+            uploadForm.setInsertUpdateChoice(UploadMaterialSetForm.InsertUpdateChoice.insertOrUpdate.name());
             uploadForm.setCreateNewSampleSet(false);
             uploadForm.setLoader(new MapTabLoader(form.getMaterials()));
 
@@ -2420,7 +2419,7 @@ public class ExperimentController extends SpringActionController
                         errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
                                 "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
                     }
-                    if (form.isImportMoreSamples() && form.getOverwriteChoice() == null)
+                    if (form.isImportMoreSamples() && form.getInsertUpdateChoice() == null)
                     {
                         errors.reject(ERROR_MSG, "Please select how to deal with duplicates.");
                     }

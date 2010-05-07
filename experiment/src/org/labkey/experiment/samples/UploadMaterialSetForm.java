@@ -17,11 +17,9 @@
 package org.labkey.experiment.samples;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.view.ViewForm;
-import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -41,14 +39,23 @@ public class UploadMaterialSetForm extends ViewForm
     private int idColumn2 = -1;
     private int idColumn3 = -1;
     private int parentColumn;
-    private OverwriteChoice overwriteChoice;
+    private InsertUpdateChoice insertUpdateChoice;
 
     private DataLoader _loader;
 
-    public enum OverwriteChoice
+    public enum InsertUpdateChoice
     {
-        ignore,
-        replace,
+        /** Insert new rows only.  If the row already exists, throw an error. */
+        insertOnly,
+
+        /** Insert new rows only.  Ignore existing rows. */
+        insertIgnore,
+
+        /** Insert a new row or update an existing row. Upsert! */
+        insertOrUpdate,
+
+        /** Update an existing row.  If the row doesn't exist, throw an error. */
+        updateOnly,
     }
 
     public void setName(String name)
@@ -170,19 +177,19 @@ public class UploadMaterialSetForm extends ViewForm
         this.parentColumn = parentColumn;
     }
 
-    public String getOverwriteChoice()
+    public String getInsertUpdateChoice()
     {
-        return overwriteChoice == null ? null : overwriteChoice.toString();
+        return insertUpdateChoice == null ? null : insertUpdateChoice.toString();
     }
 
-    public OverwriteChoice getOverwriteChoiceEnum()
+    public InsertUpdateChoice getInsertUpdateChoiceEnum()
     {
-        return overwriteChoice;
+        return insertUpdateChoice;
     }
 
-    public void setOverwriteChoice(String choice)
+    public void setInsertUpdateChoice(String choice)
     {
-        overwriteChoice = OverwriteChoice.valueOf(choice);
+        insertUpdateChoice = InsertUpdateChoice.valueOf(choice);
     }
 
     public Map<Integer, String> getKeyOptions(boolean allowBlank)

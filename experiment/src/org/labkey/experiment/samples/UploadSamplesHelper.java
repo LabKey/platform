@@ -38,7 +38,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.*;
-import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
+import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -113,6 +113,7 @@ public class UploadSamplesHelper
             }
             Map<String, DomainProperty> descriptorsByName = domain.createImportMap(true);
 
+            boolean hasCommentHeader = false;
             boolean addedProperty = false;
             for (ColumnDescriptor cd : columns)
             {
@@ -122,6 +123,7 @@ public class UploadSamplesHelper
                     // Skip over other reserved names 'RowId', 'Run', etc.
                     if (isCommentHeader(cd.name))
                     {
+                        hasCommentHeader = true;
                         cd.name = ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI();
                     }
                     else if (isNameHeader(cd.name))
@@ -290,48 +292,48 @@ public class UploadSamplesHelper
                         throw new ExperimentException("Your upload must contain the original id columns");
                     }
                 }
-                if (_form.getOverwriteChoiceEnum() == OverwriteChoice.ignore)
+
+                UploadMaterialSetForm.InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
+                ListIterator<Map<String, Object>> li = maps.listIterator();
+                while (li.hasNext())
                 {
-                    List<Map<String, Object>> newMaps = new ArrayList<Map<String, Object>>();
-                    for (Map<String, Object> map : maps)
+                    Map<String, Object> map = li.next();
+                    String name = decideName(map, idColPropertyURIs);
+                    String lsid = new Lsid(source.getMaterialLSIDPrefix() + name).toString();
+                    ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+
+                    if (material == null)
                     {
-                        String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
-                        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-                        if (material == null)
-                        {
-                            newMaps.add(map);
-                        }
+                        if (insertUpdate == InsertUpdateChoice.updateOnly)
+                            throw new ExperimentException("Can't update; material not found for '" + name + "' in folder '" + getContainer().getPath() + "'");
                     }
-                    maps = newMaps;
-                }
-                else if (_form.getOverwriteChoiceEnum() == OverwriteChoice.replace)
-                {
-                    ListIterator<Map<String, Object>> li = maps.listIterator();
-                    while (li.hasNext())
+                    else
                     {
-                        Map<String, Object> map = li.next();
-                        String lsid = new Lsid(source.getMaterialLSIDPrefix() + decideName(map, idColPropertyURIs)).toString();
-                        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-                        if (material != null)
+                        if (insertUpdate == UploadMaterialSetForm.InsertUpdateChoice.insertOnly)
+                            throw new ExperimentException("Can't insert; material already exists for '" + name + "' in folder '" + material.getContainer().getPath() + "'");
+
+                        if (insertUpdate == InsertUpdateChoice.insertIgnore)
                         {
-                            if (!material.getContainer().equals(getContainer()))
-                            {
-                                throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
-                            }
-
-                            // 8309 : preserve comment property on existing materials
-                            String oldComment = material.getComment();
-                            String newComment = (String)map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
-                            if (StringUtils.isEmpty(newComment) && oldComment != null)
-                            {
-                                Map<String, Object> newMap = new HashMap<String, Object>(map);
-                                newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
-                                li.set(newMap);
-                            }
-
-                            OntologyManager.deleteOntologyObjects(_form.getContainer(), material.getLSID());
-                            reusedMaterialLSIDs.add(lsid);
+                            li.remove();
+                            continue;
                         }
+
+                        if (!material.getContainer().equals(getContainer()))
+                            throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
+
+                        // 8309 : preserve comment property on existing materials
+                        // 10164 : Deleting flag/comment doesn't clear flag/comment after reupload
+                        String oldComment = material.getComment();
+                        String newComment = (String)map.get(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI());
+                        if (StringUtils.isEmpty(newComment) && !hasCommentHeader && oldComment != null)
+                        {
+                            Map<String, Object> newMap = new HashMap<String, Object>(map);
+                            newMap.put(ExperimentProperty.COMMENT.getPropertyDescriptor().getPropertyURI(), oldComment);
+                            li.set(newMap);
+                        }
+
+                        OntologyManager.deleteOntologyObjects(_form.getContainer(), material.getLSID());
+                        reusedMaterialLSIDs.add(lsid);
                     }
                 }
             }

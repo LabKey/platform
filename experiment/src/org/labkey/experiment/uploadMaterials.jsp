@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm" %>
+<%@ page import="org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.exp.query.ExpMaterialTable" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
@@ -110,10 +111,12 @@
     </tr>
     <% if (form.isImportMoreSamples()) { %>
         <tr>
-            <td class="labkey-form-label">Update Options</td>
+            <td class="labkey-form-label">Insert/Update Options</td>
             <td>This sample set already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
-                <labkey:radio name="overwriteChoice" id="ignoreOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.ignore%>" currentValue="<%=form.getOverwriteChoice()%>" /> <label for="ignoreOverwriteChoice">Skip new samples that already exist.</label><br>
-                <labkey:radio name="overwriteChoice" id="replaceOverwriteChoice" value="<%=UploadMaterialSetForm.OverwriteChoice.replace%>" currentValue="<%=form.getOverwriteChoice()%>" /> <label for="replaceOverwriteChoice">Replace existing samples with new ones.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="insertOnlyChoice" value="<%=InsertUpdateChoice.insertOnly%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOnlyChoice">Insert only new samples; error if trying to update an existing sample.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="insertIgnoreChoice" value="<%=InsertUpdateChoice.insertIgnore%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertIgnoreChoice">Insert only new samples; ignore any existing samples.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="insertOrUpdateChoice" value="<%=InsertUpdateChoice.insertOrUpdate%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOrUpdateChoice">Insert any new samples and update existing samples.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="updateOnlyChoice" value="<%=InsertUpdateChoice.updateOnly%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="updateOnlyChoice">Update only existing samples with new values; error if sample doesn't already exist.</label><br>
             </td>
         </tr>
     <% } %>
@@ -307,16 +310,17 @@ function validateKey()
         return false;
     }
 
-    var ignoreOverwriteChoice = document.getElementById("ignoreOverwriteChoice");
-    var replaceOverwriteChoice = document.getElementById("replaceOverwriteChoice");
-    if (ignoreOverwriteChoice && replaceOverwriteChoice)
-    {
-        if (!ignoreOverwriteChoice.checked && !replaceOverwriteChoice.checked)
+    <% if (form.isImportMoreSamples()) { %>
+        var insertOnlyChoice = document.getElementById("insertOnlyChoice");
+        var insertIgnoreChoice = document.getElementById("insertIgnoreChoice");
+        var insertOrUpdateChoice = document.getElementById("insertOrUpdateChoice");
+        var updateOnlyChoice = document.getElementById("updateOnlyChoice");
+        if (!(insertOnlyChoice.checked || insertIgnoreChoice.checked || insertOrUpdateChoice.checked || updateOnlyChoice.checked))
         {
-            alert("Please select how to deal with duplicates by selecting one of the update options.");
+            alert("Please select how to deal with duplicates by selecting one of the insert/update options.");
             return false;
         }
-    }
+    <% } %>
 
     var text = document.getElementById("textbox");
     if (text.value.match("/^\\s*\$/"))
