@@ -124,7 +124,7 @@ public interface Module extends Comparable<Module>
      *
      * @return null if no web parts, otherwise Collection of WebPartFactory
      */
-    public Collection<? extends WebPartFactory> getWebPartFactories();
+    public Collection<WebPartFactory> getWebPartFactories();
 
     /**
      * Return true if the set of web part factories is now stale and needs to be reloaded

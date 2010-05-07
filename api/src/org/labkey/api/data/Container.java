@@ -755,7 +755,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     //get set of all web parts for all modules
                     for (Module module : allModules)
                     {
-                        Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
+                        Collection<WebPartFactory> factories = module.getWebPartFactories();
                         if (factories != null)
                         {
                             for (WebPartFactory desc : factories)

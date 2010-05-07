@@ -71,7 +71,7 @@ public abstract class DefaultModule implements Module
 
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
-    private Collection<? extends WebPartFactory> _webPartFactories;
+    private Collection<WebPartFactory> _webPartFactories;
 
     private ModuleResourceResolver _resolver;
     private boolean _loadFromSource;
@@ -149,7 +149,7 @@ public abstract class DefaultModule implements Module
 
         init();
 
-        Collection<? extends WebPartFactory> wpFactories = getWebPartFactories();
+        Collection<WebPartFactory> wpFactories = getWebPartFactories();
         if(null != wpFactories)
         {
             for (WebPartFactory part : wpFactories)
@@ -159,7 +159,7 @@ public abstract class DefaultModule implements Module
     
 
     protected abstract void init();
-    protected abstract Collection<? extends WebPartFactory> createWebPartFactories();
+    protected abstract Collection<WebPartFactory> createWebPartFactories();
     public boolean isWebPartFactorySetStale() {return false;}
     public abstract boolean hasScripts();
 
@@ -258,12 +258,31 @@ public abstract class DefaultModule implements Module
         }
     }
 
-
-    public final Collection<? extends WebPartFactory> getWebPartFactories()
+    @NotNull
+    protected File[] getWebPartFiles()
     {
-        if(null == _webPartFactories || isWebPartFactorySetStale())
-            _webPartFactories = createWebPartFactories();
+        File viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
+        return viewsDir.exists() && viewsDir.isDirectory() ? viewsDir.listFiles(org.labkey.api.module.SimpleWebPartFactory.webPartFileFilter) : new File[0];
+    }
 
+    public final Collection<WebPartFactory> getWebPartFactories()
+    {
+        if (null == _webPartFactories || isWebPartFactorySetStale())
+        {
+            _webPartFactories = createWebPartFactories();
+        }
+
+        File[] files = getWebPartFiles();
+        if (files.length > 0)
+        {
+            Collection<WebPartFactory> wpf = new ArrayList<WebPartFactory>();
+            for (int i = 0; i < files.length; i++)
+            {
+                wpf.add(new SimpleWebPartFactory(this, files[i]));
+            }
+            wpf.addAll(_webPartFactories);
+            return wpf;
+        }
         return _webPartFactories;
     }
 

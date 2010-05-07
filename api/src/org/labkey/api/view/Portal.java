@@ -721,7 +721,7 @@ public class Portal
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
         {
-            Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
+            Collection<WebPartFactory> factories = module.getWebPartFactories();
             if (null == factories)
                 continue;
             for (WebPartFactory webpart : factories)
@@ -750,7 +750,7 @@ public class Portal
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            Collection<? extends WebPartFactory> factories = module.getWebPartFactories();
+            Collection<WebPartFactory> factories = module.getWebPartFactories();
 
             if (null != factories)
                 for (WebPartFactory factory : factories)

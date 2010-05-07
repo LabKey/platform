@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.TablesDocument;
 import org.apache.xmlbeans.XmlException;
 import org.apache.log4j.Logger;
@@ -58,9 +59,9 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         getSchemaNames();
     }
 
-    protected Collection<SimpleWebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<SimpleWebPartFactory> factories = new ArrayList<SimpleWebPartFactory>();
+        List<WebPartFactory> factories = new ArrayList<WebPartFactory>();
         for(File webPartFile : getWebPartFiles())
         {
             factories.add(new SimpleWebPartFactory(this, webPartFile));

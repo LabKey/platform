@@ -26,7 +26,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.util.Pair;
 import org.labkey.api.search.SearchService;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +40,6 @@ import java.text.DecimalFormat;
 
 import junit.framework.TestCase;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -122,7 +120,7 @@ public class MockModule implements Module
     {
     }
 
-    public Collection<? extends WebPartFactory> getWebPartFactories()
+    public Collection<WebPartFactory> getWebPartFactories()
     {
         return null;
     }
