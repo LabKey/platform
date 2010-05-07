@@ -21,16 +21,12 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.workbook.view.WorkbookList;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 public class WorkbookModule extends DefaultModule
 {
@@ -51,9 +47,9 @@ public class WorkbookModule extends DefaultModule
         return true;
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new DefaultWebPartFactory("Workbooks (Prototype)", "menubar", WorkbookList.class));
+        return new ArrayList<WebPartFactory>(Arrays.asList(new DefaultWebPartFactory("Workbooks (Prototype)", "menubar", WorkbookList.class)));
     }
 
     protected void init()

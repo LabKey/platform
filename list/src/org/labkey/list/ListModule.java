@@ -57,9 +57,9 @@ public class ListModule extends DefaultModule
         return false;
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<BaseWebPartFactory> result = new ArrayList<BaseWebPartFactory>();
+        List<WebPartFactory> result = new ArrayList<WebPartFactory>();
         result.add(ListWebPart.FACTORY);
         result.add(new SingleListWebPartFactory());
         return result;

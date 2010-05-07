@@ -77,12 +77,12 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         ServiceRegistry.get().registerService(WikiService.class, new ServiceImpl());
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new WikiWebPartFactory(),
+        return new ArrayList<WebPartFactory>(Arrays.asList(new WikiWebPartFactory(),
                 new WikiTOCFactory(),
                 new WikiWebPartFactory(WEB_PART_NAME, "right"),
-                new MenuWikiWebPartFactory());
+                new MenuWikiWebPartFactory()));
     }
 
     public boolean hasScripts()

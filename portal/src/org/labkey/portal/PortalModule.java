@@ -55,7 +55,7 @@ public class PortalModule extends DefaultModule
         addController("project", ProjectController.class);
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }

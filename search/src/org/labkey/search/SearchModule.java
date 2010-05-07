@@ -80,10 +80,10 @@ public class SearchModule extends DefaultModule
     }
 
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new SearchWebPartFactory("Search", null),
-            new SearchWebPartFactory("Search", "right"));
+        return new ArrayList<WebPartFactory>(Arrays.asList(new SearchWebPartFactory("Search", null),
+            new SearchWebPartFactory("Search", "right")));
     }
 
     

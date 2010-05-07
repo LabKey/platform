@@ -168,13 +168,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return true;
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
+        return new ArrayList<WebPartFactory>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
-                participantWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory);
+                participantWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory));
     }
 
     public Collection<String> getSummary(Container c)

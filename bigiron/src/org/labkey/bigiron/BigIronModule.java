@@ -42,7 +42,7 @@ public class BigIronModule extends DefaultModule
         return 10.10;
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }

@@ -99,9 +99,9 @@ public class QueryModule extends DefaultModule
 //		WebdavService.addProvider(new QueryWebdavprovider());
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new QueryWebPartFactory(), new ReportsWebPartFactory());
+        return new ArrayList<WebPartFactory>(Arrays.asList(new QueryWebPartFactory(), new ReportsWebPartFactory()));
     }
 
     public boolean hasScripts()

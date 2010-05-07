@@ -85,9 +85,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineQuerySchema.register();
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return new ArrayList<WebPartFactory>(Arrays.asList(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
                 public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -97,7 +97,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             },
 
             new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class)
-        );
+        ));
     }
 
     public boolean hasScripts()

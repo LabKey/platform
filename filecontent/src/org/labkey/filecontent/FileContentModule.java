@@ -22,7 +22,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
-import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
@@ -31,10 +30,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 
 public class FileContentModule extends DefaultModule
@@ -57,9 +53,9 @@ public class FileContentModule extends DefaultModule
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT));
+        return new ArrayList<WebPartFactory>(Arrays.asList(new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT)));
     }
 
     public boolean hasScripts()

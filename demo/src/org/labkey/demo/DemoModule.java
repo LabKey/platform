@@ -52,9 +52,9 @@ public class DemoModule extends DefaultModule
         addController("demo", DemoController.class);
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new BaseWebPartFactory("Demo Summary") {
+        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory("Demo Summary") {
                 public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
                     return new DemoWebPart();
@@ -69,7 +69,7 @@ public class DemoModule extends DefaultModule
                 {
                     return new DemoWebPart();
                 }
-            });
+            }));
     }
 
     public boolean hasScripts()

@@ -168,9 +168,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new AlwaysAvailableWebPartFactory("Contacts")
+        return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
@@ -229,7 +229,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         return false;
                     }
-                });
+                }));
     }
 
 

@@ -71,9 +71,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         addController("announcements", AnnouncementsController.class);
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new AlwaysAvailableWebPartFactory(WEB_PART_NAME)
+        return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory(WEB_PART_NAME)
             {
                 public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
                 {
@@ -101,7 +101,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                     }
                 }
             },
-            new DiscussionWebPartFactory());
+            new DiscussionWebPartFactory()));
     }
 
     public boolean hasScripts()

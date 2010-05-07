@@ -107,9 +107,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return ContextType.config;
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<BaseWebPartFactory> result = new ArrayList<BaseWebPartFactory>();
+        List<WebPartFactory> result = new ArrayList<WebPartFactory>();
 
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME)
         {

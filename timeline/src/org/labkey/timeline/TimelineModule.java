@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.*;
 import org.labkey.timeline.view.TimelineView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -48,9 +49,9 @@ public class TimelineModule extends DefaultModule
     {
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new BaseWebPartFactory(NAME, null, true, true){
+        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory(NAME, null, true, true){
 
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
             {
@@ -64,7 +65,7 @@ public class TimelineModule extends DefaultModule
             {
                 return new JspView<Portal.WebPart>(TimelineView.class, "customizeTimeline.jsp", webPart);
             }
-        });
+        }));
     }
 
     public boolean hasScripts()

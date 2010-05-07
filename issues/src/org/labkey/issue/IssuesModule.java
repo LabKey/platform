@@ -63,9 +63,9 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         IssuesQuerySchema.register();        
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new IssuesWebPartFactory());
+        return new ArrayList<WebPartFactory>(Arrays.asList(new IssuesWebPartFactory()));
     }
 
     public boolean hasScripts()

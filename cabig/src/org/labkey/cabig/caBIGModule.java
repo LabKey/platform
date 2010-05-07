@@ -47,7 +47,7 @@ public class caBIGModule extends DefaultModule
         addController("cabig", caBIGController.class);
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }

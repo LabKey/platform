@@ -17,11 +17,8 @@
 package org.labkey.cbcassay;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayService;
@@ -29,7 +26,6 @@ import org.labkey.cbcassay.data.CBCDataProperty;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 
 public class CBCAssayModule extends DefaultModule
 {
@@ -62,7 +58,7 @@ public class CBCAssayModule extends DefaultModule
     }
 
     @Override
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
