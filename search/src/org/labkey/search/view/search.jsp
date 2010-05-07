@@ -52,14 +52,11 @@
     if (loginStatusChanged())
         window.location.reload(true);
 
-    var params = {};
-    var isModified = false;
-
-    function establishParams() {
-        if (!(isModified))
-        {
-            params['q'] = document.getElementById('query').value;
-        }
+    var params = LABKEY.ActionURL.getParameters();
+    
+    function establishParams()
+    {
+        params['q'] = document.getElementById('query').value;
         params["_dc"] = document.getElementsByName('_dc')[0].value;
         var _newSearchURL = LABKEY.ActionURL.buildURL(
                 LABKEY.ActionURL.getController(),
@@ -69,33 +66,9 @@
         return _newSearchURL;
     }
 
-    function modifiedSearch(key, value)
+    function resubmit(key, value)
     {
-        if(!(key) && !(value))
-        {
-            // User modified the search string
-            isModified = true;
-            console.info("User modified search: " + document.getElementById('query').value);
-            params['q'] = document.getElementById('query').value;
-        }
-        else if (!(value))
-        {
-            params.remove(key);
-        }
-        else
-        {
-            params[key] = value;
-        }
-    }
-
-    function resubmit()
-    {
-        window.location = establishParams();
-    }
-
-    function showURL(obj, key, value)
-    {
-        if (value)
+        if(value)
         {
             params[key] = value;
         }
@@ -103,7 +76,7 @@
         {
             delete params[key];
         }
-        obj.href = establishParams();
+        window.location = establishParams();
     }
     
 </script>
@@ -151,7 +124,7 @@
 
     %>
     <input type="hidden" name="_dc" value="<%=Math.round(1000*Math.random())%>">
-    <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" onchange="modifiedSearch()" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
+    <input type="text" size="<%=form.getTextBoxWidth()%>" id="query" name="q" value="<%=h(StringUtils.trim(StringUtils.join(q, " ")))%>"></td>
     <td>&nbsp;<%=generateSubmitButton("Search")%><%
 
     if (form.getIncludeHelpLink())
@@ -171,22 +144,22 @@
         %><tr><td colspan=1>
         <table width=100% cellpadding="0" cellspacing="0"><tr>
             <td class="labkey-search-filter"><%
-                %><span><%if (null == category)           { %>All<%      } else { %><a onmouseover="showURL(this, 'category', null);" onclick="resubmit();">All</a><% } %></span>&nbsp;<%
-                %><span><%if ("File".equals(category))    { %>Files<%    } else { %><a onmouseover="showURL(this, 'category', 'File');" onclick="resubmit();">Files</a><% } %></span>&nbsp;<%
-                %><span><%if ("Subject".equals(category)) { %>Subjects<% } else { %><a onmouseover="showURL(this, 'category', 'Subject');" onclick="resubmit();">Subjects</a><% } %></span>&nbsp;<%
-                %><span><%if ("Dataset".equals(category)) { %>Datasets<% } else { %><a onmouseover="showURL(this, 'category', 'Dataset');" onclick="resubmit();">Datasets</a><% } %></span><%
+                %><span><%if (null == category)           { %>All<%      } else { %><a onclick="resubmit('category', null);">All</a><% } %></span>&nbsp;<%
+                %><span><%if ("File".equals(category))    { %>Files<%    } else { %><a onclick="resubmit('category', 'File');">Files</a><% } %></span>&nbsp;<%
+                %><span><%if ("Subject".equals(category)) { %>Subjects<% } else { %><a onclick="resubmit('category', 'Subject');">Subjects</a><% } %></span>&nbsp;<%
+                %><span><%if ("Dataset".equals(category)) { %>Datasets<% } else { %><a onclick="resubmit('category', 'Dataset');">Datasets</a><% } %></span><%
             %></td>
             <td class="labkey-search-filter" align="right" style="width:100%"><%
                 SearchScope scope = form.getSearchScope(c);
-                %><span title="<%=h(LookAndFeelProperties.getInstance(c).getShortName())%>"><%if (scope == SearchScope.All) { %>Site<% } else { %><a onmouseover="showURL(this, 'container', null);" onclick="resubmit();">Site</a><% } %></span>&nbsp;<%
+                %><span title="<%=h(LookAndFeelProperties.getInstance(c).getShortName())%>"><%if (scope == SearchScope.All) { %>Site<% } else { %><a onclick="delete params['includeSubfolders']; resubmit('container', null);">Site</a><% } %></span>&nbsp;<%
 
                 Container project = c.getProject();
 
                 // Skip the "Project" and "Folder" links if we're at the root
                 if (null != project)
                 {
-                    %><span title="<%=h(c.getProject().getName())%>"><%if (scope == SearchScope.Project) { %>Project<% } else { %><a onmouseover="showURL(this, 'container', '<%=c.getProject().getId()%>');" onclick="resubmit();">Project</a><% } %></span>&nbsp;<%
-                    %><span title="<%=h(c.getName())%>"><%if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a onmouseover="showURL(this, 'container', '<%=c.getId()%>');" onclick="resubmit();">Folder</a><% } %></span><%
+                    %><span title="<%=h(c.getProject().getName())%>"><%if (scope == SearchScope.Project) { %>Project<% } else { %><a onclick="delete params['includeSubfolders']; resubmit('container', '<%=h(c.getProject().getId())%>');">Project</a><% } %></span>&nbsp;<%
+                    %><span title="<%=h(c.getName())%>"><%if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a onclick="params['includeSubfolders'] = 0; resubmit('container', '<%=h(c.getId())%>');">Folder</a><% } %></span><%
                 }
             %></td>
             <td>&nbsp;</td>
