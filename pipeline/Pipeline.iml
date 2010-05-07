@@ -45,7 +45,7 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../../JavaAPIs/ws-core-4.0.7/java/core/source/src" />
+          <root url="file://C:/JavaAPIs/ws-core-4.0.7/java/core/source/src" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -256,6 +256,24 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/globus_wsrf_rendezvous_stubs.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/xstream-1.2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/backport-util-concurrent-3.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
