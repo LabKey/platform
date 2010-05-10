@@ -17,10 +17,7 @@ package org.labkey.api.settings;
 
 import org.labkey.api.view.ActionURL;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: adam
@@ -36,7 +33,7 @@ public class AdminConsole
     static
     {
         for (SettingsLinkType type : SettingsLinkType.values())
-            _links.put(type, new LinkedList<AdminLink>());
+            _links.put(type, new TreeSet<AdminLink>());
     }
 
     public static void addLink(SettingsLinkType type, AdminLink link)
@@ -60,7 +57,7 @@ public class AdminConsole
         }
     }
 
-    public static class AdminLink
+    public static class AdminLink implements Comparable<AdminLink>
     {
         private final String _text;
         private final ActionURL _url;
@@ -79,6 +76,12 @@ public class AdminConsole
         public ActionURL getUrl()
         {
             return _url;
+        }
+
+        @Override
+        public int compareTo(AdminLink o)
+        {
+            return getText().compareTo(o.getText());
         }
     }
 }
