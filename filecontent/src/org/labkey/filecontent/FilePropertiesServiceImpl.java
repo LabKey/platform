@@ -49,7 +49,7 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
         GWTDomain domain = super.getDomainDescriptor(typeURI);
         if (domain != null)
             domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
         return domain;
     }
 
@@ -59,7 +59,7 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
         GWTDomain domain = super.getDomainDescriptor(typeURI, domainContainer);
         if (domain != null)
             domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
         return domain;
     }
 

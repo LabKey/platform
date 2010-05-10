@@ -39,7 +39,6 @@ import javax.mail.MessagingException;
  * Date: Jul 24, 2009
  */
 @RequiresPermissionClass(ReadPermission.class)
-@RequiresLogin
 public class SendMessageAction extends MutatingApiAction<SendMessageAction.MessageForm>
 {
     private boolean _allowUnregisteredUser;

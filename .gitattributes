@@ -110,6 +110,7 @@ announcements/src/org/labkey/announcements/update.jsp -text
 audit/module.properties -text
 audit/resources/schemas/audit.xml -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-2.30.sql -text
+audit/resources/schemas/dbscripts/postgresql/audit-10.10-10.11.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-8.20-8.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-9.10-9.20.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-0.00-0.01.sql -text
@@ -122,6 +123,7 @@ audit/resources/schemas/dbscripts/postgresql/obsolete/audit-8.21-8.22.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-8.23-8.24.sql -text
 audit/resources/schemas/dbscripts/postgresql/obsolete/audit-9.10-9.11.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-0.00-2.30.sql -text
+audit/resources/schemas/dbscripts/sqlserver/audit-10.10-10.11.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-8.20-8.30.sql -text
 audit/resources/schemas/dbscripts/sqlserver/audit-9.10-9.20.sql -text
 audit/resources/schemas/dbscripts/sqlserver/obsolete/audit-0.00-0.01.sql -text

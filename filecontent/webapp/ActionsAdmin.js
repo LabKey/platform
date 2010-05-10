@@ -582,7 +582,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             border: false,
             flex: 1,
             layout: 'table',
-            bodyStyle:'padding:30px',
+            //bodyStyle:'padding:30px',
             //tbar: this.toolbar,
             layoutConfig: {columns:5},
             items: [actions]
@@ -676,7 +676,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                        'Buttons can be added by dragging from the list of available buttons below and dropping them on the toolbar. Buttons can be removed ' +
                        'by clicking on the toolbar button and selecting "remove" from the dropdown menu.</br></br>' +
                        'Grid columns can be customized by dragging to reorder, adjusting the width, and controlling the sort or show state using the drop down ' +
-                       'menus on each column.', border: false, height: 90},
+                       'menus on each column.', border: false, height: 120, autoScroll:true},
                 panel,
                 this.grid
             ]
@@ -771,6 +771,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             handler: this.onEmailPrefChanged,
             scope: this,
             disabled: true,
+            hidden: true,
             boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
             name: 'emailPref', inputValue: 2});
 
@@ -803,7 +804,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             },
             items: [
                 {html: '<span class="labkey-strong">Configure Email defaults</span></br>Select the default email notification options to apply ' +
-                       'to this folder. Project users will have the option to override or accept folder defaults.', border: false, height: 40},
+                       'to this folder. Project users will have the option to override or accept folder defaults.', border: false, height: 55, autoScroll:true},
                 panel
             ]
         });
@@ -984,6 +985,7 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
             radioItems.push({xtype: 'radio',
                 checked: emailPref == 2,
                 disabled: true,
+                hidden: true,
                 boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
                 name: 'emailPref', inputValue: 2});
 

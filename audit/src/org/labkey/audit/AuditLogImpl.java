@@ -219,6 +219,12 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         try
         {
+            if (event.getContainerId() == null)
+            {
+                _log.warn("container was not specified, defaulting to root container.");
+                Container root = ContainerManager.getRoot();
+                event.setContainerId(root.getId());
+            }
             /**
              * This is necessary because audit log service needs to be registered in the constructor
              * of the audit module, but the schema may not be created or updated at that point.  Events

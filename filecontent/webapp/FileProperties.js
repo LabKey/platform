@@ -18,14 +18,15 @@
  */
 LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
 
-    fileFields : [],            // array of extra field information to collect/display for each file uploaded
-    files : [],                 // array of file information for each file being transferred
-    fileIndex : 0,
-    containerPath : undefined,  // the effective container custom file properties originate from (may be a parent if inherited)
-    defaults : {},              // contains any default values set on the domain
-
     constructor : function(config)
     {
+        this.fileFields = [];            // array of extra field information to collect/display for each file uploaded
+        this.files = [];                 // array of file information for each file being transferred
+        this.fileIndex = 0;
+        this.containerPath = undefined;  // the effective container custom file properties originate from (may be a parent if inherited)
+        this.defaults = {};              // contains any default values set on the domain
+        this.disabled = {};              // contains any disabled fields
+
         LABKEY.FilePropertiesPanel.superclass.constructor.call(this, config);
 
         Ext.apply(this, config);
@@ -125,9 +126,22 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             var field = this.fileFields[i];
             if (field.defaultValue)
                 this.defaults[field.name] = field.defaultDisplayValue;
+
+            if (field.defaultValueType && field.defaultValueType == 'FIXED_NON_EDITABLE')
+                this.disabled[field.name] = true;
         }
         var values = this.applyDefaults(this.files[this.fileIndex], this.defaults);
         this.formPanel.getForm().setValues(values);
+
+        for (var a in this.disabled)
+        {
+            if ('boolean' == typeof this.disabled[a])
+            {
+                var field = this.formPanel.getForm().findField(a);
+                if (field)
+                    field.disable();
+            }
+        }
 
         var titlePanel = new Ext.Panel({
             id: 'file-props-title',

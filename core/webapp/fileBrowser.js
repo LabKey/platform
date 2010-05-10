@@ -3078,10 +3078,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
             var uploadPanel_rb1 = new Ext.form.Radio({
                 style: 'background-color:#f0f0f0;',
+                width: 100,
                 boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, checked: true
             });
             var uploadPanel_rb2 = new Ext.form.Radio({
                 boxLabel: 'Multiple files', name: 'rb-auto', inputValue: 2,
+                width: 100,
                 listeners:{check:function(button, checked) {
                     if (checked)
                         this.onMultipleFileUpload();
@@ -3099,13 +3101,14 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [
                     {
-                    xtype: 'radiogroup',
-                    fieldLabel: 'File Upload Type',
-                    width: 200,
-                    items: [
-                        uploadPanel_rb1,
-                        uploadPanel_rb2
-                    ]},
+                        xtype: 'radiogroup',
+                        fieldLabel: 'File Upload Type',
+                        columns:2,
+                        width: 350,
+                        items: [
+                            uploadPanel_rb1,
+                            uploadPanel_rb2
+                        ]},
                     this.fileUploadField,
                     {xtype: 'textfield', name: 'description', fieldLabel: 'Description', width: 350}
                 ],
@@ -3121,14 +3124,14 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.uploadPanel.on('beforeshow', function(c){uploadPanel_rb1.setValue(true); uploadPanel_rb2.setValue(false);}, this);
 
             var uploadMultiPanel_rb1 = new Ext.form.Radio({
-                boxLabel: 'Single file', name: 'rb-auto', inputValue: 1,
+                boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, width: 100,
                 listeners:{check:function(button, checked) {
                     if (checked)
                         this.toggleTabPanel('uploadFileTab');
                 }, scope:this}
             });
             var uploadMultiPanel_rb2 = new Ext.form.Radio({
-                boxLabel: 'Multiple files', name: 'rb-auto', inputValue: 2, checked: true
+                boxLabel: 'Multiple files', name: 'rb-auto', inputValue: 2, checked: true, width: 100
             });
 
             this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
@@ -3139,7 +3142,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 statusAlign: 'right',
                 style : 'background-color:#f0f0f0;',
                 items:[{
-                    xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120
+                    xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:100, minWidth:100
                 }]
             });
 
@@ -3158,7 +3161,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
                 items: [{
                     xtype: 'radiogroup',
-                    width: 200,
+                    width: 300,
+                    columns:2,
                     fieldLabel: 'File Upload Type',
                     items: [
                         uploadMultiPanel_rb1,
