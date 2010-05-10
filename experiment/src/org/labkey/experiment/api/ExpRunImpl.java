@@ -312,11 +312,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     " WHERE RunId = " + getRowId() + ";\n";
 
             sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL " +
-                    " WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material " +
-                    " INNER JOIN exp.MaterialInput ON exp.Material.RowId = exp.MaterialInput.MaterialId " +
-                    " INNER JOIN exp.ProtocolApplication PAOther ON exp.MaterialInput.TargetApplicationId = PAOther.RowId " +
-                    " INNER JOIN exp.ProtocolApplication PA ON exp.Material.SourceApplicationId = PA.RowId " +
-                    " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + getRowId() + ");\n";
+                    " WHERE RunId = " + getRowId() + ";\n";
 
             sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
             sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";

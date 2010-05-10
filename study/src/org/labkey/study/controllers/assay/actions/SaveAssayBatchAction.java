@@ -22,10 +22,10 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataValidator;
@@ -134,11 +134,15 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             JSONArray dataInputs;
             JSONArray materialInputs;
             JSONArray dataOutputs;
+            JSONArray materialOutputs;
+
+            JSONObject serializedRun = null;
             if (!runJsonObject.has(DATA_ROWS))
             {
                 // Client didn't post the rows so reuse the values that are currently attached to the run
                 // Inefficient but easy
-                dataRows = serializeRun(run, provider, protocol).getJSONArray(DATA_ROWS);
+                serializedRun = serializeRun(run, provider, protocol);
+                dataRows = serializedRun.getJSONArray(DATA_ROWS);
             }
             else
             {
@@ -147,9 +151,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             if (!runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
             {
-                // Client didn't post the inputs so reuse the values that are currently attached to the run
-                // Inefficient but easy
-                dataInputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
+                if (serializedRun == null)
+                    serializedRun = serializeRun(run, provider, protocol);
+                dataInputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
             }
             else
             {
@@ -158,7 +162,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
             {
-                materialInputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
+                if (serializedRun == null)
+                    serializedRun = serializeRun(run, provider, protocol);
+                materialInputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
             }
             else
             {
@@ -167,22 +173,37 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             if (!runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
             {
-                // Client didn't post the outputs so reuse the values that are currently attached to the run
-                // Ineffecient but easy
-                dataOutputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
+                if (serializedRun == null)
+                    serializedRun = serializeRun(run, provider, protocol);
+                dataOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
             }
             else
             {
                 dataOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
             }
 
-            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, pipeRoot, dataOutputs);
+            if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_OUTPUTS))
+            {
+                if (serializedRun == null)
+                    serializedRun = serializeRun(run, provider, protocol);
+                materialOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
+            }
+            else
+            {
+                materialOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
+            }
+
+            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject, pipeRoot, dataOutputs, materialOutputs);
         }
 
         return run;
     }
 
-    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, PipeRoot pipelineRoot, JSONArray outputDataArray) throws ExperimentException, ValidationException
+    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run,
+                                             JSONArray inputDataArray, JSONArray dataArray,
+                                             JSONArray inputMaterialArray, JSONObject runJsonObject, PipeRoot pipelineRoot,
+                                             JSONArray outputDataArray, JSONArray outputMaterialArray)
+            throws ExperimentException, ValidationException
     {
         ViewContext context = getViewContext();
 
@@ -224,12 +245,21 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             outputData.put(handleData(dataObject, pipelineRoot), dataObject.optString(ExperimentJSONConverter.ROLE, "Data"));
         }
 
+        Map<ExpMaterial, String> outputMaterial = new HashMap<ExpMaterial, String>();
+        for (int i=0; i < outputMaterialArray.length(); i++)
+        {
+            JSONObject materialObject = outputMaterialArray.getJSONObject(i);
+            ExpMaterial material = handleMaterial(materialObject);
+            if (material != null)
+                outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
+        }
+
         List<Map<String, Object>> rawData = dataArray.toMapList();
 
         run = ExperimentService.get().insertSimpleExperimentRun(run,
             inputMaterial,
             inputData,
-            Collections.<ExpMaterial, String>emptyMap(),
+            outputMaterial,
             outputData,
             Collections.<ExpData, String>emptyMap(),                
             new ViewBackgroundInfo(context.getContainer(),
@@ -326,23 +356,149 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private ExpMaterial handleMaterial(JSONObject materialObject) throws ValidationException
     {
-        if (materialObject.has(ExperimentJSONConverter.ROW_ID))
+        ExpSampleSet sampleSet = null;
+        ExpMaterial material = null;
+        if (materialObject.has(ExperimentJSONConverter.ID))
         {
-            // Unlike with runs and batches, we require that the materials are already created
-            int materialRowId = materialObject.getInt(ExperimentJSONConverter.ROW_ID);
-            ExpMaterial material = ExperimentService.get().getExpMaterial(materialRowId);
+            int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
+            material = ExperimentService.get().getExpMaterial(materialRowId);
             if (material == null)
-            {
-                throw new NotFoundException("Could not find material with row id: " + materialRowId);
-            }
-            if (!material.getContainer().equals(getViewContext().getContainer()))
-            {
-                throw new NotFoundException("Material with row id " + materialRowId + " is not in folder " + getViewContext().getContainer());
-            }
-            saveProperties(material, new DomainProperty[0], materialObject);
-            return material;
+                throw new NotFoundException("Could not find material with row id '" + materialRowId + "'");
+            sampleSet = material.getSampleSet();
         }
-        return null;
+        else if (materialObject.has(ExperimentJSONConverter.LSID))
+        {
+            String materialLsid = materialObject.getString(ExperimentJSONConverter.LSID);
+            material = ExperimentService.get().getExpMaterial(materialLsid);
+            if (material == null)
+                throw new NotFoundException("Could not find material with LSID '" + materialLsid + "'");
+            sampleSet = material.getSampleSet();
+        }
+
+        if (material == null)
+        {
+            // Get SampleSet by id or name
+            if (materialObject.has(ExperimentJSONConverter.SAMPLE_SET))
+            {
+                JSONObject sampleSetJson = materialObject.getJSONObject(ExperimentJSONConverter.SAMPLE_SET);
+                if (sampleSetJson.has(ExperimentJSONConverter.ID))
+                {
+                    int sampleSetRowId = sampleSetJson.getInt(ExperimentJSONConverter.ID);
+                    sampleSet = ExperimentService.get().getSampleSet(sampleSetRowId);
+                    if (sampleSet == null)
+                        throw new NotFoundException("A sample set with row id '" + sampleSetRowId + "' doesn't exist.");
+                }
+                else if (sampleSetJson.has(ExperimentJSONConverter.NAME))
+                {
+                    String sampleSetName = sampleSetJson.getString(ExperimentJSONConverter.NAME);
+                    // XXX: may need to search Project and Shared contains for sample set
+//                String sampleSetLsid = ExperimentService.get().getSampleSetLsid(sampleSetName, getViewContext().getContainer()).toString();
+//                sampleSet = ExperimentService.get().getSampleSet(sampleSetLsid);
+                    sampleSet = ExperimentService.get().getSampleSet(getViewContext().getContainer(), sampleSetName);
+                    if (sampleSet == null)
+                        throw new NotFoundException("A sample set named '" + sampleSetName + "' doesn't exist.");
+                }
+            }
+
+            // Get material name or construct name from SampleSet id columns
+            String materialName = null;
+            if (materialObject.has(ExperimentJSONConverter.NAME))
+            {
+                materialName = materialObject.getString(ExperimentJSONConverter.NAME);
+            }
+            else if (sampleSet != null && !sampleSet.hasNameAsIdCol() && materialObject.has(ExperimentJSONConverter.PROPERTIES))
+            {
+                JSONObject properties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+                StringBuilder sb = new StringBuilder();
+                for (DomainProperty dp : sampleSet.getIdCols())
+                {
+                    // XXX: may need to support all possible forms of the property name: label, import aliases, mv
+                    String val = properties.getString(dp.getName());
+                    if (val == null)
+                        throw new IllegalArgumentException("Can't create new sample for sample set '" + sampleSet.getName() + "'; missing required id column '" + dp.getName() + "'");
+                    if (sb.length() > 0)
+                        sb.append("-");
+                    sb.append(val);
+                }
+
+                if (sb.length() == 0)
+                    throw new IllegalArgumentException("Failed to construct name for material from sample set '" + sampleSet.getName() + "' id columns");
+                materialName = sb.toString();
+            }
+
+            if (materialName != null && materialName.length() > 0)
+            {
+                if (sampleSet != null)
+                    material = sampleSet.getSample(materialName);
+                else
+                {
+                    List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(materialName, getViewContext().getContainer(), getViewContext().getUser());
+                    if (materials != null)
+                    {
+                        if (materials.size() > 1)
+                            throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleSet to disambiguate the desired material.");
+                        if (materials.size() == 1)
+                            material = materials.get(0);
+                    }
+                }
+
+                if (material == null)
+                    material = createMaterial(sampleSet, materialName);
+            }
+        }
+
+        if (material == null)
+            return null;
+
+        if (!material.getContainer().equals(getViewContext().getContainer()))
+            throw new NotFoundException("Material with row id " + material.getRowId() + " is not in folder " + getViewContext().getContainer());
+
+        // ??
+        saveProperties(material, new DomainProperty[0], materialObject);
+        
+        if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
+        {
+            DomainProperty[] dps = sampleSet != null ? sampleSet.getPropertiesForType() : new DomainProperty[0];
+            saveProperties(material, dps, materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES));
+        }
+        return material;
+    }
+
+    // XXX: doesn't handle SampleSet parent property magic
+    // XXX: doesn't assert the materialName is the concat of sampleSet id columns
+    private ExpMaterial createMaterial(ExpSampleSet sampleSet, String materialName)
+    {
+        ExpMaterial material;
+        String materialLsid;
+        if (sampleSet != null)
+        {
+            Lsid lsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "test");
+            lsid.setObjectId(materialName);
+            materialLsid = lsid.toString();
+        }
+        else
+        {
+            XarContext context = new XarContext("DeriveSamples", getViewContext().getContainer(), getViewContext().getUser());
+            try
+            {
+                materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, "Material");
+            }
+            catch (XarFormatException e)
+            {
+                // Shouldn't happen - our template is safe
+                throw new RuntimeException(e);
+            }
+        }
+
+        ExpMaterial other = ExperimentService.get().getExpMaterial(materialLsid);
+        if (other != null)
+            throw new IllegalArgumentException("Sample with name '" + materialName + "' already exists.");
+
+        material = ExperimentService.get().createExpMaterial(getViewContext().getContainer(), materialLsid, materialName);
+        if (sampleSet != null)
+            material.setCpasType(sampleSet.getLSID());
+        material.save(getViewContext().getUser());
+        return material;
     }
 
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception

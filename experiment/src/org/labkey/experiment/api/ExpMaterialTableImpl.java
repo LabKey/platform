@@ -113,7 +113,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return columnInfo;
             }
             case Run:
-                return wrapColumn(alias, _rootTable.getColumn("RunId"));
+            {
+                ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                ret.setReadOnly(true);
+                return ret;
+            }
             case RowId:
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
