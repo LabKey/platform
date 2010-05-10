@@ -531,7 +531,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 {
                     Map<String, String> transformedProps = new HashMap<String, String>();
                     for (Map<String, Object> row : parseRunInfo(transformedRunProps))
-                        transformedProps.put(row.get("name").toString(), row.get("value").toString());
+                    {
+                        String name = String.valueOf(row.get("name"));
+                        String value = String.valueOf(row.get("value"));
+
+                        if (name != null && value != null)
+                            transformedProps.put(name, value);
+                    }
 
                     // merge the transformed props with the props in the upload form
                     Map<DomainProperty, String> runProps = new HashMap<DomainProperty, String>();

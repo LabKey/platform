@@ -185,15 +185,15 @@ function renderBrowser(rootPath, renderTo)
 
     var _resize = function(w,h)
     {
-        if (!fileBrowser.rendered)
+        if (!panel.rendered)
             return;
         var padding = [20,20];
-        var xy = fileBrowser.el.getXY();
+        var xy = panel.el.getXY();
         var size = {
             width : Math.max(100,w-xy[0]-padding[0]),
             height : Math.max(100,h-xy[1]-padding[1])};
-        fileBrowser.setSize(size);
-        fileBrowser.doLayout();
+        panel.setSize(size);
+        panel.doLayout();
     };
 
     if (autoResize)
