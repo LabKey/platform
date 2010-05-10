@@ -62,14 +62,14 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
     {
-        JSONObject jsonObject = serializeStandardProperties(runGroup, domain);
+        JSONObject jsonObject = serializeStandardProperties(runGroup, domain.getProperties());
         jsonObject.put(COMMENT, runGroup.getComments());
         return jsonObject;
     }
 
     public static JSONObject serializeRun(ExpRun run, Domain domain) throws SQLException
     {
-        JSONObject jsonObject = serializeStandardProperties(run, domain);
+        JSONObject jsonObject = serializeStandardProperties(run, domain.getProperties());
         jsonObject.put(COMMENT, run.getComments());
 
         JSONArray inputDataArray = new JSONArray();
@@ -105,7 +105,7 @@ public class ExperimentJSONConverter
     }
 
 
-    public static JSONObject serializeStandardProperties(ExpObject object, Domain domain)
+    public static JSONObject serializeStandardProperties(ExpObject object, DomainProperty[] properties)
     {
         JSONObject jsonObject = new JSONObject();
 
@@ -128,10 +128,10 @@ public class ExperimentJSONConverter
             jsonObject.put(COMMENT, object.getComment());
 
         // Add the custom properties
-        if (domain != null)
+        if (properties != null)
         {
             JSONObject propertiesObject = new JSONObject();
-            for (DomainProperty dp : domain.getProperties())
+            for (DomainProperty dp : properties)
             {
                 propertiesObject.put(dp.getName(), object.getProperty(dp));
             }
@@ -162,11 +162,25 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeMaterial(ExpMaterial material)
     {
-        JSONObject jsonObject = serializeStandardProperties(material, null);
-
         ExpSampleSet sampleSet = material.getSampleSet();
-        if (sampleSet != null)
+
+        JSONObject jsonObject;
+        if (sampleSet == null)
         {
+            jsonObject = serializeStandardProperties(material, null);
+        }
+        else
+        {
+            jsonObject = serializeStandardProperties(material, sampleSet.getPropertiesForType());
+            if (sampleSet.hasNameAsIdCol())
+            {
+                JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+                if (properties == null)
+                    properties = new JSONObject();
+                properties.put(ExperimentJSONConverter.NAME, material.getName());
+                jsonObject.put(ExperimentJSONConverter.PROPERTIES, properties);
+            }
+
             JSONObject sampleSetJson = serializeStandardProperties(sampleSet, null);
             jsonObject.append(SAMPLE_SET, sampleSetJson);
         }
