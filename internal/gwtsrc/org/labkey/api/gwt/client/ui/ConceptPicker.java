@@ -17,19 +17,22 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.extjs.gxt.ui.client.Style;
+import com.extjs.gxt.ui.client.core.DomHelper;
+import com.extjs.gxt.ui.client.core.DomQuery;
+import com.extjs.gxt.ui.client.core.El;
+import com.extjs.gxt.ui.client.core.XDOM;
 import com.extjs.gxt.ui.client.event.*;
-import com.extjs.gxt.ui.client.widget.ContentPanel;
 import com.extjs.gxt.ui.client.widget.Dialog;
 import com.extjs.gxt.ui.client.widget.button.Button;
 import com.extjs.gxt.ui.client.widget.form.*;
-import com.extjs.gxt.ui.client.widget.layout.AccordionLayout;
-import com.extjs.gxt.ui.client.widget.layout.FitLayout;
-import com.extjs.gxt.ui.client.widget.layout.VBoxLayout;
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.shared.HandlerManager;
+import com.extjs.gxt.ui.client.widget.layout.RowLayout;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,35 +47,67 @@ import java.util.ArrayList;
  *    ConceptURI    Marker type e.g. Subject or VisitDate (may imply storage type)
  *    Lookup        Lookup (container,schmea,table), must match storage type of PK
  */
-public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //implements HasChangeHandlers
+public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 {
-    private HandlerManager _handlers = new HandlerManager(this);
     final private LookupServiceAsync _lookupService;
 
     private boolean isRangeEditable = true;
     private boolean allowFileLinkProperties = true;
     private boolean allowAttachmentProperties = true;
 
-    protected ConceptPicker(LookupServiceAsync lookupService)
+    public void onComponentEvent(ComponentEvent ce)
+    {
+        super.onComponentEvent(ce);
+        if (ce.getEventTypeInt() == Event.ONCHANGE)
+        {
+            onChange(ce);
+        }
+    }
+
+    // TODO avoid double fireChangeEvent() on blur
+    protected void onChange(ComponentEvent be)
+    {
+        ConceptType v = getValue();
+        value = v;
+        fireChangeEvent(focusValue, v);
+    }
+   
+    
+    protected ConceptPicker(LookupServiceAsync lookupService, String name)
     {
         super();
+        sinkEvents(Event.ONCHANGE);
         setPropertyEditor(conceptTypePropertyEditor);
         _lookupService = lookupService;
         setEditable(true);
+        setName(name);
     }
 
 
-    public ConceptPicker(LookupServiceAsync lookupService, GWTPropertyDescriptor initial)
+    public ConceptPicker(LookupServiceAsync lookupService, String name, GWTPropertyDescriptor initial)
     {
-        this(lookupService);
+        this(lookupService, name);
         ConceptType type = fromPropertyDescriptor(initial);
         setValue(type);
     }
 
-    
+    public void setValue(ConceptType t)
+    {
+        assert t != genericLookup;
+        super.setValue(t);
+    }
+
+    public static String getDisplayString(GWTPropertyDescriptor pd)
+    {
+        ConceptType t = fromPropertyDescriptor(pd);
+        return null==t ? "" : t.getDisplay();
+    }
+
+
     public void setIsRangeEditable(boolean b)
     {
         this.isRangeEditable = b;
+        setEditable(b);
     }
 
 
@@ -122,7 +157,10 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
         if (null != value && rawValue.equals(value.getDisplay()))
             return true;
         ConceptType type = parseRawValue(rawValue);
-        return null != type;
+        if (null != type)
+            return true;
+        markInvalid("Unrecognized type");
+        return false;
     }
 
 
@@ -136,7 +174,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
     {
         showEditor(ConceptPicker.this);
     }
-    
+
 
     private static void _copy(GWTPropertyDescriptor from, GWTPropertyDescriptor to)
     {
@@ -150,15 +188,11 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
 
     private static class ConceptTypeRadio extends Radio
     {
-        ConceptType type;
+        ConceptType _type;
 
-        ConceptTypeRadio(String text, String rangeURI)
-        {
-            this(new BaseConceptType(rangeURI, text));
-        }
         ConceptTypeRadio(ConceptType type)
         {
-            this.type = type;
+            this._type = type;
             setBoxLabel(type.getDisplay());
         }
     }
@@ -167,26 +201,31 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
 
     private static class EditorWindow extends Dialog
     {
-        ArrayList<Field> allradios = new ArrayList<Field>();
-        ConceptType _type = null;
+        ArrayList<ConceptTypeRadio> allradios = new ArrayList<ConceptTypeRadio>();
+        ConceptTypeRadio _lookupRadio = null;
+        ConceptTypeRadio _selectedRadio = null;
         ConceptPicker _current;
-        LookupEditorPanel _lookupPanel;
+        LookupServiceAsync _service;
+        LookupEditorPanel _lookupEditorPanel;
 
 
         EditorWindow(LookupServiceAsync lookupService)
         {
             super();
-            setSize(500, 300);
+            _service = lookupService;
+            setSize(250, 500);
+            setAutoHeight(true);
             setModal(true);
             setHeading("Choose field type:");
 
-            setLayout(new AccordionLayout());
+//            setLayout(new AccordionLayout());
+            setLayout(new RowLayout(Style.Orientation.VERTICAL));
             okText = "Apply";
             setButtons(Dialog.OKCANCEL);
             
             // SIMPLE
-            ContentPanel simplePanel = new ContentPanel(new FitLayout());
-            simplePanel.setHeading("Simple data type");
+            //ContentPanel simplePanel = new ContentPanel(new FitLayout());
+            //simplePanel.setHeading("Simple data type");
             final RadioGroup group = new RadioGroup("rangeURI");
             group.setOrientation(Style.Orientation.VERTICAL);
             group.add(new ConceptTypeRadio(stringType));
@@ -195,35 +234,50 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
             group.add(new ConceptTypeRadio(integerType));
             group.add(new ConceptTypeRadio(doubleType));
             group.add(new ConceptTypeRadio(datetimeType));
-            simplePanel.add(group);
-            add(simplePanel);
+            group.add(new ConceptTypeRadio(fileType));
+            group.add(new ConceptTypeRadio(attachmentType));
+            group.add(new ConceptTypeRadio(userType));
+            group.add(new ConceptTypeRadio(subjectType));
+            //simplePanel.add(group);
+            //add(simplePanel);
+            add(group);
 
             // LOOKUP
-            ContentPanel lookupPanel = new ContentPanel(new VBoxLayout());
-            lookupPanel.setHeading("Lookup");
-            final Radio lookupRadio = new ConceptTypeRadio(genericLookup);
-            lookupPanel.add(lookupRadio);
-            _lookupPanel = new LookupEditorPanel(lookupService, true);
-            lookupPanel.add(_lookupPanel);
-            add(lookupPanel);
+            //ContentPanel lookupPanel = new ContentPanel(new VBoxLayout());
+            //lookupPanel.setHeading("Lookup");
+            _lookupRadio = new ConceptTypeRadio(genericLookup)
+            {
+                @Override
+                public void setValue(Boolean value)
+                {
+                    super.setValue(value);
+                    _lookupEditorPanel.setEnabled(getValue()==Boolean.TRUE);
+                }
+            };
+            _lookupEditorPanel = new LookupEditorPanel(lookupService, null, true);
+            //lookupPanel.add(lookupRadio);
+            //lookupPanel.add(_lookupEditorPanel);
+            //add(lookupPanel);
+            group.add(_lookupRadio);
+            add(_lookupEditorPanel);
 
             // CUSTOM
-            ContentPanel customPanel = new ContentPanel(new FitLayout());
-            customPanel.setHeading("Custom Types");
-            final RadioGroup custom = new RadioGroup("customGroup");
-            custom.setOrientation(Style.Orientation.VERTICAL);
-            //if (allowFileLinkProperties)
-            custom.add(new ConceptTypeRadio(fileType));
-            custom.add(new ConceptTypeRadio(attachmentType));
-            custom.add(new ConceptTypeRadio(userType));
-            custom.add(new ConceptTypeRadio(subjectType));
-            customPanel.add(custom);
-            add(customPanel);
+//            ContentPanel customPanel = new ContentPanel(new FitLayout());
+//            customPanel.setHeading("Custom Types");
+//            final RadioGroup custom = new RadioGroup("customGroup");
+//            custom.setOrientation(Style.Orientation.VERTICAL);
+//            custom.add(new ConceptTypeRadio(fileType));
+//            custom.add(new ConceptTypeRadio(attachmentType));
+//            custom.add(new ConceptTypeRadio(userType));
+//            custom.add(new ConceptTypeRadio(subjectType));
+//            customPanel.add(custom);
+//            add(customPanel);
 
             // init all radios list
-            allradios.addAll(custom.getAll());
-            allradios.add(lookupRadio);
-            allradios.addAll(group.getAll());
+//            allradios.addAll(custom.getAll());
+//            allradios.add(lookupRadio);
+            for (Field f : group.getAll())
+                allradios.add((ConceptTypeRadio)f);
 
             // events : disable radios in other groups
             group.addListener(Events.Change, new Listener<FieldEvent>(){
@@ -231,30 +285,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
                 {
                     if (Boolean.TRUE != fe.getValue())
                         return;
-                    if (custom.getValue() != null) custom.getValue().setValue(false);
-                    lookupRadio.setValue(false);
-                    _type = ((ConceptTypeRadio)((RadioGroup)fe.getField()).getValue()).type;
-                }
-            });
-            custom.addListener(Events.Change, new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe)
-                {
-                    if (Boolean.TRUE != fe.getValue())
-                        return;
-                    if (group.getValue() != null) group.getValue().setValue(false);
-                    lookupRadio.setValue(false);
-                    _type = ((ConceptTypeRadio)((RadioGroup)fe.getField()).getValue()).type;
-                }
-            });
-            lookupRadio.addListener(Events.Change, new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe)
-                {
-                    _lookupPanel.setEnabled(Boolean.TRUE==fe.getValue());
-                    if (Boolean.TRUE != fe.getValue())
-                        return;
-                    if (group.getValue() != null) group.getValue().setValue(false);
-                    if (custom.getValue() != null) custom.getValue().setValue(false);
-                    _type = ((ConceptTypeRadio)fe.getField()).type;
+                    _selectedRadio = (ConceptTypeRadio)((RadioGroup)fe.getField()).getValue();
                 }
             });
         }
@@ -269,67 +300,96 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
                 return;
             }
 
-            apply();
-            hide();
+            apply(true);
         }
 
         
         void init(ConceptPicker picker)
         {
             _current = picker;
-            // TODO
-            // set inital selection and combos
+            ConceptType type = picker.getValue();
+
+            // this is a funny swap back to GWTPopertyDescriptor...
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor();
+            type.apply(pd);
+            _lookupEditorPanel.setValue(pd);
+
+            _lookupEditorPanel.setKeyType(picker.isRangeEditable ? null : type.getPropertyType());
+
+            for (int i=allradios.size()-1 ; i>=0 ; i--)
+            {
+                ConceptTypeRadio r = allradios.get(i);
+                if (null != pd && r._type.matches(pd))
+                {
+                    r.setValue(true);
+                    pd = null;
+                }
+                if (r._type == attachmentType)
+                    r.setEnabled(picker.isRangeEditable && picker.allowAttachmentProperties);
+                else if (r._type == fileType)
+                    r.setEnabled(picker.isRangeEditable && picker.allowFileLinkProperties);
+                else if (r._type instanceof LookupConceptType)
+                    setEnabled(picker.isRangeEditable || type.getPropertyType().isLookupType());
+                else
+                    r.setEnabled(picker.isRangeEditable || type.getPropertyType() == r._type.getPropertyType());
+            }
         }
 
         
         // push from the EditorPanel to the TriggerField
-        private void apply()
+        private void apply(final boolean hideOnSuccess)
         {
-            if (_type != genericLookup)
+            if (_selectedRadio == _lookupRadio)
             {
-                _current.setValue(_type);
+                final String folder = _lookupEditorPanel.getContainer();
+                final String schema = _lookupEditorPanel.getSchemaName();
+                final String table = _lookupEditorPanel.getTableName();
+                if (_empty(schema) || _empty(table))
+                {
+                    Window.alert("Schema name and table name must not be empty");
+                    return;
+                }
+                XDOM.getBodyEl().mask();
+                _service.getTablesForLookup(folder, schema, new AsyncCallback<Map<String,GWTPropertyDescriptor>>(){
+                    public void onFailure(Throwable caught)
+                    {
+                        XDOM.getBodyEl().unmask();
+                        Window.alert(caught.getMessage());
+                    }
+
+                    public void onSuccess(Map<String, GWTPropertyDescriptor> result)
+                    {
+                        XDOM.getBodyEl().unmask();
+                        GWTPropertyDescriptor key = result.get(table);  // case sensitivity???
+                        if (null == key || null == key.getRangeURI())
+                        {
+                            Window.alert("Table not found: " + table);
+                            return;
+                        }
+                        String range = key.getRangeURI();
+                        if (!_current.isRangeEditable && null!=_current.getValue() && PropertyType.fromName(range) != _current.getValue().getPropertyType())
+                        {
+                            Window.alert("Lookup primary key does not match: " + _current.getValue().getPropertyType().getShortName());
+                            return;
+                        }
+                        _current.setValue(new LookupConceptType(range, folder, schema, table));
+                        if (hideOnSuccess)
+                            hide();
+                    }
+                });
                 return;
             }
-            // TODO
-            _current.setValue(_type);
+            else // !lookup
+            {
+                _current.setValue(_selectedRadio._type);
+                if (hideOnSuccess)
+                    hide();
+            }
         }
-        
-
-        ConceptType lookupType = new ConceptType()
-        {
-            @Override
-            String getDisplay()
-            {
-                return _lookupPanel.getSchemaName() + "." + _lookupPanel.getTableName();
-            }
-
-            @Override
-            String rangeURI()
-            {
-                // TODO _lookupPanel.getRangeURI();
-                return PropertyType.xsdInt.toString();
-            }
-
-            @Override
-            boolean matches(GWTPropertyDescriptor pd)
-            {
-                throw new UnsupportedOperationException("generic lookup");
-            }
-
-            @Override
-            void apply(GWTPropertyDescriptor pd)
-            {
-                pd.setRangeURI(rangeURI());
-                pd.setConceptURI(null);
-                pd.setLookupContainer(_lookupPanel.getContainer());
-                pd.setLookupSchema(_lookupPanel.getSchemaName());
-                pd.setLookupQuery(_lookupPanel.getTableName());
-            }
-        };
     }
 
 
-    EditorWindow _editorInstance = null;
+    static EditorWindow _editorInstance = null;
     
     EditorWindow getEditor()
     {
@@ -348,22 +408,6 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
     }
 
 
-    void fireChange()
-    {
-        ChangeEvent event = new ChangeEvent(){};
-        _handlers.fireEvent(event);
-    }
-
-
-    ArrayList<ConceptType> customTypes = new ArrayList<ConceptType>();
-
-    void addCustomType(ConceptType c)
-    {
-        customTypes.add(c);
-    }
-
-    
-
     /**
      * ConceptType is a wrapper for a PropetyDescriptor with a matches and apply method
      */
@@ -371,7 +415,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
     public abstract static class ConceptType
     {
         abstract String getDisplay();
-        abstract String rangeURI();
+        abstract PropertyType getPropertyType();
         abstract boolean matches(GWTPropertyDescriptor pd);
         abstract void apply(GWTPropertyDescriptor pd);
     }
@@ -379,36 +423,39 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
     public static class BaseConceptType extends ConceptType
     {
         GWTPropertyDescriptor _pd = new GWTPropertyDescriptor();
+        PropertyType _propertyType;
         String _text;
         
         BaseConceptType(PropertyType type)
         {
             this._pd.setRangeURI(type.toString());
+            _propertyType = type;
             this._text = type.getDisplay();
         }
         BaseConceptType(String rangeURI)
         {
             this._pd.setRangeURI(rangeURI);
-            PropertyType t = PropertyType.fromName(rangeURI);
-            this._text = _default(null==t?null:t.getDisplay(), rangeURI);
+            _propertyType = null==rangeURI ? null : PropertyType.fromName(rangeURI);
+            this._text = _default(null==_propertyType?null:_propertyType.getDisplay(), rangeURI);
         }
 
         BaseConceptType(String rangeURI, String text)
         {
             this._pd.setRangeURI(rangeURI);
+            _propertyType = PropertyType.fromName(rangeURI);
             this._text = text;
         }
 
         BaseConceptType(GWTPropertyDescriptor pd, String text)
         {
             _copy(pd, _pd);
+            _propertyType = PropertyType.fromName(_pd.getRangeURI());
             this._text = text;
         }
 
-        @Override
-        String rangeURI()
+        PropertyType getPropertyType()
         {
-            return _pd.getRangeURI();
+            return _propertyType;
         }
 
         @Override
@@ -431,7 +478,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
                 if (!_empty(pd.getLookupContainer()))
                     return false;
             }
-            if (!_empty(pd.getConceptURI()) && !_pd.getConceptURI().equalsIgnoreCase(pd.getConceptURI()))
+            if (!_empty(_pd.getConceptURI()) && !_pd.getConceptURI().equalsIgnoreCase(pd.getConceptURI()))
                 return false;
             return true;
         }
@@ -445,9 +492,10 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
 
     public static class LookupConceptType extends BaseConceptType
     {
-        LookupConceptType(String schema, String table)
+        LookupConceptType(String rangeURI, String folder, String schema, String table)
         {
-            super((String)null);
+            super(rangeURI);
+            _pd.setLookupContainer(folder);
             _pd.setLookupSchema(schema);
             _pd.setLookupQuery(table);
         }
@@ -476,7 +524,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
     public static final ConceptType datetimeType = new BaseConceptType(PropertyType.xsdDateTime);
     public static final ConceptType attachmentType = new BaseConceptType(PropertyType.expAttachment);
     public static final ConceptType fileType = new BaseConceptType(PropertyType.expFileLink);
-    public static final ConceptType subjectType = new BaseConceptType(PropertyType.xsdString.toString(), "Subject")
+    public static final ConceptType subjectType = new BaseConceptType(PropertyType.xsdString.toString(), "Subject/Participant (String)")
     {
         @Override
         boolean matches(GWTPropertyDescriptor pd)
@@ -512,7 +560,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
     };
 
     // generic lookup (used by init)
-    private static final ConceptType genericLookup = new BaseConceptType("", "Lookup")
+    private static final ConceptType genericLookup = new LookupConceptType(null, null, null, null)
     {
         @Override
         boolean matches(GWTPropertyDescriptor pd)
@@ -521,9 +569,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
         }
 
         @Override
-        void apply(GWTPropertyDescriptor pd)
+        String getDisplay()
         {
-            throw new UnsupportedOperationException("generic lookup");
+            return "Lookup";
         }
     };
 
@@ -557,7 +605,6 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
         int period = str.indexOf(".");
         if (0 < period && period < str.length()-1)
         {
-            String table = str.substring(period+1);
             GWTPropertyDescriptor lookup = new GWTPropertyDescriptor();
             lookup.setLookupSchema(str.substring(0,period));
             lookup.setLookupQuery(str.substring(period+1));
@@ -586,31 +633,38 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType> //imp
      * this is a bound version of the ConceptPicker, it automatically
      * applies the value of the picker to the provided PropertyDescriptor
      */
-    public static class Bound extends ConceptPicker
+    public static class Bound extends ConceptPicker implements BoundWidget, Listener<FieldEvent>
     {
         GWTPropertyDescriptor _target;
 
-        public Bound(LookupServiceAsync lookupService, GWTPropertyDescriptor target)
+        public Bound(LookupServiceAsync lookupService, String name, GWTPropertyDescriptor target)
         {
-            super(lookupService, target);
+            super(lookupService, name, target);
             _target = target;
-            this.addListener(Events.Change, new Listener(){
-                public void handleEvent(BaseEvent be)
-                {
-                    onChange();
-                }
-            });
+            setFireChangeEventOnSetValue(true);
+            this.addListener(Events.Change, this);
         }
 
-        private void onChange()
+        public void handleEvent(FieldEvent fe)
+        {
+            if (fe.getType() == Events.Change)
+                pushValue();
+        }
+
+        public void pushValue()
         {
             ConceptType t = getValue();
             if (null != t)
                 t.apply(_target);
         }
+
+        public void pullValue()
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static boolean _empty(String s) {return null==s || s.length()==0;}
-    private static String _string(Object o) {return null==o ? "" : o.toString();}
+//    private static String _string(Object o) {return null==o ? "" : o.toString();}
     private static String _default(String a, String b) {return _empty(a) ? b : a;}
 }

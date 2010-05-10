@@ -30,7 +30,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.ui.PropertiesEditor;
+import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
 import org.labkey.api.qc.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -1516,7 +1516,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String studyName = StudyService.get().getStudyName(studyContainer);
             if (studyName == null)
                 continue; // No study in that folder
-            String studyColumnName = "copied_to_" + PropertiesEditor.sanitizeName(studyName);
+            String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
 
             // column names must be unique. Prevent collisions
             while (usedColumnNames.contains(studyColumnName))

@@ -16,6 +16,7 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.rpc.RemoteService;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,6 @@ public interface LookupService extends RemoteService
      * @param schemaName name of schema for query module
      * @return map table name to pk column name
      */
-    Map<String, String> getTablesForLookup(String containerId, String schemaName);
+    Map<String, GWTPropertyDescriptor> getTablesForLookup(String containerId, String schemaName);
 
 }

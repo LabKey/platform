@@ -1559,9 +1559,6 @@ public class PageFlowUtil
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
             sb.append("/ext-3.2.0/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
-//            sb.append("<link href=\"");
-//            sb.append(AppProps.getInstance().getContextPath());
-//            sb.append("/ext-3.2.0/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");
@@ -1692,7 +1689,6 @@ public class PageFlowUtil
             scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
         included.add(extDebug);
         included.add(extMin);
-//        scripts.add("ext-3.2.0/ext-patches.js");
 
         // CLIENT
         for (String e : clientExploded)

@@ -224,7 +224,7 @@ public class PropertyColumn extends LookupColumn
     {
         if (containerId == null)
             return super.getTableAlias();
-        return super.getTableAlias() + "_C";
+        return super.getTableAlias() + "_C" + containerId.replace('-','_');
     }
 
     public String getInputType()

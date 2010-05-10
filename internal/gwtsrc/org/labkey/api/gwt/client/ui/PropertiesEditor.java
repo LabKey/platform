@@ -16,11 +16,20 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.extjs.gxt.ui.client.GXT;
+import com.extjs.gxt.ui.client.event.*;
+import com.extjs.gxt.ui.client.util.SwallowEvent;
+import com.extjs.gxt.ui.client.widget.TabItem;
+import com.extjs.gxt.ui.client.widget.form.Field;
+import com.extjs.gxt.ui.client.widget.form.TextField;
+import com.extjs.gxt.ui.client.widget.form.Validator;
+import com.extjs.gxt.ui.client.widget.layout.FitLayout;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.*;
-import com.google.gwt.event.logical.shared.SelectionHandler;
-import com.google.gwt.event.logical.shared.SelectionEvent;
+import com.google.gwt.event.dom.client.DomEvent;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -28,13 +37,9 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.property.*;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,8 +47,10 @@ import java.util.Set;
  * Date: Apr 24, 2007
  * Time: 2:10:20 PM
  */
-public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements LookupListener<FieldType>
+public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor>
 {
+    boolean useConceptPicker = true;
+    
     public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>,GWTPropertyDescriptor>
     {
         public PD(Saveable<GWTDomain> owner, LookupServiceAsync service)
@@ -54,7 +61,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public static final String currentFolder = "[current folder]";
     protected VerticalPanel _contentPanel;
-    private TabPanel _extraPropertiesTabPanel = new TabPanel();
+    private com.extjs.gxt.ui.client.widget.TabPanel _extraPropertiesTabPanel = new com.extjs.gxt.ui.client.widget.TabPanel();
     private Image _spacerImage;
     private boolean _warnedAboutDelete = false;
     private static final String BAD_NAME_ERROR_MESSAGE = "Name may only contain letters, numbers, spaces, and underscores (_), and must start with a letter or underscore.";
@@ -85,8 +92,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private VerticalPanel _noColumnsPanel;
     private FlexTable _table;
     private HorizontalPanel _buttonPanel;
-    private boolean _readOnly;
-    protected LookupServiceAsync _lookupService;
+    private boolean _readOnly = false;
+    protected CachingLookupService _lookupService;
     private List<ChangeHandler> _listeners = new ArrayList<ChangeHandler>();
 
     private FieldType _selectedPD;
@@ -99,6 +106,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     protected DomainType _domain;
     ArrayList<Row> _rows;
     FieldType _newPropertyDescriptor;
+
+    String prefixInputId = "";
 
     protected class Row
     {
@@ -124,20 +133,35 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _newPropertyDescriptor = empty;
         _rows = new ArrayList<Row>();
 
-        _lookupService = service;
+        _lookupService = new CachingLookupService(service);
         _owner = owner;
 
         _panel = new DockPanel();
-        _panel.setWidth("100%");
-        DOM.setElementAttribute(_panel.getElement(), "width", "100%");
+        _panel.setWidth("900");
+
         _table = new FlexTable();
-        _table.setCellPadding(2);
-        _table.setCellSpacing(0);
+        _table.addStyleName("labkey-pad-cells"); // padding:5
+        _table.setCellPadding(2);   // doesn't work inside extContainer!
+        _table.setCellSpacing(0);   // causes spaces in highlight background if != 0
         _table.setWidth("100%");
         _table.setVisible(false);
 
         _noColumnsPanel = new VerticalPanel();
         _noColumnsPanel.add(new HTML("<br/>No fields have been defined.<br/>&nbsp;"));
+
+        ClickHandler rowBubbleHandler = new ClickHandler()
+        {
+            public void onClick(ClickEvent event)
+            {
+                HTMLTable.Cell cell = _table.getCellForEvent(event);
+                int row = cell.getRowIndex();
+                int i = row-1;
+                if (i >= 0 && i < _rows.size())
+                    select(i);
+            }
+        };
+
+        _table.addClickHandler(rowBubbleHandler);
 
         ClickHandler addListener = new ClickHandler()
         {
@@ -194,8 +218,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _exportSchemaButton = new ImageButton("Export Fields", exportSchemaListener);
         _inferSchemaButton = new ImageButton("Infer Fields from File", inferSchemaListener);
 
-        refreshButtons(_buttonPanel);
-
         _contentPanel = new VerticalPanel();
         _contentPanel.add(_noColumnsPanel);
         _contentPanel.add(_table);
@@ -211,7 +233,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 if (_selectedPD != null)
                 {
-                    refreshRow(_selectedPD);
+//                    refreshRow(_selectedPD);
                 }
                 fireChangeEvent();
             }
@@ -224,17 +246,24 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             // TabPanel size
             wrapper.add(propertiesPane, DockPanel.NORTH);
 
-            _extraPropertiesTabPanel.add(wrapper, propertiesPane.getName());
+            TabItem ti = new TabItem(propertiesPane.getName());
+            ti.setLayout(new FitLayout());
+            ti.add(propertiesPane);
+            _extraPropertiesTabPanel.add(ti);
         }
-        _extraPropertiesTabPanel.getDeckPanel().setHeight("100%");
-        DOM.setStyleAttribute(_extraPropertiesTabPanel.getDeckPanel().getElement(), "backgroundColor", "#eeeeee");
 
+        _extraPropertiesTabPanel.setPlain(true);
+        _extraPropertiesTabPanel.addListener(Events.Render, new Listener<ComponentEvent>(){
+            public void handleEvent(ComponentEvent be)
+            {
+                _extraPropertiesTabPanel.getLayoutTarget().setStyleAttribute("backgroundColor","#eeeeee");
+            }
+        });
         _extraPropertiesTabPanel.setPixelSize(350, getExtraPropertiesHeight());
-        DOM.setStyleAttribute(_extraPropertiesTabPanel.getDeckPanel().getElement(), "borderWidth", "1 0 0 0");
-        _extraPropertiesTabPanel.selectTab(0);
-        _extraPropertiesTabPanel.addSelectionHandler(new SelectionHandler<Integer>()
+        _extraPropertiesTabPanel.setSelection(_extraPropertiesTabPanel.getItem(0));
+        _extraPropertiesTabPanel.addListener(Events.Select, new Listener<TabPanelEvent>()
         {
-            public void onSelection(SelectionEvent<Integer> integerSelectionEvent)
+            public void handleEvent(TabPanelEvent integerSelectionEvent)
             {
                 repositionExtraProperties();
             }
@@ -270,12 +299,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _table.getFlexCellFormatter().setWidth(0, col, "155px");
         setBoldText(_table, 0, col++, "Type");
 
-        _table.getFlexCellFormatter().setColSpan(0, col, 2);
-        setBoldText(_table, 0, col, "Lookup");
-        col += 2;
+        if (!useConceptPicker)
+        {
+            _table.getFlexCellFormatter().setColSpan(0, col, 2);
+            setBoldText(_table, 0, col, "Lookup");
+            col += 2;
+        }
 
         _readOnly = false;
+        refreshButtons(_buttonPanel);
     }
+
 
     protected int getExtraPropertiesHeight()
     {
@@ -345,13 +379,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     
     public FieldType addField(FieldType field)
     {
+        _log("-- ADD FIELD --");
         _table.setVisible(true);
         _noColumnsPanel.setVisible(false);
         Row newRow = new Row(field);
         int index = _rows.size();
         _rows.add(newRow);
-        refresh();
-
+        refreshRow(index, newRow);
         select(newRow.edit);
         setFocus(index);
         return newRow.edit;
@@ -362,7 +396,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         try
         {
-            ((TextBox)_table.getWidget(row + 1, COLUMN_OF_NAMEFIELD)).setFocus(true);
+            Widget w = _table.getWidget(row + 1, COLUMN_OF_NAMEFIELD);
+            if (w instanceof Field)
+                ((TextField)w).focus();
+            if (w instanceof FocusWidget)
+                ((FocusWidget)w).setFocus(true);
         }
         catch (Exception x)
         {
@@ -377,6 +415,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         init(_domain);
         fireChangeEvent();
     }
+
 
     void refresh()
     {
@@ -393,6 +432,27 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         select(_selectedPD);
     }
+
+
+    void saveRow(int index)
+    {
+        if (1==1) return;
+        // UNDONE: there is something wrong with BoundTextBox and selenium.  no blur event fires, so no update()
+        // make sure we save current selection before changing
+        int tableRow = index+1;
+        if (tableRow >= _table.getRowCount())
+            return;
+        for (int col=0 ; col<_table.getCellCount(tableRow) ; col++)
+        {
+            Widget w = _table.getWidget(tableRow,col);
+            if (w instanceof BoundWidget)
+            {
+                ((BoundWidget)w).validate();
+                ((BoundWidget)w).pushValue();
+            }
+        }
+    }
+    
 
     protected void refreshButtons(HorizontalPanel buttonPanel)
     {
@@ -415,8 +475,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
+
+    private void select(int index)
+    {
+        select(_rows.get(index).edit);
+    }
+    
+
     private void select(FieldType pd)
     {
+        if (pd == _selectedPD)
+            return;
         FieldType oldPD = _selectedPD;
         if (_selectedPD != null)
         {
@@ -501,8 +570,85 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         refreshRow(index, rowObject);
     }
 
+
+    class RowWidgetListener implements FocusHandler, Listener<ComponentEvent>, KeyPressHandler
+    {
+        FieldType pd;
+        int index;
+
+        RowWidgetListener(FieldType pd, int index)
+        {
+            this.pd = pd;
+            this.index = index;
+        }
+
+        public void onFocus(FocusEvent event)
+        {
+            focus();
+        }
+
+        public void handleEvent(ComponentEvent e)
+        {
+            if (e.getType() ==  Events.KeyPress)
+                componentKeyPress(e);
+            else if (e.getType() == Events.Focus)
+                focus();
+        }
+
+        public void onKeyPress(KeyPressEvent event)
+        {
+            if (event.getCharCode() == 13)
+                enter();
+        }
+
+        public void componentKeyPress(ComponentEvent event)
+        {
+            if (event.getKeyCode() == 13)
+                enter();
+        }
+
+        private void enter()
+        {
+            if (index < _rows.size()-1)
+                setFocus(index+1);
+            else if (null != _newPropertyDescriptor)
+                addField(_newPropertyDescriptor);
+        }
+
+        private void focus()
+        {
+            PropertiesEditor.this.select(pd);
+        }
+    }
+
+
+    class ColumnNameValidator implements WarningValidator
+    {
+        public String validate(Field<?> field, String value)
+        {
+            if (value == null || PropertiesEditorUtil.isLegalName(value))
+                return null;
+            return BAD_NAME_ERROR_MESSAGE;
+
+        }
+        public String warning(Field<?> field, String text)
+        {
+            if (text != null && text.contains(" "))
+            {
+                return "Name should not contain spaces.";
+            }
+            return null;
+        }
+    }
+
+
     public void refreshRow(final int index, final Row rowObject)
     {
+        // see UNDONE in saveRow()
+        saveRow(index);
+
+        HTMLTable.CellFormatter formatter = _table.getCellFormatter();
+
         final FieldType pd = rowObject.edit;
         int tableRow = index+1;
         int col = 0;
@@ -630,32 +776,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
 
 
-        FocusHandler focusHandler = new FocusHandler()
-        {
-            public void onFocus(FocusEvent event)
-            {
-                if (pd != _selectedPD)
-                {
-                    select(pd);
-                }
-            }
-        };
+        RowWidgetListener listener = new RowWidgetListener(pd,index);
 
-        KeyPressHandler keypressHandler = new KeyPressHandler()
-        {
-            public void onKeyPress(KeyPressEvent event)
-            {
-                if (event.getCharCode() == 13)
-                {
-                    if (index < _rows.size()-1)
-                        setFocus(index+1);
-//                    else if (null == _newPropertyDescriptor)
-//                        return;
-//                    else
-//                        addField(_newPropertyDescriptor);
-                }
-            }
-        };
+//        TextBox textbox = new _TextBox();
+//        textbox.setName("ff_textbox" + index);
+//        textbox.addFocusHandler(listener);
+//        textbox.addKeyPressHandler(listener);
+//        textbox.addChangeHandler(new ChangeHandler(){
+//            public void onChange(ChangeEvent event)
+//            {
+//                _log("onChange(ff_textbox)");
+//            }
+//        });
+//        _table.setWidget(tableRow,col++,textbox);
+
 
         Widget name;
         if (readOnly)
@@ -665,27 +799,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
         else
         {
-            BoundTextBox nameTextBox = new BoundTextBox(pd, "name", "120", 200, "ff_name" + index)
-            {
-                String validateValue(String text)
-                {
-                    if (text == null || isLegalName(text))
-                        return null;
-                    return BAD_NAME_ERROR_MESSAGE;
-                }
-
-                @Override
-                String validateValueWarning(String text)
-                {
-                    if (text != null && text.contains(" "))
-                    {
-                        return "Name should not contain spaces.";
-                    }
-                    return null;
-                }
-            };
-            nameTextBox.addFocusHandler(focusHandler);
-            nameTextBox.addKeyPressHandler(keypressHandler);
+            BoundTextBox nameTextBox = new BoundTextBox(pd, pd.bindProperty("name"), "120", 200, prefixInputId + "name" + index, "ff_name" + index);
+            nameTextBox.setValidator(new ColumnNameValidator());
+            nameTextBox.addListener(Events.Focus, listener);
+            nameTextBox.addListener(Events.KeyPress, listener);
             nameTextBox.setEnabled(!readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
             name = nameTextBox;
         }
@@ -700,53 +817,79 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
         else
         {
-            BoundTextBox labelTextBox = new BoundTextBox(pd, "label", "120", 200, "ff_label" + index);
-            labelTextBox.addFocusHandler(focusHandler);
-            labelTextBox.addKeyPressHandler(keypressHandler);
+            BoundTextBox labelTextBox = new BoundTextBox(pd, pd.bindProperty("label"), "120", 200, prefixInputId + "label" + index, "ff_label" + index);
+            labelTextBox.addListener(Events.Focus, listener);
+            labelTextBox.addListener(Events.KeyPress, listener);
             labelTextBox.setEnabled(!readOnly);
             label = labelTextBox;
         }
         _table.setWidget(tableRow, col, label);
         col++;
 
-
         Widget type;
         if (readOnly)
         {
-            // ConceptPicker.getDisplayString()
-            type = new Label(TypePicker.getDisplayString(pd.getRangeURI()));
+            if (useConceptPicker)
+            {
+                type = new Label(ConceptPicker.getDisplayString(pd));
+            }
+            else
+            {
+                type = new Label(TypePicker.getDisplayString(pd.getRangeURI()));
+            }
         }
         else
         {
-            // type = new ConceptPicker.Bound(_lookupService, pd);
-            BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
-            typePicker.addFocusHandler(focusHandler);
-            typePicker.setRangeURI(pd.getRangeURI());
-            typePicker.setEnabled(isTypeEditable(pd, status) && !readOnly);
-            type = typePicker;
+            if (useConceptPicker)
+            {
+                ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + index, pd);
+                picker.addListener(Events.Focus, listener);
+                picker.addListener(Events.KeyPress, listener);
+                picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
+                picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
+                picker.setIsRangeEditable(isTypeEditable(pd,status));
+                type = picker;
+            }
+            else
+            {
+                BoundTypePicker typePicker = new BoundTypePicker(pd, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
+                typePicker.addFocusHandler(listener);
+                typePicker.setRangeURI(pd.getRangeURI());
+                typePicker.setEnabled(isTypeEditable(pd, status) && !readOnly);
+                type = typePicker;
+            }
         }
         _table.setWidget(tableRow, col, type);
         col++;
 
-        if (!readOnly)
+        if (!useConceptPicker)
         {
-            PushButton l = getDownButton("lookup" + index, new ClickHandler()
+            if (!readOnly)
             {
-                public void onClick(ClickEvent sender)
+                PushButton l = getDownButton("lookup" + index, new ClickHandler()
                 {
-                    select(pd);
-                    editLookup(index);
-               }
-            });
-            Tooltip.addTooltip(l, "Click to edit the lookup");
-            _table.setWidget(tableRow,col,l);
+                    public void onClick(ClickEvent sender)
+                    {
+                        select(pd);
+                        editLookup(index);
+                   }
+                });
+                Tooltip.addTooltip(l, "Click to edit the lookup");
+                _table.setWidget(tableRow,col,l);
+            }
+            else
+            {
+                _table.setText(tableRow,col,"");
+            }
+            col++;
+            _table.setText(tableRow,col,pd.getLookupDescription());
+            col++;
         }
-        else
-            _table.setText(tableRow,col,"");
-        col++;
 
-        _table.setText(tableRow,col,pd.getLookupDescription());
-        _table.getFlexCellFormatter().setWidth(tableRow, col, "900px");
+        // blank cell
+        _table.setHTML(tableRow, col,"&nbsp");
+        formatter.setWidth(tableRow, col, "900");
+        formatter.setHeight(tableRow, col, "22");
     }
 
 
@@ -768,7 +911,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         String src = PropertyUtil.getContextPath() + "/_images/" + action + ".gif";
         PushButton result = new PushButton(new Image(src));
-        DOM.setElementProperty(result.getElement(), "id", action + "_" + idSuffix);
+        result.setTabIndex(-1);
+        String id = action + "_" + idSuffix;
+        result.getElement().setId(id);
         if (null != h)
             result.addClickHandler(h);
         return result;
@@ -916,7 +1061,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 continue;
             }
 
-            if (!isLegalName(name))
+            if (!PropertiesEditorUtil.isLegalName(name))
             {
                 errors.add(BAD_NAME_ERROR_MESSAGE);
                 continue;
@@ -938,11 +1083,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         ArrayList<FieldType> l = new ArrayList<FieldType>();
         for (int i=0 ; i<_rows.size() ; i++)
         {
+            saveRow(i);
             Row r = getRow(i);
             FieldStatus status = getStatus(r.edit);
             if (status == FieldStatus.Deleted)
                 continue;
-            r.edit.setName(StringUtils.trimToNull(r.edit.getName()));
+            r.edit.setName(_trimToNull(r.edit.getName()));
             l.add(r.edit);
         }
         d.setFields(l);
@@ -1061,6 +1207,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
 
 
+    private interface WarningValidator extends Validator
+    {
+        public String warning(Field<?> field, String value);
+    }
+
 
     /*
      * These widgets are bound in one direction, that is they push changes into the
@@ -1072,14 +1223,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     private class BoundTypePicker extends TypePicker implements ChangeListener
     {
-        int _index;
         FieldType _p;
 
-        BoundTypePicker(int i, String id, boolean allowFileLinkProperties, boolean allowAttachmentProperties)
+        BoundTypePicker(FieldType pd, String id, boolean allowFileLinkProperties, boolean allowAttachmentProperties)
         {
-            super(getRow(i).edit.getRangeURI(), allowFileLinkProperties, allowAttachmentProperties);
-            _index = i;
-            _p = getRow(_index).edit;
+            super(pd.getRangeURI(), allowFileLinkProperties, allowAttachmentProperties);
+            _p = pd;
             DOM.setElementProperty(getElement(), "id", id);
             addChangeListener(this);
         }
@@ -1092,104 +1241,91 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-    
-    private class BoundTextBox extends TextBox implements ChangeListener, FocusListener
+
+
+    private class _TextField<D> extends TextField<D>
+    {
+        public _TextField()
+        {
+            sinkEvents(Event.ONCHANGE);
+        }
+
+        public void onComponentEvent(ComponentEvent ce)
+        {
+            super.onComponentEvent(ce);
+            if (ce.getEventTypeInt() == Event.ONCHANGE)
+            {
+                onChange(ce);
+            }
+        }
+
+        // TODO avoid double fireChangeEvent() on blur
+        protected void onChange(ComponentEvent be)
+        {
+            D v = getValue();
+            value = v;
+            fireChangeEvent(focusValue, v);
+        }
+    }
+
+
+
+    private class BoundTextBox extends _TextField<String> implements BoundWidget
     {
         FieldType _pd = null;
         IPropertyWrapper _prop;
 
-        private BoundTextBox(String width, int maxLength, String id)
+        private BoundTextBox(String width, int maxLength, String id, String name)
         {
+            if (null != id)
+                setId(id);
+            if (null != name)
+                setName(name);
             if (maxLength > 0)
                 setMaxLength(maxLength);
             if (width != null && width.length()!=0)
                 setWidth(width);
-            DOM.setElementProperty(getElement(), "id", id);
-            addChangeListener(this);
-            addFocusListener(this);
-            addKeyboardListener(new KeyboardListenerAdapter()
-            {
-                public void onKeyPress(Widget sender, char keyCode, int modifiers)
+            setAutoValidate(true);
+
+            this.addListener(Events.Change, new Listener<ComponentEvent>(){
+                public void handleEvent(ComponentEvent be)
                 {
-                    fireChangeEvent();
-                }
-                public void onKeyUp(Widget sender, char keyCode, int modifiers)
-                {
-                    if (_prop instanceof StringProperty)
-                        updateErrorFormat(false);
+                    _log("Listener.handleEvent(Events.Change, " + getName());
+                    pushChange();
                 }
             });
         }
 
-        // this constructor knows how/when to refreshRow(i)
-        BoundTextBox(FieldType pd, String name, String width, int maxLength, String id)
+
+        BoundTextBox(FieldType pd, IPropertyWrapper prop, String width, int maxLength, String id, String name)
         {
-            this(width, maxLength, id);
+            this(width, maxLength, id, name);
             _pd = pd;
-            _prop = pd.bindProperty(name);
-            refresh();
-        }
-
-        BoundTextBox(IPropertyWrapper prop, String width, int maxLength, String id)
-        {
-            this(width, maxLength, id);
             _prop = prop;
-            refresh();
+            _log("init " + getName() + " = " + _prop.get());
+            pullValue();
         }
 
-        /** retrieve/reshow data from bound object */
-        void refresh()
+
+        /* we do our own UI for error and warning so always return true */
+        @Override
+        public boolean validateValue(String text)
         {
-            setText(StringUtils.trimToEmpty((String)_prop.get()));
-            updateErrorFormat(false);
+            _log("validate(" + text + ")");
+            String error = updateErrorFormat(text, false);
+            return true;
         }
 
-        void updateErrorFormat(boolean alert)
-        {
-            String text = StringUtils.trimToNull(getText());
-            String message = validateValue(text);
-            if (null != message)
-            {
-                this.setStyleName("labkey-textbox-error");
-                this.setTitle(message);
-                if (alert)
-                    Window.alert(message);
+
+        /* push data from field to bound property, refreshRow() on status change */
+        void pushChange()
+        {                 
+            _log("update()  " + getName() + "=" + getValue() + ", " + getRawValue() +", " + (null==getInputEl()?"???":getInputEl().getValue()));
+
+            String text = _default(getValue(), null);
+
+            if (null != updateErrorFormat(text, false))
                 return;
-            }
-            else
-            {
-                // No error. How about a warning?
-                message = validateValueWarning(text);
-                if (null != message)
-                {
-                    this.setStyleName("labkey-textbox-warning");
-                    this.setTitle(message);
-                    return; // Never alert
-                }
-            }
-            this.setStyleName("");
-            this.setTitle("");
-        }
-
-        String validateValue(String text)
-        {
-            return null;
-        }
-
-        /**
-         * Indicates a warning should be given -- box turns color,
-         * and pop-up text is given. Does not prevent user from submitting.
-         */
-        String validateValueWarning(String text)
-        {
-            return null;
-        }
-
-        /** push data to bound object */
-        void update()
-        {
-            updateErrorFormat(false);
-            String text = StringUtils.trimToNull(getText());
 
             if (_pd != null)
             {
@@ -1201,41 +1337,75 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                     _prop.set(text);
                     if (status != getStatus(_pd))
                         refreshRow(_pd);
-                    fireChangeEvent();
                 }
             }
             else
             {
                 _prop.set(text);
-                fireChangeEvent();
             }
         }
 
 
-        public void onLostFocus(Widget sender)
+        public void pushValue()
         {
-            update();
+            String text = _default(getValue(), null);
+            _prop.set(text);
         }
 
-        public void onFocus(Widget sender)
+
+        public void pullValue()
+        {
+            String text = _default((String)_prop.get(),"");
+            if (!text.equals(getValue()))
+                setValue(text);
+        }
+
+
+        @Override
+        public void clearInvalid()
         {
         }
 
-        public void onChange(Widget sender)
-        {
-            update();
-        }
 
-        private boolean nullEquals(Object s1, Object s2)
+        String updateErrorFormat(String text, boolean alert)
         {
-            if (s1 == null)
+            if (null == getValidator() || !isRendered())
+                return null;
+            text = _trimToNull(text);
+            String message = getValidator().validate(this, text);
+            if (null != message)
             {
-                return s2 == null;
+                getInputEl().addStyleName("labkey-textbox-error");
+                getInputEl().setTitle(message);
+                if (alert)
+                    Window.alert(message);
+                return message;
             }
             else
             {
-                return s1.equals(s2);
+                // No error. How about a warning?
+                String warning = (getValidator() instanceof WarningValidator) ? ((WarningValidator)getValidator()).warning(this, text) : null;
+                if (null != warning)
+                {
+                    getInputEl().addStyleName("labkey-textbox-warning");
+                    getInputEl().setTitle(warning);
+                    return null; // Never alert
+                }
             }
+            getInputEl().removeStyleName("labkey-textbox-error", "labkey-textbox-warning");
+            getInputEl().setTitle("");
+            return null;
+        }
+    }
+
+
+    public static class _TextBox extends TextBox
+    {
+        @Override
+        public void onBrowserEvent(Event event)
+        {
+            _log("TextBox.onBrowserEvent(" + event.getType() + ")");
+            super.onBrowserEvent(event);
         }
     }
 
@@ -1254,43 +1424,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         fireChangeEvent();
     }
 
+
     protected LookupEditor<FieldType> createLookupEditor()
     {
-        return new LookupEditor<FieldType>(_lookupService, this, true);
-    }
-
-
-    public void lookupUpdated(FieldType pd)
-    {
-        int row = getRow(pd);
-        if (row != -1)
+        return new LookupEditor<FieldType>(_lookupService, new LookupListener<FieldType>()
         {
-            refreshRow(pd);
-        }
-    }
-
-
-    public static boolean isLegalNameChar(char ch, boolean first)
-    {
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
-            return true;
-        if (first)
-            return false;
-        if (ch >= '0' && ch <= '9')
-            return true;
-        if (ch == ' ')
-            return true;
-        return false;
-    }
-
-    public static boolean isLegalName(String str)
-    {
-        for (int i = 0; i < str.length(); i ++)
-        {
-            if (!isLegalNameChar(str.charAt(i), i == 0))
-                return false;
-        }
-        return true;
+            public void lookupUpdated(FieldType pd)
+            {
+                int row = getRow(pd);
+                if (row != -1)
+                {
+                    refreshRow(pd);
+                }
+            }
+        }, true);
     }
 
     public void addButton(ImageButton imageButton)
@@ -1298,27 +1445,44 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _buttonPanel.add(imageButton);
     }
 
-    /**
-     * Transform an illegal name into a safe version. All non-letter characters
-     * become underscores, and the first character must be a letter
-     */
-    public static String sanitizeName(String originalName)
+
+    private static boolean nullEquals(Object s1, Object s2)
     {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true; // first character is special
-        for (int i=0; i<originalName.length(); i++)
+        if (s1 == null)
         {
-            char c = originalName.charAt(i);
-            if (isLegalNameChar(c, first))
-            {
-                sb.append(c);
-                first = false;
-            }
-            else if (!first)
-            {
-                sb.append('_');
-            }
+            return s2 == null;
         }
-        return sb.toString();
+        else
+        {
+            return s1.equals(s2);
+        }
     }
+
+    public static void _log(String s)
+    {
+//        _logConsole(s);
+//        _logGwtDebug(s);
+    }
+
+    private static native void _logConsole(String s) /*-{
+        console.log(s);
+    }-*/;
+
+    private static void _logGwtDebug(String s)
+    {
+        Element e = DOM.getElementById("gwtDebug");
+        if (null != e)
+        {
+            String v = e.getInnerText();
+            String append = (new Date()) + "    " + s + "\n";
+            e.setInnerText(v + append);
+            e.setScrollTop(e.getScrollHeight());
+        }
+    }
+
+
+    private static boolean _empty(String s) {return null==s || s.length()==0;}
+    private static String _string(Object o) {return null==o ? "" : o.toString();}
+    private static String _default(String a, String b) {return _empty(a) ? b : a;}
+    private static String _trimToNull(String a) {return _empty(a) ? null : StringUtils.trimToNull(a.toString());}
 }

@@ -17,85 +17,131 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.extjs.gxt.ui.client.data.BaseModelData;
-import com.extjs.gxt.ui.client.widget.Container;
+import com.extjs.gxt.ui.client.event.BaseEvent;
 import com.extjs.gxt.ui.client.event.ComponentEvent;
+import com.extjs.gxt.ui.client.event.Events;
+import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
 import com.extjs.gxt.ui.client.widget.form.ComboBox;
-import com.extjs.gxt.ui.client.widget.layout.LayoutData;
-import com.extjs.gxt.ui.client.widget.layout.TableData;
+import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.layout.TableLayout;
-import com.extjs.gxt.ui.client.widget.table.Table;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.shared.HandlerManager;
+import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.util.StringProperty;
-import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * User: jeckels
-* Date: Sep 24, 2007
-*/ // LookupEditor is a popup panel for editing lookup information
-public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends LayoutContainer
+ * Date: Sep 24, 2007
+ *
+ *  LookupEditorPanel for editing lookup information
+ */
+public class LookupEditorPanel extends LayoutContainer
 {
-    private StringProperty _container = new StringProperty();
-    private StringProperty _schemaName = new StringProperty();
-    private StringProperty _tableName = new StringProperty();
-
     private final LookupServiceAsync _service;
+
+    private PropertyType _keyType = null;
     private _ComboBox _comboContainer;
     private _ComboBox _comboSchema;
     private _ComboBox _comboTableName;
 
-    public LookupEditorPanel(LookupServiceAsync service, boolean showContainer)
+    public LookupEditorPanel(LookupServiceAsync service, GWTPropertyDescriptor initialValue, boolean showContainer)
+    {
+        if (!(service instanceof CachingLookupService))
+            service = new CachingLookupService(service);
+        _service = service;
+        initUI(showContainer);
+        setValue(initialValue);
+        updateUI();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled)
+    {
+        super.setEnabled(enabled);
+    }
+
+    public void setKeyType(PropertyType type)
+    {
+        _keyType = type;
+    }
+
+    protected void initUI(boolean showContainer)
     {
         setLayout(new TableLayout(2));
         
-        _service = service;
-        int row = 0;
-
         if (showContainer)
         {
             ComboStore store = getContainerStore();
             _comboContainer = new _ComboBox();
+            _comboContainer.setName("lookupContainer");
+            _comboContainer.setEmptyText("Folder");
             _comboContainer.setStore(store);
             _comboContainer.getElement().setId("lookupFolder");
 
             this.add(new Label("Folder"));
             this.add(_comboContainer);
-            row++;
         }
 
         // SchemaName
         {
-            _comboSchema = new _ComboBox()
-            {
-                @Override
-                protected void onTriggerClick(ComponentEvent ce)
-                {
-                    //populateSchemaStore(_comboSchema.getStore(), getContainer());
-                    super.onTriggerClick(ce);
-                }
-            };
+            _comboSchema = new _ComboBox();
+            _comboSchema.setName("schema");
+            _comboSchema.setEmptyText("Choose schema");
             _comboSchema.getElement().setId("lookupSchema");
 
             this.add(new Label("Schema"));
             this.add(_comboSchema);
-            row++;
         }
 
         // TableName
         {
             _comboTableName = new _ComboBox();
+            _comboTableName.setName("table");
             _comboTableName.getElement().setId("lookupTable");
 
             this.add(new Label("Table"));
             this.add(_comboTableName); // this.add(new Label("help")); 
-            row++;
+        }
+    }
+
+
+    protected void updateUI()
+    {
+        String folder = getContainer();
+        String schema = getSchemaName();
+
+        ComboStore schemaStore = (ComboStore)_comboSchema.getStore();
+        populateSchemaStore(schemaStore, folder);
+
+        ComboStore tableStore = (ComboStore)_comboTableName.getStore();
+        if (!_empty(schema))
+            populateTableStore(tableStore,folder, schema);
+
+        updateEmptyText();
+    }
+
+
+    protected void updateEmptyText()
+    {
+        _comboSchema.setEmptyText("Choose a schema");
+        if (_empty(getSchemaName()))
+        {
+            _comboTableName.setEnabled(false);
+            _comboTableName.setEmptyText("Must select a schema");
+        }
+        else
+        {
+            _comboTableName.setEnabled(this.isEnabled());
+            _comboTableName.setEmptyText("Choose a table");
         }
     }
 
@@ -110,14 +156,13 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
         {
             super();
             set("value", value);
-            set("text", text);
+            set("text", null==text?"":text);
         }
     }
 
 
     public static class ComboStore extends ListStore<ComboModelData>
     {
-        
     }
 
 
@@ -133,7 +178,7 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
 
             public void onSuccess(List<String> l)
             {
-                ret.add(new ComboModelData(PropertiesEditor.currentFolder, ""));
+                ret.add(new ComboModelData("", PropertiesEditor.currentFolder));
                 for (String folder : l)
                     ret.add(new ComboModelData(folder));
             }
@@ -142,12 +187,14 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
     }
 
 
-    String lastFolder = null;
+    String lastFolderSchemaStore = null;
     
-    void populateSchemaStore(final ComboStore store, String folder)
+    void populateSchemaStore(final ComboStore store, String f)
     {
-        if (lastFolder != null && lastFolder.equals(folder) && !store.getModels().isEmpty())
+        final String folder = null==f ? "" : f;
+        if (folder.equals(lastFolderSchemaStore))
             return;
+        lastFolderSchemaStore = folder;
 
         store.removeAll();
         
@@ -160,6 +207,8 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
 
             public void onSuccess(List<String> l)
             {
+                if (!folder.equals(lastFolderSchemaStore) )
+                    return;
                 store.add(new ComboModelData(""));
                 for (String schema : l)
                     store.add(new ComboModelData(schema));
@@ -168,16 +217,23 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
     }
 
 
-    void populateTableStore(final ComboStore store, final String folder, final String schema)
+    String lastFolderTableStore = null;
+    String lastSchemaTableStore = null;
+    
+    void populateTableStore(final ComboStore store, String f, final String schema)
     {
-        if (null == schema)
-        {
-            Window.alert("Please select a schema");
+        final String folder = null==f ? "" : f;
+        if (null == schema) throw new IllegalArgumentException();
+
+        if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore))
             return;
-        }
+
+        lastFolderTableStore = folder;
+        lastSchemaTableStore = schema;
+
         store.removeAll();
         
-        _service.getTablesForLookup(folder, schema, new AsyncCallback<Map<String, String>>()
+        _service.getTablesForLookup(folder, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
         {
 
             public void onFailure(Throwable caught)
@@ -185,53 +241,51 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
                 Window.alert(caught.getMessage());
             }
 
-            public void onSuccess(Map<String, String> m)
+            public void onSuccess(Map<String, GWTPropertyDescriptor> m)
             {
-                if (m == null)
-                {
-                    Window.alert("Could not find any tables in the '" + schema + "' schema in the selected folder.");
+                if (!folder.equals(lastFolderTableStore) || !schema.equals(lastSchemaTableStore))
                     return;
-                }
                 for (String table : m.keySet())
                 {
-                    String key = m.get(table);
-                    store.add(new ComboModelData(table, table + " (" + key + ")"));
+                    GWTPropertyDescriptor _pd = m.get(table);
+                    PropertyType tableKeyType = PropertyType.fromName( _pd.getRangeURI());
+                    if (null != _keyType)
+                    {
+                        // CONSIDER: how to you do disabled items in an Ext ComboBox?
+                        if (_keyType != tableKeyType)
+                            continue;
+                    }
+                    store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")"));
                 }
+                if (store.getCount()==0)
+                {
+                    if (m.size() == 0)
+                        Window.alert("Could not find any tables in the '" + schema + "' schema in the selected folder.");
+                    else
+                        Window.alert("There are no tables available with a matching primary key: " + _keyType.getShortName());
+                    return;
+                }
+                updateEmptyText();
             }
         });
     }
 
 
-    public void init(FieldType pd)
+    public void init(GWTPropertyDescriptor pd)
     {
-        String container = pd.getLookupContainer();
-        if (null == StringUtils.trimToNull(container))
-            container = "";
-        setContainer(container);
-        String schema = StringUtils.trimToNull(pd.getLookupSchema());
-        if (null == schema)
-            schema = "lists";
-        setSchemaName(schema);
-        setTableName(pd.getLookupQuery());
-
-        // since we're reusing these we have to ping them
-        if (_comboContainer != null)
-        {
-            _comboContainer.setStringValue(StringUtils.nullToEmpty(container));
-        }
-        _comboSchema.setStringValue(StringUtils.nullToEmpty(schema));
-        _comboTableName.setStringValue(StringUtils.nullToEmpty(pd.getLookupQuery()));
+        setValue(pd);
     }
 
 
     public void setContainer(String c)
     {
-        _container.set(c);
+        _comboContainer.setStringValue(c);
     }
+
 
     public String getContainer()
     {
-        String c = StringUtils.trimToNull(_container.getString());
+        String c = _comboContainer.getStringValue();
         if (".".equals(c))
             c = null;
         if (PropertiesEditor.currentFolder.equals(c))
@@ -241,43 +295,204 @@ public class LookupEditorPanel<FieldType extends GWTPropertyDescriptor> extends 
 
     public void setSchemaName(String name)
     {
-        _schemaName.set(name);
+        _comboSchema.setStringValue(name);
     }
 
     public String getSchemaName()
     {
-        if ("".equals(_schemaName.getString()))
-        {
-            return null;
-        }
-        return _schemaName.getString();
+        return _comboSchema.getStringValue();
     }
 
     public void setTableName(String name)
     {
-        _tableName.set(name);
+        _comboTableName.setStringValue(name);
     }
 
     public String getTableName()
     {
-        if ("".equals(_tableName.getString()))
-        {
-            return null;
-        }
-        return _tableName.getString();
+        return _comboTableName.getStringValue();
     }
 
-    private static class _ComboBox extends ComboBox
+//    void resetRangeURI()
+//    {
+//        value.setRangeURI(null);
+//        getRangeURI(null);
+//    }
+//
+//    String getRangeURI()
+//    {
+//        return value.getRangeURI();
+//    }
+//
+//    void getRangeURI(final AsyncCallback<String> async)
+//    {
+//        final String container = getContainer();
+//        final String schema = getSchemaName();
+//        String table = getTableName();
+//        if (_empty(schema) || _empty(table))
+//        {
+//            value.setRangeURI(null);
+//            return;
+//        }
+//        _service.getTablesForLookup(container, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
+//        {
+//            public void onFailure(Throwable caught)
+//            {
+//                if (null != async)
+//                    async.onSuccess(null);
+//            }
+//
+//            public void onSuccess(Map<String, GWTPropertyDescriptor> result)
+//            {
+//                if (!_eq(container,getContainer()) || !_eq(schema,getSchemaName()))
+//                    return;
+//                GWTPropertyDescriptor pd = result.get(getTableName());
+//                if (null != pd)
+//                    value.setRangeURI(pd.getRangeURI());
+//                if (null != async)
+//                    async.onSuccess(value.getRangeURI());
+//                if (null != value.getRangeURI())
+//                    fireChange();
+//            }
+//        });
+//    }
+
+
+    private class _ComboBox extends ComboBox
     {
         _ComboBox()
         {
             super();
+            sinkEvents(Event.ONCHANGE);
+//            setForceSelection(true);
+            setTriggerAction(TriggerAction.ALL);
             setStore(new ComboStore());
+            addListener(Events.Change,new Listener(){
+                public void handleEvent(BaseEvent be)
+                {
+                    widgetChange();
+                }
+            });
+            addListener(Events.Select,new Listener(){
+                public void handleEvent(BaseEvent be)
+                {
+                    widgetChange();
+                }
+            });
         }
 
         void setStringValue(String value)
         {
             setValue(new ComboModelData(value));
         }
+        
+        String getStringValue()
+        {
+            return null==getValue()?null:(String)getValue().get("value");
+        }
+
+        void widgetChange()
+        {
+            _log("widgetChange(" + getName() + ") = " + getStringValue());
+            updateUI();
+            LookupEditorPanel.this.fireChange();
+        }
+
+
+        public void onComponentEvent(ComponentEvent ce)
+        {
+            super.onComponentEvent(ce);
+            if (ce.getEventTypeInt() == Event.ONCHANGE)
+            {
+                _log("_ComboBox.ONCHANGE()");
+                //onChange(ce);
+                value = new ComboModelData(getRawValue(),getRawValue());
+                widgetChange();
+            }
+        }
+
+        // TODO avoid double fireChangeEvent() on blur
+        protected void onChange(ComponentEvent be)
+        {
+            Object v = getValue();
+            value = v;
+            fireChangeEvent(focusValue, v);
+        }
     }
+
+
+//    GWTPropertyDescriptor initialValue;
+//    GWTPropertyDescriptor value;
+
+    public void setValue(GWTPropertyDescriptor pd)
+    {
+        if (null==pd)
+            pd = new GWTPropertyDescriptor();
+        
+        _comboContainer.setStringValue(pd.getLookupContainer());
+        if (_empty(pd.getLookupSchema()) && _empty(pd.getLookupQuery()))
+            _comboSchema.setStringValue("lists");
+        else
+            _comboSchema.setStringValue(pd.getLookupSchema());
+        _comboTableName.setStringValue(pd.getLookupQuery());
+        updateUI();
+    }
+
+//    public GWTPropertyDescriptor getValue()
+//    {
+//        // selenium onChange events are not firing
+//        _comboContainer.onChange();
+//        _comboSchema.onChange();
+//        _comboTableName.onChange();
+//
+//        if (null == value)
+//            return null;
+//        return copy(value);
+//    }
+
+
+//    public boolean isDirty()
+//    {
+//        GWTPropertyDescriptor init = null==initialValue ? new GWTPropertyDescriptor() : initialValue;
+//        return !_eq(initialValue.getLookupContainer(), value.getLookupContainer()) ||
+//               !_eq(initialValue.getLookupSchema(), value.getLookupSchema()) ||
+//               !_eq(initialValue.getLookupQuery(), value.getLookupQuery());
+//    }
+
+
+    // is this a valid folder/schema/table/range combination
+    public boolean isValid()
+    {
+        if (_empty(getSchemaName()) || _empty(getTableName()))
+            return false;
+        return true;
+    }
+
+
+    HandlerManager changes = new HandlerManager(this);
+
+    void addChangeHandler(ChangeHandler h)
+    {
+        changes.addHandler(ChangeEvent.getType(), h);
+    }
+
+    void fireChange()
+    {
+        changes.fireEvent(new ChangeEvent(){});
+    }
+
+
+//    static GWTPropertyDescriptor copy(GWTPropertyDescriptor src)
+//    {
+//        GWTPropertyDescriptor ret = new GWTPropertyDescriptor();
+//        ret.setRangeURI(src.getRangeURI());
+//        ret.setLookupContainer(src.getLookupContainer());
+//        ret.setLookupSchema(src.getLookupSchema());
+//        ret.setLookupQuery(src.getLookupQuery());
+//        return ret;
+//    }
+
+    boolean _empty(String a) { return null == a || "".equals(a); }
+    boolean _eq(String a, String b) { return _empty(a)?_empty(b):a.equals(b); }
+    static void _log(String s) {PropertiesEditor._log(s);}
 }

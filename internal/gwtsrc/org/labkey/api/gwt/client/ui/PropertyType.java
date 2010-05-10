@@ -27,19 +27,26 @@ import java.util.Map;
 */
 public enum PropertyType
 {
-    xsdString("http://www.w3.org/2001/XMLSchema#string", "Text (String)", "string"),
-    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", "Multi-Line Text", "multiline"),
-    xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", "boolean"),
-    xsdInt("http://www.w3.org/2001/XMLSchema#int", "Integer", "int"),
-    xsdDouble("http://www.w3.org/2001/XMLSchema#double", "Number (Double)", "double"),
-    xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", "datetime"),
-    expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", "File", "file"),
-    expAttachment("http://www.labkey.org/exp/xml#attachment", "Attachment", "attachment");
+    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", false, "Multi-Line Text", "String"),
+    xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "String"),
+    xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean"),
+    xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer"),
+    xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "Double"),
+    xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime"),
+    expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File"),
+    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment");
 
     private final String _uri, _display, _short;
-    PropertyType(String uri, String display, String shortName)
+    private final boolean _lookup;
+
+    PropertyType(String uri, boolean lookup, String display)
+    {
+        this(uri,lookup,display,display);
+    }
+    PropertyType(String uri, boolean lookup, String display, String shortName)
     {
         this._uri = uri;
+        this._lookup = lookup;
         this._display = display;
         this._short = shortName;
     }
@@ -61,6 +68,11 @@ public enum PropertyType
         return _short;
     }
 
+    public boolean isLookupType()
+    {
+        return _lookup;
+    }
+    
     public static PropertyType fromName(String type)
     {
         PropertyType t = synonyms.get(type);
@@ -73,24 +85,31 @@ public enum PropertyType
     private static Map<String,PropertyType> synonyms = new HashMap<String,PropertyType>();
     private static void _put(PropertyType t)
     {
-        synonyms.put(t.toString(), t);
         synonyms.put(t.toString().toLowerCase(), t);
-        synonyms.put(t.getShortName(), t);
+        synonyms.put(t.getDisplay().toLowerCase(), t);
+        synonyms.put(t.getShortName().toLowerCase(), t);
     }
     static
     {
         for (PropertyType t : PropertyType.values())
             _put(t);
+
         synonyms.put("text", xsdString);
+        synonyms.put("xsd:string", xsdString);
+
+        synonyms.put("int", xsdInt);
         synonyms.put("integer", xsdInt);
+        synonyms.put("xsd:int", xsdInt);
+
         synonyms.put("number", xsdDouble);
         synonyms.put("real", xsdDouble);
         synonyms.put("float", xsdDouble);
-        synonyms.put("date", xsdDateTime);
-        synonyms.put("xsd:string", xsdString);
-        synonyms.put("xsd:boolean", xsdBoolean);
-        synonyms.put("xsd:int", xsdInt);
         synonyms.put("xsd:double", xsdDouble);
+
+        synonyms.put("date", xsdDateTime);
         synonyms.put("xsd:datetime", xsdDateTime);
+
+        synonyms.put("bool", xsdBoolean);
+        synonyms.put("xsd:boolean", xsdBoolean);
     }
 }

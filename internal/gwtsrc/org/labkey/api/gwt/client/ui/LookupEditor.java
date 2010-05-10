@@ -264,14 +264,14 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             Window.alert("Please select a schema");
             return;
         }
-        _service.getTablesForLookup(container, schema, new AsyncCallback<Map<String, String>>()
+        _service.getTablesForLookup(container, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
         {
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
             }
 
-            public void onSuccess(Map<String, String> m)
+            public void onSuccess(Map<String, GWTPropertyDescriptor> m)
             {
                 List<String> tables = new ArrayList<String>();
                 if (m == null)
@@ -283,7 +283,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
                 Collections.sort(tables);
                 List<String> display = new ArrayList<String>();
                 for (String table : tables)
-                    display.add(table + " (" + m.get(table) + ")");
+                    display.add(table + " (" + m.get(table).getName() + ")");
                 display.add(0,"");
                 tables.add(0,null);
                 if (_popupList != null)

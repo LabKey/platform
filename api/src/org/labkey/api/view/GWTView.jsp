@@ -22,15 +22,14 @@
 <%
     HttpView me = HttpView.currentView();
     GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
-    String loading = bean.getLoading();
 %>
-<div id="<%= PageFlowUtil.filter(bean.getModuleName()) %>-Root"><%=loading%></div>
+<%--<textarea id="gwtDebug" cols="200" rows=20 style="overflow:auto;"></textarea>--%>
+<div id="<%= PageFlowUtil.filter(bean.getModuleName()) %>-Root" class="extContainer <%=h(bean.getLoadingStyleName())%>"></div>
 <%
 String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
 
 %>
-
 <%-- jgarms: The combination of yahoo ui and gwt javascript causes GWT to fail on IE.
   As a horrible, horrible hack, we insert a special pair of elements here that
   the GWT platform detection code uses to find its base directory.

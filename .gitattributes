@@ -2311,6 +2311,8 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundListBox.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundRadioButton.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextAreaBox.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextBox.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundWidget.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/CachingLookupService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ChartService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ChartServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/ConceptPicker.java -text
@@ -2331,6 +2333,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupListener.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/LookupServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertiesEditor.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertiesEditorUtil.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertyPane.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/PropertyType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/SaveButtonBar.java -text

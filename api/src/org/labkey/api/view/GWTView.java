@@ -52,7 +52,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
 
     public static class GWTViewBean
     {
-        private String _loading = "";
+        public static final String defaultLoadingStyle = "loading-indicator";
         private String _moduleName;
         private Map<String, String> _properties;
 
@@ -60,8 +60,6 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         {
             _moduleName = moduleName;
             _properties = new HashMap<String, String>(properties);
-            if (null != properties.get("loading"))
-                setLoading(properties.get("loading"));
         }
 
         public void init(ViewContext context)
@@ -72,6 +70,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             _properties.put("queryString", context.getActionURL().getQueryString());
             _properties.put("contextPath", context.getContextPath());
             _properties.put("header1Size", ThemeFont.getThemeFont(context.getContainer()).getHeader_1Size());
+            _properties.put("loadingStyle", "");
         }
 
         public String getModuleName()
@@ -84,14 +83,24 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
             return _properties;
         }
 
-        public void setLoading(String message)
+//        public void setLoading(String message)
+//        {
+//            _loading = message;
+//        }
+
+//        public String getLoading()
+//        {
+//            return _loading;
+//        }
+
+        public String getLoadingStyleName()
         {
-            _loading = message;
+            return _properties.get("loadingStyle");
         }
 
-        public String getLoading()
+        public void setLoadingStyleName(String name)
         {
-            return _loading;
+            _properties.put("loadingStyle", name);
         }
     }
 

@@ -195,7 +195,11 @@ public class GUID
      */
     public static String makeHash()
     {
-        return Crypt.MD5.digest(makeGUID() + hashUniq);
+        return makeHash("");
+    }
+    public static String makeHash(String addl)
+    {
+        return Crypt.MD5.digest(makeGUID() + hashUniq + addl);
     }
 
 

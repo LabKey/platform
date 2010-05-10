@@ -50,11 +50,11 @@ public class GWTTabLoader
             // We can't have spaces in property names
             String name = row.get("property");
             String label = row.get("label");
-            if (name != null && !PropertiesEditor.isLegalName(name))
+            if (name != null && !PropertiesEditorUtil.isLegalName(name))
             {
                 if (label == null)
                     label = name;
-                name = PropertiesEditor.sanitizeName(name);
+                name = PropertiesEditorUtil.sanitizeName(name);
             }
 
             GWTPropertyDescriptor prop = new GWTPropertyDescriptor();

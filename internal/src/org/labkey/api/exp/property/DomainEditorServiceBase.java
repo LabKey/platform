@@ -22,7 +22,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryException;
@@ -95,7 +97,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    public Map<String,String> getTablesForLookup(String containerId, String schemaName)
+    public Map<String, GWTPropertyDescriptor> getTablesForLookup(String containerId, String schemaName)
     {
         try
         {
@@ -105,7 +107,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
                 return null;
 
             UserSchema schema = (UserSchema) qSchema;
-            Map<String, String> availableQueries = new HashMap<String, String>();  //  GWT: TreeMap does not work
+            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<String, GWTPropertyDescriptor>();  //  GWT: TreeMap does not work
             for (String name : schema.getTableAndQueryNames(false))
             {
                 TableInfo table;
@@ -122,7 +124,10 @@ public class DomainEditorServiceBase extends BaseRemoteService
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 if (pkColumns.size() != 1)
                     continue;
-                availableQueries.put(name, pkColumns.get(0).getName());
+                ColumnInfo pk = pkColumns.get(0);
+                PropertyType type = PropertyType.getFromClass(pk.getJavaObjectClass());
+                GWTPropertyDescriptor pd = new GWTPropertyDescriptor(pk.getName(), type.getTypeUri());
+                availableQueries.put(name, pd);
             }
             return availableQueries;
         }
