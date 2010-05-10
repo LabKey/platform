@@ -41,7 +41,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 
     public TablePropertiesEditor(Saveable parent, LookupServiceAsync service)
     {
-        super(parent, service);
+        super(parent, service, new GWTColumnInfo());
         _contentPanel.insert(_otherContainerMessage, 0);
     }
 
@@ -178,11 +178,4 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         return false;
     }
-
-    @Override
-    protected LookupEditor<GWTColumnInfo> createLookupEditor()
-    {
-        return new LookupEditor<GWTColumnInfo>(_lookupService, this, false);
-    }
-
 }

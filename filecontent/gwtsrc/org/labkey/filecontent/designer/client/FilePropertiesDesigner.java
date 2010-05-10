@@ -37,7 +37,6 @@ import java.util.List;
  * User: klum
  * Date: Mar 24, 2010
  * Time: 5:56:06 PM
- * To change this template use File | Settings | File Templates.
  */
 public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
 {

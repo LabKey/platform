@@ -66,7 +66,7 @@ public class ListQueryView extends QueryView
         }
         if (getViewContext().hasPermission(ACL.PERM_UPDATE))
         {
-            ActionURL designURL = getList().urlFor(ListController.Action.showListDefinition);
+            ActionURL designURL = getList().urlFor(ListController.Action.editListDefinition);
             designURL.addReturnURL(getViewContext().getActionURL());
             ActionButton btnUpload = new ActionButton("View Design", designURL);
             bar.add(btnUpload);

@@ -23,6 +23,7 @@ import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
@@ -122,6 +123,40 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
+
+    String loadingStyle = null;
+    
+    public String getLoadingStyle()
+    {
+        if (null == loadingStyle)
+        {
+            loadingStyle = PropertyUtil.getServerProperty("loadingStyle");
+            if (null == loadingStyle || "".equals(loadingStyle))
+            loadingStyle = "loading-indicator";
+        }
+        return loadingStyle;
+    }
+    
+    // move to shared base class
+    public void clearLoading(RootPanel panel)
+    {
+        panel.clear();
+        Element e = panel.getElement();
+        panel.getElement().removeClassName(getLoadingStyle());
+        panel.getElement().addClassName("extContainer");
+    }
+
+
+    public void loading(RootPanel panel, String message)
+    {
+        panel.clear();
+        Element e = panel.getElement();
+        panel.getElement().addClassName(getLoadingStyle());
+        _loading = new Label(null==message?"Loading...":message);
+        panel.add(_loading);
+    }
+
+
     public void onModuleLoad()
     {
         _listId = Integer.parseInt(PropertyUtil.getServerProperty("listId"));
@@ -130,10 +165,13 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _hasDesignListPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasDesignListPermission"));
         _hasInsertPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasInsertPermission"));
         _hasDeleteListPermission =  Boolean.valueOf(PropertyUtil.getServerProperty("hasDeleteListPermission"));
+        boolean startInEdit = "#edit".equals(Window.Location.getHash());
 
         _root = RootPanel.get("org.labkey.list.Designer-Root");
+        clearLoading(_root);
 
         _propTable = new _ListPropertiesEditor(new DomainListSaveable(this), getService());
+        setReadOnly(!startInEdit || !_hasDeleteListPermission);
 
         _buttons = new FlexTable();
 
@@ -163,14 +201,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
-    public void loading(String message)
-    {
-        _root.clear();
-        _loading = new Label(null==message?"Loading...":message);
-        _root.add(_loading);
-    }
-
-
     public void refreshButtons()
     {
         _buttons.clear();
@@ -184,6 +214,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 {
                     if (null != _list && !isEmpty(_list.getName()))
                     {
+                        _log("Create List clicked");
                         _service.createList(_list, new AsyncCallback<GWTList>(){
                             public void onFailure(Throwable caught)
                             {
@@ -192,6 +223,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
                             public void onSuccess(GWTList result)
                             {
+                                _log("Create List onSuccess");
                                 if (_importFromFile.booleanValue())
                                 {
                                     //setList() goes to DesignerUI
@@ -251,7 +283,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             _buttons.setWidget(0, col++, new ImageButton("Done", new ClickHandler(){
                 public void onClick(ClickEvent event)
                 {
-                    cancel();
+                    done();
                 }
             }));
         }
@@ -319,6 +351,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public void setList(GWTList ds)
     {
+        _log("setList");
         _listId = ds.getListId();
         _list = ds;
         asyncGetDefinition();
@@ -327,6 +360,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     public void setDomain(GWTDomain d)
     {
+        _log("setDomain");
         if (null == _root)
             return;
 
@@ -344,7 +378,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         if (0 == _listId)
         {
-            _root.clear();
+            _log("showNewListUI");
+
+            clearLoading(_root);
             _root.add(_buttons);
             
             _list = new GWTList();
@@ -358,9 +394,11 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     private void showDesignerUI()
     {
+        _log("showDesignerUI");
+
         if (null != _domain && null != _list)
         {
-            _root.clear();
+            clearLoading(_root);
             _root.add(_buttons);
 
             _propertiesPanel = new ListPropertiesPanel(_readonly);
@@ -371,13 +409,14 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             _root.add(new WebPartPanel("List Fields", _schemaPanel));
 
             refreshButtons();
+            _log("showDesignerUI ok");
         }
     }
 
 
     private void showImporterUI()
     {
-        _root.clear();
+        clearLoading(_root);
 
         VerticalPanel vPanel = new VerticalPanel();
         _root.add(vPanel);
@@ -399,6 +438,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     private void setReadOnly(boolean ro)
     {
+        _propTable.setReadOnly(ro);
         if (ro == _readonly)
             return;
         _readonly = ro;
@@ -504,6 +544,21 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
+    public void done()
+    {
+        if (!_readonly && _listId != 0)
+        {
+            cancel();
+            return;
+        }
+
+        if (!isEmpty(_returnURL))
+            WindowUtil.setLocation(_returnURL);
+        else
+            WindowUtil.setLocation("begin.view");
+    }
+
+
     public void finish()
     {
         saveListDefinition();
@@ -556,7 +611,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     void asyncGetList(int id, String message)
     {
-        loading(message);
+        loading(_root, message);
         setDirty(false);
         _list = null;
         _domain = null;
@@ -582,6 +637,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     void asyncGetDefinition(final Saveable.SaveListener<GWTDomain> saveListener)
     {
+        _propTable.setReadOnly(_readonly);
+        
         getService().getDomainDescriptor(_list, new AsyncCallback<GWTDomain>()
         {
             public void onFailure(Throwable caught)
@@ -820,7 +877,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 radios.add(multi);
 
                 HorizontalPanel panel = new HorizontalPanel();
-                panel.add(new Label("Discussion LInks"));
+                panel.add(new Label("Discussion Links"));
                 _table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
                 _table.setWidget(row, 1, radios);
@@ -940,7 +997,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         _ListPropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync lookup)
         {
-            super(owner, lookup);
+            super(owner, lookup, new GWTPropertyDescriptor());
         }
 
         private boolean isKeyRow(PropertiesEditor.Row row)
@@ -1009,5 +1066,11 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     private static boolean isEmpty(String s)
     {
         return null == s || s.length() == 0;
+    }
+
+
+    public static void _log(String s)
+    {
+        PropertiesEditor._log(s);
     }
 }
