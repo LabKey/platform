@@ -181,7 +181,6 @@ LABKEY.Query = new function()
              LABKEY.Query.executeSql({
                      containerPath: 'home/Study/demo/guestaccess',
                      schemaName: 'lists',
-                     queryName: 'Reagent Requests',
                      sql: 'SELECT "Reagent Requests".UserID AS UserID, \
                          Count("Reagent Requests".UserID) AS TotalRequests, \
                          Sum("Reagent Requests".Quantity) AS TotalQuantity \

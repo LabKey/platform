@@ -77,7 +77,10 @@ public class EmailTemplateService
                 if (o1 == null) return 1;
                 if (o2 == null) return -1;
 
-                return o1.getPriority() - o2.getPriority();
+                int ret = o1.getPriority() - o2.getPriority();
+                if (0 == ret && null != o1.getName() && null != o2.getName())
+                    ret = o1.getName().compareToIgnoreCase(o2.getName());
+                return ret;
             }
         });
 
