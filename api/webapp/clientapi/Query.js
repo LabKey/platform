@@ -169,6 +169,11 @@ LABKEY.Query = new function()
          * you should either include an ORDER BY clause in your SQL, or specific a sort specification in this config property,
          * but not both. The value of this property should be a comma-delimited list of column names you want to sort by. Use
          * a - prefix to sort a column in descending order (e.g., 'LastName,-Age' to sort first by LastName, then by Age descending).
+         * @param {Double} [config.requiredVersion] Set this field to "9.1" to receive the {@link LABKEY.Query.ExtendedSelectRowsResults} format
+                   instead of the SelectRowsResults format. The main difference is that in the
+                   ExtendedSelectRowsResults format each column in each row
+                   will be another object (not just a scalar value) with a "value" property as well as other
+                   related properties (url, mvValue, mvIndicator, etc.)
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
@@ -206,6 +211,9 @@ LABKEY.Query = new function()
 
             if(config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
+
+            if(config.requiredVersion)
+                dataObject.apiVersion = config.requiredVersion;
 
             var qsParams;
             if (config.sort)
