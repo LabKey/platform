@@ -55,6 +55,10 @@ public class ExperimentJSONConverter
     public static final String MATERIAL_INPUTS = "materialInputs";
     public static final String ROLE = "role";
     public static final String DATA_OUTPUTS = "dataOutputs";
+    public static final String MATERIAL_OUTPUTS = "materialOutputs";
+
+    // Material properties
+    public static final String SAMPLE_SET = "sampleSet";
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
     {
@@ -89,6 +93,13 @@ public class ExperimentJSONConverter
                 outputDataArray.put(ExperimentJSONConverter.serializeData(data));
         }
         jsonObject.put(DATA_OUTPUTS, outputDataArray);
+
+        JSONArray outputMaterialArray = new JSONArray();
+        for (ExpMaterial material : run.getMaterialOutputs())
+        {
+            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material));
+        }
+        jsonObject.put(MATERIAL_OUTPUTS, outputMaterialArray);
 
         return jsonObject;
     }
@@ -152,6 +163,14 @@ public class ExperimentJSONConverter
     public static JSONObject serializeMaterial(ExpMaterial material)
     {
         JSONObject jsonObject = serializeStandardProperties(material, null);
+
+        ExpSampleSet sampleSet = material.getSampleSet();
+        if (sampleSet != null)
+        {
+            JSONObject sampleSetJson = serializeStandardProperties(sampleSet, null);
+            jsonObject.append(SAMPLE_SET, sampleSetJson);
+        }
+
         return jsonObject;
     }
 

@@ -586,10 +586,15 @@ Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] Configuration object.  Inherits the config properties of {@link LABKEY.Exp.ExpObject}.
+ * @param {Object} [config.sampleSet] The SampleSet the material belongs to.  With the following properties:
+ * @param {Integer} [config.sampleSet.id] The row id of the SampleSet.
+ * @param {String} [config.sampleSet.name] The name of the SampleSet.
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
     config = config || {};
+
+    this.sampleSet = config.sampleSet;
 };
 Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
 

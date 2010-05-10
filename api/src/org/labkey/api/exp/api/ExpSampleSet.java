@@ -31,6 +31,8 @@ public interface ExpSampleSet extends ExpObject
 
     public ExpMaterial[] getSamples();
 
+    public ExpMaterial getSample(String name);
+
     public Domain getType();
 
     public String getDescription();
