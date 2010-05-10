@@ -453,14 +453,12 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if (!material.getContainer().equals(getViewContext().getContainer()))
             throw new NotFoundException("Material with row id " + material.getRowId() + " is not in folder " + getViewContext().getContainer());
 
-        // ??
-        saveProperties(material, new DomainProperty[0], materialObject);
-        
         if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
         {
             DomainProperty[] dps = sampleSet != null ? sampleSet.getPropertiesForType() : new DomainProperty[0];
             saveProperties(material, dps, materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES));
         }
+        
         return material;
     }
 
