@@ -19,10 +19,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -69,7 +66,7 @@ public class OpenSSOController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class ConfigureAction extends FormViewAction<ConfigProperties>
     {
         public ActionURL getSuccessURL(ConfigProperties form)

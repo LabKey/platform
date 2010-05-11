@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -37,7 +38,7 @@
     if (bean.emails.isEmpty())
         return;
 %>
-    <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>">
+    <form method="get" action="<%=new UserController.UserUrlsImpl().getImpersonateURL(c)%>"><labkey:csrf/>
         <table>
         <tr><td><%=bean.message%></td></tr>
         <tr><td><%

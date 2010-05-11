@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -60,13 +61,14 @@
 
 
     if (agreeOnly)
-    { %>
-<form name="login" method="POST" action="agreeToTerms.post"><%
+    {
+        %><form name="login" method="POST" action="agreeToTerms.post"><%
     }
     else
-    { %>
-<form name="login" method="POST" action="login.post"><%
+    {
+        %><form name="login" method="POST" action="login.post"><%
     } %>
+    <labkey:csrf/>
     <table><%
     if (null != form.getErrorHtml() && form.getErrorHtml().length() > 0)
     { %>

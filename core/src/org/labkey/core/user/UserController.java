@@ -35,6 +35,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
 import org.labkey.core.query.CoreQuerySchema;
@@ -57,6 +58,13 @@ public class UserController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    @Override
+    public PageConfig defaultPageConfig()
+    {
+        PageConfig ret = super.defaultPageConfig();
+        ret.setFrameOption(PageConfig.FrameOption.DENY);
+        return ret;
+    }
 
     public static class UserUrlsImpl implements UserUrls
     {
@@ -1225,7 +1233,7 @@ public class UserController extends SpringActionController
         return false;
     }
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class ShowChangeEmail extends FormViewAction<UserForm>
     {
         private int _userId;
@@ -1599,7 +1607,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
     public class ImpersonateAction extends SimpleRedirectAction<ImpersonateForm>
     {
         public ActionURL getRedirectURL(ImpersonateForm form) throws Exception

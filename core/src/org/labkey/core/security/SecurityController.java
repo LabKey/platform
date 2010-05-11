@@ -41,6 +41,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -1553,10 +1554,7 @@ public class SecurityController extends SpringActionController
         {
             try
             {
-                ViewContext context = new ViewContext();
-                context.setContainer(c);
-                context.setUser(u);
-                BaseViewAction.checkActionPermissions(actionClass, context, null);
+                BaseViewAction.checkActionPermissions(actionClass, makeContext(u), null);
             }
             catch (UnauthorizedException x)
             {
@@ -1564,21 +1562,35 @@ public class SecurityController extends SpringActionController
             }
         }
 
-
         void assertNoPermission(User u, Class<? extends Controller> actionClass) throws Exception
         {
             try
             {
-                ViewContext context = new ViewContext();
-                context.setContainer(c);
-                context.setUser(u);
-                BaseViewAction.checkActionPermissions(actionClass, context, null);
+                BaseViewAction.checkActionPermissions(actionClass, makeContext(u), null);
                 fail("Should not have permission");
             }
             catch (UnauthorizedException x)
             {
                 // expected
             }
+        }
+
+        private ViewContext makeContext(User u)
+        {
+            HttpServletRequest w = new HttpServletRequestWrapper(TestContext.get().getRequest()){
+                @Override
+                public String getParameter(String name)
+                {
+                    if (CSRFUtil.csrfName.equals(name))
+                        return CSRFUtil.getExpectedToken(TestContext.get().getRequest());
+                    return super.getParameter(name);
+                }
+            };
+            ViewContext context = new ViewContext();
+            context.setContainer(c);
+            context.setUser(u);
+            context.setRequest(w);
+            return context;
         }
 
 

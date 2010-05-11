@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.authentication.opensso.OpenSSOController.*" %>
@@ -25,7 +25,7 @@
     JspView<ConfigProperties> me = (JspView<ConfigProperties>)HttpView.currentView();
     ConfigProperties bean = me.getModelBean();
 %>
-<form action="configure.post" method="post">
+<form action="configure.post" method="post"><labkey:csrf/>
     <table><%
 
     for (String key : bean.props.keySet())

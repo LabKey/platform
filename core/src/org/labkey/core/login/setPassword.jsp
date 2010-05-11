@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 %>
+asfdasd asdafsd
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -26,7 +28,7 @@
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrors("form");
 %>
-<form method="POST" action="<%=bean.actionName%>.post">
+<form method="POST" action="<%=bean.actionName%>.post"><labkey:csrf />
 <table><%
     if (errors.length() > 0)
     { %>

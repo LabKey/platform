@@ -1022,7 +1022,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction @CSRF
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception

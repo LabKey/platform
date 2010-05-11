@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.LoginUrls"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -29,7 +30,7 @@
 
     String errors = formatMissedErrors("form");
 %>
-<form method="POST" action="resetPassword.post">
+<form method="POST" action="resetPassword.post"><labkey:csrf/>
     <table><%
         if (errors.length() > 0)
         { %>

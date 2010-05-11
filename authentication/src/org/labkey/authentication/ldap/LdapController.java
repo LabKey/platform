@@ -55,7 +55,7 @@ public class LdapController extends SpringActionController
     }
 
 
-    @AdminConsoleAction
+    @AdminConsoleAction @CSRF
     public class ConfigureAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors) throws Exception

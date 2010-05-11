@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -25,7 +26,7 @@
     JspView<Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
 %>
-<form action="configure.post" method="post">
+<form action="configure.post" method="post"><labkey:csrf/>
 <table>
     <tr>
         <td class="labkey-form-label">LDAP servers</td>

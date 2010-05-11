@@ -78,6 +78,13 @@ public class LoginController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    @Override
+    public PageConfig defaultPageConfig()
+    {
+        PageConfig ret = super.defaultPageConfig();
+        ret.setFrameOption(PageConfig.FrameOption.DENY);
+        return ret;
+    }
 
     public static class LoginUrlsImpl implements LoginUrls
     {
@@ -212,6 +219,7 @@ public class LoginController extends SpringActionController
     @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @CSRF
     public class LoginAction extends FormViewAction<LoginForm>
     {
         private User _user = null;
@@ -239,7 +247,6 @@ public class LoginController extends SpringActionController
                 return HttpView.redirect(getSuccessURL(form));
             else
             {
-                response.setHeader("X-FRAME-OPTIONS", "DENY");
                 return showLogin(form, request, getPageConfig(), false);
             }
         }
@@ -443,6 +450,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @CSRF
     public class AgreeToTermsAction extends FormViewAction<LoginForm>
     {
         public void validateCommand(LoginForm target, Errors errors)
@@ -827,6 +835,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @CSRF
     public class SetPasswordAction extends AbstractSetPasswordAction
     {
         @Override
@@ -908,6 +917,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @CSRF
     public class ChangePasswordAction extends AbstractSetPasswordAction
     {
         @Override
@@ -1046,6 +1056,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @CSRF
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
         private ValidEmail _email = null;

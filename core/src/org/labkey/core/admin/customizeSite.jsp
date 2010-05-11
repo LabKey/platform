@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
@@ -90,7 +91,7 @@ function testSequest()
 }
 </script>
 
-<form name="preferences" enctype="multipart/form-data" method="post">
+<form name="preferences" enctype="multipart/form-data" method="post"><labkey:csrf />
 <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 1 : 0%>" />
 
 <table>

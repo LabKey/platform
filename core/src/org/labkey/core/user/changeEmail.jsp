@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -24,7 +25,7 @@
     JspView<ChangeEmailBean> me = (JspView<ChangeEmailBean>) HttpView.currentView();
     ChangeEmailBean bean = me.getModelBean();
 %>
-<form method="post" action="showChangeEmail.post">
+<form method="post" action="showChangeEmail.post"><labkey:csrf/>
 <input type="hidden" name="userId" value="<%=bean.userId%>">
 <table><%=formatMissedErrorsInTable("form", 2)%>
     <tr>
