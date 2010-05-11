@@ -55,46 +55,45 @@ LABKEY.Portal = new function()
     function updateDOM(webparts, action, webPartId, direction)
     {
         // would be nice to use getElementsByName('webpart') here, but this isn't supported in IE.
-        var docWebPartSpans = [];
-        var spans = document.getElementsByTagName('span');
-        for (var spanIndex = 0; spanIndex < spans.length; spanIndex++)
+        var tables = document.getElementsByTagName('table');
+        var webpartTables = [];
+        var targetTable;
+        var targetTableIndex;
+        for (var tableIndex = 0; tableIndex < tables.length; tableIndex++)
         {
-            if (spans[spanIndex].getAttribute('name') == 'webpart')
-                docWebPartSpans[docWebPartSpans.length] = spans[spanIndex];
-        }
-
-        var targetSpan;
-        for (var i = 0; i < docWebPartSpans.length; i++)
-        {
-            var span = docWebPartSpans[i];
-            var webpart = span.firstChild;
-            if (webpart.id == 'webpart_' + webPartId)
+            var table = tables[tableIndex];
+            if (table.getAttribute('name') == 'webpart')
             {
-                targetSpan = span;
-                break;
-            }
-        }
-
-        // update the dom
-        if (action == MOVE_ACTION)
-        {
-            if (targetSpan)
-            {
-                var swapSpan = direction == MOVE_UP ? docWebPartSpans[i - 1] : docWebPartSpans[i + 1];
-                if (swapSpan)
+                webpartTables[webpartTables.length] = table;
+                if (table.id == 'webpart_' + webPartId)
                 {
-                    var targetWebPartEl = targetSpan.firstChild;
-                    var swapWebPartEl = swapSpan.firstChild;
-                    targetSpan.removeChild(targetWebPartEl);
-                    swapSpan.removeChild(swapWebPartEl);
-                    targetSpan.appendChild(swapWebPartEl);
-                    swapSpan.appendChild(targetWebPartEl);
+                    targetTableIndex = webpartTables.length - 1;
+                    targetTable = table;
                 }
             }
         }
-        else if (action == REMOVE_ACTION)
+
+        if (targetTable)
         {
-            targetSpan.parentNode.removeChild(targetSpan);
+            if (action == MOVE_ACTION)
+            {
+                var swapTable = webpartTables[direction == MOVE_UP ? targetTableIndex - 1 : targetTableIndex + 1];
+                if (swapTable)
+                {
+                    var parentEl = targetTable.parentNode;
+                    var insertPoint = swapTable.nextSibling;
+                    var swapPoint = targetTable.nextSibling;
+
+                    parentEl.removeChild(targetTable);
+                    parentEl.removeChild(swapTable);
+                    parentEl.insertBefore(targetTable, insertPoint);
+                    parentEl.insertBefore(swapTable, swapPoint);
+                }
+            }
+            else if (action == REMOVE_ACTION)
+            {
+                targetTable.parentNode.removeChild(targetTable);
+            }
         }
         updateButtons(webparts);
     }
@@ -128,12 +127,29 @@ LABKEY.Portal = new function()
         for (var region in webparts)
         {
             var regionParts = webparts[region];
-            for (var index = 0; index < regionParts.length; index++)
+
+            // get the webpart table elements from the DOM here; it's possible that some configured webparts may
+            // not actually be in the document (if the webpartfactory returns null for security reasons, for example.)
+            var confirmedWebparts = [];
+            var confirmedWebpartTables = [];
+            var index;
+            for (index = 0; index < regionParts.length; index++)
             {
-                var webpart = regionParts[index];
+                var testWebpart = regionParts[index];
+                var testTable = document.getElementById('webpart_' + testWebpart.webPartId);
+                if (testTable)
+                {
+                    confirmedWebparts[confirmedWebparts.length] = testWebpart;
+                    confirmedWebpartTables[confirmedWebpartTables.length] = testTable;
+                }
+            }
+
+            for (index = 0; index < confirmedWebpartTables.length; index++)
+            {
+                var webpartTable = confirmedWebpartTables[index];
+                var webpart = confirmedWebparts[index];
                 var disableUp = index == 0;
-                var disableDown = index == regionParts.length - 1;
-                var webpartTable = document.getElementById('webpart_' + webpart.webPartId);
+                var disableDown = index == confirmedWebparts.length - 1;
                 var imgChildren = webpartTable.getElementsByTagName("img");
 
                 for (var imageIndex = 0; imageIndex < imgChildren.length; imageIndex++)

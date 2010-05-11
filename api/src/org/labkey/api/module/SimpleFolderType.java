@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.folderType.FolderType;
@@ -38,7 +39,7 @@ import java.util.*;
  */
 public class SimpleFolderType extends DefaultFolderType
 {
-    private File _folderTypeFile;
+    private Resource _folderTypeFile;
     private long _lastModified = 0;
     private String _name;
     private String _description;
@@ -48,39 +49,34 @@ public class SimpleFolderType extends DefaultFolderType
     private Module _defaultModule;
     public static final String FILE_EXTENSION = ".foldertype.xml";
 
-    //can be used to select all webpart files in a directory
-    public static final FilenameFilter folderTypeFileFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return name.toLowerCase().endsWith(FILE_EXTENSION);
-        }
-    };
-
-    public SimpleFolderType(File folderTypeFile, FolderType folderType)
+    public SimpleFolderType(Resource folderTypeFile, FolderType folderType)
     {
         super(folderType.getName(), folderType.getDescription());
         _folderTypeFile = folderTypeFile;
         reload();
     }
 
-    public static SimpleFolderType create(File folderTypeFile)
+    public static SimpleFolderType create(Resource folderTypeFile)
     {
         FolderType type = parseFile(folderTypeFile);
         return new SimpleFolderType(folderTypeFile, type);
     }
 
-    public static List<SimpleFolderType> createFromDirectory(File directory)
+    public static List<SimpleFolderType> createFromDirectory(Resource directory)
     {
         List<SimpleFolderType> folderTypes = new ArrayList<SimpleFolderType>();
-        if (directory.exists() && directory.isDirectory())
+        if (directory.exists() && directory.isCollection())
         {
-            for (File file : directory.listFiles(folderTypeFileFilter))
-                folderTypes.add(create(file));
+            for (Resource file : directory.list())
+            {
+                if (file.isFile() && file.getName().toLowerCase().endsWith(FILE_EXTENSION))
+                    folderTypes.add(create(file));
+            }
         }
         return folderTypes;
     }
 
-    private static FolderType parseFile(File folderTypeFile)
+    private static FolderType parseFile(Resource folderTypeFile)
     {
         Logger log = Logger.getLogger(SimpleFolderType.class);
         XmlOptions xmlOptions = new XmlOptions();
@@ -92,24 +88,24 @@ public class SimpleFolderType extends DefaultFolderType
         FolderTypeDocument doc;
         try
         {
-            doc = FolderTypeDocument.Factory.parse(folderTypeFile, xmlOptions);
+            doc = FolderTypeDocument.Factory.parse(folderTypeFile.getInputStream(), xmlOptions);
         }
         catch (XmlException e)
         {
             log.error(e);
             throw new RuntimeException("Unable to load custom folder type from file " +
-                    folderTypeFile.getAbsolutePath() + ".", e);
+                    folderTypeFile.getPath() + ".", e);
         }
         catch (IOException e)
         {
             log.error(e);
             throw new RuntimeException("Unable to load custom folder type from file " +
-                    folderTypeFile.getAbsolutePath() + ".", e);
+                    folderTypeFile.getPath() + ".", e);
         }
         if(null == doc || null == doc.getFolderType())
         {
             IllegalStateException error = new IllegalStateException("Folder type definition file " +
-                    folderTypeFile.getAbsolutePath() + " does not contain a root 'folderType' element!");
+                    folderTypeFile.getPath() + " does not contain a root 'folderType' element!");
             log.error(error);
             throw error;
         }
@@ -153,12 +149,12 @@ public class SimpleFolderType extends DefaultFolderType
         }
         _activeModules = activeModules;
         _defaultModule = getModule(type.getDefaultModule());
-        _lastModified = _folderTypeFile.lastModified();
+        _lastModified = _folderTypeFile.getLastModified();
     }
 
     private void reloadIfStale()
     {
-        if (_folderTypeFile.lastModified() != _lastModified)
+        if (_folderTypeFile.getLastModified() != _lastModified)
             reload();
     }
 

@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -172,5 +173,14 @@ public abstract class ExportScriptModel
         WebPartView scriptView = factory.getView(queryView);
         scriptView.setFrame(WebPartView.FrameType.NONE);
         return scriptView;
-    }    
+    }
+
+    public ContainerFilter getContainerFilter()
+    {
+        String containerFilterName = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() +  ".containerFilterName");
+        if (containerFilterName != null)
+            return ContainerFilter.getContainerFilterByName(containerFilterName, _view.getUser());
+        else
+            return _view.getQueryDef().getContainerFilter();
+    }
 }

@@ -343,7 +343,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             case PORTAL:
             {
                 out.println("<!--webpart-->");
-                out.println("<span name=\"webpart\"><table id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp\">");
+                out.println("<table name=\"webpart\" id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp\">");
 
                 Boolean collapsed = false;
 
@@ -560,7 +560,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
 
         case LEFT_NAVIGATION:
         case PORTAL:
-            out.print("</td></tr></table></span><!--/webpart-->");
+            out.print("</td></tr></table><!--/webpart-->");
             break;
 
         case DIALOG:

@@ -773,7 +773,8 @@ public class Portal
         try
         {
             view = factory.getWebPartView(portalCtx, webPart);
-            view.setWebPartRowId(webPart.getRowId());
+            if (view != null)
+                view.setWebPartRowId(webPart.getRowId());
         }
         catch(Throwable t)
         {

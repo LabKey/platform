@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.data.xml.queryCustomView.PropertyName;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,7 @@ public interface CustomViewInfo
     String getName();
     User getOwner();
     User getCreatedBy();
+    Date getModified();
 
     String getSchemaName();
     String getQueryName();

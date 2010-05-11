@@ -14,10 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%><%@ page import="org.labkey.api.query.CreateJavaScriptModel" %><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %><%@ page import="org.labkey.api.util.PageFlowUtil" %><%
+%><%@ page import="org.labkey.api.query.CreateJavaScriptModel" %><%@ page import="org.labkey.api.data.ContainerFilter" %><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %><%@ page import="org.labkey.api.util.PageFlowUtil" %><%
     JspView<CreateJavaScriptModel> me = (JspView<CreateJavaScriptModel>) HttpView.currentView();
     CreateJavaScriptModel model = me.getModelBean();
     me.getViewContext().getResponse().setContentType("text/plain");
+    ContainerFilter containerFilter = null;
+    if (model.getContainerFilter() != null)
+        containerFilter = model.getContainerFilter();
 %><script type="text/javascript">
     LABKEY.Query.selectRows({
         schemaName: <%=PageFlowUtil.jsString(model.getSchemaName())%>,
@@ -27,7 +30,8 @@
         errorCallback: onError,
         requiredVersion: 9.1,  //remove to get the 8.3 response format
         sort: <%=model.getSort()%>,
-        filterArray: <%=model.getFilters()%>
+        filterArray: <%=model.getFilters()%><%=
+            containerFilter != null ? ",\n        containerFilter: '" + containerFilter.getType().name() + "'" : "" %>
     });
 
     function onSuccess(results)

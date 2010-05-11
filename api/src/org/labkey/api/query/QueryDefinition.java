@@ -60,6 +60,7 @@ public interface QueryDefinition
     void setMetadataXml(String xml);
     void setContainer(Container container);
     void setContainerFilter(ContainerFilter containerFilter);
+    ContainerFilter getContainerFilter();
 
     boolean canEdit(User user);
     void save(User user, Container container) throws SQLException;
