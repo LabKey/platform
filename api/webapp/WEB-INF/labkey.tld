@@ -142,4 +142,9 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
+    <tag>
+        <name>csrf</name>
+        <tag-class>org.labkey.api.jsp.taglib.CsrfInputTag</tag-class>
+        <body-content>empty</body-content>
+    </tag>
 </taglib>

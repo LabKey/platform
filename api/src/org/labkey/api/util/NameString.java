@@ -101,10 +101,12 @@ public class NameString extends HString
                 return value;
             if (value instanceof HString)
                 value = ((HString)value).getSource();
-            NameString g = new NameString(String.valueOf(value));
-            if (g.isTainted())
+            String s = String.valueOf(value);
+            validateChars(s);
+            NameString name = new NameString(String.valueOf(value));
+            if (name.isTainted())
                 throw new ConversionException("Invalid name, use only alphanumeric characters, spaces, and '-_:()$'.");
-            return g;
+            return name;
         }
     }
 }

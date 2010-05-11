@@ -32,6 +32,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -564,6 +565,9 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public static void checkActionPermissions(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles) throws UnauthorizedException
     {
+        String method = context.getRequest().getMethod();
+        boolean isPOST = "POST".equals(method);
+
         Container c = context.getContainer();
         if (null == c)
         {
@@ -574,6 +578,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         User user = context.getUser();
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
+
+        CSRF csrfCheck = actionClass.getAnnotation(CSRF.class);
+        if (null != csrfCheck && isPOST)
+            CSRFUtil.validate(context.getRequest());
 
         RequiresPermission oldReqPerm = actionClass.getAnnotation(RequiresPermission.class);
         RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
@@ -602,8 +610,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         {
             assert c.isRoot();  // TODO: HttpView.throwUnauthorized(); -- once we've done some testing with the assert
 
-            String method = context.getRequest().getMethod();
-            if ("POST".equals(method))
+            if (isPOST)
             {
                 if (!user.isAdministrator())
                     HttpView.throwUnauthorized();

@@ -75,6 +75,7 @@ public class PageConfig
     private List<NavTree> _navTrail;
     private AppBar _appBar;
     private MultiMap<String, String> _meta = new MultiHashMap<String, String>();
+    private FrameOption _frameOption = FrameOption.ALLOW;
 
     public PageConfig()
     {
@@ -318,5 +319,20 @@ public class PageConfig
             sb.append("\">\n");
         }
         return sb.toString();
+    }
+
+    public enum FrameOption
+    {
+        ALLOW, SAMEORIGIN, DENY
+    }
+    
+    public void setFrameOption(FrameOption option)
+    {
+        _frameOption = option;
+    }
+
+    public FrameOption getFrameOption()
+    {
+        return null==_frameOption?FrameOption.ALLOW:_frameOption;
     }
 }

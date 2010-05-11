@@ -1917,6 +1917,7 @@ public class PageFlowUtil
             }
             sb.append("}");
         }
+        sb.append(",CSRF:").append(jsString(CSRFUtil.getExpectedToken(context.getRequest())));
         sb.append("}"); //end config
         return sb.toString();
     }

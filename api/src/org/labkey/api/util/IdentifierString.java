@@ -81,10 +81,12 @@ public class IdentifierString extends HString
                 return value;
             if (value instanceof HString)
                 value = ((HString)value).getSource();
-            IdentifierString g = new IdentifierString(String.valueOf(value));
-            if (g.isTainted())
+            String s = String.valueOf(value);
+            validateChars(s);
+            IdentifierString id = new IdentifierString(s);
+            if (id.isTainted())
                 throw new ConversionException("Invalid identifier");
-            return g;
+            return id;
         }
     }
 }

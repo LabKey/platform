@@ -118,9 +118,16 @@ public class ReturnURLString extends HString
                 return ReturnURLString.EMPTY;
             if (value instanceof ReturnURLString)
                 return value;
+            CharSequence seq;
             if (value instanceof CharSequence)
-                return new ReturnURLString((CharSequence)value, true);
-            return new ReturnURLString((String)_impl.convert(String.class, value), true);
+                seq = (CharSequence)value;
+            else
+                seq = (String)_impl.convert(String.class, value);
+            validateChars(seq);
+
+            // TODO more validation for crazy char encoding
+
+            return new ReturnURLString(seq, true);
         }
     }
 }

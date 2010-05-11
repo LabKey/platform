@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.action.HasViewContext;
@@ -133,6 +134,9 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
     protected void exposeModelAsRequestAttributes(Map model, HttpServletRequest request) throws Exception
     {
+        // init CSRF attribute as side-effect
+        CSRFUtil.getExpectedToken(request);
+
         // a) merge properties that were dropped into the spring ModelMap
         // b) copy parameters into request attributes where JSP framework/taglibs might expect them
         ViewContext context = getViewContext();

@@ -324,6 +324,7 @@ api/src/org/labkey/api/jsp/RecompilingJspClassLoader.java -text
 api/src/org/labkey/api/jsp/taglib/ButtonTag.java -text
 api/src/org/labkey/api/jsp/taglib/CheckboxTag.java -text
 api/src/org/labkey/api/jsp/taglib/ClearAll.java -text
+api/src/org/labkey/api/jsp/taglib/CsrfInputTag.java -text
 api/src/org/labkey/api/jsp/taglib/ErrorsTag.java -text
 api/src/org/labkey/api/jsp/taglib/HelpPopupTag.java -text
 api/src/org/labkey/api/jsp/taglib/LinkTag.java -text
@@ -637,6 +638,7 @@ api/src/org/labkey/api/security/AuthenticatedRequest.java -text
 api/src/org/labkey/api/security/AuthenticatedResponse.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text
 api/src/org/labkey/api/security/AuthenticationProvider.java -text
+api/src/org/labkey/api/security/CSRF.java -text
 api/src/org/labkey/api/security/ContextualRoles.java -text
 api/src/org/labkey/api/security/Group.java -text
 api/src/org/labkey/api/security/GroupManager.java -text
@@ -841,6 +843,8 @@ api/src/org/labkey/api/unused/Tree2D.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
+api/src/org/labkey/api/util/CSRFException.java -text
+api/src/org/labkey/api/util/CSRFUtil.java -text
 api/src/org/labkey/api/util/CloseableIterator.java -text
 api/src/org/labkey/api/util/ConfigurationException.java -text
 api/src/org/labkey/api/util/ContainerContext.java -text

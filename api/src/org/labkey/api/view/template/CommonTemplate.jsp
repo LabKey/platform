@@ -19,7 +19,6 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.GWTView" %>
@@ -38,6 +37,9 @@
     base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = me.getViewContext().getContainer();
+
+    if (bean.getFrameOption() != PageConfig.FrameOption.ALLOW)
+        response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
 %>
 <html>
 <head>

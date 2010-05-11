@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.DialogTemplate" %>
@@ -27,6 +26,9 @@
     PageConfig pageConfig = me.getModelBean();
     String contextPath = request.getContextPath();
     Container c = me.getViewContext().getContainer();
+
+    if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
+        response.setHeader("X-FRAME-OPTIONS", pageConfig.getFrameOption().name());
 %>
 <html>
 <head>

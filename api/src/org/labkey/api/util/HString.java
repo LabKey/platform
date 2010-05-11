@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.ConvertHelper;
@@ -244,7 +245,9 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
             if (value instanceof HString)
                 return value;
             // Converter is always strict
-            return new HString(_impl.convert(String.class, value), true);
+            String s = (String)_impl.convert(String.class, value);
+            validateChars(s);
+            return new HString(s, true);
         }
     }
 
@@ -551,6 +554,33 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
         return new HString(r,tainted);
     }
 
+
+
+    static boolean[] legal = new boolean[256];
+    static
+    {
+        for (char ch=0 ; ch<256 ; ch++)
+            legal[ch] = Character.isWhitespace(ch) || !Character.isISOControl(ch);
+    }
+
+    protected static boolean validChar(int ch)
+    {
+        return ch < 256 ? legal[ch] : Character.isDefined(ch) && (Character.isWhitespace(ch) || !Character.isISOControl(ch));
+    }
+
+    protected static boolean validChars(CharSequence s)
+    {
+        for (int i=0 ; i<s.length() ; i++)
+            if (!validChar(s.charAt(i)))
+                return false;
+        return true;
+    }
+
+    protected static void validateChars(CharSequence s)
+    {
+        if (!validChars(s))
+            throw new ConversionException("Invalid characters in string");
+    }
 
 
     public static class TestCase extends junit.framework.TestCase
