@@ -307,6 +307,10 @@ a.labkey-disabled-button span
 a.labkey-menu-button span, a.labkey-disabled-menu-button span
 {
     padding-right: 1.0em;
+}
+
+a.labkey-menu-button span
+{
     color: black;
 }
 
