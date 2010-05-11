@@ -25,75 +25,93 @@
  * then mouse is hovering over the ToolTip's popup element.
  */
 LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
-  initComponent: function() {
-    Ext.apply(this,{
-      showDelay: 500,
-      hideDelay: 1500,
-      dismissDelay: 0,
-      autoHide: false
-      //floating:{shadow:true,shim:true,useDisplay:true,constrain:true}
-    });
-    LABKEY.ext.PersistentToolTip.superclass.initComponent.call(this);
-  },
+    initComponent: function() {
+        Ext.apply(this, {
+            showDelay: 500,
+            hideDelay: 1500,
+            dismissDelay: 0,
+            autoHide: false
+            //floating:{shadow:true,shim:true,useDisplay:true,constrain:true}
+        });
+        LABKEY.ext.PersistentToolTip.superclass.initComponent.call(this);
+    },
 
-  afterRender: function() {
-    LABKEY.ext.PersistentToolTip.superclass.afterRender.call(this);
-    this.el.on('mouseout', this.onTargetOut, this);
-    this.el.on('mouseover', this.onElOver, this);
-  },
+    afterRender: function() {
+        LABKEY.ext.PersistentToolTip.superclass.afterRender.call(this);
+        this.el.on('mouseout', this.onTargetOut, this);
+        this.el.on('mouseover', this.onElOver, this);
+    },
 
-  checkWithin: function(e) {
-    if (this.el && e.within(this.el.dom, true)) {
-      return true;
+    checkWithin: function(e) {
+        if (this.el && e.within(this.el.dom, true)) {
+            return true;
+        }
+        if (this.disabled || e.within(this.target.dom, true)) {
+            return true;
+        }
+        return false;
+    },
+
+    onElOver: function(e) {
+        if (this.checkWithin(e)) {
+            this.clearTimer('hide');
+        }
+    },
+
+    // same as private method of ToolTip, passing 'e' to delayShow
+    onTargetOver : function(e)
+    {
+        if (this.disabled || e.within(this.target.dom, true)) {
+            return;
+        }
+        var t = e.getTarget(this.delegate);
+        if (t) {
+            this.triggerElement = t;
+            this.clearTimer('hide');
+            this.targetXY = e.getXY();
+            this.delayShow(e);
+        }
+    },
+
+    // override private method of ToolTip, passing 'e' to doShow
+    delayShow : function(e) {
+        this.showTimer = this.doShow.defer(this.showDelay, this, [e]);
+    },
+
+    doShow: function(e) {
+        var xy = e.getXY();
+        var within = this.target.getRegion().contains({left: xy[0], right: xy[0], top: xy[1], bottom: xy[1]});
+        if (within) {
+            this.show();
+        }
+    },
+
+    onTargetOut: function(e) {
+        if (this.checkWithin(e)) {
+            this.clearTimer('hide');
+        }
+        else if (this.hideTimer) {
+            this.hide();
+        }
+        else {
+            this.delayHide();
+        }
+    },
+
+    show: function () {
+        LABKEY.ext.PersistentToolTip.superclass.show.call(this);
+        if (this.el)
+            LABKEY.Utils.ensureBoxVisible(this);
+    },
+
+    // private
+    onDocMouseDown : function(e) {
+        if (this.autoHide !== true && !this.closable && !this.checkWithin(e)) {
+            this.disable();
+            this.doEnable.defer(100, this);
+        }
     }
-    if (this.disabled || e.within(this.target.dom, true)){
-      return true;
-    }
-    return false;
-  },
 
-  onElOver: function(e) {
-    if (this.checkWithin(e)) {
-      this.clearTimer('hide');
-    }
-  },
-
-  onTargetOver : function(e){
-    if (this.disabled || e.within(this.target.dom, true)){
-        return;
-    }
-    this.clearTimer('hide');
-    this.targetXY = e.getXY();
-    this.delayShow(e);
-  },
-
-  delayShow : function(e){
-    this.showTimer = this.doShow.defer(this.showDelay, this, [e]);
-  },
-
-  doShow: function(e) {
-    var xy = e.getXY();
-    var within = this.target.getRegion().contains({left: xy[0], right: xy[0], top: xy[1], bottom: xy[1]});
-    if (within) {
-      this.show();
-    }
-  },
-
-  onTargetOut: function(e){
-    if (this.checkWithin(e)) {
-      this.clearTimer('hide');
-    } else if (this.hideTimer) {
-      this.hide();
-    } else {
-      this.delayHide();
-    }
-  },
-
-  show: function () {
-    LABKEY.ext.PersistentToolTip.superclass.show.call(this);
-    if (this.el)
-        LABKEY.Utils.ensureBoxVisible(this);
-  }
 });
 Ext.reg('persistenttip', LABKEY.ext.PersistentToolTip);
 
@@ -133,7 +151,7 @@ Ext.reg('persistenttip', LABKEY.ext.PersistentToolTip);
        '&lt;/tpl>',
        '&lt;/table>')
  });
- * &lt;/div>
+ * &lt;/script>
  */
 LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
     overTargetCls : 'labkey-callout-tip-over',
@@ -141,7 +159,7 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
     initComponent: function()
     {
       Ext.apply(this, {
-          mouseOffset: [2, 8]
+          mouseOffset: [0, 0]
       });
 
       if (!this.targetAutoEl) {
@@ -154,14 +172,14 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
       LABKEY.ext.CalloutTip.superclass.initComponent.call(this);
     },
 
-    initTarget : function ()
+    initTarget : function (target)
     {
         if (this.target)
         {
             var origTarget = Ext.get(this.target);
             this.target = Ext.DomHelper.append(origTarget, this.targetAutoEl, true);
         }
-        LABKEY.ext.CalloutTip.superclass.initTarget.call(this);
+        LABKEY.ext.CalloutTip.superclass.initTarget.call(this, this.target);
     },
 
     onTargetOver : function (e)
