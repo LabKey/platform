@@ -17,12 +17,10 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.*" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -47,6 +45,9 @@ function validateForm(form)
     alert("Title must not be blank");
     return false;
 }
+Ext.onReady(function(){
+    new Ext.Resizable('textareaBody', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+});
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
@@ -94,7 +95,7 @@ if (settings.hasExpires())
 
 %>
     <tr>
-    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
+    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea id="textareaBody" cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
         <input type="hidden" name="parentId" value="<%=bean.parentAnnouncement.getEntityId()%>"/>
     </td>
 </tr><%
