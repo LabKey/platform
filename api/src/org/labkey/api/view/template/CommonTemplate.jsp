@@ -43,8 +43,9 @@
 %>
 <html>
 <head>
+    <%if (bean.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%= h(bean.getTitle()) %></title>
-    <!-- <%=url.getURIString()%> -->
+    <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags() %>
 <%= PageFlowUtil.getStandardIncludes(c) %>
@@ -185,7 +186,7 @@ if (null != me.getView("moduleNav"))
     <script type="text/javascript">
     Ext.onReady(function(){Ext.DomHelper.insertHtml("beforeend",document.body,"<input id=seleniumExtReady name=seleniumExtReady type=hidden>");});
     </script>
-    <!--<%= request.getHeader("User-Agent") %>--><%
+    <!--<%= h(request.getHeader("User-Agent")) %>--><%
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
     { %>
     <!--<%= "time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms" %> --><%
