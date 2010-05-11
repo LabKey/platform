@@ -167,6 +167,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
+    @Override
+    public Set<ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.<ModuleResourceLoader>singleton(new FolderTypeResourceLoader());
+    }
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {

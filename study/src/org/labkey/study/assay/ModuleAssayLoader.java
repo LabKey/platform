@@ -16,9 +16,7 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.module.ModuleResourceLoader;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleResourceLoadException;
+import org.labkey.api.module.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;

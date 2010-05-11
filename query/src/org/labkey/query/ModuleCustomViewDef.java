@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.XmlValidationException;
 
 import java.io.File;
+import java.util.Date;
 
 /*
 * User: Dave
@@ -58,4 +59,10 @@ public class ModuleCustomViewDef extends CustomViewXmlReader
     {
         return _sourceFile.lastModified() != _lastModified;
     }
+
+    public Date getLastModified()
+    {
+        return new Date(_lastModified);   
+    }
+
 }

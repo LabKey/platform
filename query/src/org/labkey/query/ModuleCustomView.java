@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +66,12 @@ public class ModuleCustomView implements CustomView
     public User getCreatedBy()
     {
         return null;
+    }
+
+    @Override
+    public Date getModified()
+    {
+        return _customViewDef.getLastModified();
     }
 
     public Container getContainer()

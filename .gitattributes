@@ -2710,7 +2710,7 @@ study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studySummary.jsp -text
 study/src/org/labkey/study/view/typeNotFound.jsp -text
 study/src/org/labkey/study/view/typeSummary.jsp -text
-study/src/org/labkey/study/view/updateDataset.jsp -text
+study/src/org/labkey/study/view/updateDatasetVisitMapping.jsp -text
 study/src/org/labkey/study/view/updateQCState.jsp -text
 study/src/org/labkey/study/view/uploadAttachmentReport.jsp -text
 study/src/org/labkey/study/view/uploadVisitMap.jsp -text

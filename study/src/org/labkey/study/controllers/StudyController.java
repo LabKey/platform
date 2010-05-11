@@ -1723,7 +1723,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UpdateDatasetFormAction extends FormViewAction<DataSetForm>
+    public class UpdateDatasetVisitMappingAction extends FormViewAction<DataSetForm>
     {
         DataSetDefinition _def;
 
@@ -1731,8 +1731,6 @@ public class StudyController extends BaseStudyController
         {
             if (form.getDatasetId() < 1)
                 errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
-            if (null == StringUtils.trimToNull(form.getLabel()))
-                errors.reject(SpringActionController.ERROR_MSG, "Label is required.");
         }
 
         public ModelAndView getView(DataSetForm form, boolean reshow, BindException errors) throws Exception
@@ -1743,7 +1741,7 @@ public class StudyController extends BaseStudyController
                 BeginAction action = (BeginAction)initAction(this, new BeginAction());
                 return action.getView(form, errors);
             }
-            ModelAndView view = new JspView<DataSetDefinition>("/org/labkey/study/view/updateDataset.jsp", _def);
+            ModelAndView view = new JspView<DataSetDefinition>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def);
             view.addObject("errors", errors);
             return view;
         }
@@ -1752,26 +1750,6 @@ public class StudyController extends BaseStudyController
         {
             DataSetDefinition original = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
             DataSetDefinition modified = original.createMutable();
-/*
-            BeanUtils.copyProperties(modified, form);
-            if (modified.isDemographicData() && !original.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(original))
-            {
-                errors.reject("updateDataset", "This dataset currently contains more than one row of data per participant. Demographic data includes one row of data per participant.");
-                return false;
-            }
-            try
-            {
-                StudyManager.getInstance().updateDataSetDefinition(getUser(), modified);
-            }
-            catch (SQLException x)
-            {
-                if (!(x.getSQLState().equals("23000") || x.getSQLState().equals("23505")))    // constraint violation
-                    throw new RuntimeSQLException(x);
-                errors.reject("updateDataset", "Dataset name already exists: " + form.getName());
-                // UNDONE: reshow entered values
-                return false;
-            }
-*/
             if (null != form.getVisitRowIds())
             {
                 for (int i = 0; i < form.getVisitRowIds().length; i++)
@@ -3502,7 +3480,7 @@ public class StudyController extends BaseStudyController
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
 
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
+            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "participantsequencekey", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
             if (study.getTimepointType() != TimepointType.VISIT)
                 ignoreColumns.add("SequenceNum");
 

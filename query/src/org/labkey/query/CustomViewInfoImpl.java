@@ -67,6 +67,12 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return UserManager.getUser(_cstmView.getCreatedBy());
     }
 
+    @Override
+    public Date getModified()
+    {
+        return _cstmView.getModified();
+    }
+
     public Container getContainer()
     {
         return ContainerManager.getForId(_cstmView.getContainerId());

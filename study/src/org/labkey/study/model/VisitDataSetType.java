@@ -23,7 +23,18 @@ package org.labkey.study.model;
  */
 public enum VisitDataSetType
 {
-    NOT_ASSOCIATED,
-    OPTIONAL,
-    REQUIRED
+    NOT_ASSOCIATED("Not Associated"),
+    OPTIONAL("Optional"),
+    REQUIRED("Required");
+
+    private String _label;
+    VisitDataSetType(String label)
+    {
+        _label = label;
+    }
+
+    public String getLabel()
+    {
+        return _label;
+    }
 }

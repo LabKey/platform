@@ -48,7 +48,7 @@
     ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, context.getContainer());
     viewDatasetURL.addParameter("datasetId", dataset.getDataSetId());
 
-    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetFormAction.class, context.getContainer());
+    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, context.getContainer());
     updateDatasetURL.addParameter("datasetId", dataset.getDataSetId());
 
     ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, context.getContainer());
@@ -143,14 +143,23 @@ if (!pipelineSet)
     HashMap<Integer,VisitDataSet> visitMap = new HashMap<Integer, VisitDataSet>();
     for (VisitDataSet vds : visitList)
         visitMap.put(vds.getVisitRowId(), vds);
+    boolean hasVisitAssociations = false;
     for (VisitImpl visit : study.getVisits(Visit.Order.DISPLAY))
     {
         VisitDataSet vm = visitMap.get(visit.getRowId());
-        VisitDataSetType type = vm == null ? VisitDataSetType.NOT_ASSOCIATED : vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;
-        %><tr>
-            <td><%= visit.getDisplayString() %></td>
-            <td><%= type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : type.name() %></td>
-        </tr><%
+        if (vm != null)
+        {
+            hasVisitAssociations = true;
+            VisitDataSetType type = vm.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL;
+            %><tr>
+                <td><%= visit.getDisplayString() %></td>
+                <td><%= type == VisitDataSetType.NOT_ASSOCIATED ? "&nbsp;" : type.getLabel() %></td>
+            </tr><%
+        }
+    }
+    if (!hasVisitAssociations)
+    {
+    %><tr><td><i>This dataset isn't explicitly associated with any visits.</i></td></tr><%
     }
 %></table>
 <% WebPartView.endTitleFrame(out); %>

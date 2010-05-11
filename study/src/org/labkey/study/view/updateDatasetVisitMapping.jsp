@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
@@ -60,16 +59,13 @@
 </table>
 
 <%
-    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetFormAction.class, container);
+    ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, container);
 %>
 
 <form action="<%=updateDatasetURL.getLocalURIString()%>" method="POST">
+<%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
+<% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
     <table>
-        <tr>
-            <td>
-                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
-            </td>
-        </tr>
         <tr>
             <td class="labkey-form-label">Id</td>
             <td>
@@ -125,8 +121,11 @@
                 %>
             </td>
         </tr>
+        </table>
+<% WebPartView.endTitleFrame(out); %>
+<% WebPartView.startTitleFrame(out, "Associated " + visitManager.getPluralLabel(), null, "100%", null); %>
+<table>
         <tr>
-            <th valign="top">Associated <%=visitManager.getPluralLabel()%></th>
             <td>
                 <table>
                 <%
@@ -154,11 +153,7 @@
                 </table>
             </td>
         </tr>
-        <tr>
-            <td>&nbsp;</td>
-            <td>
-                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
-            </td>
-        </tr>
     </table>
+<% WebPartView.endTitleFrame(out); %>
+<%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "datasetDetails.view?id=" + dataset.getDataSetId())%>
 </form>
