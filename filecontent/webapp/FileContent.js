@@ -194,7 +194,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             method:'GET',
             disableCaching:false,
             success : this.updatePipelineActions,
-            failure: LABKEY.Utils.displayAjaxErrorResponse,
+            failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
             updateSelection: true,
             scope: this
         });
@@ -249,7 +249,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 method:'GET',
                 disableCaching:false,
                 success : this.updatePipelineActions,
-                failure: LABKEY.Utils.displayAjaxErrorResponse,
+                failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
                 scope: this,
                 updateSelection: e.updateSelection
             });

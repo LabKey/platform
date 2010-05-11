@@ -85,44 +85,15 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     show : function(btn)
     {
-        if (this.isPipelineRoot)
-        {
-            Ext.Ajax.request({
-                autoAbort:true,
-                url:this.actionsConfigURL,
-                method:'GET',
-                disableCaching:false,
-                success : this.getActionConfiguration,
-                scope: this
-            });
-        }
-        else
-        {
-            var win = new Ext.Window({
-                title: 'Manage File Browser Configuration',
-                border: false,
-                width: 400,
-                height: 250,
-                cls: 'extContainer',
-                autoScroll: true,
-                closeAction:'close',
-                modal: true,
-                items: [{
-                    xtype: 'panel',
-                    bodyStyle : 'padding: 30 10px;',
-                    html: 'There is a Pipeline Override for this folder and actions are not available for the ' +
-                          'default file location.<br/><br/>Customize this web part to use the pipeline location using the ' +
-                          'customize web part button <img src="' + LABKEY.contextPath + '/_images/partedit.gif"/>'
-                }],
-                buttons: [{
-                    text: 'Close',
-                    id: 'btn_cancel',
-                    handler: function(){win.close();}
-                }]
-            });
-            win.show();
-
-        }
+        Ext.Ajax.request({
+            autoAbort:true,
+            url:this.actionsConfigURL,
+            method:'GET',
+            disableCaching:false,
+            success : this.getActionConfiguration,
+            failure: LABKEY.Utils.displayAjaxErrorResponse,
+            scope: this
+        });
     },
 
     // parse the configuration information
@@ -166,6 +137,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             method:'GET',
             disableCaching:false,
             success : this.getPipelineActions,
+            failure: this.isPipelineRoot ? LABKEY.Utils.displayAjaxErrorResponse : undefined,
             scope: this
         });
     },
@@ -329,77 +301,72 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
      */
     createActionsPropertiesPanel : function(data)
     {
-        this.actionsStore = new Ext.data.GroupingStore({
-            reader: new Ext.data.JsonReader({root:'actions',id:'id'},
-                    [
-                        {name: 'type'},
-                        {name: 'action'},
-                        {name: 'actionId'},
-                        {name: 'description'},
-                        {name: 'display'},
-                        {name: 'enabled', type: 'boolean'},
-                        {name: 'showOnToolbar', type: 'boolean'}]),
-            data: data,
-            sortInfo: {field:'type', direction:"ASC"},
-            groupField:'type',
-            autoLoad: true});
+        var items = [];
 
-        var enabledColumn = new LABKEY.ActionsCheckColumn({
-            header: 'Enabled', dataIndex: 'enabled',
-            listeners: {mousedown:function(record, index)
-            {
-                if (!record.data['enabled'])
-                    record.set('showOnToolbar', false);
-            }, scope:this}
-        });
-        var onToolbarColumn = new LABKEY.ActionsCheckColumn({
-            header: 'Show on Toolbar', dataIndex: 'showOnToolbar', width: 175,
-            listeners: {mousedown:function(record, index)
-            {
-                if (!record.data['enabled'])
-                    record.set('enabled', true);
-            }, scope:this}
-        });
+        if (this.isPipelineRoot)
+        {
+            this.actionsStore = new Ext.data.GroupingStore({
+                reader: new Ext.data.JsonReader({root:'actions',id:'id'},
+                        [
+                            {name: 'type'},
+                            {name: 'action'},
+                            {name: 'actionId'},
+                            {name: 'description'},
+                            {name: 'display'},
+                            {name: 'enabled', type: 'boolean'},
+                            {name: 'showOnToolbar', type: 'boolean'}]),
+                data: data,
+                sortInfo: {field:'type', direction:"ASC"},
+                groupField:'type',
+                autoLoad: true});
 
-         var cm = new Ext.grid.ColumnModel({
-                // specify any defaults for each column
-                columns: [
-                    {header:'Type', dataIndex:'type'},
-                    {header:'Action', dataIndex:'action', width:300},
-                    enabledColumn,
-                    onToolbarColumn
-                ]
+            var enabledColumn = new LABKEY.ActionsCheckColumn({
+                header: 'Enabled', dataIndex: 'enabled',
+                listeners: {mousedown:function(record, index)
+                {
+                    if (!record.data['enabled'])
+                        record.set('showOnToolbar', false);
+                }, scope:this}
+            });
+            var onToolbarColumn = new LABKEY.ActionsCheckColumn({
+                header: 'Show on Toolbar', dataIndex: 'showOnToolbar', width: 175,
+                listeners: {mousedown:function(record, index)
+                {
+                    if (!record.data['enabled'])
+                        record.set('enabled', true);
+                }, scope:this}
             });
 
-        var selModel = new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false});
-        var grid = new Ext.grid.EditorGridPanel({
-            loadMask:{msg:"Loading, please wait..."},
-            store: this.actionsStore,
-            selModel: selModel,
-            stripeRows: true,
-            clicksToEdit: 1,
-            flex: 1,
-            cm: cm,
-            plugins: [enabledColumn, onToolbarColumn],
-            view: new Ext.grid.GroupingView({
-                startCollapsed:false,
-                cls: 'extContainer',
-                hideGroupedColumn:true,
-                forceFit:true,
-                groupTextTpl: '{values.group}'
-            })
-        });
+             var cm = new Ext.grid.ColumnModel({
+                    // specify any defaults for each column
+                    columns: [
+                        {header:'Type', dataIndex:'type'},
+                        {header:'Action', dataIndex:'action', width:300},
+                        enabledColumn,
+                        onToolbarColumn
+                    ]
+                });
 
-        var actionPanel = new Ext.Panel({
-            id: 'actionTab',
-            title: 'Actions',
-            bodyStyle : 'padding:10px;',
-            layout: 'vbox',
-            layoutConfig: {
-                align: 'stretch',
-                pack: 'start'
-            },
-            items: [
+            var selModel = new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false});
+            var grid = new Ext.grid.EditorGridPanel({
+                loadMask:{msg:"Loading, please wait..."},
+                store: this.actionsStore,
+                selModel: selModel,
+                stripeRows: true,
+                clicksToEdit: 1,
+                flex: 1,
+                cm: cm,
+                plugins: [enabledColumn, onToolbarColumn],
+                view: new Ext.grid.GroupingView({
+                    startCollapsed:false,
+                    cls: 'extContainer',
+                    hideGroupedColumn:true,
+                    forceFit:true,
+                    groupTextTpl: '{values.group}'
+                })
+            });
+
+            items.push(
                 new Ext.Panel({
                     border: false,
                     height: 60,
@@ -412,9 +379,30 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                         name: 'importAction',
                         listeners: {check: function(button, checked) {this.importDataEnabled = checked;}, scope:this}
                     }
-                }),
-                grid
-            ]
+                }));
+            items.push(grid);
+        }
+        else {
+            items.push({
+                //xtype: 'panel',
+                bodyStyle : 'padding: 30 10px;',
+                border: false,
+                html: 'There is a Pipeline Override for this folder and actions are not available for the ' +
+                      'default file location.<br/><br/>Customize this web part to use the pipeline location using the ' +
+                      'customize web part button <img src="' + LABKEY.contextPath + '/_images/partedit.gif"/>'
+            });
+        }
+
+        var actionPanel = new Ext.Panel({
+            id: 'actionTab',
+            title: 'Actions',
+            bodyStyle : 'padding:10px;',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
         });
 
         return actionPanel;
@@ -838,7 +826,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     saveActionConfig : function(button, event)
     {
         var adminOptions = {actions: []};
-        var records = this.actionsStore.getModifiedRecords();
+        var records = this.actionsStore ? this.actionsStore.getModifiedRecords() : undefined;
 
         // pipeline action configuration
         if (records && records.length)
