@@ -228,7 +228,7 @@ LABKEY.ext.CalloutTip = Ext.extend(LABKEY.ext.PersistentToolTip, {
                     }
                 }
             };
-            this.body.getUpdater().setRenderer(updaterRenderer);
+            this.renderer = updaterRenderer;
         }
         LABKEY.ext.CalloutTip.superclass.doAutoLoad.call(this);
     }
