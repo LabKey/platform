@@ -222,7 +222,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if ("text/html".equals(type))
             {
-                String html = PageFlowUtil.getStreamContentsAsString(is);
+                String html;
+                if (fs.getSize() > FILE_SIZE_LIMIT)
+                    html = "<html><body></body></html>";
+                else
+                    html = PageFlowUtil.getStreamContentsAsString(is);
 
                 // TODO: Need better check for issue HTML vs. rendered page HTML
                 if (r instanceof ActionResource)
@@ -244,7 +248,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             }
             else if (type.startsWith("text/") && !type.contains("xml"))
             {
-                body = PageFlowUtil.getStreamContentsAsString(is);
+                if (fs.getSize() > FILE_SIZE_LIMIT)
+                    body = "";
+                else
+                    body = PageFlowUtil.getStreamContentsAsString(is);
             }
             else
             {
