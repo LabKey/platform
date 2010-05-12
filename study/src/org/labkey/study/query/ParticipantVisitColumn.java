@@ -46,11 +46,6 @@ public class ParticipantVisitColumn extends ColumnInfo
         return getValueSql(_participantColumn.getValueSql(alias), _visitColumn.getValueSql(alias));
     }
 
-    public SQLFragment getValueSql()
-    {
-        return getValueSql(_participantColumn.getValueSql(), _visitColumn.getValueSql());
-    }
-
     public SQLFragment getValueSql(SQLFragment participant, SQLFragment visit)
     {
         SqlDialect dialect = getSqlDialect();

@@ -197,12 +197,6 @@ public abstract class QueryRelation
             _column = column;
         }
 
-        public SQLFragment getValueSql()
-        {
-            return getValueSql(_column.getTable().getAlias());
-        }
-
-
         public SQLFragment getValueSql(String tableAlias)
         {
             return _column.getValueSql(tableAlias);
