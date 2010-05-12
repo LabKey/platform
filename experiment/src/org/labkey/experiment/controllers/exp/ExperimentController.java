@@ -953,7 +953,7 @@ public class ExperimentController extends SpringActionController
                 sb.append("[<strong>text view</strong>] ");
             }
             File runRoot = expRun.getFilePathRoot();
-            if (NetworkDrive.exists(runRoot))
+            if (runRoot != null && NetworkDrive.exists(runRoot))
             {
                 if (!runRoot.isDirectory())
                 {
