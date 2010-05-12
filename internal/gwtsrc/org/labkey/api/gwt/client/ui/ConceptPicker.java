@@ -17,9 +17,6 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.extjs.gxt.ui.client.Style;
-import com.extjs.gxt.ui.client.core.DomHelper;
-import com.extjs.gxt.ui.client.core.DomQuery;
-import com.extjs.gxt.ui.client.core.El;
 import com.extjs.gxt.ui.client.core.XDOM;
 import com.extjs.gxt.ui.client.event.*;
 import com.extjs.gxt.ui.client.widget.Dialog;
@@ -329,7 +326,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 else if (r._type == fileType)
                     r.setEnabled(picker.isRangeEditable && picker.allowFileLinkProperties);
                 else if (r._type instanceof LookupConceptType)
-                    setEnabled(picker.isRangeEditable || type.getPropertyType().isLookupType());
+                    r.setEnabled(picker.isRangeEditable || type.getPropertyType().isLookupType());
                 else
                     r.setEnabled(picker.isRangeEditable || type.getPropertyType() == r._type.getPropertyType());
             }
