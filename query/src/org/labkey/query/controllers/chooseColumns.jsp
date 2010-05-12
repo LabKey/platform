@@ -100,15 +100,11 @@
         <% if (form.getQueryDef() != null && form.getQueryDef().getName() != null) { %>
             based on <%=form.getQueryDef().getName()%> query
         <% } %>
-        <%=form.isCustomViewInherited() ? "(inherited from project " + view.getContainer().getPath() + ")" : ""%>
     </td></tr>
 </table>
 </p>
 
-<% if (form.isCustomViewInherited()) { %>
-    <p><b>This grid view can't be edited since it is inherited from project <%=view.getContainer().getPath()%>.</b></p>
-<% }
-   else if (getViewContext().getUser().isGuest()) { %>
+<% if (getViewContext().getUser().isGuest()) { %>
     <p><b>You are not currently logged in.  Changes you make here will only persist for the duration of your session.</b></p>
 <% } %>
 <table class="labkey-customize-view">
@@ -246,19 +242,19 @@
         <% if (view.getOwner() == null) { %>
             <input type="hidden" name="ff_saveForAllUsers" value="true">
         <% } %>
-    <% } else if (canEdit) { %>
-        <b>View Name:</b> <input type="text" name="ff_columnListName" maxlength="50" value="<%=h(form.ff_columnListName)%>">
-        <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
-        <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
-        <br>
-        <% if (form.canSaveForAllUsers()) { %>
-            <input type="checkbox" name="ff_saveForAllUsers" value="true"<%=view != null && view.getOwner() == null ? " checked" : ""%> onclick="updateViewNameDescription(this)"> Make
-            this grid view available to all users<br>
-            <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders<br>
-        <% } %>
+    <% } %>
+    <b>View Name:</b> <input type="text" name="ff_columnListName" maxlength="50" value="<%= canEdit ? h(form.ff_columnListName) : (form.ff_columnListName == null ? "CustomizedView" : form.ff_columnListName + "Copy") %>">
+    <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
+    <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
+    <% if (!canEdit) { %><br/>You must save this view with an alternate name.<% } %>
+    <br>
+    <% if (form.canSaveForAllUsers()) { %>
+        <input type="checkbox" name="ff_saveForAllUsers" value="true"<%=view != null && view.getOwner() == null ? " checked" : ""%> onclick="updateViewNameDescription(this)"> Make
+        this grid view available to all users<br>
+        <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders<br>
     <% } %>
 
-    <% if (canEdit && form.hasFilterOrSort()) { %>
+    <% if (form.hasFilterOrSort()) { %>
         <input id="ff_saveFilterCbx" type="checkbox" name="ff_saveFilter" value="true"> Remember grid filters and sorts:<ul>
     <%
         List<String> filterColumns = form.getFilterColumnNamesFromURL();
@@ -307,9 +303,9 @@
         <input type="hidden" name="ff_saveFilter" value="true">
     <% } %>
     </p>
+    <labkey:button text="Save" onclick="needToPrompt = false" />
     <% if (canEdit)
     {
-        %><labkey:button text="Save" onclick="needToPrompt = false" /> <%
         if (view != null && ! view.isHidden())
         {
             ActionURL urlDeleteView = form.urlFor(QueryAction.deleteView);

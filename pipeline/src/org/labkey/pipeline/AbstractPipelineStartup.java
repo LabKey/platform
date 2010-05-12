@@ -53,6 +53,31 @@ public abstract class AbstractPipelineStartup
         ModuleDependencySorter sorter = new ModuleDependencySorter();
         modules = sorter.sortModulesByDependencies(modules, Collections.<ModuleResourceLoader>emptySet());
 
+        // Horrible hack to work around failure to respect module dependencies in non-built file based modules
+        Module pipelineModule = null;
+        Module experimentModule = null;
+        for (Module module : modules)
+        {
+            if ("pipeline".equalsIgnoreCase(module.getName()))
+            {
+                pipelineModule = module;
+            }
+            else if ("experiment".equalsIgnoreCase(module.getName()))
+            {
+                experimentModule = module;
+            }
+        }
+        if (pipelineModule != null)
+        {
+            modules.remove(pipelineModule);
+            modules.add(0, pipelineModule);
+        }
+        if (experimentModule != null)
+        {
+            modules.remove(experimentModule);
+            modules.add(1, experimentModule);
+        }
+
         Map<String, BeanFactory> result = new CaseInsensitiveHashMap<BeanFactory>();
 
         for (Module module : modules)

@@ -1332,23 +1332,9 @@ public class QueryController extends SpringActionController
     {
         ActionURL _returnURL = null;
 
-        protected boolean canEdit(ChooseColumnsForm form, Errors errors)
-        {
-            CustomView view = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), form.ff_columnListName);
-            if (view != null && view.canInherit())
-            {
-                if (!getContainer().getId().equals(view.getContainer().getId()))
-                {
-                    errors.reject(ERROR_MSG, "Inherited view '" + view.getName() + "' can only be edited from the folder it was created in");
-                    return false;
-                }
-            }
-            return true;
-        }
-
         public void validateCommand(ChooseColumnsForm form, Errors errors)
         {
-            canEdit(form, errors);
+            form.canEdit(errors);
         }
 
         public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
@@ -1370,6 +1356,17 @@ public class QueryController extends SpringActionController
                     if (view == null)
                     {
                         view = form.getQueryDef().createCustomView(getUser(), form.getQuerySettings().getViewName());
+                    }
+                    else
+                    {
+                        // Make a copy in case it's a read-only version from an XML file
+                        CustomView viewCopy = new CustomViewImpl(form.getQueryDef(), getUser(), form.getQuerySettings().getViewName());
+                        viewCopy.setColumns(view.getColumns());
+                        viewCopy.setCanInherit(view.canInherit());
+                        viewCopy.setFilterAndSort(view.getFilterAndSort());
+                        viewCopy.setColumnProperties(view.getColumnProperties());
+                        viewCopy.setIsHidden(view.isHidden());
+                        view = viewCopy;
                     }
 
                     ActionURL url = new ActionURL();
@@ -1404,7 +1401,7 @@ public class QueryController extends SpringActionController
             }
             String name = StringUtils.trimToNull(form.ff_columnListName);
 
-            boolean canEdit = canEdit(form, errors);
+            boolean canEdit = form.canEdit(errors);
             boolean isHidden = false;
             if (canEdit)
             {

@@ -314,8 +314,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 propColumn.setNullable(false);
                 propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
             }
-            addColumn(propColumn);
-            visibleColumns.add(FieldKey.fromParts(pd.getName()));
+            if (getColumn(propColumn.getName()) == null)
+            {
+                addColumn(propColumn);
+                visibleColumns.add(FieldKey.fromParts(pd.getName()));
+            }
         }
         setDefaultVisibleColumns(visibleColumns);
     }

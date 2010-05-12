@@ -380,7 +380,7 @@ img.labkey-mv-indicator
 {
     color: #808080;
     background-color: #F4F4F4;
-    border: 1px solid #F4F4F4;
+    border: 1px solid black;
     margin: 0.1em 0.4em 0.5em 0.0em;
     cursor: default; /* cursor to indicate non-linked item */
     vertical-align: middle;

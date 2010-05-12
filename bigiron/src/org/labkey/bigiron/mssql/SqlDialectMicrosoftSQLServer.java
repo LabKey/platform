@@ -635,6 +635,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return null;
     }
 
+    @Override
+    protected String getDatabaseMaintenanceSql()
+    {
+        return "EXEC sp_updatestats;";
+    }
 
     public TestSuite getTestSuite()
     {

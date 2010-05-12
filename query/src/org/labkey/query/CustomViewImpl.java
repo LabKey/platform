@@ -40,16 +40,16 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 {
     private static final Logger _log = Logger.getLogger(CustomViewImpl.class);
     boolean _dirty;
-    final QueryDefinitionImpl _queryDef;
+    final QueryDefinition _queryDef;
 
-    public CustomViewImpl(QueryDefinitionImpl queryDef, CstmView view)
+    public CustomViewImpl(QueryDefinition queryDef, CstmView view)
     {
         super(view);
         _queryDef = queryDef;
         _dirty = false;
     }
 
-    public CustomViewImpl(QueryDefinitionImpl queryDef, User user, String name)
+    public CustomViewImpl(QueryDefinition queryDef, User user, String name)
     {
         super(new CstmView());
         _queryDef = queryDef;

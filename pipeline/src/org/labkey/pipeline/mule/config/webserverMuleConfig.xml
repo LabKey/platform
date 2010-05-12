@@ -116,18 +116,18 @@
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
-    <connector name="sqsConnectorState" className="org.mule.providers.sqs.SqsConnector">
-        <properties>
-            <property name="awsAccessKey" value="14YHE2J1CWVFR0JGG2G2" />
-            <property name="awsSecretKey" value="mBNF8S/Tbp/CwOpsG9u+6ps2ptZv6lBmzN+Ry1dZ" />
-            <property name="pollingFrequency" value="10000" />
-        </properties>
-    </connector>
+    <!--<connector name="sqsConnectorState" className="org.mule.providers.sqs.SqsConnector">-->
+        <!--<properties>-->
+            <!--<property name="awsAccessKey" value="14YHE2J1CWVFR0JGG2G2" />-->
+            <!--<property name="awsSecretKey" value="mBNF8S/Tbp/CwOpsG9u+6ps2ptZv6lBmzN+Ry1dZ" />-->
+            <!--<property name="pollingFrequency" value="10000" />-->
+        <!--</properties>-->
+    <!--</connector>-->
 
     <endpoint-identifiers>
         <endpoint-identifier name="JobMQ" value="jms://job.queue"/>
         <endpoint-identifier name="StatusMQ" value="jms://status.queue"/>
-        <endpoint-identifier name="StatusSQS" value="sqs://status-queue"/>
+        <!--<endpoint-identifier name="StatusSQS" value="sqs://status-queue"/>-->
     </endpoint-identifiers>
 
     <transformers>
@@ -315,37 +315,37 @@
             <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
         </mule-descriptor>
 
-        <mule-descriptor name="PipelineStatusSetterCloud" implementation="org.labkey.pipeline.mule.StatusRequestHandler">
+        <!--<mule-descriptor name="PipelineStatusSetterCloud" implementation="org.labkey.pipeline.mule.StatusRequestHandler">-->
 
-            <inbound-router>
-                <endpoint type="receiver" address="StatusSQS"
-                         connector="sqsConnectorState"/>
-                <router className="org.labkey.pipeline.mule.routing.CloudInboundAggregator"/>
-            </inbound-router>
+            <!--<inbound-router>-->
+                <!--<endpoint type="receiver" address="StatusSQS"-->
+                         <!--connector="sqsConnectorState"/>-->
+                <!--<router className="org.labkey.pipeline.mule.routing.CloudInboundAggregator"/>-->
+            <!--</inbound-router>-->
 
-            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <!--<threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>-->
+            <!--<pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>-->
 
-            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
-        </mule-descriptor>
-        <mule-descriptor name="CloudWaitDummy" implementation="org.mule.components.simple.PassThroughComponent" >
+            <!--<exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />-->
+        <!--</mule-descriptor>-->
+        <!--<mule-descriptor name="CloudWaitDummy" implementation="org.mule.components.simple.PassThroughComponent" >-->
 
-            <inbound-router>
-                <endpoint type="receiver" address="JobMQ" transformers="NoOpTransformer"
-                        responseTransformers="NoOpTransformer" connector="jmsConnectorCloud">
-                    <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
-                        <properties>
-                            <property name="location" value="cloud"/>
-                            <property name="includeMonolithic" value="true"/>
-                        </properties>
-                    </filter>
-                </endpoint>
-            </inbound-router>
+            <!--<inbound-router>-->
+                <!--<endpoint type="receiver" address="JobMQ" transformers="NoOpTransformer"-->
+                        <!--responseTransformers="NoOpTransformer" connector="jmsConnectorCloud">-->
+                    <!--<filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">-->
+                        <!--<properties>-->
+                            <!--<property name="location" value="cloud"/>-->
+                            <!--<property name="includeMonolithic" value="true"/>-->
+                        <!--</properties>-->
+                    <!--</filter>-->
+                <!--</endpoint>-->
+            <!--</inbound-router>-->
 
-            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+            <!--<threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>-->
+            <!--<pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>-->
 
-            <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
-        </mule-descriptor>
+            <!--<exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />-->
+        <!--</mule-descriptor>-->
     </model>
 </mule-configuration>

@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.util.*;
 
@@ -38,6 +39,7 @@ public class ChooseColumnsForm extends DesignForm
     public boolean ff_inheritable;
 
     private ActionURL _sourceURL;
+    private boolean _allowSaveWithSameName = true;
 
     public BindException bindParameters(PropertyValues params)
     {
@@ -110,16 +112,6 @@ public class ChooseColumnsForm extends DesignForm
     public void setFf_inheritable(boolean ff_inheritable)
     {
         this.ff_inheritable = ff_inheritable;
-    }
-
-    public boolean isCustomViewInherited()
-    {
-        CustomView customView = getCustomView();
-        if (customView != null && customView.canInherit())
-        {
-            return !getContainer().getId().equals(customView.getContainer().getId());
-        }
-        return false;
     }
 
     public void setFf_columnListName(String name)
@@ -316,6 +308,32 @@ public class ChooseColumnsForm extends DesignForm
 
     public boolean canEdit()
     {
-        return !isCustomViewInherited();
+        return canEdit(null);
     }
+
+    public boolean canEdit(Errors errors)
+    {
+        CustomView view = getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), ff_columnListName);
+        if (view != null && view.canInherit())
+        {
+            if (!getContainer().getId().equals(view.getContainer().getId()))
+            {
+                if (errors != null)
+                {
+                    errors.reject(null, "Inherited view '" + (view.getName() == null ? "<default>" : view.getName()) + "' can only be edited from the folder in which it is defined, " + getContainer().getPath());
+                }
+                return false;
+            }
+        }
+        if (view != null && !view.isEditable())
+        {
+            if (errors != null)
+            {
+                errors.reject(null, "The view '" + (view.getName() == null ? "<default>" : view.getName()) + "' is read-only and cannot be edited");
+            }
+            return false;
+        }
+        return true;
+    }
+
 }
