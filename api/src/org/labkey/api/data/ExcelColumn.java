@@ -24,15 +24,12 @@ import jxl.write.*;
 import jxl.write.Number;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.Boolean;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -203,7 +200,7 @@ public class ExcelColumn extends RenderColumn
 
     protected void writeCell(WritableSheet sheet, int column, int row, RenderContext ctx) throws SQLException, WriteException
     {
-        WritableCell cell = null;
+        WritableCell cell;
         Object o = _dc.getDisplayValue(ctx);
 
         // For null values, leave the cell blank
@@ -225,11 +222,7 @@ public class ExcelColumn extends RenderColumn
                     break;
                 case(TYPE_STRING):
                 default:
-                    URL url = createURL(_dc.renderURL(ctx));
-                    if (url != null)
-                        sheet.addHyperlink(new WritableHyperlink(column, row, column, row, url, o.toString()));
-                    else
-                        cell = new Label(column, row, o.toString());
+                    cell = new Label(column, row, o.toString());
                     break;
             }
 
@@ -249,29 +242,6 @@ public class ExcelColumn extends RenderColumn
             throw cce;
         }
     }
-
-    private URL createURL(String urlString)
-    {
-        if (urlString == null)
-            return null;
-
-        URL url = null;
-        try {
-            url = new URL(urlString);
-        } catch (MalformedURLException ex) { }
-
-        if (url == null)
-        {
-            try
-            {
-                url = new URL(AppProps.getInstance().getBaseServerUrl() + urlString);
-            }
-            catch (MalformedURLException e) { }
-        }
-
-        return url;
-    }
-
 
     protected void renderCaption(WritableSheet sheet, int row, int column, WritableCellFormat cellFormat) throws WriteException
     {

@@ -1918,6 +1918,14 @@ public class PageFlowUtil
             sb.append("}");
         }
         sb.append(",CSRF:").append(jsString(CSRFUtil.getExpectedToken(context.getRequest())));
+        // Include a few server-generated GUIDs/UUIDs
+        sb.append(", uuids: ['");
+        sb.append(GUID.makeGUID());
+        sb.append("','");
+        sb.append(GUID.makeGUID());
+        sb.append("','");
+        sb.append(GUID.makeGUID());
+        sb.append("']");
         sb.append("}"); //end config
         return sb.toString();
     }

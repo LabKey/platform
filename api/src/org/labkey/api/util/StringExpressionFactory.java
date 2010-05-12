@@ -371,10 +371,10 @@ public class StringExpressionFactory
     {
         boolean _urlEncodeSubstitutions = true;
 
-        SimpleStringExpression(String source, boolean urlEncdoeSubstitutions)
+        SimpleStringExpression(String source, boolean urlEncodeSubstitutions)
         {
             super(source);
-            _urlEncodeSubstitutions = urlEncdoeSubstitutions;
+            _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
         
         protected StringPart parsePart(String expr)

@@ -1056,7 +1056,7 @@ public class QueryView extends WebPartView<Object>
 
     public void addCustomizeViewItems(MenuButton button)
     {
-        if (_report == null && (null == _customView || _customView.isEditable()))
+        if (_report == null)
         {
             NavTree item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
             item.setId("Views:Customize View");

@@ -218,7 +218,7 @@ LABKEY.Experiment = new function()
          * @param config.name name of the sample set
          * @param config.materials An array of LABKEY.Exp.Material objects to be saved.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the following parameters:
          * <ul>
          * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.  Some values will be filled in by the server.
          * <li><b>response</b> The original response

@@ -31,6 +31,9 @@ LABKEY.Utils = new function()
         "dir" : "query.sortdir"
         };
 
+    // Private array of chars to use for UUID generation
+    var CHARS = '0123456789abcdefghijklmnopqrstuvwxyz'.split('');
+
     // private functions
     function handleLoadError(This, o, arg, e)
     {
@@ -535,6 +538,43 @@ LABKEY.Utils.convertToExcel(
                 if (config.errorCallback)
                     config.errorCallback.apply(config.scope || this, [e,config.errorArguments]);
             }
+        },
+
+        /**
+          * Returns a universally unique identifier, of the general form: "92329D39-6F5C-4520-ABFC-AAB64544E172"
+          * Based on original Math.uuid.js (v1.4)
+          * http://www.broofa.com
+          * mailto:robert@broofa.com
+          * Copyright (c) 2010 Robert Kieffer
+          * Dual licensed under the MIT and GPL licenses.
+        */
+        generateUUID : function()
+        {
+            // First see if there are any server-generated UUIDs available to return
+            if (LABKEY && LABKEY.uuids && LABKEY.uuids.length > 0)
+            {
+                return LABKEY.uuids.pop();
+            }
+            // From the original Math.uuidFast implementation
+            var chars = CHARS, uuid = new Array(36), rnd = 0, r;
+            for (var i = 0; i < 36; i++)
+            {
+                if (i == 8 || i == 13 || i == 18 || i == 23)
+                {
+                    uuid[i] = '-';
+                } else if (i == 14)
+                {
+                    uuid[i] = '4';
+                }
+                else
+                {
+                    if (rnd <= 0x02) rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
+                    r = rnd & 0xf;
+                    rnd = rnd >> 4;
+                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+            return uuid.join('');
         }
     };
 };

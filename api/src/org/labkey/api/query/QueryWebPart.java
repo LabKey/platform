@@ -49,7 +49,10 @@ public class QueryWebPart extends WebPartView
 
         ActionURL url = QueryService.get().urlQueryDesigner(getUser(), getContainer(), null);
         _schemaName = _properties.get(QueryParam.schemaName.toString());
-        _schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _schemaName);
+        if (_schemaName != null)
+        {
+            _schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _schemaName);
+        }
 
         if (_schema != null)
         {

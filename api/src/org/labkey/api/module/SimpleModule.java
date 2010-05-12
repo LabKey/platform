@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.beans.PropertyChangeEvent;
 
@@ -163,10 +164,18 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     @Override
     protected ContextType getContextType()
     {
-        String realPath = ModuleLoader.getServletContext().getRealPath(getContextXMLPath());
-        if (new File(realPath).exists())
+        InputStream is = ModuleLoader.getServletContext().getResourceAsStream(getContextXMLPath());
+        try
         {
-            return ContextType.config;
+            if (is != null && is.read() != -1)
+            {
+                return ContextType.config;
+            }
+        }
+        catch (IOException e) { /* Just return */ }
+        finally
+        {
+            if (is != null) { try { is.close(); } catch (IOException e) {} }
         }
         return ContextType.none;
     }
