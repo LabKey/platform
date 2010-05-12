@@ -258,14 +258,9 @@ public class LookupEditorPanel extends LayoutContainer
                     store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")"));
                 }
                 if (store.getCount()==0)
-                {
-                    if (m.size() == 0)
-                        Window.alert("Could not find any tables in the '" + schema + "' schema in the selected folder.");
-                    else
-                        Window.alert("There are no tables available with a matching primary key: " + _keyType.getShortName());
-                    return;
-                }
-                updateEmptyText();
+                    _comboTableName.setEmptyText(m.size()==0?"No tables found":"No matching tables found");
+                else
+                    updateEmptyText();
             }
         });
     }
