@@ -16,7 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.ExternalStudyWriter;
 import org.labkey.api.study.ExternalStudyWriterFactory;
@@ -48,7 +47,6 @@ public class StudyListWriter implements ExternalStudyWriter
 
         if (listWriter.write(c, ctx.getUser(), listsDir))
             ctx.getStudyXml().addNewLists().setDir(DEFAULT_DIRECTORY);
-
     }
 
     public static class Factory implements ExternalStudyWriterFactory
