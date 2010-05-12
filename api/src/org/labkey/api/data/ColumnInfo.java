@@ -311,11 +311,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return selectName;
     }
 
-    public SQLFragment getValueSql()
-    {
-        return getValueSql(getParentTable().getName());
-    }
-
     public SQLFragment getValueSql(String tableAliasName)
     {
         return new SQLFragment(tableAliasName + "." + getSelectName());
@@ -324,7 +319,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getPropertyURI()
     {
         if (null == propertyURI)
-            propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getTableAlias() + "." + getSelectName();
+            propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getParentTable().getName() + "." + getSelectName();
         return propertyURI;
     }
 
@@ -337,7 +332,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
     }
 
-    public String getTableAlias()
+    public String getTableAlias(String baseAlias)
     {
         return parentTable.getName();
     }

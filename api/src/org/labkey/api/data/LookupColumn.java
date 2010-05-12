@@ -73,23 +73,18 @@ public class LookupColumn extends ColumnInfo
         this(foreignKey, lookupKey, lookupColumn, false);
     }
 
-    public SQLFragment getValueSql()
-    {
-        return lookupColumn.getValueSql(getTableAlias());
-    }
-
 
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return lookupColumn.getValueSql(getTableAlias());
+        return lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         return getJoinConditionHelper(
-            foreignKey.getTableAlias(), foreignKey.getValueSql(tableAliasName), foreignKey.getSqlTypeInt(),
-            getTableAlias(), lookupKey.getValueSql(getTableAlias()), lookupKey.getSqlTypeInt(),
+            foreignKey.getTableAlias(tableAliasName), foreignKey.getValueSql(tableAliasName), foreignKey.getSqlTypeInt(),
+            getTableAlias(tableAliasName), lookupKey.getValueSql(getTableAlias(tableAliasName)), lookupKey.getSqlTypeInt(),
             joinOnContainer, getSqlDialect().isPostgreSQL()
         );
     }
@@ -129,7 +124,7 @@ public class LookupColumn extends ColumnInfo
         boolean assertEnabled = false; // needed to generate SQL for logging
         assert assertEnabled = true;
 
-        String colTableAlias = getTableAlias();
+        String colTableAlias = getTableAlias(baseAlias);
 
         if (assertEnabled || !map.containsKey(colTableAlias))
         {
@@ -157,9 +152,9 @@ public class LookupColumn extends ColumnInfo
     }
 
 
-    public String getTableAlias()
+    public String getTableAlias(String baseAlias)
     {
-        return foreignKey.getAlias() + "$";
+        return baseAlias + foreignKey.getAlias() + "$";
     }
 
     public void setJoinOnContainer(boolean joinOnContainer)

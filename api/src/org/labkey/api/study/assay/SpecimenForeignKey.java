@@ -294,7 +294,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                     sql.append(")");
                 }
 
-                String colTableAlias = getTableAlias();
+                String colTableAlias = getTableAlias(parentAlias);
                 sql.append(" AS ").append(colTableAlias);
                 sql.append(" ON ");
                 sql.append(vialSubqueryAlias + ".RowId = " + colTableAlias + ".RowId");

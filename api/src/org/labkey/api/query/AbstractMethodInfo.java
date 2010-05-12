@@ -43,7 +43,7 @@ abstract public class AbstractMethodInfo implements MethodInfo
         List<SQLFragment> ret = new ArrayList();
         for (ColumnInfo col : arguments)
         {
-            ret.add(col.getValueSql());
+            ret.add(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));
         }
         return ret.toArray(new SQLFragment[0]);
     }

@@ -47,16 +47,6 @@ public class AliasedColumn extends ColumnInfo
         this(column.getParentTable(), name, column);
     }
 
-
-    public SQLFragment getValueSql()
-    {
-        if (getParentTable() == _column.getParentTable())
-        {
-            return _column.getValueSql();
-        }
-        return super.getValueSql();
-    }
-
     public SQLFragment getValueSql(String tableAlias)
     {
         // TODO: Investigate!  Need to call getValueSql() even when tables differ (e.g., ExprColumn for SAS formats)
@@ -84,8 +74,8 @@ public class AliasedColumn extends ColumnInfo
     }
 
     @Override
-    public String getTableAlias()
+    public String getTableAlias(String baseAlias)
     {
-        return _column.getTableAlias();
+        return _column.getTableAlias(baseAlias);
     }
 }

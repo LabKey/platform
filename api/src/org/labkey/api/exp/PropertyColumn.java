@@ -108,12 +108,6 @@ public class PropertyColumn extends LookupColumn
     }
     
 
-    public SQLFragment getValueSql()
-    {
-        return getValueSql(getTableAlias());
-    }
-
-    
     public SQLFragment getValueSql(String tableAlias)
     {
         String cast = getPropertySqlCastType();
@@ -135,7 +129,7 @@ public class PropertyColumn extends LookupColumn
         if (_parentIsObjectId)
             sql.append(foreignKey.getValueSql(tableAlias));
         else
-            sql.append(getTableAlias() + ".ObjectId");
+            sql.append(getTableAlias(tableAlias) + ".ObjectId");
         sql.append(")");
         if (null != cast)
         {
@@ -220,11 +214,11 @@ public class PropertyColumn extends LookupColumn
         return strJoinNoContainer;
     }
 
-    public String getTableAlias()
+    public String getTableAlias(String baseAlias)
     {
         if (containerId == null)
-            return super.getTableAlias();
-        return super.getTableAlias() + "_C" + containerId.replace('-','_');
+            return super.getTableAlias(baseAlias);
+        return super.getTableAlias(baseAlias) + "_C";
     }
 
     public String getInputType()

@@ -49,19 +49,14 @@ public class MvColumn extends LookupColumn
         setUserEditable(false);
     }
 
-    public SQLFragment getValueSql()
+    public SQLFragment getValueSql(String tableAlias)
     {
         SQLFragment sql = new SQLFragment("\n(SELECT MvIndicator");
 
         sql.append("\nFROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
-        sql.append("\nAND exp.ObjectProperty.ObjectId = " + getTableAlias() + ".ObjectId)");
+        sql.append("\nAND exp.ObjectProperty.ObjectId = " + getTableAlias(tableAlias) + ".ObjectId)");
 
         return sql;
-    }
-
-    public SQLFragment getValueSql(String tableAlias)
-    {
-        return getValueSql();
     }
 
     public PropertyDescriptor getPropertyDescriptor()
@@ -95,10 +90,10 @@ public class MvColumn extends LookupColumn
         return strJoinNoContainer;
     }
 
-    public String getTableAlias()
+    public String getTableAlias(String baseAlias)
     {
         if (getContainerId() == null)
-            return super.getTableAlias();
-        return super.getTableAlias() + "_C";
+            return super.getTableAlias(baseAlias);
+        return super.getTableAlias(baseAlias) + "_C";
     }
 }
