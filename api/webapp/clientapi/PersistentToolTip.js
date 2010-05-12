@@ -43,7 +43,7 @@ LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
     },
 
     checkWithin: function(e) {
-        if (this.el && e.within(this.el.dom, true)) {
+        if (this.el && e.within(this.el.dom)) {
             return true;
         }
         if (this.disabled || e.within(this.target.dom, true)) {
