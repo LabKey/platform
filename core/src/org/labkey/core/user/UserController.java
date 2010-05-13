@@ -209,6 +209,11 @@ public class UserController extends SpringActionController
         ButtonBar updateButtonBar = new ButtonBar();
         updateButtonBar.setStyle(ButtonBar.Style.separateButtons);
         ActionButton update = new ActionButton("showUpdate.post", "Submit");
+        if (isOwnRecord)
+        {
+            updateButtonBar.addContextualRole(OwnerRole.class);
+            update.addContextualRole(OwnerRole.class);
+        }
         //update.setActionType(ActionButton.Action.LINK);
         updateButtonBar.add(update);
         if (isSiteAdmin)
@@ -1062,18 +1067,18 @@ public class UserController extends SpringActionController
             if (isOwnRecord)
             {
                 //add the owner contextual role to the edit button
-                for (DisplayElement btn : bb.getList())
-                {
-                    if (btn == ActionButton.BUTTON_SHOW_UPDATE)
-                    {
-                        btn.addContextualRole(OwnerRole.class);
-                        break;
-                    }
-                }
+                assert bb.getList().size() == 1;  // Should be just one at this point
 
-                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL(), null), "Change Password");
-                changePasswordButton.setActionType(ActionButton.Action.LINK);
-                bb.add(changePasswordButton);
+                for (DisplayElement btn : bb.getList())
+                    btn.addContextualRole(OwnerRole.class);
+
+                if (!SecurityManager.isLdapEmail(new ValidEmail(user.getEmail())))
+                {
+                    ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL(), null), "Change Password");
+                    changePasswordButton.setActionType(ActionButton.Action.LINK);
+                    changePasswordButton.addContextualRole(OwnerRole.class);
+                    bb.add(changePasswordButton);
+                }
 
                 ActionButton doneButton;
 
@@ -1096,7 +1101,9 @@ public class UserController extends SpringActionController
                     doneButton.setURL(doneURL.getLocalURIString());
                 }
 
+                doneButton.addContextualRole(OwnerRole.class);
                 bb.add(doneButton);
+                bb.addContextualRole(OwnerRole.class);
             }
 
             DetailsView detailsView = new DetailsView(rgn, _detailsUserId);
