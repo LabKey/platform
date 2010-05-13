@@ -731,6 +731,38 @@ quickScan:
     }
 
 
+    public static String makeFileNameWithTimestamp(String prefix, String extension)
+    {
+        return prefix + "_" + getTimestamp() + "." + extension;
+    }
+
+
+    private static long lastTime = 0;
+    private static final Object timeLock = new Object();
+
+    // return a unique time, rounded to the nearest second
+    private static long currentSeconds()
+    {
+        synchronized(timeLock)
+        {
+            long sec = HeartBeat.currentTimeMillis();
+            sec -= sec % 1000;
+            lastTime = Math.max(sec, lastTime + 1000);
+            return lastTime;
+        }
+    }
+
+
+    public static String getTimestamp()
+    {
+        String time = DateUtil.toISO(currentSeconds(), false);
+        time = time.replace(":", "-");
+        time = time.replace(" ", "_");
+
+        return time;
+    }
+
+
     public static class TestCase extends junit.framework.TestCase
     {
         private static final File ROOT;

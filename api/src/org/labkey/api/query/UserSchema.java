@@ -60,7 +60,8 @@ abstract public class UserSchema extends AbstractSchema
 
     protected boolean canReadSchema()
     {
-        return getContainer().hasPermission(getUser(), ReadPermission.class);
+        User user = getUser();
+        return user == User.getSearchUser() || getContainer().hasPermission(user, ReadPermission.class);
     }
 
 
@@ -89,7 +90,7 @@ abstract public class UserSchema extends AbstractSchema
             return null;
 
         if (!canReadSchema())
-            HttpView.throwUnauthorized("Cannot read schema: " + name);
+            HttpView.throwUnauthorized("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
 
         TableInfo table = createTable(name);
         if (table != null)
