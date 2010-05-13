@@ -1067,7 +1067,7 @@ public class UserController extends SpringActionController
             if (isOwnRecord)
             {
                 //add the owner contextual role to the edit button
-                assert bb.getList().size() == 1;  // Should be just one at this point
+//                assert bb.getList().size() == 1;  // Should be just one at this point
 
                 for (DisplayElement btn : bb.getList())
                     btn.addContextualRole(OwnerRole.class);
