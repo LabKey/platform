@@ -45,6 +45,7 @@ public class ExternalIndex extends SearchableIndex implements SecurableResource
 {
     private final Object _swapLock = new Object();
     private final File _indexRoot;
+    private static final String RESOURCE_ID = "0d9aaf80-4102-102d-87fb-c74c764dc328";  // Constant, arbitrary GUID for permissions
 
     public ExternalIndex(File indexRoot, Analyzer analyzer) throws IOException
     {
@@ -126,7 +127,7 @@ public class ExternalIndex extends SearchableIndex implements SecurableResource
     public String getResourceId()
     {
         // Unique enough, since there's only one external index
-        return getResourceName();
+        return RESOURCE_ID;
     }
 
     @NotNull
