@@ -349,6 +349,7 @@ public class ListDefinitionImpl implements ListDefinition
         Object errorValue = new Object(){@Override public String toString(){return "~ERROR VALUE~";}};
 
         ColumnDescriptor[] columns;
+
         try
         {
             columns = loader.getColumns();
@@ -358,13 +359,14 @@ public class ListDefinitionImpl implements ListDefinition
             errors.add(e.getMessage());
             return errors;
         }
+
         for (ColumnDescriptor cd : columns)
         {
             String columnName = cd.name;
             DomainProperty property = propertiesByName.get(columnName);
             cd.errorValues = errorValue;
 
-            boolean isKeyField = getKeyName().equalsIgnoreCase(cd.name) || null!=property && getKeyName().equalsIgnoreCase(property.getName());
+            boolean isKeyField = getKeyName().equalsIgnoreCase(cd.name) || null != property && getKeyName().equalsIgnoreCase(property.getName());
 
             if (property == null && !isKeyField)
             {
@@ -439,7 +441,7 @@ public class ListDefinitionImpl implements ListDefinition
                 if (null == cdKey)
                     break;
 
-            // cdKey must be class Integer if autoincrement key exists or normal Integer key column
+            // cdKey must be class Integer if auto-increment key exists or normal Integer key column
             case Integer:
                 if (Integer.class.equals(cdKey.clazz))
                     break;

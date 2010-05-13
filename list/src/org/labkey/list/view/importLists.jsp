@@ -23,8 +23,8 @@
 <table cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
 <tr><td>
-You can import a list archive to create and populate lists in this folder.  A list archive is a .list.zip file that
-comforms to the LabKey list export format.  A list archive is typically created using the list export feature.  Using
+You can import a list archive to create and populate lists in this folder.  A list archive is a .lists.zip file that
+conforms to the LabKey list export format.  A list archive is typically created using the list export feature.  Using
 export and import, lists can be moved from one server to another or a folder can be initialized with standard lists or
 list templates.<%
     Container c = getViewContext().getContainer();

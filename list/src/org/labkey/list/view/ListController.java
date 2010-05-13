@@ -971,7 +971,7 @@ public class ListController extends SpringActionController
         {
             Container c = getContainer();
             ListWriter writer = new ListWriter();
-            ZipFile zip = new ZipFile(response, c.getName() + "_lists.zip");
+            ZipFile zip = new ZipFile(response, FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip"));
             writer.write(c, getUser(), zip);
             zip.close();
         }

@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -27,9 +28,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.SimpleDocumentResource;
 
 import java.sql.SQLException;
@@ -45,6 +48,7 @@ import java.util.Set;
  */
 public class ExternalSchemaDocumentProvider implements SearchService.DocumentProvider
 {
+    private static final Logger LOG = Logger.getLogger(ExternalSchemaDocumentProvider.class);
     public static final SearchService.SearchCategory externalTableCategory = new SearchService.SearchCategory("externalTable", "External Table");
 
     public void enumerateDocuments(SearchService.IndexTask t, final @NotNull Container c, Date since)
@@ -70,7 +74,24 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
 
                     for (String tableName : tableNames)
                     {
-                        TableInfo table = schema.getTable(tableName);
+                        TableInfo table;
+
+                        try
+                        {
+                            table = schema.getTable(tableName);
+                        }
+                        catch (UnauthorizedException e)
+                        {
+                            // Shouldn't happen, but if it does, log it and continue
+                            LOG.error("Unauthorized", e);
+                            continue;
+                        }
+                        catch (Exception e)
+                        {
+                            // Shouldn't happen, but if it does, continue with the next query
+                            ExceptionUtil.logExceptionToMothership(null, e);
+                            continue;
+                        }
 
                         assert tableName.equals(table.getName());
 

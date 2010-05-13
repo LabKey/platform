@@ -107,7 +107,7 @@ if (bean.allowBroadcast)
   </tr>
   <tr>
     <td width="2%"><input type="checkbox" name="broadcast"></td>
-    <td>Send this message as email to all site users who have not explicitly opted-out (site admins only).  If checked, email will be sent to <%=Formats.commaf0.format(AnnouncementsController.getBroadcastEmailAddresses(c).size())%> users.</td>
+    <td>Send this message as email to all site users who have not explicitly opted-out (site admins only).  If checked, this email will be sent to <%=Formats.commaf0.format(AnnouncementsController.getBroadcastEmailAddresses(c).size())%> users.</td>
   </tr>
 </table><%
 }%>
