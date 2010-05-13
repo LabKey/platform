@@ -174,7 +174,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     }
 
     @Override
-    protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
+    protected boolean isTypeEditable(Row row)
     {
         return false;
     }
