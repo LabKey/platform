@@ -67,6 +67,7 @@ public abstract class DisplayElement implements View, Cloneable
 
     public void addContextualRole(Class<? extends Role> role)
     {
+        checkLocked();
         if (null == _contextualRoles)
             _contextualRoles = new HashSet<Role>();
         _contextualRoles.add(RoleManager.getRole(role));

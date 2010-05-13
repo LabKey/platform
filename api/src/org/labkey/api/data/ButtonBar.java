@@ -135,7 +135,7 @@ public class ButtonBar extends DisplayElement
             if (ctx.getMode() != 0 && (ctx.getMode() & el.getDisplayModes()) == 0)
                 continue;
 
-            // This is rendundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
+            // This is redundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
             if (el.shouldRender(ctx))
             {
                 out.write("<span>");
