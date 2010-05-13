@@ -133,16 +133,6 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     {
         LABKEY.ext.FormPanel.superclass.onRender.call(this, ct, position);
         this.el.addClass('extContainer');
-//        new Ext.KeyMap(
-//            this.el,
-//            [{
-//                key: [10, Ext.EventObject.ENTER],
-//                ctrl: false,
-//                alt: false,
-//                shift: false,
-//                scope: this.getForm(),
-//                fn: this.getForm().submit
-//            }]);
     },
 
 
@@ -152,11 +142,11 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         LABKEY.ext.FormPanel.superclass.doLayout.call(this);
         var fn = function(c)
         {
-            if (c.isFormField && c.helpPopup && c.helpPopup.target)
+            if (c.helpPopup && c.helpPopup.target)
             {
                 // First line: open on click; Second line: open on hover
                 //Ext.get(c.helpPopup.target).on("click", c.helpPopup.onTargetOver, c.helpPopup);
-                c.helpPopup.initTarget();
+                c.helpPopup.initTarget(c.helpPopup.target);
             }
             if (c.items)
                 c.items.each(fn);
