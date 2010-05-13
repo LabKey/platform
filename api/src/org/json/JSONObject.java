@@ -1210,6 +1210,10 @@ public class JSONObject extends HashMap<String, Object> {
         if (value.getClass().isArray()) {
             return new JSONArray(value).toString();
         }
+        if(value instanceof Date)
+        {
+            return quote(DateUtil.formatDateTime((Date)value, JAVASCRIPT_DATE_FORMAT));
+        }
         return quote(value.toString());
     }
 
