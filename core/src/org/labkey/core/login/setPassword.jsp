@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-asfdasd asdafsd
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
