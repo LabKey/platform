@@ -91,7 +91,7 @@
     boolean wideView = true;
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
 
-    SearchController.SearchParameters params = form.getParams();
+    SearchController.SearchConfiguration searchConfig = form.getConfig();
 
     if (form.isAdvanced())
     {
@@ -100,7 +100,7 @@
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
 %>
-<form class="labkey-search-form" id=searchForm name="search" action="<%=h(params.getPostURL(c))%>">
+<form class="labkey-search-form" id=searchForm name="search" action="<%=h(searchConfig.getPostURL(c))%>">
     <table><tr><td><%
     if (form.isPrint())
     {
@@ -139,7 +139,7 @@
     ActionURL scopeResearchURL = ctx.cloneActionURL().deleteParameter("includeSubfolders").deleteParameter("container");
     String queryString = form.getQueryString();
 
-    if (params.includeAdvancedUI() && null != StringUtils.trimToNull(queryString))
+    if (searchConfig.includeAdvancedUI() && null != StringUtils.trimToNull(queryString))
     {
         %><tr><td colspan=1>
         <table width=100% cellpadding="0" cellspacing="0"><tr>
@@ -182,7 +182,7 @@
 
         try
         {
-            SearchService.SearchResult result = params.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
+            SearchService.SearchResult result = searchConfig.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
 
             int primaryHits = result.totalHits;
             int pageCount = (int)Math.ceil((double)primaryHits / hitsPerPage);
@@ -191,19 +191,19 @@
             <table cellspacing=0 cellpadding=0 width=100%><%
                boolean includesSecondarySearch = false;
 
-               if (params.hasSecondaryPermissions(user))
+               if (searchConfig.hasSecondaryPermissions(user))
                {
                    includesSecondarySearch = true;
-                   SearchService.SearchResult secondaryResult = params.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
+                   SearchService.SearchResult secondaryResult = searchConfig.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
 
                    %>
                <tr><td align=left colspan="2"><%
                    if (secondaryResult.totalHits > 0)
                    { %>
-                   <a href="<%=h(params.getSecondarySearchURL(c, queryString))%>"><%
+                   <a href="<%=h(searchConfig.getSecondarySearchURL(c, queryString))%>"><%
                    }
 
-                   out.print(getResultsSummary(secondaryResult.totalHits, params.getSecondaryDescription(c), "click to view"));
+                   out.print(getResultsSummary(secondaryResult.totalHits, searchConfig.getSecondaryDescription(c), "click to view"));
 
                    if (secondaryResult.totalHits > 0)
                    { %>
@@ -213,7 +213,7 @@
                }
                %>
                <tr><td align=left colspan="2">&nbsp;</td>
-               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? params.getPrimaryDescription(c) : null, includesSecondarySearch ? "shown below" : null)%></td><%
+               <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, includesSecondarySearch ? "shown below" : null)%></td><%
 
             if (hitsPerPage < primaryHits)
             {
@@ -308,7 +308,7 @@
 
             %></div></td><%
 
-            if (null == category && wideView && form.getSearchScope(null) != SearchScope.Folder)
+            if (null == category && wideView && searchConfig.includeNavigationLinks() && form.getSearchScope(null) != SearchScope.Folder)
             {
                 result = ss.search(queryString, SearchService.navigationCategory, user, form.getSearchContainer(), true, offset, hitsPerPage);
 

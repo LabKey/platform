@@ -631,9 +631,8 @@ public class SearchController extends SpringActionController
 
     }
 
-    // This interface hides all the specifics of internal vs. external index search, allowing keeping search.jsp
-    // reasonably generic.
-    public interface SearchParameters
+    // This interface hides all the specifics of internal vs. external index search, keeping search.jsp reasonably generic.
+    public interface SearchConfiguration
     {
         ActionURL getPostURL(Container c);
         ActionURL getSecondarySearchURL(Container c, String queryString); // TODO: Need other params? (category, scope)
@@ -643,14 +642,15 @@ public class SearchController extends SpringActionController
         SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
         boolean hasSecondaryPermissions(User user);
         boolean includeAdvancedUI();
+        boolean includeNavigationLinks();
     }
 
 
-    public static class InternalSearchParameters implements SearchParameters
+    public static class InternalSearchConfiguration implements SearchConfiguration
     {
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
 
-        private InternalSearchParameters()
+        private InternalSearchConfiguration()
         {
         }
 
@@ -698,6 +698,12 @@ public class SearchController extends SpringActionController
 
         @Override
         public boolean includeAdvancedUI()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean includeNavigationLinks()
         {
             return true;
         }
@@ -773,9 +779,9 @@ public class SearchController extends SpringActionController
 
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
-            SearchParameters params = new ExternalSearchParameters();
-            form.setParameters(params);
-            _description = params.getPrimaryDescription(getContainer());
+            SearchConfiguration config = new ExternalSearchConfiguration();
+            form.setConfiguration(config);
+            _description = config.getPrimaryDescription(getContainer());
             return super.getView(form, errors, true);
         }
 
@@ -786,11 +792,11 @@ public class SearchController extends SpringActionController
     }
 
 
-    public class ExternalSearchParameters implements SearchParameters
+    public class ExternalSearchConfiguration implements SearchConfiguration
     {
         private final SearchService _ss = ServiceRegistry.get(SearchService.class);
 
-        private ExternalSearchParameters()
+        private ExternalSearchConfiguration()
         {
         }
 
@@ -841,6 +847,12 @@ public class SearchController extends SpringActionController
         {
             return false;
         }
+
+        @Override
+        public boolean includeNavigationLinks()
+        {
+            return false;
+        }
     }
 
 
@@ -881,16 +893,16 @@ public class SearchController extends SpringActionController
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
         private boolean _includeHelpLink = true;
-        private SearchParameters _params = new InternalSearchParameters();    // Assume internal search (for webparts, etc.)
+        private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
 
-        public void setParameters(SearchParameters params)
+        public void setConfiguration(SearchConfiguration config)
         {
-            _params = params;
+            _config = config;
         }
 
-        public SearchParameters getParams()
+        public SearchConfiguration getConfig()
         {
-            return _params;
+            return _config;
         }
 
         public static enum SearchScope {All, Project, Folder}
@@ -1058,7 +1070,7 @@ public class SearchController extends SpringActionController
 
         if (external)
         {
-            String prefix = "Searched against " + form.getParams().getPrimaryDescription(ctx.getContainer());
+            String prefix = "Searched against " + form.getConfig().getPrimaryDescription(ctx.getContainer());
 
             if (StringUtils.isBlank(comment))
                 comment = prefix;
