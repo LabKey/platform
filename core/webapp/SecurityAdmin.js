@@ -884,14 +884,14 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
 var CloseButton = Ext.extend(Ext.Button,{
 
     template : new Ext.Template(
-                    '<span><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="display:inline;"><tbody>',
-                    '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc" colspan="2"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
-                    '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><td class="x-btn-mc"><i class="pclose">&#160;</i></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr>',
-                    '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc" colspan="2"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
-                    "</tbody></table><span>"),
+            '<span id="{4}" class="{3}"><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="float:left; margin-right:5px;"><tbody>',
+            '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc" colspan="2"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
+            '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><td class="x-btn-mc"><i class="pclose">&#160;</i></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr>',
+            '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc" colspan="2"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
+            "</tbody></table><span>"),
     // add &nbsp;
     templateIE : new Ext.Template(
-            '<span><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="display:inline;"><tbody>',
+            '<span id="{4}" class="{3}"><table cellpadding="0" cellspacing="0" class="x-btn x-btn-noicon" width="auto" style="float:left; margin-right:5px;"><tbody>',
             '<tr><td class="x-btn-tl"><i>&nbsp;</i></td><td class="x-btn-tc" colspan="2"></td><td class="x-btn-tr"><i>&nbsp;</i></td></tr>',
             '<tr><td class="x-btn-ml"><i>&nbsp;</i></td><td class="x-btn-mc"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em><td class="x-btn-mc"><i class="pclose">&#160;</i></td><td class="x-btn-mr"><i>&nbsp;</i></td></tr>',
             '<tr><td class="x-btn-bl"><i>&nbsp;</i></td><td class="x-btn-bc" colspan="2"></td><td class="x-btn-br"><i>&nbsp;</i></td></tr>',
@@ -1005,10 +1005,9 @@ var ButtonsDragDrop = Ext.extend(Ext.dd.DragZone,
     getDragData : function(e)
     {
         // is target a button in my container?
-        var btnEl = Ext.fly(e.getTarget()).findParentNode('table');
-        if (btnEl && !btnEl.id)
-            btnEl = btnEl.parentNode;
-        if (!btnEl || !btnEl.id) return;
+        var btnEl = Ext.fly(e.getTarget()).findParentNode('span.principalButton');
+        if (!btnEl || !btnEl.id)
+            return false;
         var btn = this.container.getComponent(btnEl.id);
         if (!btn)
             return false;
@@ -1454,7 +1453,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     roleTemplate : new Ext.Template(
             '<tr id="$tr${uniqueName}" class="permissionsTR">'+
             '<td><img height=50 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td height=44 width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
-            '<td class="groupsTD" width=100%><table><tr><td><img height=24 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td valign=top id="$buttons${uniqueName}"><span id="$br${uniqueName}"></span></td></tr><tr><td><img height=22 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td id="$combo${uniqueName}"></td></tr></table></td>'+
+            '<td class="groupsTD" width=100%><table><tr><td><img height=24 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td valign=top id="$buttons${uniqueName}"><img id="$br${uniqueName}" src="' +Ext.BLANK_IMAGE_URL + '" width=1 height=1></td></tr><tr><td><img height=22 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td id="$combo${uniqueName}"></td></tr></table></td>'+
             '</tr>\n'),
 
     _redraw : function()
@@ -1689,14 +1688,15 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var btnEl = Ext.get(btnId);
         var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
 
-        if (typeof animate == 'boolean' && animate) // && !Ext.isSafari)
+        if (typeof animate == 'boolean' && animate && !Ext.isSafari)
         {
-            if (!animEl)
-                animEl = this.getComponent('$add$' + roleId).el;
+            var startAtEl = animEl || this.getComponent('$add$' + roleId).el;
+            var endAtEl = btnEl || br;
+
             var body = Ext.getBody();
             var span = body.insertHtml("beforeend",'<span style:"position:absolute;">' + $h(groupName) + '<span>', true);
-            span.setXY(animEl.getXY());
-            var xy = btnEl ? btnEl.getXY() : br.getXY();
+            span.setXY(startAtEl.getXY());
+            var xy = endAtEl.getXY();
             span.shift({x:xy[0], y:xy[1], callback:function(){
                 span.remove();
                 this.addButton(group, role, false);
@@ -1714,11 +1714,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var tooltip = (group.Type == 'u' ? 'User: ' : group.Container ? 'Group: ' : 'Site group: ') + group.Name;
         var ct = Ext.fly(roleId);
         b = new CloseButton({text:groupName, id:btnId, groupId:groupId, roleId:roleId, tooltip:tooltip, closeTooltip:'Remove ' + groupName + ' from' + (roleName ? (' ' + roleName) : '') + ' role'});
+        b.addClass('principalButton');
         b.addClass(style);
         b.on("close", this.Button_onClose, this);
         b.on("click", this.Button_onClick, this);
         b.render(ct, br);
-        br.insertHtml("beforebegin"," ");
+        if (!b.el.id == btnId)
+            console.error("button id is wrong.  was <" + b.el.id + "> expected <" + btnId + ">");
 
         if (typeof animate == 'string')
             b.el[animate]();
