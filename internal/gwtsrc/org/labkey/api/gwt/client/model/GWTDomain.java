@@ -176,7 +176,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
 
     public boolean isEditable(FieldType field)
     {
-        return !isMandatoryField(field);
+        return true;
     }
 
     /**

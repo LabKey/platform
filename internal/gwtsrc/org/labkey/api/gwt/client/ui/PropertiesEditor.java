@@ -16,17 +16,13 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.extjs.gxt.ui.client.GXT;
 import com.extjs.gxt.ui.client.event.*;
-import com.extjs.gxt.ui.client.util.SwallowEvent;
 import com.extjs.gxt.ui.client.widget.TabItem;
 import com.extjs.gxt.ui.client.widget.form.Field;
 import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.form.Validator;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.*;
-import com.google.gwt.event.dom.client.DomEvent;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Event;
@@ -434,24 +430,21 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
-    void saveRow(int index)
-    {
-        if (1==1) return;
-        // UNDONE: there is something wrong with BoundTextBox and selenium.  no blur event fires, so no update()
-        // make sure we save current selection before changing
-        int tableRow = index+1;
-        if (tableRow >= _table.getRowCount())
-            return;
-        for (int col=0 ; col<_table.getCellCount(tableRow) ; col++)
-        {
-            Widget w = _table.getWidget(tableRow,col);
-            if (w instanceof BoundWidget)
-            {
-                ((BoundWidget)w).validate();
-                ((BoundWidget)w).pushValue();
-            }
-        }
-    }
+//    void saveRow(int index)
+//    {
+//        int tableRow = index+1;
+//        if (tableRow >= _table.getRowCount())
+//            return;
+//        for (int col=0 ; col<_table.getCellCount(tableRow) ; col++)
+//        {
+//            Widget w = _table.getWidget(tableRow,col);
+//            if (w instanceof BoundWidget)
+//            {
+//                ((BoundWidget)w).validate();
+//                ((BoundWidget)w).pushValue();
+//            }
+//        }
+//    }
     
 
     protected void refreshButtons(HorizontalPanel buttonPanel)
@@ -644,9 +637,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public void refreshRow(final int index, final Row rowObject)
     {
-        // see UNDONE in saveRow()
-        saveRow(index);
-
         HTMLTable.CellFormatter formatter = _table.getCellFormatter();
 
         final FieldType pd = rowObject.edit;
@@ -702,7 +692,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
 
 
-        if (!_readOnly && canDelete(rowObject))
+        if (!readOnly && canDelete(rowObject))
         {
             if (status == FieldStatus.Deleted)
             {
@@ -792,7 +782,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
 
         Widget name;
-        if (readOnly)
+        if (readOnly || !isNameEditable(rowObject))
         {
             name = new Label(pd.getName());
             name.setHeight("20px");
@@ -803,7 +793,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             nameTextBox.setValidator(new ColumnNameValidator());
             nameTextBox.addListener(Events.Focus, listener);
             nameTextBox.addListener(Events.KeyPress, listener);
-            nameTextBox.setEnabled(!readOnly && pd.isNameEditable() && !_domain.isMandatoryField(pd));
+            //nameTextBox.setEnabled(isNameEditable(rowObject));
             name = nameTextBox;
         }
         _table.setWidget(tableRow, col, name);
@@ -827,7 +817,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         col++;
 
         Widget type;
-        if (readOnly)
+        if (readOnly || !isTypeEditable(rowObject))
         {
             if (useConceptPicker)
             {
@@ -847,7 +837,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 picker.addListener(Events.KeyPress, listener);
                 picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
                 picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
-                picker.setIsRangeEditable(isTypeEditable(pd,status));
+                // distinguish between RangeEditable and any ConceptEditable
+                picker.setIsRangeEditable(isRangeEditable(rowObject));
                 type = picker;
             }
             else
@@ -855,7 +846,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 BoundTypePicker typePicker = new BoundTypePicker(pd, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
                 typePicker.addFocusHandler(listener);
                 typePicker.setRangeURI(pd.getRangeURI());
-                typePicker.setEnabled(isTypeEditable(pd, status) && !readOnly);
+                typePicker.setEnabled(isRangeEditable(rowObject));
                 type = typePicker;
             }
         }
@@ -891,21 +882,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         formatter.setWidth(tableRow, col, "900");
         formatter.setHeight(tableRow, col, "22");
     }
-
-
-    protected boolean canDelete(Row row)
-    {
-        if (_domain.isMandatoryField(row.edit))
-            return false;
-        return true;
-    }
-
-
-    protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
-    {
-        return pd.isEditable() && status == FieldStatus.Added;
-    }
-
 
     static PushButton getImageButton(String action, Object idSuffix, ClickHandler h)
     {
@@ -962,6 +938,36 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         return _rows.get(i);
     }
+
+
+    protected boolean canDelete(Row row)
+    {
+        if (null == row.orig || _domain.isMandatoryField(row.orig))
+            return false;
+        return true;
+    }
+
+
+    protected boolean isTypeEditable(Row row)
+    {
+        return null == row.orig || !_domain.isMandatoryField(row.orig);
+    }
+
+
+    protected boolean isRangeEditable(Row row)
+    {
+        if (!isTypeEditable(row))
+            return false;
+        FieldStatus status = getStatus(row);
+        return status == FieldStatus.Added;
+    }
+
+
+    protected boolean isNameEditable(Row row)
+    {
+        return null == row.orig || !_domain.isMandatoryField(row.orig);            
+    }
+
 
     /** @return ReadOnly status of the field. */
     public boolean isReadOnly(Row row)
@@ -1083,7 +1089,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         ArrayList<FieldType> l = new ArrayList<FieldType>();
         for (int i=0 ; i<_rows.size() ; i++)
         {
-            saveRow(i);
             Row r = getRow(i);
             FieldStatus status = getStatus(r.edit);
             if (status == FieldStatus.Deleted)
@@ -1094,6 +1099,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         d.setFields(l);
         return d;
     }
+
 
     public int getRow(GWTPropertyDescriptor pd)
     {

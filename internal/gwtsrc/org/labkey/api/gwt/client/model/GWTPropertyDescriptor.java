@@ -63,9 +63,9 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty shownInDetailsView = new BooleanProperty(true);
 
     // for controlling the property editor (not persisted or user settable)
-    private boolean isEditable = true;
+//    private boolean isEditable = true;
 //    private boolean isTypeEditable = true;
-    private boolean isNameEditable = true;
+//    private boolean isNameEditable = true;
 
     
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
@@ -536,15 +536,15 @@ public class GWTPropertyDescriptor implements IsSerializable
 
 
     // for communicating with the type editor, not persisted
-    public void setEditable(boolean b)
-    {
-        isEditable = b;
-    }
-
-    public boolean isEditable()
-    {
-        return isEditable;
-    }
+//    public void setEditable(boolean b)
+//    {
+//        isEditable = b;
+//    }
+//
+//    public boolean isEditable()
+//    {
+//        return isEditable;
+//    }
 
 //    public void setTypeEditable(boolean b)
 //    {
@@ -556,13 +556,13 @@ public class GWTPropertyDescriptor implements IsSerializable
 //        return isTypeEditable;
 //    }
 
-    public void setNameEditable(boolean b)
-    {
-        isNameEditable = b;
-    }
-
-    public boolean isNameEditable()
-    {
-        return isNameEditable;
-    }
+//    public void setNameEditable(boolean b)
+//    {
+//        isNameEditable = b;
+//    }
+//
+//    public boolean isNameEditable()
+//    {
+//        return isNameEditable;
+//    }
 }
