@@ -596,7 +596,7 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
         return true;
     },
 
-    deletePath : function(path, callback)   // callback(filesystem, success, path)
+    deletePath : function(path, isFile, callback)   // callback(filesystem, success, path)
     {
         return false;
     },
@@ -782,7 +782,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         return !options || -1 != options.indexOf('DELETE');
     },
 
-    deletePath : function(path, callback)
+    deletePath : function(path, isFile, callback)
     {
         try
         {
@@ -794,7 +794,10 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                 if (204 == response.status || 404 == response.status) // NO_CONTENT (success), NOT_FOUND (actually goes to handleFailure)
                 {
                     // CONSIDER just delete one entry
-                    fileSystem.uncacheListing(fileSystem.parentPath(path));
+                    if (!isFile)
+                        fileSystem.uncacheListing(path);
+                    else
+                        fileSystem.uncacheListing(fileSystem.parentPath(path));
                     callback(fileSystem, true, path, response);
                 }
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
@@ -891,7 +894,17 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     uncacheListing : function(record)
     {
         var path = (typeof record == "string") ? record : record.data.path;
-        this.directoryMap[path] = null;
+
+        // want to uncache all subfolders of the parent folder
+        for (var a in this.directoryMap)
+        {
+            if (typeof a == 'string')
+            {
+                var idx = a.indexOf(path);
+                if (idx == 0)
+                    this.directoryMap[a] = null;
+            }
+        }
 
         var args = this.pendingPropfind[path];
         if (args && args.transId)
@@ -1871,14 +1884,61 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, hideText: true, handler: function()
         {
-            Ext.MessageBox.prompt('Create Folder', 'Folder Name:', function(btn, folder){
-                if (btn == 'ok')
-                {
-                    var p = this.currentDirectory.data.path;
-                    var path = this.fileSystem.concatPaths(p, folder);
-                    this.fileSystem.createDirectory(path, this._refreshOnCallbackSelectPath.createDelegate(this));
-                }
-            }, this, false, 'New Folder');
+            var panel = new Ext.form.FormPanel({
+                bodyStyle : 'padding:20px;',
+                border: false,
+                items: [{
+                    xtype: 'textfield',
+                    allowBlank: false,
+                    name: 'folderName',
+                    fieldLabel: 'Folder Name',
+                    value: 'New Folder',
+                    scope: this,
+                    validator: function(folder){
+                        var scope = this.initialConfig.scope;
+                        if (folder && folder.length && scope)
+                        {
+                            var p = scope.currentDirectory.data.path;
+                            var path = scope.fileSystem.concatPaths(p, folder);
+                            var file = scope.fileSystem.recordFromCache(path);
+                            if (file)
+                                return 'The folder already exists';
+                        }
+                        return true;
+                    }
+                }]
+            });
+
+            var win = new Ext.Window({
+                title: 'Create Folder',
+                width: 300,
+                height: 150,
+                cls: 'extContainer',
+                autoScroll: true,
+                closeAction:'close',
+                modal: true,
+                layout: 'fit',
+                items: panel,
+                buttons: [
+                    {text:'Submit', scope: this, handler:function() {
+                        if (panel.getForm().isValid())
+                        {
+                            var values = panel.getForm().getValues();
+                            if (values && values.folderName)
+                            {
+                                var folder = values.folderName;
+                                var p = this.currentDirectory.data.path;
+                                var path = this.fileSystem.concatPaths(p, folder);
+                                this.fileSystem.createDirectory(path, this._refreshOnCallbackSelectPath.createDelegate(this));
+                            }
+                            win.close();
+                        }
+                    }},
+                    {text:'Cancel', handler:function(){win.close();}}
+                ]
+            });
+            win.show();
+
         }.createDelegate(this)});
     },
 
@@ -1953,7 +2013,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 for (var i = 0; i < selections.length; i++)
                 {
                     var selectedRecord = selections[i];
-                    this.fileSystem.deletePath(selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
+                    this.fileSystem.deletePath(selectedRecord.data.path, selectedRecord.data.file, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
                     this.selectFile(null);
                     if (this.tree)
                     {
@@ -2206,47 +2266,44 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
         if (pending.length != 0)
         {
-            var conflicted = [];
+            var pendingFiles = [];
+            var pendingFolders = {};
+
             for (i=0; i < pending.length; i++)
             {
                 var rec = pending[i];
                 var target = rec.id.substring(this.fileSystem.prefixUrl.length);
+                rec.target = decodeURIComponent(target);
 
-                if (this.fileSystem.recordFromCache(decodeURIComponent(target)))
+                // group by files and folders
+                var relativePath = decodeURIComponent(rec.recordId.substring(this.currentDirectory.data.uri.length));
+
+                if (relativePath == rec.name)
+                    pendingFiles.push(rec);
+                else
                 {
-                    target = target.substring(1);
-                    conflicted.push({idx:i, name:decodeURIComponent(target), id:rec.id});
+                    var parent = this.fileSystem.parentPath(rec.target);
+                    if (!pendingFolders[parent])
+                        pendingFolders[parent] = {parent:parent};
                 }
             }
 
-            if (conflicted.length != 0)
+            // make sure folders have been listed by the client, else we need to make an async request
+            for (var dir in pendingFolders)
             {
-                var txt = this.fileReplaceTemplate.apply({files:conflicted});
+                if (!this.fileSystem.directoryFromCache(dir))
+                {
+                    this.fileSystem.listFiles(dir, function(filesystem, success, parentPath, records){
+                        if (pendingFolders[parentPath])
+                            pendingFolders[parentPath].ready = true;
 
-                Ext.MessageBox.confirm('Confirm replacement', txt, function(btn){
-                    if (btn == 'yes')
-                    {
-                        this.doStartTransfer(transfers, pending);
-                    }
-                    else
-                    {
-                        for (i=0; i < pending.length; i++)
-                        {
-                            var item = pending[i];
-                            var tr = transfers.getById(item.recordId);
-                            if (tr)
-                            {
-                                transfers.remove(tr);
-                                var idx = this.applet.getApplet().transfer_getIndex(tr.get('transferId'));
-                                if (idx != -1)
-                                    this.applet.getApplet().transfer_removeFile(idx);
-                            }
-                        }
-                    }
-                }, this);
+                        this.checkForTransferConflicts(pending, pendingFolders, pendingFiles);
+                    }, this);
+                }
+                else
+                    pendingFolders[dir].ready = true;
             }
-            else
-                this.doStartTransfer(transfers, pending);
+            this.checkForTransferConflicts(pending, pendingFolders, pendingFiles);
         }
 
         if (newlyAdded.length != 0)
@@ -2263,6 +2320,67 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             for (var i = 0; i < newlyComplete.length; i++)
                 this.notifyStates[newlyComplete[i].id].notified = TRANSFER_STATES.success;
         }
+    },
+
+    checkForTransferConflicts : function(pending, pendingFolders, pendingFiles)
+    {
+        // folders may not have been listed in the filesystem yet, wait until they are all processed
+        for (var dir in pendingFolders)
+        {
+            var rec = pendingFolders[dir];
+            if (rec && !rec.ready)
+                return;
+        }
+
+        var conflicted = [];
+
+        for (var i=0; i < pendingFiles.length; i++)
+        {
+            rec = pendingFiles[i];
+            if (this.fileSystem.recordFromCache(rec.target))
+            {
+                var target = rec.id.substring(this.fileSystem.prefixUrl.length);
+                target = target.substring(1);
+                //conflicted.push({name:decodeURIComponent(target)});
+                conflicted.push({name:rec.name});
+            }
+        }
+
+        for (dir in pendingFolders)
+        {
+            if (this.fileSystem.directoryFromCache(dir))
+                conflicted.push({name:dir});
+        }
+
+        var transfers = this.applet.getTransfers();
+        if (conflicted.length != 0)
+        {
+            var txt = this.fileReplaceTemplate.apply({files:conflicted});
+
+            Ext.MessageBox.confirm('Confirm replacement', txt, function(btn){
+                if (btn == 'yes')
+                {
+                    this.doStartTransfer(transfers, pending);
+                }
+                else
+                {
+                    for (i=0; i < pending.length; i++)
+                    {
+                        var item = pending[i];
+                        var tr = transfers.getById(item.recordId);
+                        if (tr)
+                        {
+                            transfers.remove(tr);
+                            var idx = this.applet.getApplet().transfer_getIndex(tr.get('transferId'));
+                            if (idx != -1)
+                                this.applet.getApplet().transfer_removeFile(idx);
+                        }
+                    }
+                }
+            }, this);
+        }
+        else
+            this.doStartTransfer(transfers, pending);
     },
 
     /**
@@ -2606,6 +2724,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             this.store.totalLength = records.length;
             this.store.applySort();
             this.store.fireEvent("datachanged", this.store);
+
+            this.grid.getEl().unmask();
         }
     },
 
@@ -2867,6 +2987,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             // data store
             this.store.removeAll();
+            this.grid.getEl().mask("loading...", "x-mask-loading");
             this.grid.view.scrollToTop();
             this.fileSystem.listFiles(record.data.path, this.loadRecords, this);
 
@@ -2890,6 +3011,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     }
                 }).createDelegate(this));
             }
+//            this.grid.getEl().unmask();
         }, this);
 
 
@@ -2903,13 +3025,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         }, this);
 
         this.on(BROWSER_EVENTS.transferstarted, function(result) {this.showProgressBar();}, this);
-        this.fileReplaceTemplate = new Ext.XTemplate('The following files(s) already exist, do you want to replace them?<br>',
+        this.fileReplaceTemplate = new Ext.XTemplate('The following files(s) or folders already exist, and will be overwritten. Do you want to replace them?<br><br>',
                 '<tpl for="files">' +
                     '<tpl if="xindex &lt; 11">' +
                         '<span style="margin-left:8px;">{name}</span><br>' +
                     '</tpl>' +
                     '<tpl if="xindex == 11">' +
-                        '<span style="margin-left:8px;">... too many files to display</span><br>' +
+                        '<span style="margin-left:8px;">... too many to display</span><br>' +
                     '</tpl>' +
                 '</tpl>').compile();
     },
