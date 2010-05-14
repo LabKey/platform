@@ -543,16 +543,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return true;
     }
 
+    @Deprecated  // Use getStartURL(User)
     public ActionURL getStartURL(ViewContext viewContext)
+    {
+        return getStartURL(viewContext.getUser());
+    }
+
+    public ActionURL getStartURL(User user)
     {
         FolderType ft = getFolderType();
         if (!FolderType.NONE.equals(ft))
-            return ft.getStartURL(this, viewContext.getUser());
+            return ft.getStartURL(this, user);
 
         Module module = getDefaultModule();
         if (module != null)
         {
-            ActionURL helper = module.getTabURL(this, viewContext.getUser());
+            ActionURL helper = module.getTabURL(this, user);
             if (helper != null)
                 return helper;
         }
