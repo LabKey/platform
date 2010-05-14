@@ -246,9 +246,7 @@ public class LoginController extends SpringActionController
             if (!reshow && (isLoggedIn() || authenticate(form, request, response)))
                 return HttpView.redirect(getSuccessURL(form));
             else
-            {
                 return showLogin(form, request, getPageConfig(), false);
-            }
         }
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
@@ -357,26 +355,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(LoginForm form)
         {
-            // Default redirect if returnURL is not specified
-            ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
-
-            // After successful login (and possibly profile update) we'll end up here
-            URLHelper returnURL = form.getReturnURLHelper(homeURL);
-
-            try
-            {
-                // If this is user's first log in or some required field isn't filled in then go to update page first
-                if (!form.getSkipProfile() && (_user.isFirstLogin() || UserController.requiresUpdate(_user)))
-                {
-                    returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(returnURL, _user.getUserId());
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-
-            return returnURL;
+            return getAfterLoginURL(form, _user, form.getSkipProfile());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -426,6 +405,31 @@ public class LoginController extends SpringActionController
         page.setTitle("Sign In");
 
         return vBox;
+    }
+
+
+    private URLHelper getAfterLoginURL(ReturnUrlForm form, @Nullable User user, boolean skipProfile)
+    {
+        // Default redirect if returnURL is not specified
+        ActionURL homeURL = null != user ? ContainerManager.getHomeContainer().getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
+
+        // After successful login (and possibly profile update) we'll end up here
+        URLHelper returnURL = form.getReturnURLHelper(homeURL);
+
+        try
+        {
+            // If this is user's first log in or some required field isn't filled in then go to update page first
+            if (!skipProfile && null != user && (user.isFirstLogin() || UserController.requiresUpdate(user)))
+            {
+                returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(returnURL, user.getUserId());
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return returnURL;
     }
 
 
@@ -601,14 +605,30 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class LoginForm extends ReturnUrlForm
+    private static abstract class AbstractLoginForm extends ReturnUrlForm
+    {
+        private boolean _skipProfile = false;
+
+        public boolean getSkipProfile()
+        {
+            return _skipProfile;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSkipProfile(boolean skipProfile)
+        {
+            _skipProfile = skipProfile;
+        }
+    }
+
+
+    public static class LoginForm extends AbstractLoginForm
     {
         private String errorHtml = "";
         private boolean remember;
         private String email;
         private String password;
         private boolean approvedTermsOfUse;
-        private boolean skipProfile;
 
         public void setEmail(String email)
         {
@@ -625,14 +645,10 @@ public class LoginController extends SpringActionController
             return password;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setPassword(String password)
         {
             this.password = password;
-        }
-
-        public void setRemember(boolean remember)
-        {
-            this.remember = remember;
         }
 
         public boolean isRemember()
@@ -640,14 +656,20 @@ public class LoginController extends SpringActionController
             return this.remember;
         }
 
-        public void setErrorHtml(String errorHtml)
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setRemember(boolean remember)
         {
-            this.errorHtml = errorHtml;
+            this.remember = remember;
         }
 
         public String getErrorHtml()
         {
             return this.errorHtml;
+        }
+
+        public void setErrorHtml(String errorHtml)
+        {
+            this.errorHtml = errorHtml;
         }
 
         public boolean isApprovedTermsOfUse()
@@ -658,16 +680,6 @@ public class LoginController extends SpringActionController
         public void setApprovedTermsOfUse(boolean approvedTermsOfUse)
         {
             this.approvedTermsOfUse = approvedTermsOfUse;
-        }
-
-        public boolean getSkipProfile()
-        {
-            return skipProfile;
-        }
-
-        public void setSkipProfile(boolean skipProfile)
-        {
-            this.skipProfile = skipProfile;
         }
     }
 
@@ -707,7 +719,7 @@ public class LoginController extends SpringActionController
     private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
         protected ValidEmail _email = null;
-        private User _user;
+        private boolean _skipProfile = true;  // In most set password scenarios we skip the profile page
         protected boolean _unrecoverableError = false;
 
         public void validateCommand(SetPasswordForm form, Errors errors)
@@ -798,12 +810,19 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            _user = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper());
-
-            if (null != _user)
+            // Should log in only for initial user, choose password, and forced change password scenarios, but not for
+            // scenarios where a user is already logged in (normal changed password, admins initializing another user's a password, etc.)
+            if (getUser().isGuest())
             {
-                // Log the user into the system
-                SecurityManager.setAuthenticatedUser(request, _user, null, null, null);
+                User authenticatedUser = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper());
+
+                if (null != authenticatedUser)
+                {
+                    // Log the user into the system
+                    SecurityManager.setAuthenticatedUser(request, authenticatedUser, null, null, null);
+                    getViewContext().setUser(authenticatedUser);
+                    _skipProfile = form.getSkipProfile();
+                }
             }
 
             return true;
@@ -811,13 +830,7 @@ public class LoginController extends SpringActionController
 
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
-            if (_user != null)
-            {
-                ViewContext viewContext = getViewContext();
-                viewContext.setUser(_user);
-                return form.getReturnURLHelper(ContainerManager.getHomeContainer().getStartURL(viewContext));
-            }
-            return getUrls().getLoginURL(getContainer(), _email.getEmailAddress(), form.getSkipProfile(), form.getReturnURLHelper());
+            return getAfterLoginURL(form, getUser(), _skipProfile);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -849,13 +862,17 @@ public class LoginController extends SpringActionController
                 if (SecurityManager.verify(email, verification))
                 {
                     // logout any current user
+/*
+                    Try NOT logging out the current user.  This allows admins to set somebody else's password without getting
+                    themselves logged out in the process.  Need to test all scenarios to make sure this is correct.
+
                     if (getUser() != null && !getUser().isGuest())
                     {
                         SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
                         HttpView.throwRedirect(currentUrl);
                     }
 
-                    // Success
+*/                    // Success
                     _email = email;
                 }
                 else
@@ -1005,13 +1022,13 @@ public class LoginController extends SpringActionController
     }
 
 
-    public static class SetPasswordForm extends ReturnUrlForm
+    public static class SetPasswordForm extends AbstractLoginForm
     {
         private String _verification;
         private String _email;
         private String _message;
-        private boolean _skipProfile = false;
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setEmail(String email)
         {
             _email = email;
@@ -1022,6 +1039,7 @@ public class LoginController extends SpringActionController
             return _email;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setVerification(String verification)
         {
             _verification = verification;
@@ -1032,21 +1050,12 @@ public class LoginController extends SpringActionController
             return _verification;
         }
 
-        public boolean getSkipProfile()
-        {
-            return _skipProfile;
-        }
-
-        public void setSkipProfile(boolean skipProfile)
-        {
-            _skipProfile = skipProfile;
-        }
-
         public String getMessage()
         {
             return _message;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setMessage(String message)
         {
             _message = message;

@@ -27,11 +27,12 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -201,8 +202,8 @@ public class UserController extends SpringActionController
         {
             ActionButton edit = new ActionButton("showUpdate.view", "Edit");
             edit.setActionType(ActionButton.Action.GET);
+            edit.addContextualRole(OwnerRole.class);
             detailsButtonBar.add(edit);
-
         }
         rgn.setButtonBar(detailsButtonBar, DataRegion.MODE_DETAILS);
 
@@ -1066,12 +1067,6 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord)
             {
-                //add the owner contextual role to the edit button
-//                assert bb.getList().size() == 1;  // Should be just one at this point
-
-                for (DisplayElement btn : bb.getList())
-                    btn.addContextualRole(OwnerRole.class);
-
                 if (!SecurityManager.isLdapEmail(new ValidEmail(user.getEmail())))
                 {
                     ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL(), null), "Change Password");
@@ -1090,6 +1085,7 @@ public class UserController extends SpringActionController
                 else
                 {
                     Container doneContainer;
+
                     if (c.isRoot())
                         doneContainer = ContainerManager.getHomeContainer();
                     else
