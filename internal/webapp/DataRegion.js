@@ -796,7 +796,7 @@ LABKEY.DataRegion.clearSelected = function (config)
 LABKEY.DataRegion.getSelected = function (config)
 {
     var url = LABKEY.ActionURL.buildURL("query", "getSelected.api", config.containerPath,
-        { 'key' : this.selectionKey });
+        { 'key' : config.selectionKey });
 
     Ext.Ajax.request({
         url: url,

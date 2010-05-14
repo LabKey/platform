@@ -110,6 +110,8 @@ public class NetworkDrive
 
     public static boolean exists(File f)
     {
+        if (f == null)
+            return false;
         if (f.exists())
             return true;
         ensureDrive(f.getPath());
