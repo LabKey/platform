@@ -1,4 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-jaxrpc.jar|Java API for XML-Based RPC|1.1|{link:JAX-RPC|http://java.sun.com/webservices/jaxrpc/}|{link:Sun - JCP|http://java.sun.com/webservices/docs/2.0/LICENSE}|jeckels|Java API for XML RPC, used for webservices
-{table}

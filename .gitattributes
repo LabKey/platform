@@ -177,7 +177,6 @@ bigiron/src/org/labkey/bigiron/sas/SqlDialectSas.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas91.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas92.java -text
 bigiron/src/org/labkey/bigiron/sas/exportSasScript.jsp -text
-biotrue/lib/jaxrpc.jar -text
 biotrue/module.properties -text
 biotrue/resources/schemas/biotrue.xml -text
 biotrue/resources/schemas/dbscripts/postgresql/biotrue-0.00-2.10.sql -text
@@ -186,7 +185,6 @@ biotrue/resources/schemas/dbscripts/postgresql/obsolete/biotrue-0.01-0.02.sql -t
 biotrue/resources/schemas/dbscripts/sqlserver/biotrue-0.00-2.10.sql -text
 biotrue/resources/schemas/dbscripts/sqlserver/obsolete/biotrue-0.00-0.01.sql -text
 biotrue/resources/schemas/dbscripts/sqlserver/obsolete/biotrue-0.01-0.03.sql -text
-biotrue/src/META-INF/biotrue/jars.txt -text
 biotrue/src/org/labkey/biotrue/BtModule.java -text
 biotrue/src/org/labkey/biotrue/controllers/BtController.java -text
 biotrue/src/org/labkey/biotrue/controllers/BtOverview.java -text
