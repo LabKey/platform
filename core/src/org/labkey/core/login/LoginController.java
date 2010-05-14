@@ -163,18 +163,6 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        private ActionURL getLoginURL(Container c, String email, boolean skipProfile, URLHelper returnURL)
-        {
-            ActionURL url = getLoginURL(c, returnURL);
-
-            url.addParameter("email", email);
-
-            if (skipProfile)
-                url.addParameter("skipProfile", "1");
-
-            return url;
-        }
-
         public ActionURL getLogoutURL(Container c)
         {
             return new ActionURL(LogoutAction.class, c);
@@ -410,11 +398,14 @@ public class LoginController extends SpringActionController
 
     private URLHelper getAfterLoginURL(ReturnUrlForm form, @Nullable User user, boolean skipProfile)
     {
+        Container current = getContainer();
+        Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : getContainer());
+
         // Default redirect if returnURL is not specified
-        ActionURL homeURL = null != user ? ContainerManager.getHomeContainer().getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
+        ActionURL defaultURL = null != user ? c.getStartURL(user) : AppProps.getInstance().getHomePageActionURL();
 
         // After successful login (and possibly profile update) we'll end up here
-        URLHelper returnURL = form.getReturnURLHelper(homeURL);
+        URLHelper returnURL = form.getReturnURLHelper(defaultURL);
 
         try
         {
