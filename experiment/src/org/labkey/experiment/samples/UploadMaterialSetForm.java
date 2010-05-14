@@ -38,7 +38,7 @@ public class UploadMaterialSetForm extends ViewForm
     private int idColumn1 = -1;
     private int idColumn2 = -1;
     private int idColumn3 = -1;
-    private int parentColumn;
+    private int parentColumn = -1;
     private InsertUpdateChoice insertUpdateChoice;
 
     private DataLoader _loader;

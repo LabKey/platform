@@ -2492,9 +2492,16 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
+            ExpSampleSet sampleSet = null;
             if (rowId != null)
+                sampleSet = ExperimentService.get().getSampleSet(Integer.parseInt(rowId));
+
+            String name = getViewContext().getRequest().getParameter("name");
+            if (sampleSet == null && name != null && name.trim().length() > 0)
+                sampleSet = ExperimentService.get().getSampleSet(getContainer(), name.trim());
+
+            if (sampleSet != null)
             {
-                ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(Integer.parseInt(rowId));
                 ExperimentService.get().setActiveSampleSet(getContainer(), sampleSet);
             }
             return true;
