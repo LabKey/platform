@@ -233,7 +233,8 @@ public interface SearchService
 
     void purgeQueues();
     void start();
-    void pause();
+    void startCrawler();
+    void pauseCrawler();
     void updatePrimaryIndex();
     boolean isRunning();
     boolean hasExternalIndexPermission(User user);
