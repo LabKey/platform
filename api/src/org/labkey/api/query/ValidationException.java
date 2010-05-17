@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 /*
  * User: Dave
  * Date: Jun 9, 2008
@@ -33,6 +34,8 @@ import java.util.ArrayList;
  */
 public class ValidationException extends Exception
 {
+    public static final String ERROR_ROW_NUMBER_KEY = "_rowNumber";
+
     private List<ValidationError> _errors = new ArrayList<ValidationError>();
 
     public ValidationException()
@@ -88,5 +91,54 @@ public class ValidationException extends Exception
     public String getMessage()
     {
         return toString();
+    }
+
+
+    public static int getRowNum(Map rowErrors)
+    {
+        if (rowErrors.containsKey(ERROR_ROW_NUMBER_KEY))
+        {
+            Object _rowNumber = rowErrors.get(ERROR_ROW_NUMBER_KEY);
+            if (_rowNumber instanceof Integer)
+                return ((Integer)_rowNumber).intValue();
+            try
+            {
+                return Integer.parseInt(String.valueOf(_rowNumber));
+            }
+            catch (NumberFormatException _) { }
+        }
+
+        return -1;
+    }
+
+    // converts the List of error Maps into a ValidationException
+    public static void throwValidationException(List<Map<String, String>> errors, boolean multipleRows) throws ValidationException
+    {
+        List<ValidationError> list = new ArrayList<ValidationError>(errors.size());
+        for (Map<String, String> rowErrors : errors)
+        {
+            int row = getRowNum(rowErrors);
+            for (Map.Entry<String, String> fields : rowErrors.entrySet())
+            {
+                String property = fields.getKey();
+                if (ERROR_ROW_NUMBER_KEY.equals(property))
+                    continue;
+
+                StringBuilder message = new StringBuilder();
+                if (multipleRows && row > -1)
+                    message.append("Row ").append(row).append(" has error: ");
+
+                if (property != null)
+                    message.append(String.valueOf(property)).append(": ");
+
+                message.append(String.valueOf(fields.getValue()));
+
+                if (property != null)
+                    list.add(new PropertyValidationError(message.toString(), property));
+                else
+                    list.add(new SimpleValidationError(message.toString()));
+            }
+        }
+        throw new ValidationException(list);
     }
 }

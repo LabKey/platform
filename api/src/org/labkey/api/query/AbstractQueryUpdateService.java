@@ -18,6 +18,9 @@ package org.labkey.api.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.*;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -42,133 +45,168 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return _queryTable;
     }
 
-    public abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
+    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    {
+        return getQueryTable().hasPermission(user, acl);
+    }
+
+    protected abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         for (Map<String, Object> rowKeys : keys)
         {
             Map<String, Object> row = getRow(user, container, rowKeys);
             if (row != null)
-            {
                 result.add(row);
-            }
         }
         return result;
     }
 
-    public abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+    protected abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors)
+        throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        Map<Integer, Map<String, String>> errors = new LinkedHashMap<Integer, Map<String, String>>();
-        if (!getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, rows, errors))
-            throwValidationException(rows.size(), errors);
+        if (!hasPermission(user, InsertPermission.class))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, rows.size(), errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
             Map<String, String> rowErrors = new HashMap<String, String>();
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, null, row, rowErrors))
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, i, row, null, errors))
+                continue;
+
+            row = insertRow(user, container, row, rowErrors);
+            if (row == null || !rowErrors.isEmpty())
             {
-                errors.put(i, rowErrors);
+                addError(errors, rowErrors, i, "failed to insert");
                 continue;
             }
 
-            row = insertRow(user, container, row);
-            if (row == null)
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, i, row, null, errors))
                 continue;
-
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, null, row, rowErrors))
-            {
-                errors.put(i, rowErrors);
-                continue;
-            }
 
             result.add(row);
         }
 
-        if (!errors.isEmpty())
-            throwValidationException(rows.size(), errors);
-
-        if (!getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, result, errors))
-            throwValidationException(rows.size(), errors);
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, rows.size(), errors);
 
         return result;
     }
 
-    public abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys)
+    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        if (!hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You do not have permission to update data in this table.");
+
         if (oldKeys != null && rows.size() != oldKeys.size())
-        {
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
-        }
+
+        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, true, rows.size(), errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
-            Map<String, Object> updatedRow = updateRow(user, container, rows.get(i), oldKeys == null ? null : oldKeys.get(i));
-            if (updatedRow != null)
+            Map<String, Object> row = rows.get(i);
+            Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
+            Map<String, Object> oldRow = getRow(user, container, oldKey);
+            if (oldRow == null)
+                throw new NotFoundException("The existing row was not found.");
+
+            Map<String, String> rowErrors = new HashMap<String, String>();
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, true, i, row, oldRow, errors))
+                continue;
+
+            Map<String, Object> updatedRow = updateRow(user, container, row, oldRow, rowErrors);
+            if (updatedRow == null || !errors.isEmpty())
             {
-                result.add(updatedRow);
+                addError(errors, rowErrors, i, "failed to update");
+                continue;
             }
+
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow, errors))
+                continue;
+
+            result.add(updatedRow);
         }
+
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, false, rows.size(), errors);
+
         return result;
     }
 
-    public abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys)
+    protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
     
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        if (!hasPermission(user, DeletePermission.class))
+            throw new UnauthorizedException("You do not have permission to delete data from this table.");
+
+        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, true, keys.size(), errors);
+
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
-        for (Map<String, Object> key : keys)
+        for (int i = 0; i < keys.size(); i++)
         {
-            Map<String, Object> updatedRow = deleteRow(user, container, key);
-            if (updatedRow != null)
+            Map<String, Object> key = keys.get(i);
+            Map<String, Object> oldRow = getRow(user, container, key);
+            // if row doesn't exist, bail early
+            if (oldRow == null)
+                continue;
+
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, true, i, null, oldRow, errors))
+                continue;
+
+            Map<String, String> rowErrors = new HashMap<String, String>();
+            Map<String, Object> updatedRow = deleteRow(user, container, oldRow, rowErrors);
+            if (updatedRow == null || !rowErrors.isEmpty())
             {
-                result.add(updatedRow);
+                addError(errors, rowErrors, i, "failed to delete");
+                continue;
             }
+
+            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, false, i, null, updatedRow, errors))
+                continue;
+
+            result.add(updatedRow);
         }
+
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, false, keys.size(), errors);
+
         return result;
     }
 
-
-    protected void throwValidationException(int rowCount, Map<Integer, Map<String, String>> errors) throws ValidationException
+    protected void addError(List<Map<String, String>> allErrors, Map rowErrors, int i, String msg)
     {
-        List<ValidationError> list = new ArrayList<ValidationError>(errors.size());
-        for (Map.Entry<Integer, Map<String, String>> entry : errors.entrySet())
-        {
-            int row = entry.getKey() == null ? -1 : entry.getKey().intValue();
-            Map<String, String> rowErrors = entry.getValue();
-            for (Map.Entry<String, String> fields : rowErrors.entrySet())
-            {
-                String property = fields.getKey();
-                StringBuilder message = new StringBuilder();
-                if (rowCount > 1 && row > -1)
-                    message.append("Row ").append(row).append(" has error: ");
+        if (rowErrors.isEmpty())
+            rowErrors.put(null, msg);
+        rowErrors.put(ValidationException.ERROR_ROW_NUMBER_KEY, i);
+        allErrors.add(rowErrors);
+    }
 
-                if (property != null)
-                    message.append(String.valueOf(property)).append(": ");
-
-                message.append(fields.getValue());
-
-                if (property != null)
-                    list.add(new PropertyValidationError(message.toString(), property));
-                else
-                    list.add(new SimpleValidationError(message.toString()));
-            }
-        }
-        throw new ValidationException(list);
+    // converts the List of error Maps into a ValidationException
+    protected void throwValidationException(List<Map<String, String>> errors, int rowCount) throws ValidationException
+    {
+        ValidationException.throwValidationException(errors, rowCount > 1);
     }
 
 }

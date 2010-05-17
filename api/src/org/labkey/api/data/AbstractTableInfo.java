@@ -701,50 +701,60 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private Object[] EMPTY_ARGS = new Object[0];
 
     @Override
-    public boolean fireBatchTrigger(TriggerType type, boolean before,
-                                    List<Map<String, Object>> rows, Map<Integer, Map<String, String>> errors)
-            throws ValidationException
+    public void fireBatchTrigger(TriggerType type, boolean before, int rowCount, List<Map<String, String>> errors) throws ValidationException
     {
         assert errors != null;
-        String triggerMethod = (before ? "init_" : "complete_") + type.name().toLowerCase();
-        Boolean success = invokeTableScript(Boolean.class, triggerMethod, rows, errors);
+        String triggerMethod = (before ? "init" : "complete");
+        Boolean success = invokeTableScript(Boolean.class, triggerMethod, type.name().toLowerCase(), errors);
         if (success != null && !success.booleanValue())
-            errors.put(null, Collections.singletonMap((String)null, triggerMethod + " validation failed"));
-        return errors.isEmpty();
+            errors.add(Collections.singletonMap((String)null, triggerMethod + " validation failed"));
+
+        if (!errors.isEmpty())
+            ValidationException.throwValidationException(errors, rowCount > 1);
     }
 
     @Override
-    public boolean fireRowTrigger(TriggerType type, boolean before,
-                                  Map<String, Object> oldRow, Map<String, Object> newRow, Map<String, String> errors)
-            throws ValidationException
+    public boolean fireRowTrigger(TriggerType type, boolean before, int rowNumber,
+                                  Map<String, Object> newRow, Map<String, Object> oldRow, List<Map<String, String>> allErrors)
     {
-        assert errors != null;
-        String triggerMethod = (before ? "before_" : "after_") + type.name().toLowerCase();
+        Map<String, String> rowErrors = new HashMap<String, String>();
+        String triggerMethod = (before ? "before" : "after") + type.getMethodName();
+
         Object[] args = EMPTY_ARGS;
         if (before)
         {
             switch (type)
             {
-                case SELECT: args = new Object[] { oldRow, errors };         break;
-                case INSERT: args = new Object[] { newRow, errors };         break;
-                case UPDATE: args = new Object[] { oldRow, newRow, errors }; break;
-                case DELETE: args = new Object[] { oldRow, errors };         break;
+                case SELECT: args = new Object[] { oldRow, rowErrors };         break;
+                case INSERT: args = new Object[] { newRow, rowErrors };         break;
+                case UPDATE: args = new Object[] { newRow, oldRow, rowErrors }; break;
+                case DELETE: args = new Object[] { oldRow, rowErrors };         break;
             }
         }
         else
         {
             switch (type)
             {
-                case SELECT: args = new Object[] { newRow, errors };         break;
-                case INSERT: args = new Object[] { newRow, errors };         break;
-                case UPDATE: args = new Object[] { oldRow, newRow, errors }; break;
-                case DELETE: args = new Object[] { oldRow, errors };         break;
+                case SELECT: args = new Object[] { newRow, rowErrors };         break;
+                case INSERT: args = new Object[] { newRow, rowErrors };         break;
+                case UPDATE: args = new Object[] { newRow, oldRow, rowErrors }; break;
+                case DELETE: args = new Object[] { oldRow, rowErrors };         break;
             }
         }
         Boolean success = invokeTableScript(Boolean.class, triggerMethod, args);
         if (success != null && !success.booleanValue())
-            errors.put(null, triggerMethod + " validation failed");
-        return errors.isEmpty();
+        {
+            rowErrors.put(null, triggerMethod + " validation failed");
+            ((Map)rowErrors).put(ValidationException.ERROR_ROW_NUMBER_KEY, Integer.valueOf(rowNumber));
+        }
+
+        if (!rowErrors.isEmpty())
+        {
+            allErrors.add(rowErrors);
+            return false;
+        }
+
+        return true;
     }
 
 }

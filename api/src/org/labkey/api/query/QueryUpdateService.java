@@ -103,10 +103,11 @@ public interface QueryUpdateService
      * @param keys The list of primary key values as maps.
      * @return The primary key values passed as the keys parameter.
      * @throws InvalidKeyException Thrown if the primary key values are not valid.
+     * @throws ValidationException Thrown if the data fails one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String,Object>> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException;
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
 
 }

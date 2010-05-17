@@ -19,6 +19,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
@@ -428,6 +429,7 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(PrintStream.class.getName());
         allowedClasses.add(PrintWriter.class.getName());
         allowedClasses.add(RhinoException.class.getName());
+        allowedClasses.add(RowMap.class.getName());
         allowedClasses.add(Short.class.getName());
         allowedClasses.add(SimpleScriptContext.class.getName());
         allowedClasses.add(String.class.getName());

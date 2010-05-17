@@ -100,23 +100,29 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
         }
     }
 
-    public final Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    protected final Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         T bean = get(user, container, keyFromMap(keys));
         return null == bean ? null : mapFromBean(bean);
     }
 
-    public final Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    @Override
+    protected final Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors)
+            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         T bean = createNewBean();
         populateBean(bean, row, user);
         return mapFromBean(insert(user, container, bean));
     }
 
-    public final Map<String, Object> updateRow(User user, Container container, Map<String, Object> row,
-                                         Map<String,Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    @Override
+    protected final Map<String, Object> updateRow(User user, Container container,
+                                               Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        K oldKey = null != oldKeys ? keyFromMap(oldKeys) : keyFromMap(row);
+        K oldKey = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);
         T bean = get(user, container, oldKey);
         if(null == bean)
             throw new NotFoundException("The object you are trying to update was not found in the database."); //CONSIDER: maybe we should return null for 0 rows affected instead?
@@ -124,10 +130,12 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
         return mapFromBean(update(user, container, bean, oldKey));
     }
 
-    public final Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    protected final Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        delete(user, container, keyFromMap(keys));
-        return keys;
+        delete(user, container, keyFromMap(oldRow));
+        return oldRow;
     }
 
     /**
@@ -143,7 +151,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @return The primary key.
      * @throws InvalidKeyException Thrown if the required key values in the map are missing or invalid.
      */
-    public abstract K keyFromMap(Map<String,Object> map) throws InvalidKeyException;
+    protected abstract K keyFromMap(Map<String,Object> map) throws InvalidKeyException;
 
     /**
      * Returns an instance of the main bean type corresponding to the provided key.
@@ -155,7 +163,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there is a problem communicating with the database.
      */
-    public abstract T get(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
+    protected abstract T get(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
 
     /**
      * Inserts a new bean into the database.
@@ -169,7 +177,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was a problem communicating with the database.
      */
-    public abstract T insert(User user, Container container, T bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException;
+    protected abstract T insert(User user, Container container, T bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException;
 
     /**
      * Updates a bean in the database.
@@ -182,7 +190,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there is a problem communicating with the database.
      */
-    public abstract T update(User user, Container container, T bean, K oldKey) throws ValidationException, QueryUpdateServiceException, SQLException;
+    protected abstract T update(User user, Container container, T bean, K oldKey) throws ValidationException, QueryUpdateServiceException, SQLException;
 
     /**
      * Deletes a bean in the database.
@@ -192,5 +200,5 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there is a problem communicating with the database.
      */
-    public abstract void delete(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
+    protected abstract void delete(User user, Container container, K key) throws QueryUpdateServiceException, SQLException;
 }

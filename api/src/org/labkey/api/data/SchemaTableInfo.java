@@ -820,16 +820,14 @@ public class SchemaTableInfo implements TableInfo
     }
 
     @Override
-    public boolean fireRowTrigger(TriggerType type, boolean before,
-                                  Map<String, Object> oldRow, Map<String, Object> newRow, Map<String, String> errors) throws ValidationException
+    public void fireBatchTrigger(TriggerType type, boolean before, int rowCount, List<Map<String, String>> allErrors) throws ValidationException
     {
-        return false;
+        throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
 
     @Override
-    public boolean fireBatchTrigger(TriggerType type, boolean before,
-                                    List<Map<String, Object>> rows, Map<Integer, Map<String, String>> errors) throws ValidationException
+    public boolean fireRowTrigger(TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, List<Map<String, String>> allErrors)
     {
-        return false;
+        throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
 }
