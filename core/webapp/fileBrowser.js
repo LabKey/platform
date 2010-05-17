@@ -3410,6 +3410,10 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var path = this.fileUploadField.getValue();
             var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
             var name = path.substring(i+1);
+            if (name.length == 0) {
+                Ext.MessageBox.alert('Error', 'No file selected. Please choose one or more files to upload.');
+                return;
+            }
             var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
             var file = this.fileSystem.recordFromCache(target);
             if (file)
