@@ -39,8 +39,9 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         super(table);
     }
 
+    @Override
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
@@ -49,7 +50,8 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         return result;
     }
 
-    public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    @Override
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         study.savePropertyBag(row);
@@ -57,12 +59,14 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         return getRow(user, container, null);
     }
 
-    public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         throw new UnsupportedOperationException("You cannot delete all of a Study's properties");
     }
 
-    public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    @Override
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         throw new UnsupportedOperationException("You cannot insert a new set of study properties");
     }

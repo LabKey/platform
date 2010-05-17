@@ -53,13 +53,25 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         _table = table;
     }
 
-    public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         String lsid = keyFromMap(keys);
         return StudyService.get().getDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), lsid);
     }
 
-    public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super.insertRows(user, container, rows);
+        resyncStudy(user, container, true);
+        return result;
+    }
+
+    @Override
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors)
+            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
         String newLsid = StudyService.get().insertDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), row, errors);
@@ -114,17 +126,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
-    {
-        List<Map<String, Object>> result = super.insertRows(user, container, rows);
-        resyncStudy(user, container, true);
-        return result;
-    }
-
-    public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
-        String lsid = null != oldKeys ? keyFromMap(oldKeys) : keyFromMap(row);
+        String lsid = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);
         String newLsid = StudyService.get().updateDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), lsid, row, errors);
         if(errors.size() > 0)
         {
@@ -140,17 +146,20 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.deleteRows(user, container, keys);
         resyncStudy(user, container, true);
         return result;
     }
 
-    public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    @Override
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        StudyService.get().deleteDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), keyFromMap(keys));
-        return keys;
+        StudyService.get().deleteDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), keyFromMap(oldRow));
+        return oldRow;
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

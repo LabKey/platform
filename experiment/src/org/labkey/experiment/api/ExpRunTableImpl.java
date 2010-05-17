@@ -597,27 +597,27 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            Object rowIdRaw = keys.get(Column.RowId.toString());
+            Object rowIdRaw = oldRow.get(Column.RowId.toString());
             if (rowIdRaw != null)
             {
                 Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
@@ -626,7 +626,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     ExperimentService.get().deleteExperimentRunsByRowIds(_schema.getContainer(), user, rowId.intValue());
                 }
             }
-            return keys;
+            return oldRow;
         }
     }
 }

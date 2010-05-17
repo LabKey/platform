@@ -131,32 +131,32 @@ public class WorkbooksTableInfo extends FilteredTable
         }
 
         @Override
-        public Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldKeys) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Map<String, Object> deleteRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            String id = keys.get("ID") == null ? "" : keys.get("ID").toString();
+            String id = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
             Container workbook = ContainerManager.getForRowId(id);
             if (null == workbook || !workbook.isWorkbook())
                 throw new NotFoundException("Could not find a workbook with id '" + id + "'");
             ContainerManager.delete(workbook, user);
-            return keys;
+            return oldRow;
         }
     }
 }

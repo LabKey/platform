@@ -1721,8 +1721,13 @@ public class QueryController extends SpringActionController
             if (qus == null)
                 throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
 
+            DbSchema dbschema = table.getSchema();
+            boolean ownTransaction = !dbschema.getScope().isTransactionActive();
             try
             {
+                if (ownTransaction)
+                    dbschema.getScope().beginTransaction();
+                
                 if (insert)
                 {
                     qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values));
@@ -1736,6 +1741,12 @@ public class QueryController extends SpringActionController
                     }
                     qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues));
                 }
+
+                if (ownTransaction)
+                {
+                    dbschema.getScope().commitTransaction();
+                    ownTransaction = false;
+                }
             }
             catch (SQLException x)
             {
@@ -1746,6 +1757,11 @@ public class QueryController extends SpringActionController
             catch (Exception x)
             {
                 errors.reject(ERROR_MSG, x.getMessage());
+            }
+            finally
+            {
+                if (ownTransaction)
+                    dbschema.getScope().closeConnection();
             }
         }
     }
