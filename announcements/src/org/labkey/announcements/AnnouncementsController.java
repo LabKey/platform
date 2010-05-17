@@ -196,7 +196,7 @@ public class AnnouncementsController extends SpringActionController
         return url;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminPermission.class)
     public class AdminEmailAction extends SimpleViewAction<ReturnUrlForm>
     {
         private int realRowIndex = 0;
