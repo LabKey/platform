@@ -428,10 +428,8 @@ public class DavCrawler implements ShutdownListener
         ((AbstractSearchService)ss).waitForRunning();
 
         // wait for indexer to have nothing else to do
-        while (!_shuttingDown && ss.isBusy())
-        {
+        if (!_shuttingDown && ss.isBusy())
             ss.waitForIdle();
-        }
     }
     
 

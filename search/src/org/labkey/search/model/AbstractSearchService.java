@@ -37,6 +37,7 @@ import org.labkey.api.webdav.WebdavService;
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -282,8 +283,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public boolean isBusy()
     {
-        if (!isRunning())
-            return true;
         if (_runQueue.size() > 0)
             return true;
         int n = _itemQueue.size();
@@ -435,13 +434,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    // params will be modified
     public boolean _eq(URLHelper a, URLHelper b)
     {
+        a.deleteParameter("_docid");
+        a.deleteParameter("_print");
+        b.deleteParameter("_docid");
+        b.deleteParameter("_print");
+        
         if (!a.getParsedPath().equals(b.getParsedPath()))
             return false;
-        Map A = a.getParameterMap();
-        Map B = b.getParameterMap();
-        return A.equals(B);
+        return URLHelper.queryEqual(a,b);
     }
 
 
@@ -457,16 +460,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             String docid = in.getParameter("_docid");
             if (StringUtils.isEmpty(docid))
                 return;
-            URLHelper url = in.clone();
-            url.deleteParameter("_docid");
-            url.deleteParameter("_print");
             SearchHit hit = ((LuceneSearchServiceImpl)this).find(docid);
             if (null == hit || null == hit.url)
                 return;
 
+            URLHelper url = in.clone();
             URLHelper expected = new URLHelper(hit.url);
-            expected.deleteParameter("_docid");
-            expected.deleteParameter("_print");
             if (!_eq(url,expected))
                 return;
             deleteResource(docid);

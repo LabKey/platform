@@ -207,7 +207,7 @@ public class LoginController extends SpringActionController
     @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @CSRF
+    // @CSRF don't need CSRF for actions that require a password
     public class LoginAction extends FormViewAction<LoginForm>
     {
         private User _user = null;
@@ -925,7 +925,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    @CSRF
+    // @CSRF don't need CSRF for actions that require a password
     public class ChangePasswordAction extends AbstractSetPasswordAction
     {
         @Override

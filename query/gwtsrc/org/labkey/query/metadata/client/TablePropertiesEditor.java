@@ -174,8 +174,14 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     }
 
     @Override
-    protected boolean isTypeEditable(Row row)
+    protected boolean isRangeEditable(Row row)
     {
         return false;
+    }
+
+    @Override
+    protected boolean isTypeEditable(Row row)
+    {
+        return true;
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.filecontent;
 
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.settings.AppProps;
@@ -130,8 +131,16 @@ public class FileWebdavProvider implements WebdavService.Provider
         @Override
         public String getExecuteHref(ViewContext context)
         {
+            Container c = ContainerManager.getForId(getContainerId());
+            Path containerPath = null==c ? null : c.getParsedPath();
+
             assert getPath().startsWith(WebdavService.getPath());
             Path rel = WebdavService.getPath().relativize(getPath());
+            if (null != containerPath && rel.startsWith(containerPath))
+            {
+                rel = containerPath.relativize(rel);
+                rel = new Path(c.getId()).append(rel);
+            }
             Path fileServlet = new Path("files");
             Path contextPath = Path.parse(AppProps.getInstance().getContextPath());
             Path full = contextPath.append(fileServlet).append(rel);

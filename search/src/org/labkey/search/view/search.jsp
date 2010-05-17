@@ -19,15 +19,11 @@
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>                 
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
@@ -41,6 +37,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.labkey.api.util.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -86,7 +83,8 @@
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainer();
     User user = ctx.getUser();
-    String contextPath = ctx.getContextPath();
+    String contextPathStr = ctx.getContextPath();
+    Path contextPath = Path.parse(contextPathStr);
     SearchService ss = ServiceRegistry.get().getService(SearchService.class);
     boolean wideView = true;
     List<String> q = new ArrayList<String>(Arrays.asList(form.getQ()));
@@ -173,7 +171,7 @@
     if (null != StringUtils.trimToNull(queryString))
     {
         %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
-        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPath%>/_.gif" width=500 height=1>
+        <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPathStr%>/_.gif" width=500 height=1>
            <div id="searchResults" class="labkey-search-results"><%
 
         int hitsPerPage = 20;
@@ -228,27 +226,13 @@
 
             for (SearchService.SearchHit hit : result.hits)
             {
-                String href = hit.url;
+                Container documentContainer = ContainerManager.getForId(hit.container);
+
+                String href = normalizeHref(documentContainer, contextPath, hit.url);
                 String summary = StringUtils.trimToNull(hit.summary);
-
-                try
-                {
-                    if (href.startsWith("/"))
-                    {
-                        ActionURL url = new ActionURL(href);
-                        Container cc = ContainerManager.getForId(url.getExtraPath());
-                        url.setExtraPath(cc.getPath());
-                        href = url.getLocalURIString();
-                    }
-                }
-                catch (Exception x)
-                {
-                    //
-                }
-
                 %>
 
-<a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
+<a class="labkey-search-title" href="<%=h(href)%>"><%=h(hit.displayTitle)%></a><div style='margin-left:10px; width:600;'><%
                 if (null != summary)
                 {
                     %><%=PageFlowUtil.filter(summary, false)%><br><%
@@ -259,7 +243,7 @@
                 }
                 else
                 {
-                    NavTree nav = getDocumentContext(hit);
+                    NavTree nav = getDocumentContext(documentContainer, hit);
                     if (null != nav)
                     {
                         %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
@@ -314,12 +298,12 @@
 
                 if (result.hits.size() > 0)
                 {
-                    %><td valign="top" align="left"><img title="" src="<%=contextPath%>/_.gif" width=200 height=1><%
+                    %><td valign="top" align="left"><img title="" src="<%=contextPathStr%>/_.gif" width=200 height=1><%
                     %><div id="navigationResults" class="labkey-search-navresults"><h3>Folders</h3><%
 
                     for (SearchService.SearchHit hit : result.hits)
                     {
-                        %><table><tr><td><img src="<%=contextPath%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a></td></tr></table><%
+                        %><table><tr><td><img src="<%=contextPathStr%>/_icons/folder.gif"></td><td><a class="labkey-search-title" href="<%=h(hit.url)%>"><%=h(hit.displayTitle)%></a></td></tr></table><%
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
                         {
@@ -422,9 +406,8 @@ Path files = new Path("@files");
 Path pipeline = new Path("@pipeline");
 Path dav = new Path("_webdav");
 
-NavTree getDocumentContext(org.labkey.api.search.SearchService.SearchHit hit)
+NavTree getDocumentContext(Container c, org.labkey.api.search.SearchService.SearchHit hit)
 {
-    Container c = ContainerManager.getForId(hit.container);
     if (null == c)
         return null;
     String text = c.getPath();
@@ -485,5 +468,36 @@ String getResultsSummary(int totalHits, @Nullable String description, @Nullable 
     }
 
     return sb.toString();
+}
+
+
+String normalizeHref(Container c, Path contextPath, String href)
+{
+    try
+    {
+        if (null != c && href.startsWith("/"))
+        {
+            URLHelper url = new URLHelper(href);
+            Path path = url.getParsedPath();
+System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c.getId());
+            if (path.startsWith(contextPath))
+            {
+                int pos = contextPath.size() + 1;
+                if (path.size() > pos && c.getId().equals(path.get(pos)))
+                {
+                    path = path.subpath(0,pos)
+                            .append(c.getParsedPath())
+                            .append(path.subpath(pos+1,path.size()));
+                    url.setPath(path);
+                    return url.getLocalURIString(false);
+                }
+            }
+        }
+    }
+    catch (Exception x)
+    {
+        //
+    }
+    return href;
 }
 %>
