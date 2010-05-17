@@ -769,6 +769,27 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
+    /**
+     * works for URLs with out multi-valued parameters
+     * no guarantees about what happens with multi-valued parameters, impl may change
+     */
+    public static boolean queryEqual(URLHelper a, URLHelper b)
+    {
+        // null check
+        if (a._parameters == b._parameters) return true;
+        if (a._parameters == null || b._parameters == null) return false;
+        HashMap<String,String> bmap = new HashMap<String,String>(b._parameters.size());
+        for (Pair<String,String> p : b._parameters)
+            bmap.put(p.first, p.second);
+        for (Pair<String,String> p : a._parameters)
+        {
+            if (!StringUtils.isEmpty(p.second) && !p.second.equals(bmap.get(p.first)))
+                return false;
+        }
+        return true;
+    }
+    
+
 
     public static class Converter implements org.apache.commons.beanutils.Converter
     {

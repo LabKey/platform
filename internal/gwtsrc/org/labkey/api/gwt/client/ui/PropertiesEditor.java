@@ -934,6 +934,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return null;
     }
 
+
     Row getRow(int i)
     {
         return _rows.get(i);
@@ -942,9 +943,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected boolean canDelete(Row row)
     {
-        if (null == row.orig || _domain.isMandatoryField(row.orig))
-            return false;
-        return true;
+        return null == row.orig || !_domain.isMandatoryField(row.orig);
     }
 
 

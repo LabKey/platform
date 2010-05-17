@@ -270,6 +270,8 @@ public class Path implements Serializable, Iterable<String>
      */
     public Path relativize(Path other)
     {
+        if (size()==0)
+            return other;
         int shorter = Math.min(this._length, other._length);
         int i;
         for (i=0 ; i<shorter && 0==compareName(_path[i],other._path[i]); i++)

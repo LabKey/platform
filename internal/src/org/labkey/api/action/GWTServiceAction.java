@@ -16,18 +16,33 @@
 
 package org.labkey.api.action;
 
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.validation.BindException;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.view.UnauthorizedException;
+import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * User: jeckels
  * Date: Feb 8, 2008
  */
-public abstract class GWTServiceAction extends SimpleViewAction
+public abstract class GWTServiceAction extends BaseViewAction<Object>
 {
-    public ModelAndView getView(Object o, BindException errors) throws Exception
+    protected GWTServiceAction()
+    {
+        super(Object.class);
+    }
+
+    @Override
+    public void checkPermissions() throws UnauthorizedException
+    {
+        checkPermissionsBasicAuth();
+    }
+
+    @Override
+    protected ModelAndView handleRequestInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws Exception
     {
         BaseRemoteService service = createService();
         service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
@@ -36,9 +51,23 @@ public abstract class GWTServiceAction extends SimpleViewAction
 
     protected abstract BaseRemoteService createService();
 
-    public NavTree appendNavTrail(NavTree root)
+
+    // methods we ignore, but have to implement since we extends BaseViewAction
+    @Override
+    protected String getCommandClassMethodName()
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void validate(Object o, Errors errors)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ModelAndView handleRequest() throws Exception
+    {
+        throw new UnsupportedOperationException();
+    }
 }

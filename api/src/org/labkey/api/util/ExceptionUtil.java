@@ -349,8 +349,14 @@ public class ExceptionUtil
         {
             User user = (User) request.getUserPrincipal();
 
+            if  (ex instanceof CSRFException)
+            {
+                responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
+                message = "This form has an invalid security context.  You may have signed in or signed out of this session.  Try again by using the back 'back' and 'refresh' button in your browser.";
+            }
+
             // If user has not logged in or agreed to terms, not really unauthorized yet...
-            if (user.isGuest() || ex instanceof TermsOfUseException)
+            else if (user.isGuest() || ex instanceof TermsOfUseException)
             {
                 if (ex instanceof RequestBasicAuthException)
                 {

@@ -27,6 +27,6 @@ public class CSRFException extends UnauthorizedException
 {
     CSRFException()
     {
-        super("Incorrect LABKEY.CSRF token provided");
+        super("Invalid security context");
     }
 }

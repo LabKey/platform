@@ -579,10 +579,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
-        CSRF csrfCheck = actionClass.getAnnotation(CSRF.class);
-        if (null != csrfCheck && isPOST)
-            CSRFUtil.validate(context.getRequest());
-
         RequiresPermission oldReqPerm = actionClass.getAnnotation(RequiresPermission.class);
         RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
         Set<Class<? extends Permission>> permissionsRequired = null;
@@ -635,6 +631,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
         if (requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
+
+        CSRF csrfCheck = actionClass.getAnnotation(CSRF.class);
+        if (null != csrfCheck && isPOST)
+            CSRFUtil.validate(context.getRequest());
 
         boolean requiresNoPermission = actionClass.isAnnotationPresent(RequiresNoPermission.class);
 

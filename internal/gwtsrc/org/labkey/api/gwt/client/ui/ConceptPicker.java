@@ -319,6 +319,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 if (null != pd && r._type.matches(pd))
                 {
                     r.setValue(true);
+                    r.focus();
                     pd = null;
                 }
                 if (r._type == attachmentType)
