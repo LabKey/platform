@@ -528,17 +528,24 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             startThreads();
 
             if (SearchPropertyManager.getCrawlerRunningState())
-            {
-                _crawlerPaused = false;
-                DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath(), null);
-                _runningLock.notifyAll();
-            }
+                startCrawler();
         }
     }
 
 
+    @Override
+    public void startCrawler()
+    {
+        synchronized (_runningLock)
+        {
+            _crawlerPaused = false;
+            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath(), null);
+            _runningLock.notifyAll();
+        }
+    }
+
     /** OK we're really only pausing the crawler */
-    public void pause()
+    public void pauseCrawler()
     {
         synchronized (_runningLock)
         {

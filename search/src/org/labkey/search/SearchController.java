@@ -215,13 +215,13 @@ public class SearchController extends SpringActionController
 
             if (form.isStart())
             {
-                ss.start();
+                ss.startCrawler();
                 SearchPropertyManager.setCrawlerRunningState(true);
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Started");
             }
             else if (form.isPause())
             {
-                ss.pause();
+                ss.pauseCrawler();
                 SearchPropertyManager.setCrawlerRunningState(false);
                 audit(getViewContext().getUser(), null, "(admin action)", "Crawler Paused");
             }

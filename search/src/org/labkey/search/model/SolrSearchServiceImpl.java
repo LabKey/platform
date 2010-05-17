@@ -17,7 +17,6 @@ package org.labkey.search.model;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;

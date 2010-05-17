@@ -277,7 +277,12 @@ public class NoopSearchService implements SearchService
     {
     }
 
-    public void pause()
+    @Override
+    public void startCrawler()
+    {
+    }
+
+    public void pauseCrawler()
     {
     }
 
