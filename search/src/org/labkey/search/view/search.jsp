@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
@@ -36,7 +37,6 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.util.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -408,39 +408,47 @@ Path dav = new Path("_webdav");
 
 NavTree getDocumentContext(Container c, org.labkey.api.search.SearchService.SearchHit hit)
 {
+
     if (null == c)
-        return null;
-    String text = c.getPath();
-    ActionURL url = c.getStartURL(getViewContext());
-
-    try
     {
-        if (hit.docid.startsWith("dav:"))
-        {
-            Path containerPath = c.getParsedPath();
-            Path path = Path.parse(hit.docid.substring(4));
-            if (path.startsWith(dav))
-                path = dav.relativize(path);
-            if (path.startsWith(containerPath))
-            {
-                Path rel = containerPath.relativize(path);
-                if (rel.startsWith(files) || rel.startsWith(pipeline))
-                {
-                    if (path.size() > 0) path = path.getParent();
-                    text = path.toString("/","");
+        if (null == hit.url)
+            return null;
+        else
+            return new NavTree(hit.url, hit.url);
+    }
+    else
+    {
+        String text = c.getPath();
+        ActionURL url = c.getStartURL(getViewContext().getUser());
 
-                    if (rel.size() > 0) rel = rel.getParent();
-                    url = new ActionURL("project","fileBrowser",c).addParameter("path",rel.toString("/",""));
+        try
+        {
+            if (hit.docid.startsWith("dav:"))
+            {
+                Path containerPath = c.getParsedPath();
+                Path path = Path.parse(hit.docid.substring(4));
+                if (path.startsWith(dav))
+                    path = dav.relativize(path);
+                if (path.startsWith(containerPath))
+                {
+                    Path rel = containerPath.relativize(path);
+                    if (rel.startsWith(files) || rel.startsWith(pipeline))
+                    {
+                        if (path.size() > 0) path = path.getParent();
+                        text = path.toString("/","");
+
+                        if (rel.size() > 0) rel = rel.getParent();
+                        url = new ActionURL("project","fileBrowser",c).addParameter("path",rel.toString("/",""));
+                    }
                 }
             }
         }
-    }
-    catch (Exception x)
-    {
-    }
+        catch (Exception x)
+        {
+        }
 
-    NavTree ret = new NavTree(text, url);
-    return ret;
+        return new NavTree(text, url);
+    }
 }
 
 
