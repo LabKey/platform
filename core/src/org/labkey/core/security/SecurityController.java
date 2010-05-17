@@ -1309,7 +1309,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class EmailForm
+    public static class EmailForm extends ReturnUrlForm
     {
         private String _email;
         private String _mailPrefix;
@@ -1450,7 +1450,8 @@ public class SecurityController extends SpringActionController
                     UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to reset the password, but the reset failed: " + e.getMessage());
                 }
             }
-            sbReset.append("<br>");
+            sbReset.append("<br><br>");
+            sbReset.append(PageFlowUtil.generateButton("Done", form.getReturnURLHelper()));
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new HtmlView(sbReset.toString());
         }

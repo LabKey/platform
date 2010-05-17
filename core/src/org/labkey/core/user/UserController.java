@@ -1032,6 +1032,7 @@ public class UserController extends SpringActionController
                     ActionButton reset = new ActionButton("reset", "Reset Password");
                     ActionURL resetURL = new ActionURL(SecurityController.ResetPasswordAction.class, c);
                     resetURL.addParameter("email", displayEmail);
+                    resetURL.addReturnURL(getViewContext().getActionURL());
                     reset.setURL(resetURL.getLocalURIString());
                     reset.setActionType(ActionButton.Action.LINK);
                     bb.add(reset);
