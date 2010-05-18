@@ -27,6 +27,7 @@ public class UserIdRenderer extends DataColumn
     {
         return ObjectUtils.equals(value, 0);
     }
+
     static public class GuestAsBlank extends DataColumn
     {
         public GuestAsBlank(ColumnInfo column)

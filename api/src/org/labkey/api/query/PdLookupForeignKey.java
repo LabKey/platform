@@ -37,6 +37,19 @@ public class PdLookupForeignKey extends AbstractForeignKey
         _user = user;
     }
 
+    @Override
+    public String getLookupTableName()
+    {
+        return _pd.getLookupQuery();
+    }
+
+    @Override
+    public String getLookupSchemaName()
+    {
+        return _pd.getLookupSchema();
+    }
+
+    @Override
     public String getLookupContainerId()
     {
         return _pd.getLookupContainer();

@@ -22,8 +22,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -46,7 +45,26 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
+            if (isUserId(colInfo))
+            {
+                return new UserIdRenderer(colInfo);
+            }
             return new DataColumn(colInfo);
+        }
+
+        private boolean isUserId(ColumnInfo col)
+        {
+            if (col.getSqlTypeInt() != Types.INTEGER)
+                return false;
+            if (!col.getParentTable().getSchema().getScope().equals(CoreSchema.getInstance().getSchema().getScope()))
+                return false;
+            if (col.getFk() instanceof PdLookupForeignKey)
+            {
+                PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
+                if ("core".equals(lfk.getLookupSchemaName()) && "users".equals(lfk.getLookupTableName()))
+                    return true;
+            }
+            return false;
         }
     };
 
