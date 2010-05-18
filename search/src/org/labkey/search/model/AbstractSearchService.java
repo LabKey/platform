@@ -37,7 +37,6 @@ import org.labkey.api.webdav.WebdavService;
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -441,10 +440,34 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         a.deleteParameter("_print");
         b.deleteParameter("_docid");
         b.deleteParameter("_print");
-        
-        if (!a.getParsedPath().equals(b.getParsedPath()))
-            return false;
+
+        Path aPath = a.getParsedPath();
+        Path bPath = b.getParsedPath();
+        if (!aPath.equals(bPath))
+        {
+            // handle container ids
+            aPath = normalize(aPath);
+            bPath = normalize(bPath);
+            if (!aPath.equals(bPath))
+                return false;
+        }
         return URLHelper.queryEqual(a,b);
+    }
+
+
+    // doesn't know about contextPath
+    protected Path normalize(Path p)
+    {
+        Container c;
+        if (p.size() > 1 && GUID.isGUID(p.get(1)) && null != (c = ContainerManager.getForId(p.get(1))))
+        {
+            return p.subpath(0,1).append(c.getParsedPath()).append(p.subpath(2, p.size()));
+        }
+        else if (p.size() > 2 && GUID.isGUID(p.get(2)) && null != (c = ContainerManager.getForId(p.get(2))))
+        {
+            return p.subpath(0,2).append(c.getParsedPath()).append(p.subpath(3, p.size()));
+        }
+        return p;
     }
 
 

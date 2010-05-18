@@ -122,6 +122,7 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                         }
 
                         ActionURL url = QueryService.get().urlFor(user, c, QueryAction.executeQuery, schemaName, tableName);
+                        url.setExtraPath(c.getId());
                         String documentId = "externalTable:" + c.getId() + ":" + schemaName + "." + tableName;
                         SimpleDocumentResource r = new SimpleDocumentResource(
                                 new Path(documentId),

@@ -26,7 +26,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
@@ -34,6 +33,7 @@ import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.ServletContextEvent;
 import java.io.File;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -306,7 +306,16 @@ public class DavCrawler implements ShutdownListener
                     {
                         // just index the name and that's all
                         final WebdavResource wrap = child;
-                        ActionURL url = new ActionURL(r.getExecuteHref(null));
+                        URLHelper url;
+                        try
+                        {
+                            url = new URLHelper(child.getExecuteHref(null));
+                        }
+                        catch (URISyntaxException uri)
+                        {
+                            ExceptionUtil.logExceptionToMothership(null, uri);
+                            continue;
+                        }
                         Map<String, Object> props = new HashMap<String, Object>();
                         props.put(SearchService.PROPERTY.categories.toString(), SearchService.fileCategory.toString());
                         props.put(SearchService.PROPERTY.displayTitle.toString(), wrap.getPath().getName());

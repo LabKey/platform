@@ -355,6 +355,7 @@ public class AssayManager implements AssayService.Interface
             m.put(SearchService.PROPERTY.categories.toString(), StudyManager.assayCategory.getName());
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
+            assayRunsURL.setExtraPath(c.getId());
             WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body.getBytes(), assayRunsURL, m);
             task.addResource(r, SearchService.PRIORITY.item);
         }

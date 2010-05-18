@@ -587,12 +587,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             properties.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
         properties.put(SearchService.PROPERTY.displayTitle.toString(), displayTitle);
         properties.put(SearchService.PROPERTY.categories.toString(), SearchService.navigationCategory.getName());
+        ActionURL startURL = new ActionURL("project","start",c);
+        startURL.setExtraPath(c.getId());
         WebdavResource doc = new SimpleDocumentResource(c.getParsedPath(),
                 "link:" + c.getId(),
                 c.getId(),
                 "text/plain",
                 body.getBytes(),
-                new ActionURL("project","start",c),
+                startURL,
                 properties);
         task.addResource(doc, SearchService.PRIORITY.item);
     }

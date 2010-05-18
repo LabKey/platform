@@ -268,15 +268,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 if (StringUtils.isBlank(displayTitle))
                     displayTitle = extractedTitle;
                 searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
-                _log.debug("Parsed " + id);
             }
             fs.closeInputStream();
             fs = null;
 
             String url = r.getExecuteHref(null);
             assert null != url;
-
             assert null != displayTitle;
+            _log.debug("parsed " + url);
 
             if (StringUtils.isBlank(searchTitle))
                 searchTitle = displayTitle;

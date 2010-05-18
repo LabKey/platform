@@ -83,6 +83,11 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getLabel();
     }
 
+    public String getConceptURI()
+    {
+        return _pd.getConceptURI();
+    }
+
     public Domain getDomain()
     {
         return _domain;
@@ -166,6 +171,11 @@ public class DomainPropertyImpl implements DomainProperty
     public void setLabel(String caption)
     {
         edit().setLabel(caption);
+    }
+
+    public void setConceptURI(String conceptURI)
+    {
+        edit().setConceptURI(conceptURI);
     }
 
     public void setRequired(boolean required)
