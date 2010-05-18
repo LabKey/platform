@@ -48,34 +48,6 @@
     }
     if (loginStatusChanged())
         window.location.reload(true);
-
-    var params = LABKEY.ActionURL.getParameters();
-    
-    function establishParams()
-    {
-        params['q'] = document.getElementById('query').value;
-        params["_dc"] = document.getElementsByName('_dc')[0].value;
-        var _newSearchURL = LABKEY.ActionURL.buildURL(
-                LABKEY.ActionURL.getController(),
-                "search",
-                LABKEY.ActionURL.getContainer(),
-                params);
-        return _newSearchURL;
-    }
-
-    function resubmit(key, value)
-    {
-        if(value)
-        {
-            params[key] = value;
-        }
-        else
-        {
-            delete params[key];
-        }
-        window.location = establishParams();
-    }
-    
 </script>
 <%
     JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
@@ -98,7 +70,7 @@
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
 %>
-<form class="labkey-search-form" id=searchForm name="search" action="<%=h(searchConfig.getPostURL(c))%>">
+<form class="labkey-search-form" id=searchForm name="search" onsubmit="resubmit(); return false;" action="<%=h(searchConfig.getPostURL(c))%>">
     <table><tr><td><%
     if (form.isPrint())
     {
@@ -129,7 +101,7 @@
     {
         %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch").getHelpTopicLink())%><%
     }
-
+        
     %></td></tr><%
 
     String category = form.getCategory();
@@ -139,34 +111,21 @@
 
     if (searchConfig.includeAdvancedUI() && null != StringUtils.trimToNull(queryString))
     {
-        %><tr><td colspan=1>
-        <table width=100% cellpadding="0" cellspacing="0"><tr>
-            <td class="labkey-search-filter"><%
-                %><span><%if (null == category)           { %>All<%      } else { %><a onclick="resubmit('category', null);">All</a><% } %></span>&nbsp;<%
-                %><span><%if ("File".equals(category))    { %>Files<%    } else { %><a onclick="resubmit('category', 'File');">Files</a><% } %></span>&nbsp;<%
-                %><span><%if ("Subject".equals(category)) { %>Subjects<% } else { %><a onclick="resubmit('category', 'Subject');">Subjects</a><% } %></span>&nbsp;<%
-                %><span><%if ("Dataset".equals(category)) { %>Datasets<% } else { %><a onclick="resubmit('category', 'Dataset');">Datasets</a><% } %></span><%
-            %></td>
-            <td class="labkey-search-filter" align="right" style="width:100%"><%
-                SearchScope scope = form.getSearchScope(c);
-                %><span title="<%=h(LookAndFeelProperties.getInstance(c).getShortName())%>"><%if (scope == SearchScope.All) { %>Site<% } else { %><a onclick="delete params['includeSubfolders']; resubmit('container', null);">Site</a><% } %></span>&nbsp;<%
-
-                Container project = c.getProject();
-
-                // Skip the "Project" and "Folder" links if we're at the root
-                if (null != project)
-                {
-                    %><span title="<%=h(c.getProject().getName())%>"><%if (scope == SearchScope.Project) { %>Project<% } else { %><a onclick="delete params['includeSubfolders']; resubmit('container', '<%=h(c.getProject().getId())%>');">Project</a><% } %></span>&nbsp;<%
-                    %><span title="<%=h(c.getName())%>"><%if (scope == SearchScope.Folder && !form.getIncludeSubfolders()) { %>Folder<% } else { %><a onclick="params['includeSubfolders'] = 0; resubmit('container', '<%=h(c.getId())%>');">Folder</a><% } %></span><%
-                }
-            %></td>
-            <td>&nbsp;</td>
-        </tr></table>
+        %><tr><td>
+        <table width=100% cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="font-size: small;"><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(true); return false;"> Advanced Search</td>
+            </tr>
+            <tr>
+                <td><div id="advancedPanelDiv" style="display: none;"></div></td>
+            </tr>
+            </table>
         </td></tr><%
     }
     %>
     </table>
-</form><%
+</form>
+<%
 
     if (null != StringUtils.trimToNull(queryString))
     {
@@ -210,7 +169,6 @@
                </td></tr><%
                }
                %>
-               <tr><td align=left colspan="2">&nbsp;</td>
                <tr><td align=left><%=getResultsSummary(primaryHits, includesSecondarySearch ? searchConfig.getPrimaryDescription(c) : null, includesSecondarySearch ? "shown below" : null)%></td><%
 
             if (hitsPerPage < primaryHits)
@@ -509,3 +467,239 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
     return href;
 }
 %>
+<script type="text/javascript">
+    var params = LABKEY.ActionURL.getParameters();
+
+    function establishParams()
+    {
+        params['q'] = document.getElementById('query').value;
+        params["_dc"] = document.getElementsByName('_dc')[0].value;
+
+        checkOptions('adv-category', 'category');
+        checkRadio('adv-scope', 'container');
+        
+        var _newSearchURL = LABKEY.ActionURL.buildURL(
+                LABKEY.ActionURL.getController(),
+                "search",
+                LABKEY.ActionURL.getContainer(),
+                params);
+        return _newSearchURL;
+    }
+
+    function checkRadio(el, param)
+    {
+        var rad = Ext.getCmp(el);
+        params[param] = "";
+
+        if (rad && rad.getValue() && rad.getValue().value)
+        {
+            params[param] = rad.getValue().value;
+        }
+        else
+        {
+            delete params[param];
+        }
+    }
+    
+    function checkOptions(el, param)
+    {
+        var cat = Ext.getCmp(el).getValue();
+        params[param] = "";
+
+        if (cat && cat.length)
+        {
+            params[param] = cat[0].value;
+            for(var j = 1; j < cat.length; j++)
+            {
+                params[param] += "_" + cat[j].value;
+            }
+        }
+        else
+        {
+            delete params[param];
+        }
+    }
+
+    var seen = false;
+    
+    function init()
+    {
+        var header = {
+            layout: 'form',
+            html : 'Categories<%=helpPopup("Categories", "Choose categories that your search might fit under. Example: If you are looking for information known attached file then select 'Files' to refine your search.")%>'
+        };
+
+        var categories = {
+            layout: 'form',
+            html  : 'Scope<%=helpPopup("Scope", "Scoping allows for the search to be refined to contents of the site (default), contents of this project, or contents of this folder.")%>',
+            items: {
+                id        : 'adv-category',
+                xtype     : 'checkboxgroup',
+                columns   : [90,90],
+                autoHeight: true,
+                defaults  : {
+                    listeners : {
+                        afterrender: function(chkbox) {
+                            var cats = LABKEY.ActionURL.getParameter('category');
+                            if (cats)
+                            {
+                                cats = cats.split('_');
+                                for(var i = 0; i < cats.length; i++)
+                                {
+                                    if (cats[i] == chkbox.value)
+                                    {
+                                        chkbox.setValue(true);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                items : [{
+                    boxLabel: 'Files',
+                    value   : 'File',
+                    name    : 'category'
+                },{
+                    boxLabel: 'Subjects',
+                    value   : 'Subject',
+                    name    : 'category'
+                },{
+                    boxLabel: 'Datasets',
+                    value   : 'Dataset',
+                    name    : 'category'
+                },{
+                    boxLabel: 'Assay',
+                    value   : 'Assay',
+                    name    : 'category'
+                }]
+            }
+        };
+
+        var scopes = {
+            layout: 'form',
+            items: {
+                id        : 'adv-scope',
+                xtype     : 'radiogroup',
+                columns   : [50,65,65],
+                autoHeight: true,
+                items : [{
+                    boxLabel: 'Site',
+                    name    : 'scope',
+                    listeners : {
+                        check : function(chkbox, checked)
+                        {
+                            if (checked)
+                            {
+                                delete params["includeSubfolders"];
+                            }
+                        },
+                        afterrender : function(chkbox)
+                        {
+                            if (!(LABKEY.ActionURL.getParameter('container')))
+                            {
+                                chkbox.setValue(true);
+                            }
+                        }
+                    }
+                },{
+                    boxLabel: 'Project',
+                    value   : "<%=h(c.getProject().getId())%>",
+                    name    : 'scope',
+                    listeners : {
+                        check : function(chkbox, checked)
+                        {
+                            if (checked)
+                            {
+                                delete params["includeSubfolders"];
+                            }
+                        },
+                        afterrender : function(chkbox)
+                        {
+                            if ((LABKEY.ActionURL.getParameter('container') == chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') != 0))
+                            {
+                                chkbox.setValue(true);
+                            }
+                        }
+                    }
+                },{
+                    boxLabel: 'Folder',
+                    value   : "<%=h(c.getId())%>",
+                    name    : 'scope',
+                    listeners : {
+                        check : function(chkbox, checked) {
+                            if (checked)
+                            {
+                                params["includeSubfolders"] = 0;
+                            }
+                            else
+                            {
+                                delete params["includeSubFolders"];
+                            }
+                        },
+                        afterrender: function(chkbox) {
+                            if (LABKEY.ActionURL.getParameter('container') == chkbox.value && LABKEY.ActionURL.getParameter('includeSubfolders'))
+                            {
+                                chkbox.setValue(true);
+                            }
+                        }
+                    }
+                }]
+            }
+        };
+
+        var panel = new Ext.Panel({
+            id : 'advanced-panel',
+            renderTo: 'advancedPanelDiv',
+            width: 310,
+            items: [header, categories, scopes],
+            border: false,
+            defaults: {
+                border: false,
+                style : {
+                    padding : '5px'
+                }
+            },
+            listeners : {
+                afterrender : function(pnl) {
+                    if (LABKEY.ActionURL.getParameter('advancedPanel'))
+                    {
+                        console.info("Showing panel due to url.");
+                        showPanel();
+                    }
+                }
+            }
+        });
+    }
+
+    // This is to swap out the image on the form +/-
+    var minus_img = new Image();
+    minus_img.src = "/labkey/_images/minus.gif";
+    var org_src = "/labkey/_images/plus.gif";
+
+    function showPanel(animate)
+    {
+        var ppanel = Ext.get('advancedPanelDiv');
+        if(!(seen))
+        {
+            ppanel.slideIn();
+            seen = true;
+            Ext.getCmp('advanced-panel').show();
+            document.getElementById('adv-search-btn').src = minus_img.src;
+            params['advancedPanel'] = true;
+        }
+        else {
+            ppanel.slideOut();
+            Ext.getCmp('advanced-panel').hide();
+            seen = false;
+            document.getElementById('adv-search-btn').src = org_src;
+            delete params['advancedPanel'];
+        }
+    }
+
+    function resubmit()
+    {
+        window.location = establishParams();
+    }
+
+    Ext.onReady(init);
+</script>
