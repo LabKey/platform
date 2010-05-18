@@ -119,10 +119,8 @@
                         Available&nbsp;Fields
                     </td>
                     <td class="labkey-tab-space" style="text-align:right;" width=100%>
-
                         <labkey:helpPopup title="Available Fields">
                             <p>Click on the available fields to select them.  Click the 'Add' button to add selected fields to the grid view.</p>
-
                             <p>Expand elements of the tree to add related fields from other tables.</p>
                         </labkey:helpPopup>
                     </td>
@@ -165,6 +163,7 @@
             </table>
         </th>
     </tr>
+    <tr><td class="labkey-tab-strip-spacer"></td><td></td><td colspan=2 class="labkey-tab-strip-spacer"></td></tr>
     <tr>
     <td onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;vertical-align:top;">
         <div style="height:400px;width:300px;overflow:auto;position:relative" id="columnPicker">

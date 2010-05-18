@@ -60,7 +60,7 @@
 <table class="labkey-no-spacing">
     <tr>
         <th>
-            <table class="labkey-no-spacing">
+            <table class="labkey-no-spacing" width="100%">
                 <tr>
                     <td class="labkey-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
@@ -76,7 +76,7 @@
         </th>
         <th></th>
         <th colspan="3" align="left">
-            <table class="labkey-no-spacing">
+            <table class="labkey-no-spacing" width="100%">
                 <tr>
                     <td class="labkey-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
@@ -95,10 +95,10 @@
                     <td class="labkey-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
-                    <td style="cursor:pointer" id="sort.tab" class="labkey-tab"
-                        onclick="designer.setActiveTab(designer.tabs.sort)">
+<%--                    <td style="cursor:pointer" id="sort.tab" class="labkey-tab"
+                        onclick="designerx.setActiveTab(designerx.tabs.sort)">
                         Order&nbsp;By
-                    </td>
+                    </td>  --%>
                     <td class="labkey-tab-space" width=100%>
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
@@ -106,6 +106,7 @@
             </table>
         </th>
     </tr>
+    <tr><td class="labkey-tab-strip-spacer"></td><td></td><td colspan=3 class="labkey-tab-strip-spacer"></td></tr>
     <tr>
         <td valign="top" onSelectStart="return false;" onMouseDown="return false;" class="labkey-tab" style="border-top:none;">
         <div style="height:400px;width:300px;overflow:auto">

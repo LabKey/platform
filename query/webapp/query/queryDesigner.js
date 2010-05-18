@@ -792,7 +792,7 @@ function SQLBuilder(designer, title, value)
         {
             var doc = parent.ownerDocument;
             var img = doc.createElement('img');
-            img.src = contextPath + '/designer/wand.gif';
+            img.src = contextPath + '/designerx/wand.gif';
             img.onclick = function()
             {
                 showSQLEditor(designer, title, value);
@@ -1066,10 +1066,11 @@ QueryOrViewDesigner.prototype =
         {
             this.setActiveTab(this.tabs.filter);
         }
-        else if (this.defaultTab == 'sort')
-        {
-            this.setActiveTab(this.tabs.sort);
-        }
+// see issue #9091
+//        else if (this.defaultTab == 'sort')
+//        {
+//            this.setActiveTab(this.tabs.sort);
+//        }
         else
         {
             this.setActiveTab(this.tabs.columns);
