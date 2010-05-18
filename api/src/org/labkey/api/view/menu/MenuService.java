@@ -16,6 +16,7 @@
 
 package org.labkey.api.view.menu;
 
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.data.Container;
@@ -86,8 +87,9 @@ public class MenuService
             ActionURL url = context.cloneActionURL();
             url.deleteParameters().setAction("setAdminMode").setPageFlow("admin");
             url.replaceParameter("adminMode", String.valueOf(!context.isAdminMode()));
-            url.replaceParameter("redir", context.getActionURL().toString());
-
+            ActionURL redir = context.getActionURL().clone();
+            redir.replaceParameter("_dc", GUID.makeHash());
+            url.replaceParameter("redir", redir.toString());
             return url;
         }
     }
