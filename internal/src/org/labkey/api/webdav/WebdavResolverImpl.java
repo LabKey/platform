@@ -21,8 +21,8 @@ import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.webdav.AbstractWebdavResourceCollection;
-import org.labkey.api.webdav.AbstractWebdavResource;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -334,8 +334,6 @@ public class WebdavResolverImpl implements WebdavResolver
     {
         WebdavResolver _resolver;
         final Container _c;
-//        final AttachmentDirectory _attachmentDirectory;
-//        final Resource _attachmentResource;
         ArrayList<String> _children = null;
 
         WebFolderResource(WebdavResolver resolver, Container c)
@@ -345,11 +343,16 @@ public class WebdavResolverImpl implements WebdavResolver
             _c = c;
             _containerId = c.getId();
             setPolicy(c.getPolicy());
-//            _attachmentDirectory = root;
-//            if (null != _attachmentDirectory)
-//                _attachmentResource = AttachmentService.get().getAttachmentResource(getPath(), _attachmentDirectory);
-//            else
-//                _attachmentResource = null;
+        }
+
+        @Override
+        public String getExecuteHref(ViewContext context)
+        {
+            // context
+            Path contextPath = null==context ? AppProps.getInstance().getParsedContextPath() : Path.parse(context.getContextPath());
+            // _webdav
+            Path path = contextPath.append(getPath().get(0)).append(getContainerId());
+            return path.encode("/", "/");
         }
 
         public int getIntPermissions(User user)

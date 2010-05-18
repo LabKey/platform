@@ -444,6 +444,14 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             this._text = text;
         }
 
+        BaseConceptType(String rangeURI, String text, String conceptURI)
+        {
+            this._pd.setRangeURI(rangeURI);
+            this._pd.setConceptURI(conceptURI);
+            _propertyType = PropertyType.fromName(rangeURI);
+            this._text = text;
+        }
+
         BaseConceptType(GWTPropertyDescriptor pd, String text)
         {
             _copy(pd, _pd);
@@ -522,21 +530,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     public static final ConceptType datetimeType = new BaseConceptType(PropertyType.xsdDateTime);
     public static final ConceptType attachmentType = new BaseConceptType(PropertyType.expAttachment);
     public static final ConceptType fileType = new BaseConceptType(PropertyType.expFileLink);
-    public static final ConceptType subjectType = new BaseConceptType(PropertyType.xsdString.toString(), "Subject/Participant (String)")
-    {
-        @Override
-        boolean matches(GWTPropertyDescriptor pd)
-        {
-            return super.matches(pd) && "http://cpas.labkey.com/Study#ParticipantId".equals(pd.getConceptURI());
-        }
-
-        @Override
-        void apply(GWTPropertyDescriptor pd)
-        {
-            super.apply(pd);
-            pd.setConceptURI("http://cpas.labkey.com/Study#ParticipantId");
-        }
-    };
+    public static final ConceptType subjectType = new BaseConceptType(PropertyType.xsdString.toString(), "Subject/Participant (String)", "http://cpas.labkey.com/Study#ParticipantId");
     public static final ConceptType userType = new BaseConceptType(PropertyType.xsdInt.toString(), "User")
     {
         @Override

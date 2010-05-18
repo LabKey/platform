@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.services.ServiceRegistry;
@@ -277,6 +278,13 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             super(path);
             this._files = files;
             _additional = addl;
+        }
+
+        @Override
+        public String getExecuteHref(ViewContext context)
+        {
+            Path contextPath = null==context ? AppProps.getInstance().getParsedContextPath() : Path.parse(context.getContextPath());
+            return contextPath.append(getPath()).encode();            
         }
 
         @Override

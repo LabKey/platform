@@ -15,9 +15,13 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -38,9 +42,9 @@ public class SimpleDocumentResource extends AbstractDocumentResource
     String _documentId;
     String _contentType = "text/html";
     byte[] _body;
-    ActionURL _executeUrl;
+    URLHelper _executeUrl;
 
-    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, ActionURL executeUrl, Map<String,Object> properties)
+    public SimpleDocumentResource(Path path, String documentId, String containerId, String contentType, byte[] body, URLHelper executeUrl, Map<String,Object> properties)
     {
         super(path);
         _containerId = containerId;
@@ -48,6 +52,7 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         _contentType = contentType;
         _body = body;
         _executeUrl = executeUrl;
+        assert !(_executeUrl instanceof ActionURL) || ((ActionURL)executeUrl).getExtraPath().equals(_containerId);
         if (null != properties)
             _properties = new HashMap<String,Object>(properties);
     }

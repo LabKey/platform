@@ -168,6 +168,7 @@ public class DomainUtil
         gwtProp.setDescription(prop.getDescription());
         gwtProp.setFormat(prop.getFormat());
         gwtProp.setLabel(prop.getLabel());
+        gwtProp.setConceptURI(prop.getConceptURI());
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());

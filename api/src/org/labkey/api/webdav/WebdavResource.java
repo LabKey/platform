@@ -88,6 +88,13 @@ public interface WebdavResource extends Resource
     @NotNull
     String getLocalHref(ViewContext context);
 
+    /**
+     * for files should return the location of the rendered version of this file
+     * may be same as getLocalHref().
+     *
+     * For collections, it may be a prefix for child nodes, to use.  May or may
+     * not be a valid href.
+     */
     @Nullable
     String getExecuteHref(ViewContext context);
 

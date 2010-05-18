@@ -35,6 +35,7 @@ public interface DomainProperty
     String getDescription();
     String getFormat();
     String getLabel();
+    String getConceptURI();
     
     Domain getDomain();
     IPropertyType getType();
@@ -50,6 +51,7 @@ public interface DomainProperty
     void setName(String name);
     void setDescription(String description);
     void setLabel(String caption);
+    void setConceptURI(String conceptURI);
     void setType(IPropertyType type);
     void setPropertyURI(String uri);
     void setRangeURI(String uri);
