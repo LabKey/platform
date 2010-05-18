@@ -3428,6 +3428,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 form.errorReader = this.fileSystem.transferReader;
                 form.doAction(new Ext.form.Action.Submit(form, options));
                 this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.url, encodeURIComponent(options.name))).pathname}]});
+                this.fileUploadPanel.getEl().mask("Uploading " + name + '...');
                 Ext.getBody().dom.style.cursor = "wait";
             }
         }
@@ -3436,6 +3437,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     // handler for a file upload complete event
     uploadSuccess : function(f, action)
     {
+        this.fileUploadPanel.getEl().unmask();
         var form = this.uploadPanel.getForm();
         if (form)
             form.reset();
@@ -3453,6 +3455,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     // handler for a file upload failed event
     uploadFailed : function(f, action)
     {
+        this.fileUploadPanel.getEl().unmask();
         var form = this.uploadPanel.getForm();
         if (form)
             form.reset();
