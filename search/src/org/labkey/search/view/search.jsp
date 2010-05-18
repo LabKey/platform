@@ -479,10 +479,12 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
         checkRadio('adv-scope', 'container');
         
         var _newSearchURL = LABKEY.ActionURL.buildURL(
-                LABKEY.ActionURL.getController(),
+                "search",
                 "search",
                 LABKEY.ActionURL.getContainer(),
                 params);
+        alert("Returing new search URL: " + _newSearchURL);
+        alert("Controller: " + LABKEY.ActionURL.getController());
         return _newSearchURL;
     }
 
