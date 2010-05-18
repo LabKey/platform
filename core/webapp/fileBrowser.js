@@ -1799,7 +1799,15 @@ LABKEY.TinyTabPanel = Ext.extend(Ext.TabPanel, {
     }
 });
 
-var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange", doubleclick:"doubleclick",  transferstarted:'transferstarted', transfercomplete:'transfercomplete'};
+var BROWSER_EVENTS = {
+    selectionchange:"selectionchange",
+    directorychange:"directorychange",
+    doubleclick:"doubleclick",
+    transferstarted:'transferstarted',
+    transfercomplete:'transfercomplete',
+    deletestarted:'deletestarted',
+    deletecomplete:'deletecomplete'
+};
 
 
 // configuration
@@ -2041,6 +2049,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 //this.refreshDirectory();
             }
         }
+
+        this.fireEvent(BROWSER_EVENTS.deletecomplete);
     },
 
     getDeleteAction : function()
@@ -2053,6 +2063,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var selections = this.grid.selModel.getSelections();
             var fnDelete = (function()
             {
+                this.fireEvent(BROWSER_EVENTS.deletestarted);
                 for (var i = 0; i < selections.length; i++)
                 {
                     var selectedRecord = selections[i];
@@ -3031,6 +3042,18 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                         '<span style="margin-left:8px;">... too many to display</span><br>' +
                     '</tpl>' +
                 '</tpl>').compile();
+
+        var deletesInProgress = 0;
+
+        this.on(BROWSER_EVENTS.deletestarted, function(result){
+            this.actions.deletePath.setIconClass("iconAjaxLoadingRed");
+            deletesInProgress ++;
+        }, this);
+
+        this.on(BROWSER_EVENTS.deletecomplete, function(result){
+            if ( -- deletesInProgress < 1)
+                this.actions.deletePath.setIconClass("iconDelete");
+        }, this);
     },
 
     showProgressBar : function()
