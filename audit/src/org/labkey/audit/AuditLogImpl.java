@@ -397,16 +397,18 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             }
 
             event = addEvent(event);
-            String parentLsid = domainURI + ':' + event.getRowId();
+            if (event != null)
+            {
+                String parentLsid = domainURI + ':' + event.getRowId();
 
-            SQLFragment updateSQL = new SQLFragment();
-            updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
-            updateSQL.add(parentLsid);
-            updateSQL.add(event.getRowId());
-            Table.execute(LogManager.get().getSchema(), updateSQL);
+                SQLFragment updateSQL = new SQLFragment();
+                updateSQL.append("UPDATE " + LogManager.get().getTinfoAuditLog() + " SET lsid = ? WHERE rowid = ?");
+                updateSQL.add(parentLsid);
+                updateSQL.add(event.getRowId());
+                Table.execute(LogManager.get().getSchema(), updateSQL);
 
-            addEventProperties(parentLsid, domainURI, dataMap);
-
+                addEventProperties(parentLsid, domainURI, dataMap);
+            }
             if (startedTransaction)
                 schema.getScope().commitTransaction();
 
