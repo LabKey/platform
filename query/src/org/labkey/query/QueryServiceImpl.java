@@ -54,15 +54,9 @@ public class QueryServiceImpl extends QueryService
 {
 //    static private final Logger _log = Logger.getLogger(QueryServiceImpl.class);
 
-    protected static final FilenameFilter moduleQueryFileFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return name.toLowerCase().endsWith(ModuleQueryDef.FILE_EXTENSION);
-        }
-    };
-
     private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
+    private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
 
     public static Cache getModuleResourcesCache()
     {
@@ -167,7 +161,7 @@ public class QueryServiceImpl extends QueryService
                 if (AppProps.getInstance().isDevMode())
                 {
                     Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
-                    queries = getModuleQueries(schemaDir);
+                    queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
                 }
                 else
                 {
@@ -178,7 +172,7 @@ public class QueryServiceImpl extends QueryService
                     if (null == queries)
                     {
                         Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
-                        queries = getModuleQueries(schemaDir);
+                        queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
                         _moduleResourcesCache.put(fileSetCacheKey, queries);
                     }
                 }
@@ -238,7 +232,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    private Collection<? extends Resource> getModuleQueries(Resource schemaDir)
+    private Collection<? extends Resource> getModuleQueries(Resource schemaDir, String fileExtension)
     {
         if (schemaDir == null)
             return Collections.emptyList();
@@ -246,7 +240,7 @@ public class QueryServiceImpl extends QueryService
         Collection<? extends Resource> queries = schemaDir.list();
         List<Resource> result = new ArrayList<Resource>(queries.size());
         for (Resource query : queries)
-            if (query.getName().endsWith(ModuleQueryDef.FILE_EXTENSION))
+            if (query.getName().endsWith(fileExtension))
                 result.add(query);
 
         return result;
@@ -717,6 +711,7 @@ public class QueryServiceImpl extends QueryService
      */
     public QueryDef findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery)
     {
+        Container originalContainer = container;
         QueryDef queryDef;
         do
         {
@@ -735,6 +730,53 @@ public class QueryServiceImpl extends QueryService
         if (queryDef != null && queryDef.getMetaData() != null)
         {
             return queryDef;
+        }
+
+        // Finally, look for file-based definitions in modules
+        for (Module module : originalContainer.getActiveModules())
+        {
+            Collection<? extends Resource> queryMetadatas = null;
+
+            //always scan the file system in dev mode
+            if (AppProps.getInstance().isDevMode())
+            {
+                Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
+                queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
+            }
+            else
+            {
+                //in production, cache the set of query defs for each module on first request
+                String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
+                queryMetadatas = (Collection<? extends Resource>)_moduleResourcesCache.get(fileSetCacheKey);
+
+                if (null == queryMetadatas)
+                {
+                    Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
+                    queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
+                    _moduleResourcesCache.put(fileSetCacheKey, queryMetadatas);
+                }
+            }
+
+            if (null != queryMetadatas)
+            {
+                for (Resource query : queryMetadatas)
+                {
+                    String cacheKey = query.getPath().toString();
+                    ModuleQueryMetadataDef metadataDef = (ModuleQueryMetadataDef)_moduleResourcesCache.get(cacheKey);
+                    if (null == metadataDef || metadataDef.isStale())
+                    {
+                        metadataDef = new ModuleQueryMetadataDef(query);
+                        _moduleResourcesCache.put(cacheKey, metadataDef);
+                    }
+
+                    if (metadataDef.getName().equalsIgnoreCase(tableName))
+                    {
+                        QueryDef result = metadataDef.toQueryDef(container);
+                        result.setSchema(schemaName);
+                        return result;
+                    }
+                }
+            }
         }
 
         return null;

@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.assay;
 
+import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -656,7 +657,9 @@ public class AssayController extends SpringActionController
             data.setName(originalName);
             data.save(getViewContext().getUser());
 
-            return ExperimentJSONConverter.serializeData(data).toString();
+            JSONObject json = ExperimentJSONConverter.serializeData(data);
+            json.put("success", true);
+            return json.toString();
         }
     }
 

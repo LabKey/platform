@@ -144,7 +144,8 @@ public class ListImporter
         // Set up RowMap with all the keys that OntologyManager.importTypes() handles
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
-                "LookupSchema", "LookupQuery", "URL", "ImportAliases");
+                "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
+                "ShownInDetailsView");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -173,6 +174,11 @@ public class ListImporter
 
             boolean mvEnabled = columnXml.isSetIsMvEnabled() ? columnXml.getIsMvEnabled() : null != columnXml.getMvColumnName();
 
+            // These default to being visible if nothing's specified in the XML
+            boolean shownInInsertView = !columnXml.isSetShownInInsertView() || columnXml.getShownInInsertView();
+            boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
+            boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
+
             Set<String> importAliases = new LinkedHashSet<String>();
             if (columnXml.isSetImportAliases())
             {
@@ -198,7 +204,10 @@ public class ListImporter
                 null != fk ? fk.getFkDbSchema() : null,
                 null != fk ? fk.getFkTable() : null,
                 columnXml.getUrl(),
-                ColumnRenderProperties.convertToString(importAliases)
+                ColumnRenderProperties.convertToString(importAliases),
+                shownInInsertView,
+                shownInUpdateView,
+                shownInDetailsView
             });
 
             importMaps.add(map);

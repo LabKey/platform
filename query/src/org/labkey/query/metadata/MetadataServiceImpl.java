@@ -131,7 +131,16 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                     gwtTableInfo.setDefinitionFolder(c.getPath());
                 }
             }
-            TableType tableType = getTableType(tableName, parseDocument(queryDef.getMetaData()));
+            TablesDocument doc = null;
+            try
+            {
+                doc = parseDocument(queryDef.getMetaData());
+            }
+            catch (XmlException e)
+            {
+                // Just ignore the metadata override if it doesn't parse correctly
+            }
+            TableType tableType = getTableType(tableName, doc);
             if (tableType != null)
             {
                 if (tableType.getColumns() != null)
@@ -226,23 +235,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         return null;
     }
 
-    private TablesDocument parseDocument(String xml)
+    private TablesDocument parseDocument(String xml) throws XmlException
     {
         if (xml == null)
         {
             return null;
         }
         
-        TablesDocument doc;
-        try
-        {
-            doc = TablesDocument.Factory.parse(xml);
-        }
-        catch (XmlException e)
-        {
-            throw new RuntimeException(e);
-        }
-        return doc;
+        return TablesDocument.Factory.parse(xml);
     }
 
     public GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName) throws MetadataUnavailableException
@@ -258,7 +258,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
         if (queryDef != null)
         {
-            doc = parseDocument(queryDef.getMetaData());
+            try
+            {
+                doc = parseDocument(queryDef.getMetaData());
+            }
+            catch (XmlException e)
+            {
+                throw new MetadataUnavailableException(e.getMessage());
+            }
             xmlTable = getTableType(gwtTableInfo.getName(), doc);
         }
         else

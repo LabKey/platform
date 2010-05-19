@@ -1720,6 +1720,7 @@ query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text
 query/src/org/labkey/query/ModuleCustomViewDef.java -text
 query/src/org/labkey/query/ModuleQueryDef.java -text
+query/src/org/labkey/query/ModuleQueryMetadataDef.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryImporter.java -text
 query/src/org/labkey/query/QueryModule.java -text
