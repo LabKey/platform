@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -74,7 +75,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
             throw new QueryUpdateServiceException(e);
         }
 
-        return map;
+        return new CaseInsensitiveHashMap<Object>(map);
     }
 
     /**
