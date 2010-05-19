@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.settings.AppProps;
@@ -265,47 +266,123 @@ public class AuthenticationManager
     }
 
 
-    public static User authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public static User authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
     {
-        ValidEmail email = null;
+        AuthenticationResponse firstFailure = null;
 
         for (AuthenticationProvider authProvider : getActiveProviders())
         {
+            AuthenticationResponse authResponse = null;
+
             try
             {
                 if (authProvider instanceof LoginFormAuthenticationProvider)
                 {
                     if (areNotBlank(id, password))
-                        email = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password, returnURL);
+                        authResponse = ((LoginFormAuthenticationProvider)authProvider).authenticate(id, password, returnURL);
                 }
                 else
                 {
                     if (areNotNull(request, response))
-                        email = ((RequestAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
+                        authResponse = ((RequestAuthenticationProvider)authProvider).authenticate(request, response, returnURL);
                 }
             }
             catch (RedirectException e)
             {
                 // Some authentication provider has chosen to redirect (e.g., to retrieve auth credentials from
-                // a different server or to force change password due to expiration.
+                // a different server or to force change password due to expiration).
                 throw new RuntimeException(e);
             }
 
-            if (email != null)
+            // Null only if params are blank... just ignore that case
+            if (null != authResponse)
             {
-                User user = SecurityManager.afterAuthenticate(email);
-
-                if (!user.isActive())
+                if (authResponse.isAuthenticated())
                 {
+                    ValidEmail email = authResponse.getValidEmail();
+                    User user = SecurityManager.afterAuthenticate(email);
+
+                    if (!user.isActive())
+                    {
+                        AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
+                                "Inactive user " + user.getEmail() + " attempted to login");
+                        return null;
+                    }
+
+                    _userProviders.put(user.getUserId(), authProvider);
                     AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                            "Inactive user " + user.getEmail() + " attempted to login");
-                    return null;
+                            email + " logged in successfully via " + authProvider.getName() + " authentication.");
+                    return user;
+                }
+                else
+                {
+                    AuthenticationProvider.FailureReason reason = authResponse.getFailureReason();
+
+                    switch (reason.getReportType())
+                    {
+                        // Log the first one we encounter to the audit log, always
+                        case always:
+                            if (null == firstFailure)
+                                firstFailure = authResponse;
+                            break;
+
+                        // Log the first one we encounter to the audit log, but only if the login fails (i.e., this
+                        // login may succeed on another provider)
+                        case onFailure:
+                            if (logFailures && null == firstFailure)
+                                firstFailure = authResponse;
+                            break;
+
+                        // Just not the right provider... ignore.
+                        case never:
+                            break;
+
+                        default:
+                            assert false : "Unknown AuthenticationProvider.ReportType: " + reason.getReportType();
+                    }
+                }
+            }
+        }
+
+        // Login failed all providers... log the first interesting failure (but only if logFailures == true)
+        if (null != firstFailure)
+        {
+            User user = null;
+            String emailAddress = null;
+
+            // Try to determine who is attempting to login.
+            if (!StringUtils.isBlank(id))
+            {
+                emailAddress = id;
+                ValidEmail email = null;
+
+                try
+                {
+                    email = new ValidEmail(id);
+                    emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
                 }
 
-                _userProviders.put(user.getUserId(), authProvider);
-                AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                        email + " logged in successfully.");
-                return user;
+                if (null != email)
+                    user = UserManager.getUser(email);
+            }
+
+            String message = " failed to login: " + firstFailure.getFailureReason().getMessage() + ".";
+
+            if (null != user)
+            {
+                AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(), user.getEmail() + message);
+                _log.warn(user.getEmail() + message);
+            }
+            else if (null != emailAddress)
+            {
+                _log.warn(emailAddress + message);
+            }
+            else
+            {
+                _log.warn("Unknown user " + message);
             }
         }
 
@@ -318,7 +395,7 @@ public class AuthenticationManager
     //  authentication mechanisms that rely on cookies, browser redirects, etc.
     public static User authenticate(String id, String password) throws ValidEmail.InvalidEmailException
     {
-        return authenticate(null, null, id, password, null);
+        return authenticate(null, null, id, password, null, true);
     }
 
 

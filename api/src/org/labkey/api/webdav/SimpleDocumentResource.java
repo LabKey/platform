@@ -15,21 +15,18 @@
  */
 package org.labkey.api.webdav;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.ByteArrayInputStream;
-import java.util.Map;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.

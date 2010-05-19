@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -41,12 +42,95 @@ public abstract interface AuthenticationProvider
 
     public static interface RequestAuthenticationProvider extends AuthenticationProvider
     {
-        public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException;
+        public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException;
     }
 
     public static interface LoginFormAuthenticationProvider extends AuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
-        public ValidEmail authenticate(String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException;
+        public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException;
+    }
+
+
+    public static class AuthenticationResponse
+    {
+        private final @Nullable ValidEmail _email;
+        private final @Nullable FailureReason _failureReason;
+
+        private AuthenticationResponse(ValidEmail email)
+        {
+            _email = email;
+            _failureReason = null;
+        }
+
+        private AuthenticationResponse(FailureReason failureReason)
+        {
+            _email = null;
+            _failureReason = failureReason;
+        }
+
+        public static AuthenticationResponse createSuccessResponse(ValidEmail email)
+        {
+            return new AuthenticationResponse(email);
+        }
+
+        public static AuthenticationResponse createFailureResponse(FailureReason failureReason)
+        {
+            return new AuthenticationResponse(failureReason);
+        }
+
+        public boolean isAuthenticated()
+        {
+            return null != _email;
+        }
+
+        public @NotNull FailureReason getFailureReason()
+        {
+            assert null != _failureReason && null == _email;
+
+            return _failureReason;
+        }
+
+        public @NotNull ValidEmail getValidEmail()
+        {
+            assert null != _email;
+
+            return _email;
+        }
+    }
+
+    // FailureReasons are only reported to administrators (in the audit log and/or server log), NOT to users (and potential
+    // hackers).  We try to be as specific as possible.
+    public enum FailureReason
+    {
+        userDoesNotExist(ReportType.onFailure, "user does not exist"),
+        badPassword(ReportType.onFailure, "incorrect password"),
+        badCredentials(ReportType.onFailure, "invalid credentials"),  // Use for cases where we can't distinguish between userDoesNotExist and badPassword
+        configurationError(ReportType.always, "configuration problem"),
+        notApplicable(ReportType.never, "not applicable");
+
+        private final ReportType _type;
+        private final String _message;
+
+        FailureReason(ReportType type, String message)
+        {
+            _type = type;
+            _message = message;
+        }
+
+        public ReportType getReportType()
+        {
+            return _type;
+        }
+
+        public String getMessage()
+        {
+            return _message;
+        }
+    }
+
+    public enum ReportType
+    {
+        always, onFailure, never
     }
 }
