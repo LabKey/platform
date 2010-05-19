@@ -279,7 +279,7 @@ public class GroupManager
             if (c != null && c.getProject() != null)
                 event.setProjectId(c.getProject().getId());
 
-            event.setContainerId(group.getContainer());
+            event.setContainerId(group.getContainer() != null ? group.getContainer() : ContainerManager.getRoot().getId());
             event.setComment(message);
 
             AuditLogService.get().addEvent(event);

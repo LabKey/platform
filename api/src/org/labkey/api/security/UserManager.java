@@ -484,17 +484,21 @@ public class UserManager
     public static void addToUserHistory(User principal, String message) throws SQLException
     {
         User user = UserManager.getGuestUser();
+        Container c = ContainerManager.getRoot();
 
         try
         {
             ViewContext context = HttpView.currentContext();
 
             if (context != null)
+            {
                 user = context.getUser();
+                c = context.getContainer();
+            }
         }
         catch (RuntimeException e){}
 
-        AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, principal.getUserId(), message);
+        AuditLogService.get().addEvent(user, c, UserManager.USER_AUDIT_EVENT, principal.getUserId(), message);
         //Table.insert(user, _core.getTableInfoUserHistory(), PageFlowUtil.map("Date", new Date(), "UserId", user.getUserId(), "Message", message));
     }
 

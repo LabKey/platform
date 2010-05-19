@@ -304,13 +304,13 @@ public class AuthenticationManager
 
                     if (!user.isActive())
                     {
-                        AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
+                        AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
                                 "Inactive user " + user.getEmail() + " attempted to login");
                         return null;
                     }
 
                     _userProviders.put(user.getUserId(), authProvider);
-                    AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
+                    AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
                             email + " logged in successfully via " + authProvider.getName() + " authentication.");
                     return user;
                 }
@@ -406,7 +406,7 @@ public class AuthenticationManager
         if (null != provider)
             provider.logout(request);
 
-        AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(),
+        AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
                 user.getEmail() + " logged out.");
     }
 
