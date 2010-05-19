@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
@@ -184,6 +185,8 @@ public class MailHelper
                 event.setCreatedBy(user);
             if (c != null)
                 event.setContainerId(c.getId());
+            else
+                event.setContainerId(ContainerManager.getRoot().getId());
             event.setComment("The Email Message: (" + m.getSubject() + ") was sent");
             event.setKey1(getAddressStr(m.getFrom()));
             event.setKey2(getAddressStr(m.getAllRecipients()));

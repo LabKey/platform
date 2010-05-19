@@ -104,6 +104,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
             String domainUri = ensureAuditLogDomainAndProps(user);
             AuditLogEvent event = new AuditLogEvent();
             event.setCreatedBy(user);
+            event.setContainerId(ContainerManager.getRoot().getId());
             event.setComment("The " + getType() + " were changed (see details).");
             event.setEventType(AUDIT_EVENT_TYPE);
 
