@@ -373,7 +373,7 @@ public class AuthenticationManager
 
             if (null != user)
             {
-                AuditLogService.get().addEvent(user, null, UserManager.USER_AUDIT_EVENT, user.getUserId(), user.getEmail() + message);
+                AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(), user.getEmail() + message);
                 _log.warn(user.getEmail() + message);
             }
             else if (null != emailAddress)
