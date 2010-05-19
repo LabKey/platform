@@ -142,6 +142,12 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         return ExperimentServiceImpl.get().getExpRun(_object.getRunId().intValue());
     }
 
+
+    public Integer getRunId()
+    {
+        return _object.getRunId();
+    }
+
     public void setSourceApplication(ExpProtocolApplication app)
     {
         if (app != null && app.getRowId() == 0)
