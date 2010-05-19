@@ -1984,7 +1984,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getRefreshAction : function()
     {
-        return new Ext.Action({text: 'Refresh', tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload', scope:this, hideText: true, handler: this.refreshDirectory});
+        return new Ext.Action({text: 'Refresh', tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload',
+            scope:this,
+            hideText: true,
+            handler: function() {
+                this.refreshDirectory();
+                this.refreshFolderTree();
+        }});
     },
 
 

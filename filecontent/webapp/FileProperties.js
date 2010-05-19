@@ -139,7 +139,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             {
                 var field = this.formPanel.getForm().findField(a);
                 if (field)
-                    field.disable();
+                    field.setReadOnly(true);
             }
         }
 

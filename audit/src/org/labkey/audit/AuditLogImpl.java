@@ -219,6 +219,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         try
         {
+            assert event.getContainerId() != null : "Container cannot be null";
+
             if (event.getContainerId() == null)
             {
                 _log.warn("container was not specified, defaulting to root container.");
