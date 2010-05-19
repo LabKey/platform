@@ -56,8 +56,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             if (col.getSqlTypeInt() != Types.INTEGER)
                 return false;
-            if (!col.getParentTable().getSchema().getScope().equals(CoreSchema.getInstance().getSchema().getScope()))
-                return false;
             if (col.getFk() instanceof PdLookupForeignKey)
             {
                 PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
