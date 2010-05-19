@@ -16,12 +16,13 @@
 package org.labkey.authentication.ldap;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
@@ -41,40 +42,9 @@ public class LdapAuthenticationManager
     private static final Logger _log = Logger.getLogger(LdapAuthenticationManager.class);
 
     //
-    // Attempt to authenticate by iterating through all the LDAP servers.
-    // List of servers is stored as a site property in the database
-    //
-    public static boolean authenticate(ValidEmail email, String password)
-    {
-        String[] ldapServers = getServers();
-        boolean saslAuthentication = useSASL();
-        if (null == ldapServers)
-            return false;
-
-        for (String server : ldapServers)
-        {
-            if (null == server || 0 == server.length())
-                continue;
-
-            try
-            {
-                return authenticate(server, email, password, saslAuthentication);
-            }
-            catch (NamingException e)
-            {
-                // Can't find the server... log the exception and try the next one
-                _log.error("LDAPLogin: " + server + " failed.", e);
-            }
-        }
-
-        return false;   // Can't connect to any of the servers
-    }
-
-
-    //
     // Attempt LDAP authentication on a single server
     //
-    static boolean authenticate(String url, ValidEmail email, String password, boolean saslAuthentication)
+    static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication)
             throws NamingException
     {
         // Don't pass blank or null password or email to connect -- it will ALWAYS SUCCEED
@@ -95,7 +65,7 @@ public class LdapAuthenticationManager
 
 
     // Careful... blank principal or password will switch to "anonymous bind", meaning it will always succeed
-    public static boolean connect(String url, String principal, String password, boolean saslAuthentication) throws NamingException
+    public static boolean connect(String url, @NotNull String principal, @NotNull String password, boolean saslAuthentication) throws NamingException
     {
         boolean authenticated = false;
 

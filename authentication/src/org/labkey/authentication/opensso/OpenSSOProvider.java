@@ -69,19 +69,23 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
         return OpenSSOController.getCurrentSettingsURL();
     }
 
-    public ValidEmail authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
+    @Override
+    public AuthenticationResponse authenticate(HttpServletRequest request, HttpServletResponse response, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
     {
         try
         {
             SSOTokenManager manager = SSOTokenManager.getInstance();
             SSOToken token = manager.createSSOToken(request);
+
             if (SSOTokenManager.getInstance().isValidToken(token))
             {
                 String principalName = token.getPrincipal().getName();
                 int i = principalName.indexOf(',');
                 String email = principalName.substring(3, i);
-                return new ValidEmail(email);
+                return AuthenticationResponse.createSuccessResponse(new ValidEmail(email));
             }
+
+            // TODO: Need special failure response for this case?
         }
         catch (SSOException e)
         {
@@ -108,7 +112,7 @@ public class OpenSSOProvider implements AuthenticationProvider.RequestAuthentica
             }
         }
 
-        return null;     // Rely on login screen to present link to OpenSSO
+        return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);     // Rely on login screen to present link to OpenSSO
     }
 
 

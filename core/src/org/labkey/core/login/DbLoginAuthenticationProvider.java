@@ -16,6 +16,7 @@
 package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.*;
@@ -65,27 +66,22 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return "Stores user names and passwords in the LabKey database";
     }
 
+    @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public ValidEmail authenticate(String id, String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
+    public AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException, RedirectException
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
 
         if (null == hash)
-        {
-            _log.error("Invalid login. name=" + email + ", does not exist.");
-            return null;
-        }
+            return AuthenticationResponse.createFailureResponse(FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
-        {
-            _log.error("Invalid login. name=" + email + ", incorrect password.");
-            return null;
-        }
+            return AuthenticationResponse.createFailureResponse(FailureReason.badPassword);
 
         // Password is correct for this user.  Now check password rules and expiration.
 
-        // TODO: skip checks if basic auth
+        // TODO: skip these checks if basic auth
 
         PasswordRule rule = DbLoginManager.getPasswordRule();
         User user = UserManager.getUser(email);
@@ -93,17 +89,23 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         Collection<String> messages = new LinkedList<String>();
 
         if (!rule.isValidForLogin(password, user, messages))
-            return handleProblem(user, returnURL, "doesn't meet the current complexity requirements");
+        {
+            email = handleProblem(user, returnURL, "doesn't meet the current complexity requirements");
+        }
+        else
+        {
+            PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
+            Date lastChanged = SecurityManager.getLastChanged(user);
 
-        PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
-        Date lastChanged = SecurityManager.getLastChanged(user);
+            if (expiration.hasExpired(lastChanged))
+                email = handleProblem(user, returnURL, "has expired");
+        }
 
-        if (expiration.hasExpired(lastChanged))
-            return handleProblem(user, returnURL, "has expired");
-
-        return email;
+        if (null == email)
+            return AuthenticationResponse.createFailureResponse(FailureReason.configurationError);
+        else
+            return AuthenticationResponse.createSuccessResponse(email);
     }
-
 
     private ValidEmail handleProblem(User user, URLHelper returnURL, String description) throws RedirectException
     {

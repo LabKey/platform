@@ -231,7 +231,7 @@ public class LoginController extends SpringActionController
             // If user is already logged in, then redirect immediately.  This is necessary because of Excel's link
             // behavior (see #9246).  Next, check to see if any authentication credentials already exist (passed as URL
             // param, in a cookie, etc.)
-            if (!reshow && (isLoggedIn() || authenticate(form, request, response)))
+            if (!reshow && (isLoggedIn() || authenticate(form, request, response, false)))
                 return HttpView.redirect(getSuccessURL(form));
             else
                 return showLogin(form, request, getPageConfig(), false);
@@ -253,7 +253,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            boolean success = authenticate(form, request, response);
+            boolean success = authenticate(form, request, response, true);
 
             if (success)
             {
@@ -302,12 +302,12 @@ public class LoginController extends SpringActionController
             return true;
         }
 
-        private boolean authenticate(LoginForm form, HttpServletRequest request, HttpServletResponse response)
+        private boolean authenticate(LoginForm form, HttpServletRequest request, HttpServletResponse response, boolean logFailures)
         {
             try
             {
                 // Attempt authentication with all registered providers
-                _user = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper());
+                _user = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
 
                 if (null != _user)
                 {
@@ -801,11 +801,11 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            // Should log in only for initial user, choose password, and forced change password scenarios, but not for
-            // scenarios where a user is already logged in (normal changed password, admins initializing another user's a password, etc.)
+            // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
+            // where a user is already logged in (normal changed password, admins initializing another user's a password, etc.)
             if (getUser().isGuest())
             {
-                User authenticatedUser = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper());
+                User authenticatedUser = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
                 if (null != authenticatedUser)
                 {
