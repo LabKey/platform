@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -139,7 +140,7 @@ public abstract class AbstractFileUploadAction<FORM> extends ExportAction<FORM>
     private void error(Writer writer, String message, int statusCode) throws IOException
     {
         getViewContext().getResponse().setStatus(statusCode);
-        writer.write(message);
+        writer.write(PageFlowUtil.jsString(message));
         writer.flush();
         writer.close();
     }

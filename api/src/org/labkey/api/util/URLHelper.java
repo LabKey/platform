@@ -173,9 +173,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     public String getLocalURIString(boolean allowSubstSyntax)
     {
         StringBuilder uriString = new StringBuilder(getPath());
+        if (uriString.indexOf("/") != 0)
+        {
+            uriString.insert(0, '/');
+        }
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
         if (!isDirectory() || hasParams)
-            uriString.append('?');      // makes it easier for users who want to concatentate
+            uriString.append('?');      // makes it easier for users who want to concatenate
         if (hasParams)
             uriString.append(getQueryString(allowSubstSyntax));
         if (null != _fragment && _fragment.length() > 0)

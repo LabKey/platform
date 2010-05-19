@@ -78,7 +78,12 @@ public class AuthFilter implements Filter
                 originalURL.append(req.getQueryString());
             }
             URL url = new URL(originalURL.toString());
-            url = new URL("https", url.getHost(), AppProps.getInstance().getSSLPort(), url.getFile());
+            int port = AppProps.getInstance().getSSLPort();
+            if (port == 443)
+            {
+                port = -1;
+            }
+            url = new URL("https", url.getHost(), port, url.getFile());
             resp.sendRedirect(url.toString());
             return;
         }

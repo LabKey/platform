@@ -87,7 +87,10 @@ public class ButtonBarConfig
 
     public ButtonBarConfig(ButtonBarOptions buttonBarOptions)
     {
-        _position = getPosition(buttonBarOptions.getPosition().toString());
+        if (buttonBarOptions.isSetPosition())
+        {
+            _position = getPosition(buttonBarOptions.getPosition().toString());
+        }
         _includeStandardButtons = buttonBarOptions.getIncludeStandardButtons();
         _scriptIncludes = buttonBarOptions.getIncludeScriptArray();
         ButtonBarItem[] items = buttonBarOptions.getItemArray();

@@ -630,62 +630,65 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  * &lt;/form>
  * &lt;script type="text/javascript">
  *    LABKEY.Utils.requiresScript("FileUploadField.js");
+ *    Ext.onReady(function() {
+ *       var form = new Ext.form.BasicForm(
+ *       Ext.get("upload-run-form"), {
+ *          fileUpload: true,
+ *          frame: false,
+ *          url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
+ *          listeners: {
+ *             actioncomplete : function (form, action) {
+ *                alert('Upload successful!');
+ *                var data = new LABKEY.Exp.Data(action.result);
+ *
+ *                // now add the data as a dataInput to a LABKEY.Exp.Run
+ *                var run = new LABKEY.Exp.Run();
+ *                run.name = data.name;
+ *                run.dataInputs = [ data ];
+ *
+ *                // add the new run to a LABKEY.Exp.Batch object and
+ *                // fetch the parsed file contents from the data object
+ *                // using the LABKEY.Exp.Data#getContent() method.
+ *             },
+ *             actionfailed: function (form, action) {
+ *                alert('Upload failed!');
+ *             }
+ *          }
+ *       });
+ *
+ *       var uploadField = new Ext.form.FileUploadField({
+ *          id: "upload-run-field",
+ *          renderTo: "upload-run-button",
+ *          buttonText: "Upload Data...",
+ *          buttonOnly: true,
+ *          buttonCfg: { cls: "labkey-button" },
+ *          listeners: {
+ *             "fileselected": function (fb, v) {
+ *                form.submit();
+ *             }
+ *          }
+ *       });
+ *    });
  * &lt;/script>
+ *
+ * // Or, to upload the contents of a JavaScript string as a file:
  * &lt;script type="text/javascript">
- * var form = new Ext.form.BasicForm(
- *   Ext.get("upload-run-form"), {
- *     fileUpload: true,
- *     frame: false,
- *     url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
- *     listeners: {
- *       "actioncomplete" : function (f, action) {
- *         var data = new LABKEY.Exp.Data(action.result);
+ * Ext.onReady(function() {
+ *    Ext.Ajax.request({
+ *      url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
+ *      params: { fileName: 'test.txt', fileContent: 'Some text!' },
+ *      success: function(response, options) {
+ *         var data = new LABKEY.Exp.Data(Ext.util.JSON.decode(response.responseText));
  *
  *         // now add the data as a dataInput to a LABKEY.Exp.Run
  *         var run = new LABKEY.Exp.Run();
  *         run.name = data.name;
  *         run.dataInputs = [ data ];
  *
- *         // add the new run to a LABKEY.Exp.Batch object and
- *         // fetch the parsed file contents from the data object
- *         // using the LABKEY.Exp.Data#getContent() method.
- *       }
- *     }
- *   }
- * );
- *
- * var uploadField = new Ext.form.FileUploadField({
- *   id: "upload-run-field",
- *   renderTo: "upload-run-button",
- *   buttonText: "Upload Data...",
- *   buttonOnly: true,
- *   buttonCfg: {
- *     cls: "labkey-button"
- *   },
- *   listeners: {
- *     "fileselected": function (fb, v) {
- *       form.submit();
- *     }
- *   }
+ *         // add the new run to a LABKEY.Exp.Batch object here
+ *      }
+ *    });
  *  });
- * &lt;/script>
- *
- * // To upload the contents of a JavaScript string as a file:
- * &lt;script type="text/javascript">
- * Ext.Ajax.request({
- *   url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
- *   params: { fileName: 'test.txt', fileContent: 'Some text!' },
- *   success: function(response, options)
- *   {
- *      var data = new LABKEY.Exp.Data(Ext.util.JSON.decode(response.responseText));
- *
- *      // now add the data as a dataInput to a LABKEY.Exp.Run
- *      var run = new LABKEY.Exp.Run();
- *      run.name = data.name;
- *      run.dataInputs = [ data ];
- *
- *      // add the new run to a LABKEY.Exp.Batch object here
- *   } });
  * &lt;/script>
  */
 LABKEY.Exp.Data = function (config) {

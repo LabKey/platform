@@ -35,6 +35,8 @@ public class PdLookupForeignKey extends AbstractForeignKey
             throw new IllegalArgumentException("pd cannot be null");
         _pd = pd;
         _user = user;
+        setLookupSchemaName(pd.getLookupSchema());
+        setTableName(pd.getLookupQuery());
     }
 
     @Override
