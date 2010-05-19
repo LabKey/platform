@@ -121,7 +121,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "caches", new ActionURL(CachesAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root));

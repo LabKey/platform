@@ -40,6 +40,10 @@
         initialScope = DbScope.getLabkeyScope();
     }
 %>
+<style type="text/css">
+    .systemSchemaStyleClass{padding-right:5px !important}
+</style>
+
 <labkey:errors/>
 <div id="form"></div>
 
@@ -103,7 +107,7 @@ var schemaIndex = 3;
 // Admin can only choose from the data sources in the drop down.  Selecting a data source updates the schemas drop down below.
 var dataSourceCombo = new Ext.form.ComboBox({fieldLabel:'Data Source', mode:'local', store:store, valueField:'value', displayField:'name', hiddenName:'dataSource', editable:false, triggerAction:'all', helpPopup:{title:'Data Source', html:'<%=bean.getHelpHTML("DataSource")%>'}, value:dataSources[<%=coreIndex%>][0]});
 var includeLabel = new Ext.form.Label({text:'Show System Schemas', align:"middle", padding:"4"});
-var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem'});
+var includeSystemCheckBox = new LABKEY.ext.Checkbox({name:'includeSystem', id:'myincludeSystem', boxLabel:'Show System Schemas'});
 // Admin can choose one of the schemas listed or type in their own (e.g., admin might want to use a system schema that we're filtering out).
 var dbSchemaCombo = new Ext.form.ComboBox({name:'dbSchemaName', fieldLabel:'Database Schema Name', store:dataSources[<%=coreIndex%>][3], editable:true, triggerAction:'all', allowBlank:false, helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, value:<%=q(h(def.getDbSchemaName()))%>});
 var userSchemaText = new Ext.form.TextField({name:'userSchemaName', fieldLabel:'Schema Name', allowBlank:false, helpPopup:{title:'Schema Name', html:'<%=bean.getHelpHTML("UserSchemaName")%>'}, value:<%=q(h(def.getUserSchemaName()))%>});
@@ -147,6 +151,19 @@ var tableText = new Ext.form.TextField({name:'tables', hidden:true});
         selModel: selModel
     });
 
+    var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
+        initComponent: function() {
+            this.fieldLabel = 'Database Schema Name';
+            this.layout = 'table';
+            this.layoutConfig = {columns:2};
+            this.items = [dbSchemaCombo, includeSystemCheckBox];
+            this.border = false;
+            this.helpPopup = {title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'};
+            this.defaults = {cellCls:'systemSchemaStyleClass'};
+            DatabaseSchemaNamePanel.superclass.initComponent.apply(this, arguments);
+        }
+    });
+
     var f = new LABKEY.ext.FormPanel({
         width:955,
         labelWidth:150,
@@ -154,7 +171,7 @@ var tableText = new Ext.form.TextField({name:'tables', hidden:true});
         standardSubmit:true,
         items:[
             dataSourceCombo,
-            {fieldLabel:'Database Schema Name', helpPopup:{title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'}, xtype:'panel', border:false, layout:'hbox', items:[dbSchemaCombo, includeSystemCheckBox, includeLabel]},
+            new DatabaseSchemaNamePanel(),
             userSchemaText,
             editableCheckBox,
             indexableCheckBox,
@@ -177,7 +194,7 @@ Ext.onReady(function()
     loadTables();
 });
 
-// Populate the "Database Schema Name" combobox with new data source's schemas
+// Populate the "Database Schema Name" combo box with new data source's schemas
 function dataSourceCombo_onSelect()
 {
     userSchemaText.setValue("");

@@ -40,8 +40,6 @@ public class ExternalSchema extends SimpleModuleUserSchema
     {
         super(def.getUserSchemaName(), "Contains data tables from the '" + def.getUserSchemaName() + "' database schema.", user, container, getDbSchema(def), new ExternalSchemaFilter(def));
         _def = def;
-
-        assert _dbSchema != null;
     }
 
     private static class ExternalSchemaFilter implements Filter<TableInfo>
@@ -72,13 +70,19 @@ public class ExternalSchema extends SimpleModuleUserSchema
     public static DbSchema getDbSchema(ExternalSchemaDef def)
     {
         DbScope scope = DbScope.getDbScope(def.getDataSource());
-        return scope.getSchema(def.getDbSchemaName());
+
+        if (null != scope)
+            return scope.getSchema(def.getDbSchemaName());
+        else
+            return null;
     }
 
     public static void uncache(ExternalSchemaDef def)
     {
         DbScope scope = DbScope.getDbScope(def.getDataSource());
-        scope.invalidateSchema(def.getDbSchemaName());
+
+        if (null != scope)
+            scope.invalidateSchema(def.getDbSchemaName());
     }
 
     protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)

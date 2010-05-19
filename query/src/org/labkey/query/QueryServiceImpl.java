@@ -52,8 +52,6 @@ import java.util.*;
 
 public class QueryServiceImpl extends QueryService
 {
-//    static private final Logger _log = Logger.getLogger(QueryServiceImpl.class);
-
     private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
@@ -319,7 +317,7 @@ public class QueryServiceImpl extends QueryService
             qd = QueryService.get().getUserSchema(user, container, cstmView.getSchema()).getQueryDefForTable(cstmView.getQueryName());
 
         if (qd instanceof QueryDefinitionImpl && !views.containsKey(cstmView.getName()))
-            views.put(cstmView.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, cstmView));
+            views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
     }
 
     public int importCustomViews(User user, Container container, File viewDir) throws XmlValidationException

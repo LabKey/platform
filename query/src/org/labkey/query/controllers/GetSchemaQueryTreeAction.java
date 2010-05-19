@@ -63,7 +63,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
             for (String name : defSchema.getUserSchemaNames())
             {
                 QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
-                if (null == schema)
+                if (null == schema || null == schema.getDbSchema())
                     continue;
 
                 DbScope scope = schema.getDbSchema().getScope();
@@ -187,7 +187,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
         qprops.put("queryName", qname);
-        qprops.put("id", "q:" + qname);
+        qprops.put("id", "q:" + schemaName + ":" + qname);
         qprops.put("text", PageFlowUtil.filter(qname));
         qprops.put("leaf", true);
         if (null != description)
