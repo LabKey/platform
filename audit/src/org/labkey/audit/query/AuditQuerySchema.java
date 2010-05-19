@@ -62,6 +62,10 @@ public class AuditQuerySchema extends UserSchema
 
     public TableInfo createTable(String name)
     {
-        return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
+        if (AUDIT_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
+        }
+        return null;
     }
 }

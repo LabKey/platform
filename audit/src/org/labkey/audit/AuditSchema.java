@@ -33,9 +33,9 @@ public class AuditSchema
 
     private AuditSchema()
     {
-        // private contructor to prevent instantiation from
+        // private constructor to prevent instantiation from
         // outside this class: this singleton should only be
-        // accessed via cpas.audit.AuditSchema.getInstance()
+        // accessed via getInstance()
     }
 
     public DbSchema getSchema()
