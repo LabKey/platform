@@ -116,72 +116,72 @@ var indexableCheckBox = new LABKEY.ext.Checkbox({name:'indexable', /*id:'myedita
 var metaDataTextArea = new Ext.form.TextArea({name:'metaData', fieldLabel:'Meta Data', width:800, height:400, resizable:true, autoCreate:{tag:"textarea", style:"font-family:'Courier'", autocomplete:"off", wrap:"off"}, helpPopup:{title:'Meta Data', html:'<%=bean.getHelpHTML("MetaData")%>'}, value:<%=PageFlowUtil.jsString(def.getMetaData())%>});
 var tableText = new Ext.form.TextField({name:'tables', hidden:true});
 
-    // create the data store
-    var tableStore = new Ext.data.JsonStore({
-        url: 'getTables.api',
-        autoDestroy: true,
-        storeId: 'tables',
-        idProperty: 'table',
-        root: 'rows',
-        fields: ['table']
-    });
+// create the data store
+var tableStore = new Ext.data.JsonStore({
+    url: 'getTables.api',
+    autoDestroy: true,
+    storeId: 'tables',
+    idProperty: 'table',
+    root: 'rows',
+    fields: ['table']
+});
 
-    var selModel = new Ext.grid.CheckboxSelectionModel();
-    selModel.addListener('rowselect', updateTableTitle);
-    selModel.addListener('rowdeselect', updateTableTitle);
+var selModel = new Ext.grid.CheckboxSelectionModel();
+selModel.addListener('rowselect', updateTableTitle);
+selModel.addListener('rowdeselect', updateTableTitle);
 
-    var initialTables = '<%=def.getTables()%>';
+var initialTables = '<%=def.getTables()%>';
 
-    // create the Grid
-    var grid = new Ext.grid.GridPanel({
-        fieldLabel:'Tables',
-        helpPopup:{title:'Tables', html:'<%=bean.getHelpHTML("Tables")%>'},
-        title:'&nbsp;',
-        store: tableStore,
-        columns: [
-            selModel,
-            {id:'table', width: 160, sortable: false, dataIndex: 'table'}
-        ],
-        stripeRows: true,
-        collapsed: true,
-        collapsible: true,
-        autoExpandColumn: 'table',
-        height: 500,
-        width: 600,
-        selModel: selModel
-    });
+// create the Grid
+var grid = new Ext.grid.GridPanel({
+    fieldLabel:'Tables',
+    helpPopup:{title:'Tables', html:'<%=bean.getHelpHTML("Tables")%>'},
+    title:'&nbsp;',
+    store: tableStore,
+    columns: [
+        selModel,
+        {id:'table', width: 160, sortable: false, dataIndex: 'table'}
+    ],
+    stripeRows: true,
+    collapsed: true,
+    collapsible: true,
+    autoExpandColumn: 'table',
+    height: 500,
+    width: 600,
+    selModel: selModel
+});
 
-    var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
-        initComponent: function() {
-            this.fieldLabel = 'Database Schema Name';
-            this.layout = 'table';
-            this.layoutConfig = {columns:2};
-            this.items = [dbSchemaCombo, includeSystemCheckBox];
-            this.border = false;
-            this.helpPopup = {title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'};
-            this.defaults = {cellCls:'systemSchemaStyleClass'};
-            DatabaseSchemaNamePanel.superclass.initComponent.apply(this, arguments);
-        }
-    });
+var DatabaseSchemaNamePanel = Ext.extend(Ext.Panel, {
+    initComponent: function() {
+        this.fieldLabel = 'Database Schema Name';
+        this.layout = 'table';
+        this.layoutConfig = {columns:2};
+        this.items = [dbSchemaCombo, includeSystemCheckBox];
+        this.border = false;
+        this.helpPopup = {title:'Database Schema Name', html:'<%=bean.getHelpHTML("DbSchemaName")%>'};
+        this.defaults = {cellCls:'systemSchemaStyleClass'};
+        DatabaseSchemaNamePanel.superclass.initComponent.apply(this, arguments);
+    }
+});
 
-    var f = new LABKEY.ext.FormPanel({
-        width:955,
-        labelWidth:150,
-        border:false,
-        standardSubmit:true,
-        items:[
-            dataSourceCombo,
-            new DatabaseSchemaNamePanel(),
-            userSchemaText,
-            editableCheckBox,
-            indexableCheckBox,
-            grid,
-            metaDataTextArea,
-            tableText
-        ],
-        buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
-        buttonAlign:'left'
-    });
+var f = new LABKEY.ext.FormPanel({
+    width:955,
+    labelWidth:150,
+    border:false,
+    standardSubmit:true,
+    items:[
+        dataSourceCombo,
+        new DatabaseSchemaNamePanel(),
+        userSchemaText,
+        editableCheckBox,
+        indexableCheckBox,
+        grid,
+        metaDataTextArea,
+        tableText
+    ],
+    buttons:[{text:'<%=(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit}, <%=bean.isInsert() ? "" : "{text:'Delete', handler:function() {document.location = " + q(bean.getDeleteURL().toString()) + "}}, "%>{text:'Cancel', handler:function() {document.location = <%=q(bean.getReturnURL().toString())%>;}}],
+    buttonAlign:'left'
+});
 
 Ext.onReady(function()
 {
@@ -190,6 +190,8 @@ Ext.onReady(function()
     dataSourceCombo.on('select', dataSourceCombo_onSelect);
     includeSystemCheckBox.on('check', includeSystemCheckBox_onCheck);
     dbSchemaCombo.on('select', dbSchemaCombo_onSelect);
+    grid.on('expand', updateTableTitle);
+    grid.on('collapse', updateTableTitle);
     initEditable(<%=def.isEditable()%>, <%=initialScope.getSqlDialect().isEditable()%>);
     loadTables();
 });
@@ -231,14 +233,11 @@ function loadTables()
     var dataSource = dataSourceCombo.getValue();
     var schemaName = dbSchemaCombo.getValue();
 
-    // Don't bother loading tables if either is empty (e.g., insert case)
-    if (dataSource && schemaName)
-    {
-        tableStore.load({
-            params: {dataSource: dataSource, schemaName: schemaName},
-            callback: tablesLoaded
-        });
-    }
+    // dataSource and/or schemaName could be empty, but action handles this
+    tableStore.load({
+        params: {dataSource: dataSource, schemaName: schemaName},
+        callback: tablesLoaded
+    });
 }
 
 function tablesLoaded()
@@ -258,6 +257,8 @@ function tablesLoaded()
         grid.selModel.selectRecords(recordArray);
         initialTables = '*';
     }
+
+    updateTableTitle();
 }
 
 function submit()
@@ -283,22 +284,30 @@ function submit()
 function updateTableTitle()
 {
     var selectedCount = grid.selModel.getCount();
-    var title;
+    var title = "&nbsp;";
 
-    if (selectedCount == tableStore.getCount())
+    if (dbSchemaCombo.getValue() != '')
     {
-        title = "All (" + selectedCount + ") tables";
-    }
-    else
-    {
-        if (0 == selectedCount)
-            title = "No tables";
-        else if (1 == selectedCount)
-            title = "1 table";
+        if (selectedCount == tableStore.getCount())
+        {
+            title = "All (" + selectedCount + ") tables";
+        }
         else
-            title = selectedCount + " tables";
+        {
+            if (0 == selectedCount)
+                title = "No tables";
+            else if (1 == selectedCount)
+                title = "1 table";
+            else
+                title = selectedCount + " tables";
+        }
+
+        title += " in this schema will be published";
+
+        if (grid.collapsed)
+            title += "; click + to change the published tables";
     }
 
-    grid.setTitle(title + " in this schema will be published; click + to change the selected tables");
+    grid.setTitle(title);
 }
 </script>

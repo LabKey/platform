@@ -2930,25 +2930,33 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(GetTablesForm form, BindException errors) throws Exception
         {
-            DbScope scope = DbScope.getDbScope(form.getDataSource());
-            DbSchema schema = scope.getSchema(form.getSchemaName());
-            List<String> tableNames = new ArrayList<String>();
-
-            for (TableInfo table : schema.getTables())
-                tableNames.add(table.getName());
-
-            Collections.sort(tableNames);
-
-            Map<String, Object> properties = new HashMap<String, Object>();
             List<Map<String, Object>> rows = new LinkedList<Map<String, Object>>();
 
-            for (String tableName : tableNames)
+            DbScope scope = DbScope.getDbScope(form.getDataSource());
+
+            if (null != scope && null != form.getSchemaName())
             {
-                Map<String, Object> row = new LinkedHashMap<String, Object>();
-                row.put("table", tableName);
-                rows.add(row);
+                DbSchema schema = scope.getSchema(form.getSchemaName());
+
+                if (null != schema)
+                {
+                    List<String> tableNames = new ArrayList<String>();
+
+                    for (TableInfo table : schema.getTables())
+                        tableNames.add(table.getName());
+
+                    Collections.sort(tableNames);
+
+                    for (String tableName : tableNames)
+                    {
+                        Map<String, Object> row = new LinkedHashMap<String, Object>();
+                        row.put("table", tableName);
+                        rows.add(row);
+                    }
+                }
             }
 
+            Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("rows", rows);
 
             return new ApiSimpleResponse(properties);
