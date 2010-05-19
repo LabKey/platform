@@ -26,6 +26,7 @@ public interface ExpProtocolOutput extends ExpObject
     ExpProtocol getSourceProtocol();
 
     ExpRun getRun();
+    Integer getRunId();
 
     ExpProtocolApplication[] getTargetApplications();
     ExpRun[] getTargetRuns();
