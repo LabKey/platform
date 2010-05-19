@@ -613,7 +613,7 @@ LABKEY.Query = new function()
 
         /**
         * Build and return an object suitable for passing to the
-        * <a href = "http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
+        * <a href = "http://www.extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
         * @param {String} schemaName Name of a schema defined within the current container.  See also: <a class="link"
 					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.

@@ -60,14 +60,14 @@
   *                 degrade to being non-editable despite the 'editable' parameter.
   * @param {Object} [config.gridPanelConfig] Sets the display configuration for the new grid.  This
   *                 configuration is passed through to the underlying Ext.grid.GridPanel implementation,
-  *                 so all <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.grid.GridPanel">
+  *                 so all <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel">
   *                 GridPanel config options</a> are valid. <p/>Note that providing this configuration
   *                 is optional. Further, if you do provide it, you take responsibility for
   *                 providing a valid and complete config object.  If you do not set the
   *                 GridPanel config, LabKey Server will use a default configuration option.
   * @param {Object} [config.storeConfig] Config object that is passed to the underlying Store.
   *                 This configuration is passed through to the underlying Ext.data.Store implementation,
-  *                 so all <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.data.Store">
+  *                 so all <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.data.Store">
   *                 Store config options</a> are valid. <p/>Note that providing this configuration
   *                 is optional. Further, if you do provide it, you take responsibility for
   *                 providing a valid and complete config object.  If you do not set the
@@ -78,12 +78,12 @@
   *					element/object contains information about how one may interact with
   *					the columns within a user interface. This format is generated to match
   *					the requirements of the Ext grid component.  See
-  *					<a href=http://extjs.com/deploy/dev/ext-2.2.1/?class=Ext.grid.ColumnModel>
+  *					<a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
   *					Ext.grid.ColumnModel</a> for further information.
   * @param {Function(Ext.grid.GridPanel)} config.gridCustomizeCallback Function that should be called after the
   *					grid has been constructed and populated with data. You can use this to
   *					further customize the grid's appearance, add toolbar buttons, or call
-  *					any method on the <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.grid.GridPanel">
+  *					any method on the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.grid.GridPanel">
   *                 Ext GridPanel object</a>.  The function passed as this config property
   *					should look like this:
   * @param {String} [config.containerPath] The container path in which the schemaName and queryName are defined.
@@ -752,8 +752,8 @@ LABKEY.GridView = function(config)
          * Returns the Ext.data.Store used to manage the data displayed in the grid.
          * You can use the returned object to programmatically manipulate the store.
          * <p/>
-         * See <a href='http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.data.Store'>
-         * http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.data.Store</a> for more
+         * See <a href='http://www.extjs.com/deploy/dev/docs/?class=Ext.data.Store'>
+         * http://www.extjs.com/deploy/dev/docs/?class=Ext.data.Store</a> for more
          * information on the Ext.data.Store class.
          * 
          * @example Example:

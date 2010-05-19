@@ -22,7 +22,7 @@ Ext.namespace("LABKEY", "LABKEY.ext");
 
 /**
  * Constructs a new LabKey Store using the supplied configuration.
- * @class LabKey extension to the <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.data.Store">Ext.data.Store</a> class,
+ * @class LabKey extension to the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.data.Store">Ext.data.Store</a> class,
  * which can retrieve data from a LabKey server, track changes, and update the server upon demand. This is most typically
  * used with data-bound user interface widgets, such as the LABKEY.ext.Grid.
  *
@@ -279,7 +279,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
      * You may return false form the "commitexception" event to supress the default display of the error message.
      * <p>
      * For information on the Ext event model, see the
-     * <a href="http://extjs.com/deploy/ext-2.2.1/docs/?class=Ext.util.Observable">Ext API documentation</a>.
+     * <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.util.Observable">Ext API documentation</a>.
      * @name commitChanges
      * @function
      * @memberOf LABKEY.ext.Store#
