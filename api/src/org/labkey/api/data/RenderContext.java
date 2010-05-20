@@ -23,6 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.MessageSourceResolvable;
@@ -649,7 +650,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         for (Object m : list)
         {
             sb.append(br);
-            sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
+            sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable)m)));
             br = "<br>";
         }
         if (sb.length() > 0)
@@ -659,7 +660,10 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public String getErrors(ColumnInfo column)
     {
-        return getErrors(getForm().getFormFieldName(column));
+        String errors = getErrors(getForm().getFormFieldName(column));
+        if ("".equals(errors))
+            errors = getErrors(column.getName());
+        return errors;
     }
 
     public List<String> getRecordSelectorValueColumns()

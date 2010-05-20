@@ -69,44 +69,44 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    protected abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors)
+    protected abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
         throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows)
+            throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, rows.size(), errors);
+        ValidationException errors = new ValidationException();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, true, errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
-            Map<String, Object> row = rows.get(i);
-            Map<String, String> rowErrors = new HashMap<String, String>();
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, i, row, null, errors))
-                continue;
-
-            row = insertRow(user, container, row, rowErrors);
-            if (row == null || !rowErrors.isEmpty())
+            try
             {
-                addError(errors, rowErrors, i, "failed to insert");
-                continue;
+                Map<String, Object> row = rows.get(i);
+                getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, i, row, null);
+                row = insertRow(user, container, row);
+                if (row == null)
+                    continue;
+
+                getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, i, row, null);
+                result.add(row);
             }
-
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, false, i, row, null, errors))
-                continue;
-
-            result.add(row);
+            catch (ValidationException vex)
+            {
+                errors.addNested(vex);
+            }
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, rows.size(), errors);
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, errors);
 
         return result;
     }
 
-    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors)
+    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys)
@@ -118,41 +118,40 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (oldKeys != null && rows.size() != oldKeys.size())
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
 
-        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, true, rows.size(), errors);
+        ValidationException errors = new ValidationException();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, true, errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(rows.size());
         for (int i = 0; i < rows.size(); i++)
         {
-            Map<String, Object> row = rows.get(i);
-            Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
-            Map<String, Object> oldRow = getRow(user, container, oldKey);
-            if (oldRow == null)
-                throw new NotFoundException("The existing row was not found.");
-
-            Map<String, String> rowErrors = new HashMap<String, String>();
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, true, i, row, oldRow, errors))
-                continue;
-
-            Map<String, Object> updatedRow = updateRow(user, container, row, oldRow, rowErrors);
-            if (updatedRow == null || !errors.isEmpty())
+            try
             {
-                addError(errors, rowErrors, i, "failed to update");
-                continue;
+                Map<String, Object> row = rows.get(i);
+                Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
+                Map<String, Object> oldRow = getRow(user, container, oldKey);
+                if (oldRow == null)
+                    throw new NotFoundException("The existing row was not found.");
+
+                getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, true, i, row, oldRow);
+                Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
+                if (updatedRow == null)
+                    continue;
+
+                getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow);
+                result.add(updatedRow);
             }
-
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow, errors))
-                continue;
-
-            result.add(updatedRow);
+            catch (ValidationException vex)
+            {
+                errors.addNested(vex);
+            }
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, false, rows.size(), errors);
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, false, errors);
 
         return result;
     }
 
-    protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors)
+    protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
     
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
@@ -161,52 +160,37 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (!hasPermission(user, DeletePermission.class))
             throw new UnauthorizedException("You do not have permission to delete data from this table.");
 
-        List<Map<String, String>> errors = new ArrayList<Map<String, String>>();
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, true, keys.size(), errors);
+        ValidationException errors = new ValidationException();
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, true, errors);
 
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>(keys.size());
         for (int i = 0; i < keys.size(); i++)
         {
-            Map<String, Object> key = keys.get(i);
-            Map<String, Object> oldRow = getRow(user, container, key);
-            // if row doesn't exist, bail early
-            if (oldRow == null)
-                continue;
-
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, true, i, null, oldRow, errors))
-                continue;
-
-            Map<String, String> rowErrors = new HashMap<String, String>();
-            Map<String, Object> updatedRow = deleteRow(user, container, oldRow, rowErrors);
-            if (updatedRow == null || !rowErrors.isEmpty())
+            try
             {
-                addError(errors, rowErrors, i, "failed to delete");
-                continue;
+                Map<String, Object> key = keys.get(i);
+                Map<String, Object> oldRow = getRow(user, container, key);
+                // if row doesn't exist, bail early
+                if (oldRow == null)
+                    continue;
+
+                getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, true, i, null, oldRow);
+                Map<String, Object> updatedRow = deleteRow(user, container, oldRow);
+                if (updatedRow == null)
+                    continue;
+
+                getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, false, i, null, updatedRow);
+                result.add(updatedRow);
             }
-
-            if (!getQueryTable().fireRowTrigger(TableInfo.TriggerType.DELETE, false, i, null, updatedRow, errors))
-                continue;
-
-            result.add(updatedRow);
+            catch (ValidationException vex)
+            {
+                errors.addNested(vex);
+            }
         }
 
-        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, false, keys.size(), errors);
+        getQueryTable().fireBatchTrigger(TableInfo.TriggerType.DELETE, false, errors);
 
         return result;
-    }
-
-    protected void addError(List<Map<String, String>> allErrors, Map rowErrors, int i, String msg)
-    {
-        if (rowErrors.isEmpty())
-            rowErrors.put(null, msg);
-        rowErrors.put(ValidationException.ERROR_ROW_NUMBER_KEY, i);
-        allErrors.add(rowErrors);
-    }
-
-    // converts the List of error Maps into a ValidationException
-    protected void throwValidationException(List<Map<String, String>> errors, int rowCount) throws ValidationException
-    {
-        ValidationException.throwValidationException(errors, rowCount > 1);
     }
 
 }

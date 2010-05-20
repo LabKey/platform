@@ -17,6 +17,9 @@ package org.labkey.api.action;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -113,6 +116,60 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeJsonObj(jsonObj);
     }
 
+    public void write(ValidationException e) throws IOException
+    {
+        //set the status to 400 to indicate that it was a bad request
+        if (null != getResponse())
+            getResponse().setStatus(400);
+
+        JSONObject obj = new JSONObject();
+        obj.put("exception", e.getMessage());
+        toJSON(obj, e);
+        writeJsonObj(obj);
+    }
+
+    public void toJSON(JSONObject parent, ValidationException e)
+    {
+        if (e.getErrors().size() == 0 && e.getNested().size() == 1)
+        {
+            // move errors up a level if e has no error messages of it's own
+            toJSON(parent, e.getNested().get(0));
+        }
+        else
+        {
+            JSONArray jsonErrors = new JSONArray();
+            for (ValidationError error : e.getErrors())
+            {
+                toJSON(jsonErrors, error);
+            }
+
+            for (ValidationException nested : e.getNested())
+            {
+                JSONObject obj = new JSONObject();
+                toJSON(obj, nested);
+                jsonErrors.put(obj);
+            }
+
+            parent.put("errors", jsonErrors);
+            if (e.getRowNumber() > -1)
+                parent.put("rowNumber", e.getRowNumber());
+        }
+    }
+
+    public void toJSON(JSONArray parent, ValidationError error)
+    {
+        String msg = error.getMessage();
+        String key = null;
+        if (error instanceof PropertyValidationError)
+            key = ((PropertyValidationError)error).getProperty();
+
+        JSONObject jsonError = new JSONObject();
+        jsonError.putOpt("field", key);
+        jsonError.put("message", msg);
+
+        parent.put(jsonError);
+    }
+
     public void write(Errors errors) throws IOException
     {
         //set the status to 400 to indicate that it was a bad request
@@ -121,23 +178,22 @@ public class ApiJsonWriter extends ApiResponseWriter
 
         String exception = null;
         JSONArray jsonErrors = new JSONArray();
-        for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
+        for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
         {
             String msg = error.getDefaultMessage();
             String key = error.getObjectName();
 
-            if(error instanceof FieldError)
+            if (error instanceof FieldError)
             {
                 FieldError ferror = (FieldError)error;
                 key = ferror.getField();
-                msg = ferror.getDefaultMessage();
             }
 
             JSONObject jsonError = new JSONObject();
             jsonError.put("field", key);
             jsonError.put("message", msg);
 
-            if(null == exception)
+            if (null == exception)
                 exception = msg;
 
             jsonErrors.put(jsonError);

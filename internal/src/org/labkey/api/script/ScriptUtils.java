@@ -18,6 +18,7 @@ package org.labkey.api.script;
 
 import org.mozilla.javascript.*;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,19 @@ public class ScriptUtils {
             return new ScriptableList(scope, (List) obj);
         } else if (obj instanceof Map) {
             return new ScriptableMap(scope, (Map) obj);
+//        } else if (obj instanceof Object[]) {
+//            Object[] arr = (Object[])obj;
+//            int len = arr.length;
+//            Object[] wrapped = new Object[len];
+//            Class<?> componentType = arr.getClass().getComponentType();
+//            Context cx = Context.getCurrentContext();
+//            WrapFactory wrapper = cx.getWrapFactory();
+//            for (int i = 0; i < len; i++)
+//                wrapped[i] = wrapper.wrap(cx, scope, arr[i], componentType);
+//            NativeArray jsArray = new NativeArray(wrapped);
+//            jsArray.setPrototype(ScriptableObject.getClassPrototype(scope, "Array"));
+//            jsArray.setParentScope(scope);
+//            return jsArray;
         } else {
             return Context.javaToJS(obj, scope);
         }
@@ -70,9 +84,10 @@ public class ScriptUtils {
             if (ids.length == 0 || array.length == ids.length)
             {
                 // Array is an associative array if the length is 0 or is the same length as the script object.
+                ArrayList list = new ArrayList(array.length);
                 for (int i = 0; i < array.length; i++)
-                    array[i] = jsToJava(array[i], ScriptRuntime.ObjectClass);
-                return array;
+                    list.add(jsToJava(array[i], ScriptRuntime.ObjectClass));
+                return list;
             }
             else
             {
@@ -109,6 +124,7 @@ public class ScriptUtils {
                 return map;
             }
         }
+
         return jsObj;
     }
 

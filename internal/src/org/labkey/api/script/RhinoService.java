@@ -20,13 +20,14 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
-import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 import org.mozilla.javascript.*;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.script.*;
 import java.io.*;
@@ -291,6 +292,7 @@ class RhinoEngine extends RhinoScriptEngine
                     String names[] = { "bindings", "scope", "sync"  };
                     topLevel.defineFunctionProperties(names, RhinoScriptEngine.class, ScriptableObject.DONTENUM);
 
+                    initHostObjects(topLevel);
                     processAllTopLevelScripts(cx);
 
                     topLevel.sealObject();
@@ -302,6 +304,20 @@ class RhinoEngine extends RhinoScriptEngine
             }
 
             return topLevel;
+        }
+    }
+
+    protected void initHostObjects(Scriptable scope)
+    {
+        try
+        {
+            ScriptableList.init(scope);
+            ScriptableMap.init(scope);
+            ScriptableObject.defineClass(scope, ScriptableValidationException.class, true);
+        }
+        catch (Exception e)
+        {
+            UnexpectedException.rethrow(e);
         }
     }
 
@@ -413,12 +429,14 @@ class SandboxContextFactory extends ContextFactory
         
         HashSet<String> allowedClasses = new HashSet<String>();
         allowedClasses.add(ArrayList.class.getName());
+        allowedClasses.add(BindException.class.getName());
         allowedClasses.add(Boolean.class.getName());
         allowedClasses.add(CaseInsensitiveHashMap.class.getName());
         allowedClasses.add(Character.class.getName());
         allowedClasses.add(Collections.class.getName() + "$*"); // allow inner-classes
         allowedClasses.add(Double.class.getName());
         allowedClasses.add(EcmaError.class.getName());
+        allowedClasses.add(Errors.class.getName());
         allowedClasses.add(Float.class.getName());
         allowedClasses.add(HashMap.class.getName());
         allowedClasses.add(Integer.class.getName());
@@ -487,6 +505,8 @@ class SandboxContextFactory extends ContextFactory
                 return new ScriptableMap(scope, (Map)obj);
             else if (obj instanceof List)
                 return new ScriptableList(scope, (List)obj);
+//            else if (obj instanceof ValidationException)
+//                return cx.newObject(scope, ScriptableValidationException.CLASSNAME, new Object[] { obj });
             else if (obj instanceof Object[])
             {
                 Object[] arr = (Object[])obj;

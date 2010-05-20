@@ -72,7 +72,7 @@ public interface QueryUpdateService
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
-    public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String,Object>> rows)
+    public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -92,8 +92,8 @@ public interface QueryUpdateService
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public List<Map<String,Object>> updateRows(User user, Container container, List<Map<String,Object>> rows,
-                                        List<Map<String,Object>> oldKeys)
+    public List<Map<String,Object>> updateRows(User user, Container container, List<Map<String, Object>> rows,
+                                               List<Map<String, Object>> oldKeys)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -107,7 +107,7 @@ public interface QueryUpdateService
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String,Object>> keys)
+    public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
 
 }

@@ -20,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
@@ -158,10 +159,14 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                     createResponseWriter().write((Errors)errors);
             }
         }
+        catch (ValidationException e)
+        {
+            createResponseWriter().write(e);
+        }
         catch (Exception e)
         {
             //don't log exceptions that result from bad inputs
-            if(e instanceof IllegalArgumentException || e instanceof NotFoundException || e instanceof InvalidKeyException)
+            if (e instanceof ValidationException || e instanceof IllegalArgumentException || e instanceof NotFoundException || e instanceof InvalidKeyException)
             {
                 createResponseWriter().write(e);
             }

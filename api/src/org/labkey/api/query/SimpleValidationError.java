@@ -37,6 +37,12 @@ public class SimpleValidationError implements ValidationError
     }
 
     @Override
+    public String toString()
+    {
+        return getMessage();
+    }
+
+    @Override
     public boolean equals(Object o)
     {
         if (this == o) return true;

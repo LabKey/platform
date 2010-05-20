@@ -701,23 +701,29 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private Object[] EMPTY_ARGS = new Object[0];
 
     @Override
-    public void fireBatchTrigger(TriggerType type, boolean before, int rowCount, List<Map<String, String>> errors) throws ValidationException
+    public void fireBatchTrigger(TriggerType type, boolean before, ValidationException errors)
+            throws ValidationException
     {
         assert errors != null;
-        String triggerMethod = (before ? "init" : "complete");
-        Boolean success = invokeTableScript(Boolean.class, triggerMethod, type.name().toLowerCase(), errors);
-        if (success != null && !success.booleanValue())
-            errors.add(Collections.singletonMap((String)null, triggerMethod + " validation failed"));
+        List<Map<String, Object>> list = errors.toList();
 
-        if (!errors.isEmpty())
-            ValidationException.throwValidationException(errors, rowCount > 1);
+        String triggerMethod = (before ? "init" : "complete");
+        Boolean success = invokeTableScript(Boolean.class, triggerMethod, type.name().toLowerCase(), list);
+
+        errors = ValidationException.fromList(list);
+        if (success != null && !success.booleanValue())
+                errors.addError(new SimpleValidationError(triggerMethod + " validation failed"));
+
+        if (errors.hasErrors())
+            throw errors;
     }
 
     @Override
-    public boolean fireRowTrigger(TriggerType type, boolean before, int rowNumber,
-                                  Map<String, Object> newRow, Map<String, Object> oldRow, List<Map<String, String>> allErrors)
+    public void fireRowTrigger(TriggerType type, boolean before, int rowNumber,
+                                  Map<String, Object> newRow, Map<String, Object> oldRow)
+            throws ValidationException
     {
-        Map<String, String> rowErrors = new HashMap<String, String>();
+        Map<String, Object> errors = new LinkedHashMap<String, Object>();
         String triggerMethod = (before ? "before" : "after") + type.getMethodName();
 
         Object[] args = EMPTY_ARGS;
@@ -725,36 +731,28 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         {
             switch (type)
             {
-                case SELECT: args = new Object[] { oldRow, rowErrors };         break;
-                case INSERT: args = new Object[] { newRow, rowErrors };         break;
-                case UPDATE: args = new Object[] { newRow, oldRow, rowErrors }; break;
-                case DELETE: args = new Object[] { oldRow, rowErrors };         break;
+                case SELECT: args = new Object[] { oldRow, errors };         break;
+                case INSERT: args = new Object[] { newRow, errors };         break;
+                case UPDATE: args = new Object[] { newRow, oldRow, errors }; break;
+                case DELETE: args = new Object[] { oldRow, errors };         break;
             }
         }
         else
         {
             switch (type)
             {
-                case SELECT: args = new Object[] { newRow, rowErrors };         break;
-                case INSERT: args = new Object[] { newRow, rowErrors };         break;
-                case UPDATE: args = new Object[] { newRow, oldRow, rowErrors }; break;
-                case DELETE: args = new Object[] { oldRow, rowErrors };         break;
+                case SELECT: args = new Object[] { newRow, errors };         break;
+                case INSERT: args = new Object[] { newRow, errors };         break;
+                case UPDATE: args = new Object[] { newRow, oldRow, errors }; break;
+                case DELETE: args = new Object[] { oldRow, errors };         break;
             }
         }
         Boolean success = invokeTableScript(Boolean.class, triggerMethod, args);
         if (success != null && !success.booleanValue())
-        {
-            rowErrors.put(null, triggerMethod + " validation failed");
-            ((Map)rowErrors).put(ValidationException.ERROR_ROW_NUMBER_KEY, Integer.valueOf(rowNumber));
-        }
+            errors.put(null, triggerMethod + " validation failed");
 
-        if (!rowErrors.isEmpty())
-        {
-            allErrors.add(rowErrors);
-            return false;
-        }
-
-        return true;
+        if (!errors.isEmpty())
+            throw new ValidationException(errors, rowNumber);
     }
 
 }

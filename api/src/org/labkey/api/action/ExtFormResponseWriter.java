@@ -15,7 +15,11 @@
  */
 package org.labkey.api.action;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -33,6 +37,24 @@ import java.util.List;
 /**
  * This writer extends ApiJsonWriter by writing validation errors in the format
  * that Ext forms require.
+ *
+ * Ext has a particular format they use for consuming validation errors expressed in JSON:
+ *  {
+ *      success: false,
+ *      errors: {
+ *          clientCode: "Client not found",
+ *          portOfLoading: "This field must not be null"
+ *          }
+ * }
+ *
+ * This is a bit strange, since you can't provide more than one error
+ * for a given field, and there's really no place to put object-level
+ * errors.  Labkey.form
+ *
+ * Also, the response code must be 200, even though there are errors.
+ *
+ * See http://extjs.com/deploy/dev/docs/?class=Ext.form.Action.Submit
+ *
  */
 public class ExtFormResponseWriter extends ApiJsonWriter
 {
@@ -46,27 +68,44 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         super(response, contentTypeOverride);
     }
 
+    public void write(ValidationException e) throws IOException
+    {
+        writeJsonObj(toJSON(e));
+    }
+
+    public JSONObject toJSON(ValidationException e)
+    {
+        String exception = null;
+        JSONObject jsonErrors = new JSONObject();
+
+        for (ValidationError error : e.getErrors())
+            toJSON(jsonErrors, error);
+
+        for (ValidationException nested : e.getNested())
+        {
+            for (ValidationError error : nested.getErrors())
+                toJSON(jsonErrors, error);
+        }
+
+        JSONObject obj = new JSONObject();
+        obj.put("exception", exception);
+        obj.put("errors", jsonErrors);
+        return obj;
+    }
+
+    public void toJSON(JSONObject jsonErrors, ValidationError error)
+    {
+        String msg = error.getMessage();
+        String key = "_form";
+        if (error instanceof PropertyValidationError)
+            key = ((PropertyValidationError)error).getProperty();
+        if (jsonErrors.has(key))
+            msg = jsonErrors.get(key) + "; " + msg;
+        jsonErrors.put(key, msg);
+    }
+
     public void write(Errors errors) throws IOException
     {
-        /*
-            Ext has a particular format they use for consuming validation errors expressed in JSON:
-            {
-                success: false,
-                errors: {
-                    clientCode: "Client not found",
-                    portOfLoading: "This field must not be null"
-                    }
-            }
-
-            This is a bit strange, since you can't provide more than one error
-            for a given field, and there's really no place to put object-level
-            errors.  Labkey.form
-
-            Also, the response code must be 200, even though there are errors.
-
-            See http://extjs.com/deploy/dev/docs/?class=Ext.form.Action.Submit
-        */
-
         JSONObject jsonErrors = new JSONObject();
         for(ObjectError error : (List<ObjectError>)errors.getAllErrors())
         {
@@ -75,7 +114,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
             if (error instanceof FieldError)
                 key = ((FieldError)error).getField();
             if (jsonErrors.has(key))
-                msg = jsonErrors.get(key) + " " + msg;
+                msg = jsonErrors.get(key) + "; " + msg;
             jsonErrors.put(key, msg);
         }
 

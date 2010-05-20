@@ -41,4 +41,12 @@ public class PropertyValidationError extends SimpleValidationError
     {
         return _propety;
     }
+
+    @Override
+    public String toString()
+    {
+        if (_propety != null)
+            return _propety + ": " + getMessage();
+        return getMessage();
+    }
 }

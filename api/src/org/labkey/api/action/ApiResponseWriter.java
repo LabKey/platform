@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.query.ValidationException;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletResponse;
@@ -92,6 +93,8 @@ public abstract class ApiResponseWriter
     public abstract void write(ApiResponse response) throws IOException;
 
     public abstract void write(Throwable e) throws IOException;
+
+    public abstract void write(ValidationException e) throws IOException;
 
     public abstract void write(Errors errors) throws IOException;
 

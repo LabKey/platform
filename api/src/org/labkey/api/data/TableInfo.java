@@ -187,28 +187,58 @@ public interface TableInfo
     }
 
     /**
-     * Fire trigger for a set of rows.
-     * <p>
-     * The trigger is called once before and once after an entire set of rows for each of the
+     * Executes any trigger scripts for this table.
+     *
+     * The trigger should be called once before and once after an entire set of rows for each of the
      * INSERT, UPDATE, DELETE trigger types.  A trigger script may set up data structures to be used
      * during validation.  In particular, the trigger script might want to do a query to populate a set of
      * legal values.
-     * <b>
-     * When <code>before</code> is true, the <code>errors</code> list is empty and may be added to.  Each
-     * error map in the list maps from field name to error message.  When <code>before</code> is false,
-     * the <code>errors</code> list will be populated with any errors created during the execution of
-     * the row level trigger.  A '_rowNumber' key may be added to the error map by the trigger script
-     * or will be added during {@link TableInfo#fireRowTrigger(TriggerType, boolean, Map, Map, Map)}}.
+     * <p>
+     * The <code>errors</code> parameter holds validation error messages for the entire row set.
+     * If errors are created during the row level trigger script, they should be added as nested ValidationExceptions.
+     * The ValidationException will be thrown after executing the trigger scripts if it contains any errors.
+     * <p>
+     * Example usage:
+     * <pre>
+     *   ValidationException errors = new ValidationException();
+     *   getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, true, errors);
+     *
+     *   List&lt;Map&lt;String, Object>> result = new ArrayList&lt;Map&lt;String, Object>>(rows.size());
+     *   for (int i = 0; i &lt; rows.size(); i++)
+     *   {
+     *       try
+     *       {
+     *           Map<String, Object> row = rows.get(i);
+     *           Map<String, Object> oldRow = getRow( ... );
+     *           if (oldRow == null)
+     *               throw new NotFoundException("The existing row was not found.");
+     *
+     *           getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, true, i, row, oldRow);
+     *           Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
+     *           if (updatedRow == null)
+     *               continue;
+     *
+     *           getQueryTable().fireRowTrigger(TableInfo.TriggerType.UPDATE, false, i, updatedRow, oldRow);
+     *           result.add(updatedRow);
+     *       }
+     *       catch (ValidationException vex)
+     *       {
+     *           errors.addNested(vex);
+     *       }
+     *   }
+     *
+     *   // Firing the after batch trigger will throw a ValidationException if
+     *   // any errors were generated during the row triggers or the during after batch trigger.
+     *   getQueryTable().fireBatchTrigger(TableInfo.TriggerType.UPDATE, false, errors);
+     * </pre>
      *
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
-     * @param allErrors A list of errors maps, mapping field name to error message.
-     *                  If before is false, the errors created during {@link #fireRowTrigger()} will be
-     *                  available in the allErrors list and include a '_rowNumber' key.
-     * @throws ValidationException Throws a ValidationException if the trigger function returns false or the errors map isn't empty.
+     * @param errors Any errors created by the validation script will be added to the errors collection.
+     * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public void fireBatchTrigger(TriggerType type, boolean before, int rowCount, List<Map<String, String>> allErrors)
-        throws ValidationException;
+    public void fireBatchTrigger(TriggerType type, boolean before, ValidationException errors)
+            throws ValidationException;
 
     /**
      * Fire trigger for a single row.
@@ -219,27 +249,32 @@ public interface TableInfo
      * The following table describes the parameters for each of the trigger types:
      * <dl>
      *   <dt><code>INSERT</code>:
-     *   <dd>When <code>before</code> is true, <code>newRow</code> contains the row values to be inserted, <code>oldRow</code> is null.
-     *       When <code>before</code> is false, <code>newRow</code> contains the inserted row values, <code>oldRow</code> is null.
+     *   <dd><ul>
+     *       <li>before: <code>newRow</code> contains the row values to be inserted, <code>oldRow</code> is null.
+     *       <li>after: <code>newRow</code> contains the inserted row values, <code>oldRow</code> is null.
+     *       </li>
      *
      *   <dt><code>UPDATE</code>:
-     *   <dd>When <code>before</code> is true, <code>newRow</code> contains the row values to be updated, <code>oldRow</code> contains the previous version of the row.
-     *       When <code>before</code> is false, <code>newRow</code> contains the updated row values, <code>oldRow</code> contains the previous version of the row.
+     *   <dd><ul>
+     *       <li>before: <code>newRow</code> contains the row values to be updated, <code>oldRow</code> contains the previous version of the row.
+     *       <li>after: <code>newRow</code> contains the updated row values, <code>oldRow</code> contains the previous version of the row.
+     *       </ul>
      *
      *   <dt><code>DELETE</code>:
-     *   <dd>When <code>before</code> is true, <code>newRow</code> is null, <code>oldRow</code> contains the previous version of the row.
-     *       When <code>before</code> is false, <code>newRow</code> is null, <code>oldRow</code> contains the previous version of the row.
+     *   <dd><ul>
+     *       <li>before: <code>oldRow</code> contains the previous version of the row.
+     *       <li>after: <code>newRow</code> is null, <code>oldRow</code> contains the previous version of the row.
+     *       </li>
      * </dl>
      *
      * @param type The TriggerType for the event.
      * @param before true if the trigger is before the event, false if after the event.
      * @param oldRow The previous row for UPDATE and DELETE
      * @param newRow The new row for INSERT and UPDATE.
-     * @param allErrors A list of errors maps, mapping field name to error message.  Any errors created by the validation script will be added to the allErrors list.
-     * @return true if the trigger succeeded, false if the trigger function returns false or the errors map isn't empty.
+     * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    public boolean fireRowTrigger(TriggerType type, boolean before, int rowNumber,
-                                  Map<String, Object> newRow, Map<String, Object> oldRow,
-                                  List<Map<String, String>> allErrors);
+    public void fireRowTrigger(TriggerType type, boolean before, int rowNumber,
+                                  Map<String, Object> newRow, Map<String, Object> oldRow)
+            throws ValidationException;
 
 }
