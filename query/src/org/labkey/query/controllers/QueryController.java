@@ -1015,8 +1015,7 @@ public class QueryController extends SpringActionController
                 url.setAction(ExcelWebQueryAction.class);
             }
             getViewContext().getResponse().setContentType("text/x-ms-iqy");
-            String filename =  form.getQueryName() + "_" + DateUtil.toISO(System.currentTimeMillis()) + ".iqy";
-            filename = filename.replace(':', '_');
+            String filename =  FileUtil.makeFileNameWithTimestamp(form.getQueryName(), "iqy");
             getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
             PrintWriter writer = getViewContext().getResponse().getWriter();
             writer.println("WEB");
