@@ -134,6 +134,7 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
         return result;
     }
 
+    @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {

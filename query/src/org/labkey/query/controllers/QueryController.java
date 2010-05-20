@@ -1754,6 +1754,10 @@ public class QueryController extends SpringActionController
                     throw x;
                 errors.reject(ERROR_MSG, x.getMessage());
             }
+            catch (ValidationException x)
+            {
+                errors.addAllErrors(x.toErrors(errors.getObjectName()));
+            }
             catch (Exception x)
             {
                 errors.reject(ERROR_MSG, x.getMessage());
@@ -2382,7 +2386,7 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
-        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction) throws Exception
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
             JSONObject response = new JSONObject();
             Container container = getViewContext().getContainer();
@@ -2482,7 +2486,10 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse(executeJson(apiSaveRowsForm.getJsonObject(), CommandType.update, true));
+            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.update, true, errors);
+            if (response == null || errors.hasErrors())
+                return null;
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -2493,7 +2500,10 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse(executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true));
+            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true, errors);
+            if (response == null || errors.hasErrors())
+                return null;
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -2505,7 +2515,10 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse(executeJson(apiSaveRowsForm.getJsonObject(), CommandType.delete, true));
+            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.delete, true, errors);
+            if (response == null || errors.hasErrors())
+                return null;
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -2555,7 +2568,9 @@ public class QueryController extends SpringActionController
                     JSONObject commandObject = commands.getJSONObject(i);
                     String commandName = commandObject.getString(PROP_COMMAND);
                     CommandType command = CommandType.valueOf(commandName);
-                    JSONObject commandResponse = executeJson(commandObject, command, !transacted);
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
+                    if (commandResponse == null || errors.hasErrors())
+                        return null;
                     result.put(commandResponse);
                 }
                 if (transacted)

@@ -70,7 +70,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row, Map<String, String> rowErrors)
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
@@ -126,7 +126,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, Map<String, String> rowErrors)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
@@ -155,7 +155,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow, Map<String, String> rowErrors)
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         StudyService.get().deleteDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), keyFromMap(oldRow));
