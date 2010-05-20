@@ -102,6 +102,8 @@ LABKEY.ActionURL = new function()
 		*/
         getContainer : function()
         {
+            if (LABKEY.container && LABKEY.container.path)
+                return LABKEY.container.path;
             var path = window.location.pathname;
             var start = path.indexOf("/", LABKEY.contextPath.length + 1);
             var end = path.lastIndexOf("/");
