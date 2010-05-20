@@ -412,7 +412,7 @@ public class IssueManager
 
     private static final Object ASSIGNED_TO_CACHE_LOCK = new Object();
 
-    // Returns the assigned to list that is used for every new issue.  We can cache it and share it
+    // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
     private static Collection<User> getInitialAssignedToList(Container c)
     {

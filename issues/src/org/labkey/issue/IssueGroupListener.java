@@ -15,10 +15,9 @@
  */
 package org.labkey.issue;
 
-import org.labkey.api.security.SecurityManager.GroupListener;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager.GroupListener;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.issue.model.IssueManager;
 
 import java.beans.PropertyChangeEvent;
@@ -30,14 +29,15 @@ import java.beans.PropertyChangeEvent;
  */
 public class IssueGroupListener implements GroupListener
 {
+    // Any change to a group could change assigned to lists
     public void principalAddedToGroup(Group g, UserPrincipal user)
     {
-        IssueManager.uncache(ContainerManager.getForId(g.getContainer()));
+        IssueManager.uncache(null);
     }
 
     public void principalDeletedFromGroup(Group g, UserPrincipal user)
     {
-        IssueManager.uncache(ContainerManager.getForId(g.getContainer()));
+        IssueManager.uncache(null);
     }
 
     public void propertyChange(PropertyChangeEvent evt)

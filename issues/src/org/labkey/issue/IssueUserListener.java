@@ -41,6 +41,7 @@ public class IssueUserListener implements UserListener
         try
         {
             IssueManager.deleteUserEmailPreferences(user);
+            IssueManager.uncache(null);                     // Might change assigned to lists
         }
         catch (SQLException e)
         {
