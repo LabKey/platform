@@ -136,6 +136,19 @@ public class QueryTable extends QueryRelation
     }
 
 
+    String makeRelationName(String name)
+    {
+        SqlDialect d = getSchema().getDbSchema().getSqlDialect();
+        if (StringUtils.isEmpty(name))
+            name = "table";
+        else if (name.startsWith(d.getGlobalTempTablePrefix()) && 10 < name.indexOf('$'))
+            name = name.substring(d.getGlobalTempTablePrefix().length(), name.indexOf("$"));
+        String r = AliasManager.makeLegalName(name, getSchema().getDbSchema().getSqlDialect(), true);
+        r += "_" + _query.incrementAliasCounter();
+        return r;
+    }
+
+
     public SQLFragment getSql()
     {
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
@@ -145,9 +158,9 @@ public class QueryTable extends QueryRelation
         boolean simpleTable = null != selectName;
         
         if (simpleTable)
-            _innerAlias = selectName.replace('.', '_');
+            _innerAlias = makeRelationName(selectName);
         else
-            _innerAlias = "table" + _query.incrementAliasCounter();
+            _innerAlias = makeRelationName(_tableInfo.getName());
 
         String comment = "<QueryTable@" + System.identityHashCode(this);
         if (!StringUtils.isEmpty(_savedName))
