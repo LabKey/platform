@@ -23,8 +23,8 @@ import com.extjs.gxt.ui.client.event.Events;
 import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
+import com.extjs.gxt.ui.client.widget.ListView;
 import com.extjs.gxt.ui.client.widget.form.ComboBox;
-import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.extjs.gxt.ui.client.widget.layout.TableLayout;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
@@ -35,6 +35,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -82,6 +83,7 @@ public class LookupEditorPanel extends LayoutContainer
         {
             ComboStore store = getContainerStore();
             _comboContainer = new _ComboBox();
+            _comboContainer.setAutoSizeList(true);
             _comboContainer.setName("lookupContainer");
             _comboContainer.setEmptyText("Folder");
             _comboContainer.setStore(store);
@@ -232,7 +234,8 @@ public class LookupEditorPanel extends LayoutContainer
         lastSchemaTableStore = schema;
 
         store.removeAll();
-        
+
+        _comboTableName.setEmptyText("Loading tables...");
         _service.getTablesForLookup(folder, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
         {
 
@@ -245,7 +248,9 @@ public class LookupEditorPanel extends LayoutContainer
             {
                 if (!folder.equals(lastFolderTableStore) || !schema.equals(lastSchemaTableStore))
                     return;
-                for (String table : m.keySet())
+                String[] names = m.keySet().toArray(new String[m.size()]);
+                Arrays.sort(names, String.CASE_INSENSITIVE_ORDER);
+                for (String table : names)
                 {
                     GWTPropertyDescriptor _pd = m.get(table);
                     PropertyType tableKeyType = PropertyType.fromName( _pd.getRangeURI());
@@ -353,11 +358,14 @@ public class LookupEditorPanel extends LayoutContainer
 //    }
 
 
-    private class _ComboBox extends ComboBox
+    private class _ComboBox extends ComboBox<ComboModelData>
     {
+        boolean autoSizeList = false;
+        
         _ComboBox()
         {
             super();
+            setWidth(250);
             sinkEvents(Event.ONCHANGE);
 //            setForceSelection(true);
             setTriggerAction(TriggerAction.ALL);
@@ -365,15 +373,34 @@ public class LookupEditorPanel extends LayoutContainer
             addListener(Events.Change,new Listener(){
                 public void handleEvent(BaseEvent be)
                 {
-                    widgetChange();
+                    _widgetChange();
                 }
             });
             addListener(Events.Select,new Listener(){
                 public void handleEvent(BaseEvent be)
                 {
-                    widgetChange();
+                    _widgetChange();
                 }
             });
+            addListener(Events.Expand,new Listener(){
+                public void handleEvent(BaseEvent be)
+                {
+                    _listExpand();
+                }
+            });
+            setTemplate("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{" + getDisplayField() + "}\">{" + getDisplayField() + "}</div></tpl>");
+        }
+
+        void setAutoSizeList(boolean b)
+        {
+            autoSizeList = b;
+        }
+
+        @Override
+        protected void initList()
+        {
+            super.initList();
+            _listExpand();
         }
 
         void setStringValue(String value)
@@ -386,7 +413,21 @@ public class LookupEditorPanel extends LayoutContainer
             return null==getValue()?null:(String)getValue().get("value");
         }
 
-        void widgetChange()
+
+        void _listExpand()
+        {
+            ListView listView = getListView();
+            if (null != listView)
+            {
+                if (autoSizeList)
+                {
+                    listView.setAutoWidth(true);
+                    ((LayoutContainer)listView.getParent()).setAutoWidth(true);
+                }
+            }
+        }
+        
+        void _widgetChange()
         {
             _log("widgetChange(" + getName() + ") = " + getStringValue());
             updateUI();
@@ -402,14 +443,14 @@ public class LookupEditorPanel extends LayoutContainer
                 _log("_ComboBox.ONCHANGE()");
                 //onChange(ce);
                 value = new ComboModelData(getRawValue(),getRawValue());
-                widgetChange();
+                _widgetChange();
             }
         }
 
         // TODO avoid double fireChangeEvent() on blur
         protected void onChange(ComponentEvent be)
         {
-            Object v = getValue();
+            ComboModelData v = getValue();
             value = v;
             fireChangeEvent(focusValue, v);
         }

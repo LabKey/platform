@@ -210,7 +210,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         {
             super();
             _service = lookupService;
-            setSize(250, 500);
+            setSize(320, 500);
             setAutoHeight(true);
             setModal(true);
             setHeading("Choose field type:");
