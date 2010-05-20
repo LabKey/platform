@@ -16,10 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -27,12 +26,13 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class TSVGridWriter extends TSVWriter
 {
-    private static Logger _log = Logger.getLogger(TSVGridWriter.class);
-
     public enum ColumnHeaderType {caption, propertyName, queryColumnName}
 
     private ResultSet _rs;
@@ -315,5 +315,4 @@ public class TSVGridWriter extends TSVWriter
 
         return header;
     }
-
 }

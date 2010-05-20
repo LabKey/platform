@@ -20,9 +20,10 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.regex.Pattern;
@@ -222,7 +223,7 @@ public abstract class TSVWriter
      */
     protected String getFilename()
     {
-        return getFilenamePrefix() + "_" + Math.round(Math.random() * 100000) + ".tsv";
+        return FileUtil.makeFileNameWithTimestamp(getFilenamePrefix(), "tsv");
     }
 
 

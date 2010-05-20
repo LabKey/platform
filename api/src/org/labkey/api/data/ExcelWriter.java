@@ -23,10 +23,10 @@ import jxl.format.PaperSize;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.HttpView;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -387,8 +387,7 @@ public class ExcelWriter
         // 2) Specify the file name of the workbook with a different file name each time
         // so that your browser doesn't put the generated file into its cache
 
-        String filename = filenamePrefix + "_" + DateUtil.toISO(System.currentTimeMillis()) + ".xls";
-        filename = filename.replace(':', '_');
+        String filename = FileUtil.makeFileNameWithTimestamp(filenamePrefix, "xls");
         response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
 
         try

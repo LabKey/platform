@@ -1332,6 +1332,7 @@ public class QueryView extends WebPartView<Object>
         view.getRenderContext().setCache(false);
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
         TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+        tsv.setFilenamePrefix(getSettings().getQueryName());
         tsv.setColumnHeaderType(getColumnHeaderType());
         return tsv;
     }
@@ -1378,7 +1379,9 @@ public class QueryView extends WebPartView<Object>
         RenderContext rc = view.getRenderContext();
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
-        return new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
+        ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
+        ew.setFilenamePrefix(getSettings().getQueryName());
+        return ew;
     }
 
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
