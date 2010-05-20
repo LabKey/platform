@@ -200,6 +200,8 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                 var v = values[id];
                 if (typeof v == 'function')
                     continue;
+                if (v && typeof v == 'object' && 'value' in v)
+                    v = v.value;
                 if (!(id in defaults))
                     defaults[id] = {};
                 if ('xtype' in defaults[id] && defaults[id].xtype == 'checkbox')
