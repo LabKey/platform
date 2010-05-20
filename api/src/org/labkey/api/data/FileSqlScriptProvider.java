@@ -281,6 +281,15 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             return _validName;
         }
 
+        @Override
+        public boolean isIncremental()
+        {
+            double startVersion = _fromVersion * 10;
+            double endVersion = _toVersion * 10;
+
+            return (Math.floor(startVersion) != startVersion || Math.floor(endVersion) != endVersion);
+        }
+
         public String getSchemaName()
         {
             return _schemaName;
@@ -356,7 +365,17 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         public int compareTo(SqlScript script)
         {
-            return getDescription().compareTo(script.getDescription());
+            int schemaCompare = getSchemaName().compareTo(script.getSchemaName());
+
+            if (0 != schemaCompare)
+                return schemaCompare;
+
+            int fromCompare = Double.compare(getFromVersion(), script.getFromVersion());
+
+            if (0 != fromCompare)
+                return fromCompare;
+
+            return Double.compare(getToVersion(), script.getToVersion());
         }
     }
 }

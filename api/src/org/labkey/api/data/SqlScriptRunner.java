@@ -254,6 +254,7 @@ public class SqlScriptRunner
         public String getDescription();
         public SqlScriptProvider getProvider();
         public boolean isValidName();
+        public boolean isIncremental();
     }
 
 
