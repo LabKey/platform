@@ -16,7 +16,9 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.util.UnexpectedException;
 
 import java.util.List;
 
@@ -52,7 +54,14 @@ public class PkFilter extends SimpleFilter
                 Class<?> targetClass = columnPK.get(i).getJavaClass();
                 if (targetClass != String.class)
                 {
-                    value = ConvertUtils.convert((String)value, targetClass);
+                    try
+                    {
+                        value = ConvertUtils.convert((String)value, targetClass);
+                    }
+                    catch (ConversionException e)
+                    {
+                        throw new IllegalArgumentException("Failed to convert '" + value + "' for '" + name + "', should be of type " + targetClass.getName());
+                    }
                 }
             }
             addCondition(name, value);
