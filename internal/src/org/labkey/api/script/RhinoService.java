@@ -313,7 +313,7 @@ class RhinoEngine extends RhinoScriptEngine
         {
             ScriptableList.init(scope);
             ScriptableMap.init(scope);
-            ScriptableObject.defineClass(scope, ScriptableValidationException.class, true);
+//            ScriptableObject.defineClass(scope, ScriptableValidationException.class, true);
         }
         catch (Exception e)
         {
