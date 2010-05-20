@@ -1101,6 +1101,8 @@ public class WikiController extends SpringActionController
                 _wikiversion = new WikiVersion(name);
                 //set new page title to be name.
                 _wikiversion.setTitle(name);
+                // check if this is a search result hit
+                ServiceRegistry.get(SearchService.class).notFound(getViewContext().getActionURL());
             }
             else
             {
