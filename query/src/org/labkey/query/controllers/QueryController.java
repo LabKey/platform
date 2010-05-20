@@ -3609,9 +3609,9 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String,Object> getQueryProps(String name, String description, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        protected Map<String, Object> getQueryProps(String name, String description, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
         {
-            Map<String,Object> qinfo = new HashMap<String,Object>();
+            Map<String, Object> qinfo = new HashMap<String, Object>();
             qinfo.put("name", name);
             qinfo.put("isUserDefined", isUserDefined);
             if (null != description)
@@ -3640,16 +3640,16 @@ public class QueryController extends SpringActionController
                 List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
                 for(ColumnInfo col : table.getColumns())
                 {
-                    Map<String,Object> cinfo = new HashMap<String,Object>();
+                    Map<String, Object> cinfo = new HashMap<String, Object>();
                     cinfo.put("name", col.getName());
-                    if(null != col.getLabel())
+                    if (null != col.getLabel())
                         cinfo.put("caption", col.getLabel());
-                    if(null != col.getDescription())
+                    if (null != col.getDescription())
                         cinfo.put("description", col.getDescription());
 
                     cinfos.add(cinfo);
                 }
-                if(cinfos.size() > 0)
+                if (cinfos.size() > 0)
                     qinfo.put("columns", cinfos);
 
                 if (viewDataUrl != null)
@@ -3690,21 +3690,21 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(GetQueryViewsForm form, BindException errors) throws Exception
         {
-            if(null == StringUtils.trimToNull(form.getSchemaName()))
+            if (null == StringUtils.trimToNull(form.getSchemaName()))
                 throw new IllegalArgumentException("You must pass a value for the 'schemaName' parameter!");
-            if(null == StringUtils.trimToNull(form.getQueryName()))
+            if (null == StringUtils.trimToNull(form.getQueryName()))
                 throw new IllegalArgumentException("You must pass a value for the 'queryName' parameter!");
 
             QuerySchema qschema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getSchema(form.getSchemaName());
-            if(null == qschema)
+            if (null == qschema)
                 throw new NotFoundException("The schema name '" + form.getSchemaName()
                         + "' was not found within the folder '" + getViewContext().getContainer().getPath() + "'");
 
-            if(!(qschema instanceof UserSchema))
+            if (!(qschema instanceof UserSchema))
                 throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
             
             QueryDefinition querydef = QueryService.get().createQueryDefForTable((UserSchema)qschema, form.getQueryName());
-            if(null == querydef)
+            if (null == querydef)
                 throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
                         + form.getSchemaName() + "' schema in the container '"
                         + getViewContext().getContainer().getPath() + "'!");
@@ -3713,11 +3713,11 @@ public class QueryController extends SpringActionController
             response.put("schemaName", form.getSchemaName());
             response.put("queryName", form.getQueryName());
             
-            Map<String,CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
-            if(null == views)
+            Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
+            if (null == views)
                 views = Collections.emptyMap();
 
-            List<Map<String,Object>> viewInfos = new ArrayList<Map<String,Object>>(views.size());
+            List<Map<String, Object>> viewInfos = new ArrayList<Map<String ,Object>>(views.size());
             for(CustomView view : views.values())
                 viewInfos.add(getViewInfo(view));
 
@@ -3726,16 +3726,16 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String,Object> getViewInfo(CustomView view)
+        protected Map<String, Object> getViewInfo(CustomView view)
         {
             Map<String,Object> viewInfo = new HashMap<String,Object>();
             viewInfo.put("name", view.getName());
             if (null != view.getOwner())
                 viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
-            List<Map<String,Object>> colInfos = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> colInfos = new ArrayList<Map<String, Object>>();
             for(FieldKey key : view.getColumns())
             {
-                Map<String,Object> colInfo = new HashMap<String,Object>();
+                Map<String, Object> colInfo = new HashMap<String, Object>();
                 colInfo.put("name", key.getName());
                 colInfo.put("key", key.toString());
                 colInfos.add(colInfo);

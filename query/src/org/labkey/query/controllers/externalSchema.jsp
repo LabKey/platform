@@ -146,7 +146,7 @@ var grid = new Ext.grid.GridPanel({
     collapsed: true,
     collapsible: true,
     autoExpandColumn: 'table',
-    height: 500,
+    autoHeight: true,
     width: 600,
     selModel: selModel
 });
