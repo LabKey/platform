@@ -178,21 +178,33 @@ public class SqlScriptController extends SpringActionController
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
             html.append("<tr valign=top>");
 
-            TableInfo tinfo = CoreSchema.getInstance().getTableInfoSqlScripts();
+            List<SqlScript> allRun = new ArrayList<SqlScript>();
 
-            // Need both filename and moduleName to create links for each script
-            List<Script> allRun = Arrays.asList(Table.select(tinfo, tinfo.getColumns("FileName, ModuleName"), null, new Sort("FileName"), Script.class));
-            List<Script> incrementalRun = new ArrayList<Script>();
+            for (Module module : ModuleLoader.getInstance().getModules())
+            {
+                if (module instanceof DefaultModule)
+                {
+                    DefaultModule defModule = (DefaultModule) module;
 
-            for (Script script : allRun)
-                if (isIncrementalScript(script))
+                    if (defModule.hasScripts())
+                    {
+                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
+                        allRun.addAll(SqlScriptManager.getRunScripts(provider));
+                    }
+                }
+            }
+
+            List<SqlScript> incrementalRun = new ArrayList<SqlScript>();
+
+            for (SqlScript script : allRun)
+                if (script.isIncremental())
                     incrementalRun.add(script);
 
             appendScripts(c, html, allRun);
             appendScripts(c, html, incrementalRun);
 
-            List<Script> allNotRun = new ArrayList<Script>();
-            List<Script> incrementalNotRun = new ArrayList<Script>();
+            List<SqlScript> allNotRun = new ArrayList<SqlScript>();
+            List<SqlScript> incrementalNotRun = new ArrayList<SqlScript>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
@@ -207,18 +219,14 @@ public class SqlScriptController extends SpringActionController
                         List<SqlScript> scripts = provider.getScripts(null);
 
                         for (SqlScript script : scripts)
-                        {
-                            Script scriptBean = new Script(defModule.getName(), script.getDescription());
-
-                            if (!allRun.contains(scriptBean))
-                                allNotRun.add(scriptBean);
-                        }
+                            if (!allRun.contains(script))
+                                allNotRun.add(script);
                     }
                 }
             }
 
-            for (Script script : allNotRun)
-                if (isIncrementalScript(script))
+            for (SqlScript script : allNotRun)
+                if (script.isIncremental())
                     incrementalNotRun.add(script);
 
             appendScripts(c, html, allNotRun);
@@ -239,18 +247,7 @@ public class SqlScriptController extends SpringActionController
             return new ActionURL(SqlScriptController.ScriptsAction.class, ContainerManager.getRoot());
         }
 
-        private boolean isIncrementalScript(Script script)
-        {
-            String filename = script.getFilename();
-            String[] parts = filename.split("-|\\.sql");
-
-            double startVersion = Double.parseDouble(parts[1]) * 10;
-            double endVersion = Double.parseDouble(parts[2]) * 10;
-
-            return (Math.floor(startVersion) != startVersion || Math.floor(endVersion) != endVersion);
-        }
-
-        private void appendScripts(Container c, StringBuilder html, List<Script> scripts)
+        private void appendScripts(Container c, StringBuilder html, List<SqlScript> scripts)
         {
             html.append("<td>\n");
 
@@ -258,16 +255,16 @@ public class SqlScriptController extends SpringActionController
             {
                 Collections.sort(scripts);
 
-                for (Script script : scripts)
+                for (SqlScript script : scripts)
                 {
                     ActionURL url = new ActionURL(ScriptAction.class, c);
-                    url.addParameter("moduleName", script.getModuleName());
-                    url.addParameter("filename", script.getFilename());
+                    url.addParameter("moduleName", script.getProvider().getProviderName());
+                    url.addParameter("filename", script.getDescription());
 
                     html.append("<a href=\"");
                     html.append(url);
                     html.append("\">");
-                    html.append(script.getFilename());
+                    html.append(script.getDescription());
                     html.append("</a><br>\n");
                 }
             }
@@ -381,18 +378,20 @@ public class SqlScriptController extends SpringActionController
         private final FileSqlScriptProvider _provider;
         private final String _schemaName;
         private final List<SqlScript> _scripts;
-        private final double _fromVersion;
-        private final double _toVersion;
+        private final double _targetFrom;
+        private final double _targetTo;
+        private final double _actualTo;
 
         protected boolean _includeOriginatingScriptComments = true;
 
-        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion) throws SqlScriptException
+        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double targetFrom, double targetTo) throws SqlScriptException
         {
             _provider = provider;
             _schemaName = schemaName;
-            _fromVersion = fromVersion;
-            _toVersion = toVersion;
-            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), fromVersion, toVersion);
+            _targetFrom = targetFrom;
+            _targetTo = targetTo;
+            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), targetFrom, targetTo);
+            _actualTo = _scripts.isEmpty() ? -1 : _scripts.get(_scripts.size() - 1).getToVersion();
         }
 
         private List<SqlScript> getScripts()
@@ -405,19 +404,12 @@ public class SqlScriptController extends SpringActionController
             return _schemaName;
         }
 
-        private double getFromVersion()
-        {
-            return _fromVersion;
-        }
-
-        private double getToVersion()
-        {
-            return _toVersion;
-        }
-
         private String getFilename()
         {
-            return getSchemaName() + "-" + ModuleContext.formatVersion(getFromVersion()) + "-" + ModuleContext.formatVersion(getToVersion()) + ".sql";
+            // Ending version should be next 0.1 increment, unless this is already a 0.1 multiple 
+            double adjustedTo = Math.floor(_actualTo * 10 + .999)/10;
+            // TODO: Defer to provider for this?
+            return getSchemaName() + "-" + ModuleContext.formatVersion(_targetFrom) + "-" + ModuleContext.formatVersion(adjustedTo) + ".sql";
         }
 
         private String getModuleName()
@@ -592,7 +584,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    public static class Script implements Comparable<Script>
+/*    public static class Script implements Comparable<Script>
     {
         private String _moduleName;
         private String _filename;
@@ -650,7 +642,7 @@ public class SqlScriptController extends SpringActionController
             return _filename != null ? _filename.hashCode() : 0;
         }
     }
-
+*/
 
     @RequiresSiteAdmin
     public class ScriptAction extends SimpleViewAction<SqlScriptForm>
