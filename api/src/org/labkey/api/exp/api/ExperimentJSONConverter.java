@@ -182,7 +182,7 @@ public class ExperimentJSONConverter
             }
 
             JSONObject sampleSetJson = serializeStandardProperties(sampleSet, null);
-            jsonObject.append(SAMPLE_SET, sampleSetJson);
+            jsonObject.put(SAMPLE_SET, sampleSetJson);
         }
 
         return jsonObject;
