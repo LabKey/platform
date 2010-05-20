@@ -168,6 +168,9 @@ public class SimpleModuleUserSchema extends UserSchema
         public TableInfo getLookupTableInfo()
         {
             UserSchema schema = QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), getLookupSchemaName());
+            // CONSIDER: should we throw an exception instead?
+            if (schema == null)
+                return null;
 
             return schema.getTable(getLookupTableName(), true);
         }
