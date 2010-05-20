@@ -35,7 +35,6 @@ public class SqlScriptRunner
 {
     private static Logger _log = Logger.getLogger(SqlScriptRunner.class);
 
-//    private static final Map<String, List<SqlScript>> _remainingScripts = new HashMap<String, List<SqlScript>>();
     private static final List<SqlScript> _remainingScripts = new ArrayList<SqlScript>();
     private static String _currentModuleName = null;
     private static final Object SCRIPT_LOCK = new Object();

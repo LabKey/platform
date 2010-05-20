@@ -267,7 +267,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
                 _validName = true;
         }
 
-        // Used for DROP and CREATE scripts... so we don't both verifying filename or parsing info from it
+        // Used for DROP and CREATE scripts... so we don't bother verifying filename or parsing info from it
         // Also, leave _validName = false so we don't record these scripts in the SqlScript table
         public FileSqlScript(FileSqlScriptProvider provider, String fileName, String schemaName)
         {
