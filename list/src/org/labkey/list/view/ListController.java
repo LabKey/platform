@@ -398,7 +398,7 @@ public class ListController extends SpringActionController
             catch (ValidationException ve)
             {
                 for (ValidationError error : ve.getErrors())
-                    errors.reject(ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
+                    errors.reject(ERROR_MSG, error.getMessage());
             }
             catch (SQLException e)
             {
