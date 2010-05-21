@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.util.*" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
@@ -37,7 +37,6 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">

@@ -614,248 +614,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-/*
-    @ActionNames("projectSettings, lookAndFeelSettings")
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ProjectSettingsAction extends FormViewAction<ProjectSettingsForm>
-    {
-        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (getContainer().isRoot() && !getUser().isAdministrator())
-                throw new UnauthorizedException();
-        }
-
-        public void validateCommand(ProjectSettingsForm form, Errors errors)
-        {
-            if (form.isFilesTab())
-            {
-                String root = StringUtils.trimToNull(form.getProjectRootPath());
-                if (root != null)
-                {
-                    File f = new File(root);
-                    if (!f.exists() || !f.isDirectory())
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Web root '" + root + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
-                    }
-                }
-            }
-        }
-
-        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return new ProjectSettingsTabStrip(form, errors);
-        }
-
-        public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-
-            if (form.isResourcesTab())
-                return handleResourcesPost(c, errors);
-            else if (form.isMenuTab())
-                return handleMenuPost(c, form, errors);
-            else if (form.isFilesTab())
-                return handleFilesPost(c, form, errors);
-            else
-                return handlePropertiesPost(c, form, errors);
-        }
-
-        private boolean handlePropertiesPost(Container c, ProjectSettingsForm form, BindException errors) throws Exception
-        {
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-
-            try
-            {
-                if (form.getThemeName() != null)
-                {
-                    WebTheme theme = WebThemeManager.getTheme(form.getThemeName());
-                    if (theme != null)
-                    {
-                        props.setThemeName(theme.getFriendlyName());
-                    }
-                    ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
-                    if (themeFont != null)
-                    {
-                        props.setThemeFont(themeFont.getFriendlyName());
-                    }
-                }
-            }
-            catch (IllegalArgumentException e)
-            {
-            }
-
-            if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
-            {
-                SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
-            }
-
-            // Need to strip out any extraneous characters from the email address.
-            // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
-            try
-            {
-                String address = StringUtils.trimToEmpty(form.getSystemEmailAddress());
-                // Manually check for a space or a quote, as these will later
-                // fail to send via JavaMail.
-                if (address.contains(" ") || address.contains("\""))
-                    throw new ValidEmail.InvalidEmailException(address);
-
-                // this will throw an InvalidEmailException for some types
-                // of invalid email addresses
-                new ValidEmail(form.getSystemEmailAddress());
-                props.setSystemEmailAddresses(address);
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors.reject(ERROR_MSG, "Invalid System Email Address: ["
-                        + e.getBadEmail() + "]. Please enter a valid email address.");
-                return false;
-            }
-
-            props.setCompanyName(form.getCompanyName());
-            props.setSystemDescription(form.getSystemDescription());
-            props.setLogoHref(form.getLogoHref());
-            props.setSystemShortName(form.getSystemShortName());
-            props.setNavigationBarWidth(form.getNavigationBarWidth());
-            props.setReportAProblemPath(form.getReportAProblemPath());
-            props.setAppBarUIEnabled(form.isAppBarUIEnabled());
-
-            String webRoot = StringUtils.trimToNull(form.getProjectWebRoot());
-            if (webRoot != null)
-            {
-                File f = new File(webRoot);
-                if (!f.exists() || !f.isDirectory())
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Web root '" + webRoot + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
-                    return false;
-                }
-                AttachmentService.get().setWebRoot(c.getProject(), new File(form.getProjectWebRoot()));
-            }
-            else
-                AttachmentService.get().setWebRoot(c.getProject(), null);
-
-            FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
-            try
-            {
-                folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
-            }
-            catch (IllegalArgumentException e)
-            {
-            }
-            props.setFolderDisplayMode(folderDisplayMode);
-            props.save();
-
-            //write an audit log event
-            props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
-
-            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return true;
-        }
-
-        private boolean handleResourcesPost(Container c, BindException errors) throws Exception
-        {
-            Map<String, MultipartFile> fileMap = getFileMap();
-
-            MultipartFile logoFile = fileMap.get("logoImage");
-            if (logoFile != null && !logoFile.isEmpty())
-            {
-                try
-                {
-                    handleLogoFile(logoFile, c);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-
-            MultipartFile iconFile = fileMap.get("iconImage");
-            if (logoFile != null && !iconFile.isEmpty())
-            {
-                try
-                {
-                    handleIconFile(iconFile, c);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-
-            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
-            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
-            {
-                try
-                {
-                    handleCustomStylesheetFile(customStylesheetFile, c);
-                }
-                catch (Exception e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-
-            // TODO: write an audit log event
-            //props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
-
-            // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return true;
-        }
-
-        private boolean handleMenuPost(Container c, ProjectSettingsForm form, BindException errors) throws SQLException
-        {
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-
-            props.setMenuUIEnabled(form.isEnableMenuBar());
-            props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
-            props.save();
-            return true;
-
-        }
-
-        private boolean handleFilesPost(Container c, ProjectSettingsForm form, BindException errors)
-        {
-            String root = StringUtils.trimToNull(form.getProjectRootPath());
-            if (root != null)
-                AttachmentService.get().setWebRoot(c.getProject(), new File(root));
-            else
-                AttachmentService.get().setWebRoot(c.getProject(), null);
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ProjectSettingsForm form)
-        {
-            if (form.isResourcesTab())
-                return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
-            else if (form.isMenuTab())
-                return new AdminUrlsImpl().getProjectSettingsMenuURL(getContainer());
-            else
-                return new AdminUrlsImpl().getProjectSettingsURL(getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic(new HelpTopic("customizeLook", HelpTopic.Area.SERVER));
-            
-            Container c = getViewContext().getContainer();
-
-            if (c.isRoot())
-                return appendAdminNavTrail(root, "Look and Feel Settings", this.getClass());
-
-            root.addChild("Project Settings");
-            return root;
-        }
-    }
-*/
 
     private static class FolderSettingsTabStrip extends TabStripView
     {
@@ -878,6 +636,8 @@ public class AdminController extends SpringActionController
             if (!_container.isRoot())
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
             tabs.add(new TabInfo("Missing Value Indicators", "mvIndicators", url));
+            if (!_container.isRoot())
+                tabs.add(new TabInfo("Full-Text Search", "fullTextSearch", url));
 
             return tabs;
         }
@@ -893,11 +653,14 @@ public class AdminController extends SpringActionController
             {
                 return new JspView<FolderSettingsForm>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
             }
+            else if ("fullTextSearch".equals(tabId))
+            {
+                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
+            }
             else
             {
                 throw new NotFoundException("Unknown tab id");
             }
-
         }
     }
 
@@ -3904,13 +3667,15 @@ public class AdminController extends SpringActionController
         {
             if (form.isMvIndicatorsTab())
                 return handleMvIndicatorsPost(form, errors);
-            else
+            else if (form.isFolderTypeTab())
                 return handleFolderTypePost(form, errors);
+            else
+                return handleFullTextSearchPost(form, errors);
         }
 
         private boolean handleMvIndicatorsPost(FolderSettingsForm form, BindException errors) throws SQLException
         {
-            if(form.isInheritMvIndicators())
+            if (form.isInheritMvIndicators())
             {
                 MvUtil.inheritMvIndicators(getContainer());
                 return true;
@@ -3968,6 +3733,18 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        private boolean handleFullTextSearchPost(FolderSettingsForm form, BindException errors) throws SQLException
+        {
+            Container c = getContainer();
+            if (c.isRoot())
+                HttpView.throwNotFound();
+
+            ContainerManager.updateSearchable(c, form.getSearchable(), getUser());
+            _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces us to reload the Container object to get the property update
+
+            return true;
+        }
+
         public ActionURL getSuccessURL(FolderSettingsForm form)
         {
             return _successURL;
@@ -3999,6 +3776,9 @@ public class AdminController extends SpringActionController
         private boolean inheritMvIndicators;
         private String[] mvIndicators;
         private String[] mvLabels;
+
+        // full-text search settings
+        private boolean searchable;
 
         public String[] getActiveModules()
         {
@@ -4060,6 +3840,11 @@ public class AdminController extends SpringActionController
             return "mvIndicators".equals(getTabId());
         }
 
+        public boolean isFullTextSearchTab()
+        {
+            return "fullTextSearch".equals(getTabId());
+        }
+
         public boolean isInheritMvIndicators()
         {
             return inheritMvIndicators;
@@ -4088,6 +3873,16 @@ public class AdminController extends SpringActionController
         public void setMvLabels(String[] mvLabels)
         {
             this.mvLabels = mvLabels;
+        }
+
+        public boolean getSearchable()
+        {
+            return searchable;
+        }
+
+        public void setSearchable(boolean searchable)
+        {
+            this.searchable = searchable;
         }
     }
 

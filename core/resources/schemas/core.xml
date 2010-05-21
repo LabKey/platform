@@ -32,6 +32,7 @@
       <ns:column columnName="Description"/>
       <ns:column columnName="Workbook"/>
       <ns:column columnName="Title"/>
+      <ns:column columnName="Searchable"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Documents" tableDbType="TABLE">

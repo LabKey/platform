@@ -895,42 +895,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-    @Deprecated
-    public static String searchExternal(String queryString) throws IOException, ParseException
-    {
-        if (null == _externalIndex)
-            return null;
-
-        StringBuilder sb = new StringBuilder();
-        LabKeyIndexSearcher searcher = _externalIndex.getSearcher();
-
-        try
-        {
-            QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, new String[]{"content", "title"}, _externalIndex.getAnalyzer());
-            Query query = queryParser.parse(queryString);
-            TopDocs docs = searcher.search(query, 100);
-            ScoreDoc[] hits = docs.scoreDocs;
-
-            sb.append("<tr><td>").append(hits.length).append(" hits<br></td></tr>\n");
-
-            for (ScoreDoc hit : hits)
-            {
-                Document doc = searcher.doc(hit.doc);
-                String title = doc.get("title");
-                String url = doc.get("url");
-
-                sb.append("<tr><td><a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(title)).append("</a></td></tr>\n");
-            }
-        }
-        finally
-        {
-            _externalIndex.releaseSearcher(searcher);
-        }
-
-        return sb.toString();
-    }
-
-
     protected void shutDown()
     {
         commit();

@@ -271,6 +271,7 @@ cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
 core/module.properties -text
 core/resources/schemas/core.xml -text
 core/resources/schemas/dbscripts/postgresql/core-0.00-2.30.sql -text
+core/resources/schemas/dbscripts/postgresql/core-10.12-10.13.sql -text
 core/resources/schemas/dbscripts/postgresql/core-2.30-8.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-8.10-8.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-8.20-8.30.sql -text
@@ -358,6 +359,7 @@ core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-0.00-2.30.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-10.12-10.13.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-2.30-8.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-8.10-8.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-8.20-8.30.sql -text
@@ -479,6 +481,7 @@ core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
 core/src/org/labkey/core/admin/folderType.jsp -text
+core/src/org/labkey/core/admin/fullTextSearch.jsp -text
 core/src/org/labkey/core/admin/logging.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text

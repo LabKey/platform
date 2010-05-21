@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.util.*;
@@ -47,27 +48,30 @@ class SecurityFilter extends Filter
     private static final ContainerFieldSelector CONTAINER_FIELD_SELECTOR = new ContainerFieldSelector();
 
     private final User user;
-    private final HashMap<String,Container> containerIds;
-    private final HashMap<String,Boolean> securableResourceIds = new HashMap<String,Boolean>();
+    private final HashMap<String, Container> containerIds;
+    private final HashMap<String, Boolean> securableResourceIds = new HashMap<String,Boolean>();
 
     SecurityFilter(User user, Container root, boolean recursive)
     {
         this.user = user;
 
+        // TODO: Need to pass in current container... waiting for Nick's changes first
+        Container currentContainer = HttpView.getContextContainer();
+
         if (recursive)
         {
             Set<Container> containers = ContainerManager.getAllChildren(root, user);
-            containerIds = new HashMap<String,Container>(containers.size());
+            containerIds = new HashMap<String, Container>(containers.size());
 
             for (Container c : containers)
             {
-                if (c.shouldDisplay(user))
-                    containerIds.put(c.getId(),c);
+                if ((c.isSearchable() || c.equals(currentContainer)) && c.shouldDisplay(user))
+                    containerIds.put(c.getId(), c);
             }
         }
         else
         {
-            containerIds = new HashMap<String,Container>();
+            containerIds = new HashMap<String, Container>();
             containerIds.put(root.getId(), root);
         }
     }
