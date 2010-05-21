@@ -22,6 +22,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +51,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
-    public SearchResult search(String queryString, SearchCategory category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, List<SearchCategory> categories, User user, Container root, boolean recursive, int offset, int limit) throws IOException
     {
         return null;
     }
@@ -91,7 +92,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
         
     }
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;
     }

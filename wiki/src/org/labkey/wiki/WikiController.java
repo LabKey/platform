@@ -105,7 +105,7 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                WebPartView searchView = ss.getSearchView(false, 0, false);
+                WebPartView searchView = ss.getSearchView(false, 0, false, false);
 
                 ((HomeTemplate)template).setView("right", new VBox(searchView, toc));
             }

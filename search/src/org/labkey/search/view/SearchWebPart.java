@@ -26,18 +26,19 @@ import org.labkey.search.SearchController.SearchForm;
  */
 public class SearchWebPart extends JspView<SearchController.SearchForm>
 {
-    public SearchWebPart(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
+    public SearchWebPart(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebPart)
     {
-        super("/org/labkey/search/view/search.jsp", getForm(includeSubfolders, textBoxWidth, includeHelpLink));
+        super("/org/labkey/search/view/search.jsp", getForm(includeSubfolders, textBoxWidth, includeHelpLink, isWebPart));
         setTitle("Search");
     }
 
-    private static SearchController.SearchForm getForm(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
+    private static SearchController.SearchForm getForm(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         SearchForm form = new SearchForm();
         form.setIncludeSubfolders(includeSubfolders);
         form.setTextBoxWidth(textBoxWidth);
         form.setIncludeHelpLink(includeHelpLink);
+        form.setWebPart(isWebpart);
 
         // Always set to the current container -- this mimics the old search webpart.  TODO: Customize should allow picking scope.
         form.setContainer(getContextContainer().getId());

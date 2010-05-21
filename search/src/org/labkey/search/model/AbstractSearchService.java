@@ -334,7 +334,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public SearchResult search(String queryString, SearchCategory category, User user, Container root) throws IOException
     {
-        return search(queryString, category, user, root, true, 0, SearchService.DEFAULT_PAGE_SIZE);
+        return search(queryString, Arrays.asList(category), user, root, true, 0, SearchService.DEFAULT_PAGE_SIZE);
     }
 
 
@@ -1037,16 +1037,26 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-    public SearchCategory getCategory(String category)
+    public List<SearchCategory> getCategory(String categories)
     {
-        if (category == null)
+        if (categories == null)
             return null;
         
         List<SearchCategory> cats = _readonlyCategories;
+        List<SearchCategory> usedCats = new ArrayList<SearchCategory>();
+        List<String> requestedCats = Arrays.asList(categories.split(" "));
         for (SearchCategory cat : cats)
         {
-            if (category.equalsIgnoreCase(cat.toString()))
-                return cat;
+            for (String usedCat : requestedCats)
+            {
+                if (usedCat.equalsIgnoreCase(cat.toString()))
+                    usedCats.add(cat);
+            }
+        }
+
+        if (usedCats.size() > 0)
+        {
+            return usedCats;
         }
         return null;
     }

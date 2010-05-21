@@ -734,24 +734,22 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             boosts.put(standardFields[i], standardBoosts[i]);
     }
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink)
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
-        return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink);
+        return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink, isWebpart);
     }
 
-    public SearchResult search(String queryString, @Nullable SearchCategory searchCategory, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, boolean recursive, int offset, int limit) throws IOException
     {
-        String category = null == searchCategory ? null : searchCategory.toString();
-
         String sort = null;  // TODO: add sort parameter
         int hitsToRetrieve = offset + limit;
-        boolean limitToCategory = (null != category);
+        boolean requireCategories = (null != categories);
 
-        if (!limitToCategory)
+        if (!requireCategories)
         {
             // Boost "subject" results if this is a participant id
             if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
-                category = "subject";
+                categories = this.getCategory("subject");
         }
 
         Query query;
@@ -770,21 +768,32 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             throw new IOException("Cannot parse '" + queryString + "': " + x.getMessage());
         }
 
-        if (null != category)
+        if (null != categories)
         {
             BooleanQuery bq = new BooleanQuery();
             bq.add(query, BooleanClause.Occur.MUST);
+            Iterator itr = categories.iterator();
 
-            Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), category.toLowerCase()));
-
-            if (limitToCategory)
+            if (requireCategories)
             {
-                bq.add(categoryQuery, BooleanClause.Occur.MUST);
+                BooleanQuery requiresBQ = new BooleanQuery();
+                
+                while (itr.hasNext())
+                {
+                    Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
+                    requiresBQ.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                }
+
+                bq.add(requiresBQ, BooleanClause.Occur.MUST);
             }
             else
             {
-                categoryQuery.setBoost(3.0f);
-                bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                while (itr.hasNext())
+                {
+                    Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
+                    categoryQuery.setBoost(3.0f);
+                    bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                }
             }
             query = bq;
         }

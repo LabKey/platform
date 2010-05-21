@@ -69,26 +69,11 @@
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
 %>
-<form class="labkey-search-form" id=searchForm name="search" onsubmit="resubmit(); return false;" action="<%=h(searchConfig.getPostURL(c))%>">
+<form class="labkey-search-form" style="padding-bottom: 0px" id="searchForm" name="search" onsubmit="resubmit(); return true;" action="<%=h(searchConfig.getPostURL(c))%>">
     <table><tr><td><%
     if (form.isPrint())
     {
-        %><input type=hidden name=_print value=1><%
-    }
-
-    if (null != form.getCategory())
-    {
-        %><input type=hidden name=category value="<%=h(form.getCategory())%>"><%
-    }
-
-    if (!form.getIncludeSubfolders())
-    {
-        %><input type=hidden name=includeSubfolders value="0"><%
-    }
-
-    if (null != form.getContainer())
-    {
-        %><input type=hidden name=container value="<%=form.getContainer()%>"><%
+        %><input type="hidden" name="_print" value=1><%
     }
 
     %>
@@ -104,26 +89,35 @@
     %></td></tr><%
 
     String category = form.getCategory();
-    ActionURL categoryResearchURL = ctx.cloneActionURL().deleteParameter("category");
-    ActionURL scopeResearchURL = ctx.cloneActionURL().deleteParameter("includeSubfolders").deleteParameter("container");
     String queryString = form.getQueryString();
 
-    if (searchConfig.includeAdvancedUI() && null != StringUtils.trimToNull(queryString))
+    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
     {
-        %><tr><td>
-        <table width=100% cellpadding="0" cellspacing="0">
-            <tr>
-                <td style="font-size: small;"><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(true); return false;"> Advanced Search</td>
-            </tr>
-            <tr>
-                <td><div id="advancedPanelDiv" style="display: none;"></div></td>
-            </tr>
-            </table>
-        </td></tr><%
+        %>
+        <input type="hidden" id="hidden-category" name="category">
+        <input type="hidden" id="hidden-container" name="container">
+        <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="0" >
+        <input type="hidden" id="hidden-showAdv" name="showAdvanced" value="1" >
+        <%
     }
     %>
     </table>
 </form>
+<%
+    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    {
+%>
+<table width=100% cellpadding="0" cellspacing="0" style="padding-left: 18px;">
+    <tr>
+        <td style="font-size: small;"><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"> Advanced Search</td>
+    </tr>
+    <tr>
+        <td><div id="advancedPanelDiv" style="display: none;"></div></td>
+    </tr>
+</table>
+<%
+    }
+%>
 <%
 
     if (null != StringUtils.trimToNull(queryString))
@@ -251,7 +245,7 @@
 
             if (null == category && wideView && searchConfig.includeNavigationLinks() && form.getSearchScope(null) != SearchScope.Folder)
             {
-                result = ss.search(queryString, SearchService.navigationCategory, user, form.getSearchContainer(), true, offset, hitsPerPage);
+                result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, form.getSearchContainer(), true, offset, hitsPerPage);
 
                 if (result.hits.size() > 0)
                 {
@@ -476,14 +470,11 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
 
         checkOptions('adv-category', 'category');
         checkRadio('adv-scope', 'container');
-        
-        var _newSearchURL = LABKEY.ActionURL.buildURL(
-                "search",
-                "search",
-                LABKEY.ActionURL.getContainer(),
-                params);
-        
-        return _newSearchURL;
+
+        if (!seen && document.getElementById('hidden-showAdv'))
+        {
+            document.getElementById('hidden-showAdv').disabled = "disabled";
+        }
     }
 
     function checkRadio(el, param)
@@ -491,37 +482,59 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
         var rad = Ext.getCmp(el);
         params[param] = "";
 
+        var incEl = document.getElementById('hidden-include-folders');
+        var conEl = document.getElementById('hidden-container');
+
         if (rad && rad.getValue() && rad.getValue().value)
         {
             params[param] = rad.getValue().value;
+            conEl.value = params[param];
+
+            if (rad.getValue().id != "folder")
+            {
+                incEl.disabled = "disabled";
+            }
         }
         else
         {
-            delete params[param];
+            if (conEl && incEl)
+            {
+                conEl.disabled = "disabled";
+                incEl.disabled = "disabled";
+            }
         }
     }
-    
+
     function checkOptions(el, param)
     {
-        var cat = Ext.getCmp(el).getValue();
+        var cat = Ext.getCmp(el)
+        if(cat)
+        {
+            cat = cat.getValue();
+        }
         params[param] = "";
+        var catEl = document.getElementById('hidden-category');
 
         if (cat && cat.length)
         {
             params[param] = cat[0].value;
             for(var j = 1; j < cat.length; j++)
             {
-                params[param] += "_" + cat[j].value;
+                params[param] += " " + cat[j].value;
             }
+            catEl.value = params[param];
         }
         else
         {
-            delete params[param];
+            if (catEl)
+            {
+                catEl.disabled = "disabled";
+            }
         }
     }
 
     var seen = false;
-    
+
     function init()
     {
         var header = {
@@ -535,7 +548,7 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
             items: {
                 id        : 'adv-category',
                 xtype     : 'checkboxgroup',
-                columns   : [90,90],
+                columns   : [90,90,90,90],
                 autoHeight: true,
                 defaults  : {
                     listeners : {
@@ -543,7 +556,7 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
                             var cats = LABKEY.ActionURL.getParameter('category');
                             if (cats)
                             {
-                                cats = cats.split('_');
+                                cats = cats.split('+');
                                 for(var i = 0; i < cats.length; i++)
                                 {
                                     if (cats[i] == chkbox.value)
@@ -570,6 +583,22 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
                 },{
                     boxLabel: 'Assay',
                     value   : 'Assay',
+                    name    : 'category'
+                },{
+                    boxLabel: 'Wiki',
+                    value   : 'Wiki',
+                    name    : 'category'
+                },{
+                    boxLabel: 'List',
+                    value   : 'List',
+                    name    : 'category'
+                },{
+                    boxLabel: 'Issue',
+                    value   : 'Issue',
+                    name    : 'category'
+                },{
+                    boxLabel: 'Message',
+                    value   : 'Message',
                     name    : 'category'
                 }]
             }
@@ -606,13 +635,6 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
                     value   : "<%=h(c.getProject().getId())%>",
                     name    : 'scope',
                     listeners : {
-                        check : function(chkbox, checked)
-                        {
-                            if (checked)
-                            {
-                                delete params["includeSubfolders"];
-                            }
-                        },
                         afterrender : function(chkbox)
                         {
                             if ((LABKEY.ActionURL.getParameter('container') == chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') != 0))
@@ -623,19 +645,10 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
                     }
                 },{
                     boxLabel: 'Folder',
+                    id      : 'folder',
                     value   : "<%=h(c.getId())%>",
                     name    : 'scope',
                     listeners : {
-                        check : function(chkbox, checked) {
-                            if (checked)
-                            {
-                                params["includeSubfolders"] = 0;
-                            }
-                            else
-                            {
-                                delete params["includeSubFolders"];
-                            }
-                        },
                         afterrender: function(chkbox) {
                             if (LABKEY.ActionURL.getParameter('container') == chkbox.value && LABKEY.ActionURL.getParameter('includeSubfolders'))
                             {
@@ -646,7 +659,7 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
                 }]
             }
         };
-
+        
         var panel = new Ext.Panel({
             id : 'advanced-panel',
             renderTo: 'advancedPanelDiv',
@@ -661,9 +674,8 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
             },
             listeners : {
                 afterrender : function(pnl) {
-                    if (LABKEY.ActionURL.getParameter('advancedPanel'))
+                    if (LABKEY.ActionURL.getParameter('showAdvanced'))
                     {
-                        console.info("Showing panel due to url.");
                         showPanel();
                     }
                 }
@@ -676,10 +688,10 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
     minus_img.src = "/labkey/_images/minus.gif";
     var org_src = "/labkey/_images/plus.gif";
 
-    function showPanel(animate)
+    function showPanel()
     {
         var ppanel = Ext.get('advancedPanelDiv');
-        if(!(seen))
+        if(!(seen) && ppanel)
         {
             ppanel.slideIn();
             seen = true;
@@ -687,7 +699,7 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
             document.getElementById('adv-search-btn').src = minus_img.src;
             params['advancedPanel'] = true;
         }
-        else {
+        else if(ppanel){
             ppanel.slideOut();
             Ext.getCmp('advanced-panel').hide();
             seen = false;
@@ -698,8 +710,12 @@ System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c
 
     function resubmit()
     {
-        window.location = establishParams();
+        establishParams();
     }
 
-    Ext.onReady(init);
+    if (<%=(!form.isWebPart() && searchConfig.includeAdvancedUI())%>)
+    {
+        Ext.onReady(init);
+    }
+
 </script>

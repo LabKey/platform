@@ -634,7 +634,7 @@ public class SearchController extends SpringActionController
     // This interface hides all the specifics of internal vs. external index search, keeping search.jsp reasonably generic.
     public interface SearchConfiguration
     {
-        ActionURL getPostURL(Container c);
+        ActionURL getPostURL(Container c);    // Search does not actually post
         ActionURL getSecondarySearchURL(Container c, String queryString); // TODO: Need other params? (category, scope)
         String getPrimaryDescription(Container c);
         String getSecondaryDescription(Container c);
@@ -893,6 +893,7 @@ public class SearchController extends SpringActionController
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
         private boolean _includeHelpLink = true;
+        private boolean _webpart = false;
         private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
 
         public void setConfiguration(SearchConfiguration config)
@@ -1059,6 +1060,16 @@ public class SearchController extends SpringActionController
         public void setIncludeHelpLink(boolean includeHelpLink)
         {
             _includeHelpLink = includeHelpLink;
+        }
+
+        public boolean isWebPart()
+        {
+            return _webpart;
+        }
+
+        public void setWebPart(boolean webpart)
+        {
+            _webpart = webpart;
         }
     }
 

@@ -38,11 +38,11 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
 
         if ("right".equals(webPart.getLocation()))
         {
-            return new SearchWebPart(includeSubfolders, 0, false);
+            return new SearchWebPart(includeSubfolders, 0, false, true);
         }
         else
         {
-            return new SearchWebPart(includeSubfolders, 40, true);
+            return new SearchWebPart(includeSubfolders, 40, true, true);
         }
     }
 
