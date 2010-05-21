@@ -208,10 +208,7 @@ public interface SearchService
 
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
-
-    // Search using no offset, default page size, and recursive.
-    public SearchResult search(String queryString, @Nullable SearchCategory category, User user, Container root) throws IOException;
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException;
 
     // Search the external index.
     public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException;
