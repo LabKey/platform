@@ -23,17 +23,23 @@
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <p>
-    Administrators can make database schemas accessible to LabKey Query.  This should be used with great care as it
-    bypasses the security implemented by modules.  This may allow any user with read access to this folder to see
-    arbitrary data in your databases.  Also, the database schema may change in future releases.  Queries written against
-    this version of the database schema may stop working after an upgrade.
+    Administrators can define external schemas to make data stored in PostgreSQL, Microsoft SQL Server, and SAS available
+    for viewing, querying, and editing via LabKey Server.  This feature should be used with great care since, depending
+    on your configuration, any user with access to this folder could view and modify arbitrary data in your databases.
+</p>
+<p>
+    Defining any of the standard LabKey schemas as an external schema is strongly discouraged since it bypasses LabKey's
+    security and data integrity checks.  Also, the database schema may change in future releases, so queries written
+    against LabKey schemas may stop working after an upgrade.
 </p>
 <%
     Container c = getContainer();
     List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
+    boolean isAdmin = getUser().isAdministrator();
 
     if (defs.isEmpty()) { %>
 <p>There are no database user schemas defined in this folder.</p>
@@ -78,20 +84,39 @@ else
         ActionURL urlView = new ActionURL(QueryController.SchemaAction.class, c);
         urlView.addParameter("schemaName", def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction(QueryController.ReloadExternalSchemaAction.class); %>
+        urlReload.setAction(QueryController.ReloadExternalSchemaAction.class);
+        ActionURL urlDelete = QueryController.getDeleteExternalSchemaURL(c, def.getExternalSchemaId());
+
+    %>
 
         <tr>
-            <td><%=h(def.getUserSchemaName())%></td>
+            <td><%=h(def.getUserSchemaName())%></td><%
+                if (null != DbScope.getDbScope(def.getDataSource()))
+                {
+            %>
             <td><labkey:link text="view data" href="<%=h(urlView)%>" /></td>
-            <td><%if (getUser().isAdministrator()) {%><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /><%}%></td>
+            <% if (isAdmin) {%><td><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /></td><%}%>
             <td><labkey:link text="reload" href="<%=h(urlReload)%>" /></td>
+            <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%><%
+                }
+                else
+                {
+            %>
+            <td>&nbsp;</td>
+            <% if (isAdmin) {%><td>&nbsp;</td><%}%>
+            <td>&nbsp;</td>
+            <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <td><div class="labkey-error">Not available: can't connect to <%=h(def.getDataSource())%></div></td>
+            <%
+                }
+            %>
         </tr><%
     } %>
     </table><%
 } %>
 <br>
 <%
-    if (getUser().isAdministrator())
+    if (isAdmin)
     { %>
     <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, c)%>" text="define new schema"/>
     <!--TODO: Enable bulk publish/unpublish labkey:link href="<%= new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, c)%>" text="define multiple new schemas"/--><%
