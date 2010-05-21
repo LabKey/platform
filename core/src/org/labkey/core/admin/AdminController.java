@@ -3740,7 +3740,7 @@ public class AdminController extends SpringActionController
                 HttpView.throwNotFound();
 
             ContainerManager.updateSearchable(c, form.getSearchable(), getUser());
-            _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces us to reload the Container object to get the property update
+            _successURL = getViewContext().getActionURL();  // Redirect to ourselves -- this forces a reload of the Container object to get the property update
 
             return true;
         }
