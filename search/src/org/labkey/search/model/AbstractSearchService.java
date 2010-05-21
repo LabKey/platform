@@ -332,12 +332,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public SearchResult search(String queryString, SearchCategory category, User user, Container root) throws IOException
-    {
-        return search(queryString, Arrays.asList(category), user, root, true, 0, SearchService.DEFAULT_PAGE_SIZE);
-    }
-
-
     public final void deleteContainer(final String id)
     {
         Runnable r = new Runnable(){

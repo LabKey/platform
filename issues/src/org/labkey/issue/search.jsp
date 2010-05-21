@@ -76,7 +76,7 @@
 
         try
         {
-            SearchService.SearchResult result = ss.search(q, Arrays.asList(IssueManager.searchCategory), user, c, false, 0, SearchService.DEFAULT_PAGE_SIZE);
+            SearchService.SearchResult result = ss.search(q, Arrays.asList(IssueManager.searchCategory), user, c, c, false, 0, SearchService.DEFAULT_PAGE_SIZE);
             List<SearchService.SearchHit> hits = result.hits;
 
             %><div id="searchResults" style="max-width:800px;"><%

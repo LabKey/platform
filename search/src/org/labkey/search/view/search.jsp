@@ -132,7 +132,7 @@
 
         try
         {
-            SearchService.SearchResult result = searchConfig.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
+            SearchService.SearchResult result = searchConfig.getPrimarySearchResult(queryString, category, user, form.getSearchContainer(), c, form.getIncludeSubfolders(), offset, hitsPerPage);
 
             int primaryHits = result.totalHits;
             int pageCount = (int)Math.ceil((double)primaryHits / hitsPerPage);
@@ -144,7 +144,7 @@
                if (searchConfig.hasSecondaryPermissions(user))
                {
                    includesSecondarySearch = true;
-                   SearchService.SearchResult secondaryResult = searchConfig.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), form.getIncludeSubfolders(), offset, hitsPerPage);
+                   SearchService.SearchResult secondaryResult = searchConfig.getSecondarySearchResult(queryString, category, user, form.getSearchContainer(), c, form.getIncludeSubfolders(), offset, hitsPerPage);
 
                    %>
                <tr><td align=left colspan="2"><%
@@ -245,7 +245,7 @@
 
             if (null == category && wideView && searchConfig.includeNavigationLinks() && form.getSearchScope(null) != SearchScope.Folder)
             {
-                result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, form.getSearchContainer(), true, offset, hitsPerPage);
+                result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, form.getSearchContainer(), c, true, offset, hitsPerPage);
 
                 if (result.hits.size() > 0)
                 {

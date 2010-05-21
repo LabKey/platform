@@ -739,7 +739,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink, isWebpart);
     }
 
-    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
     {
         String sort = null;  // TODO: add sort parameter
         int hitsToRetrieve = offset + limit;
@@ -802,7 +802,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, recursive);
+            Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, currentContainer, recursive);
             TopDocs topDocs;
 
             if (null == sort)

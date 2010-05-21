@@ -28,15 +28,17 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 /*
 * User: adam
@@ -51,16 +53,13 @@ class SecurityFilter extends Filter
     private final HashMap<String, Container> containerIds;
     private final HashMap<String, Boolean> securableResourceIds = new HashMap<String,Boolean>();
 
-    SecurityFilter(User user, Container root, boolean recursive)
+    SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive)
     {
         this.user = user;
 
-        // TODO: Need to pass in current container... waiting for Nick's changes first
-        Container currentContainer = HttpView.getContextContainer();
-
         if (recursive)
         {
-            Set<Container> containers = ContainerManager.getAllChildren(root, user);
+            Set<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
             containerIds = new HashMap<String, Container>(containers.size());
 
             for (Container c : containers)
@@ -72,7 +71,7 @@ class SecurityFilter extends Filter
         else
         {
             containerIds = new HashMap<String, Container>();
-            containerIds.put(root.getId(), root);
+            containerIds.put(searchRoot.getId(), searchRoot);
         }
     }
 

@@ -531,7 +531,7 @@ public class SearchController extends SpringActionController
             {
                 //UNDONE: paging, rowlimit etc
                 int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), form.getIncludeSubfolders(),
+                SearchService.SearchResult result = ss.search(query, null, getViewContext().getUser(), ContainerManager.getRoot(), getContainer(), form.getIncludeSubfolders(),
                         form.getOffset(), limit);
                 List<SearchService.SearchHit> hits = result.hits;
                 totalHits = result.totalHits;
@@ -638,8 +638,8 @@ public class SearchController extends SpringActionController
         ActionURL getSecondarySearchURL(Container c, String queryString); // TODO: Need other params? (category, scope)
         String getPrimaryDescription(Container c);
         String getSecondaryDescription(Container c);
-        SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
-        SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
+        SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container searchRoot, Container currentContainer, boolean recursive, int offset, int limit) throws IOException;
+        SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException;
         boolean hasSecondaryPermissions(User user);
         boolean includeAdvancedUI();
         boolean includeNavigationLinks();
@@ -679,13 +679,13 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container searchRoot, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategory(category), user, root, recursive, offset, limit);
+            return _ss.search(queryString, _ss.getCategory(category), user, searchRoot, currentContainer, recursive, offset, limit);
         }
 
         @Override
-        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
         {
             return _ss.searchExternal(queryString, offset, limit);
         }
@@ -825,15 +825,15 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getPrimarySearchResult(String queryString, @Nullable String category, User user, Container searchRoot, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
         {
             return _ss.searchExternal(queryString, offset, limit);
         }
 
         @Override
-        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+        public SearchService.SearchResult getSecondarySearchResult(String queryString, @Nullable String category, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategory(category), user, root, recursive, offset, limit);
+            return _ss.search(queryString, _ss.getCategory(category), user, root, currentContainer, recursive, offset, limit);
         }
 
         @Override
