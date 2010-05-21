@@ -31,7 +31,7 @@ END
 GO
 
 /* Create study.SampleAvailabilityRule table if it doesn't exist */
-IF OBJECTPROPERTY(OBJECT_ID(LOWER('study.SampleAvailabilityRule')), 'IsTable') != 1
+IF OBJECTPROPERTY(OBJECT_ID(LOWER('study.SampleAvailabilityRule')), 'IsTable') IS NULL
 BEGIN
     CREATE TABLE study.SampleAvailabilityRule
     (
