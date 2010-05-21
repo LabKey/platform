@@ -51,7 +51,7 @@ public class SolrSearchServiceImpl extends AbstractSearchService
 //        }
     }
 
-    public SearchResult search(String queryString, List<SearchCategory> categories, User user, Container root, boolean recursive, int offset, int limit) throws IOException
+    public SearchResult search(String queryString, List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
     {
         return null;
     }
