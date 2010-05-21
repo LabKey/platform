@@ -18,7 +18,10 @@ package org.labkey.api.files;
 
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.User;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
@@ -121,4 +124,5 @@ public interface FileContentService
     public String getDomainURI(Container c, FilesAdminOptions.fileConfig config);
 
     public ExpData getDataObject(WebdavResource resource, Container c);
+    public QueryUpdateService getFilePropsUpdateService(TableInfo tinfo, Container container);
 }

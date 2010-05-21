@@ -22,6 +22,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -154,5 +155,5 @@ public interface WebdavResource extends Resource
      */
     Map<String, String> getCustomProperties(User user);
 
-    void notify(ViewContext context, String message);
+    void notify(ContainerUser context, String message);
 }

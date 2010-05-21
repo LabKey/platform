@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -35,11 +36,13 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentEmailPrefFilter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityPolicy;
@@ -50,10 +53,8 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -568,33 +569,33 @@ public class FileSystemResource extends AbstractWebdavResource
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
             ExpData data = svc.getDataObject(this, getContainer());
 
-            if (dd != null && data != null)
-            {
+            TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(user, getContainer()));
+            QueryUpdateService qus = ti.getUpdateService();
+
+            try {
                 _customProperties = new HashMap<String, String>();
-                Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-                if (domain != null)
+                Map<String, Object> keys = Collections.singletonMap("filePath", (Object)this.getFile().getCanonicalPath());
+                List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
+                assert(rows.size() <= 1);
+
+                if (rows.size() == 1)
                 {
-                    for (DomainProperty prop : domain.getProperties())
+                    for (Map.Entry<String, Object> entry : rows.get(0).entrySet())
                     {
-                        Object o = data.getProperty(prop);
-                        if (o != null)
-                        {
-                            try {
-                                _customProperties.put(prop.getName(), DomainUtil.getFormattedDefaultValue(user, prop, o));
-                            }
-                            catch (Exception e){}
-                        }
+                        _customProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
                     }
                 }
             }
-            else
-                _customProperties = Collections.emptyMap();
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
         }
         return _customProperties;
     }
 
     @Override
-    public void notify(ViewContext context, String message)
+    public void notify(ContainerUser context, String message)
     {
         String dir;
         String name;
@@ -611,7 +612,14 @@ public class FileSystemResource extends AbstractWebdavResource
             name = getName();
         }
         AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
-        sendNotificationEmail(context, message);
+        if (context instanceof ViewContext)
+            sendNotificationEmail((ViewContext)context, message);
+        else
+        {
+            ViewContext viewContext = HttpView.currentContext();
+            if (viewContext != null)
+                sendNotificationEmail(viewContext, message);
+        }
     }
 
     private void sendNotificationEmail(ViewContext context, String message)
@@ -623,21 +631,22 @@ public class FileSystemResource extends AbstractWebdavResource
             if (users != null && users.length > 0)
             {
                 FileEmailForm form = new FileEmailForm(this, message);
-                List<String> recipients = new ArrayList<String>();
+                List<EmailMessage> messages = new ArrayList<EmailMessage>();
+
                 for (User user : users)
                 {
-                    recipients.add(user.getEmail());
+                    EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(),
+                            new String[]{user.getEmail()}, "File Management Tool notification");
+
+                    msg.addContent(EmailMessage.contentType.HTML, context,
+                            new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));
+                    msg.addContent(EmailMessage.contentType.PLAIN, context,
+                            new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp", form));
+
+                    messages.add(msg);
                 }
-
-                EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(),
-                        recipients.toArray(new String[recipients.size()]), "File Management Tool notification");
-
-                msg.addContent(EmailMessage.contentType.HTML, context,
-                        new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));
-                msg.addContent(EmailMessage.contentType.PLAIN, context,
-                        new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp", form));
-
-                svc.sendMessage(msg);
+                // send messages in bulk
+                svc.sendMessage(messages.toArray(new EmailMessage[messages.size()]));
              }
        }
         catch (Exception e)

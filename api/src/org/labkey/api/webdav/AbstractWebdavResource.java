@@ -33,6 +33,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -416,7 +417,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return Collections.emptyMap();
     }
 
-    public void notify(ViewContext context, String message)
+    public void notify(ContainerUser context, String message)
     {
     }
 

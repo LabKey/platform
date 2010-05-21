@@ -21,7 +21,9 @@ import org.labkey.api.notification.EmailPref;
 import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.ReadPermission;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,8 +57,13 @@ public class FileContentEmailPrefFilter extends EmailPrefFilter
     @Override
     public User[] getUsers(Container c)
     {
-        List<User> users = SecurityManager.getProjectMembers(c);
+        List<User> users = new ArrayList<User>();
 
+        for (User user : SecurityManager.getProjectMembers(c))
+        {
+            if (c.hasPermission(user, ReadPermission.class))
+                users.add(user);
+        }
         return users.toArray(new User[users.size()]);
     }
 
