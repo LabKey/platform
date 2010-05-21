@@ -329,7 +329,8 @@ public class PipelineQueueImpl implements PipelineQueue
     {
         FakeContainer(String name, Container parent)
         {
-            super(parent, name, GUID.makeGUID(), 1, 0, new Date());
+            // CHANGE HERE FOR ADAM -- LAST BOOLEAN SET TO TRUE, MIGHT NOT WANT THAT
+            super(parent, name, GUID.makeGUID(), 1, 0, new Date(), true);
         }
     }
 
