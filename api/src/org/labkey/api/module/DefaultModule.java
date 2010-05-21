@@ -156,7 +156,7 @@ public abstract class DefaultModule implements Module
                 part.setModule(this);
         }
     }
-    
+
 
     protected abstract void init();
     protected abstract Collection<WebPartFactory> createWebPartFactories();
@@ -269,19 +269,18 @@ public abstract class DefaultModule implements Module
     {
         if (null == _webPartFactories || isWebPartFactorySetStale())
         {
-            _webPartFactories = createWebPartFactories();
-        }
-
-        File[] files = getWebPartFiles();
-        if (files.length > 0)
-        {
             Collection<WebPartFactory> wpf = new ArrayList<WebPartFactory>();
-            for (int i = 0; i < files.length; i++)
+            wpf.addAll(createWebPartFactories());
+
+            File[] files = getWebPartFiles();
+            if (files.length > 0)
             {
-                wpf.add(new SimpleWebPartFactory(this, files[i]));
+                for (int i = 0; i < files.length; i++)
+                {
+                    wpf.add(new SimpleWebPartFactory(this, files[i]));
+                }
             }
-            wpf.addAll(_webPartFactories);
-            return wpf;
+            _webPartFactories = wpf;
         }
         return _webPartFactories;
     }

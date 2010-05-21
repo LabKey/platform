@@ -206,9 +206,9 @@ public interface SearchService
 
     public DbSchema getSchema();
 
-    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink);
+    public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
-    public SearchResult search(String queryString, @Nullable SearchCategory category, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, boolean recursive, int offset, int limit) throws IOException;
 
     // Search using no offset, default page size, and recursive.
     public SearchResult search(String queryString, @Nullable SearchCategory category, User user, Container root) throws IOException;
@@ -281,7 +281,7 @@ public interface SearchService
     //
     
     public void addSearchCategory(SearchCategory category);
-    public SearchCategory getCategory(String category);
+    public List<SearchCategory> getCategory(String category);
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver);
 
     public interface DocumentProvider
