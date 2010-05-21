@@ -24,14 +24,14 @@ END
 GO
 
 /* Create study.vial.AvailabilityReason column if it doesn't exist. */
-IF NOT EXISTS(SELECT * from sys.columns WHERE Name = LOWER('AvailabilityReason') AND Object_ID = OBJECT_ID(LOWER('study.Vial')))
+IF NOT EXISTS(SELECT * from syscolumns WHERE Name = LOWER('AvailabilityReason') AND ID = OBJECT_ID(LOWER('study.Vial')))
 BEGIN
     ALTER TABLE study.Vial ADD AvailabilityReason NVARCHAR(256)
 END
 GO
 
 /* Create study.SampleAvailabilityRule table if it doesn't exist */
-IF NOT EXISTS(SELECT * from sys.objects WHERE Object_ID = OBJECT_ID(LOWER('study.SampleAvailabilityRule')) AND Type IN (N'U'))
+IF OBJECTPROPERTY(OBJECT_ID(LOWER('study.SampleAvailabilityRule')), 'IsTable') != 1
 BEGIN
     CREATE TABLE study.SampleAvailabilityRule
     (
