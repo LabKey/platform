@@ -31,6 +31,7 @@ import org.labkey.api.util.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
 import org.springframework.validation.BindException;
@@ -301,7 +302,7 @@ public class SecurityController extends SpringActionController
             if (group != null)
             {
                 SecurityManager.deleteGroup(group);
-                addGroupAuditEvent(group, "The group: " + group.getPath() + " was deleted.");
+                addGroupAuditEvent(getViewContext(), group, "The group: " + group.getPath() + " was deleted.");
             }
             return true;
         }
@@ -560,7 +561,7 @@ public class SecurityController extends SpringActionController
                 try
                 {
                     Group group = SecurityManager.createGroup(getContainer().getProject(), name);
-                    addGroupAuditEvent(group, "The group: " + name + " was created.");
+                    addGroupAuditEvent(getViewContext(), group, "The group: " + name + " was created.");
                 }
                 catch (IllegalArgumentException e)
                 {
@@ -585,18 +586,20 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private void addGroupAuditEvent(Group group, String message)
+    private void addGroupAuditEvent(ContainerUser context, Group group, String message)
     {
         AuditLogEvent event = new AuditLogEvent();
 
         event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
-        event.setCreatedBy(getUser());
+        event.setCreatedBy(context.getUser());
         event.setIntKey2(group.getUserId());
         Container c = ContainerManager.getForId(group.getContainer());
         if (c != null && c.getProject() != null)
             event.setProjectId(c.getProject().getId());
+        else
+            event.setProjectId(ContainerManager.getRoot().getId());
         event.setComment(message);
-        event.setContainerId(group.getContainer());
+        event.setContainerId(context.getContainer().getId());
 
         AuditLogService.get().addEvent(event);
     }
