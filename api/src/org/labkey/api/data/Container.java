@@ -76,12 +76,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
     //is this container a workbook?
     private boolean _workbook;
 
+    // include in results from searches outside this container?
+    private final boolean _searchable;
+
     //optional non-unique title for the container
     private String _title;
 
     // UNDONE: BeanFactory for Container
 
-    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created)
+    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, boolean searchable)
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = id;
@@ -89,6 +92,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _rowId = rowId;
         _sortOrder = sortOrder;
         _created = created;
+        _searchable = searchable;
     }
 
 
@@ -344,6 +348,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public void setWorkbook(boolean workbook)
     {
         _workbook = workbook;
+    }
+
+    public boolean isSearchable()
+    {
+        return _searchable;
     }
 
     /**

@@ -335,6 +335,25 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
+    public static void updateSearchable(Container container, boolean searchable, User user)
+    {
+        try
+        {
+            //For some reason there is no primary key defined on core.containers
+            //so we can't use Table.update here
+            StringBuilder sql = new StringBuilder("UPDATE ");
+            sql.append(core.getTableInfoContainers());
+            sql.append(" SET Searchable=? WHERE RowID=?");
+            Table.execute(core.getSchema(), sql.toString(), new Object[]{searchable, container.getRowId()});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+
+        _removeFromCache(container);
+    }
+
     public static void updateTitle(Container container, String title, User user)
     {
         try
@@ -1914,12 +1933,13 @@ public class ContainerManager
             String description = rs.getString("Description");
             boolean workbook = rs.getBoolean("Workbook");
             String title = rs.getString("Title");
+            boolean searchable = rs.getBoolean("Searchable");
 
             Container dirParent = null;
             if (null != parentId)
                 dirParent = getForId(parentId);
 
-            d = new Container(dirParent, name, id, rowId, sortOrder, created);
+            d = new Container(dirParent, name, id, rowId, sortOrder, created, searchable);
             d.setDescription(description);
             d.setWorkbook(workbook);
             d.setTitle(title);
