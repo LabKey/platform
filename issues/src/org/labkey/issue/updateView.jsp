@@ -43,6 +43,35 @@
     BindException errors = bean.getErrors();
 %>
 
+<script type="text/javascript">
+    var numberRe = /[0-9]/;
+    function filterNumber(input, e)
+    {
+        if (e.ctrlKey)
+            return true;
+
+        var cc = String.fromCharCode(e.charCode || e.keyCode);
+        if (!cc)
+            return true;
+
+        if (!numberRe.test(cc))
+        {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            } else {
+                e.cancelBubble = true;
+            }
+            if (e.preventDefault) {
+                e.preventDefault();
+            } else {
+                e.returnValue = false;
+            }
+            return false;
+        }
+
+        return true;
+    }
+</script>
 <form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
 
     <table>
@@ -97,12 +126,31 @@
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
                 <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(new HString("resolution",false), issue.getResolution(), bean.getResolutionOptions(c))%></td></tr>
 <%
-            if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
+            if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource()) && null != issue.getDuplicate())
             {
 %>
                 <tr><td class="labkey-form-label">Duplicate</td><td>
                 <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()))%>
+                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString(" onkeypress='return filterNumber(this, event);'" + (issue.getResolution().getSource() != "Duplicate" ? " readonly" : "")))%>
+                    <script type="text/javascript">
+                        var duplicateInput = document.getElementsByName('duplicate')[0];
+                        var duplicateOrig = duplicateInput.value;
+                        var resolutionSelect = document.getElementById('resolution');
+                        function updateDuplicateInput()
+                        {
+                            if (resolutionSelect.value == 'Duplicate')
+                                duplicateInput.readOnly = false;
+                            else
+                            {
+                                duplicateInput.readOnly = true;
+                                duplicateInput.value = duplicateOrig;
+                            }
+                        }
+                        if (window.addEventListener)
+                            resolutionSelect.addEventListener('change', updateDuplicateInput, false);
+                        else if (window.attachEvent)
+                            resolutionSelect.attachEvent('onchange', updateDuplicateInput);
+                    </script>
                 <% } else { %>
                     <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                 <% } %>

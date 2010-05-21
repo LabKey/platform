@@ -611,12 +611,23 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, issue);
             ActionURL detailsUrl;
 
+            // clear resolution, resolvedBy, and duplicate fields
+            if ("reopen".equals(form.getAction()))
+                issue.beforeReOpen();
+
             Issue duplicateOf = null;
             if ("resolve".equals(form.getAction()) &&
-                    issue.getResolution().equals("Duplicate") &&
+                    issue.getResolution().getSource().equals("Duplicate") &&
                     issue.getDuplicate() != null &&
-                    issue.getDuplicate() != prevIssue.getDuplicate())
-                duplicateOf = IssueManager.getIssue(c, issue.getDuplicate());
+                    !issue.getDuplicate().equals(prevIssue.getDuplicate()))
+            {
+                duplicateOf = IssueManager.getIssue(c, issue.getDuplicate().intValue());
+                if (duplicateOf == null)
+                {
+                    errors.rejectValue("Duplicate", ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
+                    return false;
+                }
+            }
 
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
             boolean ownsTransaction = !scope.isTransactionActive();
@@ -823,10 +834,6 @@ public class IssuesController extends SpringActionController
         if ("resolve".equals(action))
         {
             editable.add("resolution");
-            editable.add("duplicate");
-        }
-        if ("reopen".equals(action))
-        {
             editable.add("duplicate");
         }
 
