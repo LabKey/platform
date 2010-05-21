@@ -130,6 +130,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     {
         var o = eval('var $=' + response.responseText + ';$;');
         this.emailPref = o.success ? o.emailPref : 0;
+        this.individualEmailUsersCount = o.individualEmailUsersCount ? o.individualEmailUsersCount : 0;
 
         Ext.Ajax.request({
             autoAbort:true,
@@ -561,6 +562,8 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                 config.listeners = undefined;
                 config.text = config.prevText;
                 config.iconCls = config.prevIconCls;
+                config.hideIcon = false;
+                config.hideText = false;
 
                 actions.push(config);
             }
@@ -750,6 +753,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             name: 'emailPref', inputValue: 0});
         radioItems.push({xtype: 'radio',
             checked: this.emailPref == 1,
+            id: 'rd-individual-email',
             handler: this.onEmailPrefChanged,
             scope: this,
             boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for files changes.',
@@ -781,6 +785,18 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             items: [radioGroup]
         });
 
+        this.tooltip = new Ext.ToolTip({
+            target: 'rd-individual-email',
+            anchor: 'top',
+            hidden: true,
+            closable: true,
+            dismissDelay: 0,
+            anchorOffset: 125,
+            html: 'Email notifications for file uploads, deletions, and other changes (including file properties) may be ' +
+                    'sent to every user in this project that has read access to this folder. This list currently includes ' + 
+                    this.individualEmailUsersCount + ' user(s).'
+        });
+
         var emailPanel = new Ext.Panel({
             id: 'emailTab',
             title: 'Email Admin',
@@ -797,13 +813,19 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             ]
         });
 
+        emailPanel.on('beforehide', function(){this.tooltip.hide();}, this);
+        emailPanel.on('beforedestroy', function(){this.tooltip.destroy();}, this);
+
         return emailPanel;
     },
 
     onEmailPrefChanged : function(cb, checked)
     {
         if (checked)
+        {
             this.emailPref = cb.initialConfig.inputValue;
+            this.tooltip.setVisible(this.emailPref == 1);
+        }
     },
 
     onFilePropConfigChanged : function(group, rb)

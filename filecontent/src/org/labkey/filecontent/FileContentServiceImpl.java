@@ -35,6 +35,7 @@ import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
@@ -651,5 +652,11 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             return data;
         }
         return null;
+    }
+
+    @Override
+    public QueryUpdateService getFilePropsUpdateService(TableInfo tinfo, Container container)
+    {
+        return new FileQueryUpdateService(tinfo, container);
     }
 }

@@ -20,7 +20,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -31,7 +30,6 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.*;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -108,6 +106,12 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         }
     }
 
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+        return svc.getFilePropsUpdateService(this, getContainer());
+    }
 
     @Override
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)

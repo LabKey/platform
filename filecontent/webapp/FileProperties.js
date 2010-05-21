@@ -82,7 +82,12 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             if (field.name != 'RowId')
             {
                 if (field.lookup)
-                    field.lookup.container = this.containerPath; 
+                {
+                    if (field.lookup.containerPath)
+                        field.lookup.container = field.lookup.containerPath;
+                    else
+                        field.lookup.container = this.containerPath;
+                }
                 fields.push(field);
             }
         }

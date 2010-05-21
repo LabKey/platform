@@ -28,24 +28,25 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.*;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.notification.EmailPrefFilter;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -862,65 +863,17 @@ public class FileContentController extends SpringActionController
 
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
         {
-/*
-            Container container = getViewContext().getContainer();
-            User user = getViewContext().getUser();
-
-            FilesAdminOptions options = FilesAdminOptions.fromJSON(container, form.getProps());
-
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            svc.setAdminOptions(getContainer(), options);
-*/
             ApiSimpleResponse response = new ApiSimpleResponse();
+            TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(getUser(), getContainer()));
+            QueryUpdateService qus = ti.getUpdateService();
 
-            for (Map<String, Object> fileProps : _files)
+            try {
+                qus.updateRows(getUser(), getContainer(), _files, null);
+                response.put("success", true);
+            }
+            catch (QueryUpdateServiceException e)
             {
-                String uri = String.valueOf(fileProps.get("id"));
-
-                if (!StringUtils.isEmpty(uri))
-                {
-                    Path path = Path.decode(uri);
-
-                    if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
-                    {
-                        String newPath = path.toString();
-                        int idx = newPath.indexOf(WebdavService.getPath().toString());
-
-                        if (idx != -1)
-                        {
-                            newPath = newPath.substring(idx);
-                            path = Path.parse(newPath);
-                        }
-                    }
-                    WebdavResource resource = WebdavService.get().getResolver().lookup(path);
-                    if (resource != null)
-                    {
-                        ExpData data = FileContentServiceImpl.getDataObject(resource, getContainer(), getUser(), true);
-                        if (data != null)
-                        {
-                            try {
-                                StringBuilder sb = new StringBuilder("annotations updated: ");
-                                String delim = "";
-                                for (DomainProperty prop : _domainProps)
-                                {
-                                    Object o = fileProps.get(prop.getName());
-                                    if (o != null && !StringUtils.isBlank(String.valueOf(o)))
-                                    {
-                                        data.setProperty(getUser(), prop.getPropertyDescriptor(), o);
-                                        sb.append(delim).append(prop.getLabel()).append('=').append(String.valueOf(o));
-                                        delim = ",";
-                                    }
-                                }
-                                resource.notify(getViewContext(), sb.toString());
-                                response.put("success", true);
-                            }
-                            catch (ValidationException e){}
-                        }
-                        else
-                            response.put("success", false);
-
-                    }
-                }
+                response.put("success", false);
             }
             return response;
         }
@@ -947,6 +900,13 @@ public class FileContentController extends SpringActionController
 
                     for (Map<String, Object> fileProps : _files)
                     {
+                        WebdavResource resource = getResource(String.valueOf(fileProps.get("id")));
+                        if (resource != null && !resource.getActions(getUser()).isEmpty())
+                        {
+                            errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, resource.getName(), "has been previously processed, properties cannot be edited"));
+                            return;
+                        }
+
                         String name = String.valueOf(fileProps.get("name"));
                         for (DomainProperty dp : _domainProps)
                         {
@@ -961,6 +921,24 @@ public class FileContentController extends SpringActionController
                     }
                 }
             }
+        }
+
+        private WebdavResource getResource(String uri)
+        {
+            Path path = Path.decode(uri);
+
+            if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
+            {
+                String newPath = path.toString();
+                int idx = newPath.indexOf(WebdavService.getPath().toString());
+
+                if (idx != -1)
+                {
+                    newPath = newPath.substring(idx);
+                    path = Path.parse(newPath);
+                }
+            }
+            return WebdavService.get().getResolver().lookup(path);
         }
 
         private List<Map<String, Object>> parseFromJSON(Map<String, Object> props)
@@ -1200,7 +1178,11 @@ public class FileContentController extends SpringActionController
             ApiSimpleResponse response =  new ApiSimpleResponse();
             String pref = EmailService.get().getDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref());
 
+            EmailPrefFilter filter = new FileContentEmailPrefFilter(FileContentEmailPref.INDIVIDUAL);
+            User[] users = filter.getUsers(getContainer());
+
             response.put("emailPref", pref);
+            response.put("individualEmailUsersCount", users.length);
             response.put("success", true);
 
             return response;

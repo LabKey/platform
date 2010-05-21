@@ -993,6 +993,7 @@ filecontent/src/org/labkey/filecontent/FileContentModule.java -text
 filecontent/src/org/labkey/filecontent/FileContentServiceImpl.java -text
 filecontent/src/org/labkey/filecontent/FilePropertiesDomainKind.java -text
 filecontent/src/org/labkey/filecontent/FilePropertiesServiceImpl.java -text
+filecontent/src/org/labkey/filecontent/FileQueryUpdateService.java -text
 filecontent/src/org/labkey/filecontent/FileRoot.java -text
 filecontent/src/org/labkey/filecontent/FileRootManager.java -text
 filecontent/src/org/labkey/filecontent/FileSystemAttachmentParent.java -text
