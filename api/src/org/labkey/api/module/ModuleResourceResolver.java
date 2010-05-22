@@ -18,10 +18,8 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.TTLCacheMap;
-import org.labkey.api.resource.ClassResourceCollection;
-import org.labkey.api.resource.MergedDirectoryResource;
-import org.labkey.api.resource.Resolver;
-import org.labkey.api.resource.Resource;
+import org.labkey.api.resource.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
@@ -36,7 +34,14 @@ import java.util.List;
 public class ModuleResourceResolver implements Resolver
 {
     static Logger _log = Logger.getLogger(ModuleResourceResolver.class);
-    private static final TTLCacheMap<Pair<Resolver, Path>, Resource> _resources = new TTLCacheMap<Pair<Resolver, Path>, Resource>(1024, Cache.HOUR, "Module resources");
+    private static final TTLCacheMap<Pair<Resolver, Path>, Resource> _resources = new TTLCacheMap<Pair<Resolver, Path>, Resource>(4096, Cache.HOUR, "Module resources");
+    private static final Resource CACHE_MISS = new AbstractResource(null, null) {
+        public Resource parent()
+        {
+            return null;
+        }
+    };
+    private static boolean _devMode = AppProps.getInstance().isDevMode();
 
     Module _module;
     MergedDirectoryResource _root;
@@ -67,22 +72,30 @@ public class ModuleResourceResolver implements Resolver
         Path normalized = path.normalize();
         Pair<Resolver, Path> cacheKey = new Pair<Resolver, Path>(this, normalized);
         Resource r = _resources.get(cacheKey);
+        if (r == CACHE_MISS)
+            return null;
         if (r == null)
         {
             r = resolve(normalized);
             if (null == r)
+            {
+                // Cache misses in production mode for the default time period and
+                // in dev mode for a short time (about the length of a request.)
+                _log.debug("missed resource: " + path);
+                _resources.put(cacheKey, CACHE_MISS, _devMode ? _resources.getDefaultExpires() : (15*Cache.SECOND));
                 return null;
+            }
             if (r.exists())
             {
-                _log.debug("resolved resource: " + r.getPath() + " -> " + normalized);
+                _log.debug("resolved resource: " + r + " -> " + normalized);
                 _resources.put(cacheKey, r);
                 return r;
             }
         }
-        else if (!r.exists())
+        else if (_devMode && !r.exists())
         {
             // remove cached resource and try again
-            _log.debug("removed resource: " + r.getPath());
+            _log.debug("removed resource: " + r);
             _resources.remove(cacheKey);
             return lookup(path);
         }
