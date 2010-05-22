@@ -161,20 +161,6 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
 
 
     /**
-     * Use controller class version instead for Spring controllers.
-     * 
-     * @param action an enum named to match a controller action
-     * @return view url
-     */
-
-    // TODO: Eliminate this once Flow is ported to Spring and the two remaining usages of this are eliminated, in favor of action class URL creation
-    @Deprecated
-    public ActionURL urlFor(Enum action)
-    {
-        return getViewContext().getContainer().urlFor(action);
-    }
-
-    /**
      * Given the Class of an action in a Spring controller, returns the view URL to the action.
      *
      * @param action Action in a Spring controller

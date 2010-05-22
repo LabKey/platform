@@ -36,10 +36,10 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
@@ -1282,7 +1282,7 @@ public class PageFlowUtil
                 linkOnClick = "return false";
 
             StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\""+ linkOnClick + "\" title=\"");
+            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"").append(linkOnClick).append("\" title=\"");
             link.append(filter(helpText));
             link.append("\">").append(linkHtml).append("</a>");
             return link.toString();
