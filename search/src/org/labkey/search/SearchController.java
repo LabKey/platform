@@ -740,7 +740,7 @@ public class SearchController extends SpringActionController
                     break;
             }
             if (null != _category)
-                title += " for " + _category + "s";
+                title += " for " + _category.replaceAll(" ", "s, ") + "s";
             return root.addChild(title);
         }
     }
