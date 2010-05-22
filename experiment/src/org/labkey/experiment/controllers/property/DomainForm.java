@@ -23,11 +23,8 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewForm;
 
-import javax.servlet.ServletException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -37,18 +34,6 @@ public class DomainForm extends ViewForm
     private boolean _allowFileLinkProperties = false;
     private boolean _allowAttachmentProperties = false;
     private boolean _showDefaultValueSettings = false;
-
-    public void requiresPermission(int perm) throws ServletException
-    {
-        if (!getContainer().hasPermission(getUser(), perm))
-            HttpView.throwUnauthorized();
-
-        if (_domain != null)
-        {
-            if (!_domain.getContainer().hasPermission(getUser(), perm))
-                HttpView.throwUnauthorized();
-        }
-    }
 
     public int getDomainId()
     {
@@ -63,30 +48,6 @@ public class DomainForm extends ViewForm
     public Domain getDomain()
     {
         return _domain;
-    }
-
-    public ActionURL urlFor(Enum action)
-    {
-        ActionURL ret = getContainer().urlFor(action);
-        if (_domain != null)
-        {
-            ret.addParameter("domainId", Integer.toString(_domain.getTypeId()));
-        }
-        return ret;
-    }
-
-    public ActionURL urlFor(Enum action, DomainProperty pd)
-    {
-        ActionURL ret = urlFor(action);
-        if (pd == null)
-        {
-            ret.deleteParameter("propertyId");
-        }
-        else
-        {
-            ret.replaceParameter("propertyId", Integer.toString(pd.getPropertyId()));
-        }
-        return ret;
     }
 
     public String getLabel(DomainProperty pd)

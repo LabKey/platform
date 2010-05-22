@@ -539,12 +539,12 @@ String normalizeHref(Container c, Path contextPath, String href)
     {
         var header = {
             layout: 'form',
-            html : 'Categories<%=helpPopup("Categories", "Choose categories that your search might fit under. Example: If you are looking for information known attached file then select 'Files' to refine your search.")%>'
+            html : <%=PageFlowUtil.jsString("Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your results."))%>
         };
 
         var categories = {
             layout: 'form',
-            html  : 'Scope<%=helpPopup("Scope", "Scoping allows for the search to be refined to contents of the site (default), contents of this project, or contents of this folder.")%>',
+            html  : <%=PageFlowUtil.jsString("Scope" + helpPopup("Scope", "Scoping allows the search to be refined to the contents of the entire site (default), contents of this project including sub-folders, or contents of just this folder."))%>,
             items: {
                 id        : 'adv-category',
                 xtype     : 'checkboxgroup',
@@ -581,23 +581,23 @@ String normalizeHref(Container c, Path contextPath, String href)
                     value   : 'Dataset',
                     name    : 'category'
                 },{
-                    boxLabel: 'Assay',
+                    boxLabel: 'Assays',
                     value   : 'Assay',
                     name    : 'category'
                 },{
-                    boxLabel: 'Wiki',
+                    boxLabel: 'Wikis',
                     value   : 'Wiki',
                     name    : 'category'
                 },{
-                    boxLabel: 'List',
+                    boxLabel: 'Lists',
                     value   : 'List',
                     name    : 'category'
                 },{
-                    boxLabel: 'Issue',
+                    boxLabel: 'Issues',
                     value   : 'Issue',
                     name    : 'category'
                 },{
-                    boxLabel: 'Message',
+                    boxLabel: 'Messages',
                     value   : 'Message',
                     name    : 'category'
                 }]
