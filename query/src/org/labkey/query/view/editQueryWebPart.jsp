@@ -114,12 +114,13 @@
             querySelect.options[querySelect.options.length] = new Option(names[i], names[i]);
         }
 
-        updateViews(querySelect.value);
+        updateViews();
     }
-    function updateViews(queryName)
+    function updateViews()
     {
-        var tableName = document.getElementById('schemaName').value;
-        var viewNames = schemaInfos[tableName][queryName];
+        var schemaName = document.getElementById('schemaName').value;
+        var queryName = document.getElementById('queryName').value;
+        var viewNames = schemaInfos[schemaName][queryName];
         var viewSelect = document.getElementById('viewName');
 
         viewSelect.options.length = 0;
@@ -138,15 +139,6 @@
         document.getElementById('queryName').disabled = disable;
         document.getElementById('viewName').disabled = disable;
     }
-
-    Ext.onReady(function()
-    {
-        var schemaName = document.getElementById('schemaName');
-        if (schemaName != undefined)
-            updateQueries(schemaName.value);
-
-        document.getElementById('queryName').value = "<%=pm.get("queryName")%>";
-    });
 
 </script>
 
@@ -171,18 +163,18 @@
             <td>
                 <table>
                     <tr>
-                        <td><input type="radio" name="selectQuery" value="false" <% if (!querySelected) { %> checked <% } %> onchange="disableQuerySelect(this.value == 'false');"/></td>
-                        <td>Show the list of tables in this schema.</td>
+                        <td><input type="radio" id="selectQueryList" name="selectQuery" value="false" <% if (!querySelected) { %> checked <% } %> onchange="disableQuerySelect(this.value == 'false');"/></td>
+                        <td><label for="selectQueryList">Show the list of tables in this schema.</label></td>
                     </tr>
                     <tr>
-                        <td><input type="radio" name="selectQuery" value="true" <% if (querySelected) { %> checked <% } %>  onchange="disableQuerySelect(this.value == 'false');"/></td>
-                        <td>Show the contents of a specific table and view.</td>
+                        <td><input type="radio" id="selectQueryContents" name="selectQuery" value="true" <% if (querySelected) { %> checked <% } %>  onchange="disableQuerySelect(this.value == 'false');"/></td>
+                        <td><label for="selectQueryContents">Show the contents of a specific table and view.</label></td>
                     </tr>
                     <tr>
-                        <td/>
+                        <td></td>
                         <td>
                             <select name="queryName" id="queryName"
-                                    title="Select a Table Name" onchange="updateViews(this.value)"
+                                    title="Select a Table Name" onchange="updateViews()"
                                     <% if (!querySelected) { %> disabled="true" <% } %>>
                                 <%
                                 Map<String, List<String>> tableNames = schemaTableNames.get(pm.get("schemaName"));
@@ -206,7 +198,7 @@
                                         for (String viewName : viewNames)
                                         {
                                             viewName = StringUtils.trimToEmpty(viewName);
-                                            String value = StringUtils.defaultString(viewName, "<default view>");
+                                            String value = StringUtils.defaultIfEmpty(viewName, "<default view>");
                                             %><option value="<%=h(viewName)%>" <%=viewName.equals(pm.get("viewName")) ? "selected" : ""%>><%=h(value)%></option><%
                                         }
                                     }
