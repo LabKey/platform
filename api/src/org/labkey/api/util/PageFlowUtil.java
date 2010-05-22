@@ -154,7 +154,7 @@ public class PageFlowUtil
         if (null == s)
             return HString.EMPTY;
 
-        return new HString(filter(((HStringBuilder)s).getSource()), false);
+        return new HString(filter(s.getSource()), false);
     }
 
     
@@ -716,17 +716,6 @@ public class PageFlowUtil
             result[i] = Integer.parseInt(strings[i]);
         }
         return result;
-    }
-
-
-    // this is stupid hack to handle non-struts controllers
-    public static abstract class MessageFormatter
-    {
-        public abstract String get(String key);
-        String format(String key, String... args)
-        {
-            return MessageFormat.format(get(key), args);
-        }
     }
 
 
@@ -1302,10 +1291,10 @@ public class PageFlowUtil
                 linkOnClick = "return showHelpDiv(" + showHelpDivArgs + ");";
             }
             StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" " +
-                    "onClick=\""+ linkOnClick + "\" " +
-                    "onMouseOut=\"return hideHelpDivDelay();\" " +
-                    "onMouseOver=\"return showHelpDivDelay(" + showHelpDivArgs + ");\"");
+            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"");
+            link.append(linkOnClick);
+            link.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
+            link.append(showHelpDivArgs).append(");\"");
             link.append(">").append(linkHtml).append("</a>");
             return link.toString();
         }

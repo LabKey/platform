@@ -240,7 +240,7 @@ public class JSONObject extends HashMap<String, Object> {
                         key = key.substring(0, 1).toLowerCase() +
                                 key.substring(1);
                     }
-                    this.put(key, method.invoke(bean, null));
+                    this.put(key, method.invoke(bean));
                 }
             }
             catch (Exception e)

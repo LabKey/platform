@@ -31,7 +31,7 @@ import java.util.*;
  * NavTree can be used three ways in different places in the product
  *
  * 1) as a single navigation element (no children)
- * 2) as a list of navigatin elements (ignore the root node, use children as list of elements)
+ * 2) as a list of navigation elements (ignore the root node, use children as list of elements)
  * 3) as a tree, may be rendered as an tree, or menu
  */
 
