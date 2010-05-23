@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentEmailPrefFilter;
@@ -53,6 +54,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.api.writer.ContainerUser;
 
@@ -574,7 +576,9 @@ public class FileSystemResource extends AbstractWebdavResource
 
             try {
                 _customProperties = new HashMap<String, String>();
-                Map<String, Object> keys = Collections.singletonMap("filePath", (Object)this.getFile().getCanonicalPath());
+                File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(this.getFile());
+                String url = canonicalFile.toURI().toURL().toString();
+                Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), (Object)url);
                 List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
                 assert(rows.size() <= 1);
 
@@ -582,9 +586,14 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     for (Map.Entry<String, Object> entry : rows.get(0).entrySet())
                     {
-                        _customProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
+                        if (entry.getValue() != null)
+                            _customProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
                     }
                 }
+            }
+            catch (MalformedURLException e)
+            {
+                throw new UnexpectedException(e);
             }
             catch (Exception e)
             {

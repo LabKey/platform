@@ -52,7 +52,7 @@ sb.clearStatus(); // once completeed
  * Creates a new StatusBar
  * @param {Object/Array} config A config object
  */
-Ext.StatusBar = Ext.extend(Ext.Toolbar, {
+LABKEY.ext.StatusBar = Ext.extend(Ext.Toolbar, {
     /**
      * @cfg {String} statusAlign
      * The alignment of the status element within the overall StatusBar layout.  When the StatusBar is rendered,
@@ -187,12 +187,12 @@ sb.setStatus({
         if(this.statusAlign=='right'){
             this.cls += ' x-status-right';
         }
-        Ext.StatusBar.superclass.initComponent.call(this);
+        LABKEY.ext.StatusBar.superclass.initComponent.call(this);
     },
 
     // private
     afterRender : function(){
-        Ext.StatusBar.superclass.afterRender.call(this);
+        LABKEY.ext.StatusBar.superclass.afterRender.call(this);
 
         var right = this.statusAlign == 'right';
         this.currIconCls = this.iconCls || this.defaultIconCls;
@@ -415,4 +415,4 @@ statusBar.setStatus({
         return this.setStatus(o);
     }
 });
-Ext.reg('statusbar', Ext.StatusBar);
+Ext.reg('statusbar', LABKEY.ext.StatusBar);
