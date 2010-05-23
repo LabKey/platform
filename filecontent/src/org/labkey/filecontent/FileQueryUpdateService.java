@@ -15,8 +15,8 @@
  */
 package org.labkey.filecontent;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
+import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
@@ -25,6 +25,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -38,7 +40,9 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,6 +53,9 @@ import java.util.Map;
 public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
     private Container _container;
+    private Set<String> _columns;
+    private Domain _domain;
+
     public static final String KEY_COL_ID = "id";
     public static final String KEY_COL_DAV = "davUrl";
     public static final String KEY_COL_FILE = "filePath";
@@ -63,20 +70,17 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        String uri = svc.getDomainURI(container);
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
-        ExpData data = dataRowFromKeys(user, container, keys, true);
+        Filter filter = getQueryFilter(keys);
 
-        if (dd != null && data != null)
+        Map<String, Object> rowMap = Table.selectObject(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
+        if (rowMap != null)
         {
-            Map<String, Object> rowMap = new HashMap<String, Object>();
-            Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+            Domain domain = getFileProperties(container);
             if (domain != null)
             {
                 for (DomainProperty prop : domain.getProperties())
                 {
-                    Object o = data.getProperty(prop);
+                    Object o = rowMap.get(prop.getName());
                     if (o != null)
                     {
                         try {
@@ -89,9 +93,68 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     }
                 }
             }
-            return rowMap;
         }
-        return null;
+        return rowMap;
+    }
+
+    IntegerConverter _converter = new IntegerConverter();
+
+    private Filter getQueryFilter(Map<String, Object> keys) throws QueryUpdateServiceException
+    {
+        Filter filter;
+
+        if (keys.containsKey(ExpDataTable.Column.RowId.name()))
+        {
+            Object o = keys.get(ExpDataTable.Column.RowId.name());
+            filter = new SimpleFilter(ExpDataTable.Column.RowId.name(), _converter.convert(Integer.class, o));
+        }
+        else if (keys.containsKey(ExpDataTable.Column.LSID.name()))
+        {
+            Object o = keys.get(ExpDataTable.Column.LSID.name());
+            filter = new SimpleFilter(ExpDataTable.Column.LSID.name(), o);
+        }
+        else if (keys.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+        {
+            Object o = keys.get(ExpDataTable.Column. DataFileUrl.name());
+            filter = new SimpleFilter("DataFileUrl", o);
+        }
+        else
+            throw new QueryUpdateServiceException("Either RowId, LSID, or DataFileURL is required to get ExpData.");
+
+        return filter;
+    }
+
+    private Set<String> getQueryColumns(Container c)
+    {
+        if (_columns == null)
+        {
+            _columns = new HashSet<String>();
+
+            _columns.add(ExpDataTable.Column.Flag.name());
+            _columns.add(ExpDataTable.Column.DataFileUrl.name());
+
+            Domain domain = getFileProperties(c);
+            if (domain != null)
+            {
+                for (DomainProperty prop : domain.getProperties())
+                    _columns.add(prop.getName());
+            }
+        }
+        return _columns;
+    }
+
+    private Domain getFileProperties(Container container)
+    {
+        if (_domain == null)
+        {
+            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
+            String uri = svc.getDomainURI(container);
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
+
+            if (dd != null)
+                _domain = PropertyService.get().getDomain(dd.getDomainId());
+        }
+        return _domain;
     }
 
     @Override
@@ -108,45 +171,56 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
     private Map<String, Object> _setRow(final User user, final Container container, Map<String, Object> row, boolean isUpdate) throws ValidationException
     {
-        FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-        ExpData data = dataRowFromKeys(user, container, row, isUpdate);
+        String dataFileUrl = null;
+
+        if (!row.containsKey(ExpDataTable.Column.DataFileUrl.name()))
+        {
+            try {
+                Filter filter = getQueryFilter(row);
+                Map<String, Object> rowMap = Table.selectObject(getQueryTable(), getQueryColumns(container), filter, null, Map.class);
+                if (rowMap != null)
+                    dataFileUrl = String.valueOf(rowMap.get(ExpDataTable.Column.DataFileUrl.name()));
+            }
+            catch (Exception e)
+            {
+                throw new ValidationException("Unable to get the DataFileUrl");
+            }
+        }
+        else
+            dataFileUrl = String.valueOf(row.get(ExpDataTable.Column.DataFileUrl.name()));
+
+        ExpData data = ExperimentService.get().getExpDataByURL(dataFileUrl, container);
 
         if (data != null)
         {
-            String uri = svc.getDomainURI(container);
-            DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, container);
+            Domain domain = getFileProperties(container);
             WebdavResource resource = davResourceFromKeys(row);
 
-
-            if (dd != null)
+            if (domain != null)
             {
-                Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-                if (domain != null)
+                StringBuilder sb = new StringBuilder("annotations updated: ");
+                String delim = "";
+
+                for (DomainProperty prop : domain.getProperties())
                 {
-                    StringBuilder sb = new StringBuilder("annotations updated: ");
-                    String delim = "";
-
-                    for (DomainProperty prop : domain.getProperties())
+                    if (row.containsKey(prop.getName()))
                     {
-                        if (row.containsKey(prop.getName()))
-                        {
-                            Object value = row.get(prop.getName());
+                        Object value = row.get(prop.getName());
 
-                            data.setProperty(user, prop.getPropertyDescriptor(), value);
-                            sb.append(delim).append(prop.getLabel()).append('=').append(String.valueOf(value));
-                            delim = ",";
-                        }
+                        data.setProperty(user, prop.getPropertyDescriptor(), value);
+                        sb.append(delim).append(prop.getLabel()).append('=').append(String.valueOf(value));
+                        delim = ",";
                     }
-                    if (resource != null)
-                        resource.notify(new ContainerUser(){
-                            public User getUser(){
-                                return user;
-                            }
-                            public Container getContainer(){
-                                return container;
-                            }
-                        }, sb.toString());
                 }
+                if (resource != null)
+                    resource.notify(new ContainerUser(){
+                        public User getUser(){
+                            return user;
+                        }
+                        public Container getContainer(){
+                            return container;
+                        }
+                    }, sb.toString());
             }
             return row;
         }
@@ -163,27 +237,6 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         throw new UnsupportedOperationException("DeleteRow not supported");
-    }
-
-    private ExpData dataRowFromKeys(User user, Container container, Map<String, Object> keys, boolean isUpdate)
-    {
-        if (keys.containsKey(KEY_COL_DAV))
-        {
-            WebdavResource resource = getResource(String.valueOf(keys.get(KEY_COL_DAV)));
-            return FileContentServiceImpl.getDataObject(resource, container, user, !isUpdate);
-        }
-        else if (keys.containsKey(KEY_COL_ID))
-        {
-            WebdavResource resource = getResource(String.valueOf(keys.get(KEY_COL_ID)));
-            return FileContentServiceImpl.getDataObject(resource, container, user, !isUpdate);
-        }
-        else if (keys.containsKey(KEY_COL_FILE))
-        {
-            File file = new File(String.valueOf(keys.get(KEY_COL_FILE)));
-            if (file.exists())
-                return ExperimentService.get().getExpDataByURL(file, container);
-        }
-        return null;
     }
 
     private WebdavResource davResourceFromKeys(Map<String, Object> keys)

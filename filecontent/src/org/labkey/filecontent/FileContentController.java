@@ -33,6 +33,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.*;
 import org.labkey.api.files.view.FilesWebPart;
@@ -68,6 +69,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.util.*;
 
 
@@ -787,14 +789,24 @@ public class FileContentController extends SpringActionController
 
     public static class DesignerForm
     {
+        private String _returnURL;
 
+        public String getReturnURL()
+        {
+            return _returnURL;
+        }
+
+        public void setReturnURL(String returnURL)
+        {
+            _returnURL = returnURL;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
     public class DesignerAction extends SimpleViewAction<DesignerForm>
     {
         @Override
-        public ModelAndView getView(DesignerForm designerForm, BindException errors) throws Exception
+        public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
         {
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
             String uri = svc.getDomainURI(getContainer());
@@ -803,7 +815,9 @@ public class FileContentController extends SpringActionController
 
             properties.put("typeURI", uri);
             properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
-            
+            properties.put("returnURL", form.getReturnURL());
+            properties.put("cancelURL", form.getReturnURL());
+
             return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
         }
 
@@ -917,6 +931,18 @@ public class FileContentController extends SpringActionController
                                     errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, name, ve.getMessage()));
                                 return;
                             }
+                        }
+
+                        // need this as a key for the query update service
+                        try {
+                            File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(resource.getFile());
+                            String url = canonicalFile.toURI().toURL().toString();
+
+                            fileProps.put(ExpDataTable.Column.DataFileUrl.name(), url);
+                        }
+                        catch (MalformedURLException e)
+                        {
+                            errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, name, "Unable to create the DataFileUrl"));
                         }
                     }
                 }

@@ -100,7 +100,15 @@ if (null == getStudy())
     {
         out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
         out.write("&nbsp;");
-        out.write(textLink("Manage Files", url.setPageFlow("Pipeline").setAction("begin.view")));
+
+        // if there is a pipeline override, show the pipeline view, else show the files webpart
+        ActionURL pipelineUrl;
+        if (PipelineService.get().hasSiteDefaultRoot(c))
+            pipelineUrl = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
+        else
+            pipelineUrl = PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(c);
+
+        out.write(textLink("Manage Files", pipelineUrl.toString()));
     }
     else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
             getStudy().getRepositorySettings().isEnableRequests())

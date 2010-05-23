@@ -2787,7 +2787,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         var toolbar = new Ext.Toolbar({buttons:[
             this.actions.appletFileAction, this.actions.appletDirAction
         ]});
-        this.appletStatusBar = new Ext.StatusBar({id:'appletStatusBar', defaultText:'Ready', busyText:'Copying...', items:[
+        this.appletStatusBar = new LABKEY.ext.StatusBar({id:'appletStatusBar', defaultText:'Ready', busyText:'Copying...', items:[
             {xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120}
         ]});
 
@@ -3283,7 +3283,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
-            this.appletStatusBar = new Ext.StatusBar({
+            this.appletStatusBar = new LABKEY.ext.StatusBar({
                 id:'appletStatusBar', defaultText:'', busyText:'Copying...',
                 width: 200,
                 hidden: true,

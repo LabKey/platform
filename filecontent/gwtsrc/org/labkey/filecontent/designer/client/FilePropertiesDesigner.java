@@ -203,7 +203,10 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
     @Override
     public void cancel()
     {
-        back();
+        if (_cancelURL != null)
+            navigate(_cancelURL);
+        else
+            back();
     }
 
     @Override

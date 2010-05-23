@@ -839,7 +839,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     onEditFileProperties : function(btn, evt)
     {
         //this.saveActionConfig(btn, evt);
-        window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer');
+        window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', null, {'returnURL':window.location});
     },
 
     /**
