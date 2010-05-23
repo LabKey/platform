@@ -48,23 +48,6 @@ LABKEY.Experiment = new function()
         };
     }
 
-    function getErrorCallbackWrapper(fn, scope)
-    {
-        if (!fn)
-            return Ext.emptyFn;
-        return function (response, options)
-        {
-            var errorInfo = null;
-            if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
-                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-                errorInfo = Ext.util.JSON.decode(response.responseText);
-            else
-                errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
-
-            fn.call(scope || this, errorInfo, options, response);
-        };
-    }
-
     /** @scope LABKEY.Experiment */
     return {
 
@@ -109,7 +92,7 @@ LABKEY.Experiment = new function()
                 method : 'POST',
                 jsonData : { runIds : config.runIds },
                 success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
                 headers :
                 {
                     'Content-Type' : 'application/json'
@@ -152,7 +135,7 @@ LABKEY.Experiment = new function()
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
                 scope: config.scope,
                 jsonData : {
                     assayId: config.assayId,
@@ -203,7 +186,7 @@ LABKEY.Experiment = new function()
                     batch: config.batch
                 },
                 success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
                 scope: config.scope,
                 headers: {
                     'Content-Type' : 'application/json'
@@ -213,6 +196,7 @@ LABKEY.Experiment = new function()
 
         /**
          * Saves materials.
+         * @deprecated Use LABKEY.Query.insertRows({schemaName: 'Samples', queryName: '&lt;sample set name>', ...});
          *
          * @param config An object that contains the following configuration parameters
          * @param config.name name of the sample set
@@ -237,24 +221,13 @@ LABKEY.Experiment = new function()
                 return;
             }
 
-            function createReturnedObject(json)
-            {
-                return null;
-            }
-
-            Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("experiment", "saveMaterials", LABKEY.ActionURL.getContainer()),
-                method: 'POST',
-                jsonData: {
-                    name: config.name,
-                    materials: config.materials
-                },
-                success: getSuccessCallbackWrapper(createReturnedObject, config.successCallback, config.scope),
-                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
-                scope: config.scope,
-                headers: {
-                    'Content-Type' : 'application/json'
-                }
+            LABKEY.Query.insertRows({
+                schemaName: 'Samples',
+                queryName: config.name,
+                rowDataArray: config.materials,
+                successCallback: config.successCallback,
+                errorCallback: config.failureCallback,
+                scope: config.scope
             });
         }
     };
@@ -723,23 +696,6 @@ LABKEY.Exp.Data = function (config) {
         };
     }
 
-    function getErrorCallbackWrapper(fn, scope)
-    {
-        if (!fn)
-            return Ext.emptyFn;
-        return function (response, options)
-        {
-            var errorInfo = null;
-            if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
-                    && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-                errorInfo = Ext.util.JSON.decode(response.responseText);
-            else
-                errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
-
-            fn.call(scope || this, errorInfo, options, response);
-        };
-    }
-
     /**
      * Retrieves the contents of the data object from the server.
      * @param config An object that contains the following configuration parameters
@@ -791,7 +747,7 @@ LABKEY.Exp.Data = function (config) {
             method : 'GET',
             params : { rowId : this.id, format: config.format },
             success: getSuccessCallbackWrapper(config.successCallback, config.format, config.scope),
-            failure: getErrorCallbackWrapper(config.failureCallback, config.scope)
+            failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
         });
 
     };
