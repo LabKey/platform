@@ -74,7 +74,6 @@ public abstract class DefaultModule implements Module
     private Collection<WebPartFactory> _webPartFactories;
 
     private ModuleResourceResolver _resolver;
-    private boolean _loadFromSource;
     private String _name = null;
     private double _version = 0.0;
     private double _requiredServerVersion = 0.0;
@@ -137,13 +136,6 @@ public abstract class DefaultModule implements Module
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
         if (null != getSourcePath() && null != getBuildPath())
             ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
-
-        if (AppProps.getInstance().isDevMode() && _sourcePath != null)
-        {
-            File f = new File(_sourcePath);
-            if (f.exists())
-                _loadFromSource = true;
-        }
 
         _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
@@ -784,7 +776,10 @@ public abstract class DefaultModule implements Module
         {
             if (null != source)
             {
-                File f = new File(new File(source), "webapp");
+                File f = new File(new File(source), "web");
+                if (f.isDirectory())
+                    l.add(f);
+                f = new File(new File(source), "webapp");
                 if (f.isDirectory())
                     l.add(f);
             }
