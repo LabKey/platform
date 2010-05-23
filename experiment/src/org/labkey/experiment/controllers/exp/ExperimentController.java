@@ -554,14 +554,27 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
+            StringBuilder updateLinks = new StringBuilder();
+            if (getContainer().hasPermission(getUser(), UpdatePermission.class))
+            {
+                // XXX: ridiculous amount of work to get a update url expression for the sample set's table.
+                UserSchema sampleSetSchema = QueryService.get().getUserSchema(getUser(), getContainer(), "Samples");
+                QueryDefinition queryDef = sampleSetSchema.getQueryDefForTable(_material.getSampleSet().getName());
+                StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, getContainer());
+                String url = expr.eval(Collections.singletonMap("RowId", _material.getRowId()));
+
+                updateLinks.append("[<a href=\"").append(url).append("\">edit</a>] ");
+            }
+
             if (getContainer().hasPermission(getUser(), InsertPermission.class))
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());
 
-                HtmlView deriveView = new HtmlView("[<a href=\"" + deriveURL + "\">derive samples from this sample</a>]");
-                vbox.addView(deriveView);
+                updateLinks.append("[<a href=\"").append(deriveURL).append("\">derive samples from this sample</a>] ");
             }
+
+            vbox.addView(new HtmlView(updateLinks.toString()));
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.setShowRecordSelectors(false);
@@ -2401,6 +2414,18 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(UpdatePermission.class)
     public class ShowUploadMaterialsAction extends SimpleViewAction<UploadMaterialSetForm>
     {
+        ExpSampleSet _ss;
+
+        @Override
+        public void validate(UploadMaterialSetForm form, BindException errors)
+        {
+            if (StringUtils.isNotEmpty(form.getName()))
+            {
+                String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
+                _ss = ExperimentService.get().getSampleSet(materialSourceLsid);
+            }
+        }
+
         public ModelAndView getView(UploadMaterialSetForm form, BindException errors) throws ServletException
         {
             if (isPost())
@@ -2411,10 +2436,7 @@ public class ExperimentController extends SpringActionController
                 }
                 else
                 {
-                    String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
-                    ExpSampleSet sourceExisting = ExperimentService.get().getSampleSet(materialSourceLsid);
-
-                    if (!form.isImportMoreSamples() && null != sourceExisting)
+                    if (!form.isImportMoreSamples() && null != _ss)
                     {
                         errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
                                 "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
@@ -2461,7 +2483,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Import Sample Set");
+            NavTree nav = appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            if (_ss != null)
+                nav.addChild(_ss.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(_ss));
+            nav.addChild("Import Sample Set");
+            return nav;
         }
     }
 

@@ -1667,6 +1667,9 @@ public class QueryController extends SpringActionController
 
         public ActionURL getSuccessURL(QueryUpdateForm form)
         {
+            String returnURL = getViewContext().getRequest().getParameter(QueryParam.srcURL.toString());
+            if (returnURL != null)
+                return new ActionURL(returnURL);
             return _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
         }
 

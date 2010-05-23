@@ -251,9 +251,15 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
         });
         typeColumnInfo.setReadOnly(true);
+        typeColumnInfo.setShownInInsertView(false);
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
-        addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
+
+        ColumnInfo runCol = addColumn(ExpMaterialTable.Column.Run);
+        runCol.setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
+        runCol.setShownInInsertView(false);
+        runCol.setShownInUpdateView(false);
+
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setHidden(true);
         colLSID.setReadOnly(true);
