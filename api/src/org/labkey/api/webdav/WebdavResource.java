@@ -70,6 +70,7 @@ public interface WebdavResource extends Resource
     FileStream getFileStream(User user) throws IOException;
 
     /** Caller needs to check permissions */
+    @Nullable
     InputStream getInputStream(User user) throws IOException;
 
     /** Caller needs to check permissions */
