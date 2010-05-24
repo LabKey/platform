@@ -258,7 +258,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 Metadata metadata = new Metadata();
                 metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                ContentHandler handler = new BodyContentHandler();
+                ContentHandler handler = new BodyContentHandler(-1);
 
                 parse(r, fs, is, handler, metadata);
 
