@@ -20,10 +20,12 @@ import org.apache.log4j.Logger;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
 import javax.servlet.ServletException;
@@ -459,15 +461,15 @@ public class DbScope
 
                 if (null != schema)
                 {
-                    if (resource != null)
+                    if (resource == null)
+                        resource = new DbSchemaResource(schema);
+
+                    schema.setResource(resource);
+                    xmlStream = resource.getInputStream();
+                    if (null != xmlStream)
                     {
-                        schema.setResource(resource);
-                        xmlStream = resource.getInputStream();
-                        if (null != xmlStream)
-                        {
-                            TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
-                            schema.loadXml(tablesDoc, true);
-                        }
+                        TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
+                        schema.loadXml(tablesDoc, true);
                     }
 
                     _loadedSchemas.put(schema.getName(), schema);
@@ -930,6 +932,32 @@ public class DbScope
         {
             while (!_commitTasks.isEmpty())
                 _commitTasks.removeFirst().run();
+        }
+    }
+
+    private class DbSchemaResource extends AbstractResource
+    {
+        private DbSchema schema;
+
+        protected DbSchemaResource(DbSchema schema)
+        {
+            // CONSIDER: create a ResourceResolver based on DbScope
+            super(new Path(schema.getName()), null);
+            this.schema = schema;
+        }
+
+        @Override
+        public Resource parent()
+        {
+            return null;
+        }
+
+        @Override
+        public long getVersionStamp()
+        {
+            // UNDONE: The DbSchemaResource could check if the schema is modified
+            // in the source database.  For now the DbSchemaResource is always up to date.
+            return 0L;
         }
     }
 }

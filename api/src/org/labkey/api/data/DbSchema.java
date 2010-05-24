@@ -195,8 +195,8 @@ public class DbSchema
 
     boolean isStale()
     {
-        // TODO: Check this with Kevin
-        return _resourceRef != null && _resourceRef.isStale();
+        assert _resourceRef != null;
+        return _resourceRef.isStale();
     }
 
     Resource getResource()
