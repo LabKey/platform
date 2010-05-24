@@ -556,7 +556,7 @@ public class ExperimentController extends SpringActionController
 
             StringBuilder updateLinks = new StringBuilder();
             ExpSampleSet ss = _material.getSampleSet();
-            if (ss.getContainer().hasPermission(getUser(), UpdatePermission.class))
+            if (ss != null && ss.getContainer() != null && ss.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
                 // XXX: ridiculous amount of work to get a update url expression for the sample set's table.
                 UserSchema samplesSchema = QueryService.get().getUserSchema(getUser(), ss.getContainer(), "Samples");
