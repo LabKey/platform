@@ -489,8 +489,6 @@ public class FileSystemResource extends AbstractWebdavResource
     @NotNull @Override
     public Collection<NavTree> getActions(User user)
     {
-        if (_file != null)
-        {
             if (isFile())
             {
                 ExpData data = getExpData();
@@ -510,20 +508,6 @@ public class FileSystemResource extends AbstractWebdavResource
                     return result;
                 }
             }
-            else
-            {
-                ExpRun[] runs = ExperimentService.get().getRunsForPath(_file, null);
-                List<NavTree> result = new ArrayList<NavTree>();
-                for (ExpRun run : runs)
-                {
-                    if (run.getContainer().hasPermission(user, ReadPermission.class))
-                    {
-                        result.add(new NavTree(run.getName(), LsidManager.get().getDisplayURL(run.getLSID())));
-                    }
-                }
-                return result;
-            }
-        }
         return Collections.emptyList();
     }
 
