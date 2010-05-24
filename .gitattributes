@@ -1000,6 +1000,7 @@ filecontent/src/org/labkey/filecontent/FileSystemAttachmentParent.java -text
 filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
 filecontent/src/org/labkey/filecontent/ManageWebPart.java -text
 filecontent/src/org/labkey/filecontent/view/configure.jsp -text
+filecontent/src/org/labkey/filecontent/view/configureEmail.jsp -text
 filecontent/src/org/labkey/filecontent/view/davfiles.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text

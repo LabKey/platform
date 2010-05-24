@@ -120,6 +120,11 @@ public class FileContentController extends SpringActionController
         {
             return new ActionURL(ShowAdminAction.class, container);
         }
+
+        public ActionURL urlFileEmailPreference(Container container)
+        {
+            return new ActionURL(FileEmailPreferenceAction.class, container);
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -1241,6 +1246,20 @@ public class FileContentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("File History");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class FileEmailPreferenceAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/filecontent/view/configureEmail.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Email Notification Preferences");
         }
     }
 

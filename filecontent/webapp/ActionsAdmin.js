@@ -770,7 +770,6 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         var radioGroup = new Ext.form.RadioGroup({
             xtype: 'radiogroup',
             //fieldLabel: 'Email Notification Settings',
-            itemCls: 'x-check-group',
             columns: 1,
             labelSeparator: '',
             items: radioItems
@@ -1002,7 +1001,6 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
             var radioGroup = new Ext.form.RadioGroup({
                 xtype: 'radiogroup',
                 //fieldLabel: 'Email Notification Settings',
-                itemCls: 'x-check-group',
                 columns: 1,
                 labelSeparator: '',
                 items: radioItems
@@ -1040,33 +1038,59 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
                 items: items
             });
 
-            win = new Ext.Window({
-                title: 'Email Notification Settings',
-                width: 575,
-                height: 250,
-                cls: 'extContainer',
-                autoScroll: true,
-                closeAction:'close',
-                modal: true,
-                layout: 'fit',
-                items: panel,
-                buttons: [
-                    {text:'Submit', handler:function(){
-                        formPanel.getForm().doAction('submit', {
-                            url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref"),
-                            waitMsg:'Saving Settings...',
-                            method: 'POST',
-                            success: function(){win.close();},
-                            failure: LABKEY.Utils.displayAjaxErrorResponse,
-                            scope: this,
-                            clientValidation: false
-                        });}
-                    },
-                    {text:'Cancel', handler:function(){win.close();}}
-                ]
-            });
-            win.show();
-
+            if (this.renderTo)
+            {
+                var p = new Ext.Panel({
+                    renderTo: this.renderTo,
+                    border: false,
+                    height: 175,
+                    items: items,
+                    buttonAlign: 'left',
+                    buttons: [
+                        {text:'Submit', handler:function(){
+                            formPanel.getForm().doAction('submit', {
+                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref"),
+                                waitMsg:'Saving Settings...',
+                                method: 'POST',
+                                success: function(){window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin');},
+                                failure: LABKEY.Utils.displayAjaxErrorResponse,
+                                scope: this,
+                                clientValidation: false
+                            });}
+                        },
+                        {text:'Cancel', handler:function(){window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin');}}
+                    ]
+                })
+            }
+            else
+            {
+                var win = new Ext.Window({
+                    title: 'Email Notification Settings',
+                    width: 575,
+                    height: 250,
+                    cls: 'extContainer',
+                    autoScroll: true,
+                    closeAction:'close',
+                    modal: true,
+                    layout: 'fit',
+                    items: panel,
+                    buttons: [
+                        {text:'Submit', handler:function(){
+                            formPanel.getForm().doAction('submit', {
+                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref"),
+                                waitMsg:'Saving Settings...',
+                                method: 'POST',
+                                success: function(){win.close();},
+                                failure: LABKEY.Utils.displayAjaxErrorResponse,
+                                scope: this,
+                                clientValidation: false
+                            });}
+                        },
+                        {text:'Cancel', handler:function(){win.close();}}
+                    ]
+                });
+                win.show();
+            }
         }
         else
             Ext.Msg.alert('Error', 'An error occurred getting the user email settings.');
