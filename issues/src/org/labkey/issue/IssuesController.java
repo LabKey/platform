@@ -1131,7 +1131,7 @@ public class IssuesController extends SpringActionController
         }
         catch (Exception e)
         {
-            _log.error("sendUpdateEmail", e);
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
@@ -1144,7 +1144,8 @@ public class IssuesController extends SpringActionController
         final Set<String> emailAddresses = new HashSet<String>();
         final Container c = getContainer();
         int assignedToPref = IssueManager.getUserEmailPreferences(c, issue.getAssignedTo());
-        int assignedToPrevPref = prevIssue != null ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
+        int assignedToPrev = prevIssue != null && prevIssue.getAssignedTo() != null ? prevIssue.getAssignedTo() : 0;
+        int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
         int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
 
