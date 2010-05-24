@@ -438,7 +438,6 @@ String normalizeHref(Container c, Path contextPath, String href)
         {
             URLHelper url = new URLHelper(href);
             Path path = url.getParsedPath();
-            System.err.println(path.toString() + "    " + contextPath.toString() + "   " + c.getId());
             if (path.startsWith(contextPath))
             {
                 int pos = contextPath.size() + 1;
