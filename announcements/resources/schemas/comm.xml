@@ -237,6 +237,18 @@
       <ns:column columnName="RendererType"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="PagesAndVersions" tableDbType="VIEW">
+    <ns:columns>
+      <ns:column columnName="Container">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
+      <ns:column columnName="Name">
+        <ns:url>/wiki/page.view?name=${Name}</ns:url>
+      </ns:column>
+      <ns:column columnName="Title"/>
+      <ns:column columnName="Body"/>
+    </ns:columns>
+  </ns:table>
   <ns:table tableName="EmailFormats" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="EmailFormatId"/>

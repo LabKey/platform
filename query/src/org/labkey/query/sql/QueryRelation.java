@@ -159,16 +159,17 @@ public abstract class QueryRelation
 
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment(StringUtils.defaultString(tableAlias,getTable().getAlias()) + "." + getDialect(this).quoteColumnIdentifier(getAlias()));
+            return new SQLFragment(StringUtils.defaultString(tableAlias, getTable().getAlias()) + "." + getDialect(this).quoteColumnIdentifier(getAlias()));
         }
 
         abstract void copyColumnAttributesTo(ColumnInfo to);
 
-        // the sql respresenting this column 'inside' its queryrelation (optional)
+        // the sql representing this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()
         {
             throw new UnsupportedOperationException();    
         }
+
         void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
         }

@@ -21,7 +21,6 @@ import junit.framework.TestSuite;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
@@ -360,28 +359,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return SYSTEM_SCHEMAS.contains(schemaName);
     }
 
-    public String getColumnSelectName(String columnName)
-    {
-        if (reservedWordSet.contains(columnName))
-            return "\"" + columnName + "\"";    // SQL Server wants quotes around column names that are key words
-        else
-            return columnName;
-    }
-
-    // quote column identifier if necessary
-    public String quoteColumnIdentifier(String id)
-    {
-        if (!AliasManager.isLegalName(id) || reservedWordSet.contains(id))
-            return "\"" + id + "\"";
-        else
-            return id;
-    }
-
-    public String getTableSelectName(String tableName)
-    {
-        return getColumnSelectName(tableName);  // Same as column names
-    }
-
     public String sanitizeException(SQLException ex)
     {
         if ("01004".equals(ex.getSQLState()))
@@ -587,7 +564,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
-            _descriptionKey = "REMARKS";          // TODO: Has a remarks column, but doesn't seem to have anything in it...
+            _descriptionKey = "REMARKS";          // TODO: SQL Server has a remarks column, but doesn't seem to have anything in it...
         }
 
         public boolean isAutoIncrement() throws SQLException
