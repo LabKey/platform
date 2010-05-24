@@ -1519,7 +1519,7 @@ public class Table
 
             // overwrite selectName to not use schema/owner name
             this.name = name;
-            selectName = new SQLFragment(getSqlDialect().getTableSelectName(_tempTableName));
+            selectName = new SQLFragment(_tempTableName);
             for (ColumnInfo col : cols)
                 col.setParentTable(this);
             columns.addAll(cols);

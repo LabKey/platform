@@ -522,11 +522,11 @@ public abstract class SqlDialect
     }
 
 
-    // Just return name by default... subclasses can override and (for example) put quotes around keywords
     public String getColumnSelectName(String columnName)
     {
-        if (reservedWordSet.contains(columnName))
-            return "\"" + columnName.toLowerCase() + "\"";
+        // Consider: just use quoteColumnIdentifier()?
+        if (!"*".equals(columnName) && (reservedWordSet.contains(columnName) || !AliasManager.isLegalName(columnName)))
+            return "\"" + columnName + "\"";
         else
             return columnName;
     }
@@ -536,16 +536,15 @@ public abstract class SqlDialect
     public String quoteColumnIdentifier(String id)
     {
         if (!AliasManager.isLegalName(id) || reservedWordSet.contains(id))
-            return "\"" + id.toLowerCase() + "\"";
+            return "\"" + id + "\"";
         else
             return id;
     }
 
 
-    // Just return name by default... subclasses can override and (for example) put quotes around keywords
     public String getTableSelectName(String tableName)
     {
-        return tableName;
+        return getColumnSelectName(tableName);   // Same as column names
     }
 
     // String version for convenience
@@ -567,7 +566,7 @@ public abstract class SqlDialect
         String lowerNoWhiteSpace = lower.replaceAll("\\s", "");
 
         if (lowerNoWhiteSpace.contains("primarykey,"))
-            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change it later.  Instead, create the PK as a named contraint (e.g., PK_MyTable).");
+            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change it later.  Instead, create the PK as a named constraint (e.g., PK_MyTable).");
 
         checkSqlScript(lower, lowerNoWhiteSpace, errors);
 

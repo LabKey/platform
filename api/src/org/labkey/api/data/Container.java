@@ -651,6 +651,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         Map props = PropertyManager.getProperties(0, getId(), "folderType");
         String name = (String) props.get("name");
+
         if (null != name)
         {
             _folderType = ModuleLoader.getInstance().getFolderType(name);
@@ -835,14 +836,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
                         modules.add(module);
                 }
             }
-           // add all 'always display' modules, remove all 'never display' modules:
-           for (Module module : allModules)
-           {
-              if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_NEVER)
-                modules.remove(module);
-           }
-           _activeModules = Collections.unmodifiableSet(modules);
+
+            // add all 'always display' modules, remove all 'never display' modules:
+            for (Module module : allModules)
+            {
+                if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_NEVER)
+                    modules.remove(module);
+            }
+            _activeModules = Collections.unmodifiableSet(modules);
         }
+
         return _activeModules;
     }
 
