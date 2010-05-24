@@ -467,6 +467,9 @@ public abstract class SqlDialect
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDateDiff(int part, String value1, String value2);
 
+    /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
+    public abstract String getDatePart(int part, String value);
+
     /** @param expression The expression with datetime value for which a date value is desired */
     public abstract String getDateTimeToDateCast(String expression);
 
@@ -955,6 +958,48 @@ public abstract class SqlDialect
         return new StatementWrapper(conn, stmt, sql);
     }
 
+    protected String getDatePartName(int part)
+    {
+        String partName;
+        switch (part)
+        {
+            case Calendar.YEAR:
+            {
+                partName = "year";
+                break;
+            }
+            case Calendar.MONTH:
+            {
+                partName = "month";
+                break;
+            }
+            case Calendar.DAY_OF_MONTH:
+            {
+                partName = "day";
+                break;
+            }
+            case Calendar.HOUR:
+            {
+                partName = "hour";
+                break;
+            }
+            case Calendar.MINUTE:
+            {
+                partName = "minute";
+                break;
+            }
+            case Calendar.SECOND:
+            {
+                partName = "second";
+                break;
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Unsupported time unit: " + part);
+            }
+        }
+        return partName;
+    }
 
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);

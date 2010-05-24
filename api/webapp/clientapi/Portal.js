@@ -54,6 +54,20 @@ LABKEY.Portal = new function()
 
     function updateDOM(webparts, action, webPartId, direction)
     {
+        // First build up a list of valid webpart table DOM IDs.  This allows us to skip webpart tables that are embedded
+        // within others (as in the case of using the APIs to asynchronously render nested webparts).  This ensures that
+        // we only rearrange top-level webparts.
+        var validWebpartTableIds = {};
+        for (var region in webparts)
+        {
+            var regionParts = webparts[region];
+            for (var regionIndex = 0; regionIndex < regionParts.length; regionIndex++)
+            {
+                var regionId = 'webpart_' + regionParts[regionIndex].webPartId;
+                validWebpartTableIds[regionId] = true;
+            }
+        }
+
         // would be nice to use getElementsByName('webpart') here, but this isn't supported in IE.
         var tables = document.getElementsByTagName('table');
         var webpartTables = [];
@@ -62,7 +76,10 @@ LABKEY.Portal = new function()
         for (var tableIndex = 0; tableIndex < tables.length; tableIndex++)
         {
             var table = tables[tableIndex];
-            if (table.getAttribute('name') == 'webpart')
+            // a table is possibly affected by a delete action if it's if type 'webpart' (whether it's in the current set
+            // of active webparts or not).  It's possibly affected by a move action only if it's in the active set of webparts.
+            var possiblyAffected = ((action == REMOVE_ACTION && table.getAttribute('name') == 'webpart') || validWebpartTableIds[table.id]);
+            if (possiblyAffected)
             {
                 webpartTables[webpartTables.length] = table;
                 if (table.id == 'webpart_' + webPartId)

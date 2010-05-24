@@ -19,7 +19,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.view.NavTree;
-import org.labkey.data.xml.*;
+import org.labkey.data.xml.bbar.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,36 +104,41 @@ public class ButtonBarConfig
 
     protected ButtonConfig loadButtonConfig(ButtonBarItem item)
     {
-        UserDefinedButtonConfig buttonConfig = new UserDefinedButtonConfig();
-        buttonConfig.setText(item.getText());
-        if (item.getTarget() != null && item.getTarget().getStringValue() != null)
+        if (item.getOriginalText() != null)
+            return new BuiltInButtonConfig(item.getOriginalText(), item.getText());
+        else
         {
-            buttonConfig.setUrl(item.getTarget().getStringValue());
-            ActionButton.Action method = ActionButton.Action.GET;
-            try
+            UserDefinedButtonConfig buttonConfig = new UserDefinedButtonConfig();
+            buttonConfig.setText(item.getText());
+            if (item.getTarget() != null && item.getTarget().getStringValue() != null)
             {
-                if (item.getTarget().getMethod() != null)
-                    method = ActionButton.Action.valueOf(item.getTarget().getMethod().toString());
+                buttonConfig.setUrl(item.getTarget().getStringValue());
+                ActionButton.Action method = ActionButton.Action.GET;
+                try
+                {
+                    if (item.getTarget().getMethod() != null)
+                        method = ActionButton.Action.valueOf(item.getTarget().getMethod().toString());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // Unfortunately, XMLBeans throws an XmlValueOutOfRangeException on access of getMethod if the user
+                    // has provided an invalid enum value for the method.
+                }
+                buttonConfig.setAction(method);
             }
-            catch (IllegalArgumentException e)
-            {
-                // Unfortunately, XMLBeans throws an XmlValueOutOfRangeException on access of getMethod if the user
-                // has provided an invalid enum value for the method.
-            }
-            buttonConfig.setAction(method);
-        }
-        buttonConfig.setOnClick(item.getOnClick());
-        buttonConfig.setRequiresSelection(item.getRequiresSelection());
+            buttonConfig.setOnClick(item.getOnClick());
+            buttonConfig.setRequiresSelection(item.getRequiresSelection());
 
-        ButtonMenuItem[] subItems = item.getItemArray();
-        if (subItems != null && subItems.length > 0)
-        {
-            List<NavTree> menuItems = new ArrayList<NavTree>();
-            for (ButtonMenuItem subItem : subItems)
-                menuItems.add(loadNavTree(subItem));
-            buttonConfig.setMenuItems(menuItems);
+            ButtonMenuItem[] subItems = item.getItemArray();
+            if (subItems != null && subItems.length > 0)
+            {
+                List<NavTree> menuItems = new ArrayList<NavTree>();
+                for (ButtonMenuItem subItem : subItems)
+                    menuItems.add(loadNavTree(subItem));
+                buttonConfig.setMenuItems(menuItems);
+            }
+            return buttonConfig;
         }
-        return buttonConfig;
     }
 
     private NavTree loadNavTree(ButtonMenuItem item)

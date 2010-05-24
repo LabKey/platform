@@ -409,6 +409,12 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _display = display;
     }
 
+    public void setKey(String key)
+    {
+        first = key;
+    }
+
+
     public String childrenToJS()
     {
         if (null == children)

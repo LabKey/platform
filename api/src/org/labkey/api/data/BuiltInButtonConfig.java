@@ -32,11 +32,19 @@ import java.util.List;
 public class BuiltInButtonConfig implements ButtonConfig
 {
     private String _caption;
+    private String _originalCaption;
 
-    public BuiltInButtonConfig(String caption)
+    public BuiltInButtonConfig(String originalCaption)
     {
-        _caption = caption;
+        this(originalCaption, originalCaption);
     }
+
+    public BuiltInButtonConfig(String originalCaption, String newCaption)
+    {
+        _originalCaption = originalCaption;
+        _caption = newCaption;
+    }
+
 
     public String getCaption()
     {
@@ -55,8 +63,16 @@ public class BuiltInButtonConfig implements ButtonConfig
 
         for (DisplayElement de : originalButtons)
         {
-            if (de instanceof ActionButton && _caption.equalsIgnoreCase(de.getCaption()))
-                return (ActionButton)de;
+            if (de instanceof ActionButton && _originalCaption.equalsIgnoreCase(de.getCaption()))
+            {
+                if (!_caption.equals(_originalCaption))
+                {
+                    de.setCaption(_caption);
+                    return de;
+                }
+                else
+                    return de;
+            }
         }
         return null;
     }

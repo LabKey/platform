@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
@@ -124,6 +125,18 @@ public class UserDefinedButtonConfig implements ButtonConfig
             processURLs(ctx, child);
     }
 
+    private String getWrappedOnClick(RenderContext ctx, String originalOnClick)
+    {
+        if (originalOnClick == null)
+            return null;
+
+        StringBuilder onClickWrapper = new StringBuilder();
+        onClickWrapper.append("var dataRegionName = ").append(PageFlowUtil.jsString(ctx.getCurrentRegion().getName())).append("; ");
+        onClickWrapper.append("var dataRegion = LABKEY.DataRegions[dataRegionName]; ");
+        onClickWrapper.append(originalOnClick);
+        return onClickWrapper.toString();
+    }
+
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
     {
         if (null != _menuItems)
@@ -132,6 +145,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
             for (NavTree item : _menuItems)
             {
                 NavTree toAdd = new NavTree(item);
+                toAdd.setScript(getWrappedOnClick(ctx, toAdd.getScript()));
                 processURLs(ctx, toAdd);
                 btn.addMenuItem(toAdd);
             }
@@ -146,7 +160,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
             btn.setCaption(_text);
             btn.setURL(_url != null ? processURL(ctx, _url) : "#");
             if (null != _onClick)
-                btn.setScript(_onClick, false);
+                btn.setScript(getWrappedOnClick(ctx, _onClick), false);
             if (_action != null)
                 btn.setActionType(_action);
             btn.setRequiresSelection(_requiresSelection);
