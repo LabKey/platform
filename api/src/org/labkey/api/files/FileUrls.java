@@ -30,4 +30,6 @@ public interface FileUrls extends UrlProvider
     ActionURL urlBegin(Container container);
 
     ActionURL urlShowAdmin(Container container);
+
+    ActionURL urlFileEmailPreference(Container container);
 }

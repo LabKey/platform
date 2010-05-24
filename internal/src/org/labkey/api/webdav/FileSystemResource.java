@@ -41,6 +41,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentEmailPrefFilter;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileUrls;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.QueryUpdateService;
@@ -51,10 +52,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.writer.ContainerUser;
 
@@ -642,6 +640,10 @@ public class FileSystemResource extends AbstractWebdavResource
                 FileEmailForm form = new FileEmailForm(this, message);
                 List<EmailMessage> messages = new ArrayList<EmailMessage>();
 
+                form.setUrlEmailPrefs(PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(getContainer()));
+                form.setUrlFileBrowser(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(getContainer()));
+                form.setContainerPath(getContainer().getPath());
+
                 for (User user : users)
                 {
                     EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(),
@@ -669,6 +671,39 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         private String _action;
         private WebdavResource _resource;
+        private ActionURL _urlEmailPrefs;
+        private ActionURL _urlFileBrowser;
+        private String _containerPath;
+
+        public ActionURL getUrlEmailPrefs()
+        {
+            return _urlEmailPrefs;
+        }
+
+        public void setUrlEmailPrefs(ActionURL urlEmailPrefs)
+        {
+            _urlEmailPrefs = urlEmailPrefs;
+        }
+
+        public ActionURL getUrlFileBrowser()
+        {
+            return _urlFileBrowser;
+        }
+
+        public void setUrlFileBrowser(ActionURL urlFileBrowser)
+        {
+            _urlFileBrowser = urlFileBrowser;
+        }
+
+        public String getContainerPath()
+        {
+            return _containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            _containerPath = containerPath;
+        }
 
         public FileEmailForm(WebdavResource resource, String action)
         {

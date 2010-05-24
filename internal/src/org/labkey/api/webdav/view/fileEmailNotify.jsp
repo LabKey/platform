@@ -20,13 +20,25 @@
 <%@ page import="org.labkey.api.webdav.FileSystemResource" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.notification.EmailService" %>
+<%@ page import="org.labkey.api.files.FileContentEmailPref" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.apache.commons.lang.NumberUtils" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     FileSystemResource.FileEmailForm bean = ((JspView<FileSystemResource.FileEmailForm>)HttpView.currentView()).getModelBean();
     ViewContext context = HttpView.currentContext();
+    Container c = context.getContainer();
     User user = context.getUser();
+    int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 %>
 
 <table>
@@ -36,7 +48,7 @@
     if (bean.getResource().getFile().exists()) {
 %>
     <tr class="labkey-row">
-        <td>File</td><td><a href="<%=bean.getResource().getExecuteHref(context)%>"><%=bean.getResource().getName()%></a></td></tr>
+        <td>File</td><td><a href="<%=bean.getResource().getHref(context)%>"><%=bean.getResource().getName()%></a></td></tr>
 <%
     } else {
 %>
@@ -47,4 +59,21 @@
 %>
     <tr class="labkey-alternate-row">
         <td>Action</td><td><%=bean.getAction()%></td></tr>
+</table>
+
+<br>
+<br>
+<hr size="1"/>
+
+<table>
+    <tr><td>You have received this email because <%
+        switch(pref)
+        {
+            case FileContentEmailPref.FOLDER_DEFAULT:
+            case FileContentEmailPref.INDIVIDUAL: %>
+            you are signed up to receive notifications about updates to files at <a href="<%=bean.getUrlFileBrowser().getURIString()%>"><%=bean.getContainerPath()%></a>.
+            If you no longer wish to receive these notifications you can <a href="<%=bean.getUrlEmailPrefs().getURIString()%>">change your email preferences</a>. <%
+            break;
+        } %>
+    </td></tr>
 </table>
