@@ -28,6 +28,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
@@ -1758,6 +1759,19 @@ public class SpecimenImporter
         Table.execute(schema, remapExternalIdsSql);
         info("Update complete.");
 
+        Study study = StudyManager.getInstance().getStudy(container);
+        if (study.getTimepointType() != TimepointType.VISIT)
+        {
+            info("Updating visit values to match draw timestamps (date-based studies only)...");
+            SQLFragment visitValueSql = new SQLFragment();
+            visitValueSql.append("UPDATE " + tempTable + " SET VisitValue = (");
+            visitValueSql.append(StudyManager.sequenceNumFromDateSQL("DrawTimestamp"));
+            visitValueSql.append(");");
+            if (DEBUG)
+                info(visitValueSql.toString());
+            Table.execute(schema, visitValueSql);
+            info("Update complete.");
+        }
 
         SQLFragment conflictResolvingSubselect = new SQLFragment("SELECT GlobalUniqueId");
         for (SpecimenColumn col : loadedColumns)

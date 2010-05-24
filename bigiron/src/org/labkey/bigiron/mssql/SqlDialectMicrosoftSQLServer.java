@@ -317,36 +317,16 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "EXEC sp_addapprole '" + schemaName + "', 'password'";
     }
 
+    @Override
+    public String getDatePart(int part, String value)
+    {
+        String partName = getDatePartName(part);
+        return "DATEPART(" + partName + ", " + value + ")";
+    }
+
     public String getDateDiff(int part, String value1, String value2)
     {
-        String partName;
-        switch (part)
-        {
-            case Calendar.DATE:
-            {
-                partName = "day";
-                break;
-            }
-            case Calendar.HOUR:
-            {
-                partName = "hour";
-                break;
-            }
-            case Calendar.MINUTE:
-            {
-                partName = "minute";
-                break;
-            }
-            case Calendar.SECOND:
-            {
-                partName = "second";
-                break;
-            }
-            default:
-            {
-                throw new IllegalArgumentException("Unsupported time unit: " + part);
-            }
-        }
+        String partName = getDatePartName(part);
         return "DATEDIFF(" + partName + ", " + value2 + ", " + value1 + ")";
     }
 

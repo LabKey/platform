@@ -230,6 +230,12 @@ public abstract class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public String getDatePart(int part, String value)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public String getDateTimeToDateCast(String expression)
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.

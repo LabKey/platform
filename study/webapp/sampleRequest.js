@@ -51,6 +51,13 @@ function showRequestWindow(specOrVialIdArray, vialIdType)
                 new Ext.Button({text: "Close", handler: cancelAddSpecimen})
             ]
         });
+
+        _requestWin.on("show", function() {
+            // ensure that our title bar is always visible:
+            var position = _requestWin.getPosition();
+            if (position[0] < 0 || position[1] < 0)
+                _requestWin.setPosition(Math.max(0, position[0]), Math.max(0, position[1]));
+        });
     }
     if (specOrVialIdArray && specOrVialIdArray.length > 0)
     {

@@ -396,6 +396,12 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "(EXTRACT(EPOCH FROM (" + value1 + " - " + value2 + ")) / " + divideBy + ")::INT";
     }
 
+    @Override
+    public String getDatePart(int part, String value)
+    {
+        return "EXTRACT(" + getDatePartName(part) + " FROM " + value + ")";
+    }
+
     public String getDateTimeToDateCast(String columnName)
     {
         return "DATE(" + columnName + ")";

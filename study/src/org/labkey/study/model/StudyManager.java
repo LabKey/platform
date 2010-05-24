@@ -2391,6 +2391,18 @@ public class StudyManager
         return cal.get(Calendar.YEAR) * 10000 + (cal.get(Calendar.MONTH) + 1) * 100 + cal.get(Calendar.DAY_OF_MONTH);
     }
 
+    public static SQLFragment sequenceNumFromDateSQL(String dateColumnName)
+    {
+        // Returns a SQL statement that produces a single number from a date, in the form of YYYYMMDD.
+        SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
+        SQLFragment sql = new SQLFragment();
+        sql.append("(10000 * ").append(dialect.getDatePart(Calendar.YEAR, dateColumnName)).append(") + ");
+        sql.append("(100 * ").append(dialect.getDatePart(Calendar.MONTH, dateColumnName)).append(") + ");
+        sql.append("(").append(dialect.getDatePart(Calendar.DAY_OF_MONTH, dateColumnName)).append(")");
+        return sql;
+    }
+
+
     private boolean canFormat(DisplayColumn dc)
     {
         final ColumnInfo col = dc.getColumnInfo();

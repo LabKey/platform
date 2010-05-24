@@ -15,12 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%
     HttpView me = HttpView.currentView();
     boolean menuEnabled = LookAndFeelProperties.getInstance(me.getViewContext().getContainer()).isMenuUIEnabled();
+    ActionURL refreshURL = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsMenuURL(me.getViewContext().getContainer());
 %>
 <form action="" method="POST">
     <br>The menu bar is a beta feature of labkey server that can be customized to provide quick access to LabKey features.<br><br>
@@ -29,6 +34,15 @@
     <%=generateSubmitButton(menuEnabled ? "Turn Off Custom Menus" : "Turn On Custom Menus")%>
 </form>
 <br>
-The menu bar is populated by web parts. You can add and remove webparts here...<br><br>
+The menu bar is populated by web parts. You can add and remove webparts here.<br>
+<%
+    if (menuEnabled)
+    {
+%>
+<%= generateButton("Refresh Menu Bar", refreshURL) %><br>
+<%
+    }
+%>
+<br>
 <%
     include(me.getView("menubar"), out);%>
