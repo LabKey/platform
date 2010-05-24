@@ -102,17 +102,21 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     }
 
 
-    private boolean isKeyProperty(DomainProperty prop)
+    private static boolean isKeyProperty(ListDefinition list, DomainProperty prop)
     {
         // UNDONE: store keypropertyid to make this faster
-        return getList().getKeyName().equalsIgnoreCase(prop.getName());
+        return list.getKeyName().equalsIgnoreCase(prop.getName());
     }
 
 
     public Map<String, Object> mapFromBean(ListItem bean) throws QueryUpdateServiceException
     {
+        return toMap(getList(), bean);
+    }
+
+    public static Map<String, Object> toMap(ListDefinition listdef, ListItem bean)
+    {
         //since ListItems are not really 'beans' we need to convert to a map ourselves
-        ListDefinition listdef = getList();
         Map<String,Object> map = new HashMap<String,Object>();
 
         //key
@@ -124,12 +128,12 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
         //domain properties
         for (DomainProperty prop : listdef.getDomain().getProperties())
         {
-            if (isKeyProperty(prop))
+            if (isKeyProperty(listdef, prop))
                 continue;
             Object value = bean.getProperty(prop);
             if (value instanceof ObjectProperty)
                 value = ((ObjectProperty)value).value();
-                
+
             map.put(prop.getName(), value);
         }
 
@@ -158,7 +162,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
         TableInfo table = listdef.getTable(user);
         for (DomainProperty prop : listdef.getDomain().getProperties())
         {
-            if (isKeyProperty(prop))
+            if (isKeyProperty(listdef, prop))
                 continue;
             //set the prop only if it was supplied in the map
             if(row.containsKey(prop.getName()))

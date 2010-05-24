@@ -157,6 +157,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             }
         }
         ret.setDescription("A holder for any custom fields associated with this sample");
+        ret.setHidden(true);
         return ret;
     }
 

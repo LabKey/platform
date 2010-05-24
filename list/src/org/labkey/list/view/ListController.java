@@ -74,6 +74,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.data.TableInfo.TriggerType.INSERT;
+import static org.labkey.api.data.TableInfo.TriggerType.UPDATE;
+
 /**
  * User: adam
  * Date: Dec 30, 2007
@@ -325,15 +328,25 @@ public class ListController extends SpringActionController
                     transaction = true;
                 }
 
+                ValidationException validationErrors = new ValidationException();
+                TableInfo.TriggerType triggerType;
+                Map<String, Object> oldValues = null;
                 if (isInsert())
                 {
                     item = list.createListItem();
+                    triggerType = INSERT;
                 }
                 else
                 {
                     item = list.getListItem(tableForm.getPkVal());
+                    oldValues = ListQueryUpdateService.toMap(list, item);
+                    triggerType = UPDATE;
                 }
                 Object oldKey = item.getKey();
+
+                table.fireBatchTrigger(triggerType, true, validationErrors);
+                table.fireRowTrigger(triggerType, true, 0, tableForm.getTypedValues(), oldValues);
+
                 Domain domain = list.getDomain();
                 for (ColumnInfo column : tableForm.getTable().getColumns())
                 {
@@ -368,6 +381,10 @@ public class ListController extends SpringActionController
                 if (errors.hasErrors())
                     return false;
                 item.save(getUser());
+
+                table.fireRowTrigger(triggerType, false, 0, ListQueryUpdateService.toMap(list, item), oldValues);
+                table.fireBatchTrigger(triggerType, false, validationErrors);
+
                 if (transaction)
                 {
                     ExperimentService.get().commitTransaction();
