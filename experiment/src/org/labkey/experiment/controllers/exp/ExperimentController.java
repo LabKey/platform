@@ -555,15 +555,18 @@ public class ExperimentController extends SpringActionController
             }
 
             StringBuilder updateLinks = new StringBuilder();
-            if (getContainer().hasPermission(getUser(), UpdatePermission.class))
+            ExpSampleSet ss = _material.getSampleSet();
+            if (ss.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
                 // XXX: ridiculous amount of work to get a update url expression for the sample set's table.
-                UserSchema sampleSetSchema = QueryService.get().getUserSchema(getUser(), getContainer(), "Samples");
-                QueryDefinition queryDef = sampleSetSchema.getQueryDefForTable(_material.getSampleSet().getName());
-                StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, getContainer());
-                String url = expr.eval(Collections.singletonMap("RowId", _material.getRowId()));
-
-                updateLinks.append("[<a href=\"").append(url).append("\">edit</a>] ");
+                UserSchema samplesSchema = QueryService.get().getUserSchema(getUser(), ss.getContainer(), "Samples");
+                QueryDefinition queryDef = samplesSchema.getQueryDefForTable(ss.getName());
+                StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, ss.getContainer());
+                if (expr != null)
+                {
+                    String url = expr.eval(Collections.singletonMap("RowId", _material.getRowId()));
+                    updateLinks.append("[<a href=\"").append(url).append("\">edit</a>] ");
+                }
             }
 
             if (getContainer().hasPermission(getUser(), InsertPermission.class))

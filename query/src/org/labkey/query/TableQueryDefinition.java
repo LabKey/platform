@@ -80,18 +80,18 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         StringExpression expr = null;
         List<QueryException> errors = new ArrayList<QueryException>();
         TableInfo table = getTable(getSchema(), errors, true);
-        if (table != null)
+        if (table == null)
+            return null;
+
+        switch (action)
         {
-            switch (action)
-            {
-                case detailsQueryRow:
-                    expr = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), container);
-                    break;
-                
-                case updateQueryRow:
-                    expr = table.getUpdateURL(Table.createFieldKeyMap(table).keySet(), container);
-                    break;
-            }
+            case detailsQueryRow:
+                expr = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), container);
+                break;
+
+            case updateQueryRow:
+                expr = table.getUpdateURL(Table.createFieldKeyMap(table).keySet(), container);
+                break;
         }
 
         if (expr == null)
