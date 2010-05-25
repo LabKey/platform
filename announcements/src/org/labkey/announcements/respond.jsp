@@ -46,7 +46,7 @@ function validateForm(form)
     return false;
 }
 Ext.onReady(function(){
-    new Ext.Resizable('textareaBody', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
 });
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
@@ -95,7 +95,7 @@ if (settings.hasExpires())
 
 %>
     <tr>
-    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea id="textareaBody" cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
+    <td class="labkey-form-label">Body</td><td colspan=2 width="100%"><textarea cols="60" rows="15" id="body" name="body" style="width:100%;"><%=h(form.get("body"))%></textarea>
         <input type="hidden" name="parentId" value="<%=bean.parentAnnouncement.getEntityId()%>"/>
     </td>
 </tr><%
