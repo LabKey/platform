@@ -431,9 +431,12 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(ArrayList.class.getName());
         allowedClasses.add(BindException.class.getName());
         allowedClasses.add(Boolean.class.getName());
+        allowedClasses.add(Byte.class.getName());
+        allowedClasses.add(Calendar.class.getName());
         allowedClasses.add(CaseInsensitiveHashMap.class.getName());
         allowedClasses.add(Character.class.getName());
         allowedClasses.add(Collections.class.getName() + "$*"); // allow inner-classes
+        allowedClasses.add(Date.class.getName());
         allowedClasses.add(Double.class.getName());
         allowedClasses.add(EcmaError.class.getName());
         allowedClasses.add(Errors.class.getName());
@@ -445,6 +448,7 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(LinkedHashMap.class.getName());
         allowedClasses.add(List.class.getName());
         allowedClasses.add(Long.class.getName());
+        allowedClasses.add(Math.class.getName());
         allowedClasses.add(PrintStream.class.getName());
         allowedClasses.add(PrintWriter.class.getName());
         allowedClasses.add(RhinoException.class.getName());
