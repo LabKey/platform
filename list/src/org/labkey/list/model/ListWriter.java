@@ -23,12 +23,13 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -59,6 +60,9 @@ public class ListWriter
             // Create meta data doc
             TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
             TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
+
+            // Insert standard comment explaining where the data lives, who exported it, and when
+            XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
             for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
             {
