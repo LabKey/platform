@@ -454,6 +454,7 @@ public abstract class DefaultModule implements Module
         return _buildTime;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setBuildTime(String buildTime)
     {
         _buildTime = buildTime;
@@ -464,6 +465,7 @@ public abstract class DefaultModule implements Module
         return _buildOS;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setBuildOS(String buildOS)
     {
         _buildOS = buildOS;
@@ -484,6 +486,7 @@ public abstract class DefaultModule implements Module
         return _buildPath;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setBuildPath(String buildPath)
     {
         _buildPath = buildPath;

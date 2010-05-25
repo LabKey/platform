@@ -15,12 +15,14 @@
  */
 package org.labkey.api.util;
 
-import org.apache.xmlbeans.XmlError;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedList;
 
 /**
@@ -85,5 +87,23 @@ public class XmlBeansUtil
             sb.append(")");
         }
         return sb.toString();
+    }
+
+    // Insert standard export comment explaining where the data lives, who exported it, and when
+    public static void addStandardExportComment(XmlTokenSource doc, Container c, User user)
+    {
+        String urlString = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).getURIString();
+        if (urlString.endsWith("?"))
+            urlString = urlString.substring(0, urlString.length() - 1);
+        String shortName = LookAndFeelProperties.getInstance(c).getShortName();
+        String comment = "Exported from " + shortName + " at " + urlString + " by " + user.getFriendlyName() + " on " + new Date();
+        addComment(doc, comment);
+    }
+
+    public static void addComment(XmlTokenSource doc, String comment)
+    {
+        XmlCursor cursor = doc.newCursor();
+        cursor.insertComment(comment);
+        cursor.dispose();
     }
 }
