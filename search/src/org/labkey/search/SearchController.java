@@ -1093,7 +1093,7 @@ public class SearchController extends SpringActionController
     }
 
     
-    protected void audit(User user, Container c, String query, String comment)
+    protected void audit(User user, @Nullable Container c, String query, String comment)
     {
         if (user == User.getSearchUser() || StringUtils.isEmpty(query))
             return;
@@ -1101,6 +1101,9 @@ public class SearchController extends SpringActionController
         AuditLogService.I audit = AuditLogService.get();
         if (null == audit)
             return;
+
+        if (null == c)
+            c = ContainerManager.getRoot();
 
         if (query.length() > 200)
             query = query.substring(0, 197) + "...";

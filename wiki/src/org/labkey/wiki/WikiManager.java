@@ -27,8 +27,8 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -967,7 +967,6 @@ public class WikiManager
                 f.add(name);
             }
             rs = Table.executeQuery(comm.getSchema(), f, 0, false, false);
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
             HashMap<String, AttachmentParent> ids = new HashMap<String, AttachmentParent>();
             // AGGH wiki doesn't have a title!
@@ -975,10 +974,14 @@ public class WikiManager
             
             while (rs.next())
             {
-                String entityId = rs.getString("entityid");
-                assert null != entityId;
                 name = rs.getString("name");
                 assert null != name;
+
+                if (SecurityManager.TERMS_OF_USE_WIKI_NAME.equals(name))
+                    continue;
+
+                String entityId = rs.getString("entityid");
+                assert null != entityId;
                 String wikiTitle = rs.getString("title");
                 String searchTitle;
                 if (null == wikiTitle)

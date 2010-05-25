@@ -187,6 +187,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert null != r.getDocumentId();
             assert null != r.getContainerId();
 
+            Container c = ContainerManager.getForId(r.getContainerId());
+
+            if (null == c)
+                return null;
+
             fs = r.getFileStream(User.getSearchUser());
 
             if (null == fs)
@@ -281,8 +286,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 searchTitle = displayTitle;
 
             // Add all container path parts to search keywords
-            Container c = ContainerManager.getForId(r.getContainerId());
-
             for (String part : c.getParsedPath())
                 searchTitle = searchTitle + " " + part;
 
