@@ -1547,7 +1547,7 @@ public class PageFlowUtil
         {
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-3.2.0/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("/ext-3.2.1/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");
@@ -1596,14 +1596,14 @@ public class PageFlowUtil
 
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-        sb.append("LABKEY.loadedScripts('ext-3.2.0/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
+        sb.append("LABKEY.loadedScripts('ext-3.2.1/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
         sb.append("</script>\n");
 
         return sb.toString();
     }
 
-    static String extDebug = "ext-3.2.0/ext-all-debug.js";
-    static String extMin = "ext-3.2.0/ext-all.js";
+    static String extDebug = "ext-3.2.1/ext-all-debug.js";
+    static String extMin = "ext-3.2.1/ext-all.js";
 
     static String[] clientExploded = new String[]
     {
@@ -1653,10 +1653,10 @@ public class PageFlowUtil
         scripts.add("util.js");
 
         // EXT
-        scripts.add("ext-3.2.0/adapter/ext/ext-base.js");
+        scripts.add("ext-3.2.1/adapter/ext/ext-base.js");
         if (explodedExt)
         {
-            String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/ext-3.2.0/ext.jsb2")));
+            String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/ext-3.2.1/ext.jsb2")));
             JSONObject json = new JSONObject(jsonString);
             Map<String, JSONObject> packages = new HashMap<String, JSONObject>();
             for (JSONObject pkgObject : json.getJSONArray("pkgs").toJSONObjectArray())
@@ -1670,7 +1670,7 @@ public class PageFlowUtil
                 JSONObject dependency = packages.get(allPackageDeps.getString(i));
                 for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
                 {
-                    scripts.add("ext-3.2.0/" + fileInclude.getString("path") + fileInclude.getString("text"));
+                    scripts.add("ext-3.2.1/" + fileInclude.getString("path") + fileInclude.getString("text"));
                 }
             }
         }
@@ -1821,7 +1821,7 @@ public class PageFlowUtil
 
 
 
-    static final String extJsRoot = "ext-3.2.0";
+    static final String extJsRoot = "ext-3.2.1";
     static Integer serverHash = null;
 
     public static String extJsRoot()

@@ -80,7 +80,7 @@
         if (folderMenu)
         {
     %>
-            <a href="#" id="menuBarFolder" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/ext-3.2.0/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
+            <a href="#" id="menuBarFolder" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/ext-3.2.1/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
         }
         if (menus.size() > 0)
         {
