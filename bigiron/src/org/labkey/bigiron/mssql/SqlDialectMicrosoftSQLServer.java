@@ -25,7 +25,6 @@ import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import java.sql.*;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
