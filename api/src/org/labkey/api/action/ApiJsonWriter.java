@@ -164,6 +164,11 @@ public class ApiJsonWriter extends ApiResponseWriter
             key = ((PropertyValidationError)error).getProperty();
 
         JSONObject jsonError = new JSONObject();
+
+        // these are the Ext expected property names
+        jsonError.putOpt("id", key);
+        jsonError.put("msg", msg);
+        // TODO deprecate these with a new API version
         jsonError.putOpt("field", key);
         jsonError.put("message", msg);
 

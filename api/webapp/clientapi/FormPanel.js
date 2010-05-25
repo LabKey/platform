@@ -234,21 +234,45 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         return f;
     },
 
-    // override this for special form error handling
-    markInvalid : function(msg)
+    // Look for form level errors that BasicForm won't handle
+    // CONSIDER: move implementation to getForm().markInvalid()
+    // CONSIDER: find 'unbound' errors and move to form level
+    markInvalid : function(errors)
     {
-//        if (!this.qtipFormError)
-//            this.qtipFormError = new Ext.ToolTip({closable:true, target:this.el});
-//        this.qtipFormError.hide();
-//        this.qtipFormError.html = Ext.util.Format.htmlEncode(msg);
-//        this.qtipFormError.showAt(this.el.getXY());
+        var formMessage;
 
-        if (this.errorEl)
-            Ext.get(this.errorEl).update(Ext.util.Format.htmlEncode(msg));
-        else
-            Ext.Msg.alert("Error", msg);
+        if (typeof errors == "string")
+        {
+            formMessage = errors;
+            errors = null;
+        }
+        else if (Ext.isArray(errors))
+        {
+           for(var i = 0, len = errors.length; i < len; i++)
+           {
+               var fieldError = errors[i];
+               if (!("id" in fieldError) || "_form" == fieldError.id)
+                   formMessage = fieldError.msg;
+           }
+        }
+        else if (typeof errors == "object" && "_form" in errors)
+        {
+            formMessage = errors._form;
+        }
+
+        if (errors)
+        {
+            this.getForm().markInvalid(errors);
+        }
+
+        if (formMessage)
+        {
+            if (this.errorEl)
+                Ext.get(this.errorEl).update(Ext.util.Format.htmlEncode(formMessage));
+            else
+               Ext.Msg.alert("Error", formMessage);
+        }
     }
-
 });
 
 
