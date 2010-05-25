@@ -71,6 +71,10 @@ public class massSpecDataFileType extends FileType
             {
                 mzMLLibName = "";
             }
+            if (null == mzMLLibName)
+            {   // completely unconfigured (thought exception caught this)
+                mzMLLibName = "";
+            }
             if (""!=mzMLLibName)
             {
                 String why="";
