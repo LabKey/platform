@@ -117,8 +117,6 @@
 </table>
 <%
     }
-%>
-<%
 
     if (null != StringUtils.trimToNull(queryString))
     {

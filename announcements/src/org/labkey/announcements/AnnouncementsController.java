@@ -124,12 +124,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    protected HttpServletRequest getRequest()
-    {
-        return getViewContext().getRequest();
-    }
-
-
     protected HttpServletResponse getResponse()
     {
         return getViewContext().getResponse();
@@ -232,8 +226,8 @@ public class AnnouncementsController extends SpringActionController
             rgn.setButtonBar(bb);
 
             GridView gridView = new GridView(rgn, errors);
-
             ResultSet rs = null;
+
             try
             {
                 rs = AnnouncementManager.getEmailPrefsResultset(c);
@@ -281,6 +275,7 @@ public class AnnouncementsController extends SpringActionController
             if (colLastModifiedBy != null)
                 colLastModifiedBy.setVisible(false);
 
+            setHelpTopic("adminMessages");
             VBox vbox = new VBox();
             vbox.addView(new AnnouncementEmailDefaults(c, form.getReturnURLHelper()));
             vbox.addView(gridView);
@@ -894,6 +889,7 @@ public class AnnouncementsController extends SpringActionController
             else if (hasEditorPerm(Group.groupUsers))
                 bean.securityWarning = "Warning: all site users have been granted editor permissions in this folder.  As a result, any logged in user will be able to view, create, and respond to posts, regardless of the security setting below.  You may want to change permissions in this folder.";
 
+            setHelpTopic("adminMessages");
             return new JspView<CustomizeBean>("/org/labkey/announcements/customize.jsp", bean);
         }
 
@@ -1664,6 +1660,7 @@ public class AnnouncementsController extends SpringActionController
 
             form.setEmailOption(emailOption);
 
+            setHelpTopic("createMessage");
             JspView view = new JspView("/org/labkey/announcements/emailPreferences.jsp");
             view.setFrame(WebPartView.FrameType.DIV);
             EmailPreferencesPage page = (EmailPreferencesPage)view.getPage();

@@ -1148,7 +1148,6 @@ public class IssuesController extends SpringActionController
         int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
         int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
-
         if ("insert".equals(action))
         {
             if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
@@ -1166,23 +1165,13 @@ public class IssuesController extends SpringActionController
                 emailAddresses.add(UserManager.getEmailForId(issue.getCreatedBy()));
         }
 
-/*
-        if ((filter & IssueManager.getUserEmailPreferences(c, issue.getAssignedTo())) != 0)
-        {
-            emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
-        }
-
-        if ((filter & IssueManager.getUserEmailPreferences(c, issue.getCreatedBy())) != 0)
-        {
-            emailAddresses.add(UserManager.getEmailForId(issue.getCreatedBy()));
-        }
-*/
-
         // add any explicit notification list addresses
         final HString notify = issue.getNotifyList();
+
         if (notify != null)
         {
             StringTokenizer tokenizer = new StringTokenizer(notify.getSource(), ";\n\r\t");
+
             while (tokenizer.hasMoreTokens())
             {
                 emailAddresses.add((String)tokenizer.nextElement());

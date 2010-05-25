@@ -206,7 +206,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String searchTitle = (String)props.get(PROPERTY.searchTitle.toString());
             String type = r.getContentType();
 
-            // Skip images for now
+            // Skip images and zip files for now
             if (isImage(type) || isZip(type))
             {
                 return null;
@@ -258,7 +258,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 Metadata metadata = new Metadata();
                 metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                ContentHandler handler = new BodyContentHandler(-1);
+                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
 
                 parse(r, fs, is, handler, metadata);
 

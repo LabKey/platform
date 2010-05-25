@@ -49,6 +49,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.InvalidFileException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1035,7 +1036,15 @@ public class ListController extends SpringActionController
                     ZipUtil.unzipToDirectory(is, dir);
 
                     ListImporter li = new ListImporter();
-                    li.process(dir, dir, getContainer(), getUser(), Logger.getLogger(ListController.class));
+
+                    try
+                    {
+                        li.process(dir, dir, getContainer(), getUser(), Logger.getLogger(ListController.class));
+                    }
+                    catch (InvalidFileException e)
+                    {
+                        errors.reject(ERROR_MSG, "Invalid list archive");
+                    }
                 }
             }
 
