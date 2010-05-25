@@ -135,8 +135,8 @@
     </tr>
     <tr>
         <th align="left">Quality Control States</th>
-        <td>Manage QC states for this Study</td>
-        <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
+        <td>Manage QC states for datasets in this Study</td>
+        <td><%= PageFlowUtil.textLink("Manage Dataset QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Comments</th>

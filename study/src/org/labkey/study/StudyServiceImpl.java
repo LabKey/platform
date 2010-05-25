@@ -580,11 +580,51 @@ public class StudyServiceImpl implements StudyService.Service
 
     public String getSubjectTableName(Container container)
     {
-        return ColumnInfo.legalNameFromName(getSubjectNounSingular(container));
+        return getSubjectTableName(getSubjectNounSingular(container));
     }
 
     public String getSubjectVisitTableName(Container container)
     {
-        return getSubjectTableName(container) + "Visit";
+        return getSubjectVisitTableName(getSubjectNounSingular(container));
     }
+
+    private String getSubjectTableName(String subjectNounSingular)
+    {
+        return ColumnInfo.legalNameFromName(subjectNounSingular);
+    }
+
+    private String getSubjectVisitTableName(String subjectNounSingular)
+    {
+        return getSubjectTableName(subjectNounSingular) + "Visit";
+    }
+
+    public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
+    {
+        TableInfo studyDataTable = StudySchema.getInstance().getTableInfoStudyData();
+        for (ColumnInfo col : studyDataTable.getColumns())
+        {
+            String colName = col.getName();
+            // Our subject column name isn't allowed to match the name of a non-participant column in the same table:
+            if (!"ParticipantId".equalsIgnoreCase(colName) && subjectColumnName.equalsIgnoreCase(colName))
+                return false;
+        }
+        return true;
+    }
+
+    public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
+    {
+        String subjectTableName = getSubjectTableName(subjectNounSingular);
+        String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
+        for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())
+        {
+            String tableName = schemaTable.getName();
+            if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
+            {
+                if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
+                    return false;
+            }
+        }
+        return true;
+    }
+
 }

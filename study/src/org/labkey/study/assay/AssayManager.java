@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay;
 
+import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
@@ -48,6 +49,8 @@ import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.view.StudyGWTView;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
 
@@ -202,6 +205,20 @@ public class AssayManager implements AssayService.Interface
         vbox.addView(new JspView("/org/labkey/study/assay/view/assaySetup.jsp"));
         vbox.addView(queryView);
         return vbox;
+    }
+
+    @Override
+    public ModelAndView createAssayDesignerView(Map<String, String> properties)
+    {
+        return new StudyGWTView(StudyApplication.GWTModule.AssayDesigner, properties);
+    }
+
+    @Override
+    public ModelAndView createListChooserView(Map<String, String> properties)
+    {
+        GWTView listChooser = new StudyGWTView(StudyApplication.GWTModule.ListChooser, properties);
+        listChooser.getModelBean().getProperties().put("pageFlow", "assay");
+        return listChooser;
     }
 
     public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)

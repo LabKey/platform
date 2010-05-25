@@ -41,6 +41,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -524,6 +525,10 @@ public class DesignerController extends SpringActionController
         }
         else if (container.hasChild(folderName) && null != StudyManager.getInstance().getStudy(container.getChild(folderName)))
             form.setMessage(container.getName() + " already has a child named " + folderName + " containing a study.");
+        else if (!StudyService.get().isValidSubjectColumnName(getContainer(), form.getSubjectColumnName()))
+            form.setMessage("\"" + form.getSubjectColumnName() + "\" is not a valid subject column name.");
+        else if (!StudyService.get().isValidSubjectNounSingular(getContainer(), form.getSubjectNounSingular()))
+            form.setMessage("\"" + form.getSubjectNounSingular() + "\" is not a valid subject noun.");
         else
         {
             GWTStudyDefinition def = getStudyDefinition(form);

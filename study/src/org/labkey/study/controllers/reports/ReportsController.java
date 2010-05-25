@@ -1845,6 +1845,7 @@ public class ReportsController extends BaseStudyController
             props.put("isAdmin", String.valueOf(getContainer().hasPermission(getUser(), AdminPermission.class)));
             props.put("isGuest", String.valueOf(getUser().isGuest()));
             props.put("isParticipantChart", getViewContext().getActionURL().getParameter("isParticipantChart"));
+            props.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
             props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
 
             _datasetId = NumberUtils.toInt((String)getViewContext().get(DataSetDefinition.DATASETKEY));

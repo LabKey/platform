@@ -47,6 +47,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
     private String _datasetId;
     private String _participantId;
     private boolean _isParticipantChart;
+    private String _subjectNounSingular;
 
     private StudyChartServiceAsync _service;
     private GWTChart _chart;
@@ -63,6 +64,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         String participantChart = PropertyUtil.getServerProperty("isParticipantChart");
         if (participantChart != null)
             _isParticipantChart = Boolean.valueOf(participantChart).booleanValue();
+        _subjectNounSingular = PropertyUtil.getServerProperty("subjectNounSingular");
         String isAdmin = PropertyUtil.getServerProperty("isAdmin");
         _isAdmin = isAdmin != null ? Boolean.valueOf(isAdmin).booleanValue() : false;
         String isGuest = PropertyUtil.getServerProperty("isGuest");
@@ -112,7 +114,9 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         FlexTable panel = new FlexTable();
         int row = 0;
 
-        BoundCheckBox participant = new BoundCheckBox("Subject Chart", false, new WidgetUpdatable()
+        String subjectNounLower = Character.toLowerCase(_subjectNounSingular.charAt(0)) + _subjectNounSingular.substring(1);
+        String subjectNounUpper = Character.toUpperCase(_subjectNounSingular.charAt(0)) + _subjectNounSingular.substring(1);
+        BoundCheckBox participant = new BoundCheckBox(subjectNounUpper + " Chart", false, new WidgetUpdatable()
         {
             public void update(Widget widget)
             {
@@ -125,8 +129,9 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
         participant.setName("participantChart");
         HorizontalPanel hp = new HorizontalPanel();
         hp.add(participant);
-        hp.add(new HelpPopup("Subject Chart", "A subject chart view shows measures for only one subject " +
-                "at a time. A subject chart view allows the user to step through charts for each subject shown in any dataset grid."));
+        hp.add(new HelpPopup(subjectNounUpper + " Chart", subjectNounUpper + " chart views show measures for only one " + subjectNounLower +
+                " at a time. " + subjectNounUpper + " chart views allow the user to step through charts for each " +
+                subjectNounLower + " shown in any dataset grid."));
         panel.setWidget(row, 0, hp);
         WebPartPanel wpp = new WebPartPanel("Study Options", panel);
         wpp.setWidth("100%");

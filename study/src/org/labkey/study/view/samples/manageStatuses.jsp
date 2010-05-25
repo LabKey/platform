@@ -91,7 +91,7 @@ function showSystemRows(value)
                 <%
                     }
                 %>
-                        <td align="center"><%= status.isSystemStatus() ? "&nbsp;" : status.getSortOrder() + 1 %></td>
+                        <td align="center"><%= status.isSystemStatus() ? "1" : status.getSortOrder() + 1 %></td>
                         <td>
                             <%
                                 if (!status.isSystemStatus())

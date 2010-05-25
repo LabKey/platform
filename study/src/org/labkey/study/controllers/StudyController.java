@@ -1029,9 +1029,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ShowCreateStudyAction extends SimpleViewAction<StudyPropertiesForm>
+    public class CreateStudyAction extends FormViewAction<StudyPropertiesForm>
     {
-        public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
+        public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
         {
             if (null != getStudy(true))
             {
@@ -1050,6 +1050,34 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<StudyPropertiesForm>(null, "createStudy.jsp", form, errors);
         }
 
+        public void validateCommand(StudyPropertiesForm target, Errors errors)
+        {
+            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
+                errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
+
+            target.setLabel(StringUtils.trimToNull(target.getLabel()));
+            if (null == target.getLabel())
+                errors.reject(ERROR_MSG, "Please supply a label");
+
+            if (!StudyService.get().isValidSubjectColumnName(getContainer(), target.getSubjectColumnName()))
+                errors.reject(ERROR_MSG, "\"" + target.getSubjectColumnName() + "\" is not a valid subject column name.");
+
+            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
+                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounSingular() + "\" is not a valid subject noun.");
+        }
+
+        public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
+        {
+            createStudy(getStudy(true), getContainer(), getUser(), form);
+            updateRepositorySettings(getContainer(), form.isSimpleRepository());
+            return true;
+        }
+
+        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
+        {
+            return new ActionURL(ManageStudyAction.class, getContainer());
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Study");
@@ -1057,7 +1085,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class CreateStudyAction extends FormHandlerAction<StudyPropertiesForm>
+    public class OldCreateStudyAction extends FormHandlerAction<StudyPropertiesForm>
     {
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
@@ -1067,6 +1095,12 @@ public class StudyController extends BaseStudyController
             target.setLabel(StringUtils.trimToNull(target.getLabel()));
             if (null == target.getLabel())
                 errors.reject(ERROR_MSG, "Please supply a label");
+
+            if (!StudyService.get().isValidSubjectColumnName(getContainer(), target.getSubjectColumnName()))
+                errors.reject(ERROR_MSG, target.getSubjectColumnName() + " is not a valid subject column name.");
+
+            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
+                errors.reject(ERROR_MSG, target.getSubjectNounSingular() + " is not a valid subject noun.");
         }
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
@@ -1221,8 +1255,8 @@ public class StudyController extends BaseStudyController
             Study study = getStudy(true);
             if (null == study)
             {
-                ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
-                return action.getView(form, errors);
+                CreateStudyAction action = (CreateStudyAction)initAction(this, new CreateStudyAction());
+                return action.getView(form, false, errors);
             }
             return new StudyJspView<StudyPropertiesForm>(getStudy(), "manageStudyProperties.jsp", form, errors);
         }
@@ -1248,8 +1282,8 @@ public class StudyController extends BaseStudyController
             Study study = getStudy(true);
             if (null == study)
             {
-                ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
-                return action.getView(form, errors);
+                CreateStudyAction action = (CreateStudyAction)initAction(this, new CreateStudyAction());
+                return action.getView(form, false, errors);
             }
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
@@ -1269,20 +1303,6 @@ public class StudyController extends BaseStudyController
         public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
             return new ActionURL(ManageStudyAction.class, getContainer());
-        }
-
-        public ModelAndView getView(StudyPropertiesForm form, BindException errors) throws Exception
-        {
-            Study study = getStudy(true);
-            if (null == study)
-            {
-                ShowCreateStudyAction action = (ShowCreateStudyAction)initAction(this, new ShowCreateStudyAction());
-                return action.getView(form, errors);
-            }
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous date study</span>");
-
-            return new StudyJspView<StudyPropertiesForm>(getStudy(), _jspName(), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3103,7 +3123,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            return root.addChild("Manage QC States");
+            return root.addChild("Manage Dataset QC States");
         }
     }
 
@@ -4080,11 +4100,14 @@ public class StudyController extends BaseStudyController
                     "<div>" + count + " rows were updated.<p/>" +
                     PageFlowUtil.generateButton("Done", "manageVisits.view") +
                     "</div>");
-            return new DialogTemplate(view);
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
+            _appendManageStudy(root);
+            root.addChild("Manage Visits", new ActionURL(ManageVisitsAction.class, getContainer()));
+            root.addChild("Recalculate Visit Dates");
             return root;
         }
     }
@@ -6286,7 +6309,7 @@ public class StudyController extends BaseStudyController
             {
                 List<NavTree> buttons;
                 if (getViewContext().hasPermission(ACL.PERM_ADMIN))
-                    buttons = Collections.singletonList(new NavTree("Create Study", new ActionURL(ShowCreateStudyAction.class, getContainer())));
+                    buttons = Collections.singletonList(new NavTree("Create Study", new ActionURL(CreateStudyAction.class, getContainer())));
                 else
                     buttons = Collections.emptyList();
                 return new AppBar("Study: None", buttons);

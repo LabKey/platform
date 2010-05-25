@@ -24,10 +24,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
-%>
-<labkey:errors/>
-
-<%
     if (!getViewContext().hasPermission(ACL.PERM_ADMIN))
     {%>
         A study has not been created in this folder. Please contact an administrator.

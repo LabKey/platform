@@ -41,7 +41,7 @@
     <tr>
         <td>
     <%
-        WebPartView.startTitleFrame(out, "Currently Defined QC States", null, "100%", null);
+        WebPartView.startTitleFrame(out, "Currently Defined Dataset QC States", null, "100%", null);
     %>
         <table>
     <%
@@ -50,7 +50,7 @@
             %>
             <tr>
                 <td colspan="5">
-                    <em>No QC states have been defined for this study.</em>
+                    <em>No QC states have been defined for datasets in this study.</em>
                 </td>
             </tr>
             <%
@@ -91,7 +91,7 @@
                 }
             %>
             <tr>
-                <th align="right">New QC state:</th>
+                <th align="right">New dataset QC state:</th>
                 <td><input type="text" name="newLabel" size="30"></td>
                 <td><input type="text" name="newDescription" size="50"></td>
                 <td align="center"><input type="checkbox" name="newPublicData" CHECKED></td>
@@ -109,7 +109,7 @@
         </table>
         <%
             WebPartView.endTitleFrame(out);
-            WebPartView.startTitleFrame(out, "Default states for study data", null, "100%", null);
+            WebPartView.startTitleFrame(out, "Default states for dataset data", null, "100%", null);
         %>
         <table width="100%" cellspacing="4">
             <tr>
