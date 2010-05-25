@@ -19,11 +19,11 @@ package org.labkey.api.study.actions;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
@@ -94,7 +94,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 
     protected ModelAndView createGWTView(Map<String, String> properties)
     {
-        return new GWTView("gwt.AssayDesigner", properties);
+        return AssayService.get().createAssayDesignerView(properties);
     }
 
     public NavTree appendNavTrail(NavTree root)

@@ -33,6 +33,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -162,8 +163,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     {
         Map<String, String> gwtProps = new HashMap<String, String>();
         gwtProps.put("dialogTitle", "Select a Thaw List");
-        GWTView listChooser = new GWTView("gwt.ListChooser", gwtProps);
-        listChooser.getModelBean().getProperties().put("pageFlow", "assay");
+        ModelAndView listChooser = AssayService.get().createListChooserView(gwtProps);
         JspView<ThawListBean> view = new JspView<ThawListBean>("/org/labkey/api/study/assay/thawListSelector.jsp", new ThawListBean(ctx, listChooser));
         view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
 

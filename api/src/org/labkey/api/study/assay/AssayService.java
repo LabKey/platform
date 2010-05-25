@@ -27,8 +27,10 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -59,6 +61,9 @@ public class AssayService
         public AssayProvider getProvider(ExpProtocol protocol);
         public List<AssayProvider> getAssayProviders();
         public WebPartView createAssayListView(ViewContext context, boolean portalView);
+
+        ModelAndView createAssayDesignerView(Map<String, String> properties);
+        ModelAndView createListChooserView(Map<String, String> properties);
 
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 

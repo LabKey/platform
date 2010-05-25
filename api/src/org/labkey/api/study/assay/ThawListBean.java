@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.GWTView;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: jeckels
@@ -26,9 +27,9 @@ import org.labkey.api.view.GWTView;
 public class ThawListBean
 {
     private RenderContext _renderContext;
-    private GWTView _listChooser;
+    private ModelAndView _listChooser;
 
-    public ThawListBean(RenderContext renderContext, GWTView listChooser)
+    public ThawListBean(RenderContext renderContext, ModelAndView listChooser)
     {
         _renderContext = renderContext;
         _listChooser = listChooser;
@@ -39,7 +40,7 @@ public class ThawListBean
         return _renderContext;
     }
 
-    public GWTView getListChooser()
+    public ModelAndView getListChooser()
     {
         return _listChooser;
     }

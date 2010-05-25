@@ -149,6 +149,10 @@ public class StudyService
         String getSubjectVisitTableName(Container container);
 
         String getSubjectVisitColumnName(Container container);
+
+        boolean isValidSubjectColumnName(Container container, String subjectColumnName);
+
+        boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
     }
 
     public static void register(Service serviceImpl)
