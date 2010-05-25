@@ -736,7 +736,11 @@ public class SearchController extends SpringActionController
                     title += " project '" + getContainer().getProject().getName() + "'";
                     break;
                 case Folder:
-                    title += " folder '" + getContainer().getName() + "'";
+                    title += " folder '";
+                    if (getContainer().getName() == "")
+                        title += "root'";
+                    else
+                        title += getContainer().getName() + "'";
                     break;
             }
             if (null != _category)

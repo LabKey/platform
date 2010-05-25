@@ -47,6 +47,7 @@
     }
     if (loginStatusChanged())
         window.location.reload(true);
+    
 </script>
 <%
     JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
@@ -456,6 +457,25 @@ String normalizeHref(Container c, Path contextPath, String href)
     }
     return href;
 }
+
+String projectInfo(Container c, boolean returnID)
+{
+    if (returnID)
+    {
+        return c.getId();
+    }
+
+    if (c.getProject() != null)
+    {
+        return c.getProject().getId();
+    }
+    return "";
+}
+
+%>
+<%
+    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    {
 %>
 <script type="text/javascript">
     var params = LABKEY.ActionURL.getParameters();
@@ -621,7 +641,11 @@ String normalizeHref(Container c, Path contextPath, String href)
                         },
                         afterrender : function(chkbox)
                         {
-                            if (!(LABKEY.ActionURL.getParameter('container')))
+                            if (!(params['container']))
+                            {
+                                chkbox.setValue(true);
+                            }
+                            else if(params['container'] == "")
                             {
                                 chkbox.setValue(true);
                             }
@@ -629,25 +653,33 @@ String normalizeHref(Container c, Path contextPath, String href)
                     }
                 },{
                     boxLabel: 'Project',
-                    value   : "<%=h(c.getProject().getId())%>",
+                    value   : "<%=h(projectInfo(c, false))%>",
                     name    : 'scope',
                     listeners : {
                         afterrender : function(chkbox)
                         {
-                            if ((LABKEY.ActionURL.getParameter('container') == chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') != 0))
+                            if ((params['container'] == chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') != 0))
                             {
-                                chkbox.setValue(true);
+                                if (params['container'] != "")
+                                {
+                                    chkbox.setValue(true);
+                                }
+                            }
+
+                            if ("<%=h(projectInfo(c, false))%>" == "")
+                            {
+                                chkbox.disable();
                             }
                         }
                     }
                 },{
                     boxLabel: 'Folder',
                     id      : 'folder',
-                    value   : "<%=h(c.getId())%>",
+                    value   : "<%=h(projectInfo(c, true))%>",
                     name    : 'scope',
                     listeners : {
                         afterrender: function(chkbox) {
-                            if (LABKEY.ActionURL.getParameter('container') == chkbox.value && LABKEY.ActionURL.getParameter('includeSubfolders'))
+                            if (params['container'] == chkbox.value && LABKEY.ActionURL.getParameter('includeSubfolders'))
                             {
                                 chkbox.setValue(true);
                             }
@@ -710,9 +742,19 @@ String normalizeHref(Container c, Path contextPath, String href)
         establishParams();
     }
 
-    if (<%=(!form.isWebPart() && searchConfig.includeAdvancedUI())%>)
-    {
-        Ext.onReady(init);
-    }
-
+    Ext.onReady(init);
 </script>
+<%
+    }
+    else
+    {
+%>
+<script type="text/javascript">
+    function resubmit()
+    {
+        /* NO-OP */
+    }
+</script>
+<%
+    }
+%>
