@@ -289,8 +289,8 @@ public class CoreController extends SpringActionController
                     Content root = getCustomStylesheetContent(ContainerManager.getRoot());
                     Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
                     Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
-                    WebdavResource extAll = r.lookup(Path.parse("/ext-3.2.0/resources/css/ext-all.css"));
-//                    WebdavResource extPatches = r.lookup(Path.parse("/ext-3.2.0/resources/css/ext-patches.css"));
+                    WebdavResource extAll = r.lookup(Path.parse("/ext-3.2.1/resources/css/ext-all.css"));
+//                    WebdavResource extPatches = r.lookup(Path.parse("/ext-3.2.1/resources/css/ext-patches.css"));
                     StringWriter out = new StringWriter();
 
                     _appendCss(out, extAll);
