@@ -15,10 +15,7 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -45,12 +42,12 @@ import java.util.*;
  */
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
-    private final DataSetTable _table;
+    private final DataSetDefinition _dataset;
 
     public DatasetUpdateService(DataSetTable table)
     {
         super(table);
-        _table = table;
+        _dataset = table.getDatasetDefinition();
     }
 
     @Override
@@ -58,7 +55,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         String lsid = keyFromMap(keys);
-        return StudyService.get().getDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), lsid);
+        return StudyService.get().getDatasetRow(user, container, _dataset.getDataSetId(), lsid);
     }
 
     @Override
@@ -74,7 +71,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<String> errors = new ArrayList<String>();
-        String newLsid = StudyService.get().insertDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), row, errors);
+        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDataSetId(), row, errors);
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -113,15 +110,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
-                PageFlowUtil.nullSafeEquals(_table.getDatasetDefinition().getDataSetId(), study.getParticipantCohortDataSetId()));
+                PageFlowUtil.nullSafeEquals(_dataset.getDataSetId(), study.getParticipantCohortDataSetId()));
 
         // If this results in a change to cohort assignments, the participant ID, or the visit,
         // we need to recompute the participant-visit map:
         if (recomputeCohorts || lsidChanged)
         {
-            DataSetDefinition dataset = _table.getDatasetDefinition();
-            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singletonList(dataset));
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(dataset));
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singletonList(_dataset));
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset));
         }
     }
 
@@ -131,7 +127,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         List<String> errors = new ArrayList<String>();
         String lsid = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);
-        String newLsid = StudyService.get().updateDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), lsid, row, errors);
+        String newLsid = StudyService.get().updateDatasetRow(user, container, _dataset.getDataSetId(), lsid, row, errors);
         if(errors.size() > 0)
         {
             ValidationException e = new ValidationException();
@@ -158,16 +154,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        StudyService.get().deleteDatasetRow(user, container, _table.getDatasetDefinition().getDataSetId(), keyFromMap(oldRow));
+        StudyService.get().deleteDatasetRow(user, container, _dataset.getDataSetId(), keyFromMap(oldRow));
         return oldRow;
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
         Object lsid = map.get("lsid");
-        if(null == lsid && _table.getDatasetDefinition().getKeyManagementType() != DataSetDefinition.KeyManagementType.None)
+        if(null == lsid && _dataset.getKeyManagementType() != DataSetDefinition.KeyManagementType.None)
         {
-            Object id = map.get(_table.getDatasetDefinition().getKeyPropertyName());
+            Object id = map.get(_dataset.getKeyPropertyName());
             if (id == null)
             {
                 id = map.get("Key");
@@ -176,7 +172,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             {
                 try
                 {
-                    String[] lsids = Table.executeArray(_table, _table.getColumn("LSID"), new SimpleFilter(_table.getDatasetDefinition().getKeyPropertyName(), id), null, String.class);
+                    String[] lsids = Table.executeArray(getQueryTable(), getQueryTable().getColumn("LSID"), new SimpleFilter(_dataset.getKeyPropertyName(), id), null, String.class);
                     if (lsids.length == 1)
                     {
                         map.put("lsid", lsids[0]);
@@ -185,9 +181,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                     if (lsids.length > 1)
                     {
                         throw new IllegalStateException("More than one row matched for key '" + id + "' in column " +
-                                _table.getDatasetDefinition().getKeyPropertyName() + " in dataset " +
-                                _table.getDatasetDefinition().getName() + " in folder " +
-                                _table.getDatasetDefinition().getContainer().getPath());
+                                _dataset.getKeyPropertyName() + " in dataset " +
+                                _dataset.getName() + " in folder " +
+                                _dataset.getContainer().getPath());
                     }
                 }
                 catch (SQLException e)

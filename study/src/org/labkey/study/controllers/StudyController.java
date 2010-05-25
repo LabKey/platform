@@ -2299,7 +2299,8 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
             int datasetId = form.getDatasetId();
-            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
+            StudyImpl study = getStudy();
+            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
             if (null == dataset)
                 HttpView.throwNotFound();
 
@@ -2311,13 +2312,17 @@ public class StudyController extends BaseStudyController
             try
             {
                 Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
+                List<Map<String, Object>> keys = new ArrayList<Map<String, Object>>(lsids.size());
                 for (String lsid : lsids)
-                {
-                    StudyService.get().deleteDatasetRow(getUser(), getContainer(), datasetId, lsid);
-                }
+                    keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
 
-                if (PageFlowUtil.nullSafeEquals(datasetId, getStudy().getParticipantCohortDataSetId()))
-                    CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudy());
+                StudyQuerySchema schema = new StudyQuerySchema(study, getViewContext().getUser(), true);
+                TableInfo datasetTable = schema.getDataSetTable((DataSetDefinition)dataset);
+
+                QueryUpdateService qus = datasetTable.getUpdateService();
+                assert qus != null;
+
+                qus.deleteRows(getViewContext().getUser(), getContainer(), keys);
 
                 scope.commitTransaction();
                 inTransaction = false;

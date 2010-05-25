@@ -25,6 +25,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -35,6 +37,7 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -212,7 +215,9 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             redirectTypeNotFound(form.getDatasetId());
             return false;
         }
-        if (!ds.canWrite(getViewContext().getUser()))
+        final Container c = getViewContext().getContainer();
+        final User user = getViewContext().getUser();
+        if (!ds.canWrite(user))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
@@ -227,22 +232,30 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (errors.hasErrors())
             return false;
 
-        Map<String,Object> data = updateForm.getDataMap();
-        List<String> importErrors = new ArrayList<String>();
+        // The query DataSet table supports QueryUpdateService while the table returned from ds.getTableInfo() doesn't.
+        StudyQuerySchema schema = new StudyQuerySchema(study, user, true);
+        TableInfo datasetQueryTable = schema.getDataSetTable(ds);
+        QueryUpdateService qus = datasetQueryTable.getUpdateService();
+        assert qus != null;
 
+        Map<String,Object> data = updateForm.getDataMap();
         String newLsid;
         if (isInsert())
         {
-            newLsid = StudyService.get().insertDatasetRow(getViewContext().getUser(), getViewContext().getContainer(), datasetId, data, importErrors);
+            List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data));
+            if (insertedRows.size() == 0)
+                return false;
+            Map<String, Object> insertedValues = insertedRows.get(0);
+            newLsid = (String)insertedValues.get("lsid");
 
             // save last inputs for use in default value population:
-            Domain domain = PropertyService.get().getDomain(getViewContext().getContainer(), ds.getTypeURI());
+            Domain domain = PropertyService.get().getDomain(c, ds.getTypeURI());
             DomainProperty[] properties = domain.getProperties();
             Map<String, Object> requestMap = updateForm.getTypedValues();
             Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
             for (DomainProperty property : properties)
             {
-                ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getViewContext().getUser());
+                ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user);
                 Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
                 if (property.isMvEnabled())
                 {
@@ -256,20 +269,16 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                     dataMap.put(property, value);
                 }
             }
-            DefaultValueService.get().setDefaultValues(getViewContext().getContainer(), dataMap, getViewContext().getUser());
+            DefaultValueService.get().setDefaultValues(c, dataMap, user);
         }
         else
         {
-            newLsid = StudyService.get().updateDatasetRow(getViewContext().getUser(), getViewContext().getContainer(), datasetId, form.getLsid(), data, importErrors);
-        }
-
-        if (importErrors.size() > 0)
-        {
-            for (String error : importErrors)
-            {
-                errors.reject("update", PageFlowUtil.filter(error));
-            }
-            return false;
+            List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
+                    Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())));
+            if (updatedRows.size() == 0)
+                return false;
+            Map<String, Object> updatedValues = updatedRows.get(0);
+            newLsid = (String)updatedValues.get("lsid");
         }
 
         boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
@@ -280,7 +289,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
         {
             StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singleton(ds));
-            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(getViewContext().getUser(), Collections.singleton(ds));
+            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(user, Collections.singleton(ds));
         }
 
         return true;
