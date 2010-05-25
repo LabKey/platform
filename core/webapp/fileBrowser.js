@@ -3247,6 +3247,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 border:false,
                 stateful: false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                buttonAlign: 'left',
                 items: [
                     {
                         xtype: 'radiogroup',
@@ -3307,6 +3308,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 border:false,
                 stateful: false,
                 bodyStyle : 'background-color:#f0f0f0; padding:10px;',
+                buttonAlign: 'left',
                 items: [{
                     xtype: 'radiogroup',
                     width: 300,
