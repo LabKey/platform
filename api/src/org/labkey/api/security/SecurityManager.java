@@ -65,9 +65,10 @@ public class SecurityManager
 {
     private static final Logger _log = Logger.getLogger(SecurityManager.class);
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
     private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
     private static final String GROUP_CACHE_PREFIX = "Groups/MetaData=";
+
+    public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
 
     static
     {
