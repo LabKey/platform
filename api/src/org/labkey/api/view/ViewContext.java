@@ -201,6 +201,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
+    @Deprecated // use Permission class variant instead
     public boolean hasPermission(int perm) throws NotFoundException
     {
         return (getPermissions() & perm) == perm;

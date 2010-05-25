@@ -267,9 +267,9 @@ public abstract class DefaultModule implements Module
             File[] files = getWebPartFiles();
             if (files.length > 0)
             {
-                for (int i = 0; i < files.length; i++)
+                for (File file : files)
                 {
-                    wpf.add(new SimpleWebPartFactory(this, files[i]));
+                    wpf.add(new SimpleWebPartFactory(this, file));
                 }
             }
             _webPartFactories = wpf;
@@ -324,6 +324,7 @@ public abstract class DefaultModule implements Module
             throws SQLException
     {
         boolean foundPart = false;
+
         for (Portal.WebPart part : Portal.getParts(c.getId()))
         {
             if (name.equals(part.getName()))
@@ -332,6 +333,7 @@ public abstract class DefaultModule implements Module
                 break;
             }
         }
+
         if (!foundPart)
         {
             WebPartFactory desc = Portal.getPortalPart(name);
@@ -392,6 +394,7 @@ public abstract class DefaultModule implements Module
         return _moduleDependencies;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setModuleDependencies(String dependencies)
     {
         _moduleDependenciesString = dependencies;
@@ -418,6 +421,7 @@ public abstract class DefaultModule implements Module
         return _svnRevision;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setSvnRevision(String svnRevision)
     {
         _svnRevision = svnRevision;
@@ -428,6 +432,7 @@ public abstract class DefaultModule implements Module
         return _svnUrl;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setSvnUrl(String svnUrl)
     {
         _svnUrl = svnUrl;
@@ -438,6 +443,7 @@ public abstract class DefaultModule implements Module
         return _buildUser;
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setBuildUser(String buildUser)
     {
         _buildUser = buildUser;
@@ -485,7 +491,7 @@ public abstract class DefaultModule implements Module
 
     public Map<String, String> getProperties()
     {
-        Map<String,String> props = new LinkedHashMap<String,String>();
+        Map<String, String> props = new LinkedHashMap<String, String>();
 
         props.put("Module Class", getClass().getName());
         props.put("Version", getFormattedVersion());
@@ -594,28 +600,32 @@ public abstract class DefaultModule implements Module
 
     public ReportDescriptor getReportDescriptor(String path)
     {
-        if(null == path)
+        if (null == path)
             return null;
 
         //the report path is a relative path from the module's reports directory
         //so the report key will be the middle two sections of the path
         //e.g., for path 'schemas/ms2/peptides/myreport.r', key is 'ms2/peptides'
-        String key = null;
+        String key;
         String[] pathParts = path.split("/");
-        if(getQueryReportsDir().getName().equalsIgnoreCase(pathParts[0]) && pathParts.length >= 3)
+
+        if (getQueryReportsDir().getName().equalsIgnoreCase(pathParts[0]) && pathParts.length >= 3)
             key = pathParts[1] + "/" + pathParts[2];
         else
             key = path.substring(0, path.lastIndexOf('/'));
 
         File reportFile = reportKeyToLegalFile(getReportsDir(), path);
-        if(reportFile.exists() && reportFile.isFile())
+
+        if (reportFile.exists() && reportFile.isFile())
         {
             ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(reportFile.getAbsolutePath());
-            if(null == descriptor || descriptor.isStale())
+
+            if (null == descriptor || descriptor.isStale())
             {
                 descriptor = createReportDescriptor(key, reportFile);
                 _reportDescriptorCache.put(reportFile.getAbsolutePath(), descriptor);
             }
+
             return descriptor;
         }
         else

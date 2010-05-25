@@ -67,6 +67,7 @@ public interface WebdavResource extends Resource
     Map<String,Object> getMutableProperties();
 
     /** Caller needs to check permissions */
+    @Nullable
     FileStream getFileStream(User user) throws IOException;
 
     /** Caller needs to check permissions */

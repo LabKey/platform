@@ -202,6 +202,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     }
 
 
+    public void setHelpTopic(String topicName)
+    {
+        setHelpTopic(new HelpTopic(topicName));
+    }
+
+
     public void setHelpTopic(HelpTopic topic)
     {
         assert null != getPageConfig() : "action not initialized property";

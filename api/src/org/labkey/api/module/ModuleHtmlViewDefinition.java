@@ -125,12 +125,13 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         if(null == perms)
             return;
 
-        for(PermissionType permEntry : perms)
+        for (PermissionType permEntry : perms)
         {
             SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permEntry.getName().toString());
-            if(SimpleAction.Permission.login == perm)
+
+            if (SimpleAction.Permission.login == perm)
                 _requiresLogin = true;
-            else if(null != perm)
+            else if (null != perm)
                 _requiredPerms |= perm.toInt();
         }
     }

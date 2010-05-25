@@ -34,7 +34,7 @@
     Container c = currentContext.getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     AppProps appProps = AppProps.getInstance();
-    NavTree homeLink = null;
+    NavTree homeLink;
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
     if (!laf.isShowMenuBar())
@@ -114,7 +114,7 @@
         %></span></td>
     <td class="<%=menuBarClass%>" align="right"><%
         if (currentContext.hasPermission(ACL.PERM_ADMIN))
-                include(new PopupAdminView(currentContext), out);
+            include(new PopupAdminView(currentContext), out);
         else if (currentContext.getUser().isDeveloper())
             include(new PopupDeveloperView(currentContext), out);
         else
