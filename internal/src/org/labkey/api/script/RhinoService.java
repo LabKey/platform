@@ -441,6 +441,7 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(HashMap.class.getName());
         allowedClasses.add(Integer.class.getName());
         allowedClasses.add(JavaScriptException.class.getName());
+        allowedClasses.add(org.json.JSONObject.class.getName());
         allowedClasses.add(LinkedHashMap.class.getName());
         allowedClasses.add(List.class.getName());
         allowedClasses.add(Long.class.getName());
