@@ -504,7 +504,9 @@ public class ExceptionUtil
 
     public static void doErrorRedirect(HttpServletResponse response, String url)
     {
-        response.setStatus(301);
+        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+        response.setDateHeader("Expires", 0);
+        response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Location", url);
 
         // backup strategy!
