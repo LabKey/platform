@@ -461,7 +461,15 @@ public class ViewServlet extends HttpServlet
     public static ActionURL getRequestURL()
     {
         // using HttpView to remember the root request, rather than have our own ThreadLocal
-        return (ActionURL) HttpView.getRootContext().getRequest().getAttribute(REQUEST_ACTION_URL);
+        ViewContext ctx = HttpView.getRootContext();
+        if (ctx == null)
+            return null;
+
+        HttpServletRequest request = ctx.getRequest();
+        if (request == null)
+            return null;
+
+        return (ActionURL) request.getAttribute(REQUEST_ACTION_URL);
     }
 
 

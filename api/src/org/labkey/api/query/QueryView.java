@@ -320,7 +320,9 @@ public class QueryView extends WebPartView<Object>
                     ActionURL url = ((DetailsURL)expr).getActionURL();
                     if (null != url)
                     {
-                        url.addParameter(QueryParam.srcURL, getReturnURL().getLocalURIString());
+                        URLHelper srcURL = getReturnURL();
+                        if (srcURL != null)
+                            url.addParameter(QueryParam.srcURL, srcURL.getLocalURIString());
                         return StringExpressionFactory.createURL(url);
                     }
                 }
