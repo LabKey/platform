@@ -3344,21 +3344,36 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class DeriveSamplesChooseTargetAction extends SimpleViewAction<DeriveMaterialForm>
     {
+        private List<ExpMaterial> _materials;
+
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Derive Samples");
+            root = appendRootNavTrail(root);
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
+            if (sampleSet != null)
+            {
+                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+            }
+            root.addChild("Derive Samples");
+            return root;
+        }
+
+        @Override
+        public void validate(DeriveMaterialForm form, BindException errors)
+        {
+            _materials = form.lookupMaterials();
+            if (_materials.isEmpty())
+            {
+                HttpView.throwNotFound("Could not find any matching materials");
+            }
         }
 
         public ModelAndView getView(DeriveMaterialForm form, BindException errors) throws Exception
         {
-            List<ExpMaterial> materials = form.lookupMaterials();
-            if (materials.isEmpty())
+            if (!_materials.get(0).getContainer().equals(getContainer()))
             {
-                return HttpView.throwNotFound("Could not find any matching materials");
-            }
-            if (!materials.get(0).getContainer().equals(getContainer()))
-            {
-                ActionURL redirectURL = getViewContext().cloneActionURL().setContainer(materials.get(0).getContainer());
+                ActionURL redirectURL = getViewContext().cloneActionURL().setContainer(_materials.get(0).getContainer());
                 HttpView.throwRedirect(redirectURL);
             }
 
@@ -3376,7 +3391,7 @@ public class ExperimentController extends SpringActionController
                 Set<String> materialInputRoles = new TreeSet<String>();
                 materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(getContainer()));
                 Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<ExpMaterial, String>();
-                for (ExpMaterial material : materials)
+                for (ExpMaterial material : _materials)
                 {
                     materialsWithRoles.put(material, null);
                 }
@@ -3453,9 +3468,29 @@ public class ExperimentController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class DescribeDerivedSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {
+        List<ExpMaterial> _materials;
+
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Derive Samples");
+            root = appendRootNavTrail(root);
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
+            if (sampleSet != null)
+            {
+                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+            }
+            root.addChild("Derive Samples");
+            return root;
+        }
+
+        @Override
+        public void validate(DeriveMaterialForm form, BindException errors)
+        {
+            _materials = form.lookupMaterials();
+            if (_materials.isEmpty())
+            {
+                HttpView.throwNotFound("Could not find any matching materials");
+            }
         }
 
         public ModelAndView getView(DeriveMaterialForm form, BindException errors) throws Exception
@@ -3608,7 +3643,7 @@ public class ExperimentController extends SpringActionController
             return _context;
         }
 
-        public List<ExpMaterial> lookupMaterials() throws ServletException
+        public List<ExpMaterial> lookupMaterials()
         {
             List<ExpMaterial> result = new ArrayList<ExpMaterial>();
             for (int rowId : getRowIds())
