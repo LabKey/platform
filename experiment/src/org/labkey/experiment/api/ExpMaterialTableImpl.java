@@ -25,6 +25,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
@@ -390,6 +391,10 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        return _schema.getContainer().hasPermission(user, perm);
+        if (_ss != null || perm.isAssignableFrom(DeletePermission.class))
+            return _schema.getContainer().hasPermission(user, perm);
+
+        // don't allow insert/update on exp.Materials without a sample set
+        return false;
     }
 }
