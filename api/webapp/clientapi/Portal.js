@@ -175,11 +175,11 @@ LABKEY.Portal = new function()
                     if (imageEl.src.indexOf(moveUpImage) >= 0 && disableUp)
                         removeImgHref(imageEl, moveUpDisabledImage);
                     else if (imageEl.src.indexOf(moveUpDisabledImage) >= 0 && !disableUp)
-                        addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartUp({webPartId:" + webpart.webPartId + ", updateDOM:true});", moveUpImage);
+                        addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartUp({webPartId:" + webpart.webPartId + ",updateDOM:true});", moveUpImage);
                     else if (imageEl.src.indexOf(moveDownImage) >= 0 && disableDown)
                         removeImgHref(imageEl, moveDownDisabledImage);
                     else if (imageEl.src.indexOf(moveDownDisabledImage) >= 0 && !disableDown)
-                        addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartDown({webPartId:" + webpart.webPartId + ", updateDOM:true});", moveDownImage);
+                        addImgHref(imageEl, "javascript:LABKEY.Portal.moveWebPartDown({webPartId:" + webpart.webPartId + ",updateDOM:true});", moveDownImage);
                 }
             }
         }

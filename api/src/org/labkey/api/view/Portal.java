@@ -619,8 +619,8 @@ public class Portal
         {
             String methodName = direction == MOVE_UP ? "moveWebPartUp" : "moveWebPartDown";
             return "javascript:LABKEY.Portal." + methodName + "({" +
-                    "webPartId: " + webPart.getRowId() + "," +
-                    "updateDOM: true" +
+                    "webPartId:" + webPart.getRowId() + "," +
+                    "updateDOM:true" +
                     "})";
         }
         else
@@ -633,8 +633,8 @@ public class Portal
         if (USE_ASYNC_PORTAL_ACTIONS)
         {
             return "javascript:LABKEY.Portal.removeWebPart({" +
-                    "webPartId: " + webPart.getRowId() + "," +
-                    "updateDOM: true" +
+                    "webPartId:" + webPart.getRowId() + "," +
+                    "updateDOM:true" +
                     "})";
         }
         else
