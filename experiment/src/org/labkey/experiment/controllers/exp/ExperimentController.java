@@ -604,17 +604,47 @@ public class ExperimentController extends SpringActionController
         {
             // Strip out materials in folders that the user can't see - this lets us avoid a container filter that
             // enforces the permissions when we do the query
+            String typeName = null;
+            boolean sameType = true;
             for (Iterator<ExpMaterial> iter = materials.iterator(); iter.hasNext(); )
             {
-                if (!iter.next().getContainer().hasPermission(getUser(), ReadPermission.class))
+                ExpMaterial material = iter.next();
+                if (!material.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {
                     iter.remove();
                 }
+
+                String type = material.getCpasType();
+                if (sameType)
+                {
+                    if (typeName == null)
+                        typeName = type;
+                    else if (!typeName.equals(type))
+                    {
+                        typeName = null;
+                        sameType = false;
+                    }
+                }
             }
-            ExpSchema schema = new ExpSchema(getUser(), getContainer());
+            final ExpSampleSet ss;
+            if (sameType && typeName != null && !"Material".equals(typeName) && !"Sample".equals(typeName))
+                ss = ExperimentService.get().getSampleSet(typeName);
+            else
+                ss = null;
+
             QuerySettings settings = new QuerySettings(getViewContext(), dataRegionName);
+            UserSchema schema;
+            if (ss == null)
+            {
+                schema = new ExpSchema(getUser(), getContainer());
+                settings.setQueryName(ExpSchema.TableType.Materials.toString());
+            }
+            else
+            {
+                schema = new SamplesSchema(getUser(), getContainer());
+                settings.setQueryName(ss.getName());
+            }
             settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName(ExpSchema.TableType.Materials.toString());
             settings.setAllowChooseQuery(false);
             QueryView materialsView = new QueryView(schema, settings, null)
             {
@@ -622,22 +652,26 @@ public class ExperimentController extends SpringActionController
                 {
                     ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema());
                     table.setMaterials(materials);
-                    table.populate();
+                    table.populate(ss, false);
                     // We've already set an IN clause that restricts us to showing just data that we have permission
                     // to view
                     table.setContainerFilter(ContainerFilter.EVERYTHING);
-                    List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
-                    for (Iterator<FieldKey> i = defaultVisibleColumns.iterator(); i.hasNext(); )
+
+                    List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>();
+                    if (ss == null)
                     {
-                        FieldKey fieldKey = i.next();
-                        if (fieldKey.getParent() != null && fieldKey.getParent().getName().equals(ExpMaterialTable.Column.Property.toString()))
-                        {
-                            i.remove();
-                        }
+                        // The table columns without any of the active SampleSet property columns
+                        defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
+                        defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
+                        defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
                     }
-                    defaultVisibleColumns.add(FieldKey.fromParts("Created"));
-                    defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
-                    defaultVisibleColumns.add(FieldKey.fromParts("Run"));
+                    else
+                    {
+                        defaultVisibleColumns.addAll(table.getDefaultVisibleColumns());
+                    }
+                    defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.Created));
+                    defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.CreatedBy));
+                    defaultVisibleColumns.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
                     table.setDefaultVisibleColumns(defaultVisibleColumns);
                     return table;
                 }
