@@ -42,16 +42,13 @@ import static org.labkey.experiment.samples.UploadMaterialSetForm.*;
 /**
  * User: kevink
  */
-class ExpMaterialTableUpdateService implements QueryUpdateService
+class SampleSetUpdateService implements QueryUpdateService
 {
     private ExpMaterialTableImpl _table;
     private ExpSampleSet _ss;
 
-    public ExpMaterialTableUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
+    public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
     {
-        if (ss == null)
-            throw new IllegalArgumentException("Can't insert or update without a Sample Set.");
-
         _table = table;
         _ss = ss;
     }
@@ -80,6 +77,9 @@ class ExpMaterialTableUpdateService implements QueryUpdateService
     private List<ExpMaterial> insertOrUpdate(InsertUpdateChoice insertUpdate, User user, Container container, List<Map<String, Object>> rows)
             throws QueryUpdateServiceException, ValidationException
     {
+        if (_ss == null)
+            throw new IllegalArgumentException("Can't insert or update without a Sample Set.");
+
         UploadMaterialSetForm form = new UploadMaterialSetForm();
         form.setContainer(container);
         form.setUser(user);

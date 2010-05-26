@@ -874,7 +874,6 @@ experiment/src/org/labkey/experiment/api/ExpMaterialImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialTableImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpMaterialTableUpdateService.java -text
 experiment/src/org/labkey/experiment/api/ExpObjectImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpPropertyCache.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolActionImpl.java -text
@@ -904,6 +903,7 @@ experiment/src/org/labkey/experiment/api/ProtocolActionStepDetail.java -text
 experiment/src/org/labkey/experiment/api/ProtocolApplication.java -text
 experiment/src/org/labkey/experiment/api/ProtocolOutput.java -text
 experiment/src/org/labkey/experiment/api/SampleSetDomainType.java -text
+experiment/src/org/labkey/experiment/api/SampleSetUpdateService.java -text
 experiment/src/org/labkey/experiment/api/flag/FlagColumn.java -text
 experiment/src/org/labkey/experiment/api/flag/FlagColumnRenderer.java -text
 experiment/src/org/labkey/experiment/api/flag/FlagForeignKey.java -text
