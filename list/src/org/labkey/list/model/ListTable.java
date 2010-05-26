@@ -65,7 +65,7 @@ public class ListTable extends FilteredTable
         colKey.setKeyField(true);
         colKey.setInputType("text");
         colKey.setInputLength(-1);
-        colKey.setScale(30);
+        colKey.setWidth("180");
         if (listDef.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
         {
             colKey.setUserEditable(false);
