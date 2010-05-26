@@ -19,6 +19,7 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.ChartFactory;
@@ -54,6 +55,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -4182,6 +4184,39 @@ public class AdminController extends SpringActionController
 
 
     @RequiresLogin
+    public class GetSessionLogEventsAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            int eventId = 0;
+            try
+            {
+                String s = getViewContext().getRequest().getParameter("eventId");
+                if (null != s)
+                    eventId = Integer.parseInt(s);
+            }
+            catch (NumberFormatException x) {}
+            LoggingEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
+            ArrayList<Map> list = new ArrayList<Map>(events.length);
+            for (LoggingEvent e : events)
+            {
+                if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
+                {
+                    HashMap m = new HashMap();
+                    m.put("eventId", e.getProperty("eventId"));
+                    m.put("level", e.getLevel().toString());
+                    m.put("message", e.getMessage());
+                    m.put("timestamp", new Date(e.getTimeStamp()));
+                    list.add(m);
+                }
+            }
+            return new ApiSimpleResponse("events", list);
+        }
+    }
+
+
+    @RequiresLogin
     public class SessionLoggingAction extends FormViewAction<LoggingForm>
     {
         public boolean handlePost(LoggingForm form, BindException errors) throws Exception
@@ -4204,6 +4239,8 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(LoggingForm o, boolean reshow, BindException errors) throws Exception
         {
+            SessionAppender.setLoggingForSession(getViewContext().getRequest(), true);
+            getPageConfig().setTemplate(Template.Print);
             return new LoggingView();
         }
 
