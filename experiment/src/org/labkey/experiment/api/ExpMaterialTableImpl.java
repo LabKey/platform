@@ -382,11 +382,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     @Override
     public QueryUpdateService getUpdateService()
     {
-        ExpSampleSet ss = _ss;
-        if (ss == null)
-            ss = ExperimentService.get().lookupActiveSampleSet(getContainer());
-
-        return new SampleSetUpdateService(this, ss);
+        return new SampleSetUpdateService(this, _ss);
     }
 
     public boolean hasPermission(User user, Class<? extends Permission> perm)
