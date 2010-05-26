@@ -4219,6 +4219,15 @@ public class AdminController extends SpringActionController
     @RequiresLogin
     public class SessionLoggingAction extends FormViewAction<LoggingForm>
     {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+            User user = getUser();
+            if (!user.isDeveloper() && !user.isAdministrator())
+                throw new UnauthorizedException();
+        }
+
         public boolean handlePost(LoggingForm form, BindException errors) throws Exception
         {
             boolean on = SessionAppender.isLogging(getViewContext().getRequest());
