@@ -309,7 +309,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             "    } else if (str == null) {                 \n" +
             "        str = 'null';                         \n" +
             "    }                                         \n" +
-            "    context.getWriter().println(String(str)); \n" +
+            "    context.getWriter().print(String(str)); \n" +
             "}";
 
     // kevink: expose as protected
@@ -461,7 +461,7 @@ public class RhinoScriptEngine extends AbstractScriptEngine
      * with given Bindings object as backing store. This can be used
      * to create a script scope based on arbitrary Bindings instance.
      * For example, in webapp scenario, a 'page' level Bindings instance
-     * may be wrapped as a scope and code can be run in JavaScripe 'with'
+     * may be wrapped as a scope and code can be run in JavaScript 'with'
      * statement:
      *
      *    var page = scope(pageBindings);

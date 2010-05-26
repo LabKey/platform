@@ -23,6 +23,9 @@ import javax.script.ScriptException;
 
 public interface ScriptService extends ScriptEngineFactory
 {
+    // marker class for server script logging (see log4j.xml)
+    public static class Console {}
+
     /**
      * Compiles the Resource into a script and caches the result.
      * This is mostly equivalent to calling <code>getScriptEngine().compile()</code>

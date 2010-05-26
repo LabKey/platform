@@ -38,21 +38,28 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
             this.key = key;
             this.on = on;
         }
-        String key;
+
+        final String key;
         boolean on;
-        List list = Collections.synchronizedList(new LinkedList());
+        final List list = new LinkedList();
+        int eventId=0;
     }
 
     static ThreadLocal<AppenderInfo> localInfo = new ThreadLocal();
+
 
     protected void append(LoggingEvent event)
     {
         AppenderInfo info = localInfo.get();
         if (null == info || !info.on)
             return;
-        info.list.add(event);
-        if (info.list.size() > 1000)
-            info.list.remove(0);
+        synchronized (info.list)
+        {
+            event.setProperty("eventId", String.valueOf(++info.eventId));
+            info.list.add(event);
+            if (info.list.size() > 1000)
+                info.list.remove(0);
+        }
     }
 
 
@@ -72,8 +79,10 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
         AppenderInfo info = _getLoggingForSession(request);
         if (null == info)
             return new LoggingEvent[0];
-        // list.toArray(list.size()) is not thread safe
-        return (LoggingEvent[])info.list.toArray(new LoggingEvent[0]);
+        synchronized (info.list)
+        {
+            return (LoggingEvent[])info.list.toArray(new LoggingEvent[info.list.size()]);
+        }
     }
 
 

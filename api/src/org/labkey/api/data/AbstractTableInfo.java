@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
@@ -35,6 +37,9 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
 import javax.script.ScriptException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -682,6 +687,35 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             ScriptReference script = getTableScript();
             if (script == null)
                 return null;
+
+            final Logger scriptLogger = Logger.getLogger(ScriptService.Console.class);
+
+            if (scriptLogger.isEnabledFor(Level.DEBUG))
+            {
+                script.getContext().setWriter(new PrintWriter(new Writer(){
+                    @Override
+                    public void write(String str) throws IOException
+                    {
+                        scriptLogger.debug(str);
+                    }
+
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException
+                    {
+                        scriptLogger.debug(new String(cbuf, off, len));
+                    }
+
+                    @Override
+                    public void flush() throws IOException
+                    {
+                    }
+
+                    @Override
+                    public void close() throws IOException
+                    {
+                    }
+                }));
+            }
 
             if (script.hasFn(methodName))
                 return script.invokeFn(resultType, methodName, args);
