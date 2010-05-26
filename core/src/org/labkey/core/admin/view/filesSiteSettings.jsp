@@ -20,13 +20,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <script type="text/javascript">
     LABKEY.requiresClientAPI(true);
-    LABKEY.requiresScript("ColumnTree.js");
+    LABKEY.requiresScript("TreeGrid.js");
 </script>
 
 <%
@@ -98,12 +97,12 @@
     }
 
     Ext.onReady(function(){
-        var tree = new Ext.tree.ColumnTree({
-            width: 800,
-            height: 500,
+        var tree = new Ext.ux.tree.TreeGrid({
+            //width: 800,
+            //height: 500,
             rootVisible:false,
             autoScroll:true,
-            renderTo: 'viewsGrid',
+            //renderTo: 'viewsGrid',
 
             columns:[{
                 header:'Project',
@@ -118,26 +117,21 @@
                 width:75,
                 dataIndex:'default'
             }],
-
             tbar: [
                 {text:'Expand All', tooltip: {text:'Expands all containers', title:'Expand All'}, listeners:{click:function(button, event) {tree.expandAll();}}},
                 {text:'Collapse All', tooltip: {text:'Collapses all containers', title:'Collapse All'}, listeners:{click:function(button, event) {tree.collapseAll();}, scope:this}},
                 {text:'Configure Selected', tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'}, listeners:{click:function(button, event) {configSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
                 {text:'Browse Selected', tooltip: {text:'Browse files from the selected root', title:'Browse Selected'}, listeners:{click:function(button, event) {browseSelected(tree.getSelectionModel().getSelectedNode());}, scope:this}},
             ],
+            dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container),
+            listeners: {dblclick: function(node){browseSelected(node);}}
+        });
 
-            loader: new Ext.tree.TreeLoader({
-                dataUrl: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container),
-                uiProviders:{
-                    'col': Ext.tree.ColumnNodeUI
-                }
-            }),
-
-            listeners: {dblclick: function(node){browseSelected(node);}},
-
-            root: new Ext.tree.AsyncTreeNode({
-                text:'Container'
-            })
+        var panel = new Ext.Panel({
+            layout: 'fit',
+            renderTo: 'viewsGrid',
+            items: [tree],
+            height: 500
         });
     });
 </script>

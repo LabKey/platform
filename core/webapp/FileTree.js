@@ -156,7 +156,7 @@ Ext.extend(LABKEY.ext.FileTreeMultiSelectionModel, Ext.tree.MultiSelectionModel,
     }
 });
 
-LABKEY.ext.FileTreeNodeUI = Ext.extend(Ext.ux.tree.ColumnNodeUI, {
+LABKEY.ext.FileTreeNodeUI = Ext.extend(Ext.ux.tree.TreeGridNodeUI, {
     initEvents : function () {
         LABKEY.ext.FileTreeNodeUI.superclass.initEvents.call(this);
          // XXX: Ext-2.2 doesn't initialize disabled state
@@ -282,7 +282,7 @@ LABKEY.ext.FileTree = function (config)
     }
 };
 
-Ext.extend(LABKEY.ext.FileTree, Ext.ux.tree.ColumnTree, {
+Ext.extend(LABKEY.ext.FileTree, Ext.ux.tree.TreeGrid, {
     /**
      * @cfg {Boolean} browsePipeline (optional) Defaults to false.
      * Initializes the root node to start at the pipeline root.

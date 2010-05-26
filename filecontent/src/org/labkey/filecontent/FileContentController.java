@@ -771,7 +771,6 @@ public class FileContentController extends SpringActionController
 
                 node.put("id", child.getId());
                 node.put("name", child.getName());
-                node.put("uiProvider", "col");
 
                 children.add(node);
             }
@@ -786,7 +785,6 @@ public class FileContentController extends SpringActionController
                 node.put("name", name);
                 node.put("path", dir.getPath());
                 node.put("leaf", true);
-                node.put("uiProvider", "col");
             }
             return node;
         }
