@@ -953,6 +953,14 @@ public class DbScope
         }
 
         @Override
+        public boolean exists()
+        {
+            // UNDONE: The DbSchemaResource could check if the schema exists
+            // in the source database.  For now the DbSchemaResource always exists.
+            return true;
+        }
+
+        @Override
         public long getVersionStamp()
         {
             // UNDONE: The DbSchemaResource could check if the schema is modified
