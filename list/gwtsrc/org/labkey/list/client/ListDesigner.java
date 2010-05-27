@@ -16,6 +16,7 @@
 
 package org.labkey.list.client;
 
+import com.extjs.gxt.ui.client.core.XDOM;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -354,6 +355,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _log("setList");
         _listId = ds.getListId();
         _list = ds;
+        Element el = DOM.getElementById("labkey-nav-trail-current-page");
+        if (null != el && null != ds && null != ds.getName())
+            el.setInnerText(ds.getName());
         asyncGetDefinition();
     }
 
