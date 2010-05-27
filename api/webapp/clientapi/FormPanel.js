@@ -29,6 +29,11 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * 
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeyExt">Tips for Using Ext to Build LabKey Views</a></li>
+ *              </ul>
+ *           </p>
  * @constructor
  * @augments Ext.form.FormPanel
  * @param config Configuration properties. This may contain any of the configuration properties supported

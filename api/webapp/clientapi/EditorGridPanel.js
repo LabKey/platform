@@ -35,7 +35,8 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
  *            <p>Additional Documentation:
  *              <ul>
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a></li>
- *              </ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeyExt">Tips for Using Ext to Build LabKey Views</a></li>
+ *              </ul>      
  *           </p>
  * @constructor
  * @augments Ext.grid.EditorGridPanel

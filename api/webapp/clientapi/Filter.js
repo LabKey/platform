@@ -23,6 +23,7 @@
   *            <p>Additional Documentation:
   *              <ul>
   *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
+  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=tutorialActionURL">Tutorial: Basics: Building URLs and Filters</a></li>
   *              </ul>
   *           </p>
  * @property {Object} Types Types static class to describe different types of filters.
