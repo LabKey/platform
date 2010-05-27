@@ -669,6 +669,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             return null;
 
         // replace non-word characters
+        if (getPublicSchemaName() == null || getName() == null)
+            return null;
         String dirname = getPublicSchemaName().replaceAll("\\W", "_");
         String filename =  getName().replaceAll("\\W", "_") + ".js";
         Path p = new Path("schemas", dirname, filename);
