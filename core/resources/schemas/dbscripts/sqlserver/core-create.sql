@@ -20,22 +20,20 @@ CREATE VIEW core.Users AS
     WHERE Type = 'u'
 GO
 
-CREATE VIEW core.Contacts AS
-	SELECT DISTINCT Users.FirstName + ' ' + Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container
-	FROM core.Principals Principals
-	    INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
-	    INNER JOIN core.Users Users ON Members.UserId = Users.UserId
-	WHERE Principals.Active = 1
+CREATE VIEW core.ActiveUsers AS
+    SELECT *
+    FROM core.Users
+    WHERE Active=1
 GO
 
-CREATE VIEW core.ActiveUsers AS
-    SELECT Principals.Name AS Email, UsersData.*
-    FROM core.Principals Principals
-        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
-    WHERE Type = 'u' and Principals.Active=1
+CREATE VIEW core.Contacts AS
+	SELECT DISTINCT Users.FirstName + ' ' + Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Groups.OwnerId, Groups.Container
+	FROM core.Principals Groups
+	    INNER JOIN core.Members Members ON Groups.UserId = Members.GroupId
+	    INNER JOIN core.ActiveUsers Users ON Members.UserId = Users.UserId
 GO
 
 CREATE VIEW core.UserSearchTerms AS
-    SELECT  U.UserId, U.Email + ' ' + U.FirstName + ' ' + U.LastName + ' ' + U.DisplayName as SearchTerms
+    SELECT U.UserId, U.Email + ' ' + U.FirstName + ' ' + U.LastName + ' ' + U.DisplayName as SearchTerms
     FROM core.Users U
 GO

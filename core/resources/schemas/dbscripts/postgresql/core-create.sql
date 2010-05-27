@@ -19,13 +19,6 @@ CREATE VIEW core.Users AS
         INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
     WHERE Type = 'u';
 
-CREATE VIEW core.Contacts AS
-    SELECT DISTINCT Users.FirstName || ' ' || Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Principals.OwnerId, Principals.Container
-    FROM core.Principals Principals
-        INNER JOIN core.Members Members ON Principals.UserId = Members.GroupId
-        INNER JOIN core.Users Users ON Members.UserId = Users.UserId
-    WHERE Principals.Active = true;
-
 CREATE OR REPLACE RULE Users_Update AS
 	ON UPDATE TO core.Users DO INSTEAD
 		UPDATE core.UsersData SET
@@ -43,10 +36,15 @@ CREATE OR REPLACE RULE Users_Update AS
 		WHERE UserId = NEW.UserId;
 
 CREATE VIEW core.ActiveUsers AS
-    SELECT Principals.Name AS Email, UsersData.*
-    FROM core.Principals Principals
-        INNER JOIN core.UsersData UsersData ON Principals.UserId = UsersData.UserId
-    WHERE Type = 'u' AND Principals.Active=true;
+    SELECT *
+    FROM core.Users
+    WHERE Active=true;
+
+CREATE VIEW core.Contacts AS
+    SELECT DISTINCT Users.FirstName || ' ' || Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Groups.OwnerId, Groups.Container
+    FROM core.Principals Groups
+        INNER JOIN core.Members Members ON Groups.UserId = Members.GroupId
+        INNER JOIN core.ActiveUsers Users ON Members.UserId = Users.UserId;
 
 CREATE VIEW core.UserSearchTerms AS
     SELECT U.UserId, U.Email || ' ' || U.FirstName || ' ' || U.LastName || ' ' || U.DisplayName AS SearchTerms

@@ -447,6 +447,9 @@
           <ns:inputLength>23</ns:inputLength>
           <ns:isReadOnly>true</ns:isReadOnly>
         </ns:column>
+        <ns:column columnName="Active">
+          <ns:description>True if this user is active, false otherwise. Inactive users are not allowed to sign in.</ns:description>
+        </ns:column>
       </ns:columns>
       <ns:tableTitle>Active Users</ns:tableTitle>
       <ns:pkColumnName>UserId</ns:pkColumnName>

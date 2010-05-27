@@ -689,61 +689,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
     }
 
-    // Not used currently... formerly used by NAB.  Removed from AttachmentService interface but left here just in case...
-    public InputStream getInputStream(Attachment attachment) throws ServletException, SQLException
-    {
-        InputStream attachmentStream;
-        DbSchema schema = null;
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        boolean success = false;
-
-        try
-        {
-            // we don't want a RowSet, so execute directly (not Table.executeQuery())
-            schema = coreTables().getSchema();
-            conn = schema.getScope().getConnection();
-            stmt = Table.prepareStatement(conn, sqlDocument(), new Object[]{attachment.getParent(), attachment.getName()});
-            rs = stmt.executeQuery();
-
-            if (!rs.next())
-                HttpView.throwNotFound();
-
-            attachmentStream = rs.getBinaryStream("Document");
-
-            success = true;
-        }
-        finally
-        {
-            // If anything above has failed (UnauthorizedException, SQLException, etc.) we close all resources now.
-            // Otherwise, it's the responsibility of the caller to close the input stream that we return (which will
-            // close all the resources).
-
-            if (!success)
-            {
-                try { if (null != rs) rs.close(); } catch (SQLException e) {}
-                try { if (null != stmt) stmt.close(); } catch (SQLException e) {}
-                try { if (null != conn) schema.getScope().releaseConnection(conn); } catch (SQLException e) {}
-            }
-        }
-
-        final DbSchema finalSchema = schema;
-        final Connection finalConn = conn;
-        final PreparedStatement finalStmt = stmt;
-        final ResultSet finalRs = rs;
-        return new ResourceInputStream(attachmentStream, new ResourceInputStream.ResourceCloser()
-        {
-            public void close()
-            {
-                try { if (null != finalRs) finalRs.close(); } catch (SQLException x) {}
-                try { if (null != finalStmt) finalStmt.close(); } catch (SQLException x) {}
-                try { if (null != finalConn) finalSchema.getScope().releaseConnection(finalConn); } catch (SQLException x) {}
-            }
-        });
-    }
-
-
     public void containerCreated(Container c)
     {
     }

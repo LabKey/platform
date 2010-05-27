@@ -134,7 +134,8 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
 
     private void moveSiteRoot(File prev, File dest)
     {
-        try {
+        try
+        {
             _log.info("moving " + prev.getPath() + " to " + dest.getPath());
             boolean doRename = true;
 
@@ -209,11 +210,13 @@ public class FilesSiteSettingsAction extends FormViewAction<FilesSiteSettingsAct
             // after the files have been moved, transfer metadata from the old attachment documents into the
             // exp data table and delete the old attachment records
             Container c = entry.getValue();
-            try {
+            try
+            {
                 if (!_svc.isUseDefaultRoot(c))
                 {
                     // prior to 10.1 there were no default roots, everything was an override
                     AttachmentDirectory root = _svc.getMappedAttachmentDirectory(c, false);
+
                     if (root != null)
                     {
                         for (Attachment a : AttachmentService.get().getAttachments(root))
