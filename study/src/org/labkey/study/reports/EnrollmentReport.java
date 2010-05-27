@@ -61,7 +61,7 @@ import java.util.Date;
  * Date: Feb 22, 2006
  * Time: 1:11:18 PM
  */
-public class EnrollmentReport extends ChartReport
+public class EnrollmentReport extends ChartReport implements Report.ImageReport
 {
     public static final String TYPE = "Study.enrollmentReport";
 
@@ -88,7 +88,8 @@ public class EnrollmentReport extends ChartReport
         return new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer());
     }
 
-    public HttpView renderReport(ViewContext viewContext) throws Exception
+    @Override
+    public void renderImage(ViewContext viewContext) throws Exception
     {
         String errorMessage = null;
         ReportDescriptor reportDescriptor = getDescriptor();
@@ -179,7 +180,12 @@ public class EnrollmentReport extends ChartReport
             ReportUtil.renderErrorImage(viewContext.getResponse().getOutputStream(), this, errorMessage);
             //return new VBox(ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null, viewContext.getRequest(), false));
         }
-        return null;
+    }
+
+    public HttpView renderReport(ViewContext context) throws Exception
+    {
+        ActionURL url = ReportUtil.getPlotChartURL(context, this);
+        return new HtmlView("<img src='" + url.getLocalURIString() + "'>");
     }
 
     public static byte[] generateTimeChart(String label, TimeSeriesCollection collection, String timeLabel, String valueLabel, Dimension size)
@@ -229,13 +235,10 @@ public class EnrollmentReport extends ChartReport
             {
                 ActionURL configure = new ActionURL("Study-Reports", "configureEnrollmentReport.view", getViewContext().getContainer());
 
-                ActionURL chartSrc = new ActionURL("Study-Reports", "timePlot", getViewContext().getContainer());
                 final ReportDescriptor descriptor = _report.getDescriptor();
-                if (descriptor.getReportId() != null)
-                {
-                    chartSrc.addParameter("reportId", descriptor.getReportId().toString());
-                }
-                out.println("&nbsp;<br><img src=\"" + chartSrc + "\"><br>");
+
+                ActionURL url = ReportUtil.getPlotChartURL(getViewContext(), _report);
+                out.println("&nbsp;<br><img src=\"" + url.getLocalURIString() + "\"><br>");
 
                 final Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
                 int datasetId = NumberUtils.toInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));

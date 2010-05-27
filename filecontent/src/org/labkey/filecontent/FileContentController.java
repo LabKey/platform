@@ -184,111 +184,117 @@ public class FileContentController extends SpringActionController
             if (_resource == null || !_resource.isFile())
                 throw new NotFoundException();
 
-            RenderStyle style = form.getRenderStyle();
-            MimeMap mimeMap = new MimeMap();
-            String mimeType = _resource.getContentType();
+            try {
+                RenderStyle style = form.getRenderStyle();
+                MimeMap mimeMap = new MimeMap();
+                String mimeType = _resource.getContentType();
 
-            if (style == RenderStyle.DEFAULT)
-            {
-                style = defaultRenderStyle(_resource.getName());
-            }
-            else
-            {
-                // verify legal RenderStyle
-                boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(_resource.getName());
-                if (!canInline && !(RenderStyle.ATTACHMENT == style || RenderStyle.PAGE == style))
-                    style = RenderStyle.PAGE;
-                if (RenderStyle.IMAGE == style && !mimeType.startsWith("image/"))
-                    style = RenderStyle.PAGE;
-                if (RenderStyle.TEXT == style && !mimeType.startsWith("text/"))
-                    style = RenderStyle.PAGE;
-            }
-
-            //FIX: 5523 - if renderAs is null and mimetype is HTML, default style to inline
-            if (null == form.getRenderAs())
-            {
-                if ("text/html".equalsIgnoreCase(mimeType))
-                    style = RenderStyle.INCLUDE;
-            }
-
-            switch (style)
-            {
-                case ATTACHMENT:
-                case PAGE:
+                if (style == RenderStyle.DEFAULT)
                 {
-                    getPageConfig().setTemplate(PageConfig.Template.None);
-
-                    PageFlowUtil.streamFile(getViewContext().getResponse(),
-                            Collections.singletonMap("Content-Type",_resource.getContentType()),
-                            _resource.getName(),
-                            _resource.getInputStream(getUser()),
-                            RenderStyle.ATTACHMENT==style);
-                    return null;
+                    style = defaultRenderStyle(_resource.getName());
                 }
-                case FRAME:
+                else
                 {
-                    URLHelper url = new URLHelper(HttpView.getContextURL());
-                    url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                    return new IFrameView(url.getLocalURIString());
+                    // verify legal RenderStyle
+                    boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(_resource.getName());
+                    if (!canInline && !(RenderStyle.ATTACHMENT == style || RenderStyle.PAGE == style))
+                        style = RenderStyle.PAGE;
+                    if (RenderStyle.IMAGE == style && !mimeType.startsWith("image/"))
+                        style = RenderStyle.PAGE;
+                    if (RenderStyle.TEXT == style && !mimeType.startsWith("text/"))
+                        style = RenderStyle.PAGE;
                 }
-                case INCLUDE:
-                case INLINE:
+
+                //FIX: 5523 - if renderAs is null and mimetype is HTML, default style to inline
+                if (null == form.getRenderAs())
                 {
-                    WebPartView webPart = new WebPartView()
+                    if ("text/html".equalsIgnoreCase(mimeType))
+                        style = RenderStyle.INCLUDE;
+                }
+
+                switch (style)
+                {
+                    case ATTACHMENT:
+                    case PAGE:
                     {
-                        @Override
-                        protected void renderView(Object model, PrintWriter out) throws Exception
-                        {
-                            InputStream fis = _resource.getInputStream(getUser());
-                            try
-                            {
-                                IOUtils.copy(new InputStreamReader(fis), out);
-                            }
-                            catch (FileNotFoundException x)
-                            {
-                                out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
-                            }
-                            finally
-                            {
-                                IOUtils.closeQuietly(fis);
-                            }
-                        }
-                    };
-                    webPart.setTitle(_resource.getName());
-                    webPart.setFrame(WebPartView.FrameType.DIV);
-                    return webPart;
-                }
-                case TEXT:
-                {
-                    WebPartView webPart = new WebPartView()
+                        getPageConfig().setTemplate(PageConfig.Template.None);
+
+                        PageFlowUtil.streamFile(getViewContext().getResponse(),
+                                Collections.singletonMap("Content-Type",_resource.getContentType()),
+                                _resource.getName(),
+                                _resource.getInputStream(getUser()),
+                                RenderStyle.ATTACHMENT==style);
+                        return null;
+                    }
+                    case FRAME:
                     {
-                        @Override
-                        protected void renderView(Object model, PrintWriter out) throws Exception
+                        URLHelper url = new URLHelper(HttpView.getContextURL());
+                        url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
+                        return new IFrameView(url.getLocalURIString());
+                    }
+                    case INCLUDE:
+                    case INLINE:
+                    {
+                        WebPartView webPart = new WebPartView()
                         {
-                            try
+                            @Override
+                            protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                // UNDONE stream html filter
-                                String fileContents = PageFlowUtil.getStreamContentsAsString(_resource.getInputStream(getUser()));
-                                String html = PageFlowUtil.filter(fileContents, true, true);
-                                out.write(html);
+                                InputStream fis = _resource.getInputStream(getUser());
+                                try
+                                {
+                                    IOUtils.copy(new InputStreamReader(fis), out);
+                                }
+                                catch (FileNotFoundException x)
+                                {
+                                    out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
+                                }
+                                finally
+                                {
+                                    IOUtils.closeQuietly(fis);
+                                }
                             }
-                            catch (OutOfMemoryError x)
+                        };
+                        webPart.setTitle(_resource.getName());
+                        webPart.setFrame(WebPartView.FrameType.DIV);
+                        return webPart;
+                    }
+                    case TEXT:
+                    {
+                        WebPartView webPart = new WebPartView()
+                        {
+                            @Override
+                            protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                out.write("<span class='labkey-error'>file is too long: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
+                                try
+                                {
+                                    // UNDONE stream html filter
+                                    String fileContents = PageFlowUtil.getStreamContentsAsString(_resource.getInputStream(getUser()));
+                                    String html = PageFlowUtil.filter(fileContents, true, true);
+                                    out.write(html);
+                                }
+                                catch (OutOfMemoryError x)
+                                {
+                                    out.write("<span class='labkey-error'>file is too long: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
+                                }
                             }
-                        }
-                    };
-                    webPart.setTitle(_resource.getName());
-                    return webPart;
+                        };
+                        webPart.setTitle(_resource.getName());
+                        return webPart;
+                    }
+                    case IMAGE:
+                    {
+                        URLHelper url = new URLHelper(HttpView.getContextURL());
+                        url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
+                        return new ImgView(url.getLocalURIString());
+                    }
+                    default:
+                        return null;
                 }
-                case IMAGE:
-                {
-                    URLHelper url = new URLHelper(HttpView.getContextURL());
-                    url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                    return new ImgView(url.getLocalURIString());
-                }
-                default:
-                    return null;
+            }
+            catch (Exception e)
+            {
+                throw new NotFoundException("An error occurred with the requested file : " + e.getMessage());
             }
         }
 

@@ -2056,30 +2056,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class TimePlotAction extends SimpleViewAction<TimePlotForm>
-    {
-        public ModelAndView getView(TimePlotForm form, BindException errors) throws Exception
-        {
-            Report report = form.getReportId().getReport();
-            if (report != null)
-            {
-                report.renderReport(getViewContext());
-            }
-            else
-            {
-                HttpView.throwNotFound();
-                return null;
-            }
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
     private NavTree _appendNavTrail(NavTree root, String name)
     {
         try {
