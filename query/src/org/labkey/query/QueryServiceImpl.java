@@ -367,6 +367,14 @@ public class QueryServiceImpl extends QueryService
         return viewFiles.length;
     }
 
+    
+    public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
+            @NotNull String oldQueryName, @NotNull String newQueryName)
+    {
+        QueryManager.get().updateViewsAfterRename(c,schema,oldQueryName,newQueryName);
+    }
+
+
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)
     {
         Map<String, QuerySnapshotDefinition> ret = new LinkedHashMap<String, QuerySnapshotDefinition>();

@@ -17,6 +17,7 @@
 package org.labkey.query.persist;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -239,6 +240,22 @@ public class QueryManager
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
     }
 
+
+    public void updateViewsAfterRename(@NotNull Container c, @NotNull String schema,
+            @NotNull String oldQueryName, @NotNull String newQueryName)
+    {
+        try
+        {
+            Table.execute(getDbSchema(), "UPDATE " + getTableInfoCustomView() + " SET queryname=? WHERE container=? AND schema=? AND queryname=?",
+                    new Object[]{newQueryName, c, schema, oldQueryName});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    
     public boolean canInherit(int flag)
     {
         return (flag & FLAG_INHERITABLE) != 0;

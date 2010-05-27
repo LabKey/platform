@@ -24,6 +24,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -110,10 +111,39 @@ public class ListManager implements SearchService.DocumentProvider
 
     public ListDef update(User user, ListDef def) throws SQLException
     {
-        ListDef ret = Table.update(user, getTinfoList(), def, def.getRowId());
         Container c = ContainerManager.getForId(def.getContainerId());
-        if (null != c)
-            enumerateDocuments(null, c, null);
+        if (null == c)
+            throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+
+        boolean fTransaction=false;
+        DbScope scope = getSchema().getScope();
+        ListDef ret;
+        try
+        {
+            if (!scope.isTransactionActive())
+            {
+                scope.beginTransaction();
+                fTransaction = true;                
+            }
+            ListDef old = getList(c, def.getRowId());
+            ret = Table.update(user, getTinfoList(), def, def.getRowId());
+            if (!old.getName().equals(ret.getName()))
+                QueryService.get().updateCustomViewsAfterRename(c, ListSchema.NAME, old.getName(), def.getName());
+
+            if (fTransaction)
+            {
+                scope.commitTransaction();
+                fTransaction = false;
+            }
+        }
+        finally
+        {
+            if (fTransaction)
+                scope.rollbackTransaction();
+        }
+
+        // schedules a scan (doesn't touch db)
+        enumerateDocuments(null, c, null);
         return ret;
     }
 

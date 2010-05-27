@@ -67,6 +67,7 @@ import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DataSetTable;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
@@ -343,8 +344,38 @@ public class StudyManager
 
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
     {
-        Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
-        _dataSetHelper.update(user, dataSetDefinition, pk);
+        boolean fTransaction=false;
+        DbScope scope = getSchema().getScope();
+
+        try
+        {
+            if (!scope.isTransactionActive())
+            {
+                scope.beginTransaction();
+                fTransaction=true;
+            }
+            DataSet old = getDataSetDefinition(dataSetDefinition.getContainer(), dataSetDefinition.getDataSetId());
+            if (null == old)
+                throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
+            Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
+            _dataSetHelper.update(user, dataSetDefinition, pk);
+
+            if (!old.getLabel().equals(dataSetDefinition.getLabel()))
+            {
+                QueryService.get().updateCustomViewsAfterRename(dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME,
+                        old.getLabel(), dataSetDefinition.getLabel());
+            }
+            if (fTransaction)
+            {
+                scope.commitTransaction();
+                fTransaction = false;
+            }
+        }
+        finally
+        {
+            if (fTransaction)
+                scope.rollbackTransaction();
+        }
         reindex(dataSetDefinition.getContainer());
     }
 
