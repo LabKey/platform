@@ -222,7 +222,10 @@ public class ExcelColumn extends RenderColumn
                     break;
                 case(TYPE_STRING):
                 default:
-                    cell = new Label(column, row, o.toString());
+                    // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
+                    String s = o.toString();
+                    s = s.replaceAll("\r\n", "\n");
+                    cell = new Label(column, row, s);
                     break;
             }
 
