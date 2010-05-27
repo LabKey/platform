@@ -63,8 +63,7 @@ public class RunChartReportView extends RunReportView
     {
         if (TAB_VIEW.equals(tabId))
         {
-            ActionURL url = ReportUtil.getPlotChartURL(getViewContext(), getReport());
-            return new HtmlView("<img src='" + url.getLocalURIString() + "'>");
+            return getReport().renderReport(getViewContext());
         }
         else if (TAB_DATA.equals(tabId))
         {

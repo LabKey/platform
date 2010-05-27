@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.Map;
 import java.util.Collections;
@@ -180,6 +181,12 @@ public interface Report
          * image map. Standard params plus the specified column names (if available) will be used in the callback.
          */
         public String generateImageMap(ViewContext context, String id, String imageMapCallback, String[] callbackParams) throws Exception;
+    }
+
+    // implemented by reports that render images
+    public interface ImageReport
+    {
+        public void renderImage(ViewContext context) throws Exception;        
     }
 
     enum renderParam {

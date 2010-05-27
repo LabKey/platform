@@ -113,7 +113,7 @@ public class ReportUtil
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlPlotChart(context.getContainer());
 
-        if (report != null)
+        if (report instanceof Report.ImageReport)
         {
             ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
             url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
@@ -123,6 +123,8 @@ public class ReportUtil
                     url.addParameter(param.getKey(), param.getValue());
             }
         }
+        else
+            throw new IllegalArgumentException("Report must implement Report.ImageReport to use the plot chart action");
         return url;
     }
 

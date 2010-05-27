@@ -35,9 +35,7 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.reports.Report;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
@@ -53,7 +51,7 @@ import java.util.ArrayList;
  * User: Karl Lum
  * Date: Mar 28, 2007
  */
-public class ChartQueryReport extends ChartReport implements Report.ImageMapGenerator
+public class ChartQueryReport extends ChartReport implements Report.ImageMapGenerator, Report.ImageReport
 {
     public static final String TYPE = "ReportService.chartQueryReport";
 
@@ -120,7 +118,8 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         return null;
     }
 
-    public HttpView renderReport(ViewContext context) throws Exception
+    @Override
+    public void renderImage(ViewContext context) throws Exception
     {
         List<String> errors = new ArrayList<String>();
         JFreeChart chart = _createChart(context, errors, null);
@@ -155,7 +154,12 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
             }
             ReportUtil.renderErrorImage(context.getResponse().getOutputStream(), this, sb.toString());
         }
-        return null;
+    }
+
+    public HttpView renderReport(ViewContext context) throws Exception
+    {
+        ActionURL url = ReportUtil.getPlotChartURL(context, this);
+        return new HtmlView("<img src='" + url.getLocalURIString() + "'>");
     }
 
     public String generateImageMap(ViewContext context, String id) throws Exception
