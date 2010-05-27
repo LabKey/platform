@@ -71,7 +71,6 @@ import java.io.*;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -511,7 +510,7 @@ public class PageFlowUtil
 
     public static Set<String> insensitiveSet(String... strs)
     {
-        TreeSet set = new TreeSet(String.CASE_INSENSITIVE_ORDER);
+        TreeSet<String> set = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         set.addAll(Arrays.asList(strs));
         return set;
     }

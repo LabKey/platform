@@ -180,12 +180,14 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
      *
      * @param perm
      */
+    @Deprecated // Use contextual roles instead
     public void setPermissions(int perm)
     {
         _perm = perm;
     }
 
 
+    @Deprecated
     public int getPermissions() throws NotFoundException
     {
         if (_perm == -1)
