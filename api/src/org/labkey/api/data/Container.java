@@ -657,7 +657,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
             _folderType = ModuleLoader.getInstance().getFolderType(name);
             if (null == _folderType)
             {
-                _log.warn("No such folder type " + name + " for folder " + toString());
+                // If we're upgrading then folder types won't be defined yet
+                if (!ModuleLoader.getInstance().isUpgradeInProgress())
+                    _log.warn("No such folder type " + name + " for folder " + toString());
+
                 _folderType = FolderType.NONE;
             }
         }

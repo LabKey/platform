@@ -993,7 +993,7 @@ public class ContainerManager
 
                 core.getSchema().getScope().commitTransaction();
 
-                _clearCache();  // Clear the entire cache, since containers cache their full paths
+                clearCache();  // Clear the entire cache, since containers cache their full paths
             }
 
             Container newContainer = getForId(c.getId());
@@ -1022,7 +1022,7 @@ public class ContainerManager
             if (oldName.equals(name))
                 return;
             Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", new Object[]{name, c.getId()});
-            _clearCache();  // Clear the entire cache, since containers cache their full paths
+            clearCache();  // Clear the entire cache, since containers cache their full paths
             //Get new version since name has changed.
             c = getForId(c.getId());
             fireRenameContainer(c, oldName);
@@ -1066,7 +1066,7 @@ public class ContainerManager
                         new Object[]{resetToAlphabetical ? 0 : index, current.getId()});
             }
             schema.getScope().commitTransaction();
-            _clearCache();  // Clear the entire cache, since container lists are cached in order
+            clearCache();  // Clear the entire cache, since container lists are cached in order
         }
         catch (SQLException e)
         {
@@ -1257,7 +1257,7 @@ public class ContainerManager
     }
 
 
-    private static synchronized void _clearCache()
+    public static synchronized void clearCache()
     {
         getCache().clear();
 
