@@ -23,6 +23,7 @@ import org.labkey.api.collections.RowMap;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 import org.mozilla.javascript.*;
@@ -468,10 +469,23 @@ class SandboxContextFactory extends ContextFactory
     @Override
     protected Context makeContext()
     {
-        Context context = super.makeContext();
+        Context context = new SandboxContext(this);
         context.setClassShutter(new SandboxShutter());
         context.setWrapFactory(new SandboxWrapFactory());
+        context.setInstructionObserverThreshold(30000);
+        // Checking stack depth requires opt level -1 (interpreted) so we do our own check in observeInstructionCount
+        //context.setMaximumInterpreterStackDepth(1000);
         return context;
+    }
+
+    @Override
+    protected void observeInstructionCount(Context cx, int instructionCount)
+    {
+        SandboxContext ctx = (SandboxContext)cx;
+        long currentTime = HeartBeat.currentTimeMillis();
+        final int timeout = 20;
+        if (currentTime - ctx.startTime > timeout*1000)
+            Context.reportError("Script execution exceeded " + timeout + " seconds.");
     }
 
     @Override
@@ -498,6 +512,17 @@ class SandboxContextFactory extends ContextFactory
             
             log.warn("Rhino sandbox disallowed class: " + fullClassName);
             return false;
+        }
+    }
+
+    private static class SandboxContext extends Context
+    {
+        protected long startTime;
+
+        SandboxContext(SandboxContextFactory factory)
+        {
+            super(factory);
+            startTime = HeartBeat.currentTimeMillis();
         }
     }
 
