@@ -211,7 +211,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         if(null != wikiService)
             wikiService.registerMacroProvider("study", new StudyMacroProvider());
         PlateManager.get().registerLsidHandlers();
-        registerFolderType();
+        registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
@@ -280,7 +280,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return PageFlowUtil.set(StudySchema.getInstance().getSchema());
     }
 
-    private void registerFolderType()
+    private void registerFolderTypes()
     {
         ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));
         ModuleLoader.getInstance().registerFolderType(new AssayFolderType(this));

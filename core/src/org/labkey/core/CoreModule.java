@@ -321,6 +321,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     public void startup(ModuleContext moduleContext)
     {
+        // Any containers in the cache have bogus folder types since they aren't registered until startup().  See #10310
+        ContainerManager.clearCache();
         initWebApplicationContext();
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
@@ -378,7 +380,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
         ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
-
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
