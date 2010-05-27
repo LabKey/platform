@@ -60,6 +60,9 @@ abstract public class QueryService
     abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
     abstract public int importCustomViews(User user, Container container, File viewDir) throws XmlValidationException;
+    abstract public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
+            @NotNull String oldQueryName, @NotNull String newQueryName);
+
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table
