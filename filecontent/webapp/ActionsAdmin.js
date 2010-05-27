@@ -746,17 +746,11 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
     {
         var radioItems = [];
         radioItems.push({xtype: 'radio',
-            checked: this.emailPref == 0,
-            handler: this.onEmailPrefChanged,
-            scope: this,
-            boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
-            name: 'emailPref', inputValue: 0});
-        radioItems.push({xtype: 'radio',
             checked: this.emailPref == 1,
             id: 'rd-individual-email',
             handler: this.onEmailPrefChanged,
             scope: this,
-            boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for files changes.',
+            boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for file changes.',
             name: 'emailPref', inputValue: 1});
         radioItems.push({xtype: 'radio',
             checked: this.emailPref == 2,
@@ -766,6 +760,12 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             hidden: true,
             boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
             name: 'emailPref', inputValue: 2});
+        radioItems.push({xtype: 'radio',
+            checked: this.emailPref == 0,
+            handler: this.onEmailPrefChanged,
+            scope: this,
+            boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
+            name: 'emailPref', inputValue: 0});
 
         var radioGroup = new Ext.form.RadioGroup({
             xtype: 'radiogroup',
@@ -984,12 +984,8 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
                 boxLabel: "<span class='labkey-strong'>Folder Default</span> - use the defaults configured for this folder by an administrator.",
                 name: 'emailPref', inputValue: -1});
             radioItems.push({xtype: 'radio',
-                checked: emailPref == 0,
-                boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
-                name: 'emailPref', inputValue: 0});
-            radioItems.push({xtype: 'radio',
                 checked: emailPref == 1,
-                boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for files changes.',
+                boxLabel: '<span class="labkey-strong">Individual</span> - send a separate email for file changes.',
                 name: 'emailPref', inputValue: 1});
             radioItems.push({xtype: 'radio',
                 checked: emailPref == 2,
@@ -997,6 +993,10 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
                 hidden: true,
                 boxLabel: '<span class="labkey-strong">Daily Digest</span> - send one email each day that summarizes file changes in this folder.',
                 name: 'emailPref', inputValue: 2});
+            radioItems.push({xtype: 'radio',
+                checked: emailPref == 0,
+                boxLabel: "<span class='labkey-strong'>None</span> - don't send any email for file changes in this folder.",
+                name: 'emailPref', inputValue: 0});
 
             var radioGroup = new Ext.form.RadioGroup({
                 xtype: 'radiogroup',
