@@ -127,7 +127,7 @@ public class PipelineServiceImpl extends PipelineService
                         if (root != null)
                         {
                             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                            return createDefaultRoot(container.getProject(), dir.getFileSystemDirectory(), true);
+                            return createDefaultRoot(container, dir.getFileSystemDirectory(), true);
                         }
                     }
                     else

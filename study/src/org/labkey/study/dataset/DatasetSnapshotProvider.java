@@ -471,10 +471,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                 _log.debug("Updating snapshot definition : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
                             }
-                            catch (Exception e)
+                            catch (Throwable e)
                             {
                                 _log.error(e);
-                                throw new RuntimeException(e);
+                                ExceptionUtil.logExceptionToMothership(null, e);
                             }
                         }
                     }
