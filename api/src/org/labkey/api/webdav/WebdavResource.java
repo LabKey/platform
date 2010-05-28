@@ -15,20 +15,19 @@
  */
 package org.labkey.api.webdav;
 
-import org.labkey.api.resource.Resource;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.NavTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,7 +37,6 @@ import java.util.Map;
  */
 public interface WebdavResource extends Resource
 {
-
     WebdavResource find(String name);
 
     // TODO move more functionality into interface and remove this method
