@@ -80,91 +80,94 @@ public class ExperimentUpgradeCode implements UpgradeCode
         List<Integer> sampleSetIds = new ArrayList<Integer>();
         sampleSetIds.addAll(Arrays.asList(ids));
 
-        
-        // For the SampleSets above, ensure the Material's Name and the value in the objectproperty table are the same.
-        // This shouldn't happen, but let's be paranoid.
-        String ensureNameValues =
-                "SELECT ms.RowId AS SampleSetRowId, m.RowId AS MaterialRowId, m.Name, op.StringValue\n" +
-                "FROM exp.MaterialSource ms, exp.Material m, exp.PropertyDescriptor pd, exp.ObjectProperty op, exp.Object o\n" +
-                "WHERE\n" +
-                "  ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
-                "  AND ms.idCol1 = pd.PropertyUri\n" +
-                "  AND pd.PropertyId = op.PropertyId\n" +
-                "  AND ms.Lsid = m.CpasType\n" +
-                "  AND m.Lsid = o.ObjectUri\n" +
-                "  AND o.ObjectId = op.ObjectId\n" +
-                "  AND m.Name != op.StringValue";
-        Map[] badMaterials = Table.executeQuery(exp, ensureNameValues, new Object[] { }, Map.class);
-        for (Map material : badMaterials)
+        if (sampleSetIds.size() > 0)
         {
-            Integer sampleSetId = (Integer)material.get("SampleSetRowId");
-            sampleSetIds.remove(sampleSetId);
+            // For the SampleSets above, ensure the Material's Name and the value in the objectproperty table are the same.
+            // This shouldn't happen, but let's be paranoid.
+            String ensureNameValues =
+                    "SELECT ms.RowId AS SampleSetRowId, m.RowId AS MaterialRowId, m.Name, op.StringValue\n" +
+                    "FROM exp.MaterialSource ms, exp.Material m, exp.PropertyDescriptor pd, exp.ObjectProperty op, exp.Object o\n" +
+                    "WHERE\n" +
+                    "  ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
+                    "  AND ms.idCol1 = pd.PropertyUri\n" +
+                    "  AND pd.PropertyId = op.PropertyId\n" +
+                    "  AND ms.Lsid = m.CpasType\n" +
+                    "  AND m.Lsid = o.ObjectUri\n" +
+                    "  AND o.ObjectId = op.ObjectId\n" +
+                    "  AND m.Name != op.StringValue";
+            Map[] badMaterials = Table.executeQuery(exp, ensureNameValues, new Object[] { }, Map.class);
+            for (Map material : badMaterials)
+            {
+                Integer sampleSetId = (Integer)material.get("SampleSetRowId");
+                sampleSetIds.remove(sampleSetId);
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("Expected material name to be the same as the idCol1 value:");
-            sb.append(" sampleset rowid=").append(sampleSetId);
-            sb.append(", material rowid=").append(material.get("MaterialRowId"));
-            sb.append(", name=").append(material.get("name"));
-            sb.append(", idCol1 value=").append(material.get("stringvalue"));
-            _log.warn(sb.toString());
+                StringBuilder sb = new StringBuilder();
+                sb.append("Expected material name to be the same as the idCol1 value:");
+                sb.append(" sampleset rowid=").append(sampleSetId);
+                sb.append(", material rowid=").append(material.get("MaterialRowId"));
+                sb.append(", name=").append(material.get("name"));
+                sb.append(", idCol1 value=").append(material.get("stringvalue"));
+                _log.warn(sb.toString());
+            }
         }
 
-
-        // For the Materials in the SampleSets above, delete the 'Name' values
-        String deleteName =
-                "DELETE FROM exp.objectproperty WHERE EXISTS (\n" +
-                "  SELECT * FROM (\n" +
-                "    SELECT op.ObjectId, op.PropertyId\n" +
-                "    FROM exp.materialsource ms, exp.material m, exp.propertydescriptor pd, exp.objectproperty op, exp.object o\n" +
-                "    WHERE\n" +
-                "      ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
-                "      AND ms.idCol1 = pd.propertyuri\n" +
-                "      AND pd.propertyid = op.propertyid\n" +
-                "      AND ms.lsid = m.cpastype\n" +
-                "      AND m.lsid = o.objecturi\n" +
-                "      AND o.objectid = op.objectid\n" +
-                "  ) x\n" +
-                "  WHERE x.ObjectId = exp.objectproperty.ObjectId AND x.PropertyId = exp.objectproperty.PropertyId\n" +
-                ")";
-        Table.execute(exp, deleteName, new Object[] { });
-
-        
-        // For the SampleSets above, remove the idCol1 property from the SampleSet's domain
-        String deleteIdCol1 =
-                "DELETE FROM exp.PropertyDomain WHERE EXISTS (\n" +
-                "  SELECT * FROM (\n" +
-                "    SELECT dp.PropertyId, dp.DomainId\n" +
-                "    FROM exp.MaterialSource ms, exp.DomainDescriptor dd, exp.PropertyDomain dp, exp.PropertyDescriptor pd\n" +
-                "    WHERE\n" +
-                "      ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
-                "      AND ms.Lsid = dd.DomainUri\n" +
-                "      AND dd.DomainId = dp.DomainId\n" +
-                "      AND ms.idCol1 = pd.PropertyUri\n" +
-                "      AND pd.PropertyId = dp.PropertyId\n" +
-                "  ) x\n" +
-                "  WHERE x.PropertyId = exp.PropertyDomain.PropertyId and x.DomainId = exp.PropertyDomain.DomainId\n" +
-                ")";
-        Table.execute(exp, deleteIdCol1, new Object[] { });
+        if (sampleSetIds.size() > 0)
+        {
+            // For the Materials in the SampleSets above, delete the 'Name' values
+            String deleteName =
+                    "DELETE FROM exp.objectproperty WHERE EXISTS (\n" +
+                    "  SELECT * FROM (\n" +
+                    "    SELECT op.ObjectId, op.PropertyId\n" +
+                    "    FROM exp.materialsource ms, exp.material m, exp.propertydescriptor pd, exp.objectproperty op, exp.object o\n" +
+                    "    WHERE\n" +
+                    "      ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
+                    "      AND ms.idCol1 = pd.propertyuri\n" +
+                    "      AND pd.propertyid = op.propertyid\n" +
+                    "      AND ms.lsid = m.cpastype\n" +
+                    "      AND m.lsid = o.objecturi\n" +
+                    "      AND o.objectid = op.objectid\n" +
+                    "  ) x\n" +
+                    "  WHERE x.ObjectId = exp.objectproperty.ObjectId AND x.PropertyId = exp.objectproperty.PropertyId\n" +
+                    ")";
+            Table.execute(exp, deleteName, new Object[] { });
 
 
-        // For the SampleSets above, delete the idCol1 PropertyDescriptor
-        String deleteIdCol1Property =
-                "DELETE FROM exp.PropertyDescriptor\n" +
-                "WHERE PropertyURI IN (\n" +
-                "  SELECT ms.idCol1\n" +
-                "  FROM exp.MaterialSource ms\n" +
-                "  WHERE\n" +
-                "    ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
-                ")";
-        Table.execute(exp, deleteIdCol1Property, new Object[] { });
+            // For the SampleSets above, remove the idCol1 property from the SampleSet's domain
+            String deleteIdCol1 =
+                    "DELETE FROM exp.PropertyDomain WHERE EXISTS (\n" +
+                    "  SELECT * FROM (\n" +
+                    "    SELECT dp.PropertyId, dp.DomainId\n" +
+                    "    FROM exp.MaterialSource ms, exp.DomainDescriptor dd, exp.PropertyDomain dp, exp.PropertyDescriptor pd\n" +
+                    "    WHERE\n" +
+                    "      ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
+                    "      AND ms.Lsid = dd.DomainUri\n" +
+                    "      AND dd.DomainId = dp.DomainId\n" +
+                    "      AND ms.idCol1 = pd.PropertyUri\n" +
+                    "      AND pd.PropertyId = dp.PropertyId\n" +
+                    "  ) x\n" +
+                    "  WHERE x.PropertyId = exp.PropertyDomain.PropertyId and x.DomainId = exp.PropertyDomain.DomainId\n" +
+                    ")";
+            Table.execute(exp, deleteIdCol1, new Object[] { });
 
 
-        // For the SampleSets above, set the idCol1 property to 'Name'
-        String updateIdCol1 =
-                "UPDATE exp.materialsource SET idCol1 = '" + ExpMaterialTableImpl.Column.Name.name() + "'\n" +
-                "WHERE exp.materialsource.rowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n";
-        Table.execute(exp, updateIdCol1, new Object[] { });
+            // For the SampleSets above, delete the idCol1 PropertyDescriptor
+            String deleteIdCol1Property =
+                    "DELETE FROM exp.PropertyDescriptor\n" +
+                    "WHERE PropertyURI IN (\n" +
+                    "  SELECT ms.idCol1\n" +
+                    "  FROM exp.MaterialSource ms\n" +
+                    "  WHERE\n" +
+                    "    ms.RowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n" +
+                    ")";
+            Table.execute(exp, deleteIdCol1Property, new Object[] { });
 
+
+            // For the SampleSets above, set the idCol1 property to 'Name'
+            String updateIdCol1 =
+                    "UPDATE exp.materialsource SET idCol1 = '" + ExpMaterialTableImpl.Column.Name.name() + "'\n" +
+                    "WHERE exp.materialsource.rowId IN (" + StringUtils.join(sampleSetIds, ", ") + ")\n";
+            Table.execute(exp, updateIdCol1, new Object[] { });
+        }
 
         // Finally, add a 'Property_' prefix to any properties in any SampleSet domain that collide with built-in ExpMaterialTableImpl columns
         List<String> reservedNames = new ArrayList<String>(ExpMaterialTable.Column.values().length);
