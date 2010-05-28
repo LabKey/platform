@@ -406,9 +406,11 @@ public class SqlScriptController extends SpringActionController
 
         private String getFilename()
         {
-            // Ending version should be next 0.1 increment, unless this is already a 0.1 multiple 
-            double adjustedTo = Math.floor(_actualTo * 10 + .999)/10;
-            // TODO: Defer to provider for this?
+            // Ending version should be next 0.1 increment after last script in this batch, unless it's already a 0.1 multiple
+            // or we're targeting something less
+            double adjustedTo = Math.min(Math.floor(_actualTo * 10 + .999)/10, _targetTo);
+
+            // TODO: Shouldn't provider assemble the filename?
             return getSchemaName() + "-" + ModuleContext.formatVersion(_targetFrom) + "-" + ModuleContext.formatVersion(adjustedTo) + ".sql";
         }
 
@@ -478,6 +480,7 @@ public class SqlScriptController extends SpringActionController
             return _module;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setModule(String module)
         {
             _module = module;
@@ -488,6 +491,7 @@ public class SqlScriptController extends SpringActionController
             return _schema;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setSchema(String schema)
         {
             _schema = schema;
@@ -498,6 +502,7 @@ public class SqlScriptController extends SpringActionController
             return _fromVersion;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setFromVersion(double fromVersion)
         {
             _fromVersion = fromVersion;
@@ -508,6 +513,7 @@ public class SqlScriptController extends SpringActionController
             return _toVersion;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setToVersion(double toVersion)
         {
             _toVersion = toVersion;
@@ -583,66 +589,6 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
-
-/*    public static class Script implements Comparable<Script>
-    {
-        private String _moduleName;
-        private String _filename;
-        private SqlScript _sqlScript = null;
-
-        public Script()
-        {
-        }
-
-        public Script(String moduleName, String filename)
-        {
-            _moduleName = moduleName;
-            _filename = filename;
-        }
-
-        public String getModuleName()
-        {
-            return _moduleName;
-        }
-
-        public void setModuleName(String moduleName)
-        {
-            _moduleName = moduleName;
-        }
-
-        public String getFilename()
-        {
-            return _filename;
-        }
-
-        public void setFilename(String filename)
-        {
-            _filename = filename;
-        }
-
-        public int compareTo(Script s2)
-        {
-            return getFilename().compareTo(s2.getFilename());
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Script script = (Script) o;
-
-            return !(_filename != null ? !_filename.equals(script._filename) : script._filename != null);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return _filename != null ? _filename.hashCode() : 0;
-        }
-    }
-*/
 
     @RequiresSiteAdmin
     public class ScriptAction extends SimpleViewAction<SqlScriptForm>
