@@ -18,5 +18,5 @@
 --   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
 SELECT core.fn_dropifexists('UserSearchTerms', 'core', 'VIEW', NULL);
 SELECT core.fn_dropifexists('Contacts', 'core', 'VIEW', NULL);
-SELECT core.fn_dropifexists('Users', 'core', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ActiveUsers', 'core', 'VIEW', NULL);
+SELECT core.fn_dropifexists('Users', 'core', 'VIEW', NULL);
