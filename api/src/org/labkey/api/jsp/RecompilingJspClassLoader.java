@@ -240,6 +240,8 @@ public class RecompilingJspClassLoader extends JspClassLoader
                 path = path.substring(0,path.length()-"/bin/bootstrap.jar".length());
                 if (new File(path,COMMON_LIB).isDirectory())
                     return new File(path,COMMON_LIB).getPath();
+                else if (new File(path,"lib").isDirectory())
+                    return new File(path,"lib").getPath();
             }
         }
 
@@ -251,7 +253,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
         if (tomcat == null)
             _log.warn("Could not find CATALINA_HOME environment variable, unlikely to be successful recompiling JSPs");
 
-        return new File(tomcat,COMMON_LIB).getPath();
+        if (new File(tomcat,COMMON_LIB).isDirectory())
+            return new File(tomcat,COMMON_LIB).getPath();
+        else //if (new File(tomcat,"lib").isDirectory())
+            return new File(tomcat,"lib").getPath();
     }
 
 

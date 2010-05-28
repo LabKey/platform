@@ -18,6 +18,7 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -361,5 +362,10 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
     public String getServletContextName()
     {
         return null;
+    }
+
+    public String getContextPath()
+    {
+        return AppProps.getInstance().getContextPath();
     }
 }

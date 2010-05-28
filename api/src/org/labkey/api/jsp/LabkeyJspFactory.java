@@ -20,6 +20,7 @@ import org.labkey.api.util.Taintable;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 import javax.servlet.jsp.*;
+import javax.el.ELContext;
 import javax.servlet.jsp.el.ExpressionEvaluator;
 import javax.servlet.jsp.el.VariableResolver;
 import javax.servlet.*;
@@ -58,6 +59,10 @@ public class LabkeyJspFactory extends JspFactory
         return _f.getEngineInfo();
     }
 
+    public JspApplicationContext getJspApplicationContext(javax.servlet.ServletContext servletContext)
+    {
+        return _f.getJspApplicationContext(servletContext);
+    }
 
     class _PageContext extends PageContext
     {
@@ -191,6 +196,8 @@ public class LabkeyJspFactory extends JspFactory
             return _out;
         }
 
+        
+
         public ExpressionEvaluator getExpressionEvaluator()
         {
             return _p.getExpressionEvaluator();
@@ -200,6 +207,12 @@ public class LabkeyJspFactory extends JspFactory
         {
             return _p.getVariableResolver();
         }
+
+        public ELContext getELContext()
+        {
+            return _p.getELContext();
+        }
+        
     }
 
     class _JspWriter extends JspWriter
