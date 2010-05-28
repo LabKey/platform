@@ -886,11 +886,6 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             args.callback(this, success && null != update, args.path, update);
     },
 
-
-
-    pendingPropfind : {},
-
-
     uncacheListing : function(record)
     {
         var path = (typeof record == "string") ? record : record.data.path;
@@ -980,6 +975,8 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
             prefix = prefix.substring(0,prefix.length-1);
         this.prefixUrl = prefix;
+        this.pendingPropfind = {};
+
         var prefixDecode  = decodeURIComponent(prefix);
 
         var getURI = function(v,rec)

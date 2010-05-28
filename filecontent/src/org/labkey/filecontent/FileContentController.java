@@ -152,7 +152,7 @@ public class FileContentController extends SpringActionController
                 }
             }
             else
-                p = svc.getRegisteredDirectory(getContainer(), form.getFileSet());
+                p = svc.getRegisteredDirectory(getContainer(), fileSet);
 
             if (null == p)
                 throw new NotFoundException();
@@ -175,6 +175,11 @@ public class FileContentController extends SpringActionController
                     filePath.contains(FileContentService.PIPELINE_LINK))
             {
                 path = WebdavService.getPath().append(getContainer().getParsedPath()).append(filePath);
+            }
+            // legacy format: named file set specified as parameter
+            else if (fileSet != null)
+            {
+                path = WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.FILE_SETS_LINK).append(fileSet).append(filePath);
             }
             else
                 path = WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.FILES_LINK).append(filePath);
