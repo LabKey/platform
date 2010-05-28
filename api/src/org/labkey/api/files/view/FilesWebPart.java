@@ -115,6 +115,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 }
                 getModelBean().setRootPath(getRootPath(c, FileContentService.FILE_SETS_LINK, fileSet));
                 setTitle(fileSet);
+                setFileSet(fileSet);
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName",fileSet));
             }
         }

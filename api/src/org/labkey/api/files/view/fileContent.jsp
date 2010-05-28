@@ -88,8 +88,6 @@ Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 Ext.QuickTips.init();
 
 var autoResize = <%=bean.isAutoResize()%>;
-var fileBrowser = null;
-var fileSystem = null;
 var actionsURL = <%=PageFlowUtil.jsString(PageFlowUtil.urlProvider(PipelineUrls.class).urlActions(context.getContainer()).getLocalURIString() + "path=")%>;
 var buttonActions = [];
 
@@ -103,55 +101,53 @@ var buttonActions = [];
 %>
 function renderBrowser(rootPath, renderTo)
 {
-    if (!fileSystem)
-    {
-        fileSystem = new LABKEY.WebdavFileSystem({
-            extraPropNames: ['description', 'actions'],
+    var fileSystem = new LABKEY.WebdavFileSystem({
+        extraPropNames: ['description', 'actions'],
 
-            // extra props should model Ext.data.Field types
-            extraDataFields: [
-                {name: 'description', mapping: 'propstat/prop/description'},
-                {name: 'actionHref', mapping: 'propstat/prop/actions', convert : function (v, rec)
+        // extra props should model Ext.data.Field types
+        extraDataFields: [
+            {name: 'description', mapping: 'propstat/prop/description'},
+            {name: 'actionHref', mapping: 'propstat/prop/actions', convert : function (v, rec)
+                {
+                    var result = [];
+                    var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
+                    if (actionsElements.length > 0)
                     {
-                        var result = [];
-                        var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
-                        if (actionsElements.length > 0)
+                        var actionElements = actionsElements[0].getElementsByTagName('action');
+                        for (var i = 0; i < actionElements.length; i++)
                         {
-                            var actionElements = actionsElements[0].getElementsByTagName('action');
-                            for (var i = 0; i < actionElements.length; i++)
+                            var action = new Object();
+                            var childNodes = actionElements[i].childNodes;
+                            for (var n = 0; n < childNodes.length; n++)
                             {
-                                var action = new Object();
-                                var childNodes = actionElements[i].childNodes;
-                                for (var n = 0; n < childNodes.length; n++)
+                                var childNode = childNodes[n];
+                                if (childNode.nodeName == 'message')
                                 {
-                                    var childNode = childNodes[n];
-                                    if (childNode.nodeName == 'message')
-                                    {
-                                        action.message = childNode.textContent || childNode.text;
-                                    }
-                                    else if (childNode.nodeName == 'href')
-                                    {
-                                        action.href = childNode.textContent || childNode.text;
-                                    }
+                                    action.message = childNode.textContent || childNode.text;
                                 }
-                                result[result.length] = action;
+                                else if (childNode.nodeName == 'href')
+                                {
+                                    action.href = childNode.textContent || childNode.text;
+                                }
                             }
+                            result[result.length] = action;
                         }
-                        return result;
-                    }}
-            ],
-            //extraPropNames: ["actions", "description"],
-            baseUrl:rootPath,
-            rootName:'fileset'
-        });
-    }
+                    }
+                    return result;
+                }}
+        ],
+        //extraPropNames: ["actions", "description"],
+        baseUrl:rootPath,
+        rootName:'fileset'
+    });
+
     var prefix = undefined;
 
 <%  if (bean.getStatePrefix() != null) { %>
     prefix = '<%=bean.getStatePrefix()%>';
 <%  } %>
 
-    fileBrowser = new LABKEY.FilesWebPartPanel({
+    var fileBrowser = new LABKEY.FilesWebPartPanel({
         fileSystem: fileSystem,
         helpEl:null,
         resizable: !Ext.isIE,
@@ -201,24 +197,7 @@ function renderBrowser(rootPath, renderTo)
         Ext.EventManager.onWindowResize(_resize);
         Ext.EventManager.fireWindowResize();
     }
-
     fileBrowser.start();
-
-    <% //Temporary code for testing events
-    if (AppProps.getInstance().isDevMode())
-    {
-    %>
-        fileBrowser.on(BROWSER_EVENTS.transfercomplete, function(result) {showTransfer("transfercomplete", result)});
-        fileBrowser.on(BROWSER_EVENTS.transferstarted, function(result) {showTransfer("transferstarted", result)});
-        function showTransfer(heading, result)
-        {
-            console.log("Transfer event: " + heading);
-            for (var fileIndex = 0; fileIndex <result.files.length; fileIndex++)
-                console.log("  name: " + result.files[fileIndex].name + ", id: " + result.files[fileIndex].id);
-        }
-    <%
-    }
-    %>
 }
 
 <%  if (bean.isEnabled() && bean.isRootValid()) { %>

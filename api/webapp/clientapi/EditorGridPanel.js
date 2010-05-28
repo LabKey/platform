@@ -456,12 +456,12 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         if(this.getSelectionModel().on && this.autoSave)
             this.getSelectionModel().on("rowselect", this.onRowSelect, this);
 
+        //add custom renderers for multiline/long-text columns
+        this.setLongTextRenderers();
+
         //fire the "columnmodelcustomize" event to allow clients
         //to modify our default configuration of the column model
         this.fireEvent("columnmodelcustomize", this.columns, colModelIndex);
-
-        //add custom renderers for multiline/long-text columns
-        this.setLongTextRenderers();
 
         //reset the column model
         this.reconfigure(this.store, new Ext.grid.ColumnModel(this.columns));
