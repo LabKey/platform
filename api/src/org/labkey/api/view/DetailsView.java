@@ -16,7 +16,6 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.*;
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -27,20 +26,15 @@ public class DetailsView extends DataView
 {
     private Object[] _pk;
 
-    public DetailsView(DataRegion dataRegion)
-    {
-        super(dataRegion, (BindException)null);
-    }
-
     public DetailsView(DataRegion dataRegion, TableViewForm form)
     {
-        super(dataRegion, form, (BindException)null);
+        super(dataRegion, form, null);
         _pk = form.getPkVals();
     }
 
     public DetailsView(TableViewForm form)
     {
-        super(form, (BindException)null);
+        super(form, null);
         _pk = form.getPkVals();
     }
 

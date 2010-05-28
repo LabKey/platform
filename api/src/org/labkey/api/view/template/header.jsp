@@ -63,7 +63,7 @@
           <%
           if (null != user && !user.isGuest())
           {
-              %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
+              %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
           }
           else if (bean.pageConfig.shouldIncludeLoginLink())
           {

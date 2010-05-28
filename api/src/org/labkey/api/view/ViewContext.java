@@ -210,6 +210,8 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
+    // TODO: addContextualRole() and modify hasPermission() to check them  
+
     public boolean hasPermission(Class<? extends Permission> perm) throws NotFoundException
     {
         SecurityPolicy policy = getContainer().getPolicy();
