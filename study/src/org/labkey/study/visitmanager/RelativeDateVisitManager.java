@@ -175,7 +175,7 @@ public class RelativeDateVisitManager extends VisitManager
             Table.execute(schema, sqlUpdateDays, new Object[] {VisitImpl.DEMOGRAPHICS_VISIT, _study.getContainer()});
             for (DataSetDefinition dataSet : _study.getDataSets())
             {
-                Table.TempTableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
+                TableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
                 if (tempTableInfo != null)
                 {
                     Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = " + tempTableInfo + ".ParticipantSequenceKey)"));

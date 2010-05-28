@@ -1780,6 +1780,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == c)
             return;
 
+        boolean startTransaction = !getExpSchema().getScope().isTransactionActive();
         try
         {
             String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
@@ -1793,7 +1794,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
             int[] protIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
 
-            getExpSchema().getScope().beginTransaction();
+            if (startTransaction)
+            {
+                getExpSchema().getScope().beginTransaction();
+            }
             // first delete the runs in the container, as that should be fast.  Deletes all Materials, Data,
             // and protocol applications and associated properties and parameters that belong to the run
             for (int runId : runIds)
@@ -1839,7 +1843,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] dataIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
             deleteDataByRowIds(c, dataIds);
 
-            getExpSchema().getScope().commitTransaction();
+            if (startTransaction)
+            {
+                getExpSchema().getScope().commitTransaction();
+            }
         }
         catch (SQLException e)
         {
@@ -1847,7 +1854,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            getExpSchema().getScope().closeConnection();
+            if (startTransaction)
+            {
+                getExpSchema().getScope().closeConnection();
+            }
         }
     }
 
@@ -1968,7 +1978,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     "SELECT * FROM exp.ExperimentRun WHERE \n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN \n" +
                             "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE di.DataID IN (" + dataRowIdSQL + "))" +
-                            " UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE d.RowId IN (" + dataRowIdSQL + ")))",
+                            " UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE d.RowId IN (" + dataRowIdSQL + "))) ORDER BY Created DESC",
                     new Object[0], ExperimentRun.class);
             return Arrays.asList(ExpRunImpl.fromRuns(runs));
         }

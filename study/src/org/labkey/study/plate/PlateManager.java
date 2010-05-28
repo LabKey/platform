@@ -509,20 +509,10 @@ public class PlateManager implements PlateService.Service
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("Container", container.getId());
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try
-        {
-            scope.beginTransaction();
-            Table.delete(StudySchema.getInstance().getTableInfoWell(), filter);
-            Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), filter);
-            Table.delete(StudySchema.getInstance().getTableInfoPlate(), filter);
-            scope.commitTransaction();
-            clearCache();
-        }
-        finally
-        {
-            scope.closeConnection();
-        }
+        Table.delete(StudySchema.getInstance().getTableInfoWell(), filter);
+        Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), filter);
+        Table.delete(StudySchema.getInstance().getTableInfoPlate(), filter);
+        clearCache();
     }
 
     public void registerDetailsLinkResolver(PlateService.PlateDetailsResolver resolver)

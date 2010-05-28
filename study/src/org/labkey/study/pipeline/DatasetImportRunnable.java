@@ -127,7 +127,7 @@ public class DatasetImportRunnable implements Runnable
             {
                 assert cpuDelete.start();
                 pj.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
-                int rows = _task.getStudyManager().purgeDataset(study, _datasetDefinition, useCutoff ? _replaceCutoff : null);
+                int rows = _task.getStudyManager().purgeDataset(study, _datasetDefinition, useCutoff ? _replaceCutoff : null, _task.getJob().getUser());
                 pj.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }

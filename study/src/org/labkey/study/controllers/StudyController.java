@@ -69,7 +69,6 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
@@ -268,6 +267,23 @@ public class StudyController extends BaseStudyController
         {
             _appendNavTrailDatasetAdmin(root);
             return root.addChild("Define Dataset");
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class PurgeOrphanedDatasetsAction extends SimpleViewAction
+    {
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            DataSetDefinition.purgeOrphanedDatasets();
+            throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL());
         }
     }
 
@@ -2663,7 +2679,7 @@ public class StudyController extends BaseStudyController
             }
             catch (Exception e)
             {
-                _log.error(e);
+                throw new UnexpectedException(e);
             }
             finally
             {
@@ -4053,7 +4069,7 @@ public class StudyController extends BaseStudyController
                 try
                 {
                     scope.beginTransaction();
-                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(getStudy(), dataset);
+                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(getStudy(), dataset, getUser());
                     scope.commitTransaction();
 
                     // Log the purge

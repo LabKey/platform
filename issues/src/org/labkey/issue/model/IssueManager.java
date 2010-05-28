@@ -604,22 +604,33 @@ public class IssueManager
 
     public static void purgeContainer(Container c)
     {
+        boolean startTransaction = !_issuesSchema.getSchema().getScope().isTransactionActive();
         try
         {
-            _issuesSchema.getSchema().getScope().beginTransaction();
+            if (startTransaction)
+            {
+                _issuesSchema.getSchema().getScope().beginTransaction();
+            }
             String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
             Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
-            _issuesSchema.getSchema().getScope().commitTransaction();
+            if (startTransaction)
+            {
+                _issuesSchema.getSchema().getScope().commitTransaction();
+            }
         }
         catch (SQLException x)
         {
+            throw new RuntimeSQLException(x);
         }
         finally
         {
-            _issuesSchema.getSchema().getScope().closeConnection();
+            if (startTransaction)
+            {
+                _issuesSchema.getSchema().getScope().closeConnection();
+            }
         }
     }
 

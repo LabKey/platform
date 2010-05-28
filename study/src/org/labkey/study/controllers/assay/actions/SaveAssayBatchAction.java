@@ -35,6 +35,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -305,6 +306,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             if (null == data)
             {
+                if (!NetworkDrive.exists(file))
+                {
+                    throw new IllegalArgumentException("No file with relative pipeline path '" + pipelinePath + "' was found");
+                }
+
                 //create a new one
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, pipelinePath);
                 DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
@@ -339,6 +345,10 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             if (null == data)
             {
+                if (!NetworkDrive.exists(f))
+                {
+                    throw new IllegalArgumentException("No file with path '" + absolutePath + "' was found");
+                }
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, f.getName());
                 DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
                 String lsid = expSvc.generateLSID(container, type, name);

@@ -55,27 +55,35 @@ public class ModuleQueryMetadataDef extends ResourceRef
 
         try
         {
-            Document doc = parseFile(resource);
-            Node docElem = doc.getDocumentElement();
-
-            if (!docElem.getNodeName().equalsIgnoreCase("query"))
-                return;
-
-            _name = DOMUtil.getAttributeValue(docElem, "name", _name);
-            _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
-            _schemaVersion = Double.parseDouble(DOMUtil.getAttributeValue(docElem, "schemaVersion", "0"));
-
-            //description
-            Node node = DOMUtil.getFirstChildNodeWithName(docElem, "description");
-            if (null != node)
-                _description = DOMUtil.getNodeText(node);
-
-            node = DOMUtil.getFirstChildNodeWithName(docElem, "metadata");
-            if (null != node)
+            // Check in case the file has disappeared from disk
+            if (resource.isFile())
             {
-                Node root = DOMUtil.getFirstChildElement(node);
-                if (null != root)
-                    _queryMetaData = PageFlowUtil.convertNodeToXml(root);
+                Document doc = parseFile(resource);
+                Node docElem = doc.getDocumentElement();
+
+                if (!docElem.getNodeName().equalsIgnoreCase("query"))
+                    return;
+
+                _name = DOMUtil.getAttributeValue(docElem, "name", _name);
+                _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(docElem, "hidden", "false"));
+                _schemaVersion = Double.parseDouble(DOMUtil.getAttributeValue(docElem, "schemaVersion", "0"));
+
+                //description
+                Node node = DOMUtil.getFirstChildNodeWithName(docElem, "description");
+                if (null != node)
+                    _description = DOMUtil.getNodeText(node);
+
+                node = DOMUtil.getFirstChildNodeWithName(docElem, "metadata");
+                if (null != node)
+                {
+                    Node root = DOMUtil.getFirstChildElement(node);
+                    if (null != root)
+                        _queryMetaData = PageFlowUtil.convertNodeToXml(root);
+                }
+            }
+            else
+            {
+                _queryMetaData = "";
             }
         }
         catch (IOException e)

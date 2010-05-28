@@ -409,9 +409,13 @@ public class WikiManager
         WikiCache.uncache(c);
 
         DbScope scope = comm.getSchema().getScope();
+        boolean startTransaction = !scope.isTransactionActive();
         try
         {
-            scope.beginTransaction();
+            if (startTransaction)
+            {
+                scope.beginTransaction();
+            }
             Object[] params = { c.getId() };
             Table.execute(comm.getSchema(), "UPDATE " + comm.getTableInfoPages() + " SET PageVersionId = NULL WHERE Container = ?", params);
             Table.execute(comm.getSchema(), "DELETE FROM " + comm.getTableInfoPageVersions() + " WHERE PageEntityId IN (SELECT EntityId FROM " + comm.getTableInfoPages() + " WHERE Container = ?)", params);
@@ -423,11 +427,14 @@ public class WikiManager
 
             ContainerUtil.purgeTable(comm.getTableInfoPages(), c, null);
 
-            scope.commitTransaction();
+            if (startTransaction)
+            {
+                scope.commitTransaction();
+            }
         }
         finally
         {
-            if (scope != null)
+            if (startTransaction)
                 scope.closeConnection();
         }
     }

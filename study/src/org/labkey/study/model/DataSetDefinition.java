@@ -51,11 +51,12 @@ import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.DataSetsTable;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * User: brittp
@@ -376,48 +377,81 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     /**
-     * materializedCache is a cache of the _LAST_ temp table that was materialized for this DatasetDefinition.
-     * There may also be temp tables floating around waiting to be garbage collected (see TempTableTracker).
+     * materializedCache is a cache of the table that was materialized for this DatasetDefinition.
      */
     private static class MaterializedLockObject
     {
-        Table.TempTableInfo tinfoMat = null;
-        String tempTableName = null;
+        private final String _name;
+        private SchemaTableInfo _tinfoMaterialized = null;
 
         // for debugging
-        TableInfo tinfoFrom = null;
-        long lastVerify = 0;
+        TableInfo _tinfoOntology = null;
+        private long _lastVerify = 0;
 
-        void verify()
+        public MaterializedLockObject(String name)
+        {
+            _name = name;
+        }
+
+        SchemaTableInfo getExitingTableInfo(DataSetDefinition dataset, User user)
         {
             synchronized (this)
             {
                 long now = System.currentTimeMillis();
-                if (null == tinfoMat || lastVerify + 5* Cache.MINUTE > now)
-                    return;
-                tempTableName = tinfoMat.getTempTableName();
-                lastVerify = now;
-                boolean ok = tinfoMat.verify();
-                if (ok)
-                    return;
-                tinfoMat = null;
-                tinfoFrom = null;
+                if (_lastVerify + 5* Cache.MINUTE > now && _tinfoMaterialized != null)
+                    return _tinfoMaterialized;
+                _lastVerify = now;
+                if (isMaterialized(_name))
+                {
+                    if (_tinfoMaterialized == null)
+                    {
+                        if (_tinfoOntology == null)
+                        {
+                            _tinfoOntology = dataset.getJoinTableInfo(user);
+                        }
+                        _tinfoMaterialized = getMaterializedTableInfo(_tinfoOntology, _name);
+                    }
+                }
+                else
+                {
+                    _tinfoMaterialized = null;
+                }
+                return _tinfoMaterialized;
             }
-            // cache is not OK
-            // Since this should never happen let's preemptively assume the entire dataset temptable cache is tofu
-            synchronized (materializedCache)
-            {
-                materializedCache.clear();
-            }
-            Logger.getInstance(DataSetDefinition.class).error("TempTable disappeared? " +  tempTableName);
         }
     }
 
 
+    private static boolean isMaterialized(String tempTableName)
+    {
+        DbScope scope = StudySchema.getInstance().getDatasetSchema().getScope();
+        Connection conn = null;
+        ResultSet rs = null;
+        try
+        {
+            conn = scope.getConnection();
+            rs = conn.getMetaData().getTables(scope.getDatabaseName(), StudySchema.getInstance().getDatasetSchema().getName(), tempTableName, new String[]{"TABLE"});
+            if (rs.next())
+            {
+                return true;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+            if (conn != null) { try { scope.releaseConnection(conn); } catch (SQLException e) {} }
+        }
+        return false;
+    }
+
     private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
 
 
-    public synchronized Table.TempTableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
+    public synchronized TableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
     {
         String tempName = getCacheString();
 
@@ -428,7 +462,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             mlo = materializedCache.get(tempName);
             if (null == mlo)
             {
-                mlo = new MaterializedLockObject();
+                mlo = new MaterializedLockObject(tempName);
                 materializedCache.put(tempName, mlo);
             }
         }
@@ -438,33 +472,33 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             try
             {
-                mlo.verify();
-                TableInfo tinfoProp = mlo.tinfoFrom;
-                Table.TempTableInfo tinfoMat = mlo.tinfoMat;
+                TableInfo currentFrom = getJoinTableInfo(user);
+                SchemaTableInfo result = mlo.getExitingTableInfo(this, user);
 
-                if (tinfoMat != null)
+                if (result != null)
                 {
-                    TableInfo tinfoFrom = getJoinTableInfo(user);
-                    if (!tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet()))
+                    TableInfo cachedFrom = mlo._tinfoOntology;
+                    if (!cachedFrom.getColumnNameSet().equals(currentFrom.getColumnNameSet()))
                     {
                         StringBuilder msg = new StringBuilder("unexpected difference in columns sets for dataset " + getName() + " in " + getContainer().getPath() + "\n");
-                        msg.append("  tinfoProp: ").append(StringUtils.join(tinfoProp.getColumnNameSet(),",")).append("\n");
-                        msg.append("  tinfoFrom: ").append(StringUtils.join(tinfoFrom.getColumnNameSet(), ",")).append("\n");
+                        msg.append("  cachedFrom:  ").append(StringUtils.join(new TreeSet<String>(cachedFrom.getColumnNameSet()),",")).append("\n");
+                        msg.append("  currentFrom: ").append(StringUtils.join(new TreeSet<String>(currentFrom.getColumnNameSet()), ",")).append("\n");
                         _log.error(msg);
-                        tinfoMat = null;
+                        dropMaterializedTable(tempName);
+                        result = null;
                     }
                 }
-                if (tinfoMat == null && forceMaterialization)
+                
+                if (result == null && forceMaterialization)
                 {
-                    TableInfo tinfoFrom = getJoinTableInfo(user);
-                    tinfoMat = materialize(tinfoFrom, tempName);
-                    tinfoMat.setButtonBarConfig(tinfoFrom.getButtonBarConfig());
+                    result = materialize(currentFrom, tempName);
+                    result.setButtonBarConfig(currentFrom.getButtonBarConfig());
 
-                    mlo.tinfoFrom = tinfoFrom;
-                    mlo.tinfoMat = tinfoMat;
+                    mlo._tinfoMaterialized = result;
+                    mlo._tinfoOntology = currentFrom;
                 }
-                TempTableTracker.getLogger().debug("DataSetDefinition returning " + (tinfoMat == null ? "null" : tinfoMat.getSelectName()));
-                return tinfoMat;
+                _log.debug("DataSetDefinition returning " + (result == null ? "null" : result.getSelectName()));
+                return result;
             }
             catch (SQLException x)
             {
@@ -474,7 +508,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private Table.TempTableInfo materialize(TableInfo tinfoFrom, String tempName)
+    private SchemaTableInfo materialize(TableInfo tinfoFrom, String tempName)
             throws SQLException
     {
         //noinspection UnusedAssignment
@@ -482,13 +516,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //noinspection ConstantConditions
         assert debug=true;
 
-        Table.TempTableInfo tinfoMat = Table.createTempTable(tinfoFrom, tempName);
-        String fullName = tinfoMat.getTempTableName();
-        String shortName = fullName.substring(1+fullName.lastIndexOf('.'));
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_seq ON " + fullName + "(SequenceNum)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptidsequencekey ON " + fullName + "(ParticipantSequenceKey)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid_seq ON " + fullName + "(" +
-                StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum)", null);
+        SchemaTableInfo tinfoMat = getMaterializedTableInfo(tinfoFrom, tempName);
+
+        Table.snapshot(tinfoFrom, tinfoMat.toString());
+
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().getTableSelectName("IX_" + tempName + "_seq") +
+                " ON " + tinfoMat + "(SequenceNum)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().getTableSelectName("IX_" + tempName + "_ptidsequencekey") +
+                " ON " + tinfoMat + "(ParticipantSequenceKey)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().getTableSelectName("IX_" + tempName + "_ptid_seq") +
+                " ON " + tinfoMat + "(" + StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum)", null);
 
         //noinspection ConstantConditions
         if (debug)
@@ -504,6 +541,23 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return tinfoMat;
     }
 
+    private static SchemaTableInfo getMaterializedTableInfo(TableInfo tinfoFrom, String tempName)
+    {
+        SchemaTableInfo tinfoMat = new SchemaTableInfo(tempName, StudySchema.getInstance().getDatasetSchema());
+        for (ColumnInfo col : tinfoFrom.getColumns())
+        {
+            ColumnInfo colDirect = new ColumnInfo(col.getName());
+            colDirect.setAlias(col.getAlias());
+            colDirect.copyAttributesFrom(col);
+            colDirect.copyURLFrom(col, null, null);
+            colDirect.setParentTable(tinfoMat);
+            tinfoMat.addColumn(colDirect);
+        }
+        tinfoMat.setTableType(TableInfo.TABLE_TYPE_TABLE);
+        tinfoMat.setPkColumnNames(tinfoFrom.getPkColumnNames());
+        return tinfoMat;
+    }
+
 
     public void unmaterialize()
     {
@@ -512,19 +566,29 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             public void run()
             {
                 MaterializedLockObject mlo;
+                String tempName = getCacheString();
+                if (isMaterialized(tempName))
+                {
+                    try
+                    {
+                        dropMaterializedTable(tempName);
+                        _log.debug("DataSetDefinition unmaterialize(" + getName() + ")");
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
                 synchronized(materializedCache)
                 {
-                    String tempName = getCacheString();
                     mlo = materializedCache.get(tempName);
                 }
                 if (null == mlo)
                     return;
                 synchronized (mlo)
                 {
-                    if (mlo.tinfoMat != null)
-                        TempTableTracker.getLogger().debug("DataSetDefinition unmaterialize(" + mlo.tinfoMat.getTempTableName() + ")");
-                    mlo.tinfoFrom = null;
-                    mlo.tinfoMat = null;
+                    mlo._tinfoOntology = null;
+                    mlo._tinfoMaterialized = null;
                 }
             }
         };
@@ -532,8 +596,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DbScope scope = getScope();
         if (scope.isTransactionActive())
             scope.addCommitTask(task);
-        else
-            task.run();
+
+        task.run();
+    }
+
+    private void dropMaterializedTable(String tempName)
+            throws SQLException
+    {
+        Table.execute(StudySchema.getInstance().getDatasetSchema(), "DROP TABLE studydataset." + getScope().getSqlDialect().getTableSelectName(tempName), new Object[0]);
     }
 
 
@@ -545,7 +615,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private String getCacheString()
     {
-        return "Study"+getContainer().getRowId()+"DataSet"+getDataSetId();
+        return "c" + getContainer().getRowId() + "_" + getName().toLowerCase();
     }
 
 
@@ -1040,7 +1110,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
             Table.delete(data, filter);
 
-            Table.TempTableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+            TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
             if (tempTableInfo != null)
             {
                 SimpleFilter tempTableFilter = new SimpleFilter();
@@ -1371,7 +1441,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             helper = new DatasetImportHelper(user, scope.getConnection(), c, this, lastModified);
             List<String> imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, ensureObjects, logger);
 
-            Table.TempTableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+            TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
             if (tempTableInfo != null)
             {
                 // Update the materialized temp table if it's still around
@@ -1523,5 +1593,70 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         int result = _study != null ? _study.hashCode() : 0;
         result = 31 * result + _dataSetId;
         return result;
+    }
+
+    private static final Pattern TABLE_NAME_PATTERN = Pattern.compile("c(\\d+)_(.+)");
+
+    public static void purgeOrphanedDatasets()
+    {
+        Connection conn = null;
+        try
+        {
+            DbScope scope = StudySchema.getInstance().getDatasetSchema().getScope();
+            conn = scope.getConnection();
+            ResultSet tablesRS = conn.getMetaData().getTables(scope.getDatabaseName(), "studydataset", null, new String[]{"TABLE"});
+            while (tablesRS.next())
+            {
+                String tableName = tablesRS.getString("TABLE_NAME");
+                boolean delete = true;
+                Matcher matcher = TABLE_NAME_PATTERN.matcher(tableName);
+                if (matcher.matches())
+                {
+                    int containerRowId = Integer.parseInt(matcher.group(1));
+                    String datasetName = matcher.group(2);
+                    Container c = ContainerManager.getForRowId(Integer.toString(containerRowId));
+                    if (c != null)
+                    {
+                        StudyImpl study = StudyManager.getInstance().getStudy(c);
+                        if (study != null)
+                        {
+                            for (DataSetDefinition dataset : study.getDataSets())
+                            {
+                                if (dataset.getName().equalsIgnoreCase(datasetName))
+                                {
+                                    delete = false;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (delete)
+                {
+                    Statement statement = null;
+                    try
+                    {
+                        statement = conn.createStatement();
+                        statement.execute("DROP TABLE " + StudySchema.getInstance().getDatasetSchema().getName() + "." + scope.getSqlDialect().getTableSelectName(tableName));
+                    }
+                    finally
+                    {
+                        if (statement != null) { try { statement.close(); } catch (SQLException e) {} }
+                    }
+                }
+            }
+
+
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (conn != null)
+            {
+                try { conn.close(); } catch (SQLException e) {}
+            }
+        }
     }
 }

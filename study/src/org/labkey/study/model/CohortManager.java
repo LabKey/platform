@@ -301,8 +301,7 @@ public class CohortManager
         {
             if (transactionOwner)
             {
-                if (scope.isTransactionActive())
-                    scope.rollbackTransaction();
+                scope.closeConnection();
             }
         }
     }

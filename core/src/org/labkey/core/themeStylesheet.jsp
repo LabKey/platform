@@ -80,12 +80,13 @@
 %>
 
 /* defaults */
-body, div, td, th, table, img, form
+body, div, td, th, table, img, form,
+.x-form-item, .x-panel-header, .x-btn button
 {
     font-size: <%= themeFont.getNormalSize() %>;
 }
 
-input, .gwt-TextBox
+input, .gwt-TextBox, .x-form-field
 {
 	font-size:<%= themeFont.getTextInputSize() %>;
 }

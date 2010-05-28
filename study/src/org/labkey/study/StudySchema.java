@@ -48,11 +48,9 @@ public class StudySchema
         return StudyManager.getSchema();
     }
 
-
-    /** NOTE we depend on study and exp being in the same scope **/
-    public DbSchema getExpSchema()
+    public DbSchema getDatasetSchema()
     {
-        return ExperimentService.get().getSchema();
+        return DbSchema.get("studydataset");
     }
 
 

@@ -1371,15 +1371,15 @@ public class StudyManager
     }
 
 
-    public int purgeDataset(Study study, DataSetDefinition dataset)
+    public int purgeDataset(Study study, DataSetDefinition dataset, User user)
     {
-        return purgeDataset(study, dataset, null);
+        return purgeDataset(study, dataset, null, user);
     }
 
     /**
      * Delete all rows from a dataset or just those newer than the cutoff date.
      */
-    public int purgeDataset(Study study, DataSetDefinition dataset, Date cutoff)
+    public int purgeDataset(Study study, DataSetDefinition dataset, Date cutoff, User user)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
         Container c = study.getContainer();
@@ -1472,7 +1472,7 @@ public class StudyManager
         if (null == ds)
             return;
 
-        purgeDataset(study, ds);
+        purgeDataset(study, ds, user);
 
         if (ds.getTypeURI() != null)
         {
@@ -1542,8 +1542,8 @@ public class StudyManager
 
             //If deleteDatasetData is false, OntologyManager will clean up on folder delete
             if (deleteDatasetData)
-                for (DataSetDefinition dsd : getDataSetDefinitions(getStudy(c)))
-                    deleteDataset(getStudy(c), user, dsd);
+                for (DataSetDefinition dsd : dsds)
+                    deleteDataset(study, user, dsd);
             //
             // samples
             //
@@ -1612,14 +1612,13 @@ public class StudyManager
             if (localTransaction)
             {
                 scope.commitTransaction();
-                localTransaction = false;
             }
 
         }
         finally
         {
             if (localTransaction)
-                scope.rollbackTransaction();
+                scope.closeConnection();
         }
 
         //

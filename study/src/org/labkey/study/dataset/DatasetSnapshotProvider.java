@@ -252,7 +252,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         schema.getScope().beginTransaction();
                         startedTransaction = true;
                     }
-                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef);
+                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
                     Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
                     Map<String, String> columnMap = getColumnMap(d, view, def.getColumns());
 
