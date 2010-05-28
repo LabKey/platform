@@ -412,7 +412,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         else
         {
-            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId());
+            return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), AppProps.getInstance().getHomePageActionURL());
         }
     }
 

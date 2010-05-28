@@ -1377,19 +1377,15 @@ public class MothershipController extends SpringActionController
             ActionButton b = new ActionButton(saveURL, "Save");
             b.setDisplayPermission(UpdatePermission.class);
             bb.add(b);
+
             getDataRegion().setButtonBar(bb);
             getDataRegion().setFormActionUrl(saveURL);
-
             getDataRegion().setTable(MothershipManager.get().getTableInfoExceptionStackTrace());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionStackTrace(), "ExceptionStackTraceId,StackTrace,BugNumber,Comments");
             getDataRegion().addDisplayColumn(new AssignedToDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("AssignedTo"), c));
             getDataRegion().getDisplayColumn(1).setVisible(false);
             getDataRegion().addDisplayColumn(new CreateIssueDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace"), b));
             getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionStackTrace().getColumn("StackTrace")));
-
-            // Everyone can see the form to update this exception, but we only
-            // allow users with real update permissions to save the updates.
-            getViewContext().setPermissions(ACL.PERM_UPDATE | getViewContext().getPermissions());
 
             setTitle("Exception Stack Trace Details");
         }
@@ -1400,18 +1396,15 @@ public class MothershipController extends SpringActionController
         public ServerInstallationUpdateView(ServerInstallationForm form, ActionURL url, BindException errors)
         {
             super(new DataRegion(), form, errors);
+
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerInstallation());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoServerInstallation(), "ServerInstallationId,ServerInstallationGUID,Note,OrganizationName,ServerHostName,ServerIP,LogoLink,SystemDescription,SystemShortName");
-
-            // Everyone can see the form to update this exception, but we only
-            // allow users with real update permissions to save the updates.
-            getViewContext().setPermissions(ACL.PERM_UPDATE | getViewContext().getPermissions());
-
             ButtonBar bb = new ButtonBar();
             ActionButton b = new ActionButton(new ActionURL(UpdateInstallationAction.class, getViewContext().getContainer()), "Save");
             b.setDisplayPermission(UpdatePermission.class);
             bb.add(b);
             getDataRegion().setButtonBar(bb);
+
             setTitle("Server Installation Details");
         }
     }

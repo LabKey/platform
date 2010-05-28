@@ -1159,13 +1159,12 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class AddUsersForm
+    public static class AddUsersForm extends ReturnUrlForm
     {
         private boolean sendMail;
         private String newUsers;
         private String _cloneUser;
         private boolean _skipProfile;
-        private ReturnURLString _returnUrl;
 
         public void setNewUsers(String newUsers)
         {
@@ -1198,16 +1197,6 @@ public class SecurityController extends SpringActionController
         public void setSkipProfile(boolean skipProfile)
         {
             _skipProfile = skipProfile;
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
     }
 
@@ -1265,8 +1254,14 @@ public class SecurityController extends SpringActionController
             List<Pair<String, String>> extraParams = new ArrayList<Pair<String, String>>(2);
             if (form.isSkipProfile())
                 extraParams.add(new Pair<String, String>("skipProfile", "1"));
+
+            URLHelper returnURL = null;
+
             if (null != form.getReturnUrl())
+            {
                 extraParams.add(new Pair<String, String>(ReturnUrlForm.Params.returnUrl.toString(), form.getReturnUrl().getSource()));
+                returnURL = form.getReturnURLHelper();
+            }
 
             for (ValidEmail email : emails)
             {
@@ -1275,7 +1270,7 @@ public class SecurityController extends SpringActionController
                 if (result == null)
                 {
                     User user = UserManager.getUser(email);
-                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId());
+                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
                     result = email + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
                 }
                 else if (userToClone != null)

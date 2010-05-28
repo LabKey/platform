@@ -18,6 +18,7 @@ package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
@@ -92,16 +93,25 @@ public class UserController extends SpringActionController
             return new ActionURL(UserAccessAction.class, container);
         }
 
-        public ActionURL getUserDetailsURL(Container container, int userId)
+        public ActionURL getUserDetailsURL(Container c, int userId, @Nullable URLHelper returnURL)
         {
-            ActionURL url = getUserDetailsURL(container);
+            ActionURL url = new ActionURL(DetailsAction.class, c);
             url.addParameter("userId", userId);
+
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
+
             return url;
         }
 
-        public ActionURL getUserDetailsURL(Container c)
+        public ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL)
         {
-            return new ActionURL(DetailsAction.class, c);
+            ActionURL url = new ActionURL(DetailsAction.class, c);
+
+            if (null != returnURL)
+                url.addReturnURL(returnURL);
+
+            return url;
         }
 
         public ActionURL getUserUpdateURL(URLHelper returnURL, int userId)
@@ -149,6 +159,7 @@ public class UserController extends SpringActionController
     {
         final User user = getUser();
         Container c = getContainer();
+        ActionURL currentURL = getViewContext().getActionURL();
         boolean isSiteAdmin = user.isAdministrator();
         boolean isAnyAdmin = isSiteAdmin || c.hasPermission(user, AdminPermission.class);
 
@@ -171,7 +182,7 @@ public class UserController extends SpringActionController
         }
         rgn.setDisplayColumns(displayColumns);
 
-        SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c) + "userId=${UserId}", "details");
+        SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c, currentURL) + "userId=${UserId}", "details");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
 
@@ -990,7 +1001,7 @@ public class UserController extends SpringActionController
         if (null == userId)
             root.addChild("User Details");
         else
-            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c).addParameter("userId", userId.intValue()));
+            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c, getViewContext().getActionURL()).addParameter("userId", userId.intValue()));
     }
 
 
@@ -1080,7 +1091,7 @@ public class UserController extends SpringActionController
 
                 if (null != form.getReturnUrl())
                 {
-                    doneButton = new ActionButton("Done", new ActionURL(form.getReturnUrl()));
+                    doneButton = new ActionButton("Done", form.getReturnURLHelper());
                     rgn.addHiddenFormField(ReturnUrlForm.Params.returnUrl, form.getReturnUrl());
                 }
                 else
@@ -1094,7 +1105,7 @@ public class UserController extends SpringActionController
 
                     doneButton = new ActionButton("", "Go to " + doneContainer.getName());
                     doneButton.setActionType(ActionButton.Action.LINK);
-                    ActionURL doneURL = doneContainer.getStartURL(getViewContext());
+                    ActionURL doneURL = doneContainer.getStartURL(user);
                     doneButton.setURL(doneURL.getLocalURIString());
                 }
 
@@ -1185,12 +1196,13 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UpdateForm form)
         {
-            ActionURL details = new UserUrlsImpl().getUserDetailsURL(getContainer(), ((Integer)form.getPkVal()).intValue());
-            String returnUrl = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
-            if (null != returnUrl)
-                details.addParameter(ReturnUrlForm.Params.returnUrl, returnUrl);
+            ActionURL returnURL = null;
 
-            return details;
+            String returnURLString = form.getStrings().get(ReturnUrlForm.Params.returnUrl.toString());
+            if (null != returnURLString)
+                returnURL = new ActionURL(returnURLString);
+
+            return new UserUrlsImpl().getUserDetailsURL(getContainer(), ((Integer)form.getPkVal()).intValue(), returnURL);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1273,7 +1285,7 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserForm form)
         {
-            return new UserUrlsImpl().getUserDetailsURL(getContainer(), form.getUserId());
+            return new UserUrlsImpl().getUserDetailsURL(getContainer(), form.getUserId(), form.getReturnURLHelper());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1357,13 +1369,12 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class UserForm
+    public static class UserForm extends ReturnUrlForm
     {
         private int userId;
         private String newEmail;
         private String _message = null;
         private boolean _renderInHomeTemplate = true;
-        private ReturnURLString _returnUrl;
 
         public String getNewEmail()
         {
@@ -1397,16 +1408,6 @@ public class UserController extends SpringActionController
         public void setMessage(String message)
         {
             _message = message;
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
     }
 
