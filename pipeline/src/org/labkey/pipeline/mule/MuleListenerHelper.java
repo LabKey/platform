@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.Converter;
 import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.mule.config.ThreadingProfile;
@@ -282,5 +283,10 @@ public class MuleListenerHelper implements ServletContext
     public String getServletContextName()
     {
         return null;
+    }
+
+    public String getContextPath()
+    {
+        return AppProps.getInstance().getContextPath();
     }
 }
