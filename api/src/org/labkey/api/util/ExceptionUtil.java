@@ -193,6 +193,11 @@ public class ExceptionUtil
                     if (t instanceof SQLException)
                     {
                         SQLException sqlException = (SQLException) t;
+                        if (sqlException.getMessage() != null && sqlException.getMessage().indexOf("terminating connection due to administrator command") != -1)
+                        {
+                            // Don't report exceptions from Postgres shutting down
+                            return;
+                        }
                         sqlState = sqlException.getSQLState();
                         String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
                         if (extraInfo != null)

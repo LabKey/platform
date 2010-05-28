@@ -69,6 +69,11 @@ public class WriteableAppProps extends AppProps
         storeIntValue(MEMORY_USAGE_DUMP_INTERVAL, memoryUsageDumpInterval);
     }
 
+    public void setMaxBLOBSize(int maxBLOBSize)
+    {
+        storeIntValue(MAX_BLOB_SIZE, maxBLOBSize);
+    }
+
     public void setBLASTServerBaseURL(String blastServerBaseURL)
     {
         storeStringValue(BLAST_SERVER_BASE_URL_PROP, blastServerBaseURL);

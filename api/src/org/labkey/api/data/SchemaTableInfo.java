@@ -131,6 +131,11 @@ public class SchemaTableInfo implements TableInfo
         return _pkColumnNames;
     }
 
+    public void setPkColumnNames(List<String> pkColumnNames)
+    {
+        _pkColumnNames = pkColumnNames;
+        _pkColumns = null;
+    }
 
     public List<ColumnInfo> getPkColumns()
     {
@@ -229,7 +234,7 @@ public class SchemaTableInfo implements TableInfo
             _tableType = TABLE_TYPE_NOT_IN_DB;
     }
 
-    void setTableType(int tableType)
+    public void setTableType(int tableType)
     {
         _tableType = tableType;
     }
@@ -795,6 +800,11 @@ public class SchemaTableInfo implements TableInfo
         return _buttonBarConfig;
     }
 
+    public void setButtonBarConfig(ButtonBarConfig config)
+    {
+        _buttonBarConfig = config;
+    }
+    
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
     {
         ForeignKey fk = parent.getFk();

@@ -748,7 +748,6 @@ public class DataRegion extends DisplayElement
                 headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
             }
 
-            writeFilterHtml(ctx, out);
             List<DisplayColumn> renderers = getDisplayColumns();
 
             //determine number of HTML table columns...watch out for hidden display columns
@@ -2258,23 +2257,6 @@ public class DataRegion extends DisplayElement
     }
 
     private static String FILTER_WRITTEN_KEY = "DATAREGION_FILTER_WRITTEN";
-
-    public void writeFilterHtml(RenderContext ctx, Writer out) throws IOException
-    {
-        HttpServletRequest request = ctx.getRequest();
-
-        if (request.getAttribute(FILTER_WRITTEN_KEY) != null)
-            return;
-
-        ActionURL urlhelp = ctx.getViewContext().cloneActionURL();
-        // remove Ajax specific parameter
-        urlhelp.deleteParameter("_dc");
-
-        out.write("<script type=\"text/javascript\">\n");
-        out.write("LABKEY.requiresScript('DataRegion.js');\n");
-        out.write("</script>\n");
-        request.setAttribute(FILTER_WRITTEN_KEY, "true");
-    }
 
     /**
      * Render the data region. All rendering SHOULD go through this function

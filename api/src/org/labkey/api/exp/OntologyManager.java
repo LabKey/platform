@@ -779,7 +779,6 @@ public class OntologyManager
 			if (ownTransaction)
 			{
 				getExpSchema().getScope().commitTransaction();
-				ownTransaction = false;
 			}
         }
 		finally

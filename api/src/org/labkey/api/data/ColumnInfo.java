@@ -208,7 +208,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    protected void setAlias(String alias)
+    public void setAlias(String alias)
     {
         this.alias = alias;
     }

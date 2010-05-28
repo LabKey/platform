@@ -196,7 +196,7 @@ public class DbSchema
     boolean isStale()
     {
         assert _resourceRef != null;
-        return _resourceRef.isStale();
+        return _resourceRef.isStale() && _resourceRef.getResource().exists();
     }
 
     Resource getResource()
@@ -441,7 +441,7 @@ public class DbSchema
             m2 = (Map) DbCache.get(testTable, key);
             assertNull(m2);
 
-            //Does cache get cleard on insert
+            //Does cache get cleared on insert
             m.remove("RowId");
             m = Table.insert(ctx.getUser(), testTable, m);
             rowId = ((Integer) m.get("RowId"));

@@ -116,6 +116,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          * @static
          */
@@ -212,6 +213,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
          * @static
          */
         saveMaterials : function (config)
@@ -699,6 +701,7 @@ LABKEY.Exp.Data = function (config) {
     /**
      * Retrieves the contents of the data object from the server.
      * @param config An object that contains the following configuration parameters
+     * @param {object} config.scope An optional scoping object for the success and error callback functions (default to this).
      * @param {function} config.successCallback The function to call when the function finishes successfully.
      * This function will be called with the parameters:
      * <ul>

@@ -72,7 +72,8 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
-    private static final Cache _cache = new Cache(Integer.MAX_VALUE, Cache.DAY, "containers");
+    private static final Cache CACHE = new Cache(Integer.MAX_VALUE, Cache.DAY, "containers");
+    private static final Object DATABASE_QUERY_LOCK = new Object();
 
     // enum of properties you can see in property change events
     public enum Property
@@ -84,49 +85,13 @@ public class ContainerManager
         AttachmentDirectory,
         PipelineRoot
     }
-
-    private static Cache getCache()
-    {
-        return _cache;
-    }
-
-
+    
     static Path makePath(Container parent, String name)
     {
         if (null == parent)
             return new Path(name);
         return parent.getParsedPath().append(name, true);
     }
-
-
-    public static String getParentPath(String path)
-    {
-        path = removeTrailing(path, '/');
-
-        if ("".equals(path))
-            return null;    // Parent of root is null.
-
-        int slash = path.lastIndexOf('/');
-
-        //for the case where container name does not include preceding slash
-        if(slash == -1)
-            return "";
-
-        return path.substring(0, slash);
-    }
-
-
-    private static String removeTrailing(String s, char c)
-    {
-        int i = s.length() - 1;
-
-        //noinspection StatementWithEmptyBody
-        for (; i >= 0 && c == s.charAt(i); i--)
-            ;
-
-        return s.substring(0, i + 1);
-    }
-
 
     private static Container createRoot()
     {
@@ -387,16 +352,6 @@ public class ContainerManager
         return c;
     }
 
-
-    private static final String LOSTANDFOUND_CONTAINER_NAME = "_LostAndFound";
-
-    public static Container getLostAndFoundContainer()                                 
-    {
-        Container shared = getSharedContainer();
-        return ensureContainer(shared, LOSTANDFOUND_CONTAINER_NAME);
-    }
-
-
     public static List<Container> getChildren(Container parent)
     {
         return new ArrayList<Container>(getChildrenMap(parent).values());
@@ -452,9 +407,9 @@ public class ContainerManager
 
     static String[] emptyStringArray = new String[0];
 
-    public static synchronized Map<String, Container> getChildrenMap(Container parent)
+    public static Map<String, Container> getChildrenMap(Container parent)
     {
-        String[] childIds = (String[])getCache().get(_containerChildrenPrefix + parent.getId());
+        String[] childIds = (String[]) CACHE.get(_containerChildrenPrefix + parent.getId());
         if (null != childIds)
         {
             if (childIds == emptyStringArray)
@@ -469,33 +424,49 @@ public class ContainerManager
             assert null != (ret = Collections.unmodifiableMap(ret));
             return ret;
         }
-        
+
+        boolean startTransaction = !core.getSchema().getScope().isTransactionActive();
         try
         {
-            Container[] children = Table.executeQuery(core.getSchema(),
-                    "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                    new Object[]{parent.getId()},
-                    Container.class);
-            if (children.length == 0)
+            if (startTransaction)
             {
-                getCache().put(_containerChildrenPrefix + parent.getId(), emptyStringArray);
-                return Collections.emptyMap();
+                core.getSchema().getScope().beginTransaction();
             }
-            Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
-            childIds = new String[children.length];
-            for (int i=0 ; i<children.length ; i++)
+            synchronized (DATABASE_QUERY_LOCK)
             {
-                Container c = children[i];
-                childIds[i] = c.getId();
-                _addToCache(c);
-                ret.put(c.getName(),c);
+                Container[] children = Table.executeQuery(core.getSchema(),
+                        "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
+                        new Object[]{parent.getId()},
+                        Container.class);
+                if (children.length == 0)
+                {
+                    CACHE.put(_containerChildrenPrefix + parent.getId(), emptyStringArray);
+                    return Collections.emptyMap();
+                }
+                Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
+                childIds = new String[children.length];
+                for (int i=0 ; i<children.length ; i++)
+                {
+                    Container c = children[i];
+                    childIds[i] = c.getId();
+                    _addToCache(c);
+                    ret.put(c.getName(),c);
+                }
+                CACHE.put(_containerChildrenPrefix + parent.getId(), childIds);
+                // No need to commit, SELECT only
+                return ret;
             }
-            getCache().put(_containerChildrenPrefix + parent.getId(), childIds);
-            return ret;
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (startTransaction)
+            {
+                core.getSchema().getScope().closeConnection();
+            }
         }
     }
 
@@ -527,7 +498,7 @@ public class ContainerManager
     }
 
 
-    public static synchronized Container getForId(String id)
+    public static Container getForId(String id)
     {
         Container d = _getFromCacheId(id);
         if (null != d)
@@ -539,24 +510,40 @@ public class ContainerManager
         if(null != id && !GUID.isGUID(id))
             return null;
 
+        boolean startTransaction = !core.getSchema().getScope().isTransactionActive();
         try
         {
-            Container[] ret = Table.executeQuery(
-                    core.getSchema(),
-                    "SELECT * FROM " + core.getTableInfoContainers() + " WHERE EntityId = ?",
-                    new Object[]{id}, Container.class);
-            if (ret == null || ret.length == 0)
-                return null;
-            return _addToCache(ret[0]);
+            if (startTransaction)
+            {
+                core.getSchema().getScope().beginTransaction();
+            }
+            synchronized (DATABASE_QUERY_LOCK)
+            {
+                Container[] ret = Table.executeQuery(
+                        core.getSchema(),
+                        "SELECT * FROM " + core.getTableInfoContainers() + " WHERE EntityId = ?",
+                        new Object[]{id}, Container.class);
+                if (ret == null || ret.length == 0)
+                    return null;
+                // No need to commit, SELECT only
+                return _addToCache(ret[0]);
+            }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
+        finally
+        {
+            if (startTransaction)
+            {
+                core.getSchema().getScope().closeConnection();
+            }
+        }
     }
 
 
-    public static synchronized Container getChild(Container c, String name)
+    public static Container getChild(Container c, String name)
     {
         Path path = c.getParsedPath().append(name);
         
@@ -569,14 +556,14 @@ public class ContainerManager
     }
 
 
-    public static synchronized Container getForPath(String path)
+    public static Container getForPath(String path)
     {
         Path p = Path.parse(path);
         return getForPath(p);
     }
     
 
-    public static synchronized Container getForPath(Path path)
+    public static Container getForPath(Path path)
     {
         Container d = _getFromCachePath(path);
         if (null != d)
@@ -586,22 +573,41 @@ public class ContainerManager
         {
             if (path.equals(Path.rootPath))
             {
-                // Special case for ROOT.  Never return null -- either database error or corrupt database
-                Container[] ret = Table.executeQuery(core.getSchema(),
-                        "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent IS NULL",
-                        null, Container.class);
+                boolean startTransaction = !core.getSchema().getScope().isTransactionActive();
+                try
+                {
+                    if (startTransaction)
+                    {
+                        core.getSchema().getScope().beginTransaction();
+                    }
+                    synchronized (DATABASE_QUERY_LOCK)
+                    {
+                        // Special case for ROOT.  Never return null -- either database error or corrupt database
+                        Container[] ret = Table.executeQuery(core.getSchema(),
+                                "SELECT * FROM " + core.getTableInfoContainers() + " WHERE Parent IS NULL",
+                                null, Container.class);
 
-                if (null == ret || ret.length == 0)
-                    throw new RootContainerException("Root container does not exist");
+                        if (null == ret || ret.length == 0)
+                            throw new RootContainerException("Root container does not exist");
 
-                if (ret.length > 1)
-                    throw new RootContainerException("More than one root container was found");
+                        if (ret.length > 1)
+                            throw new RootContainerException("More than one root container was found");
 
-                if (null == ret[0])
-                    throw new RootContainerException("Root container is NULL");
+                        if (null == ret[0])
+                            throw new RootContainerException("Root container is NULL");
 
-                _addToCache(ret[0]);
-                return ret[0];
+                        _addToCache(ret[0]);
+                        // No need to commit, SELECT only
+                        return ret[0];
+                    }
+                }
+                finally
+                {
+                    if (startTransaction)
+                    {
+                        core.getSchema().getScope().closeConnection();
+                    }
+                }
             }
             else
             {
@@ -981,10 +987,9 @@ public class ContainerManager
         try
         {
             // Synchronize the transaction, but not the listeners -- see #9901
-            synchronized (ContainerManager.class)
+            core.getSchema().getScope().beginTransaction();
+            synchronized (DATABASE_QUERY_LOCK)
             {
-                core.getSchema().getScope().beginTransaction();
-
                 Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoContainers() + " SET Parent=? WHERE EntityId=?", new Object[]{newParent.getId(), c.getId()});
 
                 // this could be done in the trigger, but I prefer to put it in the transaction
@@ -1001,8 +1006,11 @@ public class ContainerManager
         }
         catch (SQLException e)
         {
-            core.getSchema().getScope().rollbackTransaction();
-            _log.error(e);
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            core.getSchema().getScope().closeConnection();
         }
 
         return changedProjects;
@@ -1011,25 +1019,45 @@ public class ContainerManager
 
     // Rename a container in the table.  Will fail if the new name already exists in the parent container.
     // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
-    public static synchronized void rename(Container c, String name)
+    public static void rename(Container c, String name)
     {
         name = StringUtils.trimToNull(name);
         if (null == name)
             throw new NullPointerException();
+        String oldName = c.getName();
+        if (oldName.equals(name))
+            return;
+
+        boolean startTransaction = !core.getSchema().getScope().isTransactionActive();
         try
         {
-            String oldName = c.getName();
-            if (oldName.equals(name))
-                return;
-            Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", new Object[]{name, c.getId()});
-            clearCache();  // Clear the entire cache, since containers cache their full paths
-            //Get new version since name has changed.
-            c = getForId(c.getId());
-            fireRenameContainer(c, oldName);
+            if (startTransaction)
+            {
+                core.getSchema().getScope().beginTransaction();
+            }
+            synchronized (DATABASE_QUERY_LOCK)
+            {
+                Table.execute(core.getSchema(), "UPDATE " + core.getTableInfoContainers() + " SET Name=? WHERE EntityId=?", new Object[]{name, c.getId()});
+                clearCache();  // Clear the entire cache, since containers cache their full paths
+                //Get new version since name has changed.
+                c = getForId(c.getId());
+                fireRenameContainer(c, oldName);
+            }
+            if (startTransaction)
+            {
+                core.getSchema().getScope().commitTransaction();
+            }
         }
         catch (SQLException e)
         {
-            _log.error(e);
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (startTransaction)
+            {
+                core.getSchema().getScope().closeConnection();
+            }
         }
     }
 
@@ -1053,20 +1081,23 @@ public class ContainerManager
         setChildOrder(orderedChildren, false);
     }
 
-    private static synchronized void setChildOrder(List<Container> siblings, boolean resetToAlphabetical)
+    private static void setChildOrder(List<Container> siblings, boolean resetToAlphabetical)
     {
         DbSchema schema = core.getSchema();
         try
         {
             schema.getScope().beginTransaction();
-            for (int index = 0; index < siblings.size(); index++)
+            synchronized (DATABASE_QUERY_LOCK)
             {
-                Container current = siblings.get(index);
-                Table.execute(schema, "UPDATE " + core.getTableInfoContainers() + " SET SortOrder = ? WHERE EntityId = ?",
-                        new Object[]{resetToAlphabetical ? 0 : index, current.getId()});
+                for (int index = 0; index < siblings.size(); index++)
+                {
+                    Container current = siblings.get(index);
+                    Table.execute(schema, "UPDATE " + core.getTableInfoContainers() + " SET SortOrder = ? WHERE EntityId = ?",
+                            new Object[]{resetToAlphabetical ? 0 : index, current.getId()});
+                }
+                schema.getScope().commitTransaction();
+                clearCache();  // Clear the entire cache, since container lists are cached in order
             }
-            schema.getScope().commitTransaction();
-            clearCache();  // Clear the entire cache, since container lists are cached in order
         }
         catch (SQLException e)
         {
@@ -1081,20 +1112,61 @@ public class ContainerManager
     }
 
     // Delete a container from the database.
-    // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
     public static boolean delete(Container c, User user)
     {
-        ResultSet rs = null;
-
+        boolean startTransaction = !core.getSchema().getScope().isTransactionActive();
         try
         {
-            // check to ensure no children exist
-            rs = Table.executeQuery(core.getSchema(), "SELECT EntityId FROM " + core.getTableInfoContainers() +
-                    " WHERE Parent = ?", new Object[]{c.getId()});
-            if (rs.next())
+            if (startTransaction)
             {
-                _removeFromCache(c);
-                return false;
+                core.getSchema().getScope().beginTransaction();
+            }
+            synchronized (DATABASE_QUERY_LOCK)
+            {
+                ResultSet rs = null;
+
+                try
+                {
+                    // check to ensure no children exist
+                    rs = Table.executeQuery(core.getSchema(), "SELECT EntityId FROM " + core.getTableInfoContainers() +
+                            " WHERE Parent = ?", new Object[]{c.getId()});
+                    if (rs.next())
+                    {
+                        _removeFromCache(c);
+                        return false;
+                    }
+                }
+                finally
+                {
+                   ResultSetUtil.close(rs);
+                }
+
+                List<Throwable> errors = fireDeleteContainer(c, user);
+
+                if (errors.size() != 0)
+                {
+                    Throwable first = errors.get(0);
+                    if (first instanceof RuntimeException)
+                        throw (RuntimeException)first;
+                    else
+                       throw new RuntimeException(first);
+                }
+
+                try
+                {
+                    Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoContainerAliases() + " WHERE ContainerId=?", new Object[]{c.getId()});
+                    Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoContainers() + " WHERE EntityId=?", new Object[]{c.getId()});
+                    // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
+                    SecurityManager.removeAll(c);
+                }
+                finally
+                {
+                    _removeFromCache(c);
+                }
+                if (startTransaction)
+                {
+                    core.getSchema().getScope().commitTransaction();
+                }
             }
         }
         catch (SQLException x)
@@ -1103,34 +1175,10 @@ public class ContainerManager
         }
         finally
         {
-           ResultSetUtil.close(rs);
-        }
-
-        List<Throwable> errors = fireDeleteContainer(c, user);
-
-        if (errors.size() != 0)
-        {
-            Throwable first = errors.get(0);
-            if (first instanceof RuntimeException)
-                throw (RuntimeException)first;
-            else
-               throw new RuntimeException(first);
-        }
-
-        try
-        {
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoContainerAliases() + " WHERE ContainerId=?", new Object[]{c.getId()});
-            Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoContainers() + " WHERE EntityId=?", new Object[]{c.getId()});
-            // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
-            SecurityManager.removeAll(c);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            _removeFromCache(c);
+            if (startTransaction)
+            {
+                core.getSchema().getScope().closeConnection();
+            }
         }
         return true;
     }
@@ -1167,28 +1215,26 @@ public class ContainerManager
     }
 
     
-    private static synchronized Container[] _getAllChildrenFromCache(Container c)
+    private static Container[] _getAllChildrenFromCache(Container c)
     {
-        return (Container[]) getCache().get(_containerAllChildrenPrefix + c.getId());
+        return (Container[]) CACHE.get(_containerAllChildrenPrefix + c.getId());
     }
 
     private static void _addAllChildrenToCache(Container c, Container[] children)
     {
-        assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
-                "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        getCache().put(_containerAllChildrenPrefix + c.getId(), children);
+        CACHE.put(_containerAllChildrenPrefix + c.getId(), children);
     }
 
 
-    private static synchronized Container _getFromCacheId(String id)
+    private static Container _getFromCacheId(String id)
     {
-        return (Container) getCache().get(_containerPrefix + id);
+        return (Container) CACHE.get(_containerPrefix + id);
     }
 
 
-    private static synchronized Container _getFromCachePath(Path path)
+    private static Container _getFromCachePath(Path path)
     {
-        return (Container) getCache().get(_containerPrefix + toString(path));
+        return (Container) CACHE.get(_containerPrefix + toString(path));
     }
 
 
@@ -1205,22 +1251,17 @@ public class ContainerManager
 
     private static Container _addToCache(Container c)
     {
-        assert Thread.holdsLock(ContainerManager.class) : "Any insertion into the cache must be synchronized at a " +
+        assert Thread.holdsLock(DATABASE_QUERY_LOCK) : "Any cache modifications must be synchronized at a " +
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
-        getCache().put(_containerPrefix + toString(c), c);
-        getCache().put(_containerPrefix + c.getId(), c);
+        CACHE.put(_containerPrefix + toString(c), c);
+        CACHE.put(_containerPrefix + c.getId(), c);
         return c;
     }
 
 
-    private static synchronized void _clearChildrenFromCache(Container c)
+    private static void _clearChildrenFromCache(Container c)
     {
-        Cache cache = getCache();
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-        synchronized (cache)
-        {
-            cache.remove(_containerChildrenPrefix + c.getId());
-        }
+        CACHE.remove(_containerChildrenPrefix + c.getId());
 
         // UNDONE: NavTreeManager should register a ContainerListener
         Container project = c.getProject();
@@ -1230,25 +1271,20 @@ public class ContainerManager
     }
 
 
-    private static synchronized void _removeFromCache(Container c)
+    private static void _removeFromCache(Container c)
     {
         Container project = c.getProject();
         Container parent = c.getParent();
 
-        Cache cache = getCache();
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
-        synchronized (cache)
-        {
-            cache.remove(_containerPrefix + toString(c));
-            cache.remove(_containerPrefix + c.getId());
-            cache.remove(_containerChildrenPrefix + c.getId());
+        CACHE.remove(_containerPrefix + toString(c));
+        CACHE.remove(_containerPrefix + c.getId());
+        CACHE.remove(_containerChildrenPrefix + c.getId());
 
-            if (null != parent)
-                cache.remove(_containerChildrenPrefix + parent.getId());
+        if (null != parent)
+            CACHE.remove(_containerChildrenPrefix + parent.getId());
 
-            // blow away the all children caches
-            cache.removeUsingPrefix(_containerChildrenPrefix);
-        }
+        // blow away the all children caches
+        CACHE.removeUsingPrefix(_containerChildrenPrefix);
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheTree(PROJECT_LIST_ID);
@@ -1257,9 +1293,9 @@ public class ContainerManager
     }
 
 
-    public static synchronized void clearCache()
+    public static void clearCache()
     {
-        getCache().clear();
+        CACHE.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -1279,7 +1315,7 @@ public class ContainerManager
 
 
     /** including root node */
-    public static synchronized Container[] getAllChildren(Container root)
+    public static Container[] getAllChildren(Container root)
     {
         Container[] allChildren = _getAllChildrenFromCache(root);
         if (allChildren != null)
@@ -1404,27 +1440,6 @@ public class ContainerManager
             }
         }
     }
-
-
-    @Deprecated
-    public static Set<Container> getContainerSet(MultiMap<Container, Container> mm, User user, int perm)
-    {
-        //noinspection unchecked
-        Collection<Container> containers = mm.values();
-        if (null == containers)
-            return new HashSet<Container>();
-
-        Set<Container> set = new HashSet<Container>(containers.size());
-
-        for (Container c : containers)
-        {
-            if (c.hasPermission(user, perm))
-                set.add(c);
-        }
-
-        return set;
-    }
-
 
     public static Set<Container> getContainerSet(MultiMap<Container, Container> mm, User user, Class<? extends Permission> perm)
     {

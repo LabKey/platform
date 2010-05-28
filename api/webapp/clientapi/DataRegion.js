@@ -3,11 +3,18 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
+/**
+ * @namespace The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
+ */
 if (!LABKEY.DataRegions)
 {
     LABKEY.DataRegions = {};
 }
 
+/**
+ * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
+ */
 LABKEY.DataRegion = function (config)
 {
     this.config = config || {};
@@ -74,6 +81,348 @@ LABKEY.DataRegion = function (config)
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
     LABKEY.DataRegion.superclass.constructor.call(this, config);
+
+    /**
+     * Changes the current row offset for paged content
+     * @param newoffset row index that should be at the top of the grid
+     */
+    this.setOffset = function (newoffset)
+    {
+        if (false === this.fireEvent("beforeoffsetchange", this, newoffset))
+            return;
+
+        this._setParam(".offset", newoffset, [".offset", ".showRows"]);
+    };
+
+    /**
+     * Changes the maximum number of rows that the grid will display at one time
+     * @param newmax the maximum number of rows to be shown
+     */
+    this.setMaxRows = function (newmax)
+    {
+        if (false === this.fireEvent("beforemaxrowschange", this, newmax))
+            return;
+
+        this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
+    };
+
+    /**
+     * Forces the grid to do paging based on the current maximum number of rows
+     */
+    this.showPaged = function ()
+    {
+        if (false === this.fireEvent("beforeshowrowschange", this, null))
+            return;
+
+        this._removeParams([".showRows"]);
+    };
+
+    /**
+     * Forces the grid to show all rows, without any paging
+     */
+    this.showAll = function ()
+    {
+        if (false === this.fireEvent("beforeshowrowschange", this, "all"))
+            return;
+
+        this._setParam(".showRows", "all", [".offset", ".maxRows", ".showRows"]);
+    };
+
+    /**
+     * Forces the grid to show only rows that have been selected
+     */
+    this.showSelected = function ()
+    {
+        if (false === this.fireEvent("beforeshowrowschange", this, "selected"))
+            return;
+
+        this._setParam(".showRows", "selected", [".offset", ".maxRows", ".showRows"]);
+    };
+
+    /**
+     * Forces the grid to show only rows that have not been selected
+     */
+    this.showUnselected = function ()
+    {
+        if (false === this.fireEvent("beforeshowrowschange", this, "unselected"))
+            return;
+
+        this._setParam(".showRows", "unselected", [".offset", ".maxRows", ".showRows"]);
+    };
+
+    /** Displays the first page of the grid */
+    this.pageFirst = function ()
+    {
+        this.setOffset(0);
+    };
+
+    this.selectRow = function (el)
+    {
+        this._setSelected([el.value], el.checked);
+        var toggle = this.form[".toggle"];
+        if (el.checked)
+        {
+            if (toggle && this.isPageSelected())
+                toggle.checked = true;
+            this.onSelectChange(true);
+        }
+        else
+        {
+            if (toggle)
+                toggle.checked = false;
+            this.hideMessage();
+            this.onSelectChange(this.hasSelected());
+        }
+    };
+
+    /**
+     * Get selected items on the current page.
+     * @see getSelected
+     */
+    this.getChecked = function ()
+    {
+        return getCheckedValues(this.form, '.select');
+    };
+
+    /**
+     * Get all selected items.
+     * <b>This is an experimental API and is subject to change with out warning.</b>
+     *
+     * @param config A configuration object with the following properties:
+     * @param {Function} config.successCallback The function to be called upon success of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Function} [config.errorCallback] The function to call upon error of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     */
+    this.getSelected = function (config)
+    {
+        if (!this.selectionKey)
+            return;
+
+        config = config || { };
+        config.selectionKey = this.selectionKey;
+        LABKEY.DataRegion.getSelected(config);
+    };
+
+    /**
+     * Set the selection state for all checkboxes on the current page of the data region.
+     * @param checked whether all of the rows on the current page should be selected or unselected
+     */
+    this.selectPage = function (checked)
+    {
+        var ids = this._setAllCheckboxes(checked, '.select');
+        if (ids.length > 0)
+        {
+            var toggle = this.form[".toggle"];
+            if (toggle)
+                toggle.checked = checked;
+            this.onSelectChange(checked);
+            this._setSelected(ids, checked, function (response, options) {
+                var count = 0;
+                try {
+                    var json = Ext.util.JSON.decode(response.responseText);
+                    if (json)
+                        count = json.count;
+                }
+                catch (e) {
+                    // ignore
+                }
+                if (count > 0)
+                {
+                    var msg;
+                    if (count == this.totalRows)
+                        msg = "Selected all " + this.totalRows + " rows.";
+                    else
+                        msg = "Selected " + count + " of " + this.totalRows + " rows.";
+                    this._showSelectMessage(msg);
+                }
+                else
+                {
+                    this.hideMessage();
+                }
+            });
+        }
+        return ids;
+    };
+
+    /** Returns true if any row is checked on this page. */
+    this.hasSelected = function ()
+    {
+        if (!this.form)
+            return false;
+        var len = this.form.length;
+        for (var i = 0; i < len; i++)
+        {
+            var e = this.form[i];
+            if (e.type == 'checkbox' && e.name != ".toggle")
+            {
+                if (e.checked)
+                    return true;
+            }
+        }
+        return false;
+    };
+
+    /** Returns true if all rows are checked on this page and at least one row is present on the page. */
+    this.isPageSelected = function ()
+    {
+        if (!this.form)
+            return false;
+        var len = this.form.length;
+        var hasCheckbox = false;
+        for (var i = 0; i < len; i++)
+        {
+            var e = this.form[i];
+            if (e.type == 'checkbox' && e.name != ".toggle")
+            {
+                hasCheckbox = true;
+                if (!e.checked)
+                    return false;
+            }
+        }
+        return hasCheckbox;
+    };
+
+    this.selectNone = function (config)
+    {
+        return this.clearSelected(config);
+    };
+
+    /**
+     * Clear all selected items.
+     * <b>This is an experimental API and is subject to change with out warning.</b>
+     *
+     * @param config A configuration object with the following properties:
+     * @param {Function} config.successCallback The function to be called upon success of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Function} [config.errorCallback] The function to call upon error of the request.
+     * The callback will be passed the following parameters:
+     * <ul>
+     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+     * <li><b>response:</b> The XMLHttpResponse object</li>
+     * </ul>
+     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     */
+    this.clearSelected = function (config)
+    {
+        if (!this.selectionKey)
+            return;
+
+        this.onSelectChange(false);
+
+        config = config || { };
+        config.selectionKey = this.selectionKey;
+        LABKEY.DataRegion.clearSelected(config);
+
+        if (this.showRows == "selected")
+        {
+            this._removeParams([".showRows"]);
+        }
+        else if (this.showRows == "unselected")
+        {
+            // keep ".showRows=unselected" parameter
+            window.location.reload(true);
+        }
+        else
+        {
+            this._setAllCheckboxes(false);
+            this.hideMessage();
+        }
+    };
+
+    /**
+     * Removes all the filters for a particular field
+     * @param fieldName the name of the field from which all filters should be removed
+     */
+    this.clearFilter = function (fieldName)
+    {
+        if (false === this.fireEvent("beforeclearfilter", this, fieldName))
+            return;
+        this._removeParams(["." + fieldName + "~", ".offset"]);
+    };
+
+    /** Removes all filters from the DataRegion */
+    this.clearAllFilters = function ()
+    {
+        if (false === this.fireEvent("beforeclearallfilters", this))
+            return;
+        this._removeParams([".", ".offset"]);
+    };
+
+    /**
+     * Show a message in the header of this DataRegion.
+     * @param html the HTML source of the message to be shown
+     */
+    this.showMessage = function (html)
+    {
+        var span = this.msgbox.dom.getElementsByTagName("span")[0];
+        span.innerHTML = html;
+        this.msgbox.setVisible(true);
+    };
+
+    /** Returns true if a message is currently being shown for this DataRegion. Messages are shown as a header. */
+    this.isMessageShowing = function()
+    {
+        return this.msgbox.isVisible();
+    };
+
+    /** If a message is currently showing, hide it and clear out its contents */
+    this.hideMessage = function ()
+    {
+        this.msgbox.setVisible(false, false);
+        var span = this.msgbox.dom.getElementsByTagName("span")[0];
+        span.innerHTML = "";
+    };
+
+    this.alterSortString = function(currentSortString, columnName, direction)
+    {
+        var newSortArray = [];
+
+        if (currentSortString != null)
+        {
+            var sortArray = currentSortString.split(",");
+            for (var j = 0; j < sortArray.length; j++)
+            {
+                if (sortArray[j] != columnName && sortArray[j] != "+" + columnName && sortArray[j] != "-" + columnName)
+                    newSortArray.push(sortArray[j]);
+            }
+        }
+
+        if (direction == "+") //Easier to read without the encoded + on the URL...
+            direction = "";
+
+        if (null !== direction)
+            newSortArray = [direction + columnName].concat(newSortArray);
+
+        return newSortArray.join(",");
+    };
+
+    /**
+     * Change the currently selected view to the named view
+     * @param viewName the name of the saved view to display
+     */
+    this.changeView = function(viewName)
+    {
+        if (false === this.fireEvent("beforechangeview", this, viewName))
+            return;
+
+        this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName", ".reportId"]);
+    };
 
     this._initElements();
     Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
@@ -278,303 +627,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.fireEvent('selectchange', this, hasSelected);
     },
 
-    setOffset : function (newoffset)
+    onButtonClick : function(buttonId)
     {
-        if (false === this.fireEvent("beforeoffsetchange", this, newoffset))
-            return;
-        
-        this._setParam(".offset", newoffset, [".offset", ".showRows"]);
-    },
-
-    setMaxRows : function (newmax)
-    {
-        if (false === this.fireEvent("beforemaxrowschange", this, newmax))
-            return;
-        
-        this._setParam(".maxRows", newmax, [".offset", ".maxRows", ".showRows"]);
-    },
-
-    showPaged : function ()
-    {
-        if (false === this.fireEvent("beforeshowrowschange", this, null))
-            return;
-
-        this._removeParams([".showRows"]);
-    },
-
-    showAll : function ()
-    {
-        if (false === this.fireEvent("beforeshowrowschange", this, "all"))
-            return;
-        
-        this._setParam(".showRows", "all", [".offset", ".maxRows", ".showRows"]);
-    },
-
-    showSelected : function ()
-    {
-        if (false === this.fireEvent("beforeshowrowschange", this, "selected"))
-            return;
-
-        this._setParam(".showRows", "selected", [".offset", ".maxRows", ".showRows"]);
-    },
-
-    showUnselected : function ()
-    {
-        if (false === this.fireEvent("beforeshowrowschange", this, "unselected"))
-            return;
-
-        this._setParam(".showRows", "unselected", [".offset", ".maxRows", ".showRows"]);
-    },
-
-    pageFirst : function ()
-    {
-        this.setOffset(0);
-    },
-
-    pageLast : function ()
-    {
-//        if (!(this.totalRows == undefined) && this.maxRows > 0)
-//        {
-//            var remaining = this.totalRows - this.offset;
-//            var lastPageSize = this.totalRows % this.maxRows;
-//            if (lastPageSize == 0)
-//                lastPageSize = this.maxRows;
-//            var lastPageOffset = this.totalRows - lastPageSize;
-//            this.setOffset(lastPageSize);
-//        }
-    },
-
-    pageNext : function ()
-    {
-
-    },
-
-    pagePrev : function ()
-    {
-
-    },
-
-    selectRow : function (el)
-    {
-        this._setSelected([el.value], el.checked);
-        var toggle = this.form[".toggle"];
-        if (el.checked)
-        {
-            if (toggle && this.isPageSelected())
-                toggle.checked = true;
-            this.onSelectChange(true);
-        }
-        else
-        {
-            if (toggle)
-                toggle.checked = false;
-            this.hideMessage();
-            this.onSelectChange(this.hasSelected());
-        }
-    },
-
-    /**
-     * Get selected items on the current page.
-     * @see getSelected
-     */
-    getChecked : function ()
-    {
-        return getCheckedValues(this.form, '.select');
-    },
-
-    /**
-     * Get all selected items.
-     * <b>This is an experimental API and is subject to change with out warning.</b>
-     *
-     * @param config A configuration object with the following properties:
-     * @param {Function} config.successCallback The function to be called upon success of the request.
-     * The callback will be passed the following parameters:
-     * <ul>
-     * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     * @param {Function} [config.errorCallback] The function to call upon error of the request.
-     * The callback will be passed the following parameters:
-     * <ul>
-     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
-     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
-     */
-    getSelected : function (config)
-    {
-        if (!this.selectionKey)
-            return;
-
-        config = config || { };
-        config.selectionKey = this.selectionKey;
-        LABKEY.DataRegion.getSelected(config);
-    },
-
-    /** Select all checkboxes on in the current page of the data region. */
-    selectPage : function (checked)
-    {
-        var ids = this._setAllCheckboxes(checked, '.select');
-        if (ids.length > 0)
-        {
-            var toggle = this.form[".toggle"];
-            if (toggle)
-                toggle.checked = checked;
-            this.onSelectChange(checked);
-            this._setSelected(ids, checked, function (response, options) {
-                var count = 0;
-                try {
-                    var json = Ext.util.JSON.decode(response.responseText);
-                    if (json)
-                        count = json.count;
-                }
-                catch (e) {
-                    // ignore
-                }
-                if (count > 0)
-                {
-                    var msg;
-                    if (count == this.totalRows)
-                        msg = "Selected all " + this.totalRows + " rows.";
-                    else
-                        msg = "Selected " + count + " of " + this.totalRows + " rows.";
-                    this._showSelectMessage(msg);
-                }
-                else
-                {
-                    this.hideMessage();
-                }
-            });
-        }
-        return ids;
-    },
-
-    /** Returns true if any row is checked on this page. */
-    hasSelected : function ()
-    {
-        if (!this.form)
-            return false;
-        var len = this.form.length;
-        for (var i = 0; i < len; i++)
-        {
-            var e = this.form[i];
-            if (e.type == 'checkbox' && e.name != ".toggle")
-            {
-                if (e.checked)
-                    return true;
-            }
-        }
-        return false;
-    },
-
-    /** Returns true if all rows are checked on this page and at least one row is present on the page. */
-    isPageSelected : function ()
-    {
-        if (!this.form)
-            return false;
-        var len = this.form.length;
-        var hasCheckbox = false;
-        for (var i = 0; i < len; i++)
-        {
-            var e = this.form[i];
-            if (e.type == 'checkbox' && e.name != ".toggle")
-            {
-                hasCheckbox = true;
-                if (!e.checked)
-                    return false;
-            }
-        }
-        return hasCheckbox;
-    },
-
-    selectAll : function ()
-    {
-    },
-
-    selectNone : function (config)
-    {
-        return this.clearSelected(config);
-    },
-
-    /**
-     * Clear all selected items.
-     * <b>This is an experimental API and is subject to change with out warning.</b>
-     *
-     * @param config A configuration object with the following properties:
-     * @param {Function} config.successCallback The function to be called upon success of the request.
-     * The callback will be passed the following parameters:
-     * <ul>
-     * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     * @param {Function} [config.errorCallback] The function to call upon error of the request.
-     * The callback will be passed the following parameters:
-     * <ul>
-     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
-     * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
-     */
-    clearSelected : function (config)
-    {
-        if (!this.selectionKey)
-            return;
-
-        this.onSelectChange(false);
-
-        config = config || { };
-        config.selectionKey = this.selectionKey;
-        LABKEY.DataRegion.clearSelected(config);
-
-        if (this.showRows == "selected")
-        {
-            this._removeParams([".showRows"]);
-        }
-        else if (this.showRows == "unselected")
-        {
-            // keep ".showRows=unselected" parameter
-            window.location.reload(true);
-        }
-        else
-        {
-            this._setAllCheckboxes(false);
-            this.hideMessage();
-        }
-    },
-
-    clearFilter : function (fieldName)
-    {
-        if (false === this.fireEvent("beforeclearfilter", this, fieldName))
-            return;
-        this._removeParams(["." + fieldName + "~", ".offset"]);
-    },
-
-    clearAllFilters : function ()
-    {
-        if (false === this.fireEvent("beforeclearallfilters", this))
-            return;
-        this._removeParams([".", ".offset"]);
-    },
-
-    showMessage : function (html)
-    {
-        var span = this.msgbox.dom.getElementsByTagName("span")[0];
-        span.innerHTML = html;
-        this.msgbox.setVisible(true);
-    },
-
-    isMessageShowing : function()
-    {
-        return this.msgbox.isVisible();
-    },
-
-    hideMessage : function ()
-    {
-        this.msgbox.setVisible(false, false);
-        var span = this.msgbox.dom.getElementsByTagName("span")[0];
-        span.innerHTML = "";
+        return this.fireEvent("buttonclick", buttonId, this);
     },
 
     /**
@@ -663,44 +718,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 callback.call(this);
             }
         }
-    },
-
-    alterSortString : function(currentSortString, columnName, direction)
-    {
-        var newSortArray = [];
-
-        if (currentSortString != null)
-        {
-            var sortArray = currentSortString.split(",");
-            for (var j = 0; j < sortArray.length; j++)
-            {
-                if (sortArray[j] != columnName && sortArray[j] != "+" + columnName && sortArray[j] != "-" + columnName)
-                    newSortArray.push(sortArray[j]);
-            }
-        }
-
-        if (direction == "+") //Easier to read without the encoded + on the URL...
-            direction = "";
-
-        if (null !== direction)
-            newSortArray = [direction + columnName].concat(newSortArray);
-        
-        return newSortArray.join(",");
-    },
-
-    changeView : function(viewName)
-    {
-        if (false === this.fireEvent("beforechangeview", this, viewName))
-            return;
-        
-        this._setParam(".viewName", viewName, [".offset", ".showRows", ".viewName", ".reportId"]);
-    },
-
-    onButtonClick : function(buttonId)
-    {
-        return this.fireEvent("buttonclick", buttonId, this);
     }
-
 });
 
 

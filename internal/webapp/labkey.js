@@ -204,6 +204,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/ActionURL.js", immediate);
         LABKEY.requiresScript("clientapi/Assay.js", immediate);
         LABKEY.requiresScript("clientapi/Chart.js", immediate);
+        LABKEY.requiresScript("clientapi/DataRegion.js", immediate);
         LABKEY.requiresScript("clientapi/Domain.js", immediate);
         LABKEY.requiresScript("clientapi/Experiment.js", immediate);
         LABKEY.requiresScript("clientapi/LongTextEditor.js", immediate);
@@ -231,7 +232,6 @@ LABKEY.requiresClientAPI = function(immediate)
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
-    LABKEY.requiresScript('DataRegion.js', immediate);
 };
 
 

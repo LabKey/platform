@@ -502,7 +502,16 @@ public class FileSystemResource extends AbstractWebdavResource
                         if (run.getContainer().hasPermission(user, ReadPermission.class))
                         {
                             String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
-                            result.add(new NavTree(run.getProtocol().getName(), runURL));
+                            String actionName;
+                            if (!run.getName().equals(data.getName()))
+                            {
+                                actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
+                            }
+                            else
+                            {
+                                actionName = run.getProtocol().getName();
+                            }
+                            result.add(new NavTree(actionName, runURL));
                         }
                     }
                     return result;

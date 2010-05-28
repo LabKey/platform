@@ -23,7 +23,7 @@ import java.util.HashSet;
 /**
  * Base-class for resource references. This class provides
  * some basic functionality, such as tracking if this instance is stale compared
- * to the resource and it's dependencies and tries to not hit the file-system
+ * to the resource and its dependencies and tries to not hit the file-system
  * too frequently by using the HeartBeat.
  */
 public class ResourceRef

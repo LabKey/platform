@@ -80,6 +80,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String CABIG_ENABLED = "caBIGEnabled";
     protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     protected static final String WEB_ROOT = "webRoot";
+    protected static final String MAX_BLOB_SIZE = "maxBLOBSize";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
 
@@ -335,6 +336,11 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public int getMemoryUsageDumpInterval()
     {
         return lookupIntValue(MEMORY_USAGE_DUMP_INTERVAL, 0);
+    }
+
+    public int getMaxBLOBSize()
+    {
+        return lookupIntValue(MAX_BLOB_SIZE, 50000000);
     }
 
     public ExceptionReportingLevel getExceptionReportingLevel()

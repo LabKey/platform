@@ -1610,6 +1610,7 @@ public class PageFlowUtil
         "clientapi/ActionURL.js",
         "clientapi/Assay.js",
         "clientapi/Chart.js",
+        "clientapi/DataRegion.js",
         "clientapi/Domain.js",
         "clientapi/Experiment.js",
         "clientapi/LongTextEditor.js",
@@ -1689,7 +1690,6 @@ public class PageFlowUtil
             scripts.add(AppProps.getInstance().isDevMode() ? clientDebug : clientMin);
         included.add(clientDebug);
         included.add(clientMin);
-        scripts.add("DataRegion.js");
 
         included.addAll(scripts);
     }
