@@ -616,6 +616,7 @@ experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
 experiment/resources/schemas/dbscripts/postgresql/exp-0.00-2.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-10.10-10.11.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-10.11-10.12.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-2.30-8.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-8.10-8.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-8.20-8.30.sql -text
@@ -710,6 +711,7 @@ experiment/resources/schemas/dbscripts/postgresql/obsolete/exp_drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/findOrphans.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-0.00-2.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-10.10-10.11.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-10.11-10.12.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-2.30-8.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-8.10-8.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-8.20-8.30.sql -text
