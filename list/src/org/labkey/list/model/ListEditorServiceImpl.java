@@ -263,6 +263,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             domain = _getDomainDescriptor(def);
         }
 
+        domain.setAllowAttachmentProperties(true);
         return domain;
     }
     
