@@ -17,9 +17,11 @@
 package gwt.client.org.labkey.study.chart.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import gwt.client.org.labkey.study.chart.client.model.GWTPair;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +31,6 @@ import java.util.Map;
  */
 public interface StudyChartServiceAsync extends ChartServiceAsync
 {
-    void getStudyDatasets(AsyncCallback async);
+    void getStudyDatasets(AsyncCallback<List<GWTPair>> async);
     void saveCharts(GWTChart[] charts, Map properties, AsyncCallback async);
 }

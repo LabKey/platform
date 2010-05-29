@@ -88,10 +88,6 @@
         <tr><td colspan="2"><%=logoHtml%></td></tr>
         <tr><td colspan=2>&nbsp;</td></tr><%
         } %>
-        <% if (ModuleLoader.getInstance().isUpgradeRequired() || ModuleLoader.getInstance().isUpgradeInProgress()) { %>
-            <tr><td colspan=2>This server is being upgraded to a new version of LabKey Server.</td></tr>
-            <tr><td colspan=2>&nbsp;</td></tr>
-        <% } %>
         <tr><td colspan=2>Type in your email address and password and click the Sign In button.</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:200px;"></td></tr>

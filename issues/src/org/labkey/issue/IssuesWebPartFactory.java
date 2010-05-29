@@ -28,12 +28,13 @@ class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public IssuesWebPartFactory()
     {
-        this(IssuesModule.NAME, null);
+        this("Issues Summary", null);
     }
 
     public IssuesWebPartFactory(String name, String location)
     {
         super(name, location, true, false);
+        addLegacyNames(IssuesModule.NAME);
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

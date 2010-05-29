@@ -16,11 +16,14 @@
 
 package gwt.client.org.labkey.study.designer.client;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDesignVersion;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.ui.WindowUtil;
@@ -179,28 +182,21 @@ public class OverviewPanel extends Composite
             }
 
             layout.setText(layoutRow, 3, definition.getRevision() + " (Loading List)");
-            designer.getService().getVersions(definition.getCavdStudyId(), new AsyncCallback()
+            designer.getService().getVersions(definition.getCavdStudyId(), new ErrorDialogAsyncCallback<GWTStudyDesignVersion[]>("Error occurred getting revisions")
             {
-                public void onFailure(Throwable caught)
+                public void onSuccess(GWTStudyDesignVersion[] versions)
                 {
-                    Window.alert("Error occurred getting revisions: " + caught.getMessage());
-                }
-
-                public void onSuccess(Object result)
-                {
-                    GWTStudyDesignVersion[] versions = (GWTStudyDesignVersion[]) result;
                     final ListBox revisionList = new ListBox();
-                    for (int i = 0; i < versions.length; i++)
+                    for (GWTStudyDesignVersion version : versions)
                     {
-                        GWTStudyDesignVersion version = versions[i];
                         String title = version.getRevision() + ": " + version.getWriterName() + " " + version.getCreated();
                         revisionList.addItem(title, Integer.toString(version.getRevision()));
                         if (version.getRevision() == definition.getRevision())
                             revisionList.setItemSelected(revisionList.getItemCount() - 1, true);
                     }
-                    revisionList.addChangeListener(new ChangeListener()
+                    revisionList.addChangeHandler(new ChangeHandler()
                     {
-                        public void onChange(Widget sender)
+                        public void onChange(ChangeEvent e)
                         {
                             if (designer.isDirty())
                                 if (!Window.confirm("Viewing another revision will discard changes. Continue?"))

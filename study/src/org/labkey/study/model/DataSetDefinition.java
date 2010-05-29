@@ -1110,13 +1110,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
             Table.delete(data, filter);
 
-            TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
-            if (tempTableInfo != null)
-            {
-                SimpleFilter tempTableFilter = new SimpleFilter();
-                tempTableFilter.addInClause("LSID", rowLSIDs);
-                Table.delete(tempTableInfo, tempTableFilter);
-            }
+            deleteFromMaterialized(user, rowLSIDs);
 
             if (startTransaction)
                 scope.commitTransaction();
@@ -1131,6 +1125,17 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             if (startTransaction)
                 scope.closeConnection();
+        }
+    }
+
+    public void deleteFromMaterialized(User user, Collection<String> lsids) throws SQLException
+    {
+        TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+        if (tempTableInfo != null)
+        {
+            SimpleFilter tempTableFilter = new SimpleFilter();
+            tempTableFilter.addInClause("LSID", lsids);
+            Table.delete(tempTableInfo, tempTableFilter);
         }
     }
 
@@ -1441,21 +1446,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             helper = new DatasetImportHelper(user, scope.getConnection(), c, this, lastModified);
             List<String> imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, ensureObjects, logger);
 
-            TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
-            if (tempTableInfo != null)
-            {
-                // Update the materialized temp table if it's still around
-                SimpleFilter tempTableFilter = new SimpleFilter();
-                tempTableFilter.addInClause("LSID", imported);
-                SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
-                SQLFragment sqlSelectInto = new SQLFragment();
-                sqlSelectInto.append("INSERT INTO ").append(tempTableInfo).append(" SELECT * FROM (");
-                sqlSelectInto.append(sqlSelect);
-                sqlSelectInto.append(") x ");
-                sqlSelectInto.append(tempTableFilter.getSQLFragment(tempTableInfo.getSqlDialect()));
-
-                Table.execute(tempTableInfo.getSchema(), sqlSelectInto);
-            }
+            insertIntoMaterialized(user, imported);
 
             if (startedTransaction)
             {
@@ -1481,6 +1472,28 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 scope.closeConnection();
             }
+        }
+    }
+
+
+
+    public void insertIntoMaterialized(User user, Collection<String> lsids)
+            throws SQLException
+    {
+        TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+        if (tempTableInfo != null)
+        {
+            // Update the materialized temp table if it's still around
+            SimpleFilter tempTableFilter = new SimpleFilter();
+            tempTableFilter.addInClause("LSID", lsids);
+            SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
+            SQLFragment sqlSelectInto = new SQLFragment();
+            sqlSelectInto.append("INSERT INTO ").append(tempTableInfo).append(" SELECT * FROM (");
+            sqlSelectInto.append(sqlSelect);
+            sqlSelectInto.append(") x ");
+            sqlSelectInto.append(tempTableFilter.getSQLFragment(tempTableInfo.getSqlDialect()));
+
+            Table.execute(tempTableInfo.getSchema(), sqlSelectInto);
         }
     }
 

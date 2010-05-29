@@ -18,6 +18,8 @@ package gwt.client.org.labkey.study.dataset.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
@@ -30,6 +32,7 @@ import gwt.client.org.labkey.study.StudyApplication;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
@@ -258,10 +261,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             return;
         }
 
-        AsyncCallback<List<String>> callback = new AsyncCallback<List<String>>() {
-            public void onFailure(Throwable caught)
+        AsyncCallback<List<String>> callback = new ErrorDialogAsyncCallback<List<String>>() {
+            public void handleFailure(String message, Throwable caught)
             {
-                Window.alert(caught.getMessage());
                 _saveButton.setEnabled(true);
             }
 
@@ -339,12 +341,11 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
     void asyncGetDataset(int id)
     {
-        getService().getDataset(id, new AsyncCallback<GWTDataset>()
+        getService().getDataset(id, new ErrorDialogAsyncCallback<GWTDataset>()
         {
-                public void onFailure(Throwable caught)
+                public void handleFailure(String message, Throwable caught)
                 {
-                    Window.alert(caught.getMessage());
-                    _loading.setText("ERROR: " + caught.getMessage());
+                    _loading.setText("ERROR: " + message);
                 }
 
                 public void onSuccess(GWTDataset result)
@@ -363,11 +364,10 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
     {
         if (!domainURI.equals("testURI#TYPE"))
         {
-            getService().getDomainDescriptor(domainURI, new AsyncCallback<GWTDomain>()
+            getService().getDomainDescriptor(domainURI, new ErrorDialogAsyncCallback<GWTDomain>()
             {
-                    public void onFailure(Throwable caught)
+                    public void handleFailure(String message, Throwable caught)
                     {
-                        Window.alert(caught.getMessage());
                         _loading.setText("ERROR: " + caught.getMessage());
                     }
 
@@ -846,9 +846,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
 
             // Listen to the list of properties
-            _propTable.addChangeListener(new ChangeListener()
+            _propTable.addChangeHandler(new ChangeHandler()
             {
-                public void onChange(Widget sender)
+                public void onChange(ChangeEvent e)
                 {
                     resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
                 }

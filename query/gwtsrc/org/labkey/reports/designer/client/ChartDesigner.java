@@ -18,6 +18,8 @@ package org.labkey.reports.designer.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
@@ -119,15 +121,15 @@ public class ChartDesigner extends AbstractChartPanel implements EntryPoint
 
     protected boolean validate()
     {
-        List errors = new ArrayList();
+        List<String> errors = new ArrayList<String>();
 
         _chart.validate(errors);
 
         if (!errors.isEmpty())
         {
             String s = "";
-            for (int i=0 ; i<errors.size() ; i++)
-                s += errors.get(i) + "\n";
+            for (String error : errors)
+                s += error + "\n";
             Window.alert(s);
             return false;
         }
@@ -239,9 +241,9 @@ public class ChartDesigner extends AbstractChartPanel implements EntryPoint
             }
 
             ImageButton save = new ImageButton("OK");
-            save.addClickListener(new ClickListener()
+            save.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     if (_chart.getReportName() == null || _chart.getReportName().length() == 0)
                     {
@@ -249,17 +251,16 @@ public class ChartDesigner extends AbstractChartPanel implements EntryPoint
                     }
                     else
                     {
-                        getService().saveChart(_chart, new AsyncCallback()
+                        getService().saveChart(_chart, new AsyncCallback<String>()
                         {
                             public void onFailure(Throwable caught)
                             {
                                 Window.alert(caught.getMessage());
                             }
 
-                            public void onSuccess(Object result)
+                            public void onSuccess(String result)
                             {
-                                if (result instanceof String)
-                                    _returnURL = (String)result;
+                                    _returnURL = result;
 
                                 cancelForm();
                             }
@@ -269,9 +270,9 @@ public class ChartDesigner extends AbstractChartPanel implements EntryPoint
             });
 
             ImageButton cancel = new ImageButton("Cancel");
-            cancel.addClickListener(new ClickListener()
+            cancel.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     SaveDialog.this.hide();
                 }

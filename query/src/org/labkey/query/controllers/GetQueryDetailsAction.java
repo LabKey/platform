@@ -16,6 +16,7 @@
 package org.labkey.query.controllers;
 
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.*;
@@ -24,7 +25,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
-import org.labkey.query.persist.QueryDef;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -176,6 +176,13 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         props.put("isReadOnly", cinfo.isReadOnly());
         props.put("isUserEditable", cinfo.isUserEditable());
         props.put("isVersionField", cinfo.isVersionColumn());
+        props.put("isShownInInsertView", cinfo.isShownInInsertView());
+        props.put("isShownInUpdateView", cinfo.isShownInUpdateView());
+        props.put("isShownInDetailsView", cinfo.isShownInDetailsView());
+        if (!cinfo.getImportAliasesSet().isEmpty())
+        {
+            props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasesSet()));
+        }
         props.put("isSelectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
 
         DisplayColumn dc = cinfo.getRenderer();
@@ -184,41 +191,12 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             props.put("caption", dc.getCaption());
         }
 
-        ForeignKey fk = cinfo.getFk();
-        //lookup info
-        if (null != fk
-                && null != cinfo.getFkTableInfo()
-                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(cinfo))))
+        Map<String, Object> lookupJSON = ApiQueryResponse.getLookupJSON(cinfo);
+        if (lookupJSON != null)
         {
-            TableInfo lookupTable = cinfo.getFkTableInfo();
-
-            Map<String,Object> lookupInfo = new HashMap<String,Object>();
-            if (null != fk.getLookupContainerId())
-            {
-                Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
-                if (null != fkContainer)
-                    lookupInfo.put("containerPath", fkContainer.getPath());
-            }
-
-            boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
-            lookupInfo.put("isPublic", isPublic);
-            if (isPublic)
-            {
-                lookupInfo.put("queryName", lookupTable.getPublicName());
-                lookupInfo.put("schemaName", lookupTable.getPublicSchemaName());
-            }
-            else
-            {
-                lookupInfo.put("queryName", lookupTable.getName());
-                lookupInfo.put("schemaName", lookupTable.getSchema().getName());
-
-            }
-            lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
-            if (lookupTable.getPkColumns().size() > 0)
-                lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
-
-            props.put("lookup", lookupInfo);
+            props.put("lookup", lookupJSON);
         }
+
         return props;
     }
 

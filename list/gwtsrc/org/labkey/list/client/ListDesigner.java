@@ -34,10 +34,7 @@ import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.ui.domain.DomainImporter;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterServiceAsync;
-import org.labkey.api.gwt.client.util.BooleanProperty;
-import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.ServiceUtil;
-import org.labkey.api.gwt.client.util.StringProperty;
+import org.labkey.api.gwt.client.util.*;
 
 import java.util.*;
 
@@ -216,12 +213,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                     if (null != _list && !isEmpty(_list.getName()))
                     {
                         _log("Create List clicked");
-                        _service.createList(_list, new AsyncCallback<GWTList>(){
-                            public void onFailure(Throwable caught)
-                            {
-                                Window.alert(caught.getMessage());
-                            }
-
+                        _service.createList(_list, new ErrorDialogAsyncCallback<GWTList>(){
                             public void onSuccess(GWTList result)
                             {
                                 _log("Create List onSuccess");
@@ -484,10 +476,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             return;
         }
 
-        AsyncCallback<List<String>> callback = new AsyncCallback<List<String>>() {
-            public void onFailure(Throwable caught)
+        AsyncCallback<List<String>> callback = new ErrorDialogAsyncCallback<List<String>>() {
+            public void handleFailure(String message, Throwable caught)
             {
-                Window.alert(caught.getMessage());
                 _saveButton.setEnabled(true);
             }
 
@@ -600,11 +591,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     void asyncGetListNames()
     {
-        _service.getListNames(new AsyncCallback<List<String>>(){
-            public void onFailure(Throwable caught)
-            {
-            }
-
+        _service.getListNames(new ErrorDialogAsyncCallback<List<String>>(){
             public void onSuccess(List<String> result)
             {
                 _listNames.addAll(result);
@@ -619,12 +606,11 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         setDirty(false);
         _list = null;
         _domain = null;
-        getService().getList(id, new AsyncCallback<GWTList>()
+        getService().getList(id, new ErrorDialogAsyncCallback<GWTList>()
         {
-                public void onFailure(Throwable caught)
+                public void handleFailure(String message, Throwable caught)
                 {
-                    Window.alert(caught.getMessage());
-                    _loading.setText("ERROR: " + caught.getMessage());
+                    _loading.setText("ERROR: " + message);
                 }
 
                 public void onSuccess(GWTList result)
@@ -643,12 +629,11 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         _propTable.setReadOnly(_readonly);
         
-        getService().getDomainDescriptor(_list, new AsyncCallback<GWTDomain>()
+        getService().getDomainDescriptor(_list, new ErrorDialogAsyncCallback<GWTDomain>()
         {
-            public void onFailure(Throwable caught)
+            public void handleFailure(String message, Throwable caught)
             {
-                Window.alert(caught.getMessage());
-                _loading.setText("ERROR: " + caught.getMessage());
+                _loading.setText("ERROR: " + message);
             }
 
             public void onSuccess(GWTDomain result)

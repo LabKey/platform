@@ -895,6 +895,9 @@ public class StudyManager
 
             Table.execute(StudySchema.getInstance().getSchema(), sql);
 
+            def.deleteFromMaterialized(user, updateLsids);
+            def.insertIntoMaterialized(user, updateLsids);
+
             String auditComment = "QC state was changed for " + updateLsids.size() + " record" +
                     (updateLsids.size() == 1 ? "" : "s") + ".  User comment: " + comments;
 
@@ -918,7 +921,7 @@ public class StudyManager
             dataMap.put("newRecordMap", SimpleAuditViewFactory.encodeForDataMap(newQCStates, false));
             AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
 
-            clearCaches(container, true);
+            clearCaches(container, false);
 
             if (transactionOwner)
                 scope.commitTransaction();

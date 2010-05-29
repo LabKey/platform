@@ -892,6 +892,7 @@ public class AdminController extends SpringActionController
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
+            props.setMaxBLOBSize(form.getMaxBLOBSize());
 
             // Save the old system maintenance property values, compare with the new ones, and set a flag if they've changed
             String oldInterval = props.getSystemMaintenanceInterval();
@@ -1233,6 +1234,7 @@ public class AdminController extends SpringActionController
         private String _systemMaintenanceInterval;
         private String _systemMaintenanceTime;
         private int _memoryUsageDumpInterval;
+        private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
         private String _mascotServer;
@@ -1470,6 +1472,16 @@ public class AdminController extends SpringActionController
         public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)
         {
             _memoryUsageDumpInterval = memoryUsageDumpInterval;
+        }
+
+        public int getMaxBLOBSize()
+        {
+            return _maxBLOBSize;
+        }
+
+        public void setMaxBLOBSize(int maxBLOBSize)
+        {
+            _maxBLOBSize = maxBLOBSize;
         }
 
         public String getNetworkDriveLetter()

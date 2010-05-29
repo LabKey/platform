@@ -280,7 +280,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
                     if (null != filter.getOp())
                     {
-                        OperatorType.Enum opType = OperatorType.Enum.forString(filter.getOp().getUrlKey());
+                        OperatorType.Enum opType = OperatorType.Enum.forString(filter.getOp().getPreferredUrlKey());
 
                         if (null != opType)
                         {

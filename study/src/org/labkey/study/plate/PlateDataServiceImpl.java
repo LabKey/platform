@@ -22,12 +22,9 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.study.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.gwt.client.util.ExceptionUtil;
 import org.labkey.api.view.ViewContext;
 import java.sql.SQLException;
 import java.util.*;
-
-import com.google.gwt.user.client.rpc.SerializableException;
 
 /**
  * User: brittp
@@ -41,7 +38,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         super(context);
     }
 
-    public GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName) throws SerializableException
+    public GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName) throws Exception
     {
         try
         {
@@ -51,7 +48,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(assayTypeName);
                 if (handler == null)
                 {
-                    throw new SerializableException("Plate template type " + assayTypeName + " does not exist.");
+                    throw new Exception("Plate template type " + assayTypeName + " does not exist.");
                 }
                 template = handler.createPlate(templateTypeName, getContainer());
             }
@@ -59,7 +56,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             {
                 template = PlateService.get().getPlateTemplate(getContainer(), templateName);
                 if (template == null)
-                    throw new SerializableException("Plate " + templateName + " does not exist.");
+                    throw new Exception("Plate " + templateName + " does not exist.");
             }
 
             // Translate PlateTemplate to GWTPlate
@@ -90,7 +87,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         }
         catch (SQLException e)
         {
-            throw ExceptionUtil.convertToSerializable(e);
+            throw new Exception(e);
         }
     }
 
@@ -110,7 +107,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         return types;
     }
 
-    public void saveChanges(GWTPlate gwtPlate, boolean replaceIfExisting) throws SerializableException
+    public void saveChanges(GWTPlate gwtPlate, boolean replaceIfExisting) throws Exception
     {
         try
         {
@@ -120,7 +117,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (replaceIfExisting)
                     PlateService.get().deletePlate(getContainer(), template.getRowId());
                 else
-                    throw new SerializableException("A plate with name '" + gwtPlate.getName() + "' already exists.");
+                    throw new Exception("A plate with name '" + gwtPlate.getName() + "' already exists.");
             }
 
             template = PlateService.get().createPlateTemplate(getContainer(), gwtPlate.getType());
@@ -147,7 +144,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         }
         catch (SQLException e)
         {
-            throw ExceptionUtil.convertToSerializable(e);
+            throw new Exception(e);
         }
     }
 }

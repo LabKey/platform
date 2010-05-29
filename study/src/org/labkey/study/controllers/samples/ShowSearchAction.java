@@ -73,7 +73,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             {
                 CompareType compare = CompareType.valueOf(param.getCompareType());
                 if (!compare.isDataValueRequired() || (param.getValue() != null && param.getValue().length() > 0))
-                    url.addParameter(param.getColumnName() + "~" + compare.getUrlKey(), param.getValue());
+                    url.addParameter(param.getColumnName() + "~" + compare.getPreferredUrlKey(), param.getValue());
             }
         }
         return url;

@@ -202,6 +202,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="memoryUsageDumpInterval" size="4" value="<%= h(appProps.getMemoryUsageDumpInterval()) %>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label">Maximum file size, in bytes, to allow in database BLOBs</td>
+    <td><input type="text" name="maxBLOBSize" size="10" value="<%= h(appProps.getMaxBLOBSize()) %>"></td>
+</tr>
+<tr>
     <td>&nbsp;</td>
 </tr>
 

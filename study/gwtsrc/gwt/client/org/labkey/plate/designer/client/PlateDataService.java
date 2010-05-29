@@ -27,8 +27,8 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
 */
 public interface PlateDataService extends RemoteService
 {
-    GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName) throws SerializableException;
+    GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName) throws SerializableException, Exception;
 
-    void saveChanges(GWTPlate plate, boolean replaceIfExisting) throws SerializableException;
+    void saveChanges(GWTPlate plate, boolean replaceIfExisting) throws SerializableException, Exception;
 
 }

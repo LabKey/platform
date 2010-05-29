@@ -987,6 +987,11 @@ public class AnnouncementsController extends SpringActionController
                 for (String error: e.getErrors())
                     errors.reject(ERROR_MSG, error);
             }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, "Your changes have been saved, though some file attachments were not:");
+                errors.reject(ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
 
             // Don't send email for notes.  For messages, send email if there's body text or an attachment.
             if (!isNote() && (null != insert.getBody() || !insert.getAttachments().isEmpty()))

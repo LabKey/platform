@@ -18,6 +18,8 @@ package org.labkey.query.metadata.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
@@ -26,6 +28,7 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.Saveable;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
@@ -52,23 +55,18 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         final RootPanel rootPanel = RootPanel.get("org.labkey.query.metadata.MetadataEditor-Root");
         rootPanel.add(new Label("Loading..."));
 
-        getService().getMetadata(_schemaName, queryName, new AsyncCallback<GWTTableInfo>()
+        getService().getMetadata(_schemaName, queryName, new ErrorDialogAsyncCallback<GWTTableInfo>("Failed to get existing metadata from server")
         {
-            public void onFailure(Throwable caught)
+            public void reportFailure(String message, Throwable caught)
             {
                 if (caught instanceof MetadataUnavailableException)
                 {
                     rootPanel.clear();
-                    String s = "Failed to get metadata from server. ";
-                    if (caught.getMessage() != null)
-                    {
-                        s += caught.getMessage();
-                    }
-                    rootPanel.add(new Label(s));
+                    rootPanel.add(new Label(message));
                 }
                 else
                 {
-                    WindowUtil.reportException("Failed to get existing metadata from server", caught);
+                    super.reportFailure(message, caught);
                 }
             }
 
@@ -94,9 +92,9 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         _saveButton.setEnabled(false);
         _editor.getContentPanel().add(_saveMessage);
 
-        _editor.addChangeListener(new ChangeListener()
+        _editor.addChangeHandler(new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 _saveButton.setEnabled(_editor.isDirty());
             }
@@ -126,13 +124,8 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                     public void onClick(ClickEvent e)
                     {
                         _saveMessage.setText("");
-                        getService().resetToDefault(_schemaName, _editor.getUpdates().getName(), new AsyncCallback<GWTTableInfo>()
+                        getService().resetToDefault(_schemaName, _editor.getUpdates().getName(), new ErrorDialogAsyncCallback<GWTTableInfo>("Failed to reset metadata to default")
                         {
-                            public void onFailure(Throwable caught)
-                            {
-                                WindowUtil.reportException("Failed to reset metadata to default", caught);
-                            }
-
                             public void onSuccess(GWTTableInfo newTableInfo)
                             {
                                 _saveMessage.setText("Reset successful.");
@@ -165,13 +158,8 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                     {
                         public void onClick(ClickEvent e)
                         {
-                            saveAsync(new AsyncCallback<GWTTableInfo>()
+                            saveAsync(new ErrorDialogAsyncCallback<GWTTableInfo>("Failed to save")
                             {
-                                public void onFailure(Throwable caught)
-                                {
-                                    WindowUtil.reportException("Failed to save", caught);
-                                }
-
                                 public void onSuccess(GWTTableInfo result)
                                 {
                                     Window.Location.replace(url);
@@ -218,12 +206,11 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     public void save(final SaveListener<GWTTableInfo> listener)
     {
         _saveButton.setEnabled(false);
-        saveAsync(new AsyncCallback<GWTTableInfo>()
+        saveAsync(new ErrorDialogAsyncCallback<GWTTableInfo>()
         {
-            public void onFailure(Throwable caught)
+            public void handleFailure(String message, Throwable caught)
             {
                 _saveButton.setEnabled(true);
-                WindowUtil.reportException("Failed to save", caught);
             }
 
             public void onSuccess(GWTTableInfo newTableInfo)

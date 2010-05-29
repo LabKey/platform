@@ -234,7 +234,7 @@ public class LoginController extends SpringActionController
             if (!reshow && (isLoggedIn() || authenticate(form, request, response, false)))
                 return HttpView.redirect(getSuccessURL(form));
             else
-                return showLogin(form, request, getPageConfig(), false);
+                return showLogin(form, request, getPageConfig());
         }
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
@@ -353,7 +353,7 @@ public class LoginController extends SpringActionController
     }
 
 
-    protected HttpView showLogin(LoginForm form, HttpServletRequest request, PageConfig page, boolean omitAdminOnlyMessage) throws Exception
+    protected HttpView showLogin(LoginForm form, HttpServletRequest request, PageConfig page) throws Exception
     {
         String email = form.getEmail();
         boolean remember = false;
@@ -370,11 +370,16 @@ public class LoginController extends SpringActionController
         if (null != email)
             remember = true;
 
-        LoginView view = new LoginView(form, remember, form.isApprovedTermsOfUse());
         VBox vBox = new VBox();
-        vBox.addView(view);
 
-        if (!omitAdminOnlyMessage && ModuleLoader.getInstance().isAdminOnlyMode())
+        if (ModuleLoader.getInstance().isUpgradeRequired() || ModuleLoader.getInstance().isUpgradeInProgress())
+        {
+            HtmlView updateMessageView = new HtmlView("Server upgrade in progress",
+                    "This server is being upgraded to a new version of LabKey Server.<br/>" +
+                    "Only System Administrators are allowed to log in during the upgrade process.");
+            vBox.addView(updateMessageView);
+        }
+        else if (ModuleLoader.getInstance().isAdminOnlyMode())
         {
             String content = "The site is currently undergoing maintenance.";
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
@@ -391,6 +396,9 @@ public class LoginController extends SpringActionController
         page.setIncludeLoginLink(false);
         page.setFocusId(null != form.getEmail() ? "password" : "email");
         page.setTitle("Sign In");
+
+        LoginView view = new LoginView(form, remember, form.isApprovedTermsOfUse());
+        vBox.addView(view);
 
         return vBox;
     }

@@ -18,6 +18,8 @@ package gwt.client.org.labkey.study.chart.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
@@ -28,6 +30,7 @@ import org.labkey.api.gwt.client.ui.reports.AbstractChartPanel;
 import org.labkey.api.gwt.client.ui.reports.ChartAxisOptionsPanel;
 import org.labkey.api.gwt.client.ui.reports.ChartMeasurementsPanel;
 import org.labkey.api.gwt.client.ui.reports.ChartPreviewPanel;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import gwt.client.org.labkey.study.chart.client.model.GWTPair;
@@ -165,7 +168,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 
     public ChartServiceAsync getService()
     {
-        Map params = new HashMap();
+        Map<String, String> params = new HashMap<String, String>();
         params.put("isParticipantChart", _isParticipantChart ? "true" : "false");
 
         StudyChartServiceAsync service = (StudyChartServiceAsync) GWT.create(StudyChartService.class);
@@ -176,15 +179,15 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 
     protected boolean validate()
     {
-        List errors = new ArrayList();
+        List<String> errors = new ArrayList<String>();
 
         _chart.validate(errors);
 
         if (!errors.isEmpty())
         {
             String s = "";
-            for (int i=0 ; i<errors.size() ; i++)
-                s += errors.get(i) + "\n";
+            for (String error : errors)
+                s += error + "\n";
             Window.alert(s);
             return false;
         }
@@ -241,8 +244,7 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 
     private class SaveDialog extends DialogBox
     {
-        List _datasets;
-        String _showWithDataset;
+        List<GWTPair> _datasets;
         boolean _isParticipantChart;
 
         public SaveDialog(boolean isParticipantChart)
@@ -259,16 +261,11 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
 
         private void asyncGetDatasets()
         {
-            _service.getStudyDatasets(new AsyncCallback()
+            _service.getStudyDatasets(new ErrorDialogAsyncCallback<List<GWTPair>>()
             {
-                public void onFailure(Throwable caught)
+                public void onSuccess(List<GWTPair> result)
                 {
-                    Window.alert(caught.getMessage());
-                }
-
-                public void onSuccess(Object result)
-                {
-                    _datasets = (List)result;
+                    _datasets = result;
                     showUI();
                 }
             });
@@ -303,9 +300,8 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                     }
                 });
                 String selected = null;
-                for (Iterator it = _datasets.iterator(); it.hasNext();)
+                for (GWTPair pair : _datasets)
                 {
-                    GWTPair pair = (GWTPair)it.next();
                     view.addItem(pair.getKey(), pair.getValue());
                     if (pair.getValue().equals(_datasetId))
                         selected = pair.getKey();
@@ -350,9 +346,9 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                 }
             }
             ImageButton save = new ImageButton("OK");
-            save.addClickListener(new ClickListener()
+            save.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     if (_chart.getReportName() == null || _chart.getReportName().length() == 0)
                     {
@@ -360,17 +356,11 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
                     }
                     else
                     {
-                        getService().saveChart(_chart, new AsyncCallback()
+                        getService().saveChart(_chart, new ErrorDialogAsyncCallback<String>()
                         {
-                            public void onFailure(Throwable caught)
+                            public void onSuccess(String result)
                             {
-                                Window.alert(caught.getMessage());
-                            }
-
-                            public void onSuccess(Object result)
-                            {
-                                if (result instanceof String)
-                                    _redirectUrl = (String)result;
+                                _redirectUrl = result;
 
                                 cancelForm();
                             }
@@ -380,9 +370,9 @@ public class StudyChartDesigner extends AbstractChartPanel implements EntryPoint
             });
 
             ImageButton cancel = new ImageButton("Cancel");
-            cancel.addClickListener(new ClickListener()
+            cancel.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     SaveDialog.this.hide();
                 }

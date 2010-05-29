@@ -25,6 +25,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.*;
 import gwt.client.org.labkey.study.StudyApplication;
 import gwt.client.org.labkey.study.designer.client.model.*;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.ui.WindowUtil;
@@ -74,12 +75,7 @@ public class Designer implements EntryPoint
         readOnly = !"true".equals(PropertyUtil.getServerProperty("edit"));
         if (0 == studyId)
         {
-            getService().getBlank(new AsyncCallback<GWTStudyDefinition>(){
-
-                public void onFailure(Throwable caught)
-                {
-                    Window.alert("Couldn't get blank protocol: " + caught.getMessage());
-                }
+            getService().getBlank(new ErrorDialogAsyncCallback<GWTStudyDefinition>("Couldn't get blank protocol"){
 
                 public void onSuccess(GWTStudyDefinition result)
                 {
@@ -114,12 +110,7 @@ public class Designer implements EntryPoint
 
     void showStudy(final int studyId, final int revision)
     {
-        getService().getRevision(studyId, revision, new AsyncCallback<GWTStudyDefinition>(){
-            public void onFailure(Throwable caught)
-            {
-                Window.alert("Couldn't get protocol " + studyId + ", revision " + revision + " : " + caught.getMessage());
-            }
-
+        getService().getRevision(studyId, revision, new ErrorDialogAsyncCallback<GWTStudyDefinition>("Couldn't get protocol " + studyId + ", revision " + revision){
             public void onSuccess(GWTStudyDefinition result)
             {
                 showStudy(result);
@@ -231,14 +222,8 @@ public class Designer implements EntryPoint
                 return;
             }
 
-            getService().save(definition, new AsyncCallback<GWTStudyDesignVersion>()
+            getService().save(definition, new ErrorDialogAsyncCallback<GWTStudyDesignVersion>()
             {
-                public void onFailure(Throwable caught)
-                {
-                    Window.alert("Failure: " + caught.getMessage());
-
-                }
-
                 public void onSuccess(GWTStudyDesignVersion info)
                 {
                     if (info.isSaveSuccessful())

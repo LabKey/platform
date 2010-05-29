@@ -332,7 +332,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 StringBuffer message = new StringBuffer();
                 message.append("Failed to remove work directory ").append(_dir);
                 File[] files = _dir.listFiles();
-                if (files.length > 0)
+                if (files != null && files.length > 0)
                 {
                     message.append(" unexpected files found:");
                     for (File f : files)

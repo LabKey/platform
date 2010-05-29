@@ -28,8 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.*;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
 
@@ -43,8 +42,6 @@ import java.util.*;
  */
 public class IssuesModule extends DefaultModule implements SearchService.DocumentProvider
 {
-    private static final Logger _log = Logger.getLogger(IssuesModule.class);
-
     public static final String NAME = "Issues";
 
     public String getName()
@@ -65,7 +62,20 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new IssuesWebPartFactory()));
+        ArrayList<WebPartFactory> result = new ArrayList<WebPartFactory>();
+        result.add(new IssuesWebPartFactory());
+        result.add(new AlwaysAvailableWebPartFactory("Issues List")
+        {
+            @Override
+            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+            {
+                IssuesListView result = new IssuesListView();
+                result.setTitle("Issues List");
+                result.setFrame(WebPartView.FrameType.PORTAL);
+                return result;
+            }
+        });
+        return result;
     }
 
     public boolean hasScripts()

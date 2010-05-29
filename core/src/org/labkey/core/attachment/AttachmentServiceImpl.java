@@ -54,6 +54,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.util.*;
 
 /**
@@ -274,6 +275,12 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 {
                     filesToSkip.add(file.getFilename());
                     continue;
+                }
+
+                int maxSize = AppProps.getInstance().getMaxBLOBSize();
+                if (file.getSize() > maxSize)
+                {
+                    throw new IOException(file.getFilename() + " is larger than the maximum allowed size, " + NumberFormat.getIntegerInstance().format(maxSize) + " bytes");
                 }
 
                 HashMap<String, Object> hm = new HashMap<String, Object>();

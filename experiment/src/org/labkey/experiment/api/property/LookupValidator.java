@@ -125,7 +125,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
             }
             else
             {
-                UserSchema userSchema = QueryService.get().getUserSchema(user, defaultContainer, field.getLookupSchema());
+                UserSchema userSchema = QueryService.get().getUserSchema(user, _container, field.getLookupSchema());
                 if (userSchema == null)
                 {
                     errors.add(new SimpleValidationError("Could not find the lookup's target schema ('" + field.getLookupSchema() + "') for field '" + field.getNonBlankCaption() + "'"));

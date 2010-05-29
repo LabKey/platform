@@ -16,10 +16,9 @@
 
 package org.labkey.experiment.samplechooser.client;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTMaterial;
 import org.labkey.api.gwt.client.model.GWTSampleSet;
-import org.labkey.api.gwt.client.util.ExceptionUtil;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,13 +44,8 @@ public class SampleCache
         _sampleSets.put(SampleChooser.NONE_SAMPLE_SET.getLsid(), SampleChooser.NONE_SAMPLE_SET);
 
         SampleSetServiceAsync service = SampleSetService.App.getService();
-        service.getSampleSets(new AsyncCallback<List<GWTSampleSet>>()
+        service.getSampleSets(new ErrorDialogAsyncCallback<List<GWTSampleSet>>("Sample set retrieval failed")
         {
-            public void onFailure(Throwable caught)
-            {
-                ExceptionUtil.showDialog(caught);
-            }
-
             public void onSuccess(List<GWTSampleSet> sets)
             {
                 for (GWTSampleSet set : sets)
@@ -77,13 +71,8 @@ public class SampleCache
         if (!_sampleSetMembers.containsKey(sampleSet.getLsid()))
         {
             _sampleSetMembers.put(sampleSet.getLsid(), null);
-            SampleSetService.App.getService().getMaterials(sampleSet, new AsyncCallback<List<GWTMaterial>>()
+            SampleSetService.App.getService().getMaterials(sampleSet, new ErrorDialogAsyncCallback<List<GWTMaterial>>("Sample retrieval failed")
             {
-                public void onFailure(Throwable caught)
-                {
-                    ExceptionUtil.showDialog(caught);
-                }
-
                 public void onSuccess(List<GWTMaterial> materials)
                 {
                     _sampleSetMembers.put(sampleSet.getLsid(), materials);

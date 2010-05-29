@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.QNameSet;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlString;
@@ -95,7 +94,7 @@ public class QWhere extends QNode
                 return false;
             DgCompare comp = where.addNewCompare();
             comp.setField(field.toString());
-            comp.setOp(op == Operator.is ? CompareType.ISBLANK.getUrlKey() : CompareType.NONBLANK.getUrlKey());
+            comp.setOp(op == Operator.is ? CompareType.ISBLANK.getPreferredUrlKey() : CompareType.NONBLANK.getPreferredUrlKey());
             return true;
         }
 
@@ -110,7 +109,7 @@ public class QWhere extends QNode
             QExprList valueList = (QExprList)children.get(1);
             DgCompare comp = where.addNewCompare();
             comp.setField(field.toString());
-            comp.setOp(CompareType.IN.getUrlKey());
+            comp.setOp(CompareType.IN.getPreferredUrlKey());
             StringBuilder sb = new StringBuilder();
             String separator = "";
             for (QNode n : valueList.children())
@@ -186,7 +185,7 @@ public class QWhere extends QNode
         }
         DgCompare comp = where.addNewCompare();
         comp.setField(field.toString());
-        comp.setOp(ctOp.getUrlKey());
+        comp.setOp(ctOp.getPreferredUrlKey());
         comp.setLiteral(value);
         return true;
     }

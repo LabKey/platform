@@ -76,7 +76,7 @@ public class TemplateView extends HorizontalPanel
     {
         _rootPanel.clear();
         _rootPanel.add(new Label("Loading..."));
-        getService().getTemplateDefinition(_templateName, _assayTypeName, _templateTypeName, new AsyncCallback()
+        getService().getTemplateDefinition(_templateName, _assayTypeName, _templateTypeName, new AsyncCallback<GWTPlate>()
         {
             public void onFailure(Throwable throwable)
             {
@@ -85,9 +85,9 @@ public class TemplateView extends HorizontalPanel
                 _rootPanel.add(mainPanel);
             }
 
-            public void onSuccess(Object object)
+            public void onSuccess(GWTPlate plate)
             {
-                _plate = (GWTPlate) object;
+                _plate = plate;
                 show();
             }
         });

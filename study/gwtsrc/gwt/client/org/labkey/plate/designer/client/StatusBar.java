@@ -24,6 +24,7 @@ import com.google.gwt.user.client.ui.SimplePanel;
 import org.labkey.api.gwt.client.ui.SaveButtonBar;
 import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.ui.WindowUtil;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
@@ -77,13 +78,8 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
 
     public void save(final SaveListener<Object> listener)
     {
-        _view.saveChanges(new AsyncCallback()
+        _view.saveChanges(new ErrorDialogAsyncCallback()
         {
-            public void onFailure(Throwable caught)
-            {
-                // do nothing
-            }
-
             public void onSuccess(Object result)
             {
                 setDirty(false);

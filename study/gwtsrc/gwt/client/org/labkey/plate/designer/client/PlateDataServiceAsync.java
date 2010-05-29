@@ -27,7 +27,7 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
 public interface PlateDataServiceAsync
 {
 
-    void getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName, AsyncCallback async);
+    void getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName, AsyncCallback<GWTPlate> async);
 
     void saveChanges(GWTPlate plate, boolean replaceIfExisting, AsyncCallback async);
 }

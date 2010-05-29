@@ -216,33 +216,11 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private static final String ISSUES_QUERY = "Issues";
-    private HttpView getIssuesView() throws SQLException, ServletException
-    {
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QuerySettings settings = schema.getSettings(getViewContext(), ISSUES_QUERY, ISSUES_QUERY);
-        IssuesQueryView queryView = new IssuesQueryView(getViewContext(), schema, settings);
-
-        // add the header for buttons and views
-        QueryDefinition qd = schema.getQueryDefForTable(ISSUES_QUERY);
-        Map<String, CustomView> views = qd.getCustomViews(getUser(), getViewContext().getRequest());
-        // don't include a customized default view in the list
-        if (views.containsKey(null))
-            views.remove(null);
-
-        VBox box = new VBox();
-
-        box.addView(new JspView("/org/labkey/issue/list.jsp"));
-        box.addView(queryView);
-        return box;
-    }
-
-
     private ResultSet getIssuesResultSet() throws IOException, SQLException, ServletException
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QuerySettings settings = schema.getSettings(getViewContext(), ISSUES_QUERY);
-        settings.setQueryName(ISSUES_QUERY);
+        QuerySettings settings = schema.getSettings(getViewContext(), IssuesQuerySchema.TableType.Issues.name());
+        settings.setQueryName(IssuesQuerySchema.TableType.Issues.name());
 
         IssuesQueryView queryView = new IssuesQueryView(getViewContext(), schema, settings);
 
@@ -268,7 +246,7 @@ public class IssuesController extends SpringActionController
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
             ActionURL url = getViewContext().cloneActionURL();
-            String[] emailFilters = url.getKeysByPrefix(ISSUES_QUERY + ".AssignedTo/Email");
+            String[] emailFilters = url.getKeysByPrefix(IssuesQuerySchema.TableType.Issues.name() + ".AssignedTo/Email");
             if (emailFilters != null && emailFilters.length > 0)
             {
                 for (String emailFilter : emailFilters)
@@ -277,8 +255,8 @@ public class IssuesController extends SpringActionController
             }
 
             getPageConfig().setRssProperties(new RssAction().getUrl(), names.pluralName.toString());
-            HttpView view = getIssuesView();
-            return view;
+
+            return new IssuesListView();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -381,7 +359,7 @@ public class IssuesController extends SpringActionController
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
             ActionURL url = getViewContext().cloneActionURL();
-            String[] emailFilters = url.getKeysByPrefix(ISSUES_QUERY + ".AssignedTo/Email");
+            String[] emailFilters = url.getKeysByPrefix(IssuesQuerySchema.TableType.Issues.name() + ".AssignedTo/Email");
             if (emailFilters != null && emailFilters.length > 0)
             {
                 for (String emailFilter : emailFilters)
@@ -566,9 +544,8 @@ public class IssuesController extends SpringActionController
                 url.addParameter("issueId", _issue.getIssueId());
                 return url;
             }
-            
-            ActionURL forwardURL = new DetailsAction(_issue, getViewContext()).getURL();
-            return forwardURL;
+
+            return new DetailsAction(_issue, getViewContext()).getURL();
         }
 
 
@@ -661,9 +638,10 @@ public class IssuesController extends SpringActionController
                 if (ownsTransaction)
                     scope.commitTransaction();
             }
-            catch (Exception x)
+            catch (IOException x)
             {
-                errors.addError(new ObjectError("main", new String[] {"Error"}, new Object[] {x}, x.getMessage()));
+                String message = x.getMessage() == null ? x.toString() : x.getMessage();
+                errors.addError(new ObjectError("main", new String[] {"Error"}, new Object[] {message}, message));
                 return false;
             }
             finally
@@ -972,21 +950,13 @@ public class IssuesController extends SpringActionController
             return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
         }
     }
-
-
-    private static ActionURL getDetailsForwardURL(ViewContext context, Issue issue)
-    {
-        ActionURL url = context.cloneActionURL();
-        url.setAction("details");
-        url.addParameter("issueId", "" + issue.getIssueId());
-        return url;
-    }
-
-
+    
     private void validateRequiredFields(IssuesForm form, Errors errors)
     {
         HString requiredFields = IssueManager.getRequiredIssueFields(getContainer());
         final Map<String, String> newFields = form.getStrings();
+        if ("0".equals(newFields.get("issueId")))
+            requiredFields = requiredFields.concat(requiredFields.isEmpty() ? "comment" : ";comment");
         if (requiredFields.isEmpty())
             return;
 
@@ -1013,6 +983,8 @@ public class IssuesController extends SpringActionController
             validateRequired("string1", newFields.get("string1"), requiredFields, requiredErrors);
         if (newFields.containsKey("string2"))
             validateRequired("string2", newFields.get("string2"), requiredFields, requiredErrors);
+        if (newFields.containsKey("comment"))
+            validateRequired("comment", newFields.get("comment"), requiredFields, requiredErrors);
 
         // When resolving Duplicate, the 'duplicate' field should be set.
         if ("Duplicate".equals(newFields.get("resolution")))
@@ -1179,7 +1151,6 @@ public class IssuesController extends SpringActionController
         }
 
         final String current = getUser().getEmail();
-        final StringBuilder sb = new StringBuilder();
 
         boolean selfSpam = !((IssueManager.NOTIFY_SELF_SPAM & IssueManager.getUserEmailPreferences(c, getUser().getUserId())) == 0);
         if (selfSpam)
@@ -1202,9 +1173,8 @@ public class IssuesController extends SpringActionController
 
             int emailPrefs = IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId());
             int issueId = form.getIssueId() == null ? 0 : form.getIssueId().intValue();
-            JspView v = new JspView<EmailPrefsBean>(IssuesController.class, "emailPreferences.jsp",
+            return new JspView<EmailPrefsBean>(IssuesController.class, "emailPreferences.jsp",
                 new EmailPrefsBean(emailPrefs, errors, _message, issueId));
-            return v;
         }
 
         public boolean handlePost(EmailPrefsForm form, BindException errors) throws Exception
@@ -1257,8 +1227,7 @@ public class IssuesController extends SpringActionController
             page.getResolutionOptions(getContainer());
             // </HACK>
 
-            AdminView adminView = new AdminView(getContainer(), getCustomColumnConfiguration());
-            return adminView;
+            return new AdminView(getContainer(), getCustomColumnConfiguration());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1572,10 +1541,7 @@ public class IssuesController extends SpringActionController
                     Issue issue = getIssue(id);
                     if (issue != null)
                     {
-                        ActionURL url = getViewContext().cloneActionURL();
-                        url.deleteParameters();
-                        url.addParameter("issueId", Integer.toString(id));
-                        url.setAction("details.view");
+                        ActionURL url = getDetailsURL(getContainer(), issue.getIssueId(), false);
                         return HttpView.redirect(url);
                     }
                 }
@@ -1587,7 +1553,7 @@ public class IssuesController extends SpringActionController
             ActionURL url = getViewContext().cloneActionURL();
             url.deleteParameters();
             url.addParameter("error", "Invalid issue id '" + issueId + "'");
-            url.setAction("list.view");
+            url.setAction(ListAction.class);
             url.addParameter(".lastFilter", "true");
             return HttpView.redirect(url);
         }
@@ -1614,8 +1580,7 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 
-            HttpView results = new SearchResultsView(c, searchTerm, _status, isPrint());
-            return results;
+            return new SearchResultsView(c, searchTerm, _status, isPrint());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1642,12 +1607,6 @@ public class IssuesController extends SpringActionController
             _print = isPrint;
             setModelBean(this);
         }
-    }
-
-
-    static boolean _equal(String a, String b)
-    {
-        return _toString(a).equals(_toString(b));
     }
 
 
@@ -1965,7 +1924,6 @@ public class IssuesController extends SpringActionController
          * A bit of a hack but to allow the mothership controller to continue to create issues
          * in the way that it previously did, we need to be able to tell the issues controller
          * to not handle the post, and just get the view.
-         * @return
          */
         public boolean getSkipPost()
         {
@@ -1983,7 +1941,7 @@ public class IssuesController extends SpringActionController
             }
             else
             {
-                return getDetailsForwardURL(getViewContext(), getBean());
+                return getDetailsURL(getViewContext().getContainer(), getBean().getIssueId(), false);
             }
         }
 
@@ -2093,55 +2051,6 @@ public class IssuesController extends SpringActionController
     {
         if (!hasUpdatePermission(user, issue))
             HttpView.throwUnauthorized();
-    }
-
-
-    public static class InsertForm
-    {
-        private String _body;
-        private Integer _assignedto;
-        private String _callbackURL;
-        private String _title;
-
-        public String getBody()
-        {
-            return _body;
-        }
-
-        public void setBody(String body)
-        {
-            _body = body;
-        }
-
-        public Integer getAssignedto()
-        {
-            return _assignedto;
-        }
-
-        public void setAssignedto(Integer assignedto)
-        {
-            _assignedto = assignedto;
-        }
-
-        public String getCallbackURL()
-        {
-            return _callbackURL;
-        }
-
-        public void setCallbackURL(String callbackURL)
-        {
-            _callbackURL = callbackURL;
-        }
-
-        public String getTitle()
-        {
-            return _title;
-        }
-
-        public void setTitle(String title)
-        {
-            _title = title;
-        }
     }
 
 

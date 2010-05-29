@@ -17,16 +17,15 @@ package org.labkey.filecontent.designer.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.PropertiesEditor;
-import org.labkey.api.gwt.client.ui.SaveButtonBar;
-import org.labkey.api.gwt.client.ui.Saveable;
-import org.labkey.api.gwt.client.ui.WebPartPanel;
-import org.labkey.api.gwt.client.util.ExceptionUtil;
+import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
@@ -116,9 +115,9 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
         panel.setWidth("100%");
 
         _buttons = new SaveButtonBar(this);
-        _properties.addChangeListener(new ChangeListener()
+        _properties.addChangeHandler(new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 setDirty(true);
             }
@@ -175,13 +174,8 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
         }
 
         GWTDomain edited = _properties.getUpdates();
-        getService().updateDomainDescriptor(_domain, edited, new AsyncCallback<List<String>>() {
-            public void onFailure(Throwable caught)
-            {
-                ExceptionUtil.showDialog(caught);
-                //_submitButton.setEnabled(true);
-            }
-
+        getService().updateDomainDescriptor(_domain, edited, new ErrorDialogAsyncCallback<List<String>>("Save failed")
+        {
             public void onSuccess(List<String> errors)
             {
                 if (null == errors)
@@ -231,11 +225,10 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
 
     void asyncGetDomain(final String domainURI, final String domainName)
     {
-        getService().getDomainDescriptor(domainURI, new AsyncCallback<GWTDomain>() {
-            public void onFailure(Throwable caught)
+        getService().getDomainDescriptor(domainURI, new ErrorDialogAsyncCallback<GWTDomain>() {
+            public void handleFailure(String message, Throwable caught)
             {
-                Window.alert(caught.getMessage());
-                _loading.setText("ERROR: " + caught.getMessage());
+                _loading.setText("ERROR: " + message);
             }
 
             public void onSuccess(GWTDomain domain)

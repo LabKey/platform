@@ -27,9 +27,10 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.Saveable;
+import org.labkey.api.gwt.client.ui.WindowUtil;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
-import org.labkey.api.gwt.client.util.ExceptionUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
@@ -192,14 +193,8 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         }
 
         GWTDomain edited = _propTable.getUpdates();
-        getService().updateDomainDescriptor(_domain, edited, new AsyncCallback<List<String>>()
+        getService().updateDomainDescriptor(_domain, edited, new ErrorDialogAsyncCallback<List<String>>("Save failed")
         {
-            public void onFailure(Throwable caught)
-            {
-                ExceptionUtil.showDialog(caught);
-                _submitButton.setEnabled(true);
-            }
-
             public void onSuccess(List<String> errors)
             {
                 if (null == errors)
@@ -278,12 +273,11 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     {
         if (!domainURI.equals("testURI#TYPE"))
         {
-            getService().getDomainDescriptor(domainURI, new AsyncCallback<GWTDomain>()
+            getService().getDomainDescriptor(domainURI, new ErrorDialogAsyncCallback<GWTDomain>()
             {
-                    public void onFailure(Throwable caught)
+                    public void handleFailure(String message, Throwable caught)
                     {
-                        Window.alert(caught.getMessage());
-                        _loading.setText("ERROR: " + caught.getMessage());
+                        _loading.setText("ERROR: " + message);
                     }
 
                     public void onSuccess(GWTDomain domain)

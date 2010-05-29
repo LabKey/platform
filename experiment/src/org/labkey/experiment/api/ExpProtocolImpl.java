@@ -44,6 +44,10 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public ApplicationType getApplicationType()
     {
+        if (_object.getApplicationType() == null)
+        {
+            return null;
+        }
         try
         {
             return ApplicationType.valueOf(_object.getApplicationType());

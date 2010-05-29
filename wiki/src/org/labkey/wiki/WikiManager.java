@@ -836,6 +836,10 @@ public class WikiManager
                 //really need to generate an error in this case. Just add a warning
                 message = e.getMessage();
             }
+            catch (IOException e)
+            {
+                message = e.getMessage() == null ? e.toString() : e.getMessage();
+            }
             changes = true;
         }
 
