@@ -147,16 +147,6 @@ public class WindowUtil
         dialogBox.setPopupPosition((Window.getClientWidth() - dialogBox.getOffsetWidth()) / 2 + Window.getScrollLeft(), (Window.getClientHeight() - dialogBox.getOffsetHeight()) / 2 + Window.getScrollTop());
     }
 
-    public static void reportException(String description, Throwable caught)
-    {
-        String message = caught.getMessage() == null ? caught.toString() : caught.getMessage();
-        if (description != null)
-        {
-            message = description + ": " + message;
-        }
-        Window.alert(message);
-    }
-
     public static class NavigateCommand implements Command
     {
         private String loc;

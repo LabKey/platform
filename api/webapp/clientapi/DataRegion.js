@@ -542,7 +542,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         for (var i in skipPrefixes)
             skipPrefixes[i] = this.name + skipPrefixes[i];
 
-        var paramValPairs = getParamValPairs(skipPrefixes);
+        var paramValPairs = getParamValPairs(this.requestURL, skipPrefixes);
         if (null != value)
         {
             paramValPairs[paramValPairs.length] = [this.name + param, value];
@@ -908,7 +908,8 @@ function showFilterPanel(elem, tableName, colName, caption, dataType, mvEnabled)
     _tableName = tableName;
     fillOptions(dataType, mvEnabled);
 
-    var paramValPairs = getParamValPairs(null);
+    var queryString = LABKEY.DataRegions[tableName] ? LABKEY.DataRegions[tableName].requestURL : null;
+    var paramValPairs = getParamValPairs(queryString, null);
     //Fill in existing filters...
     var filterIndex = 1;
     for (var i = 0; i < paramValPairs.length; i++)
@@ -1183,9 +1184,19 @@ function setSearchString(tableName, search)
 }
 
 
-function getParamValPairs(skipPrefixes)
+function getParamValPairs(queryString, skipPrefixes)
 {
-    var queryString = getSearchString();
+    if (!queryString)
+    {
+        queryString = getSearchString();
+    }
+    else
+    {
+        if (queryString.indexOf("?") > -1)
+        {
+            queryString = queryString.substring(queryString.indexOf("?") + 1);
+        }
+    }
     var iNew = 0;
     //alert("getparamValPairs: " + queryString);
     var newParamValPairs = new Array(0);
@@ -1231,7 +1242,7 @@ function getParamValPairs(skipPrefixes)
 
 function getParameter(paramName)
 {
-    var paramValPairs = getParamValPairs(null);
+    var paramValPairs = getParamValPairs(null, null);
     for (var i = 0; i < paramValPairs.length; i++)
         if (paramValPairs[i][0] == paramName)
             if (paramValPairs[i].length > 1)
@@ -1271,7 +1282,7 @@ function clearFilter()
     if (false === dr.fireEvent("beforeclearfilter", dr, _fieldName))
         return;
 
-    var newParamValPairs = getParamValPairs([_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
+    var newParamValPairs = getParamValPairs(dr.requestURL, [_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
     setSearchString(_tableName, buildQueryString(newParamValPairs));
 }
 
@@ -1282,15 +1293,16 @@ function clearAllFilters()
     if (false === dr.fireEvent("beforeclearallfilters", dr))
         return;
 
-    var newParamValPairs = getParamValPairs([_tableName + ".", _tableName + ".offset"]);
+    var newParamValPairs = getParamValPairs(dr.requestURL, [_tableName + ".", _tableName + ".offset"]);
     setSearchString(_tableName, buildQueryString(newParamValPairs));
 }
 
 function doFilter()
 {
     hideFilterDiv();
-    
-    var newParamValPairs = getParamValPairs([_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
+
+    var queryString = LABKEY.DataRegions[_tableName] ? LABKEY.DataRegions[_tableName].requestURL : null;
+    var newParamValPairs = getParamValPairs(queryString, [_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
     var iNew = newParamValPairs.length;
 
     var comparisons = getValidCompares();
@@ -1495,7 +1507,7 @@ function doSort(tableName, columnName, sortDirection)
 
     var newSortString = dr.alterSortString(getParameter(tableName + ".sort"), columnName, sortDirection);
 
-    var paramValPairs = getParamValPairs([tableName + ".sort", tableName + ".offset"]);
+    var paramValPairs = getParamValPairs(dr.requestURL, [tableName + ".sort", tableName + ".offset"]);
     paramValPairs[paramValPairs.length] = [tableName + ".sort", newSortString];
 
     setSearchString(tableName, buildQueryString(paramValPairs));
@@ -1514,7 +1526,7 @@ function clearSort(tableName, columnName)
     
     var newSortString = dr.alterSortString(getParameter(tableName + ".sort"), columnName, null);
 
-    var paramValPairs = getParamValPairs([tableName + ".sort", tableName + ".offset"]);
+    var paramValPairs = getParamValPairs(dr.requestURL, [tableName + ".sort", tableName + ".offset"]);
     if(newSortString.length > 0)
         paramValPairs.push([tableName + ".sort", newSortString]);
 

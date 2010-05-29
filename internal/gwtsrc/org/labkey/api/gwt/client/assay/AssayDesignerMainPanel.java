@@ -16,6 +16,8 @@
 
 package org.labkey.api.gwt.client.assay;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
@@ -23,6 +25,7 @@ import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.URL;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -136,9 +139,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             GWTDomain<GWTPropertyDescriptor> domain = _assay.getDomains().get(i);
 
             PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor = createPropertiesEditor(domain);
-            editor.addChangeListener(new ChangeListener()
+            editor.addChangeHandler(new ChangeHandler()
             {
-                public void onChange(Widget sender)
+                public void onChange(ChangeEvent e)
                 {
                     setDirty(true);
                 }
@@ -477,11 +480,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
     public void save(final SaveListener<GWTProtocol> listener)
     {
-        saveAsync(new AsyncCallback<GWTProtocol>()
+        saveAsync(new ErrorDialogAsyncCallback<GWTProtocol>("Save failed")
         {
-            public void onFailure(Throwable caught)
+            @Override
+            protected void handleFailure(String message, Throwable caught)
             {
-                Window.alert(caught.getMessage());
                 setDirty(true);
             }
 
@@ -547,13 +550,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }
         else
         {
-            saveAsync(new AsyncCallback<GWTProtocol>()
+            saveAsync(new ErrorDialogAsyncCallback<GWTProtocol>("Save failed")
             {
-                public void onFailure(Throwable caught)
-                {
-                    Window.alert(caught.getMessage());
-                }
-
                 public void onSuccess(GWTProtocol protocol)
                 {
                     // save was successful, so don't prompt when navigating away

@@ -831,7 +831,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         }
         key.append(field);
         key.append("~");
-        key.append(ct.getUrlKey());
+        key.append(ct.getPreferredUrlKey());
         addParameter(key.toString(), value == null ? "" : value.toString());
     }
 }

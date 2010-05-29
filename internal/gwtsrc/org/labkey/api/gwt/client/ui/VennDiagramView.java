@@ -210,16 +210,16 @@ public abstract class VennDiagramView extends HorizontalPanel
     {
         String originalURL = PropertyUtil.getServerProperty("originalURL");
         String comparisonGroup = PropertyUtil.getServerProperty("comparisonName");
-        AsyncCallback callbackHandler = new AsyncCallback()
+        AsyncCallback callbackHandler = new AsyncCallback<GWTComparisonResult>()
         {
             public void onFailure(Throwable caught)
             {
                 _warningLabel.setText("ERROR: " + caught.toString());
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(GWTComparisonResult result)
             {
-                setupTable((GWTComparisonResult) result);
+                setupTable(result);
             }
         };
         requestComparison(originalURL, comparisonGroup, callbackHandler);

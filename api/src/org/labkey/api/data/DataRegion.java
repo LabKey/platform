@@ -942,6 +942,7 @@ public class DataRegion extends DisplayElement
         out.write("'showRecordSelectors' : " + _showRecordSelectors + ",\n");
         out.write("'showStatusBar' : " + _showStatusBar + ",\n");
         out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
+        out.write("'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + ",\n");
         out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
         out.write("});\n");
         if (headerMessage != null && headerMessage.length() > 0)

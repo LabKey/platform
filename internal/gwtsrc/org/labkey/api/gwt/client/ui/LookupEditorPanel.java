@@ -34,6 +34,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
 import java.util.Arrays;
 import java.util.List;
@@ -171,13 +172,8 @@ public class LookupEditorPanel extends LayoutContainer
     ComboStore getContainerStore()
     {
         final ComboStore ret = new ComboStore();
-        _service.getContainers(new AsyncCallback<List<String>>()
+        _service.getContainers(new ErrorDialogAsyncCallback<List<String>>()
         {
-            public void onFailure(Throwable caught)
-            {
-                Window.alert(caught.getMessage());
-            }
-
             public void onSuccess(List<String> l)
             {
                 ret.add(new ComboModelData("", PropertiesEditor.currentFolder));
@@ -200,13 +196,8 @@ public class LookupEditorPanel extends LayoutContainer
 
         store.removeAll();
         
-        _service.getSchemas(folder, new AsyncCallback<List<String>>()
+        _service.getSchemas(folder, new ErrorDialogAsyncCallback<List<String>>()
         {
-            public void onFailure(Throwable caught)
-            {
-                Window.alert(caught.getMessage());
-            }
-
             public void onSuccess(List<String> l)
             {
                 if (!folder.equals(lastFolderSchemaStore) )
@@ -236,14 +227,8 @@ public class LookupEditorPanel extends LayoutContainer
         store.removeAll();
 
         _comboTableName.setEmptyText("Loading tables...");
-        _service.getTablesForLookup(folder, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
+        _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<Map<String, GWTPropertyDescriptor>>()
         {
-
-            public void onFailure(Throwable caught)
-            {
-                Window.alert(caught.getMessage());
-            }
-
             public void onSuccess(Map<String, GWTPropertyDescriptor> m)
             {
                 if (!folder.equals(lastFolderTableStore) || !schema.equals(lastSchemaTableStore))

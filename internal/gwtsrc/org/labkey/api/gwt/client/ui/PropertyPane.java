@@ -16,6 +16,8 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.ChangeListener;
 import com.google.gwt.user.client.ui.ChangeListenerCollection;
@@ -49,9 +51,9 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         _propertiesEditor = propertiesEditor;
         _name = name;
 
-        propertiesEditor.addChangeListener(new ChangeListener()
+        propertiesEditor.addChangeHandler(new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 if (_currentPD != null)
                 {

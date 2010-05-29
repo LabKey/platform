@@ -22,10 +22,8 @@ import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
 import org.labkey.api.gwt.client.model.GWTChartColumn;
-import org.labkey.api.gwt.client.ui.ChartServiceAsync;
-import org.labkey.api.gwt.client.ui.HelpPopup;
-import org.labkey.api.gwt.client.ui.WebPartPanel;
-import org.labkey.api.gwt.client.ui.WidgetUpdatable;
+import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
 import java.util.*;
 
@@ -165,17 +163,15 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
 
     private void asyncGetChartRenderers()
     {
-        getService().getChartRenderers(getChart(), new AsyncCallback()
+        getService().getChartRenderers(getChart(), new ErrorDialogAsyncCallback<GWTChartRenderer[]>()
         {
-            public void onFailure(Throwable caught)
+            public void handleFailure(String message, Throwable caught)
             {
-                Window.alert(caught.getMessage());
-                _loading.setText("ERROR: " + caught.getMessage());
+                _loading.setText("ERROR: " + message);
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(GWTChartRenderer[] renderers)
             {
-                GWTChartRenderer[] renderers = (GWTChartRenderer[])result;
                 _renderers = new HashMap();
                 for (int i=0; i < renderers.length; i++)
                 {

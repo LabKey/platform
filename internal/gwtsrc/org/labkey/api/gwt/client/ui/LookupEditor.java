@@ -23,6 +23,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -180,13 +181,8 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         }
 
         // request container list
-        _service.getContainers(new AsyncCallback<List<String>>()
+        _service.getContainers(new ErrorDialogAsyncCallback<List<String>>()
         {
-            public void onFailure(Throwable caught)
-            {
-                Window.alert(caught.getMessage());
-            }
-
             public void onSuccess(List<String> l)
             {
                 _containersValues = new ArrayList<String>();
@@ -224,13 +220,8 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
     void showSchemas(final int x, final int y)
     {
         String container = getContainer();
-        _service.getSchemas(container, new AsyncCallback<List<String>>()
+        _service.getSchemas(container, new ErrorDialogAsyncCallback<List<String>>()
         {
-            public void onFailure(Throwable caught)
-            {
-                Window.alert(caught.getMessage());
-            }
-
             public void onSuccess(List<String> l)
             {
                 l.add(0,"");
@@ -264,13 +255,8 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             Window.alert("Please select a schema");
             return;
         }
-        _service.getTablesForLookup(container, schema, new AsyncCallback<Map<String, GWTPropertyDescriptor>>()
+        _service.getTablesForLookup(container, schema, new ErrorDialogAsyncCallback<Map<String, GWTPropertyDescriptor>>()
         {
-            public void onFailure(Throwable caught)
-            {
-                Window.alert(caught.getMessage());
-            }
-
             public void onSuccess(Map<String, GWTPropertyDescriptor> m)
             {
                 List<String> tables = new ArrayList<String>();

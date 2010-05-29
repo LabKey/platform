@@ -1185,32 +1185,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return false;
     }
 
-
-    @Deprecated
-    public void addChangeListener(final ChangeListener cl)
-    {
-        _listeners.add(new ChangeHandler(){
-            public void onChange(ChangeEvent event)
-            {
-                cl.onChange(null == event ? null : (Widget)event.getSource());
-            }
-        });
-    }
-
-
     public void addChangeHandler(ChangeHandler ch)
     {
         _listeners.add(ch);
     }
-
 
     private void fireChangeEvent()
     {
         for (ChangeHandler listener : _listeners)
             listener.onChange(null);
     }
-
-
 
     private interface WarningValidator extends Validator
     {

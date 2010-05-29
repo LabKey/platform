@@ -2384,7 +2384,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/util/BooleanProperty.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/ColorGenerator.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/DateProperty.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/DoubleProperty.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/util/ExceptionUtil.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/util/ErrorDialogAsyncCallback.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/IPropertyWrapper.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/IntegerProperty.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/util/PropertyUtil.java -text

@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.exp.PropertyColumn;
@@ -258,33 +259,66 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         if (includeLookupInfo && isLookup(dc))
         {
-            ForeignKey fk = col.getFk();
-            TableInfo lookupTable = fk.getLookupTableInfo();
-
-            if (null != lookupTable && lookupTable.getPkColumns().size() == 1)
+            Map<String,Object> lookupInfo = getLookupJSON(col);
+            if (lookupInfo != null)
             {
-                Map<String,Object> lookupInfo = new HashMap<String,Object>();
-                
-                lookupInfo.put("table", lookupTable.getPublicName());
-                lookupInfo.put("schema", lookupTable.getPublicSchemaName());
-                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
-                lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
-
-                //return containerPath if non-null
-                String cid = fk.getLookupContainerId();
-                if (null != cid)
-                {
-                    Container lookupContainer = ContainerManager.getForId(cid);
-                    if (null != lookupContainer)
-                        lookupInfo.put("containerPath", lookupContainer.getPath());
-                }
-
                 fmdata.put("lookup", lookupInfo);
             }
         }
 
         fmdata.put("ext",ext);
         return fmdata;
+    }
+
+    public static Map<String, Object> getLookupJSON(ColumnInfo columnInfo)
+    {
+        ForeignKey fk = columnInfo.getFk();
+
+        //lookup info
+        if (null != fk
+                && null != columnInfo.getFkTableInfo()
+                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
+        {
+            TableInfo lookupTable = columnInfo.getFkTableInfo();
+            if(lookupTable != null && lookupTable.getPkColumns().size() == 1)
+            {
+                Map<String,Object> lookupInfo = new HashMap<String,Object>();
+                if (null != fk.getLookupContainerId())
+                {
+                    Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
+                    if (null != fkContainer)
+                        lookupInfo.put("containerPath", fkContainer.getPath());
+                }
+
+                boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
+                lookupInfo.put("isPublic", isPublic);
+                String queryName;
+                String schemaName;
+                if (isPublic)
+                {
+                    queryName = lookupTable.getPublicName();
+                    schemaName = lookupTable.getPublicSchemaName();
+                }
+                else
+                {
+                    queryName = lookupTable.getName();
+                    schemaName = lookupTable.getSchema().getName();
+                }
+                lookupInfo.put("queryName", queryName);
+                lookupInfo.put("schemaName", queryName);
+                // Duplicate info with different property names for backwards compatibility
+                lookupInfo.put("table", schemaName);
+                lookupInfo.put("schema", schemaName);
+
+                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+                if (lookupTable.getPkColumns().size() > 0)
+                    lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
+
+                return lookupInfo;
+            }
+        }
+
+        return null;
     }
 
     protected List<Map<String,Object>> getColumnModel() throws Exception

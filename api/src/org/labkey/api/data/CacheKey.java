@@ -81,7 +81,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
     private void addCondition(C column, Object value, CompareType ct)
     {
         _filter.addCondition(column.toString(), value, ct);
-        addConditionToString(column.toString() + "~" + ct.getUrlKey(), value);        
+        addConditionToString(column.toString() + "~" + ct.getPreferredUrlKey(), value);        
     }
 
     private void addConditionToString(String columnName, Object value)

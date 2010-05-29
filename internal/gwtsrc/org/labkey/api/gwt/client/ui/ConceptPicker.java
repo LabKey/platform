@@ -27,6 +27,7 @@ import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -348,11 +349,10 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                     return;
                 }
                 XDOM.getBodyEl().mask();
-                _service.getTablesForLookup(folder, schema, new AsyncCallback<Map<String,GWTPropertyDescriptor>>(){
-                    public void onFailure(Throwable caught)
+                _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<Map<String,GWTPropertyDescriptor>>("Lookup retrieval failed"){
+                    public void handleFailure(String message, Throwable caught)
                     {
                         XDOM.getBodyEl().unmask();
-                        Window.alert(caught.getMessage());
                     }
 
                     public void onSuccess(Map<String, GWTPropertyDescriptor> result)

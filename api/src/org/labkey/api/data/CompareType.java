@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.exp.MvColumn;
@@ -142,7 +143,7 @@ public enum CompareType
                     }
                 }
             },
-    HAS_QC("Has a QC Value", "hasqcvalue", false, null, "QC_VALUE")           // TODO: Switch to MV_INDICATOR
+    HAS_QC("Has a QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE")           // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -150,7 +151,7 @@ public enum CompareType
                     return new QcClause(colName, false);
                 }
             },
-    NO_QC("Does not have a QC Value", "noqcvalue", false, null, "NOT_QC_VALUE")        // TODO: Switch to MV_INDICATOR
+    NO_QC("Does not have a QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE")        // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -206,15 +207,23 @@ public enum CompareType
         }
     }
 
-    private String _urlKey;
+    private String _preferredURLKey;
+    private Set<String> _urlKeys = new CaseInsensitiveHashSet();
     private String _displayValue;
     private boolean _dataValueRequired;
     private String _sql;
     private String _scriptName;
 
+    CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName)
+    {
+        this(displayValue, urlKeys[0], dataValueRequired, sql, scriptName);
+        _urlKeys.addAll(Arrays.asList(urlKeys));
+    }
+
     CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String scriptName)
     {
-        _urlKey = urlKey;
+        _preferredURLKey = urlKey;
+        _urlKeys.add(urlKey);
         _displayValue = displayValue;
         _dataValueRequired = dataValueRequired;
         _sql = sql;
@@ -254,7 +263,7 @@ public enum CompareType
     {
         for (CompareType type : values())
         {
-            if (type.getUrlKey().equals(urlKey))
+            if (type.getUrlKeys().contains(urlKey))
                 return type;
         }
         return null;
@@ -265,9 +274,14 @@ public enum CompareType
         return _displayValue;
     }
 
-    public String getUrlKey()
+    public String getPreferredUrlKey()
     {
-        return _urlKey;
+        return _preferredURLKey;
+    }
+
+    public Set<String> getUrlKeys()
+    {
+        return _urlKeys;
     }
 
     public boolean isDataValueRequired()

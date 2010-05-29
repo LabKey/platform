@@ -16,8 +16,9 @@
 
 package org.labkey.api.gwt.client.ui.reports;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.ClickListener;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -26,6 +27,8 @@ import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.ui.ChartServiceAsync;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.WebPartPanel;
+import org.labkey.api.gwt.client.ui.WindowUtil;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -47,15 +50,15 @@ public class ChartPreviewPanel extends AbstractChartPanel
 
     protected boolean validate()
     {
-        List errors = new ArrayList();
+        List<String> errors = new ArrayList<String>();
 
         getChart().validate(errors);
 
         if (!errors.isEmpty())
         {
             String s = "";
-            for (int i=0 ; i<errors.size() ; i++)
-                s += errors.get(i) + "\n";
+            for (String error : errors)
+                s += error + "\n";
             Window.alert(s);
             return false;
         }
@@ -67,9 +70,9 @@ public class ChartPreviewPanel extends AbstractChartPanel
         _panel = new VerticalPanel();
 
         ImageButton plotButton = new ImageButton("Refresh Chart");
-        plotButton.addClickListener(new ClickListener()
+        plotButton.addClickHandler(new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 if (validate())
                 {
@@ -91,15 +94,11 @@ public class ChartPreviewPanel extends AbstractChartPanel
 
     private void asyncPlotChart()
     {
-        getService().getDisplayURL(getChart(), new AsyncCallback()
+        getService().getDisplayURL(getChart(), new ErrorDialogAsyncCallback<String>()
         {
-            public void onFailure(Throwable caught)
+            public void onSuccess(String result)
             {
-            }
-
-            public void onSuccess(Object result)
-            {
-                _image = new Image((String)result);
+                _image = new Image(result);
                 _panel.add(_image);
             }
         });

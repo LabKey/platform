@@ -490,7 +490,7 @@ public class SimpleFilter implements Filter
                 CompareClause cc = (CompareClause) fc;
                 ret.append(and);
                 and = "&";
-                ret.append(PageFlowUtil.encode(prefix + cc._colName + "~" + cc._comparison.getUrlKey()));
+                ret.append(PageFlowUtil.encode(prefix + cc._colName + "~" + cc._comparison.getPreferredUrlKey()));
                 if (cc.getParamVals() != null && cc.getParamVals()[0] != null)
                 {
                     ret.append("=");
