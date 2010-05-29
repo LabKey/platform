@@ -52,6 +52,7 @@
 
 %><html>
 <head>
+<base href="<%=h(getViewContext().getActionURL().getBaseServerURI() + getViewContext().getContextPath())%>">
 <%=PageFlowUtil.getStylesheetIncludes(c)%>
 </head>
 <body><%
