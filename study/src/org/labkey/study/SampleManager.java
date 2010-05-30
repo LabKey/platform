@@ -2326,8 +2326,12 @@ public class SampleManager
         }
         SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
-        String sql = "SELECT Specimen.Container, Specimen.ParticipantId AS ParticipantId, Request.DestinationSiteId,\n" +
-                "Site.Label AS SiteLabel, Visit AS SequenceNum, \n" +
+        String subjectCol = StudyService.get().getSubjectColumnName(container);
+        String sql = "SELECT Specimen.Container,\n" +
+                "Specimen." + subjectCol + ",\n" +
+                "Request.DestinationSiteId,\n" +
+                "Site.Label AS SiteLabel,\n" +
+                "Visit AS SequenceNum,\n" +
                  sqlHelper.getTypeGroupingColumns() + ", COUNT(*) AS VialCount, SUM(Volume) AS TotalVolume\n" +
                 "FROM (" + sqlHelper.getViewSql().getSQL() + ") AS Specimen\n" +
                 "JOIN study.SampleRequestSpecimen AS RequestSpecimen ON \n" +
@@ -2343,8 +2347,8 @@ public class SampleManager
                 "\tStatus.Container = Request.Container AND\n" +
                 "\tStatus.RowId = Request.StatusId and Status.SpecimensLocked = ?\n" +
                 (completeRequestsOnly ? "\tAND Status.FinalState = ?\n" : "") +
-                "GROUP BY Specimen.Container, Specimen.ParticipantId, Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit\n" +
-                "ORDER BY Specimen.Container, Specimen.ParticipantId, Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit";
+                "GROUP BY Specimen.Container, Specimen." + subjectCol + ", Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit\n" +
+                "ORDER BY Specimen.Container, Specimen." + subjectCol + ", Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit";
 
         Object[] params = new Object[sqlHelper.getViewSql().getParamsArray().length + 1 + (completeRequestsOnly ? 1 : 0)];
         System.arraycopy(sqlHelper.getViewSql().getParamsArray(), 0, params, 0, sqlHelper.getViewSql().getParamsArray().length);
@@ -2394,7 +2398,7 @@ public class SampleManager
         RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
 
         if (includeParticipantLists)
-            setSummaryParticipantLists(sql, params, null, summaries, "ParticipantId", "SequenceNum");
+            setSummaryParticipantLists(sql, params, null, summaries, subjectCol, "SequenceNum");
         return summaries;
     }
 
