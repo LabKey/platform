@@ -70,7 +70,8 @@ public class ParticipantDataSetTable extends VirtualTable
         }
         column.setLabel(def.getLabel());
 
-        if (def.isDemographicData()) // If it's demographic, there are no visits, so we can add the dataset fields directly
+        // If it's demographic or a continuous study, there are no visits, so we can add the dataset fields directly
+        if (def.isDemographicData() || def.getStudy().getTimepointType() == TimepointType.CONTINUOUS)
         {
             column.setFk(new AbstractForeignKey() {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
