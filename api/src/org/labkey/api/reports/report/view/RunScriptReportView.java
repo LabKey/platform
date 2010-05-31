@@ -23,6 +23,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
@@ -79,7 +80,7 @@ public class RunScriptReportView extends RunReportView
 
     public List<NavTree> getTabList()
     {
-        ActionURL url = getViewContext().cloneActionURL().replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
+        URLHelper url = getBaseUrl().replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
 
         List<NavTree> tabs = new ArrayList<NavTree>();
 
@@ -259,7 +260,7 @@ public class RunScriptReportView extends RunReportView
     {
         boolean _saveChanges;
 
-        public ScriptTabInfo(String name, String id, ActionURL url, boolean saveChanges)
+        public ScriptTabInfo(String name, String id, URLHelper url, boolean saveChanges)
         {
             super(name, id, url);
             _saveChanges = saveChanges;

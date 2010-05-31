@@ -17,6 +17,7 @@ package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.*;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
@@ -44,8 +45,7 @@ public class CreateScriptReportView extends RunScriptReportView
 
     public List<NavTree> getTabList()
     {
-        ActionURL url = getViewContext().cloneActionURL().
-                replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
+        URLHelper url = getBaseUrl().replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
 
         List<NavTree> tabs = new ArrayList<NavTree>();
 

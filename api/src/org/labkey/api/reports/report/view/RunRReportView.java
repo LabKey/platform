@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
@@ -52,7 +53,7 @@ public class RunRReportView extends RunScriptReportView
 
     public List<NavTree> getTabList()
     {
-        ActionURL url = getViewContext().cloneActionURL().replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
+        URLHelper url = getBaseUrl().replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
 
         List<NavTree> tabs = new ArrayList<NavTree>();
 
@@ -152,7 +153,7 @@ public class RunRReportView extends RunScriptReportView
 
         // set the default redirect url
         if (form.getRedirectUrl() == null)
-            form.setRedirectUrl(getViewContext().cloneActionURL().
+            form.setRedirectUrl(getBaseUrl().
                     //deleteParameter(TAB_PARAM).
                     replaceParameter(TAB_PARAM, TAB_SOURCE).                            
                     deleteParameter(CACHE_PARAM).getLocalURIString());

@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
@@ -50,7 +51,7 @@ public class RunChartReportView extends RunReportView
 
     public List<NavTree> getTabList()
     {
-        ActionURL url = getViewContext().cloneActionURL();
+        URLHelper url = getBaseUrl();
 
         List<NavTree> tabs = new ArrayList<NavTree>();
         tabs.add(new TabInfo(TAB_VIEW, TAB_VIEW, url));

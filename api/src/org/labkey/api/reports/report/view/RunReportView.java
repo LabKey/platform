@@ -16,12 +16,15 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -117,9 +120,26 @@ public abstract class RunReportView extends TabStripView
 
     protected static class ReportTabInfo extends TabInfo
     {
-        public ReportTabInfo(String name, String id, ActionURL url)
+        public ReportTabInfo(String name, String id, URLHelper url)
         {
             super(name, id, url.deleteParameter(MSG_PARAM));
+        }
+    }
+
+    protected URLHelper getBaseUrl()
+    {
+        ActionURL url = getViewContext().getActionURL();
+        String returnURL = url.getParameter("returnURL");
+
+        try {
+            if (!StringUtils.isBlank(returnURL))
+                return new URLHelper(returnURL);
+            else
+                return new URLHelper(url.toString());
+        }
+        catch (URISyntaxException e)
+        {
+            throw new IllegalArgumentException(e);
         }
     }
 }

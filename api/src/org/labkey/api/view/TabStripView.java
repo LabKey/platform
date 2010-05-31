@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.ModelAndView;
 import org.apache.commons.lang.StringUtils;
 
@@ -94,7 +95,7 @@ public abstract class TabStripView extends JspView<TabStripView>
 
     public static class TabInfo extends NavTree
     {
-        public TabInfo(String name, String id, ActionURL url)
+        public TabInfo(String name, String id, URLHelper url)
         {
             super(name, url.clone().replaceParameter(TAB_PARAM, id).getLocalURIString());
             setId(id);
