@@ -816,7 +816,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (name.length() == 0)
             return name;
 
-        StringBuffer buf = new StringBuffer(name.length() + 10);
+        StringBuilder buf = new StringBuilder(name.length() + 10);
         char[] chars = new char[name.length()];
         name.getChars(0, name.length(), chars, 0);
         buf.append(Character.toUpperCase(chars[0]));
@@ -852,7 +852,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (name.length() == 0)
             return null;
 
-        StringBuffer buf = new StringBuffer(name.length());
+        StringBuilder buf = new StringBuilder(name.length());
         char[] chars = new char[name.length()];
         name.getChars(0, name.length(), chars, 0);
         //Different rule for first character
@@ -946,7 +946,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer(64);
+        StringBuilder sb = new StringBuilder(64);
 
         sb.append("  ");
         sb.append(StringUtils.rightPad(getName(), 25));

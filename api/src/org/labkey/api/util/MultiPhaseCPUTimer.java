@@ -1,0 +1,120 @@
+package org.labkey.api.util;
+
+import org.apache.commons.lang.mutable.MutableLong;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * User: adam
+ * Date: May 29, 2010
+ * Time: 2:03:25 PM
+ */
+public class MultiPhaseCPUTimer<K extends Enum<K>>
+{
+    private final Map<K, MutableLong> _accumulationMap;
+    private final Class<K> _clazz;
+    private final K[] _values;
+
+    private long _count = 0;
+
+    public MultiPhaseCPUTimer(Class<K> clazz, K[] values)
+    {
+        _clazz = clazz;
+        _values = values;
+        _accumulationMap = getEnumMap(_clazz, _values);
+    }
+
+    public InvocationTimer<K> getInvocationTimer()
+    {
+        return new InvocationTimer<K>(_clazz, _values);
+    }
+
+    public void releaseInvocationTimer(InvocationTimer<K> timer)
+    {
+        timer.close();
+
+        synchronized (_accumulationMap)
+        {
+            _count++;
+
+            for (Map.Entry<K, MutableLong> entry : timer._map.entrySet())
+                _accumulationMap.get(entry.getKey()).add(entry.getValue());
+        }
+    }
+
+    // Return a copy of the current stats as a map of phase name -> average time in milliseconds
+    public Map<String, Double> getTimes()
+    {
+        Map<String, Double> map = new LinkedHashMap<String, Double>();
+
+        synchronized (_accumulationMap)
+        {
+            // Return stats for the phases we've seen, but in order of enum values
+            for (K value : _values)
+            {
+                MutableLong nanos =  _accumulationMap.get(value);
+
+                if (null != nanos)
+                {
+                    double d = (0 == _count ? 0 : nanos.doubleValue() / (_count * 1000000.0));   // average and convert from nanos to millis
+                    map.put(value.toString(), d);
+                }
+            }
+        }
+
+        return map;
+    }
+
+    // Create an enum map and populate it with MutableLongs for each value
+    private static <ENUM extends Enum<ENUM>> Map<ENUM, MutableLong> getEnumMap(Class<ENUM> clazz, ENUM[] values)
+    {
+        Map<ENUM, MutableLong> map = new EnumMap<ENUM, MutableLong>(clazz);
+
+        for (ENUM phase : values)
+            map.put(phase, new MutableLong());
+
+        return map;
+    }
+
+    public static class InvocationTimer<K2 extends Enum<K2>>
+    {
+        private final Map<K2, MutableLong> _map;
+        private K2 _currentPhase = null;
+        private long _beginningNanos = 0;
+        private boolean _closed = false;
+
+        private InvocationTimer(Class<K2> clazz, K2[] values)
+        {
+            _beginningNanos = System.nanoTime();
+            _map = getEnumMap(clazz, values);
+        }
+
+        public void setPhase(@Nullable K2 phase)
+        {
+            long prevBeginning = _beginningNanos;
+            _beginningNanos = System.nanoTime();
+
+            if (null != _currentPhase)
+                _map.get(_currentPhase).add(_beginningNanos - prevBeginning);
+
+            _currentPhase = phase;
+            assert !_closed;
+        }
+
+        private void close()
+        {
+            setPhase(null);
+            _closed = true;
+        }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            assert _closed && null == _currentPhase;
+            super.finalize();
+        }
+    }
+}

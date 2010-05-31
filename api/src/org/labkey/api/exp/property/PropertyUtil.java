@@ -29,20 +29,6 @@ import java.text.DecimalFormat;
 */
 public class PropertyUtil
 {
-    public static Object formatValue(PropertyDescriptor prop, Object value, String defaultFormat)
-    {
-        if (prop == null)
-            return value;
-        return formatValue(prop.getPropertyType(), prop.getFormat(), value, defaultFormat);
-    }
-
-    public static Object formatValue(DomainProperty prop, Object value, String defaultFormat)
-    {
-        if (prop == null)
-            return value;
-        return formatValue(prop.getPropertyDescriptor().getPropertyType(), prop.getFormat(), value, defaultFormat);
-    }
-
     public static Object formatValue(PropertyType type, String formatString, Object value, String defaultFormat)
     {
         if (formatString == null)
