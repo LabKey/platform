@@ -32,10 +32,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -280,7 +277,7 @@ public class ChartReportView extends AbstractReportView
                 return new JspView<ReportsController.PlotForm>("/org/labkey/study/view/datasetCharts.jsp", form);
             }
         }
-        return null;
+        return new HtmlView("The requested report is obsolete and could not be rendered.");
     }
 
     public static class ChartReportViewDescriptor extends ChartReportDescriptor

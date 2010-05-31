@@ -181,13 +181,8 @@ public class StudyQueryReport extends QueryReport
                             addParameter(DataSetDefinition.DATASETKEY, datasetId).
                             addParameter("Dataset.reportId", getDescriptor().getReportId().toString());
         }
-/*
-        QueryDefinition def = QueryService.get().getQueryDef(context.getContainer(), getDescriptor().getProperty(QueryParam.schemaName.name()), getDescriptor().getProperty(QueryParam.queryName.name()));
-        if (def != null)
-            return def.urlFor(QueryAction.executeQuery).
-                    addParameter("Dataset.reportId", getDescriptor().getReportId()).
-                    addParameter(QueryParam.dataRegionName.name(), "Dataset");
-*/
-        return super.getRunReportURL(context);
+
+        return new ActionURL(StudyController.QueryReportAction.class, context.getContainer()).
+                addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
     }
 }

@@ -450,34 +450,100 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class DatasetReportAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
+    static class QueryReportForm extends QueryViewAction.QueryExportForm
     {
-        Report _report;
+        ReportIdentifier _reportId;
 
-        public DatasetReportAction()
+        public ReportIdentifier getReportId()
         {
-            super(QueryExportForm.class);
+            return _reportId;
         }
 
-        private Report getReport() throws Exception
+        public void setReportId(ReportIdentifier reportId)
         {
-            String reportId = (String)getViewContext().get("Dataset.reportId");
+            _reportId = reportId;
+        }
+    }
 
-            ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
-            if (identifier != null)
-                return identifier.getReport();
+    @RequiresPermissionClass(ReadPermission.class)
+    public class QueryReportAction extends QueryViewAction<QueryReportForm, QueryView>
+    {
+        protected Report _report;
+
+        public QueryReportAction()
+        {
+            super(QueryReportForm.class);
+        }
+
+        @Override
+        protected ModelAndView getHtmlView(QueryReportForm form, BindException errors) throws Exception
+        {
+            Report report = getReport(form);
+
+            if (report != null)
+                return report.getRunReportView(getViewContext());
+            else
+                throw new NotFoundException("Unable to locate the requested report: " + form.getReportId());
+        }
+
+        @Override
+        protected QueryView createQueryView(QueryReportForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            Report report = getReport(form);
+            if (report instanceof QueryReport)
+                return ((QueryReport)report).getQueryViewGenerator().generateQueryView(getViewContext(), report.getDescriptor());
 
             return null;
         }
 
-        protected ModelAndView getHtmlView(QueryViewAction.QueryExportForm form, BindException errors) throws Exception
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            if (_report != null)
+                return root.addChild(_report.getDescriptor().getReportName());
+            return root.addChild("Study Query Report");
+        }
+
+        protected Report getReport(QueryReportForm form) throws Exception
+        {
+            if (_report == null)
+            {
+                ReportIdentifier identifier = form.getReportId();
+                if (identifier != null)
+                    _report = identifier.getReport();
+            }
+            return _report;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DatasetReportAction extends QueryReportAction
+    {
+        public DatasetReportAction()
+        {
+            super();
+        }
+
+        protected Report getReport(QueryReportForm form) throws Exception
+        {
+            if (_report == null)
+            {
+                String reportId = (String)getViewContext().get("Dataset.reportId");
+
+                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
+                if (identifier != null)
+                    _report = identifier.getReport();
+            }
+            return _report;
+        }
+
+        protected ModelAndView getHtmlView(QueryReportForm form, BindException errors) throws Exception
         {
             ViewContext context = getViewContext();
-            _report = getReport();
+            Report report = getReport(form);
 
             // is not a report (either the default grid view or a custom view)...
-            if (_report == null)
+            if (report == null)
             {
                 return HttpView.redirect(createRedirectURLfrom(DatasetAction.class, context));
             }
@@ -488,30 +554,15 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.reportId", _report.getDescriptor().getReportId().toString()).
+                                        replaceParameter("Dataset.reportId", report.getDescriptor().getReportId().toString()).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);
             }
-            else if (ReportManager.get().canReadReport(getUser(), getContainer(), _report))
-                return _report.getRunReportView(getViewContext());
+            else if (ReportManager.get().canReadReport(getUser(), getContainer(), report))
+                return report.getRunReportView(getViewContext());
             else
                 return new HtmlView("User does not have read permission on this report.");
-        }
-
-        protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
-        {
-            Report report = getReport();
-            if (report instanceof QueryReport)
-            {
-                return ((QueryReport)report).getQueryViewGenerator().generateQueryView(getViewContext(), report.getDescriptor());                
-            }
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild(_report.getDescriptor().getReportName());
         }
     }
 
