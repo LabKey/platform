@@ -96,4 +96,10 @@ public class SolrSearchServiceImpl extends AbstractSearchService
     {
         return null;
     }
+
+    @Override
+    public Map<String, Double> getSearchStats()
+    {
+        return null;
+    }
 }

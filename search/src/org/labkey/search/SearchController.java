@@ -18,6 +18,7 @@ package org.labkey.search;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
@@ -198,10 +199,13 @@ public class SearchController extends SpringActionController
             WebPartView externalIndexView = new JspView<ExternalIndexProperties>(SearchController.class, "view/externalIndex.jsp", props, errors);
             externalIndexView.setTitle("External Index Configuration");
 
-            WebPartView statsView = new JspView<AdminForm>(SearchController.class, "view/indexerStats.jsp", form, errors);
-            statsView.setTitle("Primary Index Statistics");
+            WebPartView indexerStatsView = new JspView<AdminForm>(SearchController.class, "view/indexerStats.jsp", form, errors);
+            indexerStatsView.setTitle("Primary Index Statistics");
             
-            return new VBox(indexerView, externalIndexView, statsView);
+            WebPartView searchStatsView = new JspView<AdminForm>(SearchController.class, "view/searchStats.jsp", form, errors);
+            searchStatsView.setTitle("Search Statistics");
+
+            return new VBox(indexerView, externalIndexView, indexerStatsView, searchStatsView);
         }
 
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
@@ -719,7 +723,7 @@ public class SearchController extends SpringActionController
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
             _category = form.getCategory();
-            _scope = form.getSearchScope(getViewContext().getContainer());
+            _scope = form.getSearchScope();
 
             return super.getView(form, errors, false);
         }
@@ -737,7 +741,7 @@ public class SearchController extends SpringActionController
                     break;
                 case Folder:
                     title += " folder '";
-                    if (getContainer().getName() == "")
+                    if ("".equals(getContainer().getName()))
                         title += "root'";
                     else
                         title += getContainer().getName() + "'";
@@ -975,7 +979,7 @@ public class SearchController extends SpringActionController
             return _container;
         }
 
-        public Container getSearchContainer()
+        public @NotNull Container getSearchContainer()
         {
             Container c = null;
 
@@ -988,11 +992,11 @@ public class SearchController extends SpringActionController
             return c;
         }
 
-        public SearchScope getSearchScope(Container currentContainer)
+        public SearchScope getSearchScope()
         {
             Container searchContainer = getSearchContainer();
 
-            if (ContainerManager.getRoot().equals(searchContainer) && getIncludeSubfolders())
+            if (searchContainer.isRoot() && getIncludeSubfolders())
                 return SearchScope.All;
 
             if (searchContainer.isProject() && getIncludeSubfolders())

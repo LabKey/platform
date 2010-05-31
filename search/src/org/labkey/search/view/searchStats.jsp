@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.search.model.AbstractSearchService" %>
-<%@ page import="org.labkey.search.model.DavCrawler" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -35,29 +35,19 @@ else
     %><table><%
     if (ss instanceof AbstractSearchService)
     {
-        Map<String, Object> m = ((AbstractSearchService)ss).getIndexerStats();
+        Map<String, Double> m = ((AbstractSearchService)ss).getSearchStats();
 
-        for (Map.Entry e : m.entrySet())
+        %>
+        <tr><td colspan=3 valign="top">Average time in milliseconds for each phase of searching the primary index:</td></tr>
+        <tr><td colspan=3 valign="top">&nbsp;</td></tr><%
+
+        for (Map.Entry<String, Double> e : m.entrySet())
         {
-            String l = String.valueOf(e.getKey());
-            Object v = e.getValue();
-            if (v instanceof Integer || v instanceof Long)
-                v = Formats.commaf0.format(((Number)v).longValue());
-            v = null==v ? "" : String.valueOf(v);
-            %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
+            String label = h(ColumnInfo.labelFromName(e.getKey())).replaceAll(" ", "&nbsp;");
+            String v = Formats.f2.format(e.getValue());
+            %>
+        <tr><td valign="top"><%=label%></td><td align="right">&nbsp;&nbsp;<%=v%></td><td width="100%" align="right">&nbsp;</td></tr><%
         }
-    }
-
-    Map<String, Object> m = DavCrawler.getInstance().getStats();
-
-    for (Map.Entry e : m.entrySet())
-    {
-        String l = String.valueOf(e.getKey());
-        Object v = e.getValue();
-        if (v instanceof Integer || v instanceof Long)
-            v = Formats.commaf0.format(((Number)v).longValue());
-        v = null==v ? "" : String.valueOf(v);
-        %><tr><td valign="top"><%=l%></td><td><%=v%></td></tr><%
     }
     %></table><%
 }

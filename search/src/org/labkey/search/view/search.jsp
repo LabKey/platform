@@ -242,7 +242,7 @@
 
             %></div></td><%
 
-            if (null == category && wideView && searchConfig.includeNavigationLinks() && form.getSearchScope(null) != SearchScope.Folder)
+            if (null == category && wideView && searchConfig.includeNavigationLinks() && form.getSearchScope() != SearchScope.Folder)
             {
                 result = ss.search(queryString, Arrays.asList(SearchService.navigationCategory), user, form.getSearchContainer(), c, true, offset, hitsPerPage);
 

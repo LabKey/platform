@@ -1325,9 +1325,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     
-    public Map<String,Object> getStats()
+    public Map<String, Object> getIndexerStats()
     {
-        HashMap<String,Object> map = new HashMap<String,Object>();
+        HashMap<String, Object> map = new HashMap<String,Object>();
 
         ArrayList<RateLimiter.RateAccumulator> history;
         synchronized (_commitLock)
@@ -1353,6 +1353,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return map;
     }
     
+
+    public abstract Map<String, Double> getSearchStats();
 
     public void maintenance()
     {

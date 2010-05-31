@@ -44,6 +44,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.*;
+import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -67,6 +68,8 @@ import java.util.regex.Pattern;
 public class LuceneSearchServiceImpl extends AbstractSearchService
 {
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
+    private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<SEARCH_PHASE>(SEARCH_PHASE.class, SEARCH_PHASE.values());
+
     static final Version LUCENE_VERSION = Version.LUCENE_30;
 
     private final Analyzer _analyzer = ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
@@ -80,6 +83,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
         url, container, resourceId, uniqueId, navtrail }
 
+    private static enum SEARCH_PHASE {determineParticipantId, createQuery, buildSecurityFilter, search, processHits}
 
     private void initializeIndex()
     {
@@ -754,16 +758,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container root, Container currentContainer, boolean recursive, int offset, int limit) throws IOException
     {
+        InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
+
         String sort = null;  // TODO: add sort parameter
         int hitsToRetrieve = offset + limit;
         boolean requireCategories = (null != categories);
 
         if (!requireCategories)
         {
+            iTimer.setPhase(SEARCH_PHASE.determineParticipantId);
             // Boost "subject" results if this is a participant id
             if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
                 categories = this.getCategory("subject");
         }
+
+        iTimer.setPhase(SEARCH_PHASE.createQuery);
 
         Query query;
 
@@ -811,11 +820,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             query = bq;
         }
 
-        LabKeyIndexSearcher searcher = _index.getSearcher();
+        LabKeyIndexSearcher searcher = null;
 
         try
         {
+            iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
             Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, root, currentContainer, recursive);
+
+            iTimer.setPhase(SEARCH_PHASE.search);
+            searcher = _index.getSearcher();
+
             TopDocs topDocs;
 
             if (null == sort)
@@ -823,11 +837,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             else
                 topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
 
+            iTimer.setPhase(SEARCH_PHASE.processHits);
             return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
         }
         finally
         {
-            _index.releaseSearcher(searcher);
+            TIMER.releaseInvocationTimer(iTimer);
+
+            if (null != searcher)
+                _index.releaseSearcher(searcher);
         }
     }
 
@@ -943,7 +961,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     @Override
-    public Map<String, Object> getStats()
+    public Map<String, Object> getIndexerStats()
     {
         Map<String, Object> map = new LinkedHashMap<String,Object>();
 
@@ -967,11 +985,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         }
 
-        map.putAll(super.getStats());
+        map.putAll(super.getIndexerStats());
         return map;
     }
 
 
+    @Override
+    public Map<String, Double> getSearchStats()
+    {
+        return TIMER.getTimes();
+    }
 
     private boolean isImage(String contentType)
     {
