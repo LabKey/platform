@@ -38,7 +38,7 @@ public class ChooseColumnsForm extends DesignForm
     public boolean ff_saveFilter;
     public boolean ff_inheritable;
 
-    private ActionURL _sourceURL;
+    private ActionURL _sourceURL = null;
     private boolean _allowSaveWithSameName = true;
 
     public BindException bindParameters(PropertyValues params)
@@ -54,9 +54,16 @@ public class ChooseColumnsForm extends DesignForm
         String src = getValue(QueryParam.srcURL, params);
         if (src != null)
         {
-            _sourceURL = new ActionURL(src);
-            _sourceURL.setReadOnly();
-            ((MutablePropertyValues)_initParameters).addPropertyValues(_sourceURL.getPropertyValues());
+            try
+            {
+                _sourceURL = new ActionURL(src);
+                _sourceURL.setReadOnly();
+                ((MutablePropertyValues)_initParameters).addPropertyValues(_sourceURL.getPropertyValues());
+            }
+            catch (IllegalArgumentException x)
+            {
+                _sourceURL = null;
+            }
         }
 
         return errors;

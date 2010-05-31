@@ -96,19 +96,6 @@ public class FileContentController extends SpringActionController
    }
 
 
-/*   // UNDONE: need better way to set right pane
-   protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
-   {
-       ModelAndView t = super.getTemplate(context, mv, action, page);
-       if (action instanceof BeginAction && t instanceof HomeTemplate)
-       {
-           HomeTemplate template = (HomeTemplate)t;
-           template.setView("right", new FileSetsWebPart(getContainer()));
-       }
-       return t;
-   }
-*/
-
     public static class FileUrlsImpl implements FileUrls
     {
         public ActionURL urlBegin(Container container)
@@ -224,11 +211,18 @@ public class FileContentController extends SpringActionController
                     {
                         getPageConfig().setTemplate(PageConfig.Template.None);
 
+                        try
+                        {
                         PageFlowUtil.streamFile(getViewContext().getResponse(),
                                 Collections.singletonMap("Content-Type",_resource.getContentType()),
                                 _resource.getName(),
                                 _resource.getInputStream(getUser()),
                                 RenderStyle.ATTACHMENT==style);
+                        }
+                        catch (FileNotFoundException x)
+                        {
+                            HttpView.throwNotFound(_resource.getName());
+                        }
                         return null;
                     }
                     case FRAME:
@@ -245,9 +239,10 @@ public class FileContentController extends SpringActionController
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
                             {
-                                InputStream fis = _resource.getInputStream(getUser());
+                                InputStream fis = null;
                                 try
                                 {
+                                    fis = _resource.getInputStream(getUser());
                                     IOUtils.copy(new InputStreamReader(fis), out);
                                 }
                                 catch (FileNotFoundException x)
@@ -277,6 +272,10 @@ public class FileContentController extends SpringActionController
                                     String fileContents = PageFlowUtil.getStreamContentsAsString(_resource.getInputStream(getUser()));
                                     String html = PageFlowUtil.filter(fileContents, true, true);
                                     out.write(html);
+                                }
+                                catch (FileNotFoundException x)
+                                {
+                                    out.write("<span class='labkey-error'>file not found: " + PageFlowUtil.filter(_resource.getName()) + "</span>");
                                 }
                                 catch (OutOfMemoryError x)
                                 {
