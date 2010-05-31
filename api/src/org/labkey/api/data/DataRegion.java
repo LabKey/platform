@@ -2112,17 +2112,31 @@ public class DataRegion extends DisplayElement
             {
                 if (group.isCopyable())
                 {
-                    out.write("function " + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "Updated()\n{");
-                    out.write("if (document.getElementById('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "CheckBox') != null && document.getElementById('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "CheckBox').checked) {");
-                    out.write("v = document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "')[0].value;");
+                    ColumnInfo col0 = group.getColumns().get(0).getColumnInfo();
+                    String groupName = ctx.getForm().getFormFieldName(col0);
+                    out.write("function " + groupName + "Updated() {\n");
+                    out.write("  if (document.getElementById('" + groupName + "CheckBox') != null && document.getElementById('" + groupName + "CheckBox').checked) {\n");
+
+                    String valueProperty = "value";
+                    if (col0.inputType.equalsIgnoreCase("select"))
+                    {
+                        valueProperty = "selectedIndex";
+                    }
+                    else if (col0.inputType.equalsIgnoreCase("checkbox"))
+                    {
+                        valueProperty = "checked";
+                    }
+                    out.write("    var v = document.getElementsByName('" + groupName + "')[0]." + valueProperty + ";\n");
                     for (int i = 1; i < group.getColumns().size(); i++)
                     {
-                        out.write("document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(i).getColumnInfo()) + "')[0].value = v;");
+                        out.write("    document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(i).getColumnInfo()) + "')[0]." + valueProperty + " = v;\n");
                     }
-                    out.write("}}\n");
-                    out.write("e = document.getElementsByName('" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "')[0];\n");
-                    out.write("e.onchange=" +ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "Updated;");
-                    out.write("e.onkeyup=" + ctx.getForm().getFormFieldName(group.getColumns().get(0).getColumnInfo()) + "Updated;");
+                    out.write("  }\n");
+                    out.write("}\n");
+                    out.write("var e = document.getElementsByName('" + groupName + "')[0];\n");
+                    out.write("e.onchange=" + groupName + "Updated;\n");
+                    out.write("e.onkeyup=" + groupName + "Updated;\n");
+                    out.write("\n");
                 }
             }
             out.write("</script>");
