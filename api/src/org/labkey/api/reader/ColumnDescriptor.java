@@ -101,6 +101,13 @@ public class ColumnDescriptor
         this.mvContainer = mvContainer;
     }
 
+    public void setMvDisabled()
+    {
+        mvEnabled = false;
+        this.mvContainer = null;
+    }
+
+
     public void setMvIndicator(@NotNull Container mvContainer)
     {
         mvIndicator = true;

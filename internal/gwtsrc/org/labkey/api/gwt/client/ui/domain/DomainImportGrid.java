@@ -81,45 +81,73 @@ public class DomainImportGrid extends Grid
         return column2typePicker.get(col).getSelectedType();
     }
 
+    public boolean isMVEnabledForColumn(InferencedColumn col)
+    {
+        return column2typePicker.get(col).isMVEnabled();
+    }
+
     private class TypeListBox extends ListBox
     {
+        private static final String MV_SUPPORT_SUFFIX = " with missing value support";
         public TypeListBox(GWTPropertyDescriptor prop)
         {
             super();
             Type type = Type.getTypeByXsdType(prop.getRangeURI());
-            addItem(type);
+            boolean missingValuesFound = prop.getMvEnabled();
             switch(type)
             {
                 case StringType:
+                    addItem(Type.StringType, false);
+                    if (missingValuesFound)
+                        addItem(Type.StringType, true);
                     break;
                 case IntType:
-                    addItem(Type.DoubleType);
-                    addItem(Type.StringType);
+                    addItem(Type.IntType, missingValuesFound);
+                    addItem(Type.DoubleType, missingValuesFound);
+                    addItem(Type.StringType, false);
+                    if (missingValuesFound)
+                        addItem(Type.StringType, true);
                     break;
                 case DoubleType:
-                    addItem(Type.StringType);
+                    addItem(Type.DoubleType, missingValuesFound);
+                    addItem(Type.StringType, false);
+                    if (missingValuesFound)
+                        addItem(Type.StringType, true);
                     break;
                 case DateTimeType:
-                    addItem(Type.StringType);
+                    addItem(Type.DateTimeType, missingValuesFound);
+                    addItem(Type.StringType, false);
+                    if (missingValuesFound)
+                        addItem(Type.StringType, true);
                     break;
                 case BooleanType:
-                    addItem(Type.StringType);
+                    addItem(Type.BooleanType, missingValuesFound);
+                    addItem(Type.StringType, false);
+                    if (missingValuesFound)
+                        addItem(Type.StringType, true);
                     break;
             }
         }
 
-        private void addItem(Type type)
+        private void addItem(Type type, boolean mvEnabled)
         {
-            addItem(type.getLabel());
+            String label = type.getLabel() + (mvEnabled ? MV_SUPPORT_SUFFIX : "");
+            addItem(label);
         }
 
         public Type getSelectedType()
         {
             String selectedLabel = getValue(getSelectedIndex());
+            if (isMVEnabled())
+                selectedLabel = selectedLabel.substring(0, selectedLabel.length() - MV_SUPPORT_SUFFIX.length());
             return Type.getTypeByLabel(selectedLabel);
         }
 
-
+        public boolean isMVEnabled()
+        {
+            String selectedLabel = getValue(getSelectedIndex());
+            return selectedLabel.endsWith(MV_SUPPORT_SUFFIX);
+        }
     }
 
 

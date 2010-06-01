@@ -106,7 +106,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     {
         try
         {
-            return DataLoader.getDataLoaderForFile(getImportFile());
+            return DataLoader.getDataLoaderForFile(getImportFile(), getContainer());
         }
         catch (ServletException e)
         {
@@ -135,6 +135,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
                 prop.setName(column.name);
                 prop.setRangeURI(column.getRangeURI());
+                prop.setMvEnabled(column.isMvEnabled());
 
                 List<String> columnData = new ArrayList<String>();
                 for (int rowIndex=1; rowIndex<numRows; rowIndex++)

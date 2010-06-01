@@ -43,7 +43,7 @@ public class FolderTypeResourceLoader implements ModuleResourceLoader
         if (folderTypesDir != null && folderTypesDir.exists() && folderTypesDir.isCollection())
         {
             for (FolderType folderType : SimpleFolderType.createFromDirectory(folderTypesDir))
-                ModuleLoader.getInstance().registerFolderType(folderType);
+                ModuleLoader.getInstance().registerFolderType(module, folderType);
         }
     }
 }

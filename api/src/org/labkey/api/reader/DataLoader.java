@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -67,22 +68,37 @@ public abstract class DataLoader<T> implements Iterable<T>
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     protected boolean _throwOnErrors = false;
+    private Container _mvIndicatorContainer;
+
+    protected DataLoader()
+    {
+    }
+
+    protected DataLoader(Container mvIndicatorContainer)
+    {
+        _mvIndicatorContainer = mvIndicatorContainer;
+    }
 
     public static DataLoader<Map<String, Object>> getDataLoaderForFile(File file) throws ServletException, IOException
+    {
+        return getDataLoaderForFile(file, null);
+    }
+
+    public static DataLoader<Map<String, Object>> getDataLoaderForFile(File file, Container mvIndicatorContainer) throws ServletException, IOException
     {
         String filename = file.getName();
 
         if (filename.endsWith("xls"))
         {
-            return new ExcelLoader(file, true);
+            return new ExcelLoader(file, true, mvIndicatorContainer);
         }
         else if (filename.endsWith("txt") || filename.endsWith("tsv"))
         {
-            return new TabLoader(file, true);
+            return new TabLoader(file, true, mvIndicatorContainer);
         }
         else if (filename.endsWith("csv"))
         {
-            TabLoader loader = new TabLoader(file, true);
+            TabLoader loader = new TabLoader(file, true, mvIndicatorContainer);
             loader.parseAsCSV();
             return loader;
         }
@@ -188,6 +204,8 @@ public abstract class DataLoader<T> implements Iterable<T>
             return;
         }
 
+        Set<String> missingValueIndicators = _mvIndicatorContainer != null ? MvUtil.getMvIndicators(_mvIndicatorContainer) : Collections.<String>emptySet();
+
         int nCols = 0;
         for (String[] lineField : lineFields)
         {
@@ -208,6 +226,12 @@ public abstract class DataLoader<T> implements Iterable<T>
                 if (f >= lineFields[line].length)
                     continue;
                 String field = lineFields[line][f];
+                if (missingValueIndicators.contains(field))
+                {
+                    colDescs[f].setMvEnabled(_mvIndicatorContainer);
+                    continue;
+                }
+
                 if ("".equals(field))
                     continue;
 

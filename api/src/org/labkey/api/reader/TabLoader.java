@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reader;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.util.CloseableIterator;
 
 import java.util.Map;
@@ -38,6 +39,11 @@ public class TabLoader extends AbstractTabLoader<Map<String, Object>>
     public TabLoader(File inputFile, boolean hasColumnHeaders) throws IOException
     {
         super(inputFile, hasColumnHeaders);
+    }
+
+    public TabLoader(File inputFile, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        super(inputFile, hasColumnHeaders, mvIndicatorContainer);
     }
 
     public TabLoader(Reader reader, boolean hasColumnHeaders) throws IOException

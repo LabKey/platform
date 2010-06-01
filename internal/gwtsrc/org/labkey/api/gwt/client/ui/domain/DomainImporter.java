@@ -189,7 +189,11 @@ public class DomainImporter
 
             DomainImportGrid.Type selectedType = grid.getTypeForColumn(column);
             if (selectedType != null)
+            {
                 prop.setRangeURI(selectedType.getXsdType());
+                boolean isMvEnabled = grid.isMVEnabledForColumn(column);
+                prop.setMvEnabled(isMvEnabled);
+            }
 
             newProps.add(prop);
         }

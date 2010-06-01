@@ -92,6 +92,10 @@ public class TableInfoWriter
         if (propertyURI != null)
             columnXml.setPropertyURI(propertyURI);
 
+        String conceptURI = getConceptURI(column);
+        if (conceptURI != null)
+            columnXml.setConceptURI(conceptURI);
+
         if (!column.isNullable())
             columnXml.setNullable(false);
 
@@ -151,6 +155,11 @@ public class TableInfoWriter
         // TODO: Field validators?
         // TODO: Default values / Default value types
         // TODO: ConceptURI
+    }
+
+    protected String getConceptURI(ColumnInfo column)
+    {
+        return null;
     }
 
     /**

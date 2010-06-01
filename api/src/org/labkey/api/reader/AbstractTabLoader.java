@@ -21,6 +21,7 @@ import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
 
@@ -68,12 +69,20 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
     protected AbstractTabLoader(File inputFile, Boolean hasColumnHeaders) throws IOException
     {
+        this(inputFile, hasColumnHeaders, null);
+    }
+
+    protected AbstractTabLoader(File inputFile, Boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        super(mvIndicatorContainer);
         setSource(inputFile);
         init(hasColumnHeaders);
     }
 
     protected AbstractTabLoader(CharSequence src, Boolean hasColumnHeaders) throws IOException
     {
+        // This AbstractTabLoader constructor doesn't support MV Indicators:
+        super(null);
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
 
@@ -83,6 +92,8 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
     protected AbstractTabLoader(Reader reader, Boolean hasColumnHeaders) throws IOException
     {
+        // This AbstractTabLoader constructor doesn't support MV Indicators:
+        super(null);
         if (reader.markSupported())
             _reader = reader;
         else

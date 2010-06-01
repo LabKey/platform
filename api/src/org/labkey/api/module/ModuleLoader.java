@@ -1058,11 +1058,20 @@ public class ModuleLoader implements Filter
         }
     }
 
-    public void registerFolderType(FolderType folderType)
+    public void registerFolderType(Module sourceModule, FolderType folderType)
     {
         synchronized (_folderTypes)
         {
-            _folderTypes.put(folderType.getName(), folderType);
+            if (_folderTypes.containsKey(folderType.getName()))
+            {
+                String msg = "Unable to register folder type " + folderType.getName() + " from module " + sourceModule.getName() +
+                ".  A folder type with this name has already been registered.";
+                Throwable ex = new IllegalStateException(msg);
+                _log.error(msg, ex);
+                setModuleFailure(sourceModule.getName(), ex);
+            }
+            else
+                _folderTypes.put(folderType.getName(), folderType);
         }
     }
 
