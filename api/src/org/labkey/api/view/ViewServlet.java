@@ -124,6 +124,11 @@ public class ViewServlet extends HttpServlet
         try
         {
             url = requestActionURL(request);
+            if (null == url)
+            {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
             request.setAttribute(REQUEST_ACTION, url.getAction());
             request.setAttribute(REQUEST_CONTROLLER, url.getPageFlow());
             request.setAttribute(REQUEST_CONTAINER, url.getExtraPath());
@@ -275,7 +280,13 @@ public class ViewServlet extends HttpServlet
     private ActionURL requestActionURL(HttpServletRequest request)
             throws ServletException
     {
+        // does not reduce need to validate form parameters which may be posted
+        // check coded and decoded
+        if (!validChars(request))
+            return null;
+
         ActionURL url = new ActionURL(request);
+        assert validChars(url);
 
         // canonicalize container
         Path path = url.getParsedPath();
@@ -529,5 +540,69 @@ public class ViewServlet extends HttpServlet
     private String _toString(Object o)
     {
         return o == null ? "" : String.valueOf(o);
+    }
+
+
+    static boolean[] legal = new boolean[256];
+    static
+    {
+        for (char ch=0 ; ch<256 ; ch++)
+            legal[ch] = Character.isWhitespace(ch) || !Character.isISOControl(ch);
+    }
+
+    public static boolean validChar(int ch)
+    {
+        // 0xFFFD is sometimes used as a substitute for an illegal sequence
+        return ch < 256 ? legal[ch] : ch != 0xFFFD && Character.isDefined(ch) && (Character.isWhitespace(ch) || !Character.isISOControl(ch));
+    }
+
+    public static boolean validChars(CharSequence s)
+    {
+        if (null == s)
+            return true;
+        for (int i=0 ; i<s.length() ; i++)
+            if (!validChar(s.charAt(i)))
+                return false;
+        return true;
+    }
+
+    private boolean validChars(ActionURL url) throws ServletException
+    {
+        Path path = url.getParsedPath();
+        for (int i=0 ; i<path.size() ; i++)
+        {
+            if (!validChars(path.get(i)))
+                return false;
+        }
+        for (Pair<String,String> p : url.getParameters())
+        {
+            if (!validChars(p.getKey()))
+                return false;
+            if (!validChars(p.getValue()))
+               return false;
+        }
+        return true;
+    }
+
+
+    private boolean validChars(HttpServletRequest r)
+    {
+        try
+        {
+            // validate original and decoded
+            if (!validChars(r.getRequestURI()))
+                return false;
+            if (!validChars(r.getServletPath()))
+                return false;
+            if (!validChars(r.getQueryString()))
+                return false;
+            if (!validChars(PageFlowUtil.decode(r.getQueryString())))
+                return false;
+        }
+        catch (IllegalArgumentException x)
+        {
+            return false;
+        }
+        return true;
     }
 }

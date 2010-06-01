@@ -24,6 +24,7 @@ import java.util.Locale;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.labkey.api.view.ViewServlet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -555,30 +556,9 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
     }
 
 
-
-    static boolean[] legal = new boolean[256];
-    static
-    {
-        for (char ch=0 ; ch<256 ; ch++)
-            legal[ch] = Character.isWhitespace(ch) || !Character.isISOControl(ch);
-    }
-
-    protected static boolean validChar(int ch)
-    {
-        return ch < 256 ? legal[ch] : Character.isDefined(ch) && (Character.isWhitespace(ch) || !Character.isISOControl(ch));
-    }
-
-    protected static boolean validChars(CharSequence s)
-    {
-        for (int i=0 ; i<s.length() ; i++)
-            if (!validChar(s.charAt(i)))
-                return false;
-        return true;
-    }
-
     protected static void validateChars(CharSequence s)
     {
-        if (!validChars(s))
+        if (!ViewServlet.validChars(s))
             throw new ConversionException("Invalid characters in string");
     }
 

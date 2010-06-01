@@ -47,6 +47,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @param {boolean} [config.addAllFields='false'] If true, all fields specified in the metaData are automatically created.
  * @param {object} [config.values] Provides initial values to populate the form.
  * @param {object} [config.errorEl] If specified, form errors will be written to this element; otherwise, a MsgBox will be used.
+ * @param {string} [config.containerPath] Alternate default container for queries (e.g. for lookups)
  *
  * @example
 &lt;script type="text/javascript"&gt;
@@ -187,6 +188,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             for (i=0 ; i<count ; i++)
             {
                 var field = LABKEY.ext.FormHelper.getFieldEditorConfig(
+                        {containerPath:(config.containerPath || LABKEY.container.path)},
                         fields?fields[i]:{},
                         properties?properties[i]:{},
                         columnModel?columnModel[i]:{}
@@ -463,7 +465,7 @@ LABKEY.ext.FormHelper =
             var config = {
                 schemaName: c.lookup.schema,
                 queryName: c.lookup.table,
-                containerPath: c.lookup.container || LABKEY.container.path
+                containerPath: c.lookup.container || c.containerPath || LABKEY.container.path
             };
             var columns = [];
             if (c.lookup.keyColumn)
