@@ -40,7 +40,7 @@ public interface PipelineStatusFile
 
     public interface StatusWriter
     {
-        void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception;
+        boolean setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception;
 
         void ensureError(PipelineJob job) throws Exception;
     }
@@ -54,6 +54,8 @@ public interface PipelineStatusFile
         void storeJob(PipelineJob job) throws SQLException;
 
         PipelineJob getJob(String jobId) throws SQLException;
+
+        PipelineJob getJob(int rowId) throws SQLException;
 
         void retry(String jobId) throws IOException, SQLException;
 

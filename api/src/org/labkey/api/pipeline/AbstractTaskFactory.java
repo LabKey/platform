@@ -113,7 +113,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return true;
     }
 
-    public boolean isAutoRetryEnabled(PipelineJob job) throws IOException, SQLException
+    public boolean isAutoRetryEnabled(PipelineJob job)
     {
         // TODO: Check log file for wallclock expiration on cluster jobs
         return true;

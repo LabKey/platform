@@ -158,8 +158,6 @@ abstract public class PipelineJob extends Job implements Serializable
     private int _activeTaskRetries;
     private URI _rootURI;
     private File _logFile;
-    private File _statusFile;
-    private boolean _started;
     private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
@@ -208,7 +206,6 @@ abstract public class PipelineJob extends Job implements Serializable
         _parentGUID = job._jobGUID;
         _rootURI = job._rootURI;
         _logFile = job._logFile;
-        _statusFile = job._statusFile;
         _interrupted = job._interrupted;
         _submitted = job._submitted;
         _errors = job._errors;
@@ -220,11 +217,6 @@ abstract public class PipelineJob extends Job implements Serializable
 
         _actionSet = new RecordedActionSet(job.getActionSet());
 
-    }
-
-    public boolean isStarted()
-    {
-        return _started;
     }
 
     public String getProvider()
@@ -281,12 +273,12 @@ abstract public class PipelineJob extends Job implements Serializable
         return _activeTaskId;
     }
 
-    public void setActiveTaskId(TaskId activeTaskId)
+    public boolean setActiveTaskId(TaskId activeTaskId)
     {
-        setActiveTaskId(activeTaskId, true);
+        return setActiveTaskId(activeTaskId, true);
     }
     
-    public void setActiveTaskId(TaskId activeTaskId, boolean updateStatus)
+    public boolean setActiveTaskId(TaskId activeTaskId, boolean updateStatus)
     {
         if (activeTaskId == null || !activeTaskId.equals(_activeTaskId))
         {
@@ -299,7 +291,8 @@ abstract public class PipelineJob extends Job implements Serializable
             _activeTaskStatus = TaskStatus.waiting;
 
         if (updateStatus)
-            updateStatusForTask();
+            return updateStatusForTask();
+        return true;
     }
 
     public TaskStatus getActiveTaskStatus()
@@ -353,11 +346,6 @@ abstract public class PipelineJob extends Job implements Serializable
     public File getLogFile()
     {
         return _logFile;
-    }
-
-    public void setStatusFile(File statusFile)
-    {
-        this._statusFile = statusFile;
     }
 
     public static File getSerializedFile(File statusFile)
@@ -434,54 +422,42 @@ abstract public class PipelineJob extends Job implements Serializable
         PipelineJobService.get().getWorkDirFactory().setPermissions(file);
     }
 
-
-
-    public File getStatusFile()
-    {
-        return (_statusFile == null ? _logFile : _statusFile);
-    }
-
-    public void updateStatusForTask()
-    {
-        updateStatusForTask(null);
-    }
-
-    public void updateStatusForTask(String info)
+    public boolean updateStatusForTask()
     {
         TaskFactory factory = getActiveTaskFactory();
         TaskStatus status = getActiveTaskStatus();
 
         if (factory != null && !TaskStatus.error.equals(status))
-            setStatus(factory.getStatusName() + " " + status.toString().toUpperCase(), info);
+            return setStatus(factory.getStatusName() + " " + status.toString().toUpperCase(), null);
         else
-            setStatus(status.toString().toUpperCase(), info);
+            return setStatus(status.toString().toUpperCase(), null);
     }
 
-    public void setStatus(String status)
+    public boolean setStatus(String status)
     {
-        setStatus(status, null);
+        return setStatus(status, null);
     }
 
-    public void setStatus(String status, String info)
+    public boolean setStatus(String status, String info)
     {
         if (_settingStatus)
-            return;
+            return true;
         
         _settingStatus = true;
         try
         {
-            PipelineJobService.get().getStatusWriter().setStatusFile(this, status, info);
+            return PipelineJobService.get().getStatusWriter().setStatusFile(this, status, info);
         }
         catch (RuntimeException e)
         {
-            File f = getStatusFile();
+            File f = this.getLogFile();
             error("Failed to set status to '" + status + "' for '" +
                     (f == null ? "" : f.getPath()) + "'.", e);
             throw e;
         }
         catch (Exception e)
         {
-            File f = getStatusFile();
+            File f = this.getLogFile();
             error("Failed to set status to '" + status + "' for '" +
                     (f == null ? "" : f.getPath()) + "'.", e);
         }
@@ -489,6 +465,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             _settingStatus = false;
         }
+        return false;
     }
 
     public void restoreQueue(PipelineQueue queue)
@@ -661,8 +638,6 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             _actionSet.add(actions);
 
-            _started = true;
-
             // An error occurred running the task. Do not complete.
             if (TaskStatus.error.equals(getActiveTaskStatus()))
                 return;
@@ -709,7 +684,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 return findRunnableTask(progression, i + 1);
 
             case error:
-                // Make sure the status is in error state, so that any auto-rety that
+                // Make sure the status is in error state, so that any auto-retry that
                 // may occur will record the error.  And, if no retry occurs, then this
                 // job must be in error state.
                 try
@@ -791,7 +766,10 @@ abstract public class PipelineJob extends Job implements Serializable
             }
 
             // Set next task to be run
-            setActiveTaskId(factory.getActiveId(this));
+            if (!setActiveTaskId(factory.getActiveId(this)))
+            {
+                return false;
+            }
 
             // If it is local, then it can be run
             return isActiveTaskLocal();
@@ -812,7 +790,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
     }
 
-    public boolean isAutoRetry() throws IOException, SQLException
+    public boolean isAutoRetry()
     {
         TaskFactory factory = getActiveTaskFactory();
         return null != factory && _activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this);

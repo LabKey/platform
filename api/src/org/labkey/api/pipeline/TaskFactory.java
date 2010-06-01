@@ -61,7 +61,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     boolean isParticipant(PipelineJob job) throws IOException, SQLException;
 
-    boolean isAutoRetryEnabled(PipelineJob job) throws IOException, SQLException; 
+    boolean isAutoRetryEnabled(PipelineJob job); 
 
     String getExecutionLocation();
 

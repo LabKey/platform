@@ -74,7 +74,7 @@ public class RReportJob extends PipelineJob implements Serializable
 
     public ActionURL getStatusHref()
     {
-        File statusFile = getStatusFile();
+        File statusFile = getLogFile();
         if (statusFile != null && null != _reportId)
         {
             return PageFlowUtil.urlProvider(ReportUrls.class).urlRunReport(getContainer()).
