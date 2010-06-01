@@ -16,7 +16,6 @@
 package org.labkey.query.controllers;
 
 import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.*;
@@ -128,7 +127,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
         for (ColumnInfo cinfo : tinfo.getColumns())
         {
-            colProps.add(getColProps(cinfo, fieldKeyPrefix));
+            colProps.add(JsonWriter.getMetaData(cinfo.getDisplayColumnFactory().createRenderer(cinfo), fieldKeyPrefix, true, true));
         }
 
         return colProps;
@@ -151,53 +150,9 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         for (DisplayColumn dc : view.getDisplayColumns())
         {
             if (dc.isQueryColumn() && null != dc.getColumnInfo())
-                colProps.add(getColProps(dc.getColumnInfo(), null));
+                colProps.add(JsonWriter.getMetaData(dc, null, true, true));
         }
         return colProps;
-    }
-
-    protected Map<String,Object> getColProps(ColumnInfo cinfo, FieldKey fieldKeyPrefix)
-    {
-        Map<String,Object> props = new HashMap<String,Object>();
-        props.put("name", (null != fieldKeyPrefix ? FieldKey.fromString(fieldKeyPrefix, cinfo.getName()) : cinfo.getName()));
-        if (null != cinfo.getDescription())
-            props.put("description", cinfo.getDescription());
-
-        props.put("type", cinfo.getFriendlyTypeName());
-
-        if (null != cinfo.getFieldKey())
-            props.put("fieldKey", cinfo.getFieldKey().toString());
-
-        props.put("isAutoIncrement", cinfo.isAutoIncrement());
-        props.put("isHidden", cinfo.isHidden());
-        props.put("isKeyField", cinfo.isKeyField());
-        props.put("isMvEnabled", cinfo.isMvEnabled());
-        props.put("isNullable", cinfo.isNullable());
-        props.put("isReadOnly", cinfo.isReadOnly());
-        props.put("isUserEditable", cinfo.isUserEditable());
-        props.put("isVersionField", cinfo.isVersionColumn());
-        props.put("isShownInInsertView", cinfo.isShownInInsertView());
-        props.put("isShownInUpdateView", cinfo.isShownInUpdateView());
-        props.put("isShownInDetailsView", cinfo.isShownInDetailsView());
-        if (!cinfo.getImportAliasesSet().isEmpty())
-        {
-            props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasesSet()));
-        }
-        props.put("isSelectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
-
-        DisplayColumn dc = cinfo.getRenderer();
-        if (null != dc)
-        {
-            props.put("caption", dc.getCaption());
-        }
-
-        Map<String, Object> lookupJSON = ApiQueryResponse.getLookupJSON(cinfo);
-        if (lookupJSON != null)
-        {
-            props.put("lookup", lookupJSON);
-        }
-
-        return props;
     }
 
     public static class Form
