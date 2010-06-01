@@ -102,9 +102,9 @@ public class DomainImporter
         uploadPanel.add(new HTML("Import from TSV or Excel file.<p>"));
         fileUpload = new FileUploadWithListeners();
         fileUpload.setName("uploadFormElement");
-        fileUpload.addChangeHandler(new ChangeHandler()
+        fileUpload.addChangeListener(new ChangeListener()
         {
-            public void onChange(ChangeEvent e)
+            public void onChange(Widget sender)
             {
                 form.submit();
             }
