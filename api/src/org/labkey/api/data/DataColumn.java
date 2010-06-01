@@ -358,7 +358,7 @@ public class DataColumn extends DisplayColumn
         //UNDONE: Should use output format here.
         if (null != value)
         {
-            // 4934: Don't render form input values with formatter since we don't parse formmated inputs on post.
+            // 4934: Don't render form input values with formatter since we don't parse formatted inputs on post.
             // For now, we can at least render disabled inputs with formatting since a
             // hidden input with the actual value is emitted for diabled items.
             if (null != _format && disabledInput)

@@ -781,8 +781,7 @@ public abstract class DisplayColumn extends RenderColumn
     protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
     {
         out.write(" name='");
-        out.write(getInputPrefix());
-        out.write(formFieldName);
+        out.write(PageFlowUtil.filter(getInputPrefix() + formFieldName));
         out.write("'");
 
         String setFocusId = (String)ctx.get("setFocusId");
