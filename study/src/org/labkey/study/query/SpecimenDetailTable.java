@@ -65,7 +65,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(specimenComment);
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
-        addWrapColumn(_rootTable.getColumn("AvailabilityReason"));
         addWrapColumn(_rootTable.getColumn("Requestable"));
 
         ColumnInfo siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));
@@ -99,6 +98,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         ColumnInfo availableColumn = wrapColumn("Available", getRealTable().getColumn("Available"));
         availableColumn.setKeyField(true);
         addColumn(availableColumn);
+        addWrapColumn(_rootTable.getColumn("AvailabilityReason"));
 
         addColumn(new QualityControlFlagColumn(this));
         addColumn(new QualityControlCommentsColumn(this));

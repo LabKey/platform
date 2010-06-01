@@ -2089,7 +2089,7 @@ public class StudyManager
 
         if (null != domain)
         {
-            for (Map.Entry<String, DomainProperty> aliasInfo : def.getDomain().createImportMap(false).entrySet())
+            for (Map.Entry<String, DomainProperty> aliasInfo : def.getDomain().createImportMap(true).entrySet())
             {
                 propName2Col.put(aliasInfo.getKey(), tinfo.getColumn(aliasInfo.getValue().getName()));
             }
@@ -2159,6 +2159,13 @@ public class StudyManager
             else if (matchedCol instanceof MvColumn)
             {
                 col.setMvIndicator(def.getContainer());
+            }
+            else
+            {
+                // explicitly null the MV enabled property.  This is because the types may have been
+                // inferred as having MV indicators, after which the user may have elected not to use them.  In
+                // this case, it's necessary to explicitly modify 'col' to match 'matchedCol'.
+                col.setMvDisabled();
             }
         }
 

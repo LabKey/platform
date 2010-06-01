@@ -328,7 +328,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         org.labkey.api.security.SecurityManager.init();
-        ModuleLoader.getInstance().registerFolderType(FolderType.NONE);
+        ModuleLoader.getInstance().registerFolderType(this, FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         SystemMaintenance.setTimer();
 
@@ -379,7 +379,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsController.registerAdminConsoleLinks();
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
-        ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
+        ModuleLoader.getInstance().registerFolderType(this, new WorkbookFolderType());
 
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)

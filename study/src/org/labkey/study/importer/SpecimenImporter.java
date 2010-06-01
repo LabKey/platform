@@ -71,6 +71,7 @@ public class SpecimenImporter
         private final String _dbColumnName;
         private Class _javaType = null;
         private final boolean _unique;
+        private int _size = -1;
 
         public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType)
         {
@@ -94,6 +95,12 @@ public class SpecimenImporter
             }
             else
                 _dbType = databaseType.toUpperCase();
+            if (_dbType.startsWith("VARCHAR("))
+            {
+                assert _dbType.charAt(_dbType.length() - 1) == ')' : "Unexpected VARCHAR type format: " + _dbType;
+                String sizeStr = _dbType.substring(8, _dbType.length() - 1);
+                _size = Integer.parseInt(sizeStr);
+            }
         }
 
 
@@ -153,6 +160,11 @@ public class SpecimenImporter
                 return Types.BIT;
             else
                 throw new UnsupportedOperationException("SQL type has not been defined for DB type " + _dbType + ", java type " + getJavaType());
+        }
+
+        public int getMaxSize()
+        {
+            return _size;
         }
     }
 
@@ -1687,7 +1699,22 @@ public class SpecimenImporter
                 params.add(lsid.toString());
 
                 for (ImportableColumn col : SPECIMEN_COLUMNS)
-                    params.add(getValueParameter(col, properties));
+                {
+                    Parameter value = getValueParameter(col, properties);
+                    if (col.getMaxSize() >= 0)
+                    {
+                        Object valueToBind = value.getValueToBind();
+                        if (valueToBind != null)
+                        {
+                            if (valueToBind.toString().length() > col.getMaxSize())
+                            {
+                                throw new SQLException("Value \"" + valueToBind.toString() + "\" is too long for column " +
+                                        col.getDbColumnName() + ".  The maximum allowable length is " + col.getMaxSize() + ".");
+                            }
+                        }
+                    }
+                    params.add(value);
+                }
 
                 rows.add(params);
 

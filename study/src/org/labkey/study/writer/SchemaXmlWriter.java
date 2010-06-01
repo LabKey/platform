@@ -117,12 +117,18 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
             String propertyURI = column.getPropertyURI();
             if (propertyURI != null && !propertyURI.startsWith(_domain.getTypeURI()) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
                 return propertyURI;
+            return null;
+        }
 
+        @Override
+        protected String getConceptURI(ColumnInfo column)
+        {
+            // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
+            // as a marker to indicate which dataset column should be tagged as the visit date column during import:
             if (column.getName().equals(_def.getVisitDatePropertyName()))
                 return DataSetDefinition.getVisitDateURI();
 
             return null;
         }
-
     }
 }

@@ -96,7 +96,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
         
         ContainerManager.addContainerListener(new WikiContainerListener());
-        ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType());
+        ModuleLoader.getInstance().registerFolderType(this, new CollaborationFolderType());
         WebdavService.get().addProvider(new WikiWebdavProvider());
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on

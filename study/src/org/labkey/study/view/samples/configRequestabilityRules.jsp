@@ -69,6 +69,8 @@
         var record = selectionModel.getSelected();
         if (record)
         {
+            // Move the selection to the next item without preserving the current selection:
+            selectionModel.selectNext(false);
             store.remove([ record ]);
             grid.getView().refresh();
         }
@@ -125,7 +127,7 @@
         {
             var viewInfo = queryViews.views[i];
             var name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
-            records[i] = [name, viewInfo.viewDataUrl];
+            records[records.length] = [name, viewInfo.viewDataUrl];
         }
 
         viewCombo.store.removeAll();
@@ -548,6 +550,12 @@
             {
                 moveUpButton.enable();
                 moveDownButton.disable();
+                removeButton.enable();
+            }
+            else if (rowIndex == 0)
+            {
+                moveUpButton.disable();
+                moveDownButton.enable();
                 removeButton.enable();
             }
             else

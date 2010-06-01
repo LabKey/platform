@@ -137,6 +137,11 @@ public class CohortController extends BaseStudyController
                 return true;
             }
 
+            // In the special case where we're switching from manual assignment to advanced assignment,
+            // clear all current cohort assignments.  The user has been warned that this will happen.
+            if (form.isAdvancedCohortSupport() && study.isManualCohortAssignment())
+                CohortManager.getInstance().clearParticipantCohorts(study);
+
             if (form.isManualCohortAssignment())
             {
                 if (form.isManualCohortAssignment() != study.isManualCohortAssignment())

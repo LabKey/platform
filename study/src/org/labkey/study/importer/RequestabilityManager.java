@@ -416,6 +416,8 @@ public class RequestabilityManager
             _schemaName = values[0];
             _queryName = values[1];
             _viewName = values[2];
+            if (_viewName != null && _viewName.length() == 0)
+                _viewName = null;
             _markRequestable = Boolean.parseBoolean(values[3]);
         }
 
@@ -438,7 +440,7 @@ public class RequestabilityManager
         {
             return _schemaName + CUSTOM_QUERY_DATA_SEPARATOR +
                     _queryName + CUSTOM_QUERY_DATA_SEPARATOR +
-                    _viewName + CUSTOM_QUERY_DATA_SEPARATOR +
+                    (_viewName != null ? _viewName : "") + CUSTOM_QUERY_DATA_SEPARATOR +
                     _markRequestable;
         }
 

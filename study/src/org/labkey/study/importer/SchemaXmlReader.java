@@ -175,7 +175,9 @@ public class SchemaXmlReader implements SchemaReader
                         info.keyManagementType = DataSet.KeyManagementType.GUID;
                 }
 
-                if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getPropertyURI()))
+                // Proper ConceptURI support is not implemented, but we use the 'VisitDate' concept in this isolated spot
+                // as a marker to indicate which dataset column should be tagged as the visit date column during import:
+                if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(columnXml.getConceptURI()))
                 {
                     if (info.visitDatePropertyName == null)
                         info.visitDatePropertyName = columnName;
