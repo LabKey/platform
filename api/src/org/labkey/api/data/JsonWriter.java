@@ -22,12 +22,13 @@ package org.labkey.api.data;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.RowIdForeignKey;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class JsonWriter
 {
@@ -76,7 +77,7 @@ public class JsonWriter
         JSONObject mdata = new JSONObject();
         JSONArray fields = new JSONArray();
         for(DisplayColumn dc : _displayColumns)
-            fields.put(getMetaData(dc));
+            fields.put(getMetaData(dc, null, false, true));
 
         mdata.put("root", "rowset");
         mdata.put("totalProperty", "rowCount");
@@ -91,13 +92,152 @@ public class JsonWriter
         return mdata;
     }
 
-    protected JSONObject getMetaData(DisplayColumn dc) throws Exception
+    public static JSONObject getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup)
     {
-        JSONObject fmdata = new JSONObject();
-        fmdata.put("name", dc.getName());
-        fmdata.put("type", dc.getJsonTypeName());
-        return fmdata;
+        ColumnInfo cinfo = dc.getColumnInfo();
+        JSONObject props = new JSONObject();
+        JSONObject ext = new JSONObject();
+        props.put("ext",ext);
+
+        props.put("name", (null != fieldKeyPrefix ? FieldKey.fromString(fieldKeyPrefix, cinfo.getName()) : cinfo.getName()));
+        if (null != cinfo.getDescription())
+            props.put("description", cinfo.getDescription());
+
+        props.put("friendlyType", cinfo.getFriendlyTypeName());
+        props.put("type", useFriendlyAsType ? cinfo.getFriendlyTypeName() : dc.getJsonTypeName());
+        props.put("jsonType", dc.getJsonTypeName());
+
+        if (null != cinfo.getFieldKey())
+            props.put("fieldKey", cinfo.getFieldKey().toString());
+
+        // Duplicate booleans with alternate property name for backwards compatibility
+        props.put("isAutoIncrement", cinfo.isAutoIncrement());
+        props.put("autoIncrement", cinfo.isAutoIncrement());
+        props.put("isHidden", cinfo.isHidden());
+        props.put("hidden", cinfo.isHidden());
+        props.put("isKeyField", cinfo.isKeyField());
+        props.put("keyField", cinfo.isKeyField());
+        props.put("isMvEnabled", cinfo.isMvEnabled());
+        props.put("mvEnabled", cinfo.isMvEnabled());
+        props.put("isNullable", cinfo.isNullable());
+        props.put("nullable", cinfo.isNullable());
+        props.put("isReadOnly", cinfo.isReadOnly());
+        props.put("readOnly", cinfo.isReadOnly());
+        props.put("isUserEditable", cinfo.isUserEditable());
+        props.put("userEditable", cinfo.isUserEditable());
+        props.put("isVersionField", cinfo.isVersionColumn());
+        props.put("versionField", cinfo.isVersionColumn());
+        props.put("isSelectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
+        props.put("selectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
+
+        // These fields are new and don't need to have the "is" prefix for backwards compatibility
+        props.put("shownInInsertView", cinfo.isShownInInsertView());
+        props.put("shownInUpdateView", cinfo.isShownInUpdateView());
+        props.put("shownInDetailsView", cinfo.isShownInDetailsView());
+
+        if (!cinfo.getImportAliasesSet().isEmpty())
+        {
+            props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasesSet()));
+        }
+
+        if (cinfo.getTsvFormatString() != null)
+        {
+            props.put("tsvFormat", cinfo.getTsvFormatString());
+        }
+        if (cinfo.getFormat() != null)
+        {
+            props.put("format", cinfo.getTsvFormatString());
+        }
+        if (cinfo.getExcelFormatString() != null)
+        {
+            props.put("excelFormat", cinfo.getExcelFormatString());
+        }
+
+        props.put("inputType", cinfo.getInputType());
+        // UNDONE ext info for other field typesxtype: checkbox, combo, datefield, field, hidden, htmleditor, numberfield, radio, textarea, textfield, timefield
+        //fmdata.put("xtype","");
+        if ("textarea".equals(cinfo.getInputType()))
+        {
+            if (dc instanceof DataColumn)
+            {
+                int cols = ((DataColumn)dc).getInputLength();
+                if (cols > 0)
+                    props.put("cols", Math.min(1000,cols));
+                int rows = ((DataColumn)dc).getInputRows();
+                if (rows > 0)
+                    props.put("rows", Math.min(1000,rows));
+            }
+            ext.put("xtype","textarea");
+        }
+
+        props.put("caption", dc.getCaption());
+
+        if (includeLookup)
+        {
+            Map<String, Object> lookupJSON = getLookupInfo(cinfo);
+            if (lookupJSON != null)
+            {
+                props.put("lookup", lookupJSON);
+            }
+        }
+
+        return props;
     }
+    
+    private static JSONObject getLookupInfo(ColumnInfo columnInfo)
+    {
+        ForeignKey fk = columnInfo.getFk();
+
+        //lookup info
+        if (null != fk
+                && null != columnInfo.getFkTableInfo()
+                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
+        {
+            TableInfo lookupTable = columnInfo.getFkTableInfo();
+            if(lookupTable != null && lookupTable.getPkColumns().size() == 1)
+            {
+                JSONObject lookupInfo = new JSONObject();
+                if (null != fk.getLookupContainerId())
+                {
+                    Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
+                    if (null != fkContainer)
+                        lookupInfo.put("containerPath", fkContainer.getPath());
+                }
+
+                boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
+                // Duplicate with alternate property name for backwards compatibility
+                lookupInfo.put("isPublic", isPublic);
+                lookupInfo.put("public", isPublic);
+                String queryName;
+                String schemaName;
+                if (isPublic)
+                {
+                    queryName = lookupTable.getPublicName();
+                    schemaName = lookupTable.getPublicSchemaName();
+                }
+                else
+                {
+                    queryName = lookupTable.getName();
+                    schemaName = lookupTable.getSchema().getName();
+                }
+                // Duplicate info with different property names for backwards compatibility
+                lookupInfo.put("queryName", queryName);
+                lookupInfo.put("table", queryName);
+                lookupInfo.put("schemaName", schemaName);
+                lookupInfo.put("schema", schemaName);
+
+                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+                if (lookupTable.getPkColumns().size() > 0)
+                    lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
+
+                return lookupInfo;
+            }
+        }
+
+        return null;
+    }
+
+
 
     protected JSONArray getColumnModel() throws Exception
     {

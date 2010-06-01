@@ -357,7 +357,7 @@ LABKEY.ext.FormHelper =
             return field;
         }
 
-        switch (config.type)
+        switch (config.jsonType)
         {
             case "boolean":
                 field.xtype = 'checkbox';

@@ -19,7 +19,6 @@ import org.json.JSONObject;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.exp.PropertyColumn;
@@ -192,7 +191,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         {
             if(dc.isQueryColumn())
             {
-                Map<String,Object> fmdata = getMetaData(dc, includeLookupInfo);
+                Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, includeLookupInfo);
                 //if the column type is file, include an extra column for the url
                 if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
@@ -225,100 +224,6 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 ret = dc;
         }
         return ret;
-    }
-
-    protected Map<String, Object> getMetaData(DisplayColumn dc, boolean includeLookupInfo)
-    {
-        HashMap<String,Object> fmdata = new HashMap<String,Object>();
-        HashMap<String,Object> ext = new HashMap<String, Object>();
-        
-        ColumnInfo col = dc.getColumnInfo();
-        fmdata.put("name", col.getName());
-        fmdata.put("type", dc.getJsonTypeName());
-        fmdata.put("mvEnabled", col.isMvEnabled());
-        fmdata.put("shownInInsertView", col.isShownInInsertView());
-        fmdata.put("shownInUpdateView", col.isShownInUpdateView());
-        fmdata.put("shownInDetailsView", col.isShownInDetailsView());
-        fmdata.put("hidden", col.isHidden());
-        fmdata.put("inputType", col.getInputType());
-        // UNDONE ext info for other field typesxtype: checkbox, combo, datefield, field, hidden, htmleditor, numberfield, radio, textarea, textfield, timefield
-        //fmdata.put("xtype","");
-        if ("textarea".equals(col.getInputType()))
-        {
-            if (dc instanceof DataColumn)
-            {
-                int cols = ((DataColumn)dc).getInputLength();
-                if (cols > 0)
-                    fmdata.put("cols", Math.min(1000,cols));
-                int rows = ((DataColumn)dc).getInputRows();
-                if (rows > 0)
-                    fmdata.put("rows", Math.min(1000,rows));
-            }
-            ext.put("xtype","textarea");
-        }
-
-        if (includeLookupInfo && isLookup(dc))
-        {
-            Map<String,Object> lookupInfo = getLookupJSON(col);
-            if (lookupInfo != null)
-            {
-                fmdata.put("lookup", lookupInfo);
-            }
-        }
-
-        fmdata.put("ext",ext);
-        return fmdata;
-    }
-
-    public static Map<String, Object> getLookupJSON(ColumnInfo columnInfo)
-    {
-        ForeignKey fk = columnInfo.getFk();
-
-        //lookup info
-        if (null != fk
-                && null != columnInfo.getFkTableInfo()
-                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
-        {
-            TableInfo lookupTable = columnInfo.getFkTableInfo();
-            if(lookupTable != null && lookupTable.getPkColumns().size() == 1)
-            {
-                Map<String,Object> lookupInfo = new HashMap<String,Object>();
-                if (null != fk.getLookupContainerId())
-                {
-                    Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
-                    if (null != fkContainer)
-                        lookupInfo.put("containerPath", fkContainer.getPath());
-                }
-
-                boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
-                lookupInfo.put("isPublic", isPublic);
-                String queryName;
-                String schemaName;
-                if (isPublic)
-                {
-                    queryName = lookupTable.getPublicName();
-                    schemaName = lookupTable.getPublicSchemaName();
-                }
-                else
-                {
-                    queryName = lookupTable.getName();
-                    schemaName = lookupTable.getSchema().getName();
-                }
-                lookupInfo.put("queryName", queryName);
-                lookupInfo.put("schemaName", queryName);
-                // Duplicate info with different property names for backwards compatibility
-                lookupInfo.put("table", schemaName);
-                lookupInfo.put("schema", schemaName);
-
-                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
-                if (lookupTable.getPkColumns().size() > 0)
-                    lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
-
-                return lookupInfo;
-            }
-        }
-
-        return null;
     }
 
     protected List<Map<String,Object>> getColumnModel() throws Exception

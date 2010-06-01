@@ -291,7 +291,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getJsonTypeName(getValueClass());
     }
 
-    protected String getJsonTypeName(Class valueClass)
+    private String getJsonTypeName(Class valueClass)
     {
         if(String.class.isAssignableFrom(valueClass))
             return "string";

@@ -805,41 +805,13 @@ LABKEY.Query = new function()
          *      <li><b>isMetadataOverrideable:</b> true if the current user may override the query's metadata</li>
          *      <li><b>viewDataUrl:</b> The URL to navigate to for viewing the data returned from this query</li>
          *      <li><b>description:</b> A description for this query (if provided)</li>
-         *      <li><b>columns:</b> Information about all columns in this query. This is an array of objects, each of which
-         *      has the following properties:
-         *          <ul>
-         *              <li><b>name:</b> The name of the column</li>
-         *              <li><b>description:</b> An optional description of the column</li>
-         *              <li><b>type:</b> The column's data type</li>
-         *              <li><b>fieldKey:</b> The field key for the column. If this column comes from a foreign table, the key is a full path from the source
-         *              query to this column.</li>
-         *              <li><b>isAutoIncrement:</b> true if this column is auto-increment</li>
-         *              <li><b>isHidden:</b> true if this column should be hidden</li>
-         *              <li><b>isKeyField:</b> true if this is part of the primary key</li>
-         *              <li><b>isMvEnabled:</b> true if this column is missing-value enabled</li>
-         *              <li><b>isNullable:</b> true if this column can accept nulls</li>
-         *              <li><b>isReadOnly:</b> true if this column is read-only</li>
-         *              <li><b>isUserEditable:</b> true if this column may be edited by the current user</li>
-         *              <li><b>isVersionField:</b> true if this column is a version column</li>
-         *              <li><b>isSelectable:</b> true if this column may be selected</li>
-         *              <li><b>caption:</b> The user-friendly caption for this column (may differ from name)</li>
-         *              <li><b>lookup:</b> If this column is a lookup (foreign key) to another table, this will contain an object with the following properties:
-         *                  <ul>
-         *                      <li><b>schemaName:</b> The schema in which the lookup query exists</li>
-         *                      <li><b>queryName:</b> The name of the lookup query in that schema</li>
-         *                      <li><b>containerPath:</b> The container path if the lookup is defined in a different container</li>
-         *                      <li><b>displayColumn:</b> The column that is normally displayed form the lookup table</li>
-         *                      <li><b>keyColumn:</b> The primary key column of the lookup table</li>
-         *                      <li><b>isPublic:</b> true if the lookup table is public (i.e., may be accessed via the API)</li>
-         *                  </ul>
-         *               </li>
-         *          </ul>
-         *      </li>
+         *      <li><b>columns:</b> Information about all columns in this query. This is an array of LABKEY.Query.FieldMetaData objects.</li>
          *      <li><b>defaultView:</b> An array of column information for the columns in the current user's default view of this query.
          *      The shape of each column info is the same as in the columns array.</li>
          *  </ul>
          * </li>
          * </ul>
+         * @see LABKEY.Query.FieldMetaData
          * @param {function} [config.errorCallback] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
@@ -1212,6 +1184,263 @@ LABKEY.Query = new function()
 /**#@-*/
 
 /**
+* @name LABKEY.Query.FieldMetaDataLookup
+* @class  Lookup metadata about a single field.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *              </ul>
+ *           </p>
+ * @see LABKEY.Query.FieldMetaData
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaDataLookup#
+* @field
+* @name    containerPath
+* @description The path to the container that this lookup points to, if not the current container
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaDataLookup#
+* @field
+* @name    public
+* @description Whether the target of this lookup is exposed as a top-level query
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name queryName
+* @description The name of the query that this lookup targets
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaDataLookup#
+* @field
+* @name schemaName    
+* @description The name of the schema that this lookup targets
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaDataLookup#
+* @field
+* @name keyColumn
+* @description The name of column in the lookup's target that will be joined to the value in the local field
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaDataLookup#
+* @field
+* @name displayColumn
+* @description The name of the column in the lookup's target that will be shown as its value, instead of the raw key value
+* @type    String
+*/
+
+/**#@-*/
+
+/**
+* @name LABKEY.Query.FieldMetaData
+* @class  Metadata about a single field.
+ *            <p>Additional Documentation:
+ *              <ul>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                      How To Find schemaName, queryName &amp; viewName</a></li>
+ *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *              </ul>
+ *           </p>
+ * @see LABKEY.Query.selectRows
+ * @see LABKEY.Query.getQueryDetails
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name    name
+* @description The name of the field
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name    friendlyType
+* @description A friendlier, more verbose description of the type, like "Text (String)" or "Date and time"
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name    shownInInsertView
+* @description Whether this field is intended to be displayed in insert UIs
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name    shownInDetailView
+* @description Whether this field is intended to be displayed in detail UIs
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name    shownInUpdateView
+* @description Whether this field is intended to be displayed in update UIs
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name    versionField
+* @description Whether this field's value stores version information for the row
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name userEditable
+* @description Whether this field is intended to be edited directly by the user, or managed by the system
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name readOnly
+* @description Whether the field's value can be modified
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name nullable
+* @description Whether the field's value is allowed to be null
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name mvEnabled
+* @description Whether this field supports missing value indicators instead of or addition to its standard value
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name keyField
+* @description Whether this field is part of the row's primary key
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name hidden
+* @description Whether this value is intended to be hidden from the user, especially for grid views
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name autoIncrement
+* @description Whether this field's value is automatically assigned by the server, like a RowId whose value is determined by a database sequence
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name jsonType
+* @description The type of JSON object that will represent this field's value: string, boolean, date, int, or float
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name importAliases
+* @description Alternate names for this field that may appear in data when importing, whose values should be mapped to this field
+* @type    String[]
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name tsvFormat
+* @description The format string to be used for TSV exports
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name format
+* @description The format string to be used for generating HTML
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name excelFormat
+* @description The format string to be used for Excel exports
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name caption
+* @description The caption to be shown for this field, typically in a column header, which may differ from its name
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name description
+* @description The description for this field
+* @type    String
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name inputType
+* @description The type of form input to be used when editing this field, such as select, text, textarea, checkbox, or file
+* @type    boolean
+*/
+
+/**#@+
+* @memberOf LABKEY.Query.FieldMetaData#
+* @field
+* @name lookup
+* @description Information about this field's lookup configuration
+* @type    LABKEY.Query.FieldMetaDataLookup
+*/
+
+/**#@-*/
+
+/**
 * @name LABKEY.Query.SelectRowsResults
 * @class  SelectRowsResults class to describe the first
             object passed to the successCallback function by
@@ -1271,18 +1500,7 @@ LABKEY.Query = new function()
 /**
 * @name    metaData.fields
 * @description	Array of field information.
-            Each field has the following properties:
-            <ul><li><b>name</b> -- The name of the field</li>
-            <li><b>type</b> -- JavaScript type name of the field</li>
-            <li><b>shownInInsertView</b> -- whether this field is intended to be shown in insert views</li>
-            <li><b>shownInUpdateView</b> -- whether this field is intended to be shown in update views</li>
-            <li><b>shownInDetailsView</b> -- whether this field is intended to be shown in details views</li>
-            <li><b>hidden</b> -- whether this field is hidden and not normally shown in grid views</li>
-            <li><b>lookup</b> -- If the field is a lookup, there will
-                 be four sub-properties listed under this property:
-                 schema, table, displayColumn, and keyColumn, which describe the schema, table, and
-                 display column, and key column of the lookup table (query).</li></ul>
-* @type    Object[]
+* @type    LABKEY.Query.FieldMetaData[]
 */
 
 /**

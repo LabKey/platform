@@ -414,7 +414,7 @@ public class ContainerManager
         {
             if (childIds == emptyStringArray)
                 return Collections.emptyMap();
-            Map<String,Container> ret = new LinkedHashMap<String,Container>();
+            Map<String,Container> ret = new TreeMap<String,Container>(String.CASE_INSENSITIVE_ORDER);
             for (String id : childIds)
             {
                 Container c = ContainerManager.getForId(id);
@@ -862,8 +862,7 @@ public class ContainerManager
         }
         catch (SQLException x)
         {
-            _log.error(x);
-            return null;
+            throw new RuntimeSQLException(x);
         }
     }
 
