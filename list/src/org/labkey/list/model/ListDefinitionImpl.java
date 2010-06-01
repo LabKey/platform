@@ -348,17 +348,35 @@ public class ListDefinitionImpl implements ListDefinition
 
         Object errorValue = new Object(){@Override public String toString(){return "~ERROR VALUE~";}};
 
-        ColumnDescriptor[] columns;
+        // We know the types, so don't infer them.  Instead, read the header line and create a ColumnDescriptor array
+        // that tells the loader all the types.
+        String[][] firstLine = loader.getFirstNLines(1);
 
-        try
+        ArrayList<ColumnDescriptor> columnList = new ArrayList<ColumnDescriptor>(firstLine.length);
+
+        for (String columnHeader : firstLine[0])
         {
-            columns = loader.getColumns();
+            ColumnDescriptor descriptor;
+
+            if (getKeyName().equalsIgnoreCase(columnHeader))
+            {
+                descriptor = new ColumnDescriptor(columnHeader, getKeyType().getPropertyType().getJavaType());
+            }
+            else
+            {
+                DomainProperty prop = propertiesByName.get(columnHeader);
+
+                if (null == prop)
+                    descriptor = new ColumnDescriptor(columnHeader, String.class); // We're going to ignore this column... just claim it's a string
+                else
+                    descriptor = new ColumnDescriptor(columnHeader, prop.getPropertyDescriptor().getPropertyType().getJavaType());
+            }
+
+            columnList.add(descriptor);
         }
-        catch (IOException e)
-        {
-            errors.add(e.getMessage());
-            return errors;
-        }
+
+        ColumnDescriptor[] columns = columnList.toArray((new ColumnDescriptor[columnList.size()]));
+        loader.setColumns(columns);
 
         for (ColumnDescriptor cd : columns)
         {

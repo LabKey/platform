@@ -143,7 +143,7 @@ public class DomainImpl implements Domain
                 ret.add(c);
             }
         }
-        return ret.toArray(new Container[0]);
+        return ret.toArray(new Container[ret.size()]);
     }
 
     public String getDescription()
