@@ -927,7 +927,7 @@ public class DataRegion extends DisplayElement
         out.write("Ext.onReady(\n");
         out.write("function () {\n");
         out.write("new LABKEY.DataRegion({\n");
-        out.write("'name' : '" + PageFlowUtil.filter(getName()) + "',\n");
+        out.write("'name' : " + PageFlowUtil.jsString(getName()) + ",\n");
 //        out.write("'schemaName' : '" + "xxx" + "',\n");
 //        out.write("'queryName' : '" + "xxx" + "',\n");
 //        out.write("'viewName' : '" + "xxx" + "',\n");
@@ -941,13 +941,13 @@ public class DataRegion extends DisplayElement
         out.write("'showRows' : '" + _showRows.toString().toLowerCase() + "',\n");
         out.write("'showRecordSelectors' : " + _showRecordSelectors + ",\n");
         out.write("'showStatusBar' : " + _showStatusBar + ",\n");
-        out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
+        out.write("'selectionKey' : " + PageFlowUtil.jsString(_selectionKey) + ",\n");
         out.write("'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + ",\n");
-        out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
+        out.write("'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n");
         out.write("});\n");
         if (headerMessage != null && headerMessage.length() > 0)
         {
-            out.write("LABKEY.DataRegions['" + PageFlowUtil.filter(getName()) + "'].showMessage(" +
+            out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessage(" +
                     PageFlowUtil.jsString(headerMessage) + ");\n");
         }
         out.write("});\n");

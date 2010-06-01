@@ -1264,9 +1264,9 @@ function buildQueryString(pairs)
     {
         // alert("pair" + pairs[i]);
         if (pairs[i].length > 1)
-            paramArray[i] = pairs[i][0] + "=" + escape(pairs[i][1]);
+            paramArray[i] = escape(pairs[i][0]) + "=" + escape(pairs[i][1]);
         else
-            paramArray[i] = pairs[i][0];
+            paramArray[i] = escape(pairs[i][0]);
     }
 
     // Escape doesn't encode '+' properly

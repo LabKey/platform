@@ -240,15 +240,15 @@ public class DataColumn extends DisplayColumn
     {
         if (_filterColumn == null)
             return;
-        out.write("showFilterPanel(this, '");
-        out.write(h(ctx.getCurrentRegion().getName()));
-        out.write("','");
-        out.write(h(_filterColumn.getName()));
-        out.write("','");
+        out.write("showFilterPanel(this, ");
+        out.write(PageFlowUtil.jsString(ctx.getCurrentRegion().getName()));
+        out.write(", ");
+        out.write(PageFlowUtil.jsString(_filterColumn.getName()));
+        out.write(", ");
         StringWriter strCaption = new StringWriter();
         _caption.render(strCaption, ctx);
-        out.write(h(strCaption.toString()));
-        out.write("', '");
+        out.write(PageFlowUtil.jsString(strCaption.toString()));
+        out.write(", '");
         out.write(_filterColumn.getSqlDataTypeName());
         out.write("', ");
         out.write(Boolean.toString(_filterColumn.isMvEnabled()));
@@ -259,14 +259,14 @@ public class DataColumn extends DisplayColumn
     {
         if (_filterColumn == null)
             return "";
-        return "LABKEY.DataRegions['" + h(ctx.getCurrentRegion().getName()) + "']" +
-                ".clearFilter('" + h(_filterColumn.getName()) + "')";
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "]" +
+                ".clearFilter(" + PageFlowUtil.jsString(_filterColumn.getName()) + ")";
     }
 
     @Override
     public String getClearSortScript(RenderContext ctx)
     {
-        return "clearSort('" + h(ctx.getCurrentRegion().getName()) + "', '" + h(_sortColumn.getName()) + "');";
+        return "clearSort(" + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + ", " + PageFlowUtil.jsString(_sortColumn.getName()) + ");";
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -521,7 +521,7 @@ public class DataColumn extends DisplayColumn
         }
         String uri;
         String regionName = ctx.getCurrentRegion().getName();
-        uri = "doSort('"+ h(regionName) + "','" + h(_sortColumn.getName()) + "','" + h(sort.getDir()) + "')";
+        uri = "doSort("+ PageFlowUtil.jsString(regionName) + "," + PageFlowUtil.jsString(_sortColumn.getName()) + ",'" + h(sort.getDir()) + "')";
         out.write(uri);
     }
 

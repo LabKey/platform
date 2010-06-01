@@ -444,15 +444,16 @@ public abstract class DisplayColumn extends RenderColumn
             out.write("\"");
         }
 
-        out.write(" id=");
-        out.write(PageFlowUtil.jsString(baseId + ":header"));
+        out.write(" id='");
+        out.write(PageFlowUtil.filter(baseId + ":header"));
+        out.write("'");
 
         NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
         if (navtree != null)
         {
-            out.write(" onclick=\"showMenu(this, ");
-            out.write(PageFlowUtil.jsString(navtree.getId()));
-            out.write(", null);\"");
+            out.write(" onclick=\"showMenu(this, '");
+            out.write(PageFlowUtil.filter(navtree.getId()));
+            out.write("', null);\"");
         }
         out.write(">\n");
         out.write("<div>");
