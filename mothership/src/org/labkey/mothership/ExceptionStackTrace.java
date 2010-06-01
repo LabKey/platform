@@ -108,7 +108,8 @@ public class ExceptionStackTrace
                     if (!line.trim().startsWith("at sun.reflect.")
                             && !(line.trim().startsWith("..."))
                             && !(line.trim().startsWith("at script") && line.contains("run(script") && line.contains(".groovy:"))
-                            && !line.trim().startsWith("Detail:")) // Postgres stack traces can include a second details line
+                            && !line.trim().startsWith("Detail:")    // Postgres stack traces can include a second details line
+                            && !line.trim().startsWith("Detalhe:"))  // which is oddly sometimes prefixed by "Detalhe:" instead of "Detail:"
                     {
                         // Don't include line numbers that depend on non-labkey version install
                         if (line.trim().startsWith("Caused by:") && line.indexOf(":", line.indexOf(":") + 1) != -1)
