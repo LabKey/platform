@@ -17,7 +17,6 @@ package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.view.ViewBackgroundInfo;
 
 /**
  * Used when running a job through Globus. Globus handles giving the web server job status updates through a web
@@ -27,9 +26,9 @@ import org.labkey.api.view.ViewBackgroundInfo;
 */
 public class NoOpPipelineStatusWriter implements PipelineStatusFile.StatusWriter
 {
-    public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
+    public boolean setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
     {
-
+        return true;
     }
 
     public void ensureError(PipelineJob job) throws Exception

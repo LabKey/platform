@@ -42,7 +42,12 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     public PipelineJob getJob(String jobId) throws SQLException
     {
-        return fromStatus(PipelineStatusManager.retreiveJob(jobId));
+        return fromStatus(PipelineStatusManager.retrieveJob(jobId));
+    }
+
+    public PipelineJob getJob(int rowId) throws SQLException
+    {
+        return fromStatus(PipelineStatusManager.retrieveJob(rowId));
     }
 
     public void retry(String jobId) throws IOException, SQLException
@@ -113,7 +118,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             try
             {
                 PipelineStatusManager.beginTransaction(scope, active);
-                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), job.getStatusFile().getPath(), active);
+                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), job.getLogFile().getPath(), active);
 
                 // Make sure the join job has an existing status record before creating
                 // the rows for the split jobs.  Just to ensure a consistent creation order.
@@ -155,7 +160,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
                 TaskId tid = job.getActiveTaskId();
 
                 PipelineStatusManager.beginTransaction(scope, active);
-                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), job.getStatusFile().getPath(), active);
+                PipelineStatusManager.enforceLockOrder(job.getJobGUID(), job.getLogFile().getPath(), active);
 
                 int count = getIncompleteSplitCount(job.getParentGUID(), job.getContainer());
                 setCompleteSplit(job);

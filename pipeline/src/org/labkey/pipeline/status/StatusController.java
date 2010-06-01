@@ -606,7 +606,7 @@ public class StatusController extends SpringActionController
     {
         public void handleSelect(SelectStatusForm form) throws Exception
         {
-            completeStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            completeStatus(getUser(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
         }
     }
 

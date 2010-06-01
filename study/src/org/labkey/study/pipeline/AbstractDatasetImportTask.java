@@ -27,7 +27,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortManager;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 

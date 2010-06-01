@@ -517,9 +517,9 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
     }
 
-    public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
+    public boolean setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
     {
-        PipelineStatusManager.setStatusFile(job, new PipelineStatusFileImpl(job, status, statusInfo));
+        return PipelineStatusManager.setStatusFile(job, job.getUser(), status, statusInfo, false);
     }
 
     public void ensureError(PipelineJob job) throws Exception

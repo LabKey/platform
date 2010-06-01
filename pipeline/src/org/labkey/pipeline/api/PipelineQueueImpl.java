@@ -20,6 +20,7 @@ import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -55,14 +56,29 @@ public class PipelineQueueImpl implements PipelineQueue
         _logDebug("PENDING:   " + job.toString());
 
         // Make sure status file path and Job ID are in synch.
-        File statusFile = job.getStatusFile();
-        if (statusFile != null)
-            PipelineStatusManager.resetJobId(job.getStatusFile().getAbsolutePath(), job.getJobGUID());
-
-        if (job.setQueue(this, PipelineJob.WAITING_STATUS))
+        File logFile = job.getLogFile();
+        try
         {
-            _pending.add(job);
-            submitJobs();
+            if (logFile != null)
+            {
+                PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
+                if (pipelineStatusFile == null)
+                {
+                    PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
+                }
+
+                PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
+            }
+
+            if (job.setQueue(this, PipelineJob.WAITING_STATUS))
+            {
+                _pending.add(job);
+                submitJobs();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -223,7 +239,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
     private boolean statusFileMatches(PipelineJob job, String statusFile)
     {
-        File fileCompare = job.getStatusFile();
+        File fileCompare = job.getLogFile();
         if (fileCompare == null)
             return false;
         String compare = PipelineJobService.statusPathOf(fileCompare.toString());

@@ -30,7 +30,7 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
 {
     public static final String STATUS_QUEUE_NAME = "StatusQueue";
 
-    public void setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
+    public boolean setStatusFile(PipelineJob job, String status, String statusInfo) throws Exception
     {
         final StatusChangeRequest s = new StatusChangeRequest(job, status, statusInfo);
 
@@ -59,6 +59,7 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
                 }
             }
         }
+        return true;
     }
 
     public void ensureError(PipelineJob job) throws Exception

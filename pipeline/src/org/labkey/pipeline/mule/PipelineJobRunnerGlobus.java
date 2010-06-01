@@ -141,7 +141,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                                 {
                                     job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
 
-                                    final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
+                                    final File serializedJobFile = PipelineJob.getSerializedFile(job.getLogFile());
                                     if (!NetworkDrive.exists(serializedJobFile))
                                     {
                                         // If the file doesn't exist, the web server must have died after it pulled the job from the queue
@@ -197,7 +197,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         try
         {
             // Write the file to disk
-            final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
+            final File serializedJobFile = PipelineJob.getSerializedFile(job.getLogFile());
 
             job.writeToFile(serializedJobFile);
             
@@ -501,7 +501,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             appendAndDeleteLogFile(job, OutputType.err);
 
             // Clean up the serialized job file if Globus is done trying to run it
-            File serializedFile = PipelineJob.getSerializedFile(job.getStatusFile());
+            File serializedFile = PipelineJob.getSerializedFile(job.getLogFile());
             if (NetworkDrive.exists(serializedFile))
             {
                 job = PipelineJob.readFromFile(serializedFile);
@@ -524,7 +524,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     private static void appendAndDeleteLogFile(PipelineJob job, OutputType outputType)
     {
-        File f = getOutputFile(job.getStatusFile(), outputType);
+        File f = getOutputFile(job.getLogFile(), outputType);
         if (NetworkDrive.exists(f))
         {
             if (f.length() > 0)
@@ -614,11 +614,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         jobDescription.setJobType(JobTypeEnumeration.single);
         
         // Create the output files with the right permissions
-//        FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.out));
-//        FileUtils.touch(getOutputFile(job.getStatusFile(), OutputType.err));
+//        FileUtils.touch(getOutputFile(job.getLogFile(), OutputType.out));
+//        FileUtils.touch(getOutputFile(job.getLogFile(), OutputType.err));
 
-        jobDescription.setStdout(getClusterOutputPath(job.getStatusFile(), OutputType.out));
-        jobDescription.setStderr(getClusterOutputPath(job.getStatusFile(), OutputType.err));
+        jobDescription.setStdout(getClusterOutputPath(job.getLogFile(), OutputType.out));
+        jobDescription.setStderr(getClusterOutputPath(job.getLogFile(), OutputType.err));
         
         if (settings.getQueue() != null)
         {
