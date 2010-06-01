@@ -81,18 +81,18 @@ function submit_onclick(method)
     window.onbeforeunload = null;
 }
 
-Ext.onReady(function(){
-    var e = Ext.get('queryText');
-    if (e)
-    {
-        Ext.DomHelper.applyStyles(e,{margin:"1px"});
-        new Ext.Resizable(e, { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{border:"1px solid black"}});
-    }
-    e = Ext.get('metadataText');
-    if (e)
-    {
-        Ext.DomHelper.applyStyles(e,{margins:1, padding:2});
-        new Ext.Resizable(e, { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}});
-    }
-});
+//Ext.onReady(function(){
+//    var e = Ext.get('queryText');
+//    if (e)
+//    {
+//        Ext.DomHelper.applyStyles(e,{margin:"1px"});
+//        new Ext.Resizable(e, { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{border:"1px solid black"}});
+//    }
+//    e = Ext.get('metadataText');
+//    if (e)
+//    {
+//        Ext.DomHelper.applyStyles(e,{margins:1, padding:2});
+//        new Ext.Resizable(e, { handles:'se', minWidth:200, minHeight:100, wrap:true, style:{padding:2}});
+//    }
+//});
 </script>
