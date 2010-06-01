@@ -852,6 +852,8 @@ public class ProjectController extends SpringActionController
     }
 
     private static CaseInsensitiveHashMap<WebPartView.FrameType> _frameTypeMap = new CaseInsensitiveHashMap<WebPartView.FrameType>();
+
+    static
     {
         _frameTypeMap.put("div", WebPartView.FrameType.DIV);
         _frameTypeMap.put("portal", WebPartView.FrameType.PORTAL);

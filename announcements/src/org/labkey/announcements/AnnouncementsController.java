@@ -2303,7 +2303,19 @@ public class AnnouncementsController extends SpringActionController
 
         public AnnouncementWebPart(ViewContext ctx) throws SQLException, ServletException
         {
-            this(ctx.getContainer(), ctx.getActionURL(), ctx.getUser(), getSettings(ctx.getContainer()), false);
+            this(ctx.getContainer(), getPageURL(ctx), ctx.getUser(), getSettings(ctx.getContainer()), false);
+        }
+
+        private static ActionURL getPageURL(ViewContext ctx)
+        {
+            // This is set to the outer page URL in the case of rendering a dynamic webpart; use it instead of
+            // the getWebPart URL.
+            String returnURL = (String)ctx.get("returnURL");
+
+            if (null != returnURL)
+                return new ActionURL(returnURL);
+            else
+                return ctx.getActionURL();
         }
 
         public static class MessagesBean extends LinkBarBean

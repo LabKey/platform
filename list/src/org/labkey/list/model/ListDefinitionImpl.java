@@ -447,7 +447,7 @@ public class ListDefinitionImpl implements ListDefinition
                     break;
 
             default:
-                errors.add("Expected key field \"" + cdKey.name + "\" to all be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
+                errors.add("Expected values in key field \"" + cdKey.name + "\" to all be of type Integer but found values of type " + cdKey.clazz.getSimpleName());
                 return errors;
         }
 

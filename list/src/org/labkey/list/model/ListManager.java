@@ -166,6 +166,12 @@ public class ListManager implements SearchService.DocumentProvider
                     if (!list.getIndexMetaData())
                         continue;
 
+                    // This list might have been deleted
+                    Domain domain = list.getDomain();
+
+                    if (null == domain)
+                        continue;
+
                     StringBuilder body = new StringBuilder();
                     Map<String, Object> props = new HashMap<String, Object>();
 
@@ -179,7 +185,6 @@ public class ListManager implements SearchService.DocumentProvider
                     url.setExtraPath(c.getId());
                     url.addParameter("listId",list.getListId());
 
-                    Domain domain = list.getDomain();
                     String sep = "";
 
                     for (DomainProperty property : domain.getProperties())
