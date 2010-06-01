@@ -27,6 +27,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
@@ -264,6 +265,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
 
         domain.setAllowAttachmentProperties(true);
+        domain.setDefaultValueOptions(new DefaultValueType[]
+                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
         return domain;
     }
     
