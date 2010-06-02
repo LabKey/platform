@@ -1135,11 +1135,12 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static String generateDropDownTextLink(String text, String href, String onClick)
+    public static String generateDropDownTextLink(String text, String href, String onClick, boolean bold)
     {
-        return "<a class=\"labkey-header\" style=\"font-weight: bold;position: relative;padding-right:1em\" href=\"" + filter(href) + "\"" +
+        return "<a class=\"labkey-header\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
                 (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                "><span>" + text + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() + "/_images/text_link_arrow.gif\" class=\"labkey-button-arrow\"></a>";
+                "><span>" + text + "</span><!--img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
+                "/_images/text_link_arrow.gif\" style=\"background-color:transparent; width: 0.728em;height: auto;top: 0.7em;right: 0.5em;\"--></a>";
     }
 
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */

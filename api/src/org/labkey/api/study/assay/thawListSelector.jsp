@@ -20,8 +20,6 @@
 <%@ page import="org.labkey.api.study.assay.ThawListResolverType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ThawListBean> thisView = (JspView<ThawListBean>)HttpView.currentView();

@@ -21,8 +21,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
@@ -57,10 +57,10 @@ public class PopupAdminView extends PopupMenuView
     {
         User user = context.getUser();
 
-        boolean isAdmin = context.hasPermission(ACL.PERM_ADMIN);
-        boolean hasAdminRead = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
+        boolean isAdminInThisFolder = context.hasPermission(AdminPermission.class);
+        boolean hasAdminReadInRoot = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
 
-        visible = isAdmin || hasAdminRead;
+        visible = isAdminInThisFolder || hasAdminReadInRoot;
         if (!visible)
             return;
         
@@ -78,7 +78,7 @@ public class PopupAdminView extends PopupMenuView
                 navTree.addChild("Show Navigation Bar", adminURL);
         }
 
-        if (hasAdminRead)
+        if (hasAdminReadInRoot)
         {
             NavTree siteAdmin = new NavTree("Manage Site");
 
@@ -88,7 +88,7 @@ public class PopupAdminView extends PopupMenuView
 
         if (!c.isRoot())
         {
-            if (isAdmin && !c.isWorkbook())
+            if (isAdminInThisFolder && !c.isWorkbook())
             {
                 NavTree projectAdmin = new NavTree("Manage Project");
                 projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
@@ -149,7 +149,7 @@ public class PopupAdminView extends PopupMenuView
         navTree.setId("adminMenu");
         setNavTree(navTree);
         setAlign(PopupMenu.Align.RIGHT);
-        setButtonStyle(PopupMenu.ButtonStyle.BOLDTEXT);
+        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
     }
 
     private void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)

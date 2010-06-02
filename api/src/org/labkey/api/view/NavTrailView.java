@@ -18,22 +18,19 @@ package org.labkey.api.view;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.template.PageConfig;
 
 import java.io.PrintWriter;
 import java.util.*;
 
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
  * User: mbellew
@@ -228,8 +225,6 @@ public class NavTrailView extends HttpView
             }
             _out.print(and);
             _out.print("</span></td>");
-            if (!laf.isShowMenuBar())
-                drawAdminTd(context);
         }
 
         out.print("</tr>\n<tr><td colspan=");
@@ -243,21 +238,7 @@ public class NavTrailView extends HttpView
             _out.print("<span class=\"labkey-nav-page-header\" id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
-        if (!hasCrumbTrail && !laf.isShowMenuBar())
-            drawAdminTd(context);
         _out.print("</tr>\n</table>");
-    }
-
-    void drawAdminTd(ViewContext context) throws Exception
-    {
-        _out.print("<td align=right>");
-        if (context.hasPermission(ACL.PERM_ADMIN) || ContainerManager.getRoot().hasPermission(context.getUser(), AdminReadPermission.class))
-            include(new PopupAdminView(context));
-        else if (context.getUser().isDeveloper())
-            include(new PopupDeveloperView(context));
-        else
-            _out.print("&nbsp;");
-        _out.print("</td>");
     }
 
     void drawTab(NavTree tab)

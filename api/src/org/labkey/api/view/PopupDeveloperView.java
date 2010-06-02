@@ -16,12 +16,11 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,7 +28,7 @@ import java.util.ArrayList;
  * Date: Sep 10, 2009
  * Time: 3:13:32 PM
  */
-public class PopupDeveloperView  extends PopupMenuView
+public class PopupDeveloperView extends PopupMenuView
 {
     public PopupDeveloperView(ViewContext context)
     {
@@ -41,7 +40,7 @@ public class PopupDeveloperView  extends PopupMenuView
         navTree.setId("devMenu");
         setNavTree(navTree);
         setAlign(PopupMenu.Align.RIGHT);
-        setButtonStyle(PopupMenu.ButtonStyle.BOLDTEXT);
+        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
     }
 
     public static List<NavTree> getNavTree(ViewContext context)

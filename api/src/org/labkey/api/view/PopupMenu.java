@@ -115,11 +115,11 @@ public class PopupMenu extends DisplayElement
                     (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
                     "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');", attributes));
         }
-        else if (_buttonStyle == ButtonStyle.BOLDTEXT)
+        else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {
             assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');"));
+                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
         }
     }
 
@@ -239,6 +239,7 @@ public class PopupMenu extends DisplayElement
     {
         MENUBUTTON("shadedMenu"),
         BOLDTEXT("boldMenu"),
+        TEXT("textMenu"),
         TEXTBUTTON(null);
 
         private String _styleText;
