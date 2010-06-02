@@ -397,7 +397,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (textAlign != null)
             return textAlign;
-        return isStringType() ? "left" : "right";
+        return isStringType() || isDateTimeType() || isBooleanType() ? "left" : "right";
     }
 
     public void setTextAlign(String textAlign)

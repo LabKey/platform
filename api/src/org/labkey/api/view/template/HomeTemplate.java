@@ -116,7 +116,7 @@ public class HomeTemplate extends PrintTemplate
                 // don't add the home project folder, since 'Home' is always displayed:
                 boolean isHomeProject = container.getId().equals(ContainerManager.getForPath("home").getId());
                 if (!isHomeProject)
-                    stack.push(new NavTree(container.getName(), stack.size() > 0 ? container.getStartURL(context) : null));
+                    stack.push(new NavTree(container.getName(), stack.size() > 0 ? container.getStartURL(context.getUser()) : null));
                 container = container.getParent();
             }
             while (stack.size() > 0)

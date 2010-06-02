@@ -552,12 +552,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return true;
     }
 
-    @Deprecated  // Use getStartURL(User)
-    public ActionURL getStartURL(ViewContext viewContext)
-    {
-        return getStartURL(viewContext.getUser());
-    }
-
     public ActionURL getStartURL(User user)
     {
         FolderType ft = getFolderType();

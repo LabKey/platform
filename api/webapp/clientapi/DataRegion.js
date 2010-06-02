@@ -13,6 +13,7 @@ if (!LABKEY.DataRegions)
 }
 
 /**
+ * The DataRegion constructor is private.
  * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
  */
 LABKEY.DataRegion = function (config)
@@ -50,9 +51,11 @@ LABKEY.DataRegion = function (config)
 
     this.addEvents(
         /**
-         * @event selectchange
-         * Fires when the selection has changed.
-         * @param {DataRegion} this DataRegion object.
+         * @memberOf LABKEY.DataRegion#
+         * @name selectchange
+         * @event
+         * @description Fires when the selection has changed.
+         * @param {LABKEY.DataRegion} this DataRegion object.
          * @param {Boolean} hasSelection true if the DataRegion has at least one selected item.
          * @example Here's an example of subscribing to the DataRegion 'selectchange' event:
          * Ext.ComponentMgr.onAvailable("dataRegionName", function (dataregion) {
@@ -177,7 +180,7 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Get selected items on the current page.
-     * @see getSelected
+     * @see LABKEY.DataRegion.getSelected
      */
     this.getChecked = function ()
     {
