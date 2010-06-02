@@ -302,6 +302,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             col += 2;
         }
 
+        select(null, true);
         _readOnly = false;
         refreshButtons(_buttonPanel);
     }
@@ -372,6 +373,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         fireChangeEvent();
 
         refresh();
+        select(0);
     }
 
 
@@ -430,7 +432,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             refreshRow(row.edit);
         }
 
-        select(_selectedPD);
+        select(_selectedPD, true);
     }
 
 
@@ -475,14 +477,25 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     private void select(int index)
     {
-        select(_rows.get(index).edit);
+        if (index >= _rows.size())
+            select(null);
+        else
+            select(_rows.get(index).edit);
     }
     
 
     private void select(FieldType pd)
     {
-        if (pd == _selectedPD)
+        select(pd, false);
+    }
+
+
+    // force when readonly changes for instance
+    private void select(FieldType pd, boolean force)
+    {
+        if (pd == _selectedPD && !force)
             return;
+
         FieldType oldPD = _selectedPD;
         if (_selectedPD != null)
         {
@@ -531,6 +544,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             refreshRow(oldPD);
         }
     }
+
 
     protected boolean isReorderable()
     {

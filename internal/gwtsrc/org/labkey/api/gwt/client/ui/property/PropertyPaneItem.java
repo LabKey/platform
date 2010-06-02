@@ -28,7 +28,7 @@ import org.labkey.api.gwt.client.ui.PropertyPane;
 public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor>
 {
     protected PropertyPane _propertyPane;
-    private boolean _enabled;
+    private boolean _enabled = true;
     protected static final int LABEL_COLUMN = 0;
     protected static final int INPUT_COLUMN = 1;
 
