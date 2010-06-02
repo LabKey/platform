@@ -1139,8 +1139,8 @@ public class PageFlowUtil
     {
         return "<a class=\"labkey-header\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\"" +
                 (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
-                "><span>" + text + "</span><!--img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
-                "/_images/text_link_arrow.gif\" style=\"background-color:transparent; width: 0.728em;height: auto;top: 0.7em;right: 0.5em;\"--></a>";
+                "><span>" + text + "&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
+                "/_images/text_link_arrow.gif\" style=\"position:relative; background-color:transparent; width:10px; height:auto; top:-1px; right:0;\"></span></a>";
     }
 
     /* Renders a lightly colored inactive button, or in other words, a disabled span wrapped in a link of type labkey-disabled-button */

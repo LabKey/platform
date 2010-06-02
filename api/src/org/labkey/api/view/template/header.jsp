@@ -16,17 +16,21 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.AdminReadPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
-<%@ page import="org.labkey.api.security.*" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.permissions.AdminReadPermission" %>
-<%@ page import="org.labkey.api.view.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
@@ -45,11 +49,11 @@
     if ("search".equalsIgnoreCase(currentURL.getPageFlow()) && "search".equalsIgnoreCase(currentURL.getAction()))
         showSearchForm = false;
 %>
-<div id="headerDiv" style="position:absolute; top:0; right:0px; width:300px;"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 bordercolor=red>
+<div id="headerDiv" style="position:absolute; top:0; right:0; width:300px;"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 bordercolor=red>
   <tr>
     <td valign="top" align="right" class="labkey-main-nav">
       <%
-          if (currentContext.hasPermission(ACL.PERM_ADMIN) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
+          if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
           {
               include(new PopupAdminView(currentContext), out);
               out.write("| ");
