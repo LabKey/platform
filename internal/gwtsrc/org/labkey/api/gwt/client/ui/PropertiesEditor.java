@@ -362,6 +362,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             for (FieldType field : fields)
             {
+                // we assume that propertyId==0 usually means this is a new field
+                // however, assay round trips uncreated mandatory fields through the editor, so mark them as not-new
+                if (domain.isMandatoryField(field) && field.getPropertyId() == 0)
+                    field.setPropertyId(-1);
                 _rows.add(new Row(field));
             }
         }
