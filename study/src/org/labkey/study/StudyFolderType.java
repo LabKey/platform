@@ -19,6 +19,7 @@ package org.labkey.study;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -64,6 +65,12 @@ public class StudyFolderType extends DefaultFolderType
     {
         Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
         return study == null ? "New Study" : study.getLabel();
+    }
+
+    @Override
+    public HelpTopic getHelpTopic()
+    {
+        return new HelpTopic("study");
     }
 
     @Override

@@ -201,6 +201,8 @@ public class ProjectController extends SpringActionController
             PageConfig page = getPageConfig();
             if (title != null)
                 page.setTitle(title, appendPath);
+            page.setHelpTopic(folderType.getHelpTopic());
+            
             HttpView template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
 
             Portal.populatePortalView(getViewContext(), c.getId(), template);

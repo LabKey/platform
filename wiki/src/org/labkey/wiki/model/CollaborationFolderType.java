@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.wiki.WikiTOCFactory;
@@ -56,5 +57,11 @@ public class CollaborationFolderType extends DefaultFolderType
             return LookAndFeelProperties.getInstance(c).getShortName();
         else
             return c.getName();
+    }
+
+    @Override
+    public HelpTopic getHelpTopic()
+    {
+        return new HelpTopic("workflowModules");
     }
 }
