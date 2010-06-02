@@ -626,7 +626,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ViewContext v = new ViewContext();
         v.setUser(User.getSearchUser());
-        ActionURL url = c.getStartURL(v);
+        ActionURL url = c.getStartURL(v.getUser());
         final String docid = "container:" + c.getId();
         HashMap<String,Object> map = new HashMap<String,Object>();
         map.put(SearchService.PROPERTY.displayTitle.toString(), title);

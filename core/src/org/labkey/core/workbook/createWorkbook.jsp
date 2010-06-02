@@ -61,7 +61,7 @@
         </tr>
         <tr>
             <td colspan="2" class="cwb-button-bar">
-                <%=PageFlowUtil.generateButton("Cancel", container.getStartURL(me.getViewContext()))%>
+                <%=PageFlowUtil.generateButton("Cancel", container.getStartURL(me.getViewContext().getUser()))%>
                 <%=PageFlowUtil.generateSubmitButton("Create Workbook")%>
             </td>
         </tr>

@@ -62,7 +62,7 @@ else
                 <a href="<%= url %>"><%= run.getName() %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext()) %>"><%= runContainer.getPath() %></a>)
+                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= runContainer.getPath() %></a>)
                 <% } %>
             </li>
         <% } %>
@@ -83,7 +83,7 @@ else
                 <a href="<%= url %>"><%= run.getName() %></a>
                 <% if (!runContainer.equals(currentContainer))
                 { %>
-                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext()) %>"><%= runContainer.getPath() %></a>)
+                    (in <a href="<%= runContainer.getStartURL(bean.getViewContext().getUser()) %>"><%= runContainer.getPath() %></a>)
                 <% } %>
             </li>
         <% } %>

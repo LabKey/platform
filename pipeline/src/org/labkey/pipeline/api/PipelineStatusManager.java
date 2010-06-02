@@ -139,7 +139,7 @@ public class PipelineStatusManager
                 }
                 else
                 {
-                    job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID());
+                    job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID() + ", unable to set its status to '" + status + "'");
                     return false;
                 }
             }
@@ -434,31 +434,6 @@ public class PipelineStatusManager
         return filter;
     }
 
-    public static void removeStatusFile(ViewBackgroundInfo info, PipelineStatusFile sf)
-            throws SQLException
-    {
-        String filePath = sf.getFilePath();
-
-        StringBuffer sql = new StringBuffer();
-
-        sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
-                .append(" WHERE FilePath = ?");
-
-        Container c = info.getContainer();
-        if (c == null)
-            return;
-
-        if (c.isRoot())
-        {
-            Table.execute(_schema.getSchema(), sql.toString(), new Object[] { filePath });
-        }
-        else
-        {
-            sql.append(" AND Container = ?");
-            Table.execute(_schema.getSchema(), sql.toString(), new Object[] { filePath, c.getId() });
-        }
-    }
-
     public static void completeStatus(User user, int[] rowIds) throws SQLException, Container.ContainerException
     {
         PipelineSchema.getInstance().getSchema().getScope().beginTransaction();
@@ -466,16 +441,39 @@ public class PipelineStatusManager
         {
             for (int rowId : rowIds)
             {
-                PipelineJob job = PipelineJobService.get().getJobStore().getJob(rowId);
-
-                if (job != null)
+                boolean statusSet = false;
+                try
                 {
-                    if (!job.getContainer().hasPermission(user, UpdatePermission.class))
-                    {
-                        throw new UnauthorizedException();
-                    }
+                    PipelineJob job = PipelineJobService.get().getJobStore().getJob(rowId);
 
-                   setStatusFile(job, user, PipelineJob.COMPLETE_STATUS, null, false);
+                    if (job != null)
+                    {
+                        job.info("Job " + job + " was marked as complete by " + user);
+                        if (!job.getContainer().hasPermission(user, UpdatePermission.class))
+                        {
+                            throw new UnauthorizedException();
+                        }
+
+                        setStatusFile(job, user, PipelineJob.COMPLETE_STATUS, null, false);
+                        statusSet = true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    _log.error("Failed to get pipeline job", e);
+                }
+
+                if (!statusSet)
+                {
+                    // Fall back to updating the simple bean in the case where can can't deserialize the job itself
+                    PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(rowId);
+                    if (sf != null)
+                    {
+                        _log.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
+                        sf.setStatus(PipelineJob.COMPLETE_STATUS);
+                        sf.setInfo(null);
+                        PipelineStatusManager.updateStatusFile(sf);
+                    }
                 }
             }
             PipelineSchema.getInstance().getSchema().getScope().commitTransaction();
@@ -511,7 +509,7 @@ public class PipelineStatusManager
 
                 if (!hasActiveChildren)
                 {
-                    // Delete all the children too if nothing's active
+                    // Delete all the children too if nothing is active
                     deleteable.addAll(Arrays.asList(children));
                     deleteable.add(sf);
                 }
@@ -537,6 +535,7 @@ public class PipelineStatusManager
                 sql.append(separator);
                 separator = ", ";
                 sql.append("?");
+                _log.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
                 params.add(pipelineStatusFile.getRowId());
             }
             sql.append(")");
@@ -588,7 +587,6 @@ public class PipelineStatusManager
     *
     * @param scope the dbScope that has the transaction context
     * @param active a boolean the caller tests that says whether a transaction is already active/
-    * @throws SQLException database error
     */
     protected static void closeTransaction(DbScope scope, boolean active)
     {

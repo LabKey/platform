@@ -587,12 +587,12 @@ public class CoreController extends SpringActionController
             Container container = ContainerManager.getForRowId(form.getId());
             //if found, ensure it's a descendant of the current container, and redirect
             if (null != container && container.isDescendant(getContainer()))
-                throw new RedirectException(container.getStartURL(getViewContext()));
+                throw new RedirectException(container.getStartURL(getViewContext().getUser()));
 
             //next try to lookup based on name
             container = getContainer().findDescendant(form.getId());
             if (null != container)
-                throw new RedirectException(container.getStartURL(getViewContext()));
+                throw new RedirectException(container.getStartURL(getViewContext().getUser()));
 
             //otherwise, return a workbooks list with the search view
             HtmlView message = new HtmlView("<p class='labkey-error'>Could not find a workbook with id '" + form.getId() + "' in this folder or subfolders. Try searching or entering a different id.</p>");
@@ -681,7 +681,7 @@ public class CoreController extends SpringActionController
         public URLHelper getSuccessURL(CreateWorkbookForm form)
         {
             Container c = (null != _newWorkbook ? _newWorkbook : getContainer());
-            return c.getStartURL(getViewContext());
+            return c.getStartURL(getViewContext().getUser());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -750,7 +750,7 @@ public class CoreController extends SpringActionController
             Container parentContainer = getViewContext().getContainer();
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
             if (null == ids || ids.size() == 0)
-                throw new RedirectException(parentContainer.getStartURL(getViewContext()));
+                throw new RedirectException(parentContainer.getStartURL(getViewContext().getUser()));
 
             MoveWorkbooksBean bean = new MoveWorkbooksBean();
             for (String id : ids)

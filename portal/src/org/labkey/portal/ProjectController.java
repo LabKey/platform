@@ -25,10 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -135,6 +132,7 @@ public class ProjectController extends SpringActionController
         return new ActionURL(BeginAction.class, getContainer());
     }
 
+    @IgnoresTermsOfUse
     @RequiresNoPermission
     public class StartAction extends SimpleViewAction
     {
@@ -159,7 +157,7 @@ public class ProjectController extends SpringActionController
                             "Please select another folder from the tree to the left.");
                 }
             }
-            return HttpView.redirect(c.getStartURL(getViewContext()));
+            return HttpView.redirect(c.getStartURL(getViewContext().getUser()));
         }
 
         public NavTree appendNavTrail(NavTree root)

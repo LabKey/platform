@@ -4098,7 +4098,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
             
-            return HttpView.redirect(getContainer().getStartURL(getViewContext()));
+            return HttpView.redirect(getContainer().getStartURL(getViewContext().getUser()));
         }
 
         public NavTree appendNavTrail(NavTree root)

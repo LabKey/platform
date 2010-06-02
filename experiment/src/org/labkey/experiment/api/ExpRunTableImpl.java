@@ -237,6 +237,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             case RunGroups:
                 ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                col.setTextAlign("left");
                 final ExperimentsForeignKey fk = new ExperimentsForeignKey();
                 col.setFk(fk);
                 col.setDisplayColumnFactory(new DisplayColumnFactory()
