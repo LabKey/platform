@@ -19,6 +19,7 @@ package org.labkey.api.module;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
@@ -192,6 +193,11 @@ public class DefaultFolderType implements FolderType
     public String getStartPageLabel(ViewContext ctx)
     {
         return getLabel() + " Dashboard";
+    }
+
+    public HelpTopic getHelpTopic()
+    {
+        return null;
     }
 
     public Module getDefaultModule()

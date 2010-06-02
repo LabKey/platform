@@ -2122,11 +2122,6 @@ public class PageFlowUtil
         return ModuleLoader.getInstance().getUrlProvider(inter);
     }
 
-    static public String helpTopic(Class<? extends Controller> action)
-    {
-        return SpringActionController.getPageFlowName(action) + "/" + SpringActionController.getActionName(action);
-    }
-
     static private String h(Object o)
     {
         return PageFlowUtil.filter(o);

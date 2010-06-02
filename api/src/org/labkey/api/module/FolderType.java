@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
@@ -92,6 +93,11 @@ public interface FolderType
     public String getStartPageLabel(ViewContext ctx);
 
     /**
+     * Help topic of the start page.
+     */
+    public HelpTopic getHelpTopic();
+
+    /**
      * Module that *owns* this folder. Used in constructing navigation paths. If current URL's module is NOT part of the owning module
      * extra links will be added to automatically generated nav path
      * @return Owning module. May be null
@@ -160,6 +166,7 @@ public interface FolderType
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             return c.getDefaultModule().getTabURL(c, u);
         }
+        public HelpTopic getHelpTopic() { return null; }
 
         public void addManageLinks(NavTree adminNavTree, Container container)
         {
