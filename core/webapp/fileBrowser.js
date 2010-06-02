@@ -1860,8 +1860,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDownloadAction : function()
     {
-        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'iconDownload', scope: this, hideText: true, handler: function()
-            {
+        return new Ext.Action({text: 'Download', tooltip: 'Download the selected files or folders', iconCls:'iconDownload', 
+            disabledClass:'x-button-disabled',
+            scope: this,
+            hideText: true,
+            handler: function() {
                 var selections = this.grid.selModel.getSelections();
 
                 if (selections.length == 1 && selections[0].data.file)
@@ -1887,64 +1890,67 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getCreateDirectoryAction : function()
     {
-        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server', scope: this, hideText: true, handler: function()
-        {
-            var panel = new Ext.form.FormPanel({
-                bodyStyle : 'padding:20px;',
-                border: false,
-                items: [{
-                    xtype: 'textfield',
-                    allowBlank: false,
-                    name: 'folderName',
-                    fieldLabel: 'Folder Name',
-                    value: 'New Folder',
-                    scope: this,
-                    validator: function(folder){
-                        var scope = this.initialConfig.scope;
-                        if (folder && folder.length && scope)
-                        {
-                            var p = scope.currentDirectory.data.path;
-                            var path = scope.fileSystem.concatPaths(p, folder);
-                            var file = scope.fileSystem.recordFromCache(path);
-                            if (file)
-                                return 'The folder already exists';
-                        }
-                        return true;
-                    }
-                }]
-            });
-
-            var win = new Ext.Window({
-                title: 'Create Folder',
-                width: 300,
-                height: 150,
-                cls: 'extContainer',
-                autoScroll: true,
-                closeAction:'close',
-                modal: true,
-                layout: 'fit',
-                items: panel,
-                buttons: [
-                    {text:'Submit', scope: this, handler:function() {
-                        if (panel.getForm().isValid())
-                        {
-                            var values = panel.getForm().getValues();
-                            if (values && values.folderName)
+        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', tooltip: 'Create a new folder on the server',
+            disabledClass:'x-button-disabled',
+            scope: this,
+            hideText: true,
+            handler: function() {
+                var panel = new Ext.form.FormPanel({
+                    bodyStyle : 'padding:20px;',
+                    border: false,
+                    items: [{
+                        xtype: 'textfield',
+                        allowBlank: false,
+                        name: 'folderName',
+                        fieldLabel: 'Folder Name',
+                        value: 'New Folder',
+                        scope: this,
+                        validator: function(folder){
+                            var scope = this.initialConfig.scope;
+                            if (folder && folder.length && scope)
                             {
-                                var folder = values.folderName;
-                                var p = this.currentDirectory.data.path;
-                                var path = this.fileSystem.concatPaths(p, folder);
-                                this.fileSystem.createDirectory(path, this._refreshOnCallbackSelectPath.createDelegate(this));
+                                var p = scope.currentDirectory.data.path;
+                                var path = scope.fileSystem.concatPaths(p, folder);
+                                var file = scope.fileSystem.recordFromCache(path);
+                                if (file)
+                                    return 'The folder already exists';
                             }
-                            win.close();
+                            return true;
                         }
-                    }},
-                    {text:'Cancel', handler:function(){win.close();}}
-                ]
-            });
-            win.show();
+                    }]
+                });
 
-        }.createDelegate(this)});
+                var win = new Ext.Window({
+                    title: 'Create Folder',
+                    width: 300,
+                    height: 150,
+                    cls: 'extContainer',
+                    autoScroll: true,
+                    closeAction:'close',
+                    modal: true,
+                    layout: 'fit',
+                    items: panel,
+                    buttons: [
+                        {text:'Submit', scope: this, handler:function() {
+                            if (panel.getForm().isValid())
+                            {
+                                var values = panel.getForm().getValues();
+                                if (values && values.folderName)
+                                {
+                                    var folder = values.folderName;
+                                    var p = this.currentDirectory.data.path;
+                                    var path = this.fileSystem.concatPaths(p, folder);
+                                    this.fileSystem.createDirectory(path, this._refreshOnCallbackSelectPath.createDelegate(this));
+                                }
+                                win.close();
+                            }
+                        }},
+                        {text:'Cancel', handler:function(){win.close();}}
+                    ]
+                });
+                win.show();
+
+            }.createDelegate(this)});
     },
 
 
@@ -1969,19 +1975,23 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getParentFolderAction : function()
     {
-        return new Ext.Action({text: 'Parent Folder', tooltip: 'Navigate to parent folder', iconCls:'iconUp', scope: this, hideText: true, handler: function()
-        {
-            // CONSIDER: PROPFIND to ensure this link is still good?
-            var p = this.currentDirectory.data.path;
-            var dir = this.fileSystem.parentPath(p) || this.fileSystem.rootPath;
-            this.changeDirectory(dir);
-        }});
+        return new Ext.Action({text: 'Parent Folder', tooltip: 'Navigate to parent folder', iconCls:'iconUp',
+            disabledClass:'x-button-disabled',
+            scope: this,
+            hideText: true,
+            handler: function() {
+                // CONSIDER: PROPFIND to ensure this link is still good?
+                var p = this.currentDirectory.data.path;
+                var dir = this.fileSystem.parentPath(p) || this.fileSystem.rootPath;
+                this.changeDirectory(dir);
+            }});
     },
 
 
     getRefreshAction : function()
     {
         return new Ext.Action({text: 'Refresh', tooltip: 'Refresh the contents of the current folder', iconCls:'iconReload',
+            disabledClass:'x-button-disabled',
             scope:this,
             hideText: true,
             handler: function() {
@@ -1993,11 +2003,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getZipFolderAction : function()
     {
-        return new Ext.Action({text: 'Zip Folder', tooltip: 'Download folder as a .zip file', iconCls:'iconZip', scope: this, handler: function()
-        {
-            var uri = this.currentDirectory.data.uri;
-            window.location = uri + "?method=zip";
-        }});
+        return new Ext.Action({text: 'Zip Folder', tooltip: 'Download folder as a .zip file', iconCls:'iconZip',
+            disabledClass:'x-button-disabled',
+            scope: this,
+            handler: function() {
+                var uri = this.currentDirectory.data.uri;
+                window.location = uri + "?method=zip";
+            }});
     },
 
 
@@ -2058,78 +2070,82 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({text: 'Delete', tooltip: 'Delete the selected files or folders', iconCls:'iconDelete', scope:this, disabled:true, hideText: true, handler: function()
-        {
-            if (!this.currentDirectory || !this.selectedRecord)
-                return;
+        return new Ext.Action({text: 'Delete', tooltip: 'Delete the selected files or folders', iconCls:'iconDelete',
+            disabledClass:'x-button-disabled',
+            scope:this,
+            disabled:true,
+            hideText: true,
+            handler: function() {
+                if (!this.currentDirectory || !this.selectedRecord)
+                    return;
 
-            var selections = this.grid.selModel.getSelections();
-            var fnDelete = (function()
-            {
-                this.fireEvent(BROWSER_EVENTS.deletestarted);
-                for (var i = 0; i < selections.length; i++)
+                var selections = this.grid.selModel.getSelections();
+                var fnDelete = (function()
                 {
-                    var selectedRecord = selections[i];
-                    this.fileSystem.deletePath(selectedRecord.data.path, selectedRecord.data.file, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
-                }
-                this.selectFile(null);
-
-            }).createDelegate(this);
-
-            if (selections.length)
-            {
-                var fileCount = 0;
-                var fileName;
-                var dirCount = 0;
-                var dirName;
-                for (var i = 0; i < selections.length; i++)
-                {
-                    var selectedRecord = selections[i];
-                    if (selectedRecord.data.file)
+                    this.fireEvent(BROWSER_EVENTS.deletestarted);
+                    for (var i = 0; i < selections.length; i++)
                     {
-                        fileCount++;
-                        fileName = selectedRecord.data.name;
+                        var selectedRecord = selections[i];
+                        this.fileSystem.deletePath(selectedRecord.data.path, selectedRecord.data.file, this._deleteOnCallback.createDelegate(this,[selectedRecord],true));
                     }
-                    else
+                    this.selectFile(null);
+
+                }).createDelegate(this);
+
+                if (selections.length)
+                {
+                    var fileCount = 0;
+                    var fileName;
+                    var dirCount = 0;
+                    var dirName;
+                    for (var i = 0; i < selections.length; i++)
                     {
-                        dirCount++;
-                        dirName = selectedRecord.data.name;
+                        var selectedRecord = selections[i];
+                        if (selectedRecord.data.file)
+                        {
+                            fileCount++;
+                            fileName = selectedRecord.data.name;
+                        }
+                        else
+                        {
+                            dirCount++;
+                            dirName = selectedRecord.data.name;
+                        }
                     }
-                }
-                var message = "Are you sure that you want to delete the ";
-                if (fileCount == 1)
-                {
-                    message += "file '" + fileName + "'";
-                }
-                else if (fileCount > 1)
-                {
-                    message += fileCount + " selected files";
-                }
-
-                if (fileCount > 0 && dirCount > 0)
-                {
-                    message += " and ";
-                }
-
-                if (dirCount == 1)
-                {
-                    message += "directory '" + dirName + "' (including its content)";
-                }
-                else if (dirCount > 1)
-                {
-                    message += dirCount + " selected directories (including their contents)";
-                }
-                message += "?";
-
-                Ext.MessageBox.confirm("Confirm delete", message, function(answer)
-                {
-                    if (answer == "yes")
+                    var message = "Are you sure that you want to delete the ";
+                    if (fileCount == 1)
                     {
-                        fnDelete();
+                        message += "file '" + fileName + "'";
                     }
-                });
-            }
-        }});
+                    else if (fileCount > 1)
+                    {
+                        message += fileCount + " selected files";
+                    }
+
+                    if (fileCount > 0 && dirCount > 0)
+                    {
+                        message += " and ";
+                    }
+
+                    if (dirCount == 1)
+                    {
+                        message += "directory '" + dirName + "' (including its content)";
+                    }
+                    else if (dirCount > 1)
+                    {
+                        message += dirCount + " selected directories (including their contents)";
+                    }
+                    message += "?";
+
+                    Ext.MessageBox.confirm("Confirm delete", message, function(answer)
+                    {
+                        if (answer == "yes")
+                        {
+                            fnDelete();
+                        }
+                    });
+                }
+            }});
     },
 
     helpEl : null,
@@ -3138,6 +3154,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         actions.upload = new Ext.Action({
             text: 'Upload Files',
             iconCls: 'iconUpload',
+            disabledClass:'x-button-disabled',
             tooltip: 'Upload files or folders from your local machine to the server',
             listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
         });
@@ -3167,6 +3184,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         actions.folderTreeToggle = new Ext.Action({
             text: 'Toggle Folder Tree',
             iconCls: 'iconFolderTree',
+            disabledClass:'x-button-disabled',
             tooltip: 'Show or hide the folder tree',
             listeners: {click:function(button, event) {
                 if (this.tree) {

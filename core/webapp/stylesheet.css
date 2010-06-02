@@ -2930,3 +2930,8 @@ ul.x-tab-strip-top li {
 .x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner{
 	background-image: none;
 }
+/* makes it more apparent that the item is disabled and works for IE */
+.x-button-disabled {
+    opacity: .35;
+    filter:alpha(opacity=35)
+}

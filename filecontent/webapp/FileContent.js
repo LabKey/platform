@@ -97,12 +97,14 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             text: 'Import Data',
             listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
             iconCls: 'iconDBCommit',
+            disabledClass:'x-button-disabled',
             tooltip: 'Import data from files into the database, or analyze data files'
         });
 
         actions.customize = new Ext.Action({
             text: 'Admin',
             iconCls: 'iconConfigure',
+            disabledClass:'x-button-disabled',
             tooltip: 'Configure the buttons shown on the toolbar',
             listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
         });
@@ -110,6 +112,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         actions.editFileProps = new Ext.Action({
             text: 'Edit Properties',
             iconCls: 'iconEditFileProps',
+            disabledClass:'x-button-disabled',
             tooltip: 'Edit properties on the selected file(s)',
             listeners: {click:function(button, event) {this.onEditFileProps(button);}, scope:this},
             hideText: true
@@ -118,6 +121,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         actions.emailPreferences = new Ext.Action({
             text: 'Email Preferences',
             iconCls: 'iconEmailSettings',
+            disabledClass:'x-button-disabled',
             tooltip: 'Configure email notifications on file actions.',
             listeners: {click:function(button, event) {this.onEmailPreferences(button);}, scope:this},
             hideText: true
@@ -126,6 +130,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         actions.auditLog = new Ext.Action({
             text: 'Audit History',
             iconCls: 'iconAuditLog',
+            disabledClass:'x-button-disabled',
             tooltip: 'View the files audit log for this folder.',
             listeners: {click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory');}}
         })
