@@ -163,7 +163,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
     createGrid : function()
     {
-        var sm = new Ext.grid.CheckboxSelectionModel({width: '10px'});
+        var sm = new Ext.grid.CheckboxSelectionModel();
         var grid = new Ext.grid.GridPanel(
         {
             store: this.store,
