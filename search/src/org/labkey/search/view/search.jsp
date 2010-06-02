@@ -110,7 +110,7 @@
 %>
 <table width=100% cellpadding="0" cellspacing="0" style="padding-left: 18px;">
     <tr>
-        <td style="font-size: small;"><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"> Advanced Search</td>
+        <td><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span></td>
     </tr>
     <tr>
         <td><div id="advancedPanelDiv" style="display: none;"></div></td>
@@ -556,12 +556,12 @@ String projectInfo(Container c, boolean returnID)
     {
         var header = {
             layout: 'form',
-            html : <%=PageFlowUtil.jsString("Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your results."))%>
+            html : <%=PageFlowUtil.jsString("<span>Categories" + helpPopup("Categories", "Choosing one or more categories will refine your search to only those data types. For example, if you select 'Files' you will see only files and attachments in your results.") + "</span>")%>
         };
 
         var categories = {
             layout: 'form',
-            html  : <%=PageFlowUtil.jsString("Scope" + helpPopup("Scope", "Scoping allows the search to be refined to the contents of the entire site (default), contents of this project including sub-folders, or contents of just this folder."))%>,
+            html  : <%=PageFlowUtil.jsString("<span>Scope" + helpPopup("Scope", "Scoping allows the search to be refined to the contents of the entire site (default), contents of this project including sub-folders, or contents of just this folder.") + "</span>")%>,
             items: {
                 id        : 'adv-category',
                 xtype     : 'checkboxgroup',
