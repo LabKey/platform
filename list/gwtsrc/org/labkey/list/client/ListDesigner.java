@@ -163,7 +163,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _hasDesignListPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasDesignListPermission"));
         _hasInsertPermission = Boolean.valueOf(PropertyUtil.getServerProperty("hasInsertPermission"));
         _hasDeleteListPermission =  Boolean.valueOf(PropertyUtil.getServerProperty("hasDeleteListPermission"));
-        boolean startInEdit = "#edit".equals(Window.Location.getHash());
+        boolean startInEdit = "#edit".equals(Window.Location.getHash()) || "1".equals(Window.Location.getParameter("edit"));
 
         _root = RootPanel.get("org.labkey.list.Designer-Root");
         clearLoading(_root);
@@ -489,7 +489,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 {
                     setDirty(false);
                     if (listener != null)
-                        listener.saveSuccessful(_list, PropertyUtil.getCurrentURL());
+                    {
+                        listener.saveSuccessful(_list, getEditorURL());
+                    }
                 }
                 else
                 {
@@ -508,6 +510,19 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 pd.setPropertyId(0);
 
         getService().updateListDefinition(_list, _domain, _propTable.getUpdates(), callback);
+    }
+
+
+    public String getEditorURL()
+    {
+        String url = PropertyUtil.getCurrentURL();
+        if (_listId > 0)
+        {
+            if (-1 != (url.indexOf('?')))
+                url = url.substring(0,url.indexOf('?'));
+            url += "?listId=" + _listId  + "&edit=1";
+        }
+        return url;        
     }
 
     public void save()
@@ -648,7 +663,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 setDomain(domain);
 
                 if (saveListener != null)
-                    saveListener.saveSuccessful(domain, PropertyUtil.getCurrentURL());
+                    saveListener.saveSuccessful(domain, getEditorURL());
             }
         });
     }
