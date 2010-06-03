@@ -281,7 +281,6 @@ public class ViewServlet extends HttpServlet
             throws ServletException
     {
         // does not reduce need to validate form parameters which may be posted
-        // check coded and decoded
         if (!validChars(request))
             return null;
 
@@ -320,7 +319,9 @@ public class ViewServlet extends HttpServlet
         }
         if (null != c)
             url.setContainer(c);
+
         
+        // lastfilter
         boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
         if (expandLastFilter)
         {
@@ -566,7 +567,7 @@ public class ViewServlet extends HttpServlet
         return true;
     }
 
-    private boolean validChars(ActionURL url) throws ServletException
+    private boolean validChars(URLHelper url) throws ServletException
     {
         Path path = url.getParsedPath();
         for (int i=0 ; i<path.size() ; i++)
