@@ -125,7 +125,9 @@ Ext.onReady(function(){
         {
             var sc = scrollContainer();
             var d = listView.getTemplateTarget().dom.lastChild.lastChild;
-            Ext.fly(d).scrollIntoView(listView.getTemplateTarget().dom.parentNode, false);
+            var el;
+            if (d && (el = Ext.fly(d)))
+                el.scrollIntoView(listView.getTemplateTarget().dom.parentNode, false);
         }
     }
 
