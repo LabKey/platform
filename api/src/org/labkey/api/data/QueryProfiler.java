@@ -195,8 +195,8 @@ public class QueryProfiler
                     sb.append("<td>Queries per Request:</td><td align=\"right\">").append(Formats.f1.format((double) _requestQueryCount / requests)).append("</td>");
                     sb.append("<td width=10>&nbsp;</td>");
                     sb.append("<td>Query Time per Request:</td><td align=\"right\">").append(Formats.f1.format((double) _requestQueryTime / requests)).append("</td>");
-                    sb.append("</tr>\n  </tr>");
-                    sb.append("<td>").append(_hasBeenReset ? "Request Count Since Last Reset" : "Request Count").append(":</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td>");
+                    sb.append("</tr>\n  <tr>");
+                    sb.append("<td>").append(_hasBeenReset ? "Request Count Since Last Reset" : "Request Count").append(":</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td></tr>\n");
                     sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>\n");
 
                     sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Background Threads</td></tr>\n");
@@ -283,10 +283,6 @@ public class QueryProfiler
 
     public static class QueryStatTsvWriter extends TSVWriter
     {
-        public QueryStatTsvWriter()
-        {
-        }
-
         protected void write()
         {
             QueryTrackerSet export = new InvocationQueryTrackerSet() {
@@ -307,6 +303,19 @@ public class QueryProfiler
 
                 for (QueryTracker tracker : export)
                     tracker.exportRow(rows);
+
+                long upTime = 0;
+                RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+                if (runtimeBean != null)
+                {
+                    upTime = runtimeBean.getUptime() - _upTimeAtLastReset;
+                    upTime = upTime - (upTime % 1000);
+                }
+                _pw.printf("#Summary - unique queries: %,d, elapsed time: %s\n", _uniqueQueryCountEstimate, DateUtil.formatDuration(upTime));
+
+                int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
+                _pw.printf("#HTTP Requests - query count: %,d, query time (ms): %,d, request count: %d\n", _requestQueryCount, _requestQueryTime, requests);
+                _pw.printf("#Background Threads - query count: %,d, query time (ms): %,d\n", _backgroundQueryCount, _backgroundQueryTime);
 
                 QueryTracker.exportRowHeader(_pw);
                 _pw.println(rows);
