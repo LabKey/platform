@@ -49,7 +49,7 @@
     if ("search".equalsIgnoreCase(currentURL.getPageFlow()) && "search".equalsIgnoreCase(currentURL.getAction()))
         showSearchForm = false;
 %>
-<div id="headerDiv" style="position:absolute; top:0; right:0; width:300px;"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 bordercolor=red>
+<div id="headerDiv" style="position:absolute; top:0; right:0; width:475px;"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 bordercolor=red width="auto">
   <tr>
     <td valign="top" align="right" class="labkey-main-nav">
       <%

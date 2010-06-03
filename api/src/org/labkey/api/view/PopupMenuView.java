@@ -26,7 +26,6 @@ import java.io.PrintWriter;
  */
 public class PopupMenuView extends HttpView<PopupMenu>
 {
-
     public PopupMenuView()
     {
         super(new PopupMenu());
