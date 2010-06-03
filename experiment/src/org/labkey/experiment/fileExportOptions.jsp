@@ -31,7 +31,7 @@ String guid = GUID.makeGUID();
 <script type="text/javascript">
     function setFileDownloadEnabled(enabled, guid)
     {
-        var elements = document.getElementsByClassName("file-download-role-checkbox-" + guid);
+        var elements = Ext.DomQuery.select("input[class=file-download-role-checkbox-" + guid + "]");
         for (var i = 0; i < elements.length; i++)
         {
             elements[i].disabled = !enabled;
@@ -42,7 +42,7 @@ String guid = GUID.makeGUID();
     {
         if (document.getElementById(guid).checked)
         {
-            var elements = document.getElementsByClassName("file-download-role-checkbox-" + guid);
+            var elements = Ext.DomQuery.select("input[class=file-download-role-checkbox-" + guid + "]");
             var roleCount = 0;
             for (var i = 0; i < elements.length; i++)
             {

@@ -2971,6 +2971,8 @@ public class ExperimentController extends SpringActionController
 
                 getViewContext().getResponse().setContentType("application/zip");
                 getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+                getViewContext().getResponse().setHeader("Pragma", "private");
+                getViewContext().getResponse().setHeader("Cache-Control", "private");
 
                 exporter.write(getViewContext().getResponse().getOutputStream());
                 return null;

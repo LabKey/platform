@@ -55,6 +55,7 @@ import org.labkey.issue.query.IssuesTable;
 import org.springframework.validation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.mail.Address;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1076,34 +1077,39 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void sendUpdateEmail(Issue issue, Issue prevIssue, ActionURL detailsURL, String change, String action)
+    private void sendUpdateEmail(Issue issue, Issue prevIssue, ActionURL detailsURL, String change, String action) throws ServletException
     {
-        try
+        final String[] allAddresses = getEmailAddresses(issue, prevIssue, action);
+        for (String to : allAddresses)
         {
-            final String[] to = getEmailAddresses(issue, prevIssue, action);
-            if (to.length > 0)
+            try
             {
                 Issue.Comment lastComment = issue.getLastComment();
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to);
+                HttpServletRequest request = AppProps.getInstance().createMockRequest();  // Use base server url for root of links in email
+                Address[] addresses = m.getAllRecipients();
+                if (addresses != null && addresses.length > 0)
+                {
+                    m.setMultipart(true);
+                    m.setSubject("Issue #" + issue.getIssueId() + ", \"" + issue.getTitle().getSource() + ",\" has been " + change);
+                    m.setHeader("References", references);
 
-                EmailService.I svc = EmailService.get();
-                String subject = "Issue #" + issue.getIssueId() + ", \"" + issue.getTitle().getSource() + ",\" has been " + change;
+                    JspView viewPlain = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true));
+                    m.setTemplateContent(request, viewPlain, "text/plain");
 
-                EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to, subject);
+                    JspView viewHtml = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, false));
+                    m.setTemplateContent(request, viewHtml, "text/html");
 
-                msg.setHeader("References", references);
-                msg.addContent(EmailMessage.contentType.PLAIN, getViewContext(),
-                        new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true)));
-                msg.addContent(EmailMessage.contentType.HTML, getViewContext(),
-                        new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, false)));
-
-                svc.sendMessage(msg);
+                    MailHelper.send(m);
+                    MailHelper.addAuditEvent(getUser(), getContainer(), m);
+                }
             }
-        }
-        catch (Exception e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
+            catch (Exception e)
+            {
+                _log.error("sendUpdateEmail", e);
+            }
         }
     }
 

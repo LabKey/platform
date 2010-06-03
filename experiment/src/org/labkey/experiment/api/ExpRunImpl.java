@@ -328,7 +328,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
 
             Table.execute(ExperimentServiceImpl.get().getExpSchema(), "DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId(), new Object[]{});
-            
+
             ExperimentRunGraph.clearCache(getContainer());
         }
         catch (SQLException e)
@@ -462,6 +462,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         int loopCount = 0;
         while (descendantPAStack.size() > 0)
         {
+            if (loopCount++ > 10000)
+            {
+                throw new IllegalStateException("Infinite loop detected for run " + getRowId());
+            }
+
             ExpProtocolApplication pa = descendantPAStack.get(0);
             for (ExpMaterial m : pa.getOutputMaterials())
             {
@@ -484,6 +489,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         loopCount = 0;
         while (ancestorPAStack.size() > 0)
         {
+            if (loopCount++ > 10000)
+            {
+                throw new IllegalStateException("Infinite loop detected for run " + getRowId());
+            }
+
             ExpProtocolApplication pa = ancestorPAStack.get(0);
             if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
                 break;
