@@ -159,7 +159,6 @@ public class StudyApplication implements EntryPoint
         if (null != panel)                                    
         {
             panel.getElement().setInnerHTML("");
-            panel.add(new Label("Loading..."));
         }
         
         final String moduleName = PropertyUtil.getServerProperty("GWTModule");
