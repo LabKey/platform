@@ -119,9 +119,10 @@
         <td width="99%" style="vertical-align:top;">
             <table width="99%">
                 <tr>
-                    <td class="labkey-form-label" title="This field is required">Name<span class="labkey-error">*</span></td>
+                    <td class="labkey-form-label" title="This field is required">Name</td>
                     <td width="99%">
                         <input type="text" name="name" id="<%=ID_PREFIX%>name" size="80" onkeypress="setWikiDirty()" onchange="onChangeName()"/>
+                        <span class="labkey-error">This field is required</span>
                     </td>
                 </tr>
                 <tr>
@@ -150,7 +151,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label" title="This field is required">Body<span class="labkey-error">*</span>
+                    <td class="labkey-form-label" title="This field is required">Body
                         <br/><span id="wiki-current-format"></span>
                     </td>
                     <td width="99%">
