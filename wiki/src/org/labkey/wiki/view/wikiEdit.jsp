@@ -151,7 +151,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label" title="This field is required">Body
+                    <td class="labkey-form-label">Body
                         <br/><span id="wiki-current-format"></span>
                     </td>
                     <td width="99%">
