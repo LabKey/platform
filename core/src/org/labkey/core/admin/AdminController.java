@@ -96,6 +96,8 @@ public class AdminController extends SpringActionController
             ProjectSettingsAction.class);
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
 
+    private static final Logger LOG = Logger.getLogger(AdminController.class);
+
     private static long _errorMark = 0;
 
     public static void registerAdminConsoleLinks()
@@ -2154,15 +2156,28 @@ public class AdminController extends SpringActionController
         {
             if (form.isClearCaches())
             {
+                LOG.info("Clearing Introspector caches");
                 Introspector.flushCaches();
+                LOG.info("Purging all CacheMap caches");
                 CacheMap.purgeAllCaches();
                 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
                 if (null != ss)
+                {
+                    LOG.info("Purging SearchService queues");
                     ss.purgeQueues();
+                }
             }
 
             if (form.isGc())
+            {
+                LOG.info("Garbage collecting");
                 System.gc();
+            }
+
+            if (form.isGc() || form.isClearCaches())
+            {
+                LOG.info("Cache clearing and garbage collecting complete");
+            }
 
             return new JspView<MemBean>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest()));
         }
