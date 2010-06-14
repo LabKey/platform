@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 /*
 * User: adam
@@ -340,7 +341,8 @@ public class QueryProfiler
 
         private String getSql()
         {
-            return _sql;
+            // Do any transformations on the SQL on the way out, in the background thread
+            return transform(_sql);
         }
 
         private long getElapsed()
@@ -364,6 +366,18 @@ public class QueryProfiler
         public boolean isRequestThread()
         {
             return _isRequestThread;
+        }
+
+
+        private static final Pattern TEMP_TABLE_PATTERN = Pattern.compile("([ix_|temp\\.][\\w]+)\\$?\\p{XDigit}{32}");
+        private static final Pattern SPECIMEN_TEMP_TABLE_PATTERN = Pattern.compile("(SpecimenUpload)\\d{9}");
+
+        // Transform the SQL to help with coalescing
+        private String transform(String sql)
+        {
+            // Remove the randomly-generated parts of temp table names
+            sql = TEMP_TABLE_PATTERN.matcher(sql).replaceAll("$1");
+            return SPECIMEN_TEMP_TABLE_PATTERN.matcher(sql).replaceAll("$1");
         }
     }
 

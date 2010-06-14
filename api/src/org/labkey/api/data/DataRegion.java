@@ -33,7 +33,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
@@ -1900,7 +1899,7 @@ public class DataRegion extends DisplayElement
             if (valueMap instanceof BoundMap)
                 renderOldValues(out, ((BoundMap)valueMap).getBean());
             else
-                renderOldValues(out, valueMap);
+                renderOldValues(out, valueMap, ctx.getFieldMap());
         }
 
         //Make sure all pks are included
@@ -2149,7 +2148,7 @@ public class DataRegion extends DisplayElement
             if (valueMap instanceof BoundMap)
                 renderOldValues(out, ((BoundMap)valueMap).getBean());
             else
-                renderOldValues(out, valueMap);
+                renderOldValues(out, valueMap, ctx.getFieldMap());
         }
 
         //Make sure all pks are included
@@ -2229,13 +2228,44 @@ public class DataRegion extends DisplayElement
     }
 
 
-    protected void renderOldValues(Writer out, Object values) throws IOException
+    private void renderOldValues(Writer out, Object values) throws IOException
     {
         out.write("<input name='.oldValues' type=hidden value=\"");
         out.write(PageFlowUtil.encodeObject(values));
         out.write("\">");
     }
 
+
+    // RowMap keys are the ResultSet alias names, which might be completely mangled.  So, create a new map
+    // that's column name -> value and pass it to renderOldValues
+    private void renderOldValues(Writer out, Map<String, Object> valueMap, Map<FieldKey, ColumnInfo> fieldMap) throws IOException
+    {
+        Map<String, Object> map = new HashMap<String, Object>(valueMap.size());
+
+        for (Map.Entry<FieldKey, ColumnInfo> entry : fieldMap.entrySet())
+        {
+            FieldKey fk = entry.getKey();
+
+            if (1 == fk.getParts().size())
+            {
+                Object value;
+
+                if (valueMap.containsKey(fk.getName()))
+                {
+                    value = valueMap.get(fk.getName());
+                }
+                else
+                {
+                    ColumnInfo info = entry.getValue();
+                    value = info.getValue(valueMap);
+                }
+
+                map.put(fk.getName(), value);
+            }
+        }
+
+        renderOldValues(out, map);
+    }
 
     public static ColumnInfo[] colInfoFromMetaData(ResultSetMetaData md) throws SQLException
     {

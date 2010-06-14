@@ -110,6 +110,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
         assert null == _contextPathStr;
 
         _contextPathStr = request.getContextPath();
+        assert _contextPathStr.isEmpty() || _contextPathStr.startsWith("/");
     }
 
     public String getContextPath()
@@ -125,7 +126,10 @@ public class AppProps extends AbstractWriteableSettingsGroup
     {
         if (_contextPath == null)
         {
-            _contextPath = Path.parse(getContextPath());
+            if (StringUtils.isEmpty(getContextPath()))
+                _contextPath = Path.rootPath;
+            else
+                _contextPath = Path.parse(getContextPath());
         }
         return _contextPath;
     }

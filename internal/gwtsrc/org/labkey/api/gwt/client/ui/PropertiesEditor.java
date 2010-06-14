@@ -244,7 +244,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
             TabItem ti = new TabItem(propertiesPane.getName());
             ti.setLayout(new FitLayout());
-            ti.add(propertiesPane);
+            ti.add(wrapper);
             _extraPropertiesTabPanel.add(ti);
         }
 

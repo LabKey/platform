@@ -45,7 +45,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         FORM form = null;
         BindException errors = null;
         if (null == getCommandClass())
-            errors = new BindException(new Object(), "command");
+            errors = new NullSafeBindException(new Object(), "command");
         else
             errors = bindParameters(getPropertyValues());
 

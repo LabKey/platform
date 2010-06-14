@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -92,7 +93,7 @@ public class TableViewFormTestCase extends junit.framework.TestCase
         tf.set("intNotNull", "20");
         tf.set("datetimeNull", "garbage");
 
-        BindException errors = new BindException(tf, "form");
+        BindException errors = new NullSafeBindException(tf, "form");
         tf.validateBind(errors);
         Assert.assertEquals("1 error", errors.getErrorCount(), 1);
         Assert.assertEquals("Date conversion error", errors.getFieldErrors("datetimeNull").size(), 1);

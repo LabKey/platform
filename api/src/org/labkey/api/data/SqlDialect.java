@@ -526,7 +526,7 @@ public abstract class SqlDialect
     {
         // Consider: just use quoteColumnIdentifier()?
         if (!"*".equals(columnName) && (reservedWordSet.contains(columnName) || !AliasManager.isLegalName(columnName)))
-            return "\"" + columnName + "\"";
+            return "\"" + columnName.replaceAll("\"", "\"\"") + "\"";
         else
             return columnName;
     }
@@ -536,7 +536,7 @@ public abstract class SqlDialect
     public String quoteColumnIdentifier(String id)
     {
         if (!AliasManager.isLegalName(id) || reservedWordSet.contains(id))
-            return "\"" + id + "\"";
+            return "\"" + id.replaceAll("\"", "\"\"") + "\"";
         else
             return id;
     }

@@ -1016,7 +1016,8 @@ var _typeMap = {
     "INT8":"INT",
     "FLOAT4":"DECIMAL",
     "FLOAT8":"DECIMAL",
-    "SERIAL":"INT"
+    "SERIAL":"INT",
+    "USERID":"INT"
 };
 var _mappedType = "TEXT";
 

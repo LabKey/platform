@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.Set;
 import java.util.Map;
@@ -113,5 +114,16 @@ public class SamplesSchema extends AbstractExpSchema
                 return ret;
             }
         };
+    }
+
+    @Override
+    public String getDomainURI(String queryName)
+    {
+        Container container = getContainer();
+        ExpSampleSet ss = getSampleSets().get(queryName);
+        if (ss == null)
+            throw new NotFoundException("Sample set '" + queryName + "' not found in this container '" + container.getPath() + "'.");
+
+        return ss.getType().getTypeURI();
     }
 }

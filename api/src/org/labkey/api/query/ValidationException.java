@@ -218,6 +218,9 @@ public class ValidationException extends Exception
         for (ValidationError validationError : ex.getErrors())
         {
             String message = validationError.getMessage();
+            if (message == null)
+                message = "An error occurred";
+
             String property = null;
             if (validationError instanceof PropertyValidationError)
                 property = ((PropertyValidationError)validationError).getProperty();

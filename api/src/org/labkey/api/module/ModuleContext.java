@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
 
 import java.text.DecimalFormat;
 
@@ -94,7 +95,17 @@ public class ModuleContext implements Cloneable
 
     public String getMessage()
     {
-        double targetVersion = ModuleLoader.getInstance().getModule(_name).getVersion();
+        Module module = ModuleLoader.getInstance().getModule(_name);
+
+        // This could happen if a module failed to initialize
+        if (null == module)
+        {
+            //noinspection ThrowableInstanceNeverThrown
+            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
+            return "Configuration problem with this module";
+        }
+
+        double targetVersion = module.getVersion();
         return getModuleState().describeModuleState(_installedVersion, targetVersion);
     }
 

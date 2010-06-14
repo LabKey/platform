@@ -59,6 +59,26 @@ public class ModuleResourceResolver implements Resolver
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
 
+    private synchronized Resource get(Pair<Resolver, Path> cacheKey)
+    {
+        return _resources.get(cacheKey);
+    }
+
+    private synchronized Resource put(Pair<Resolver, Path> cacheKey, Resource r)
+    {
+        return _resources.put(cacheKey, r);
+    }
+
+    private synchronized Resource put(Pair<Resolver, Path> cacheKey, Resource r, long timeToLive)
+    {
+        return _resources.put(cacheKey, r, timeToLive);
+    }
+
+    private synchronized Resource remove(Pair<Resolver, Path> cacheKey)
+    {
+        return _resources.remove(cacheKey);
+    }
+
     public Path getRootPath()
     {
         return Path.emptyPath;
@@ -71,7 +91,7 @@ public class ModuleResourceResolver implements Resolver
 
         Path normalized = path.normalize();
         Pair<Resolver, Path> cacheKey = new Pair<Resolver, Path>(this, normalized);
-        Resource r = _resources.get(cacheKey);
+        Resource r = get(cacheKey);
         if (r == CACHE_MISS)
             return null;
         if (r == null)
@@ -82,13 +102,13 @@ public class ModuleResourceResolver implements Resolver
                 // Cache misses in production mode for the default time period and
                 // in dev mode for a short time (about the length of a request.)
                 _log.debug("missed resource: " + path);
-                _resources.put(cacheKey, CACHE_MISS, _devMode ? _resources.getDefaultExpires() : (15*Cache.SECOND));
+                put(cacheKey, CACHE_MISS, _devMode ? _resources.getDefaultExpires() : (15*Cache.SECOND));
                 return null;
             }
             if (r.exists())
             {
                 _log.debug("resolved resource: " + r + " -> " + normalized);
-                _resources.put(cacheKey, r);
+                put(cacheKey, r);
                 return r;
             }
         }
@@ -96,7 +116,7 @@ public class ModuleResourceResolver implements Resolver
         {
             // remove cached resource and try again
             _log.debug("removed resource: " + r);
-            _resources.remove(cacheKey);
+            remove(cacheKey);
             return lookup(path);
         }
 

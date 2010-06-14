@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.actions.BulkPropertiesUploadForm;
 import org.labkey.api.exp.property.Domain;
@@ -64,7 +65,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
         {
             if (form.isBulkUploadAttempted())
             {
-                BindException batchErrors = new BindException(form, "form");
+                BindException batchErrors = new NullSafeBindException(form, "form");
                 // Collect the errors in a separate list because if otherwise we fail, the superclass will add them a
                 // second time during its reshow logic
                 if (validatePostedProperties(form.getBatchProperties(), batchErrors))

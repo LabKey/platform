@@ -309,10 +309,11 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 
             // this is a funny swap back to GWTPopertyDescriptor...
             GWTPropertyDescriptor pd = new GWTPropertyDescriptor();
-            type.apply(pd);
+            if (null != type)
+                type.apply(pd);
             _lookupEditorPanel.setValue(pd);
 
-            _lookupEditorPanel.setKeyType(picker.isRangeEditable ? null : type.getPropertyType());
+            _lookupEditorPanel.setKeyType(picker.isRangeEditable ? null : null==type ? null : type.getPropertyType());
 
             for (int i=allradios.size()-1 ; i>=0 ; i--)
             {
@@ -328,9 +329,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 else if (r._type == fileType)
                     r.setEnabled(picker.isRangeEditable && picker.allowFileLinkProperties);
                 else if (r._type instanceof LookupConceptType)
-                    r.setEnabled(picker.isRangeEditable || type.getPropertyType().isLookupType());
+                    r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType().isLookupType());
                 else
-                    r.setEnabled(picker.isRangeEditable || type.getPropertyType() == r._type.getPropertyType());
+                    r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType() == r._type.getPropertyType());
             }
         }
 
@@ -375,7 +376,6 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                             hide();
                     }
                 });
-                return;
             }
             else // !lookup
             {

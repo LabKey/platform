@@ -168,7 +168,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public String getExecuteHref(ViewContext context)
     {
         String path = parent().getExecuteHref(context);
-        path += (path.endsWith("/")?"":"/") + getPath().getName();
+        path += (path.endsWith("/")?"":"/") + PageFlowUtil.encode(getPath().getName());
         return path;
     }
 

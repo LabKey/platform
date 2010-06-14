@@ -503,8 +503,83 @@ LABKEY.Exp.SampleSet = function (config) {
     config = config || {};
     this.samples = config.samples;
     this.description = config.description;
+    
+    /**
+     * Get a domain design for the SampleSet.
+     *
+     * @param {Function} config.successCallback Required. Function called if the
+     *	"getDomain" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
+     *    which describes the fields of a domain.
+     * @param {Function} [config.failureCallback] Function called if execution of the "getDomain" function fails.
+     * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
+     *       If not supplied, the current container path will be used.
+     *
+     * @ignore hide from JsDoc for now
+     *
+     * @example
+     * &lt;script type="text/javascript">
+     *   Ext.onReady(function() {
+     *     var ss = new LABKEY.Exp.SampleSet({name: 'MySampleSet'});
+     *     ss.getDomain({
+     *       successCallback : function (domain) {
+     *         console.log(domain);
+     *       }
+     *     });
+     *   }
+     * &lt;/script>
+     */
+    this.getDomain = function (config)
+    {
+        LABKEY.Domain.get(config.successCallback, config.failureCallback, "Samples", this.name, config.containerPath);
+    };
+
 };
 Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
+
+/**
+ * Create a new Sample Set definition.
+ * @param {Function} config.successCallback Required callback function.
+ * @param {Function} [config.failureCallback] Optional error callback function.
+ * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
+ * @param {Object} [config.options] Set of extra options used when creating the SampleSet:
+ * <ul>
+ *   <li>idCols: Optional. Array of indexes into the domain design fields.  If the domain design contains a 'Name' field, no idCols are allowed.  Either a 'Name' field must be present or at least one idCol must be supplied..
+ *   <li>parentCol: Optional. Index of the parent id column.
+ * </ul>
+ * @param {String} [config.containerPath] The container path in which to create the domain.
+ * @static
+ *
+ * @ignore hide from JsDoc for now
+ *
+ * @example
+ * var domainDesign = {
+ *   name: "BoyHowdy",
+ *   description: "A client api createed sample set",
+ *   fields: [{
+ *     name: 'TestName',
+ *     label: 'The First Field',
+ *     rangeURI: 'http://www.w3.org/2001/XMLSchema#string'
+ *   },{
+ *     name: 'Num',
+ *     rangeURI: 'http://www.w3.org/2001/XMLSchema#int'
+ *   },{
+ *     name: 'Parent',
+ *     rangeURI: 'http://www.w3.org/2001/XMLSchema#string'
+ *   }]
+ * };
+ *
+ * LABKEY.Exp.SampleSet.create({
+ *   successCallback: function () { alert("success!"); },
+ *   failureCallback: function () { alert("failure!"); },
+ *   domainDesign: domainDesign,
+ *   options: { idCols: [0, 1], parentCol: 2 }
+ * });
+ */
+LABKEY.Exp.SampleSet.create = function (config)
+{
+    LABKEY.Domain.create(config.successCallback, config.failureCallback, "SampleSet", config.domainDesign, config.options, config.containerPath);
+};
+
 
 /**
  * The ChildObject constructor is private.

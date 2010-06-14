@@ -32,7 +32,7 @@ public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
     public final ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
     {
         if (null == errors)
-            errors = new BindException(new Object(), "FakeObject");
+            errors = new NullSafeBindException(new Object(), "FakeObject");
 
         // Complain except for showing errors
         if (!errors.hasErrors())

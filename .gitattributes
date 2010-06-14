@@ -52,6 +52,7 @@ api/src/org/labkey/api/action/InterfaceAction.java -text
 api/src/org/labkey/api/action/LabkeyError.java -text
 api/src/org/labkey/api/action/MutatingApiAction.java -text
 api/src/org/labkey/api/action/NavTrailAction.java -text
+api/src/org/labkey/api/action/NullSafeBindException.java -text
 api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
 api/src/org/labkey/api/action/RedirectAction.java -text
@@ -1064,6 +1065,7 @@ api/webapp/ext-3.2.1/adapter/yui/ext-yui-adapter.js -text
 api/webapp/ext-3.2.1/ext-all-debug-w-comments.js -text
 api/webapp/ext-3.2.1/ext-all-debug.js -text
 api/webapp/ext-3.2.1/ext-all.js -text
+api/webapp/ext-3.2.1/ext-all.js.gz -text
 api/webapp/ext-3.2.1/ext.jsb2 -text
 api/webapp/ext-3.2.1/gpl-3.0.txt -text
 api/webapp/ext-3.2.1/index.html -text
@@ -1123,6 +1125,7 @@ api/webapp/ext-3.2.1/resources/css/README.txt -text
 api/webapp/ext-3.2.1/resources/css/debug.css -text
 api/webapp/ext-3.2.1/resources/css/ext-all-notheme.css -text
 api/webapp/ext-3.2.1/resources/css/ext-all.css -text
+api/webapp/ext-3.2.1/resources/css/ext-all.css.gz -text
 api/webapp/ext-3.2.1/resources/css/reset-min.css -text
 api/webapp/ext-3.2.1/resources/css/structure/borders.css -text
 api/webapp/ext-3.2.1/resources/css/structure/box.css -text
@@ -2417,6 +2420,7 @@ internal/src/org/labkey/api/data/XMLWriterTest.java -text
 internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text
+internal/src/org/labkey/api/exp/property/AbstractDomainKind.java -text
 internal/src/org/labkey/api/exp/property/DomainEditorServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainImporterServiceBase.java -text
 internal/src/org/labkey/api/exp/property/DomainUtil.java -text

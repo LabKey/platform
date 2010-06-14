@@ -313,7 +313,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         binder.setBindingErrorProcessor(getBindingErrorProcessor(defaultBEP));
         binder.setFieldMarkerPrefix(SpringActionController.FIELD_MARKER);
         binder.bind(params);
-        BindException errors = new BindException(binder.getBindingResult());
+        BindException errors = new NullSafeBindException(binder.getBindingResult());
         return errors;
     }
 
@@ -351,7 +351,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     {
         //params = _fixupPropertyMap(params);
 
-        BindException errors = new BindException(command, "Form");
+        BindException errors = new NullSafeBindException(command, "Form");
 
         // unfortunately ObjectFactory and BeanObjectFactory are not good about reporting errors
         // do this by hand

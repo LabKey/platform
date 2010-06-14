@@ -91,6 +91,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String selectName = null;
     protected ColumnInfo displayField;
     private String propertyURI = null;
+    private String conceptURI = null;
     private DefaultValueType _defaultValueType = null;
     private boolean _lockName = false;
 
@@ -261,6 +262,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setWidth(col.getWidth());
         setFk(col.getFk());
         setPropertyURI(col.getPropertyURI());
+        if (col.getConceptURI() != null)
+            setConceptURI(col.getConceptURI());
         setIsUnselectable(col.isUnselectable());
         setDefaultValueType(col.getDefaultValueType());
         setImportAliasesSet(col.getImportAliasesSet());
@@ -291,6 +294,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             if ((null != parent || null != remap) && url instanceof StringExpressionFactory.FieldKeyStringExpression)
                 url = ((StringExpressionFactory.FieldKeyStringExpression)url).addParent(parent, remap);
+            else
+                url = url.copy();
             setURL(url);
         }
     }
@@ -342,6 +347,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected void setPropertyURI(String propertyURI)
     {
         this.propertyURI = propertyURI;
+    }
+
+    public String getConceptURI()
+    {
+        return conceptURI;
+    }
+
+    protected void setConceptURI(String conceptURI)
+    {
+        this.conceptURI = conceptURI;
     }
 
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)

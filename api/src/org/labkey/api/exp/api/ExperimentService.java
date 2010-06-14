@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.query.*;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -89,6 +90,21 @@ public class ExperimentService
 
         Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
+        /**
+         * Create a new SampleSet with the provided properties.  A 'Name' property must exist in the list -- it will be used
+         * as the 'id' property of the SampleSet.
+         */
+        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties)
+            throws ExperimentException, SQLException;
+
+        /**
+         * Create a new SampleSet with the provided properties.  If a 'Name' property exists in the list, it will be used
+         * as the 'id' property of the SampleSet.  Either a 'Name' property must exist or at least one idCol index must be provided.
+         */
+        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, int idCol1, int idCol2, int idCol3, int parentCol)
+            throws ExperimentException, SQLException;
+
+        ExpSampleSet createSampleSet();
         ExpSampleSet getSampleSet(int rowid);
         ExpSampleSet getSampleSet(String lsid);
 
@@ -235,8 +251,6 @@ public class ExperimentService
 
         ExpProtocolApplication getExpProtocolApplication(int rowId);
         ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId);
-
-        ExpSampleSet createSampleSet();
 
         ExpProtocol[] getExpProtocols(Container container);
         ExpProtocol[] getAllExpProtocols();

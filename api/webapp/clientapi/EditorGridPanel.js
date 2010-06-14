@@ -414,7 +414,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         for(var idx = 0; idx < this.columns.length; ++idx)
         {
             col = this.columns[idx];
-            colModelIndex[col.dataIndex] = col;
             meta = this.metaMap[col.dataIndex];
 
             //this.editable can override col.editable
@@ -441,6 +440,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             //HTML-encode the column header
             if(col.header)
                 col.header = Ext.util.Format.htmlEncode(col.header);
+
+            colModelIndex[col.dataIndex] = col;
         }
 
         //if a sel model has been set, and if it needs to be added as a column,

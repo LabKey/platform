@@ -76,6 +76,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     // common error codes
     public static final String ERROR_MSG = null;
+    /** Use this error code only when no further error message is available. */
+    public static final String ERROR_GENERIC = "GenericError";
     public static final String ERROR_CONVERSION = "typeMismatch";
     public static final String ERROR_REQUIRED = "requiredError";
     public static final String ERROR_UNIQUE = "uniqueConstraint";

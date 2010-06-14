@@ -673,7 +673,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             return null;
         String dirname = getPublicSchemaName().replaceAll("\\W", "_");
         String filename =  getName().replaceAll("\\W", "_") + ".js";
-        Path p = new Path("schemas", dirname, filename);
+        Path p = new Path("queries", dirname, filename);
         // UNDONE: get all table scripts instead of just first found
         Resource r = ModuleLoader.getInstance().getResource(p);
         if (r == null)

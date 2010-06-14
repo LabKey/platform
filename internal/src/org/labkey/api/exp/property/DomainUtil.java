@@ -223,7 +223,6 @@ public class DomainUtil
             errors.add("Domain not found: " + update.getDomainURI());
             return errors;
         }
-        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
 
         if (!d.getDomainKind().canEditDefinition(user, d))
         {
@@ -301,6 +300,8 @@ public class DomainUtil
             p.delete();
         }
 
+        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
+
         // and now update properties
         for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
         {
@@ -325,18 +326,7 @@ public class DomainUtil
             if (old.equals(pd))
                 continue;
 
-            try
-            {
-                _copyProperties(p, pd, errors);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (InvocationTargetException e)
-            {
-                throw new RuntimeException(e);
-            }
+            _copyProperties(p, pd, errors);
         }
 
         // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
@@ -349,33 +339,7 @@ public class DomainUtil
         // now add properties
         for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
         {
-            if (pd.getPropertyId() > 0)
-                continue;
-
-            if (StringUtils.isEmpty(pd.getPropertyURI()))
-            {
-                String newPropertyURI = createUniquePropertyURI(update.getDomainURI() + "#" + pd.getName(), propertyUrisInUse);
-                assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
-                pd.setPropertyURI(newPropertyURI);
-                propertyUrisInUse.add(newPropertyURI);
-            }
-
-            // UNDONE: DomainProperty does not support all PropertyDescriptor fields
-            DomainProperty p = d.addProperty();
-            defaultValues.put(p, pd.getDefaultValue());
-            try
-            {
-                _copyProperties(p, pd, errors);
-                updatePropertyValidators(p, null, pd);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (InvocationTargetException e)
-            {
-                throw new RuntimeException(e);
-            }
+            addProperty(d, pd, defaultValues, propertyUrisInUse, errors);
         }
 
         try
@@ -416,6 +380,27 @@ public class DomainUtil
         return errors.size() > 0 ? errors : null;
     }
 
+    public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, List<String> errors)
+    {
+        if (pd.getPropertyId() > 0)
+            return null;
+
+        if (StringUtils.isEmpty(pd.getPropertyURI()))
+        {
+            String newPropertyURI = createUniquePropertyURI(domain.getTypeURI() + "#" + pd.getName(), propertyUrisInUse);
+            assert !propertyUrisInUse.contains(newPropertyURI) : "Attempting to assign an existing PropertyURI to a new property";
+            pd.setPropertyURI(newPropertyURI);
+            propertyUrisInUse.add(newPropertyURI);
+        }
+
+        // UNDONE: DomainProperty does not support all PropertyDescriptor fields
+        DomainProperty p = domain.addProperty();
+        defaultValues.put(p, pd.getDefaultValue());
+        _copyProperties(p, pd, errors);
+        updatePropertyValidators(p, null, pd);
+        return p;
+    }
+
     private static String createUniquePropertyURI(String base, Set<String> propertyUrisInUse)
     {
         String candidateURI = base;
@@ -430,13 +415,24 @@ public class DomainUtil
         return candidateURI;
     }
 
-    private static void _copyProperties(DomainProperty p, GWTPropertyDescriptor pd, List<String> errors)
-            throws IllegalAccessException, InvocationTargetException
+    private static void _copyProperties(DomainProperty to, GWTPropertyDescriptor from, List<String> errors)
     {
-        BeanUtils.copyProperties(p, pd);
-        if (pd.getLookupQuery() != null)
+        try
         {
-            String container = pd.getLookupContainer();
+            BeanUtils.copyProperties(to, from);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        if (from.getLookupQuery() != null)
+        {
+            String container = from.getLookupContainer();
             Container c = null;
             if (container != null)
             {
@@ -445,14 +441,19 @@ public class DomainUtil
                 if (null == c)
                     c = ContainerManager.getForPath(container);
                 if (c == null)
-                    errors.add("Container not found: " + container);
+                {
+                    String msg = "Container not found: " + container;
+                    if (errors == null)
+                        throw new RuntimeException(msg);
+                    errors.add(msg);
+                }
             }
-            Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
-            p.setLookup(lu);
+            Lookup lu = new Lookup(c, from.getLookupSchema(), from.getLookupQuery());
+            to.setLookup(lu);
         }
         else
         {
-            p.setLookup(null);
+            to.setLookup(null);
         }
     }
 

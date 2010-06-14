@@ -58,6 +58,7 @@ public class PropertyService
         Pair<Domain, Map<DomainProperty, Object>> createDomain(Container container, @Nullable XarContext context, DomainDescriptorType xDomain) throws XarFormatException;
         Pair<Domain, Map<DomainProperty, Object>> createDomain(Container container, DomainDescriptorType xDomain);
         DomainKind getDomainKind(String typeURI);
+        DomainKind getDomainKindByName(String name);
         void registerDomainKind(DomainKind type);
 
         /** register a property validator type */

@@ -410,7 +410,14 @@ public class StringExpressionFactory
         }
         String getValue(Map map)
         {
-            return PageFlowUtil.encodePath(valueOf(map.get(key)));
+            Object value = map.get(key);
+
+            // TODO: HACK!  Fix in 10.3.  Assert value non-null and fix up usages.  See #10398
+            // See also QueryController.DetailsQueryRowAction, ExternalSchemaController.UpdateAction
+            if (null == value && key.getParts().size() == 1)
+                value = map.get(key.getName());
+
+            return PageFlowUtil.encodePath(valueOf(value));
         }
         @Override
         public String toString()
@@ -441,7 +448,7 @@ public class StringExpressionFactory
         }
 
         /**
-         * Used to fixup column names when a table is refered to via a lookup.
+         * Used to fix up column names when a table is referred to via a lookup.
          * E.g. consider column lk in table A, which joins to pk in table B
          *
          * remap    pk -> fk

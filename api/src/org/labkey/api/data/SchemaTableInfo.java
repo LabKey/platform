@@ -147,7 +147,11 @@ public class SchemaTableInfo implements TableInfo
             List<ColumnInfo> cols = new ArrayList<ColumnInfo>(_pkColumnNames.size());
 
             for (String name : _pkColumnNames)
-                cols.add(getColumn(name));
+            {
+                ColumnInfo col = getColumn(name);
+                assert null != col;
+                cols.add(col);
+            }
 
             _pkColumns = Collections.unmodifiableList(cols);
         }
@@ -339,18 +343,17 @@ public class SchemaTableInfo implements TableInfo
             colMap = m;
         }
 
+        // TODO: Shouldn't do this -- ":" is a legal character in column names
         int colonIndex;
         if ((colonIndex = colName.indexOf(":")) != -1)
         {
             String first = colName.substring(0, colonIndex);
             String rest = colName.substring(colonIndex + 1);
             ColumnInfo fkColInfo = colMap.get(first);
-            if (fkColInfo == null)
-                return null; // throw new Exception("Column not found" + first);
-            if (fkColInfo.getFk() == null)
-                return null; // throw new Exception(first + "is not a foreign key");
 
-            return fkColInfo.getFkTableInfo().getColumn(rest);
+            // Fall through if this doesn't look like an FK -- : is a legal character
+            if (fkColInfo != null && fkColInfo.getFk() != null)
+                return fkColInfo.getFkTableInfo().getColumn(rest);
         }
 
         return colMap.get(colName);
@@ -453,7 +456,7 @@ public class SchemaTableInfo implements TableInfo
             if (0 == keySeq)
                 continue;
 
-            pkColArray[keySeq - 1] = colInfo.getPropertyName();
+            pkColArray[keySeq - 1] = colInfo.getName();
             if (keySeq > maxKeySeq)
                 maxKeySeq = keySeq;
             //BUG? Assume all non-string key fields are autoInc. (Should use XML instead)

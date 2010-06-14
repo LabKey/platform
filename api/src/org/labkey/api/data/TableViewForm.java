@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.security.ACL;
@@ -330,7 +331,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String name="form";
             if (null != getTable())
                 name = getTable().getName();
-            errors = new BindException(this, name);
+            errors = new NullSafeBindException(this, name);
         }
         _populateValues(errors);
         return errors;
@@ -635,7 +636,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
         }
 
-        BindException errors = new BindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
+        BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
 
         for (PropertyValue pv : params.getPropertyValues())
         {

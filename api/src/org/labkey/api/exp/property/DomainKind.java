@@ -16,21 +16,24 @@
 
 package org.labkey.api.exp.property;
 
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 abstract public class DomainKind
 {
+    abstract public String getKindName();
     abstract public String getTypeLabel(Domain domain);
     abstract public boolean isDomainType(String domainURI);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
@@ -40,21 +43,16 @@ abstract public class DomainKind
     abstract public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers);
     abstract public ActionURL urlShowData(Domain domain);
     abstract public ActionURL urlEditDefinition(Domain domain);
-    
-    public boolean canEditDefinition(User user, Domain domain)
-    {
-        return domain.getContainer().hasPermission(user, AdminPermission.class);
-    }
+
+    abstract public boolean canCreateDefinition(User user, Container container);
+
+    abstract public boolean canEditDefinition(User user, Domain domain);
 
     // Override to customize the nav trail on shared pages like edit domain
-    public void appendNavTrail(NavTree root, Container c)
-    {
-    }
+    abstract public void appendNavTrail(NavTree root, Container c);
 
     // Do any special handling before a PropertyDescriptor is deleted -- do nothing by default
-    public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
-    {
-    }
+    abstract public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd);
 
     /**
      * Return the set of names that should not be allowed for properties. E.g.
@@ -65,4 +63,24 @@ abstract public class DomainKind
 
     // CONSIDER: have DomainKind supply and IDomainInstance or similiar
     // so that it can hold instance data (e.g. a DatasetDefinition)
+
+    /**
+     * Create a Domain appropriate for this DomainKind.
+     * @param domain The domain design.
+     * @param arguments Any extra arguments.
+     * @param container Container
+     * @param user User
+     * @return The newly created Domain.
+     */
+    abstract public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user);
+
+    /**
+     * Update a Domain definition appropriate for this DomainKind.
+     * @param original The original domain definition.
+     * @param update The updated domain definition.
+     * @param container Container
+     * @param user User
+     * @return A list of errors collected during the update.
+     */
+    abstract public List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user);
 }

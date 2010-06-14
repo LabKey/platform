@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.util.URLHelper;
@@ -106,7 +107,7 @@ public abstract class RunReportView extends TabStripView
     public BindException getErrors()
     {
         if (_errors == null)
-            _errors = new BindException(this, "form");
+            _errors = new NullSafeBindException(this, "form");
 
         return _errors;
     }

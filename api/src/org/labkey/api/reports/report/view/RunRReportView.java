@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
@@ -147,7 +148,7 @@ public class RunRReportView extends RunScriptReportView
         if (getErrors() != null)
             form.setErrors(getErrors());
         else
-            form.setErrors(new BindException(form, "form"));
+            form.setErrors(new NullSafeBindException(form, "form"));
 
         initReportCache(form);
 

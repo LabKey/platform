@@ -97,7 +97,6 @@ public class SimpleModuleUserSchema extends UserSchema
 
                 // ColumnInfo doesn't copy these attributes by default
                 wrap.setHidden(col.isHidden());
-                wrap.setURL(col.getURL());
 
                 final String colName = col.getName();
                 if (colName.equalsIgnoreCase("owner") ||

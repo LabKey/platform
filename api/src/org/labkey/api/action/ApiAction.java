@@ -29,6 +29,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Iterator;
@@ -45,7 +46,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     protected ApiResponseWriter.Format _reqFormat = null;
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
-    private double _requestedApiVersion = 0;
+    private double _requestedApiVersion = -1;
 
     protected enum CommonParameters
     {
@@ -115,26 +116,14 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             {
                 _reqFormat = ApiResponseWriter.Format.JSON;
                 JSONObject jsonObj = getJsonObject();
-
-                //check for apiversion property in the JSON (might be a number or a string)
-                if(null != jsonObj && jsonObj.has(CommonParameters.apiVersion.name()))
-                {
-                    Object reqVersion = jsonObj.get(CommonParameters.apiVersion.name());
-                    if(reqVersion instanceof Number)
-                        checkApiVersion(((Number)reqVersion).doubleValue());
-                    else
-                        checkApiVersion(reqVersion.toString());
-                }
+                saveRequestedApiVersion(getViewContext().getRequest(), jsonObj);
 
                 form = getCommand();
                 errors = populateForm(jsonObj, form);
             }
             else
             {
-                //check for apiversion request prop
-                Object apiversion = getProperty(CommonParameters.apiVersion.name());
-                if(null != apiversion)
-                    checkApiVersion(apiversion.toString());
+                saveRequestedApiVersion(getViewContext().getRequest(), null);
 
                 if (null != getCommandClass())
                 {
@@ -181,25 +170,6 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return null;
     } //handleRequest()
 
-    protected final void checkApiVersion(String reqVersion) throws ApiVersionException
-    {
-        try
-        {
-            checkApiVersion(Double.parseDouble(reqVersion));
-        }
-        catch(NumberFormatException e)
-        {
-            throw new ApiVersionException("Required version value '" + reqVersion + "' could not be parsed as a valid version number (e.g., '8.3').");
-        }
-    }
-
-    protected void checkApiVersion(double reqVersion) throws ApiVersionException
-    {
-        _requestedApiVersion = reqVersion;
-        double curVersion = getApiVersion();
-        if(reqVersion > curVersion)
-            throw new ApiVersionException(reqVersion, curVersion);
-    }
 
     protected double getApiVersion()
     {
@@ -209,10 +179,48 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return null != version ? version.value() : 8.3;
     }
 
-    public double getRequestedApiVersion()
+
+    boolean _empty(Object o)
     {
+        return null == o || (o instanceof String && ((String)o).isEmpty());
+    }
+
+
+    private double saveRequestedApiVersion(HttpServletRequest request, JSONObject jsonObj)
+    {
+        Object o = null;
+        
+        if (null != jsonObj && jsonObj.has(CommonParameters.apiVersion.name()))
+            o = jsonObj.get(CommonParameters.apiVersion.name());
+        if (_empty(o))
+            o = getProperty(CommonParameters.apiVersion.name());
+        if (_empty(o))
+            o = request.getHeader("LABKEY-" + CommonParameters.apiVersion.name());
+
+        try
+        {
+            if (null == o)
+                _requestedApiVersion = 0;
+            else if (o instanceof Number)
+                _requestedApiVersion = ((Number)o).doubleValue();
+            else
+                _requestedApiVersion = Double.parseDouble(o.toString());
+        }
+        catch (NumberFormatException x)
+        {
+            _requestedApiVersion = 0;
+        }
+        
         return _requestedApiVersion;
     }
+
+
+    public double getRequestedApiVersion()
+    {
+        assert _requestedApiVersion >= 0;
+        return _requestedApiVersion < 0 ? 0 : _requestedApiVersion;
+    }
+
 
     protected JSONObject getJsonObject() throws Exception
     {
@@ -237,17 +245,17 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     protected BindException populateForm(JSONObject jsonObj, FORM form) throws Exception
     {
         if(null == jsonObj)
-            return new BindException(form, "form");
+            return new NullSafeBindException(form, "form");
 
         if(form instanceof ApiJsonForm)
         {
             ((ApiJsonForm)form).setJsonObject(jsonObj);
-            return new BindException(form, "form");
+            return new NullSafeBindException(form, "form");
         }
         else if(form instanceof CustomApiForm)
         {
             ((CustomApiForm)form).bindProperties(jsonObj);
-            return new BindException(form, "form");
+            return new NullSafeBindException(form, "form");
         }
         else
         {

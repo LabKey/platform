@@ -342,8 +342,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable
      */
     public URLHelper setContextPath(String contextPath)
     {
+        assert contextPath.isEmpty() || contextPath.startsWith("/");
         if (_readOnly) throw new java.lang.IllegalStateException();
-        _contextPath = Path.parse(contextPath);
+        if (StringUtils.isEmpty(contextPath))
+            _contextPath = Path.rootPath;
+        else
+            _contextPath = Path.parse(contextPath);
         return this;
     }
 
@@ -354,9 +358,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         return this;
     }
 
+
     /** NOTE URLHelper is dumb wrt contextPath, it does not know what the webapp contextPath is */
     public String getContextPath()
     {
+        if (_contextPath.size() == 0)
+            return "";
         return _contextPath.toString();
     }
 

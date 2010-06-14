@@ -26,6 +26,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -44,8 +45,9 @@ public class ExcelColumn extends RenderColumn
     private static final int TYPE_INT = 1;
     private static final int TYPE_DOUBLE = 2;
     private static final int TYPE_STRING = 3;
-    private static final int TYPE_DATE = 4;
-    private static final int TYPE_BOOLEAN = 5;
+    private static final int TYPE_MULTILINE_STRING = 4;
+    private static final int TYPE_DATE = 5;
+    private static final int TYPE_BOOLEAN = 6;
 
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
     private int _simpleType = TYPE_UNKNOWN;
@@ -72,7 +74,7 @@ public class ExcelColumn extends RenderColumn
         super();
         _dc = dc;
         _formatters = formatters;
-        setSimpleType(dc.getDisplayValueClass());
+        setSimpleType(dc);
         if (dc.getExcelFormatString() != null)
         {
             setFormatString(dc.getExcelFormatString());
@@ -104,8 +106,9 @@ public class ExcelColumn extends RenderColumn
     }
 
 
-    private void setSimpleType(Class valueClass)
+    private void setSimpleType(DisplayColumn dc)
     {
+        Class valueClass = dc.getDisplayValueClass();
         if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
                 Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_INT;
@@ -113,7 +116,11 @@ public class ExcelColumn extends RenderColumn
                 Double.class.isAssignableFrom(valueClass) || Double.TYPE.isAssignableFrom(valueClass))
             _simpleType = TYPE_DOUBLE;
         else if (String.class.isAssignableFrom(valueClass))
+        {
             _simpleType = TYPE_STRING;
+            if (dc instanceof DataColumn && ((DataColumn)dc).isPreserveNewlines())
+                _simpleType = TYPE_MULTILINE_STRING;
+        }
         else if (Date.class.isAssignableFrom(valueClass))
             _simpleType = TYPE_DATE;
         else if (Boolean.class.isAssignableFrom(valueClass) || Boolean.TYPE.isAssignableFrom(valueClass))
@@ -176,6 +183,25 @@ public class ExcelColumn extends RenderColumn
                 }
                 break;
             }
+            case(TYPE_MULTILINE_STRING):
+            {
+                ExcelFormatDescriptor formatDescriptor = new ExcelFormatDescriptor(String.class, getFormatString());
+                _format = _formatters.get(formatDescriptor);
+                if (_format == null)
+                {
+                    _format = new WritableCellFormat();
+                    try
+                    {
+                        _format.setWrap(true);
+                    }
+                    catch (WriteException e)
+                    {
+                        // shouldn't happen for newly created WritableCellFormat
+                        throw new UnexpectedException(e);
+                    }
+                    _formatters.put(formatDescriptor, _format);
+                }
+            }
         }
     }
 
@@ -223,9 +249,11 @@ public class ExcelColumn extends RenderColumn
                 case(TYPE_STRING):
                 default:
                     // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
-                    String s = o.toString();
-                    s = s.replaceAll("\r\n", "\n");
-                    cell = new Label(column, row, s);
+                    String s = o.toString().replaceAll("\r\n", "\n");
+                    if (_format == null)
+                        cell = new Label(column, row, s);
+                    else
+                        cell = new Label(column, row, s, _format);
                     break;
             }
 

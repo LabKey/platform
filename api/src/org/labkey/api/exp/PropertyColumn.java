@@ -202,6 +202,11 @@ public class PropertyColumn extends LookupColumn
         return getPropertyDescriptor().getPropertyURI();
     }
 
+    public String getConceptURI()
+    {
+        return getPropertyDescriptor().getConceptURI();
+    }
+
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);

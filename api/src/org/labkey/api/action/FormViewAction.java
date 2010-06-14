@@ -69,7 +69,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
             // If the action has not specified a generic form, we should not hand them
             // a null BindException -- just new one up
             form = (FORM)new Object();
-            errors = new BindException(form, getCommandName());
+            errors = new NullSafeBindException(form, getCommandName());
         }
 
         return handleRequest(form, errors);

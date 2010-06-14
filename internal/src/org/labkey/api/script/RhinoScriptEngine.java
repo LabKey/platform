@@ -303,7 +303,8 @@ public class RhinoScriptEngine extends AbstractScriptEngine
     }
 
     private static final String printSource =
-            "function print(str) {                         \n" +
+            "var console = { };                            \n" +
+            "console.log = function (str) {                \n" +
             "    if (typeof(str) == 'undefined') {         \n" +
             "        str = 'undefined';                    \n" +
             "    } else if (str == null) {                 \n" +

@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.ColumnType;
@@ -154,12 +156,11 @@ public class TableInfoWriter
 
         // TODO: Field validators?
         // TODO: Default values / Default value types
-        // TODO: ConceptURI
     }
 
     protected String getConceptURI(ColumnInfo column)
     {
-        return null;
+        return column.getConceptURI();
     }
 
     /**

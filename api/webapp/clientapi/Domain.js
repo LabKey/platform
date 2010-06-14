@@ -36,6 +36,20 @@
 LABKEY.Domain = new function()
 {
 
+    function createDomain(successCallback, failureCallback, parameters, containerPath)
+    {
+        Ext.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("property", "createDomain", containerPath),
+            method : 'POST',
+            success: LABKEY.Utils.getCallbackWrapper(successCallback),
+            failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
+            jsonData : parameters,
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    }
+
     function getDomain(successCallback, failureCallback, parameters, containerPath)
     {
         Ext.Ajax.request({
@@ -63,6 +77,26 @@ LABKEY.Domain = new function()
 
     /** @scope LABKEY.Domain */
     return {
+
+        /**
+         * Create a new domain with the given design.
+         * <b>Note: this is an experimental API and may change unexpectedly.</b>
+         *
+         * @param {Function} successCallback Required success callback.
+         * @param {Function} [failureCallback] Optional failure callback.
+         * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
+         * @param {Object} [options] Optional arguments used to create the specific domain type.
+         * @param {String} [containerPath] The container path in which to create the domain.
+         * @ignore hide from JsDoc for now
+         */
+        create : function (successCallback, failureCallback, kind, domainDesign, options, containerPath)
+        {
+            createDomain(
+                successCallback,
+                failureCallback,
+                { kind: kind, domainDesign: domainDesign, options: options },
+                containerPath);
+        },
 
 	/**
 	* Gets a domain design.
