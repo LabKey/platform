@@ -23,13 +23,17 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Filter;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.*;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -40,10 +44,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.experiment.ExperimentAuditViewFactory;
@@ -1963,23 +1964,25 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             return Collections.emptyList();
         }
-        StringBuilder dataRowIdSQL = new StringBuilder();
-        String separator = "";
+
+        List<Integer> ids = new LinkedList<Integer>();
         for (ExpData data : datas)
-        {
-            dataRowIdSQL.append(separator);
-            separator = ", ";
-            dataRowIdSQL.append(data.getRowId());
-        }
+            ids.add(data.getRowId());
+
+        SimpleFilter.InClause in1 = new SimpleFilter.InClause("di.DataID", ids);
+        SimpleFilter.InClause in2 = new SimpleFilter.InClause("d.RowId", ids);
+
+        SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
+                            "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN\n" +
+                            "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE ");
+        sql.append(in1.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+        sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE ");
+        sql.append(in2.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+        sql.append(")) ORDER BY Created DESC");
 
         try
         {
-            ExperimentRun[] runs = Table.executeQuery(getExpSchema(),
-                    "SELECT * FROM exp.ExperimentRun WHERE \n" +
-                            "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN \n" +
-                            "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE di.DataID IN (" + dataRowIdSQL + "))" +
-                            " UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE d.RowId IN (" + dataRowIdSQL + "))) ORDER BY Created DESC",
-                    new Object[0], ExperimentRun.class);
+            ExperimentRun[] runs = Table.executeQuery(getExpSchema(), sql, ExperimentRun.class);
             return Arrays.asList(ExpRunImpl.fromRuns(runs));
         }
         catch (SQLException e)
@@ -2213,12 +2216,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
 
             // now hook up material inputs to processes in both directions
-            dataSQL = "SELECT TargetApplicationId, MaterialId "
+            dataSQL = "SELECT TargetApplicationId, MaterialId"
                     + " FROM " + getTinfoMaterialInput().getSelectName()
-                    + " WHERE TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                    + " WHERE PA.RunId = ? ) "
-                    + " ORDER BY TargetApplicationId, MaterialId ;";
+                    + " WHERE TargetApplicationId IN"
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
+                    + " WHERE PA.RunId = ?)"
+                    + " ORDER BY TargetApplicationId, MaterialId";
             ResultSet materialInputRS = null;
             try
             {
@@ -2257,12 +2260,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
 
             // now hook up data inputs in both directions
-            dataSQL = "SELECT TargetApplicationId, DataId "
+            dataSQL = "SELECT TargetApplicationId, DataId"
                     + " FROM " + getTinfoDataInput().getSelectName()
-                    + " WHERE TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
-                    + " WHERE PA.RunId = ? ) "
-                    + " ORDER BY TargetApplicationId, DataId ;";
+                    + " WHERE TargetApplicationId IN"
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA"
+                    + " WHERE PA.RunId = ?)"
+                    + " ORDER BY TargetApplicationId, DataId";
 
             ResultSet dataInputRS = null;
             try
@@ -2305,18 +2308,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // use the outputs of this run.
             if (outputMaterialMap.keySet().size() > 0)
             {
-                String inClause = StringUtils.join(outputMaterialMap.keySet().iterator(), ", ");
-                dataSQL = "SELECT TargetApplicationId, MaterialId, PA.RunId "
-                        + " FROM " + getTinfoMaterialInput().getSelectName() + " M  "
-                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
-                        + " ON M.TargetApplicationId = PA.RowId "
-                        + " WHERE MaterialId IN ( " + inClause + " ) "
-                        + " AND PA.RunId <> ? "
-                        + " ORDER BY TargetApplicationId, MaterialId ;";
+                SimpleFilter.InClause in = new SimpleFilter.InClause("MaterialId", outputMaterialMap.keySet());
+
+                SQLFragment sql = new SQLFragment();
+                sql.append("SELECT TargetApplicationId, MaterialId, PA.RunId"
+                        + " FROM " + getTinfoMaterialInput().getSelectName() + " M"
+                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA"
+                        + " ON M.TargetApplicationId = PA.RowId"
+                        + " WHERE ");
+                sql.append(in.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+                sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
+                sql.add(new Integer(runId));
+
                 ResultSet materialOutputRS = null;
                 try
                 {
-                    materialOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{new Integer(runId)});
+                    materialOutputRS = Table.executeQuery(getExpSchema(), sql);
+
                     while (materialOutputRS.next())
                     {
                         Integer successorRunId = materialOutputRS.getInt("RunId");
@@ -2964,6 +2972,122 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpSampleSetImpl createSampleSet()
     {
         return new ExpSampleSetImpl(new MaterialSource());
+    }
+
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties)
+            throws ExperimentException, SQLException
+    {
+        return createSampleSet(c, u, name, description, properties, -1, -1, -1, -1);
+    }
+
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, int idCol1, int idCol2, int idCol3, int parentCol)
+            throws ExperimentException, SQLException
+    {
+        ExpSampleSet existing = getSampleSet(c, name);
+        if (existing != null)
+            throw new IllegalArgumentException("SampleSet '" + name + "' already exists");
+
+        if (properties == null || properties.size() < 1)
+            throw new ExperimentException("At least one property is required");
+
+        if (idCol2 != -1 && idCol1 == idCol2)
+            throw new ExperimentException("You cannot use the same id column twice.");
+
+        if (idCol3 != -1 && (idCol1 == idCol3 || idCol2 == idCol3))
+            throw new ExperimentException("You cannot use the same id column twice.");
+
+        if ((idCol1 > -1 && idCol1 >= properties.size()) ||
+            (idCol2 > -1 && idCol2 >= properties.size()) ||
+            (idCol3 > -1 && idCol3 >= properties.size()) ||
+            (parentCol > -1 && parentCol >= properties.size()))
+            throw new ExperimentException("column index out of range");
+
+        Lsid lsid = getSampleSetLsid(name, c);
+        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name);
+        DomainKind kind = domain.getDomainKind();
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain);
+        Set<String> lowerReservedNames = new HashSet<String>(reservedNames.size());
+        for (String s : reservedNames)
+            lowerReservedNames.add(s.toLowerCase());
+
+        boolean hasNameProperty = false;
+        String idUri1 = null, idUri2 = null, idUri3 = null, parentUri = null;
+        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
+        Set<String> propertyUris = new HashSet<String>();
+        for (int i = 0; i < properties.size(); i++)
+        {
+            GWTPropertyDescriptor pd = properties.get(i);
+            String propertyName = pd.getName().toLowerCase();
+
+            if (ExpMaterialTable.Column.Name.name().equalsIgnoreCase(propertyName))
+            {
+                hasNameProperty = true;
+            }
+            else
+            {
+                if (lowerReservedNames.contains(propertyName))
+                {
+                    if (pd.getLabel() == null)
+                        pd.setLabel(pd.getName());
+                    pd.setName("Property_" + pd.getName());
+                }
+
+                DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
+
+                if (idCol1 == i)    idUri1    = dp.getPropertyURI();
+                if (idCol2 == i)    idUri2    = dp.getPropertyURI();
+                if (idCol3 == i)    idUri3    = dp.getPropertyURI();
+                if (parentCol == i) parentUri = dp.getPropertyURI();
+            }
+        }
+
+        if (!hasNameProperty && idUri1 == null)
+            throw new ExperimentException("Please provide either a 'Name' property or an index for idCol1");
+
+        MaterialSource source = new MaterialSource();
+        source.setLSID(lsid.toString());
+        source.setName(name);
+        source.setDescription(description);
+        source.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
+        source.setContainer(c);
+
+        if (hasNameProperty)
+        {
+            source.setIdCol1(ExpMaterialTable.Column.Name.name());
+        }
+        else
+        {
+            source.setIdCol1(idUri1);
+            if (idUri2 != null)
+                source.setIdCol2(idUri2);
+            if (idUri3 != null)
+                source.setIdCol3(idUri3);
+        }
+        if (parentUri != null)
+            source.setParentCol(parentUri);
+
+        ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
+        boolean transactionOwner = false;
+        try
+        {
+            transactionOwner = !isTransactionActive();
+            if (transactionOwner)
+                beginTransaction();
+
+            domain.save(u);
+            ss.save(u);
+            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+
+            if (transactionOwner)
+                commitTransaction();
+        }
+        finally
+        {
+            if (transactionOwner)
+                closeTransaction();
+        }
+
+        return ss;
     }
 
     public ExpProtocol[] getExpProtocols(Container container)

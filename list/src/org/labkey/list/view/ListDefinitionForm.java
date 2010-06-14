@@ -19,6 +19,7 @@ package org.labkey.list.view;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.URLException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
@@ -71,7 +72,8 @@ public class ListDefinitionForm extends ViewForm
         try
         {
             if (null == _returnUrl)
-                return null;
+                return new ActionURL(ListController.BeginAction.class, getContainer());
+
             return new URLHelper(_returnUrl);
         }
         catch(URISyntaxException e)

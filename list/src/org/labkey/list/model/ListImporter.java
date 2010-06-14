@@ -195,7 +195,7 @@ public class ListImporter
                 columnXml.getDescription(),
                 t.getXsdType(),
                 notNull,
-                null,  // TODO: conceptURI
+                columnXml.getConceptURI(),
                 columnXml.getFormatString(),
                 columnXml.isSetInputType() ? columnXml.getInputType() : null,
                 columnXml.getIsHidden(),

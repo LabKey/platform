@@ -539,7 +539,7 @@ public class ReportsController extends SpringActionController
             try {
                 RReportBean form = new RReportBean();
                 form.reset(null, getViewContext().getRequest());
-                form.setErrors(new BindException(form, "form"));
+                form.setErrors(new NullSafeBindException(form, "form"));
                 initReportCache(form);
 
                 return form.getReport();
@@ -591,7 +591,7 @@ public class ReportsController extends SpringActionController
             try {
                 RReportBean form = new RReportBean();
                 form.reset(null, getViewContext().getRequest());
-                form.setErrors(new BindException(form, "form"));
+                form.setErrors(new NullSafeBindException(form, "form"));
                 initReportCache(form);
 
                 return form.getReport();

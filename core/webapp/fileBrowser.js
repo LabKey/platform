@@ -3462,13 +3462,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             }
             var target = this.fileSystem.concatPaths(this.currentDirectory.data.path,name);
             var file = this.fileSystem.recordFromCache(target);
-            if (file)
-            {
-                Ext.MessageBox.alert('File: ' + name + ' already exists', 'There is already a file with the same name in this location');
-            }
-            else
-            {
-                var options = {method:'POST', url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+
+            this.doPost = function(overwrite) {
+                var options = {method:'POST',
+                    url:overwrite ? this.currentDirectory.data.uri + '?overwrite=t' : this.currentDirectory.data.uri,
+                    record:this.currentDirectory, 
+                    name:this.fileUploadField.getValue()
+                };
                 // set errorReader, so that handleResponse() doesn't try to eval() the XML response
                 // assume that we've got a WebdavFileSystem
                 form.errorReader = this.fileSystem.transferReader;
@@ -3476,7 +3476,17 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 this.fireEvent(BROWSER_EVENTS.transferstarted, {uploadType:"webform", files:[{name:name, id:new URI(this.fileSystem.concatPaths(options.url, encodeURIComponent(options.name))).pathname}]});
                 this.fileUploadPanel.getEl().mask("Uploading " + name + '...');
                 Ext.getBody().dom.style.cursor = "wait";
+            };
+
+            if (file)
+            {
+                Ext.MessageBox.confirm('File: ' + name + ' already exists', 'There is already a file with the same name in this location, do you want to replace it? ', function(btn){
+                    if (btn == 'yes')
+                        this.doPost(true);
+                }, this);
             }
+            else
+                this.doPost(false);
         }
     },
 

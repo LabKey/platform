@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
@@ -33,8 +34,12 @@ import java.util.Set;
  * Date: Jul 30, 2008
  * Time: 2:31:04 PM
  */
-public abstract class BaseStudyDomainKind extends DomainKind
+public abstract class BaseStudyDomainKind extends AbstractDomainKind
 {
+    public String getKindName()
+    {
+        return getDomainInfo().getDomainPrefix();
+    }
 
     public String getTypeLabel(Domain domain)
     {

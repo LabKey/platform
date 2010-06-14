@@ -25,6 +25,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -40,7 +41,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public class ListDomainType extends DomainKind
+public class ListDomainType extends AbstractDomainKind
 {
     static public final ListDomainType instance = new ListDomainType();
 
@@ -49,10 +50,16 @@ public class ListDomainType extends DomainKind
         return "List '" + domain.getName() + "'";
     }
 
+    @Override
+    public String getKindName()
+    {
+        return ListDefinitionImpl.NAMESPACE_PREFIX;
+    }
+
     public boolean isDomainType(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return "List".equals(lsid.getNamespacePrefix());
+        return ListDefinitionImpl.NAMESPACE_PREFIX.equals(lsid.getNamespacePrefix());
     }
 
     @Override

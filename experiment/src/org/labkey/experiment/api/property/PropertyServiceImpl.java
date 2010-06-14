@@ -69,6 +69,16 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return new DomainImpl(container, typeURI, name);
     }
 
+    public DomainKind getDomainKindByName(String name)
+    {
+        for (DomainKind type : _domainTypes)
+        {
+            if (type.getKindName().equalsIgnoreCase(name))
+                return type;
+        }
+        return null;
+    }
+
     public DomainKind getDomainKind(String typeURI)
     {
         for (DomainKind type : _domainTypes)

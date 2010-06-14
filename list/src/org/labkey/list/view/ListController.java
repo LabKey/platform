@@ -181,9 +181,7 @@ public class ListController extends SpringActionController
             Map<String, String> props = new HashMap<String, String>();
 
             URLHelper returnURL = form.getReturnURLHelper();
-            if (null == returnURL)
-                returnURL = new ActionURL(BeginAction.class, getContainer());
-            
+
             props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
             props.put("returnURL", returnURL.toString());
             props.put("allowFileLinkProperties", "0");

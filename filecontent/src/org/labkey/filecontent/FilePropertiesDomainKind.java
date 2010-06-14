@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -37,7 +38,7 @@ import java.util.Set;
  * Time: 4:24:36 PM
  * To change this template use File | Settings | File Templates.
  */
-public class FilePropertiesDomainKind extends DomainKind
+public class FilePropertiesDomainKind extends AbstractDomainKind
 {
     private static final String[] RESERVED_FIELDS = new String[]
     {
@@ -60,6 +61,12 @@ public class FilePropertiesDomainKind extends DomainKind
     }
 
     @Override
+    public String getKindName()
+    {
+        return FileContentServiceImpl.NAMESPACE_PREFIX;
+    }
+
+    @Override
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
@@ -69,7 +76,7 @@ public class FilePropertiesDomainKind extends DomainKind
     public boolean isDomainType(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
-        return "FileProperties".equals(lsid.getNamespacePrefix());
+        return FileContentServiceImpl.NAMESPACE_PREFIX.equals(lsid.getNamespacePrefix());
     }
 
     @Override

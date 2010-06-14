@@ -856,22 +856,9 @@ public class LoginController extends SpringActionController
             try
             {
                 String verification = form.getVerification();
-                ActionURL currentUrl = getViewContext().getActionURL();
 
                 if (SecurityManager.verify(email, verification))
                 {
-                    // logout any current user
-/*
-                    Try NOT logging out the current user.  This allows admins to set somebody else's password without getting
-                    themselves logged out in the process.  Need to test all scenarios to make sure this is correct.
-
-                    if (getUser() != null && !getUser().isGuest())
-                    {
-                        SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
-                        HttpView.throwRedirect(currentUrl);
-                    }
-
-*/                    // Success
                     _email = email;
                 }
                 else

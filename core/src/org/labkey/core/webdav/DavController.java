@@ -2060,6 +2060,8 @@ public class DavController extends SpringActionController
             if (resource == null)
                 return notFound();
             boolean exists = resource.exists();
+            boolean overwrite = getOverwriteParameter();
+
             boolean deleteFileOnFail = false;
             boolean temp = false;
 
@@ -2072,12 +2074,17 @@ public class DavController extends SpringActionController
 
             try
             {
-                if (!resource.exists())
+                if (!exists)
                 {
                     temp = getTemporary();
                     if (temp)
                         markTempFile(resource);
                     deleteFileOnFail = true;
+                }
+                else
+                {
+                    if (!overwrite)
+                        throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
                 }
 
                 File file = resource.getFile();
@@ -2150,7 +2157,7 @@ public class DavController extends SpringActionController
 
             lockNullResources.remove(resource.getPath());
             if (exists)
-                return WebdavStatus.SC_NO_CONTENT;
+                return WebdavStatus.SC_OK;
             else
                 return WebdavStatus.SC_CREATED;
         }
@@ -3427,7 +3434,11 @@ public class DavController extends SpringActionController
     boolean getOverwriteParameter()
     {
         String overwriteHeader = getRequest().getHeader("Overwrite");
-        return overwriteHeader == null || overwriteHeader.equalsIgnoreCase("T");
+        if (overwriteHeader != null)
+            return overwriteHeader.equalsIgnoreCase("T");
+
+        String overwriteParam = getRequest().getParameter("overwrite");
+        return overwriteParam != null && overwriteParam.equalsIgnoreCase("T");
     }
 
 

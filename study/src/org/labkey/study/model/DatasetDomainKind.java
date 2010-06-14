@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
@@ -39,8 +40,15 @@ import java.util.Set;
  * Date: May 4, 2007
  * Time: 1:01:43 PM
  */
-public class DatasetDomainKind extends DomainKind
+public class DatasetDomainKind extends AbstractDomainKind
 {
+    private static final String LSID_PREFIX = "StudyDataset";
+
+    public String getKindName()
+    {
+        return LSID_PREFIX;
+    }
+
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
@@ -52,7 +60,7 @@ public class DatasetDomainKind extends DomainKind
         try
         {
             Lsid lsid = new Lsid(domainURI);
-            if ("StudyDataset".equalsIgnoreCase(lsid.getNamespacePrefix()))
+            if (LSID_PREFIX.equalsIgnoreCase(lsid.getNamespacePrefix()))
                 return true;
         }
         catch (Exception x)

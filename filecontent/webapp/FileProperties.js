@@ -88,6 +88,12 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
                     else
                         field.lookup.container = this.containerPath;
                 }
+                if (field.jsonType == 'string' && field.inputType == 'textarea')
+                {
+                    // size any text areas so that they fit a little better in the dialog
+                    field.cols = 40;
+                    field.rows = 4;
+                }
                 fields.push(field);
             }
         }

@@ -1833,9 +1833,9 @@ public class SpecimenImporter
         }
         conflictResolvingSubselect.append("\nFROM ").append(tempTable).append("\nGROUP BY GlobalUniqueId");
 
-
         SQLFragment updateHashSql = new SQLFragment();
-        updateHashSql.append("UPDATE ").append(tempTable).append(" SET SpecimenHash = 'Fld-").append(container.getRowId()).append("'");
+        updateHashSql.append("UPDATE ").append(tempTable).append(" SET SpecimenHash = ?");
+        updateHashSql.add("Fld-" + container.getRowId());
         String concatOp = schema.getSqlDialect().getConcatenationOperator();
         for (SpecimenColumn col : loadedColumns)
         {
@@ -1880,7 +1880,7 @@ public class SpecimenImporter
             SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
             String tableName;
             StringBuilder sql = new StringBuilder();
-            int randomizer = (new Random().nextInt(1000000000));
+            int randomizer = (new Random().nextInt(900000000) + 100000000);  // Ensure 9-digit random number
             if (DEBUG)
             {
                 tableName = dialect.getGlobalTempTablePrefix() + "SpecimenUpload" + randomizer;

@@ -16,32 +16,40 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.sql.SQLException;
+import java.util.*;
 
-public class SampleSetDomainType extends DomainKind
+public class SampleSetDomainType extends AbstractDomainKind
 {
     public SampleSetDomainType()
     {
     }
 
+    public String getKindName()
+    {
+        return "SampleSet";
+    }
+    
     public boolean isDomainType(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
@@ -105,6 +113,43 @@ public class SampleSetDomainType extends DomainKind
         Set<String> reserved = new HashSet<String>(columns.length);
         for (ExpMaterialTable.Column column : columns)
             reserved.add(column.name());
+        reserved.add("CpasType");
         return reserved;
     }
+
+    @Override
+    public boolean canCreateDefinition(User user, Container container)
+    {
+        return container.hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user)
+    {
+        String name = domain.getName();
+        String description = domain.getDescription();
+        List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
+
+        JSONArray idCols = arguments.containsKey("idCols") ? (JSONArray)arguments.get("idCols") : new JSONArray();
+        int idCol1 = idCols.optInt(0, -1);
+        int idCol2 = idCols.optInt(1, -1);
+        int idCol3 = idCols.optInt(2, -1);
+        int parentCol = arguments.optInt("parentCol", -1);
+
+        ExpSampleSet ss;
+        try
+        {
+            ss = ExperimentService.get().createSampleSet(container, user, name, description, properties, idCol1, idCol2, idCol3, parentCol);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        catch (ExperimentException e)
+        {
+            throw new RuntimeException(e);
+        }
+        return ss.getType();
+    }
+
 }

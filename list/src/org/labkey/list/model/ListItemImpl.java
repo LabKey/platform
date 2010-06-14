@@ -244,12 +244,12 @@ public class ListItemImpl implements ListItem
             if (_properties != null)
             {
                 List<ValidationError> errors = new ArrayList<ValidationError>();
-                for (Map.Entry<String, ObjectProperty> entry : _properties.entrySet())
+                for (Map.Entry<String, DomainProperty> entry : dps.entrySet())
                 {
-                    DomainProperty dp = dps.get(entry.getKey());
-                    if (dp != null)
-                        validateProperty(dp, entry.getValue(), errors, validatorCache);
+                    ObjectProperty op = _properties.get(entry.getKey());
+                    validateProperty(entry.getValue(), op, errors, validatorCache);
                 }
+
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
             }

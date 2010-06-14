@@ -1656,7 +1656,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
             QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
-            BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
+            BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
             command.validateBind(errors);
             return errors;
         }
@@ -1762,7 +1762,8 @@ public class QueryController extends SpringActionController
             }
             catch (Exception x)
             {
-                errors.reject(ERROR_MSG, x.getMessage());
+                errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
             }
             finally
             {

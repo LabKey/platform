@@ -69,8 +69,15 @@
 [<a href="<%=h(new ActionURL(IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
 [<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
     }
-%>
+
+    if (!form.isWebPart() && searchConfig.includeAdvancedUI())
+    { %>
 <form class="labkey-search-form" style="padding-bottom: 0px" id="searchForm" name="search" onsubmit="resubmit(); return true;" action="<%=h(searchConfig.getPostURL(c))%>">
+ <% }
+    else
+    { %>
+<form class="labkey-search-form" style="padding-bottom: 0px" id="searchForm" name="search" action="<%=h(searchConfig.getPostURL(c))%>">
+<%  } %>
     <table><tr><td><%
     if (form.isPrint())
     {
@@ -96,12 +103,31 @@
     {
         %>
         <input type="hidden" id="hidden-category" name="category">
-        <input type="hidden" id="hidden-container" name="container">
-        <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="0" >
-        <input type="hidden" id="hidden-showAdv" name="showAdvanced" value="1" >
+        <input type="hidden" id="hidden-showAdv" name="showAdvanced" value="true" >
         <%
     }
+
+    if (c.isProject()){ %>
+        <input type="hidden" id="hidden-container" name="container" value="<%=projectInfo(c, false)%>">
+    <% }
+    else
+    {
     %>
+        <input type="hidden" id="hidden-container" name="container" value="<%=projectInfo(c, true)%>">
+    <%
+    }
+
+    if (form.getIncludeSubfolders())
+    {
+    %>
+        <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="1" >
+    <% }
+    else
+    {
+    %>
+        <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="0" > 
+    <%
+    } %>
     </table>
 </form>
 <%
@@ -113,7 +139,13 @@
         <td><input id="adv-search-btn" type="image" src="<%=contextPathStr%>/_images/plus.gif" onclick="showPanel(); return false;"><span> Advanced Search</span></td>
     </tr>
     <tr>
-        <td><div id="advancedPanelDiv" style="display: none;"></div></td>
+        <td><%  if (form.isShowAdvanced())
+                { %>
+            <div id="advancedPanelDiv"></div><%
+                }
+                else { %>
+            <div id='advancedPanelDiv' style='display: none;'></div><%  }  %>
+        </td>
     </tr>
 </table>
 <%
@@ -479,11 +511,9 @@ String projectInfo(Container c, boolean returnID)
 %>
 <script type="text/javascript">
     var params = LABKEY.ActionURL.getParameters();
-
     function establishParams()
     {
         params['q'] = document.getElementById('query').value;
-        params["_dc"] = document.getElementsByName('_dc')[0].value;
 
         checkOptions('adv-category', 'category');
         checkRadio('adv-scope', 'container');
@@ -507,18 +537,24 @@ String projectInfo(Container c, boolean returnID)
             params[param] = rad.getValue().value;
             conEl.value = params[param];
 
-            if (rad.getValue().id != "folder")
+            if (incEl)
             {
-                incEl.disabled = "disabled";
+                if (rad.getValue().id === "cb_folder")
+                {
+                    incEl.value = "0";
+                }
+                else if (rad.getValue().id === "cb_project" || rad.getValue().id === "cb_folder_subfolder")
+                {
+                    incEl.value = "1";
+                }
             }
         }
         else
         {
-            if (conEl && incEl)
-            {
+            if (conEl)
                 conEl.disabled = "disabled";
+            if (incEl)
                 incEl.disabled = "disabled";
-            }
         }
     }
 
@@ -551,6 +587,7 @@ String projectInfo(Container c, boolean returnID)
     }
 
     var seen = false;
+    var initOpen = true;
 
     function init()
     {
@@ -626,10 +663,11 @@ String projectInfo(Container c, boolean returnID)
             items: {
                 id        : 'adv-scope',
                 xtype     : 'radiogroup',
-                columns   : [50,70,65],
+                columns   : 1,
                 autoHeight: true,
                 items : [{
                     boxLabel: 'Site',
+                    id      : 'cb_site',
                     name    : 'scope',
                     listeners : {
                         check : function(chkbox, checked)
@@ -654,11 +692,12 @@ String projectInfo(Container c, boolean returnID)
                 },{
                     boxLabel: 'Project',
                     value   : "<%=h(projectInfo(c, false))%>",
+                    id      : 'cb_project',
                     name    : 'scope',
                     listeners : {
                         afterrender : function(chkbox)
                         {
-                            if ((params['container'] == chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') != 0))
+                            if ((params['container'] === chkbox.value) && (LABKEY.ActionURL.getParameter('includeSubfolders') === "1"))
                             {
                                 if (params['container'] != "")
                                 {
@@ -673,13 +712,26 @@ String projectInfo(Container c, boolean returnID)
                         }
                     }
                 },{
-                    boxLabel: 'Folder',
-                    id      : 'folder',
+                    boxLabel: 'Current Folder',
+                    id      : 'cb_folder',
                     value   : "<%=h(projectInfo(c, true))%>",
                     name    : 'scope',
                     listeners : {
                         afterrender: function(chkbox) {
-                            if (params['container'] == chkbox.value && LABKEY.ActionURL.getParameter('includeSubfolders'))
+                            if ((params['container'] === chkbox.value && ((LABKEY.ActionURL.getParameter('includeSubfolders') === "0") || (!LABKEY.ActionURL.getParameter('includeSubfolders')))) || ((params['container'] === chkbox.value)&&(<%=h(!c.isProject())%>)))
+                            {
+                                chkbox.setValue(true);
+                            }
+                        }
+                    }
+                },{
+                    boxLabel: 'Current Folder & SubFolders',
+                    id      : 'cb_folder_subfolder',
+                    value   : "<%=h(projectInfo(c, true))%>",
+                    name    : 'scope',
+                    listeners : {
+                        afterrender: function(chkbox) {
+                            if (params['container'] === chkbox.value && (LABKEY.ActionURL.getParameter('includeSubfolders') === "1") && <%=h(!c.isProject())%>)
                             {
                                 chkbox.setValue(true);
                             }
@@ -702,11 +754,10 @@ String projectInfo(Container c, boolean returnID)
                 }
             },
             listeners : {
-                afterrender : function(pnl) {
-                    if (LABKEY.ActionURL.getParameter('showAdvanced'))
-                    {
+                beforerender : function(pnl) {
+                    <% if (form.isShowAdvanced()) {%>
                         showPanel();
-                    }
+                    <% } %>
                 }
             }
         });
@@ -714,46 +765,49 @@ String projectInfo(Container c, boolean returnID)
 
     // This is to swap out the image on the form +/-
     var minus_img = new Image();
-    minus_img.src = "/labkey/_images/minus.gif";
-    var org_src = "/labkey/_images/plus.gif";
-
+    minus_img.src = LABKEY.contextPath + "/_images/minus.gif";
+    var org_src   = LABKEY.contextPath + "/_images/plus.gif";
+    
     function showPanel()
     {
         var ppanel = Ext.get('advancedPanelDiv');
         if(!(seen) && ppanel)
         {
-            ppanel.slideIn();
-            seen = true;
             Ext.getCmp('advanced-panel').show();
+            var adv = <%=form.isShowAdvanced()%>;
+            if (adv && initOpen)
+            {
+                initOpen = false;
+                ppanel.show();
+            }
+            else
+            {
+                ppanel.slideIn();
+            }
+            seen = true;
             document.getElementById('adv-search-btn').src = minus_img.src;
-            params['advancedPanel'] = true;
         }
         else if(ppanel){
             ppanel.slideOut();
-            Ext.getCmp('advanced-panel').hide();
+            setTimeout("hidehelp()", 500);
             seen = false;
             document.getElementById('adv-search-btn').src = org_src;
-            delete params['advancedPanel'];
         }
+    }
+
+    /* Give the panel time to animate sliding away. */
+    function hidehelp()
+    {
+        Ext.getCmp('advanced-panel').hide();
+        document.getElementById('advancedPanelDiv').style.display = "none";
     }
 
     function resubmit()
     {
         establishParams();
     }
-
+    
     Ext.onReady(init);
-</script>
-<%
-    }
-    else
-    {
-%>
-<script type="text/javascript">
-    function resubmit()
-    {
-        /* NO-OP */
-    }
 </script>
 <%
     }

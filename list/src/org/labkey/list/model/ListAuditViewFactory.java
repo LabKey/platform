@@ -94,7 +94,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         filter.addClause(or);
 
         // try to filter on just list domains
-        filter.addCondition("Key1", ":List.", CompareType.CONTAINS);
+        filter.addCondition("Key1", ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

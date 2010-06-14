@@ -373,12 +373,21 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     createColumnModelColumns : function()
     {
         var columns = [];
+        var ttRenderer = function(value, p, record) {
+            var msg = Ext.util.Format.htmlEncode(value);
+            p.attr = 'ext:qtip="' + msg + '"';
+            return msg;
+        };
+
         if (this.fileFields)
         {
             for (var i=0; i < this.fileFields.length; i++)
             {
                 var prop = this.fileFields[i];
-                columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: Ext.util.Format.htmlEncode, sortable:true});
+                var idx = prop.rangeURI.indexOf('#multiLine');
+
+                // multiline fields will have a tooltip to display the entire contents
+                columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: idx != -1 ? ttRenderer : Ext.util.Format.htmlEncode, sortable:true});
             }
         }
         return columns; 
@@ -405,7 +414,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             for (var i=0; i < this.fileFields.length; i++)
             {
                 var prop = this.fileFields[i];
-                config.extraDataFields.push({name: prop.name, mapping: 'propstat/prop/custom/' + prop.name});
+                config.extraDataFields.push({name: prop.name, mapping: 'propstat/prop/custom/' + prop.name.toLowerCase()});
             }
         }
         return config;

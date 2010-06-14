@@ -2676,24 +2676,65 @@ public class StudyManager
         ResultSet rs = null;
         try
         {
-            SQLFragment f = new SQLFragment("SELECT container, datasetid FROM study.dataset ");
+            SQLFragment f = new SQLFragment("SELECT container, datasetid FROM " + StudySchema.getInstance().getTableInfoDataSet());
             if (null != c)
-                f.append("WHERE container = '" + c.getId() + "'");
+            {
+                f.append(" WHERE container = ?");
+                f.add(c);
+            }
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
 
             ActionURL dataset = new ActionURL(StudyController.DatasetAction.class, null);
-            ActionURL details = new ActionURL(StudyController.DatasetDetailsAction.class, null);
 
             while (rs.next())
             {
                 String container = rs.getString(1);
                 int id = rs.getInt(2);
+
+                c = ContainerManager.getForId(container);
+                if (null == c) continue;
+                Study study = StudyManager.getInstance().getStudy(c);
+                if (null == study) continue;
+                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(study, id);
+                if (null == dsd) continue;
+
                 String docid = "dataset:" + new Path(container,String.valueOf(id)).toString();
+
+                StringBuilder body = new StringBuilder();
+                Map<String, Object> props = new HashMap<String, Object>();
+
+                props.put(SearchService.PROPERTY.categories.toString(), datasetCategory.toString());
+                props.put(SearchService.PROPERTY.displayTitle.toString(), StringUtils.defaultIfEmpty(dsd.getLabel(),dsd.getName()));
+                String name = dsd.getName();
+                String label = StringUtils.equals(dsd.getLabel(),name) ? null : dsd.getLabel();
+                String description = dsd.getDescription();
+                String searchTitle = StringUtilsLabKey.joinNonBlank(" ", name, label, description); 
+                props.put(SearchService.PROPERTY.searchTitle.toString(), searchTitle);
+
+                body.append(searchTitle).append("\n");
+
+                String sep = "";
+
+                Domain domain = dsd.getDomain();
+                if (null != domain)
+                {
+                    for (DomainProperty property : domain.getProperties())
+                    {
+                        String n = StringUtils.trimToEmpty(property.getName());
+                        String l = StringUtils.trimToEmpty(property.getLabel());
+                        if (n.equals(l))
+                            l = "";
+                        body.append(sep).append(StringUtilsLabKey.joinNonBlank(" ", n, l));
+                        sep = ",\n";
+                    }
+                }
+
                 ActionURL view = dataset.clone().replaceParameter("datasetId",String.valueOf(id));
                 view.setExtraPath(container);
-                ActionURL source = details.clone().replaceParameter("id",String.valueOf(id));
-                source.setExtraPath(container);
-                ActionResource r = new ActionResource(datasetCategory, docid, view, source);
+
+                SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
+                        "text/plain", body.toString().getBytes(),
+                        view, props);
                 task.addResource(r, SearchService.PRIORITY.item);
             }
         }
@@ -2757,9 +2798,12 @@ public class StudyManager
                 return;
             String nav = NavTree.toJS(Collections.singleton(new NavTree("study", new ActionURL("project","begin",c.getId()))), null, false).toString();
 
-            SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
+            SQLFragment f = new SQLFragment("SELECT container, participantid FROM " + StudySchema.getInstance().getTableInfoParticipant());
             if (null != c)
-                f.append("WHERE container = '" + c.getId() + "'");
+            {
+                f.append(" WHERE container = ?");
+                f.add(c);
+            }
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
 
             ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
@@ -2832,10 +2876,12 @@ public class StudyManager
         ResultSet rs = null;
         try
         {
-            Map<String,String> studyLabels = new HashMap<String,String>();
-            SQLFragment f = new SQLFragment("SELECT container, participantid FROM study.participant ");
+            SQLFragment f = new SQLFragment("SELECT container, participantid FROM " + StudySchema.getInstance().getTableInfoParticipant());
             if (null != c)
-                f.append("WHERE container = '" + c.getId() + "'");
+            {
+                f.append(" WHERE container = ?");
+                f.add(c);
+            }
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), f, 0, false, false);
             ss.addParticipantIds(rs);
         }

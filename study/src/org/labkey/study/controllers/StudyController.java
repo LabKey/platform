@@ -3148,7 +3148,7 @@ public class StudyController extends BaseStudyController
             if (form.getIds() != null)
             {
                 // use a map to store the IDs of the public QC states; since checkboxes are
-                // ommitted from the request entirely if they aren't checked, we use a different
+                // omitted from the request entirely if they aren't checked, we use a different
                 // method for keeping track of the checked values (by posting the rowid of the item as the
                 // checkbox value).
                 Set<Integer> publicDataSet = new HashSet<Integer>();
@@ -3894,7 +3894,7 @@ public class StudyController extends BaseStudyController
             File studyFile = form.getValidatedSingleFile(c);
 
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-            BindException errors = new BindException(c, "import");
+            BindException errors = new NullSafeBindException(c, "import");
 
             boolean success = importStudy(errors, studyFile, studyFile.getName());
 

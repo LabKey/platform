@@ -153,7 +153,10 @@ public class UploadSamplesHelper
                     }
 
                     if (pd != null)
+                    {
                         cd.name = pd.getPropertyURI();
+                        cd.clazz = pd.getPropertyDescriptor().getPropertyType().getJavaType();
+                    }
                     else
                         cd.load = false;
                 }

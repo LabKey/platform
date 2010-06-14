@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -397,7 +398,7 @@ public class StudyReload
                     File root = StudyReload.getPipelineRoot(c);
                     study = manager.getStudy(c);
                     //noinspection ThrowableInstanceNeverThrown
-                    BindException errors = new BindException(c, "reload");
+                    BindException errors = new NullSafeBindException(c, "reload");
                     ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
 
                     User reloadUser = null;

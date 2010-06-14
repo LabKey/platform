@@ -23,9 +23,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainEditorServiceBase;
-import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.*;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -64,7 +62,7 @@ public class PropertyController extends SpringActionController
     {
         setActionResolver(_actionResolver);
     }
-    
+
     @RequiresNoPermission
     public class EditDomainAction extends SimpleViewAction<DomainForm>
     {
@@ -114,6 +112,25 @@ public class PropertyController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    public class CreateDomainAction extends ApiAction<SimpleApiJsonForm>
+    {
+        public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
+        {
+            JSONObject jsonObj = getForm.getJsonObject();
+
+            String kindName = jsonObj.getString("kind");
+            GWTDomain newDomain = convertJsonToDomain(jsonObj);
+            JSONObject options = jsonObj.optJSONObject("options");
+            if (options == null)
+                options = new JSONObject();
+
+            createDomain(kindName, newDomain, options, getContainer(), getUser());
+
+            return new ApiSimpleResponse();
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
     public class GetDomainAction extends ApiAction<GetForm>
     {
         public ApiResponse execute(GetForm form, BindException errors) throws Exception
@@ -135,10 +152,15 @@ public class PropertyController extends SpringActionController
             String query = jsonObj.getString("queryName");
 
             GWTDomain newDomain = convertJsonToDomain(jsonObj);
+            if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
+                throw new IllegalArgumentException("Domain id and URI are required");
 
             GWTDomain originalDomain = getDomain(schema, query, getContainer(), getUser());
 
-            DomainUtil.updateDomainDescriptor(originalDomain, newDomain, getContainer(), getUser());
+            List<String> updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
+            if (updateErrors != null)
+                for (String msg : updateErrors)
+                    errors.reject(ERROR_MSG, msg);
 
             return new ApiSimpleResponse();
         }
@@ -371,6 +393,30 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    private static Domain createDomain(String kindName, GWTDomain domain, JSONObject arguments, Container container, User user)
+    {
+        DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
+        if (kind == null)
+            throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
+
+        if (!kind.canCreateDefinition(user, container))
+            HttpView.throwUnauthorized("You don't have permission to create a new domain");
+
+        Domain created = kind.createDomain(domain, arguments, container, user);
+        if (created == null)
+            throw new RuntimeException("Failed to created domain");
+        return created;
+    }
+
+    private static List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user)
+    {
+        DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
+        if (kind == null)
+            throw new IllegalArgumentException("No domain kind matches URI '" + original.getDomainURI() + "'");
+
+        return kind.updateDomain(original, update, container, user);
+    }
+
     @NotNull
     private static GWTDomain getDomain(String schemaName, String queryName, Container container, User user)
     {
@@ -454,14 +500,14 @@ public class PropertyController extends SpringActionController
         GWTDomain domain = new GWTDomain();
         JSONObject jsonDomain = obj.getJSONObject("domainDesign");
 
-        domain.setDomainId(jsonDomain.getInt("domainId"));
+        domain.setDomainId(jsonDomain.optInt("domainId", -1));
 
         domain.setName(jsonDomain.getString("name"));
-        domain.setDomainURI(jsonDomain.getString("domainURI"));
+        domain.setDomainURI(jsonDomain.optString("domainURI", null));
         domain.setContainer(jsonDomain.getString("container"));
 
         // Description can be null
-        domain.setDescription((String)jsonDomain.get("description"));
+        domain.setDescription(jsonDomain.optString("description", null));
 
         JSONArray jsonFields = jsonDomain.getJSONArray("fields");
         List<GWTPropertyDescriptor> props = new ArrayList<GWTPropertyDescriptor>();

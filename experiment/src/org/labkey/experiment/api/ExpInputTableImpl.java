@@ -59,7 +59,8 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
                 "pa.RowId = " + "TargetApplicationId");
             if (_run != null)
             {
-                sqlFragment.append(" AND er.RowId = " + _run.getRowId());
+                sqlFragment.append(" AND er.RowId = ?");
+                sqlFragment.add(_run.getRowId());
             }
             if (_type != null)
             {
@@ -69,14 +70,12 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
             if (ids != null)
             {
                 sqlFragment.append(") IN (");
-                String separator = "";
+                String q = "?";
                 for (String id : ids)
                 {
-                    sqlFragment.append(separator);
-                    separator = ",";
-                    sqlFragment.append("'");
-                    sqlFragment.append(id);
-                    sqlFragment.append("'");
+                    sqlFragment.append(q);
+                    sqlFragment.add(id);
+                    q = ", ?";
                 }
                 sqlFragment.append(")");
             }

@@ -16,11 +16,8 @@
 
 package org.labkey.filecontent;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
@@ -34,29 +31,21 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.data.xml.ActionOptions;
-import org.labkey.data.xml.PipelineOptionsDocument;
 
 import java.beans.PropertyChangeEvent;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -608,7 +597,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
-    private static final String NAMESPACE = "FileProperties";
+    public static final String NAMESPACE_PREFIX = "FileProperties";
     public static final String PROPERTIES_DOMAIN = "File Properties";
     public static final String TYPE_PROPERTIES = "FileProperties";
 
@@ -627,7 +616,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
         //String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":List" + ".Folder-" + container.getRowId() + ":" + name;
 
-        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
+        return new Lsid("urn:lsid:labkey.com:" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
     }
 
     public ExpData getDataObject(WebdavResource resource, Container c)

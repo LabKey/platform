@@ -50,6 +50,8 @@ import java.util.*;
 
 public class ListDefinitionImpl implements ListDefinition
 {
+    protected static final String NAMESPACE_PREFIX = "List";
+
     static public ListDefinitionImpl of(ListDef def)
     {
         if (def == null)
@@ -72,7 +74,7 @@ public class ListDefinitionImpl implements ListDefinition
         _def = new ListDef();
         _def.setContainer(container.getId());
         _def.setName(name);
-        String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":List" + ".Folder-" + container.getRowId() + ":" + name;
+        String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ":" + name;
         _domain = PropertyService.get().createDomain(container, new Lsid(typeURI).toString(), name);
     }
 

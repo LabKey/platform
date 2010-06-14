@@ -45,12 +45,12 @@
 
 <script type="text/javascript">
     var numberRe = /[0-9]/;
-    function filterNumber(input, e)
+    function filterNumber(e, input)
     {
-        if (e.ctrlKey)
+        if (e.isSpecialKey())
             return true;
 
-        var cc = String.fromCharCode(e.charCode || e.keyCode);
+        var cc = String.fromCharCode(e.getCharCode());
         if (!cc)
             return true;
 
@@ -131,7 +131,7 @@
 %>
                 <tr><td class="labkey-form-label">Duplicate</td><td>
                 <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString(" onkeypress='return filterNumber(this, event);'" + (issue.getResolution().getSource() != "Duplicate" ? " readonly" : "")))%>
+                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString(issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>
                     <script type="text/javascript">
                         var duplicateInput = document.getElementsByName('duplicate')[0];
                         var duplicateOrig = duplicateInput.value;
@@ -139,10 +139,10 @@
                         function updateDuplicateInput()
                         {
                             if (resolutionSelect.value == 'Duplicate')
-                                duplicateInput.readOnly = false;
+                                duplicateInput.disabled = false;
                             else
                             {
-                                duplicateInput.readOnly = true;
+                                duplicateInput.disabled = true;
                                 duplicateInput.value = duplicateOrig;
                             }
                         }
@@ -150,6 +150,7 @@
                             resolutionSelect.addEventListener('change', updateDuplicateInput, false);
                         else if (window.attachEvent)
                             resolutionSelect.attachEvent('onchange', updateDuplicateInput);
+                        Ext.EventManager.on(duplicateInput, 'keypress', filterNumber);
                     </script>
                 <% } else { %>
                     <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>

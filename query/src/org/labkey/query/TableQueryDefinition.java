@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Table;
@@ -27,6 +28,7 @@ import org.labkey.query.sql.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
 
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -108,7 +110,14 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                     {
                         sb.append("&").append(columnName).append("=${").append(columnName).append("}");
                     }
-                    expr = StringExpressionFactory.create(sb.toString());
+                    try
+                    {
+                        expr = new StringExpressionFactory.URLStringExpression(sb.toString());
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        Logger.getLogger(TableQueryDefinition.class).error("Bad " + action.toString() + " URL: " + url.getLocalURIString(), e);
+                    }
                 }
             }
         }

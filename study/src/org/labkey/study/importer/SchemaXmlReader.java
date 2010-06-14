@@ -145,7 +145,7 @@ public class SchemaXmlReader implements SchemaReader
                     columnXml.getDescription(),
                     t.getXsdType(),
                     notNull,
-                    null,  // TODO: conceptURI
+                    columnXml.getConceptURI(),
                     columnXml.getFormatString(),
                     columnXml.isSetInputType() ? columnXml.getInputType() : null,
                     columnXml.getIsHidden(),

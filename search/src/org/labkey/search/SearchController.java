@@ -366,31 +366,37 @@ public class SearchController extends SpringActionController
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-            String message;
 
             if (null != ss)
             {
-                List<SecurableResource> resources = ss.getSecurableResources(getViewContext().getUser());
+                if (SearchPropertyManager.getExternalIndexProperties().hasExternalIndex())
+                {
+                    List<SecurableResource> resources = ss.getSecurableResources(getViewContext().getUser());
 
-                if (resources.size() < 1)
-                {
-                    message = "No securable resources found";
-                }
-                else if (resources.size() > 1)
-                {
-                    message = "Multiple securable resources found";
+                    if (resources.size() < 1)
+                    {
+                        throw new IllegalStateException("No securable resources found");
+                    }
+                    else if (resources.size() > 1)
+                    {
+                        throw new IllegalStateException("Multiple securable resources found");
+                    }
+                    else
+                    {
+                        return new JspView<SecurableResource>(SearchController.class, "view/externalIndexPermissions.jsp", resources.get(0));
+                    }
                 }
                 else
                 {
-                    return new JspView<SecurableResource>(SearchController.class, "view/externalIndexPermissions.jsp", resources.get(0));
+                    errors.reject(ERROR_MSG, "External index is not configured");
                 }
             }
             else
             {
-                message = "Search service is not running";
+                errors.reject(ERROR_MSG, "Search service is not running");
             }
 
-            throw new IllegalStateException(message);
+            return new SimpleErrorView(errors);
         }
 
         @Override
@@ -902,6 +908,7 @@ public class SearchController extends SpringActionController
         private int _textBoxWidth = 50; // default size
         private boolean _includeHelpLink = true;
         private boolean _webpart = false;
+        private boolean _showAdvanced = false;
         private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
 
         public void setConfiguration(SearchConfiguration config)
@@ -1078,6 +1085,16 @@ public class SearchController extends SpringActionController
         public void setWebPart(boolean webpart)
         {
             _webpart = webpart;
+        }
+
+        public boolean isShowAdvanced()
+        {
+            return _showAdvanced;
+        }
+
+        public void setShowAdvanced(boolean showAdvanced)
+        {
+            _showAdvanced = showAdvanced;
         }
     }
 

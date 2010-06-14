@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -46,8 +47,13 @@ import java.util.Set;
  * Date: June 25, 2007
  * Time: 1:01:43 PM
  */
-public class AssayDomainKind extends DomainKind
+public class AssayDomainKind extends AbstractDomainKind
 {
+    public String getKindName()
+    {
+        return "Assay";
+    }
+
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
