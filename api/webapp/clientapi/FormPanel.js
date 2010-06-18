@@ -87,15 +87,21 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             // get a list of fields that were already constructed
             var existing = {};
             if (this.items)
+            {
                 this.items.each(function(c)
                 {
                     if (c.isFormField)
-                        existing[c.name] = c.name;
+                    {
+                        var name = c.hiddenName || c.name;
+                        existing[name] = name;
+                    }
                 });
+            }
             for (var i=0;i<this.allFields.length;i++)
             {
                 var c = this.allFields[i];
-                if (!existing[c.name])
+                var name = c.hiddenName || c.name;
+                if (!existing[name])
                     this.add(c);
             }
         }
@@ -219,7 +225,9 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                     defaults[id].checked = v;
                 }
                 else
+                {
                     defaults[id].value = v;
+                }
             }
         }
 
@@ -293,7 +301,7 @@ Ext.applyIf(Date.patterns,{
 LABKEY.ext.FormHelper =
 {
     _textMeasure : null,
-    
+
     /**
      * Uses the given meta-data to generate a field config object.
      *
@@ -305,47 +313,71 @@ LABKEY.ext.FormHelper =
      * @param {object} [config.required]
      * @param {string} [config.label] used to generate fieldLabel
      * @param {string} [config.name] used to generate fieldLabel (if header is null)
-     * @param {string} [config.lookup.schema]
-     * @param {string} [config.lookup.table]
+     * @param {string} [config.caption] used to generate fieldLabel (if label is null)
+     * @param {integer} [config.cols] if input is a textarea, sets the width (style:width is better)
+     * @param {integer} [config.rows] if input is a textarea, sets the height (style:height is better)
+     * @param {string} [config.lookup.schema] the schema used for the lookup.  schemaName also supported
+     * @param {string} [config.lookup.table] the query used for the lookup.  queryName also supported
      * @param {string} [config.lookup.keyColumn]
      * @param {string} [config.lookup.displayColumn]
+     * @param {boolean} [config.lookups] use lookups=false to prevent creating default combobox for lookup columns
+     * @param {object}  [config.ext] is a standard Ext config object that will be merged with the computed field config
+     *      e.g. ext:{width:120, tpl:new Ext.Template(...)}
+     * @param {object} [config.store] advanced! Pass in your own custom store for a lookup field
      *
      * Will accept multiple config parameters which will be combined.
+     *
+     * @private
      */
     getFieldEditorConfig: function(c)
     {
+        /* CONSIDER for 10.3, new prototype (with backward compatibility check)
+         * getFieldEditorConfig(extConfig, [metadata,...])
+         */
+
         // Combine the metadata provided into one config object
-        var config = {editable:true, required:false};
+        var config = {editable:true, required:false, ext:{}};
         for (var i=arguments.length-1 ; i>= 0 ; --i)
+        {
+            var ext = Ext.apply(config.ext, arguments[i].ext);
             Ext.apply(config, arguments[i]);
+            config.ext = ext;
+        }
 
         var h = Ext.util.Format.htmlEncode;
         var lc = function(s){return !s?s:Ext.util.Format.lowercase(s);};
 
-        config.type = lc(config.type) || lc(config.typeName) || 'string';
+        config.type = lc(config.jsonType) || lc(config.type) || lc(config.typeName) || 'string';
 
-        var field = {
-            fieldLabel: h(config.label) || config.header || h(config.name),
-            originalConfig: config
+        var field =
+        {
+            //added 'caption' for assay support
+            fieldLabel: h(config.label) || h(config.caption) || h(config.header) || h(config.name),
+            originalConfig: config,
+            allowBlank: !config.required,
+            disabled: !config.editable
         };
 
         if (config.tooltip && !config.helpPopup)
             field.helpPopup = { html: config.tooltip };
 
-        if (config.lookup)
+        if (config.lookup && false !== config.lookups)
         {
             // UNDONE: avoid self-joins
             // UNDONE: core.UsersData
             // UNDONE: container column
             var l = config.lookup;
+            // normalize lookup
+            l.table = l.table || l.queryName;
+            l.schema = l.schema || l.schemaName;
+
             if (l.schema == 'core' && l.table=='UsersData')
                 l.table = 'Users';
             var lookupName = [l.schema,l.table,l.keyColumn,l.displayColumn].join('||');
-            var store = LABKEY.ext.FormHelper.getLookupStore(lookupName, config);
+            var store = config.store || LABKEY.ext.FormHelper.getLookupStore(lookupName, config);
             Ext.apply(field, {
                 xtype: 'combo',
                 store: store,
-                allowBlank: !config.required,
                 forceSelection:true,
                 typeAhead: false,
                 hiddenName: config.name,
@@ -356,83 +388,79 @@ LABKEY.ext.FormHelper =
                 tpl : '<tpl for="."><div class="x-combo-list-item">{[values["' + l.displayColumn + '"]]}</div></tpl>', //FIX: 5860
                 listClass: 'labkey-grid-editor'
             });
-            return field;
         }
-
-        switch (config.jsonType)
+        else
         {
-            case "boolean":
-                field.xtype = 'checkbox';
-                break;
-            case "int":
-                field.xtype = 'numberfield';
-                field.allowDecimals = false;
-                break;
-            case "float":
-                field.xtype = 'numberfield';
-                field.allowDecimals = true;
-                break;
-            case "date":
-                field.xtype = 'datefield';
-                field.format = Date.patterns.ISO8601Long;
-                field.altFormats = Date.patterns.ISO8601Short +
-                                'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
-                                'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
-                                'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
-                                'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
-                                'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
-                                'n/j/y|n/j/Y|' +
-                                'n-j-y|n-j-Y|' +
-                                'j-M-y|j-M-Y|' +
-                                'Y-n-d H:i:s|Y-n-d|' +
-                                'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
-                                'j M Y H:i:s';     // 10 Sep 2009 01:24:12
-                break;
-            case "string":
-                if (config.inputType=='textarea')
-                {
-                    field.xtype = 'textarea';
-                    field.width = 500;
-                    field.height = 60;
-                    if (!this._textMeasure)
+            switch (config.type)
+            {
+                case "boolean":
+                    field.xtype = 'checkbox';
+                    break;
+                case "int":
+                    field.xtype = 'numberfield';
+                    field.allowDecimals = false;
+                    break;
+                case "float":
+                    field.xtype = 'numberfield';
+                    field.allowDecimals = true;
+                    break;
+                case "date":
+                    field.xtype = 'datefield';
+                    field.format = Date.patterns.ISO8601Long;
+                    field.altFormats = Date.patterns.ISO8601Short +
+                                    'n/j/y g:i:s a|n/j/Y g:i:s a|n/j/y G:i:s|n/j/Y G:i:s|' +
+                                    'n-j-y g:i:s a|n-j-Y g:i:s a|n-j-y G:i:s|n-j-Y G:i:s|' +
+                                    'n/j/y g:i a|n/j/Y g:i a|n/j/y G:i|n/j/Y G:i|' +
+                                    'n-j-y g:i a|n-j-Y g:i a|n-j-y G:i|n-j-Y G:i|' +
+                                    'j-M-y g:i a|j-M-Y g:i a|j-M-y G:i|j-M-Y G:i|' +
+                                    'n/j/y|n/j/Y|' +
+                                    'n-j-y|n-j-Y|' +
+                                    'j-M-y|j-M-Y|' +
+                                    'Y-n-d H:i:s|Y-n-d|' +
+                                    'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
+                                    'j M Y H:i:s';     // 10 Sep 2009 01:24:12
+                    break;
+                case "string":
+                    if (config.inputType=='textarea')
                     {
-                        this._textMeasure = {};
-                        var ta = Ext.DomHelper.append(document.body,{tag:'textarea', rows:10, cols:80, id:'_hiddenTextArea', style:{display:'none'}});
-                        this._textMeasure.height = Math.ceil(Ext.util.TextMetrics.measure(ta,"GgYyJjZ==").height * 1.2);
-                        this._textMeasure.width  = Math.ceil(Ext.util.TextMetrics.measure(ta,"ABCXYZ").width / 6.0);
-                    }
-                    if (config.rows)
-                    {
-                        if (config.rows == 1)
-                            field.height = undefined;
-                        else
+                        field.xtype = 'textarea';
+                        field.width = 500;
+                        field.height = 60;
+                        if (!this._textMeasure)
                         {
-                            // estimate at best!
-                            var textHeight =  this._textMeasure.height * config.rows;
-                            if (textHeight)
-                                field.height = textHeight;
+                            this._textMeasure = {};
+                            var ta = Ext.DomHelper.append(document.body,{tag:'textarea', rows:10, cols:80, id:'_hiddenTextArea', style:{display:'none'}});
+                            this._textMeasure.height = Math.ceil(Ext.util.TextMetrics.measure(ta,"GgYyJjZ==").height * 1.2);
+                            this._textMeasure.width  = Math.ceil(Ext.util.TextMetrics.measure(ta,"ABCXYZ").width / 6.0);
                         }
-                    }
-                    if (config.cols)
-                    {
-                        var textWidth = this._textMeasure.width * config.cols;
-                        if (textWidth)
-                            field.width = textWidth;
-                    }
+                        if (config.rows)
+                        {
+                            if (config.rows == 1)
+                                field.height = undefined;
+                            else
+                            {
+                                // estimate at best!
+                                var textHeight =  this._textMeasure.height * config.rows;
+                                if (textHeight)
+                                    field.height = textHeight;
+                            }
+                        }
+                        if (config.cols)
+                        {
+                            var textWidth = this._textMeasure.width * config.cols;
+                            if (textWidth)
+                                field.width = textWidth;
+                        }
 
-                    if (config.ext)
-                        Ext.apply(field,config.ext);
-                }
-                break;
-            default:
+                    }
+                    break;
+                default:
+            }
+
         }
 
-        field.allowBlank = !config.required;
-
-        if (!config.editable)
-        {
-            field.disabled=true;
-        }
+        if (config.ext)
+            Ext.apply(field,config.ext);
 
         return field;
     },
@@ -470,8 +498,10 @@ LABKEY.ext.FormHelper =
             var columns = [];
             if (c.lookup.keyColumn)
                 columns.push(c.lookup.keyColumn);
+            //TODO: this could possibly be removed when displayColumn = keyColumn?
             if (c.lookup.displayColumn)
                 columns.push(c.lookup.displayColumn);
+            //TODO: not sure why we do this?
             if (columns.length < 2)
                 columns = ['*'];
             config.columns = columns.join(',');
@@ -562,7 +592,7 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
     constructor : function(c)
     {
         LABKEY.ext.ComboBox.superclass.constructor.call(this, c);
-        if (this.mode == 'remote' && this.store && this.value && this.displayField && this.valueField && this.displayField != this.valueField)
+        if (this.store && this.value && this.displayField && this.valueField && this.displayField != this.valueField)
         {
             this.initialValue = this.value;
             if (this.store.getCount())

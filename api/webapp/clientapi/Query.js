@@ -386,13 +386,16 @@ LABKEY.Query = new function()
             if(!config.queryName)
                 throw "You must specify a queryName!";
 
-            var dataObject = {};
-            dataObject['query.queryName'] = config.queryName;
-            dataObject['schemaName'] = config.schemaName;
-            if (config.sort)
-                dataObject['query.sort'] = config.sort;
+            var dataObject = this.buildQueryParams(
+                    config.schemaName,
+                    config.queryName,
+                    config.filterArray,
+                    config.sort
+                    );
+
             if(config.offset)
                 dataObject['query.offset'] = config.offset;
+
             if(config.maxRows)
             {
                 if(config.maxRows < 0)
@@ -401,14 +404,6 @@ LABKEY.Query = new function()
                     dataObject['query.maxRows'] = config.maxRows;
             }
 
-            if (config.filterArray)
-            {
-                for (var i = 0; i < config.filterArray.length; i++)
-                {
-                    var filter = config.filterArray[i];
-                    dataObject[filter.getURLParameterName()] = filter.getURLParameterValue();
-                }
-            }
 
             if(config.viewName)
                 dataObject['query.viewName'] = config.viewName;
@@ -642,6 +637,9 @@ LABKEY.Query = new function()
                 for (var i = 0; i < filterArray.length; i++)
                 {
                     var filter = filterArray[i];
+                    // 10.1 compatibility: treat ~eq=null as a NOOP (ref 10482)
+                    if (LABKEY.Filter.Types.EQUAL == filter.getFilterType() && null == filter.getURLParameterValue())
+                        continue;
                     params[filter.getURLParameterName()] = filter.getURLParameterValue();
                 }
             }

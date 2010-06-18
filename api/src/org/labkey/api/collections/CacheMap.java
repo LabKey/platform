@@ -552,6 +552,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     @Override
     public String toString()
     {
-        return (_debugName + " " + super.toString()).trim();
+        return _debugName;
     }
 }

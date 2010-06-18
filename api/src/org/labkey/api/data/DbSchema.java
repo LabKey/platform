@@ -33,7 +33,6 @@ import org.labkey.data.xml.TablesDocument;
 
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.Connection;
@@ -84,10 +83,12 @@ public class DbSchema
 
         _log.info("Loading DbSchema \"" + scope.getDisplayName() + "." + schemaName + "\"");
 
+        // Remember if we're using a connection that somebody lower on the call stack checked out,
+        // and therefore shouldn't close it out from under them
+        boolean inTransaction = scope.isTransactionActive();
         try
         {
-            DataSource ds = scope.getDataSource();
-            conn = ds.getConnection();
+            conn = scope.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
             String[] types = {"TABLE", "VIEW",};
@@ -139,7 +140,7 @@ public class DbSchema
         {
             try
             {
-                if (null != conn) conn.close();
+                if (!inTransaction && null != conn) scope.releaseConnection(conn);
             }
             catch (Exception x)
             {

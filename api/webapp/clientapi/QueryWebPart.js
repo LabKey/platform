@@ -182,6 +182,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         bodyClass: 'webpart.bodyClass',
         title: 'webpart.title',
         titleHref: 'webpart.titleHref',
+        queryName: false,
+        viewName: false,
         aggregates: false,
         renderTo: false,
         sort: false,
@@ -192,7 +194,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         filterOptRe: false,
         userFilters: false,
         qsParamsToIgnore: false,
-        buttonBar: false
+        buttonBar: false,
+        scope: false
     },
 
     constructor : function(config)
@@ -246,8 +249,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         params["webpart.name"] = "Query";
         LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap, true, false);
 
-        //handle base-filters and sorts (need data region prefix)
-        if(this.sort)
+        // 10197: Add dataRegionName prefix to all QueryView parameters.  The the generated export urls will strip any non-prefix parameters.
+        params[this.dataRegionName + ".queryName"] = this.queryName;
+        if (this.viewName)
+            params[this.dataRegionName + ".viewName"] = this.viewName;
+        if (this.sort)
             params[this.dataRegionName + ".sort"] = this.sort;
 
         if(this.filters)

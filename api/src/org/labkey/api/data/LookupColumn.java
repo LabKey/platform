@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
 
@@ -152,11 +153,21 @@ public class LookupColumn extends ColumnInfo
     }
 
 
+    /**
+     * generate a unique table name for the joined in table
+     * NOTE: postgres may ignore characters past 64 resulting in spurious duplicate alias errors
+     * ref 10493
+     * @param baseAlias alias of table on "left hand side" of the lookup
+     * @return
+     */
     public String getTableAlias(String baseAlias)
     {
-        return baseAlias + foreignKey.getAlias() + "$";
+        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + foreignKey.getAlias() + "$";
+        alias = AliasManager.truncate(alias, 64);
+        return alias;
     }
 
+    
     public void setJoinOnContainer(boolean joinOnContainer)
     {
         this.joinOnContainer = joinOnContainer;

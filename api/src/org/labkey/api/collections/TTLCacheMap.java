@@ -17,6 +17,8 @@
 package org.labkey.api.collections;
 
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 
 import java.lang.ref.ReferenceQueue;
@@ -30,6 +32,8 @@ import java.util.Map;
  */
 public class TTLCacheMap<K, V> extends CacheMap<K, V>
 {
+    private static final Logger LOG = Logger.getLogger(TTLCacheMap.class);
+
     public static final long SECOND = DateUtils.MILLIS_PER_SECOND;
     public static final long MINUTE = DateUtils.MILLIS_PER_MINUTE;
     public static final long HOUR = DateUtils.MILLIS_PER_HOUR;
@@ -158,16 +162,48 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
 
+    // If we see more than 1 million elements then we must have a loop
+    private static final int TRAVERSE_LIMIT = 1000000;
+
     @Override
     public void clear()
     {
+        int corruptionDetector = 0;
+
         for (Entry<K, V> entry = head.next; entry != head; entry = entry.next)
         {
             SoftEntry<K, V> r = ((TTLCacheEntry)entry)._ref;
             if (null != r)
                 r.clear();
+
+            // Bail out after visiting 1 million entries... must be a corrupt map
+            if (corruptionDetector++ > TRAVERSE_LIMIT)
+            {
+                reportCorruption(entry);
+                break;
+            }
         }
+
         super.clear();
+    }
+
+    private void reportCorruption(Entry<K, V> entry)
+    {
+        StringBuilder message = new StringBuilder("Corrupt TTLCacheMap detected: \"" + toString() + "\". Listing 100 entries that may be part of a loop:\n");
+
+        for (int i = 0; i < 100 && null != entry; i++)
+        {
+            message.append("  ");
+            message.append(entry.getKey());
+            message.append("\n");
+
+            entry = entry.next;
+        }
+
+        LOG.error(message);
+
+        if (AppProps.getInstance().isDevMode())
+            throw new IllegalStateException("Corrupt TTLCacheMap detected: \"" + toString() + "\"");
     }
 
 
@@ -181,6 +217,8 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     // CONSIDER: generalize to removeAll(Filter)
     public void removeUsingPrefix(String prefix)
     {
+        int corruptionDetector = 0;
+
         // since we're touching all the Entrys anyway, might as well test expired()
         for (Entry<K, V> entry = head.next; entry != head; entry = entry.next)
         {
@@ -193,6 +231,13 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
             {
                 trackRemove();
                 removeEntry(entry);
+            }
+
+            // Bail out after visiting 1 million entries... must be a corrupt map
+            if (corruptionDetector++ > TRAVERSE_LIMIT)
+            {
+                reportCorruption(entry);
+                break;
             }
         }
     }

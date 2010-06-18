@@ -327,6 +327,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    protected FileFilter getRelatedOutputDataFileFilter(final File primaryFile, final String baseName)
+    {
+        return new FileFilter()
+        {
+            public boolean accept(File f)
+            {
+                // baseName doesn't include the trailing '.', so add it here.  We want to associate myRun.jpg
+                // with myRun.xls, but we don't want to associate myRun2.xls with myRun.xls (which will happen without
+                // the trailing dot in the check).
+                return f.getName().startsWith(baseName + ".") && !primaryFile.equals(f);
+            }
+        };
+    }
+
     /**
      * Add files that follow the general naming convention (same basename) as the primary file
      * @param knownRelatedDataTypes data types that should be given a particular LSID or role, others file types
@@ -338,13 +352,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (baseName != null)
         {
             // Grab all the files that are related based on naming convention
-            File[] relatedFiles = primaryFile.getParentFile().listFiles(new FileFilter()
-            {
-                public boolean accept(File f)
-                {
-                    return f.getName().startsWith(baseName) && !primaryFile.equals(f);
-                }
-            });
+            File[] relatedFiles = primaryFile.getParentFile().listFiles(getRelatedOutputDataFileFilter(primaryFile, baseName));
 
             for (File relatedFile : relatedFiles)
             {

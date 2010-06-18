@@ -1331,9 +1331,11 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = view.getDataRegion();
         rgn.setMaxRows(0);
         rgn.setAllowAsync(false);
-        view.getRenderContext().setCache(false);
-        ResultSet rs = rgn.getResultSet(view.getRenderContext());
-        TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+        RenderContext rc = view.getRenderContext();
+        rc.setCache(false);
+        ResultSet rs = rgn.getResultSet(rc);
+        Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
+        TSVGridWriter tsv = new TSVGridWriter(rs, map, getExportColumns(rgn.getDisplayColumns()));
         tsv.setFilenamePrefix(getSettings().getQueryName());
         tsv.setColumnHeaderType(getColumnHeaderType());
         return tsv;

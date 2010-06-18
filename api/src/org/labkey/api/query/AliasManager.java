@@ -129,7 +129,7 @@ public class AliasManager
     }
 
 
-    private static String truncate(String str, int to)
+    public static String truncate(String str, int to)
     {
         int len = str.length();
         if (len <= to)

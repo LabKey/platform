@@ -79,7 +79,6 @@ public interface SearchService
         categories("searchCategories"),
         securableResourceId(SecurableResource.class.getName()),
         participantId("org.labkey.study#StudySubject"),
-        container(Container.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
         final String _propName;
@@ -240,7 +239,10 @@ public interface SearchService
     IndexTask createTask(String description);
 
     void deleteResource(String identifier);
-    
+
+    // Delete all resources whose documentIds starts with the given prefix
+    void deleteResourcesForPrefix(String prefix);
+
     // helper to call when not found exception is detected
     void notFound(URLHelper url);
 

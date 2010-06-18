@@ -143,6 +143,29 @@ public class WebdavResolverImpl implements WebdavResolver
             return super.remove(key);
         }
 
+        @Override
+        public synchronized void clear()
+        {
+            super.clear();
+        }
+
+        private synchronized void removeUsingPrefix(Path prefix)
+        {
+            // since we're touching all the Entrys anyway, might as well test expired()
+            for (Entry<Path, WebdavResource> entry = head.next; entry != head; entry = entry.next)
+            {
+                if (removeOldestEntry(entry))
+                {
+                    removeEntry(entry);
+                    trackExpiration();
+                }
+                else if (entry.getKey().startsWith(prefix))
+                {
+                    removeEntry(entry);
+                }
+            }
+        }
+
         public void containerCreated(Container c)
         {
             invalidate(c.getParsedPath().getParent(), false);
@@ -226,24 +249,6 @@ public class WebdavResolverImpl implements WebdavResolver
                 synchronized (WebdavResolverImpl.this)
                 {
                     _root = null;
-                }
-            }
-        }
-
-
-        public void removeUsingPrefix(Path prefix)
-        {
-            // since we're touching all the Entrys anyway, might as well test expired()
-            for (Entry<Path, WebdavResource> entry = head.next; entry != head; entry = entry.next)
-            {
-                if (removeOldestEntry(entry))
-                {
-                    removeEntry(entry);
-                    trackExpiration();
-                }
-                else if (entry.getKey().startsWith(prefix))
-                {
-                    removeEntry(entry);
                 }
             }
         }

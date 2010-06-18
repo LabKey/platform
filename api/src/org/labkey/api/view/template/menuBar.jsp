@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.util.FolderDisplayMode" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.view.template.MenuBarView" %>
-<%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
     List<Portal.WebPart> menus = ((MenuBarView) HttpView.currentView()).getModelBean();
     ViewContext currentContext = org.labkey.api.view.HttpView.currentContext();
@@ -112,13 +110,5 @@
         else
             out.print("<img src='" + currentContext.getContextPath() + "/_.gif'>");
         %></span></td>
-    <td class="<%=menuBarClass%>" align="right"><%
-        if (currentContext.hasPermission(ACL.PERM_ADMIN))
-            include(new PopupAdminView(currentContext), out);
-        else if (currentContext.getUser().isDeveloper())
-            include(new PopupDeveloperView(currentContext), out);
-        else
-            out.print("<img src='" + currentContext.getContextPath() + "/_.gif'>");
-  %></td>
-</tr>
+    </tr>
 </table>

@@ -41,11 +41,12 @@ String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js
 <script id="__gwt_marker_<%=bean.getModuleName()%>"></script>
 <script type="text/javascript" src="<%=contextPath%>/<%=jsPath%>?<%=PageFlowUtil.getServerSessionHash()%>"></script>
 <script type="text/javascript">
+    <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
 <%= GWTView.PROPERTIES_OBJECT_NAME %> = {<%
     String comma ="\n\t";
     for (Map.Entry<String, String> entry : bean.getProperties().entrySet())
     {
-        %><%=comma%><%=q(entry.getKey())%>:<%= q(entry.getValue()) %><%
+        %><%=comma%><%=PageFlowUtil.jsString(entry.getKey())%>:<%= PageFlowUtil.jsString(entry.getValue()) %><%
         comma=",\n\t";
     }
 %>};

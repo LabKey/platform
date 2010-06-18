@@ -41,7 +41,7 @@ public class Cache
     }
 
     
-    final TTLCacheMap<String, Object> _cache;
+    private final TTLCacheMap<String, Object> _cache;
 
     public Cache(int size, long defaultTimeToLive, String debugName)
     {

@@ -3258,7 +3258,7 @@ public class OntologyManager
             findMap.put("label", findMap.size());
 
             rsContainer = rs.findColumn("container");
-            findMap.put(SearchService.PROPERTY.container.toString(), findMap.size());
+            findMap.put("container", findMap.size());
 
             findMap.put(SearchService.PROPERTY.categories.toString(), findMap.size());
             findMap.put(SearchService.PROPERTY.displayTitle.toString(), findMap.size());
