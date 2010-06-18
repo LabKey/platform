@@ -2572,11 +2572,19 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(LabSpecimenListsForm form, BindException errors) throws Exception
         {
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
-            if (request == null)
+            if (request == null  || form.getListType() == null)
                 HttpView.throwNotFound();
             _requestId = request.getRowId();
 
-            _type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            try
+            {
+                _type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // catch malformed/old URL case, where the posted value of 'type' isn't a valid Type:
+                HttpView.throwNotFound("Unrecognized list type.");
+            }
             return new JspView<LabSpecimenListsBean>("/org/labkey/study/view/samples/labSpecimenLists.jsp",
                     new LabSpecimenListsBean(getUtils(), request, _type));
         }

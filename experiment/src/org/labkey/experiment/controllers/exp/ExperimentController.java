@@ -817,6 +817,7 @@ public class ExperimentController extends SpringActionController
         {
             boolean detail = form.isDetail();
             String focus = form.getFocus();
+            String focusType = form.getFocusType();
 
             ExpRunImpl experimentRun = form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
@@ -824,7 +825,7 @@ public class ExperimentController extends SpringActionController
             ExperimentRunGraph.RunGraphFiles files;
             try
             {
-                files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus);
+                files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus, focusType);
             }
             catch (ExperimentException e)
             {
@@ -1109,6 +1110,8 @@ public class ExperimentController extends SpringActionController
             ExperimentRunGraphView gw = new ExperimentRunGraphView(run, true);
             if (null != getViewContext().getActionURL().getParameter("focus"))
                 gw.setFocus(getViewContext().getActionURL().getParameter("focus"));
+            if (null != getViewContext().getActionURL().getParameter("focusType"))
+                gw.setFocusType(getViewContext().getActionURL().getParameter("focusType"));
             return new VBox(new ToggleRunView(run, true, false, true), gw);
         }
     }
@@ -1442,9 +1445,10 @@ public class ExperimentController extends SpringActionController
             }
             catch (IOException e)
             {
-                ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
                 try
                 {
+                    // Try to write the exception back to the caller if we haven't already flushed the buffer
+                    ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
                     writer.write(e);
                 }
                 catch (IllegalStateException ise)
@@ -4280,13 +4284,17 @@ public class ExperimentController extends SpringActionController
             return (ExperimentUrlsImpl)PageFlowUtil.urlProvider(ExperimentUrls.class);
         }
 
-        public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus)
+        public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)
         {
             ActionURL result = new ActionURL(DownloadGraphAction.class, run.getContainer());
             result.addParameter("rowId", run.getRowId()).addParameter("detail", detail);
             if (focus != null)
             {
                 result.addParameter("focus", focus);
+            }
+            if (focusType != null)
+            {
+                result.addParameter("focusType", focusType);
             }
             return result;
         }

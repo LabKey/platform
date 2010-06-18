@@ -49,7 +49,18 @@ import java.util.Set;
 public class ExternalSchemaDocumentProvider implements SearchService.DocumentProvider
 {
     private static final Logger LOG = Logger.getLogger(ExternalSchemaDocumentProvider.class);
+    private static final SearchService.DocumentProvider _instance = new ExternalSchemaDocumentProvider();
+
     public static final SearchService.SearchCategory externalTableCategory = new SearchService.SearchCategory("externalTable", "External Table");
+
+    private ExternalSchemaDocumentProvider()
+    {
+    }
+
+    public static SearchService.DocumentProvider getInstance()
+    {
+        return _instance;
+    }
 
     public void enumerateDocuments(SearchService.IndexTask t, final @NotNull Container c, Date since)
     {
@@ -62,6 +73,11 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                 User user = User.getSearchUser();
                 DefaultSchema defaultSchema = DefaultSchema.get(user, c);
                 Map<String, UserSchema> externalSchemas = QueryService.get().getExternalSchemas(defaultSchema);
+
+                // First, delete all external schema docs in this container.  This addresses schemas/tables that have
+                // disappeared from the data source plus existing schemas that get changed to not index.
+                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                ss.deleteResourcesForPrefix("externalTable:" + c.getId());
 
                 for (UserSchema schema : externalSchemas.values())
                 {

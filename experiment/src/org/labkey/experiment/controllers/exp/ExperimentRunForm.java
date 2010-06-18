@@ -30,6 +30,7 @@ public class ExperimentRunForm
     private String _lsid;
     private boolean _detail;
     private String _focus;
+    private String _focusType;
 
     public int getRowId()
     {
@@ -83,5 +84,15 @@ public class ExperimentRunForm
     public void setDetail(boolean detail)
     {
         _detail = detail;
+    }
+
+    public String getFocusType()
+    {
+        return _focusType;
+    }
+
+    public void setFocusType(String focusType)
+    {
+        _focusType = focusType;
     }
 }

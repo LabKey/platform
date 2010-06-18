@@ -619,6 +619,13 @@ public class MothershipController extends SpringActionController
                 if (form.getSvnRevision() != null && form.getSvnURL() != null)
                 {
                     ExceptionReport report = new ExceptionReport();
+                    if (stackTrace.getStackTrace() != null)
+                    {
+                        // Grab the first line of the exception report so that we don't lose things like
+                        // file paths or other unique info that's thrown away as part of the de-dupe process
+                        // for otherwise identical stacks
+                        report.setExceptionMessage(stackTrace.getStackTrace().split("[\\r\\n]")[0]);
+                    }
                     report.setURL(form.getRequestURL());
                     report.setUsernameform(form.getUsername());
                     report.setReferrerURL(form.getReferrerURL());

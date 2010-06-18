@@ -1122,6 +1122,7 @@ list/src/org/labkey/list/view/importLists.jsp -text
 list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-2.30.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-10.10-10.11.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-2.30-8.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-8.30-9.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-9.20-9.21.sql -text
@@ -1146,6 +1147,7 @@ mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-2.30-2.31.
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-2.31-2.32.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-8.30-8.31.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-2.30.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-10.10-10.11.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-2.30-8.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-8.30-9.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-9.20-9.21.sql -text

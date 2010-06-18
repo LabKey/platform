@@ -133,7 +133,7 @@ public class QueryModule extends DefaultModule
         }
 
         SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());
-        ServiceRegistry.get(SearchService.class).addDocumentProvider(new ExternalSchemaDocumentProvider());
+        ServiceRegistry.get(SearchService.class).addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
         ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
     }
 

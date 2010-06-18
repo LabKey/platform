@@ -360,8 +360,11 @@ public class MothershipSchema extends UserSchema
             }
         });
 
-        result.getColumn("ExceptionStackTraceId").setLabel("Exception");
-        result.getColumn("ExceptionStackTraceId").setFk(new LookupForeignKey("ExceptionStackTraceId")
+        // Decorate the stack trace id column and make it a lookup
+        ColumnInfo stackTraceIdColumn = result.getColumn("ExceptionStackTraceId");
+        stackTraceIdColumn.setLabel("Exception");
+        stackTraceIdColumn.setURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), "exceptionStackTraceId", FieldKey.fromParts("ExceptionStackTraceId")));
+        stackTraceIdColumn.setFk(new LookupForeignKey("ExceptionStackTraceId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -392,6 +395,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("PageflowName"));
         defaultCols.add(FieldKey.fromParts("PageflowAction"));
         defaultCols.add(FieldKey.fromParts("Username"));
+        defaultCols.add(FieldKey.fromParts("ExceptionMessage"));
         defaultCols.add(FieldKey.fromParts("URL"));
         defaultCols.add(FieldKey.fromParts("ReferrerURL"));
         defaultCols.add(FieldKey.fromParts("SQLState"));

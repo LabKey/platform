@@ -79,7 +79,7 @@ public class GraphMoreGrid extends GridView
         getDataRegion().getDisplayColumn(4).setWidth("200px");
 
         ActionURL graphDetail = new ActionURL(ExperimentController.ShowRunGraphDetailAction.class, c);
-        getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString() + runIdParam + "&detail=true&focus=" + objectType + "${rowId}");
+        getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString() + runIdParam + "&detail=true&focusType=" + objectType + "&focus=${rowId}");
 
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         String param = url.getParameter("rowId~in");

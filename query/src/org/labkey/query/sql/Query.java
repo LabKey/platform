@@ -199,38 +199,50 @@ public class Query
 		{
             TableInfo table = relation.getTableInfo();
             boolean foundColumn = false;
-            List<FieldKey> defaultVisibleColumns = table.getDefaultVisibleColumns();
-            for (FieldKey field : defaultVisibleColumns)
-			{
-				if (field.getParent() != null)
-					continue;
-                assert null != table.getColumn(field.getName());
-                if (null == table.getColumn(field.getName()))
-                    continue;
-				List<String> parts = new ArrayList<String>();
-				parts.add(key.getName());
-				parts.addAll(field.getParts());
-				QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));
-				qfield.appendSource(builder);
-				builder.nextPrefix(",");
-                foundColumn = true;
+            if (null == table)
+            {
+                // can't generate good sql text if the source query can't be parsed
+                // we should have an error to display if null==table
 
-                // Check if there's a corresponding OORIndicator that's not part of the default set, and add it
-                FieldKey oorFieldKey = new FieldKey(field.getParent(), field.getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
-                if (table.getColumn(oorFieldKey.getName()) != null && !defaultVisibleColumns.contains(oorFieldKey))
+                // TODO caller should check and display the parse error
+                // instead of returning message in the generated SQL
+                assert !this.getParseErrors().isEmpty();
+            }
+            else
+            {
+                List<FieldKey> defaultVisibleColumns = table.getDefaultVisibleColumns();
+                for (FieldKey field : defaultVisibleColumns)
                 {
-                    List<String> oorParts = new ArrayList<String>();
-                    oorParts.add(key.getName());
-                    oorParts.addAll(oorFieldKey.getParts());
-                    QFieldKey oorQField = QFieldKey.of(FieldKey.fromParts(oorParts));
-                    oorQField.appendSource(builder);
+                    if (field.getParent() != null)
+                        continue;
+                    assert null != table.getColumn(field.getName());
+                    if (null == table.getColumn(field.getName()))
+                        continue;
+                    List<String> parts = new ArrayList<String>();
+                    parts.add(key.getName());
+                    parts.addAll(field.getParts());
+                    QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));
+                    qfield.appendSource(builder);
                     builder.nextPrefix(",");
+                    foundColumn = true;
+
+                    // Check if there's a corresponding OORIndicator that's not part of the default set, and add it
+                    FieldKey oorFieldKey = new FieldKey(field.getParent(), field.getName() + OORDisplayColumnFactory.OORINDICATOR_COLUMN_SUFFIX);
+                    if (table.getColumn(oorFieldKey.getName()) != null && !defaultVisibleColumns.contains(oorFieldKey))
+                    {
+                        List<String> oorParts = new ArrayList<String>();
+                        oorParts.add(key.getName());
+                        oorParts.addAll(oorFieldKey.getParts());
+                        QFieldKey oorQField = QFieldKey.of(FieldKey.fromParts(oorParts));
+                        oorQField.appendSource(builder);
+                        builder.nextPrefix(",");
+                    }
                 }
 			}
             if (!foundColumn)
             {
-                List<String> pkNames = table.getPkColumnNames();
-                if (pkNames.isEmpty())
+                List<String> pkNames = null==table ? null : table.getPkColumnNames();
+                if (null==pkNames || pkNames.isEmpty())
                 {
                     builder.append("'No columns selected' AS message");
                 }

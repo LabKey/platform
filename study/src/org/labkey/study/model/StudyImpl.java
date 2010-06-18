@@ -57,7 +57,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _defaultPipelineQCState;
     private Integer _defaultAssayQCState;
     private Integer _defaultDirectEntryQCState;
-    private boolean _showPrivateDataByDefault;
+    private boolean _showPrivateDataByDefault = true;
     private boolean _isAllowReload;
     private Integer _reloadInterval;
     private Date _lastReload;
@@ -324,6 +324,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _defaultDirectEntryQCState = defaultDirectEntryQCState;
     }
 
+    /** Used to determine which QC states should be shown when viewing datasets */ 
     public boolean isShowPrivateDataByDefault()
     {
         return _showPrivateDataByDefault;

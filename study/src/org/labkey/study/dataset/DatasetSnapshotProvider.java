@@ -120,7 +120,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             QueryView view = QueryView.create(form);
             // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
             StringBuilder sb = new StringBuilder();
-            TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultSet());
+            TSVGridWriter tsvWriter = view.getTsvWriter();
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
             tsvWriter.write(sb);
 
@@ -243,7 +243,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     // TODO: Create and use a ResultSetDataLoader here instead of round-tripping through a TSV StringBuilder
                     StringBuilder sb = new StringBuilder();
-                    TSVGridWriter tsvWriter = new TSVGridWriter(view.getResultSet());
+                    TSVGridWriter tsvWriter = view.getTsvWriter();
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                     tsvWriter.write(sb);
 

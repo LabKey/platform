@@ -1630,9 +1630,9 @@ public class SampleManager
 
     public void deleteSamplesForVisit(VisitImpl visit) throws SQLException
     {
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " +
-                StudySchema.getInstance().getTableInfoSpecimen() +
-                " WHERE Specimen.VisitValue >= ? AND Specimen.VisitValue <= ? AND Specimen.Container = ?");
+        TableInfo tinfoSpec = StudySchema.getInstance().getTableInfoSpecimen();
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tinfoSpec + " WHERE " + tinfoSpec +
+                ".VisitValue >= ? AND " + tinfoSpec + ".VisitValue <= ? AND " + tinfoSpec + ".Container = ?");
         specimenRowIdSelectSql.add(visit.getSequenceNumMin());
         specimenRowIdSelectSql.add(visit.getSequenceNumMax());
         specimenRowIdSelectSql.add(visit.getContainer());

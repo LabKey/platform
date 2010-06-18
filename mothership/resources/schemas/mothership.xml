@@ -40,6 +40,7 @@
             <ns:column columnName="PageflowName"/>
             <ns:column columnName="SQLState"/>
             <ns:column columnName="PageflowAction"/>
+            <ns:column columnName="ExceptionMessage"/>
         </ns:columns>
     </ns:table>
     <ns:table tableName="ExceptionStackTrace" tableDbType="TABLE">

@@ -427,6 +427,17 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    @Override
+    public void deleteResourcesForPrefix(String prefix)
+    {
+        this.deleteDocumentsForPrefix(prefix);
+        synchronized (_commitLock)
+        {
+            _countIndexedSinceCommit++;
+        }
+    }
+
+
     // params will be modified
     public boolean _eq(URLHelper a, URLHelper b)
     {
@@ -1147,6 +1158,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void index(String id, WebdavResource r, Map preprocessProps);
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
+    protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
     protected abstract void shutDown();
     protected abstract void clearIndex();

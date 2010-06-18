@@ -45,6 +45,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
+import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.design.DgMessage;
@@ -151,24 +152,34 @@ public class QueryController extends SpringActionController
 
     protected boolean queryExists(QueryForm form)
     {
-        return form.getSchema() != null && form.getSchema().getTable(form.getQueryName()) != null;
+        try
+        {
+            return form.getSchema() != null && form.getSchema().getTable(form.getQueryName()) != null;
+        }
+        catch (QueryParseException x)
+        {
+            // exists with errors
+            return true;
+        }
     }
 
+
+    /**
+     * assertQueryExists throws NotFound if the query/table does not exist.
+     * Does not guarantee that the query is syntactically correct, or can execute.
+     *
+     * @param form
+     * @throws ServletException
+     *
+     *  TODO rename, this sounds like a debug-only method
+     */
     protected void assertQueryExists(QueryForm form) throws ServletException
     {
         if (form.getSchema() == null)
             HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
 
-        try
-        {
-            if (!queryExists(form))
-                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
-        }
-        catch (QueryException qe)
-        {
-            // it exists, but it has an error
-            return;
-        }
+        if (!queryExists(form))
+            HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
     }
 
 
@@ -441,7 +452,8 @@ public class QueryController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.reject(ERROR_MSG, e.getMessage());
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
+                errors.reject(ERROR_MSG, StringUtils.defaultString(e.getMessage(),e.toString()));
                 return false;
             }
         }
@@ -2888,6 +2900,7 @@ public class QueryController extends SpringActionController
             try
             {
                 form.doUpdate();
+                ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, getContainer(), null);
             }
             catch (SQLException e)
             {

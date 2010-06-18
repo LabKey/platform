@@ -1274,11 +1274,12 @@ var GroupPicker = Ext.extend(Ext.Panel,{
 
 /* config
  *
- * cache (SecurityCache)
- * resourceId
- * isSiteAdmin
- * isProjectAdministrator
- * saveButton (true/false)
+ * @param {SecurityCache} [config.cache] An allocated SecurityCache object
+ * @param {string}  [config.resourceId] the id of the resource whose policy is being edited
+ * @param {boolean} [config.isSiteAdmin] Is the current user a site administrator
+ * @param {boolean} [config.isProjectAdministrator] Does the current user have project administrator permissions
+ * @param {boolean} [config.saveButton] show the save button, may be hidden if the container has its own button/toolbar
+ * @param {boolean} [config.canInherit] defaults to true, show the inherit permissions option
  */
 var PolicyEditor = Ext.extend(Ext.Panel, {
 

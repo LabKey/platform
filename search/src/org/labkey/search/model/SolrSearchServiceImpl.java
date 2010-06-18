@@ -92,6 +92,12 @@ public class SolrSearchServiceImpl extends AbstractSearchService
         
     }
 
+    @Override
+    protected void deleteDocumentsForPrefix(String prefix)
+    {
+
+    }
+
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return null;

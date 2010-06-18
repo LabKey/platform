@@ -23,6 +23,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
@@ -111,7 +112,7 @@ public class ExperimentRunGraph
      * Creates a run graph, given the configuration parameters. Note that this creates a lock on the directory
      * that contains the files, which must be cleared by calling release() on the resulting RunGraphFiles object. 
      */
-    public static RunGraphFiles generateRunGraph(ViewContext ctx, ExpRunImpl run, boolean detail, String focus) throws ExperimentException, IOException, InterruptedException
+    public static RunGraphFiles generateRunGraph(ViewContext ctx, ExpRunImpl run, boolean detail, String focus, String focusType) throws ExperimentException, IOException, InterruptedException
     {
         boolean success = false;
 
@@ -160,19 +161,23 @@ public class ExperimentRunGraph
             ActionURL url = ctx.getActionURL();
             PrintWriter out = null;
             Integer focusId = null;
-            String typeCode = null;
+            String typeCode = focusType;
 
             try
             {
-                if (null != focus && focus.length() > 0 )
+                if (null != focus && focus.length() > 0)
                 {
-                    typeCode = focus.substring(0, 1);
+                    if (!Character.isDigit(focus.charAt(0)))
+                    {
+                        typeCode = focus.substring(0, 1);
+                        focus = focus.substring(1);
+                    }
                     try
                     {
-                        focusId = Integer.parseInt(focus.substring(1));
+                        focusId = Integer.parseInt(focus);
+                        run.trimRunTree(focusId, typeCode);
                     }
                     catch (NumberFormatException e) {}
-                    run.trimRunTree(focusId, typeCode);
                 }
                 StringWriter writer = new StringWriter();
                 out = new PrintWriter(writer);

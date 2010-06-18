@@ -159,18 +159,19 @@ public class ListManager implements SearchService.DocumentProvider
         {
             public void run()
             {
-
                 Map<String, ListDefinition> lists = ListService.get().getLists(c);
+
                 for (ListDefinition list : lists.values())
                 {
-                    if (!list.getIndexMetaData())
-                        continue;
-
-                    // This list might have been deleted
+                    String documentId = "list:" + ((ListDefinitionImpl)list).getEntityId();
                     Domain domain = list.getDomain();
 
-                    if (null == domain)
+                    // Delete from index if list has just been deleted or admin has chosen not to index it 
+                    if (null == domain || !list.getIndexMetaData())
+                    {
+                        ServiceRegistry.get(SearchService.class).deleteResource(documentId);
                         continue;
+                    }
 
                     StringBuilder body = new StringBuilder();
                     Map<String, Object> props = new HashMap<String, Object>();
@@ -197,7 +198,6 @@ public class ListManager implements SearchService.DocumentProvider
                         sep = ",\n";
                     }
 
-                    String documentId = "list:" + ((ListDefinitionImpl)list).getEntityId();
                     SimpleDocumentResource r = new SimpleDocumentResource(
                             new Path(documentId),
                             documentId,

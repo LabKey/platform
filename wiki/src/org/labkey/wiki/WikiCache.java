@@ -16,18 +16,18 @@
 
 package org.labkey.wiki;
 
-import org.labkey.api.collections.Cache;
-import org.labkey.api.util.HString;
-import org.labkey.api.data.Container;
-import org.labkey.api.wiki.WikiRenderer;
-import org.labkey.api.view.NavTree;
-import org.labkey.wiki.model.Wiki;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.data.Container;
+import org.labkey.api.util.HString;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.wiki.WikiRenderer;
+import org.labkey.wiki.model.Wiki;
 
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * User: adam
@@ -36,13 +36,12 @@ import java.util.ArrayList;
  */
 public class WikiCache
 {
-
     private static final String ORDERED_PAGE_LIST = "~~toc~~";
     private static final String PAGES_NAME = "~~pages~~";
     private static final String VERSIONS_NAME = "~~versions~~";
     private static final String TOC_NAME = "~~nvtoc~~";
     private static boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
-    private static final Cache _pageCache = Cache.getShared();
+    private static final Cache _pageCache = new Cache(10000, Cache.DAY, "Wikis");
 
     private static String _cachedName(Container c, String name)
     {

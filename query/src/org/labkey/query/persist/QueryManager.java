@@ -24,6 +24,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.query.ExternalSchema;
+import org.labkey.query.ExternalSchemaDocumentProvider;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -300,18 +301,22 @@ public class QueryManager
 
     public ExternalSchemaDef insert(User user, ExternalSchemaDef def) throws Exception
     {
-        return Table.insert(user, getTableInfoExternalSchema(), def);
+        ExternalSchemaDef ret = Table.insert(user, getTableInfoExternalSchema(), def);
+        ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, def.lookupContainer(), null);
+        return ret;
     }
 
     public ExternalSchemaDef update(User user, ExternalSchemaDef def) throws Exception
     {
         ExternalSchemaDef ret = Table.update(user, getTableInfoExternalSchema(), def, def.getExternalSchemaId());
+        ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, def.lookupContainer(), null);
         return ret;
     }
 
     public void delete(User user, ExternalSchemaDef def) throws Exception
     {
         Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
+        ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(null, def.lookupContainer(), null);
     }
 
 

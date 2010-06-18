@@ -420,9 +420,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return sb.toString();
         }
 
-        public String getFormattedValue(RenderContext ctx)
+        public String getDisplayValue(RenderContext ctx)
         {
             return buildString(ctx, false);
+        }
+
+        // 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
+        @Override
+        public Class getDisplayValueClass()
+        {
+            return String.class;
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -598,7 +605,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            throw new UnsupportedOperationException();
+            Object rowIdRaw = keys.get(Column.RowId.toString());
+            if (rowIdRaw != null)
+            {
+                Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
+                return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, new SimpleFilter(Column.RowId.toString(), rowId), null, Map.class);
+            }
+            return null;
         }
 
         @Override

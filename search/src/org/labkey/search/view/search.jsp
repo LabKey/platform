@@ -741,10 +741,11 @@ String projectInfo(Container c, boolean returnID)
             }
         };
 
+        /* The panel that contains the Advanced Search options. */
         var panel = new Ext.Panel({
             id : 'advanced-panel',
             renderTo: 'advancedPanelDiv',
-            width: 310,
+            width: 340,                            // Fix 10502 : Extended the width to stop word wrapping.
             items: [header, categories, scopes],
             border: false,
             defaults: {

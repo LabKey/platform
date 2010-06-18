@@ -889,7 +889,7 @@ public class SpecimenUtils
         ctx.setBaseFilter(getSpecimenListFilter(sampleRequest, srcSite, type));
         ResultSet rs = dr.getResultSet(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        TSVGridWriter tsv = new TSVGridWriter(rs, cols);
+        TSVGridWriter tsv = new TSVGridWriter(rs, ctx.getFieldMap(), cols);
         tsv.setFilenamePrefix(getSpecimenListFileName(srcSite, destSite));
         tsv.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
         return tsv;

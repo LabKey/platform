@@ -133,7 +133,19 @@ public class WorkbooksTableInfo extends FilteredTable
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            throw new UnsupportedOperationException();
+            String id = keys.get("ID") == null ? null : keys.get("ID").toString();
+            if (id == null)
+            {
+                return null;
+            }
+            try
+            {
+                return Table.selectObject(getQueryTable(), Table.ALL_COLUMNS, new SimpleFilter("ID", new Integer(id)), null, Map.class);
+            }
+            catch (NumberFormatException e)
+            {
+                return null;
+            }
         }
 
         @Override

@@ -129,9 +129,9 @@ public class DataSetTable extends FilteredTable
                 });
 
                 addColumn(qcStateColumn);
-                if (StudyManager.getInstance().showQCStates(_schema.getContainer()))
-                    defaultVisibleCols.add(FieldKey.fromParts(baseColumn.getName()));
-                else
+                // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
+                // but don't include it in the default set of columns either
+                if (!StudyManager.getInstance().showQCStates(_schema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
             else if ("ParticipantSequenceKey".equalsIgnoreCase(name))

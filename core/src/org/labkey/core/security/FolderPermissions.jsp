@@ -42,7 +42,7 @@
 %>
 <style type="text/css">
     .x-tree-node-leaf .x-tree-node-icon{
-        background-image:url(<%=getViewContext().getContextPath()%>/ext-3.2.1/resources/images/default/tree/folder.gif);
+        background-image:url(<%=getViewContext().getContextPath()%>/<%=PageFlowUtil.extJsRoot()%>/resources/images/default/tree/folder.gif);
     }
     .x-tree-node-current {
         font-weight: bold;
@@ -212,6 +212,7 @@ Ext.onReady(function(){
     Ext.onReady(function()
     {
         policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isProjectAdmin,
+            canInherit:<%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
             resourceId:LABKEY.container.id});
         policyEditor.render($('permissionsFrame'));
     });

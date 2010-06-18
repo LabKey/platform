@@ -450,6 +450,7 @@ public class ListDefinitionImpl implements ListDefinition
         if (null != progress)
             progress.setTotalRows(rows.size());
 
+        // TODO: Remove this, now that we're setting the ColumnDescriptors instead of inferring them
         switch (getKeyType())
         {
             // All cdKey.clazz values are okay
@@ -539,7 +540,9 @@ public class ListDefinitionImpl implements ListDefinition
                 }
                 else if (!getKeyType().isValidKey(key))
                 {
-                    errors.add("Could not convert value \"" + key + "\" in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel());
+                    // Ideally, we'd display the value we failed to convert and/or the row... but key.toString() is currently "~ERROR VALUE~".  See #10475.
+                    // TODO: Fix this
+                    errors.add("Could not convert values in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel());
                     return errors;
                 }
                 else if (!keyValues.add(key))

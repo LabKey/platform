@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.labkey.api.query.QueryParseException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.api.data.TableInfo;
@@ -68,11 +69,19 @@ public class TableXML
             }
             if (fk != null)
             {
-                TableInfo lookupTable = fk.getLookupTableInfo();
-                if (lookupTable != null)
+                try
                 {
-                    ColumnType.Fk xbFk = xbColumn.addNewFk();
-                    xbFk.setFkTable(new FieldKey(key, column.getName()).toString());
+                    TableInfo lookupTable = fk.getLookupTableInfo();
+                    if (lookupTable != null)
+                    {
+                        ColumnType.Fk xbFk = xbColumn.addNewFk();
+                        xbFk.setFkTable(new FieldKey(key, column.getName()).toString());
+                    }
+                }
+                catch (QueryParseException x)
+                {
+                    // If there is a syntax error in the lookup table, we don't want to prevent
+                    // making other changes to this view.
                 }
             }
         }

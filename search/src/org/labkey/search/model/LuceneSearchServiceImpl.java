@@ -179,7 +179,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     private static final Set<String> KNOWN_PROPERTIES = PageFlowUtil.set(
-            PROPERTY.categories.toString(), PROPERTY.displayTitle.toString(),
+            PROPERTY.categories.toString(), PROPERTY.displayTitle.toString(), PROPERTY.searchTitle.toString(),
             PROPERTY.navtrail.toString(), PROPERTY.securableResourceId.toString());
 
     @Override
@@ -313,7 +313,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAMES.displayTitle.toString(), displayTitle, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.summary.toString(), summary, Field.Store.YES, Field.Index.NO));
             doc.add(new Field(FIELD_NAMES.url.toString(), url, Field.Store.YES, Field.Index.NO));
-            doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NO));
+            doc.add(new Field(FIELD_NAMES.container.toString(), r.getContainerId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
             if (null != props.get(PROPERTY.navtrail.toString()))
                 doc.add(new Field(FIELD_NAMES.navtrail.toString(), (String)props.get(PROPERTY.navtrail.toString()), Field.Store.YES, Field.Index.NO));
             String resourceId = (String)props.get(PROPERTY.securableResourceId.toString());
@@ -330,11 +330,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                     if (stringValue.length() > 0)
                     {
-                        String key = entry.getKey().toLowerCase();
+                        String key = entry.getKey();
 
                         // Skip known properties -- we added them above
                         if (!KNOWN_PROPERTIES.contains(key))
-                            doc.add(new Field(key, stringValue, Field.Store.NO, Field.Index.ANALYZED));
+                            doc.add(new Field(key.toLowerCase(), stringValue, Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
             }
@@ -685,7 +685,37 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _index.deleteDocument(id);
     }
 
-    
+
+    @Override
+    protected void deleteDocumentsForPrefix(String prefix)
+    {
+        Term term = new Term(FIELD_NAMES.uniqueId.toString(), prefix + "*");
+        Query query = new WildcardQuery(term);
+
+        try
+        {
+            // Run the query before delete, but only if Log4J debug level is set
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Deleting " + getDocCount(query) + " docs with prefix \"" + prefix + "\"");
+            }
+
+            _index.deleteQuery(query);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int getDocCount(Query query) throws IOException
+    {
+        LabKeyIndexSearcher searcher = _index.getSearcher();
+        TopDocs docs = searcher.search(query, 1);
+        _index.releaseSearcher(searcher);
+        return docs.totalHits;
+    }
+
     protected void index(String id, WebdavResource r, Map preprocessMap)
     {
         try
@@ -705,26 +735,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            Query query;
-            String s="";
-            try
+            Query query = new TermQuery(new Term(FIELD_NAMES.container.toString(), id));
+
+            // Run the query before delete, but only if Log4J debug level is set
+            if (_log.isDebugEnabled())
             {
-                s = "+" + SearchService.PROPERTY.container.toString() + ":" + id;
-                query = new QueryParser(LUCENE_VERSION, SearchService.PROPERTY.container.toString(), _analyzer).parse(s);
-            }
-            catch (ParseException x)
-            {
-                _log.error("Unexpected exception: s=" + s, x);
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
+                _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
             }
 
             _index.deleteQuery(query);
         }
-        catch (IOException x)
+        catch (IOException e)
         {
-            
+            throw new RuntimeException(e);
         }
     }
 

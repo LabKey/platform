@@ -191,6 +191,11 @@ public class NoopSearchService implements SearchService
     {
     }
 
+    @Override
+    public void deleteResourcesForPrefix(String prefix)
+    {
+    }
+
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
     }

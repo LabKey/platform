@@ -32,8 +32,7 @@
             <td class="labkey-form-label" nowrap="true">List Data</td>
             <td>
                 Import data must be formatted as tab separated values (TSV). The first row should contain field names; subsequent rows should contain the data.<br>
-                Copy/paste from Microsoft Excel works well; <a href="<%=h(templateURL)%>">click here to download an Excel template</a> you can use to import to this list.<br>
-                If your data includes rows with keys that already exist in the list then those rows will be replaced with the new data.<br>
+                Copy/paste from Microsoft Excel works well; <a href="<%=h(templateURL)%>">click here to download an Excel template</a> you can use to insert into this list.<br>
                 <textarea rows="25" id="listTsv" style="width: 100%" cols="150" name="ff_data" wrap="off"><%=h(form.ff_data)%></textarea><br>
                 <script type="text/javascript">
                     Ext.EventManager.on('listTsv', 'keydown', handleTabsInTextArea);

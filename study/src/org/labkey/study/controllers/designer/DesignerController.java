@@ -570,6 +570,12 @@ public class DesignerController extends SpringActionController
             cohortCounts.put(group.getName(), 0);
 
         List<Map<String, Object>> rows = loader.load();
+        if (rows == null || rows.isEmpty())
+        {
+            form.setMessage("Information for at least one participant is required.");
+            return;
+        }
+        
         setParticipants(rows);
         int rowNum = 1;
         for (Map<String, Object> row : rows)
@@ -722,6 +728,9 @@ public class DesignerController extends SpringActionController
         int rowNum = 1;
         for (Map<String,Object> row : specimenRows)
         {
+            if (row.get(SimpleSpecimenImporter.VIAL_ID) ==  null && row.get(SimpleSpecimenImporter.SAMPLE_ID) == null)
+                errors.add("Error, Row " + rowNum + " must provide a sample or vial ID.");
+
             String participant = (String) row.get(SimpleSpecimenImporter.PARTICIPANT_ID);
             if (null == participant)
                 errors.add("Error, Row " + rowNum + " field " + labels.get(SimpleSpecimenImporter.PARTICIPANT_ID) + " is not supplied");

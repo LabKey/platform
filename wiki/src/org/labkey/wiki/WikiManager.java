@@ -624,13 +624,6 @@ public class WikiManager
             if (wikiversion == null)
                 throw new IllegalStateException("Cannot retrieve a valid version for page " + wiki.getName());
 
-            //make sure that wiki object that's been passed in includes attachments
-            Wiki wikiAttach = getWikiByName(c, wiki.getName());
-            if (wikiAttach == null)
-                throw new IllegalArgumentException("Wiki page not found:" + wiki.getName());
-            else
-                wiki = wikiAttach;
-
             // always cache wiki and version -- we defer formatting until WikiVersion.getHtml() is called
             wikipair = new WikiAndVersion(wiki, wikiversion);
 

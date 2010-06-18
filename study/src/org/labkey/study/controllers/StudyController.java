@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
@@ -5201,6 +5202,10 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    /**
+     * Provides a view to update study query snapshots. Since query snapshots are implemented as datasets, the
+     * dataset properties editor can be shown in this view.
+     */
     @RequiresPermissionClass(AdminPermission.class)
     public class EditSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
@@ -5236,6 +5241,7 @@ public class StudyController extends BaseStudyController
 
                 if (showDataset)
                 {
+                    // create the GWT dataset designer
                     StudyImpl study = getStudy();
                     DataSet dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotName());
 
@@ -5254,7 +5260,7 @@ public class StudyController extends BaseStudyController
 
                     HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
                             "save any changes, else click the cancel button to complete the snapshot.");
-                    HttpView view = new StudyGWTView("org.labkey.study.dataset.Designer", props);
+                    HttpView view = new StudyGWTView(StudyApplication.GWTModule.DatasetDesigner, props);
 
                     // hack for 4404 : Lookup picker performance is terrible when there are many containers
                     ContainerManager.getAllChildren(ContainerManager.getRoot());

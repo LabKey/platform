@@ -38,6 +38,7 @@ public class ExperimentRunGraphView extends WebPartView
     private ExpRunImpl _run;
     private boolean _detail;
     private String _focus;
+    private String _focusType;
 
     public ExperimentRunGraphView(ExpRunImpl run, boolean detail)
     {
@@ -60,8 +61,8 @@ public class ExperimentRunGraphView extends WebPartView
 
             out.println("<p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>");
 
-            ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(context, _run, _detail, _focus);
-            out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
+            ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(context, _run, _detail, _focus, _focusType);
+            out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus, _focusType) + "\" usemap=\"#graphmap\" >");
             
             if (files.getMapFile().exists())
             {
@@ -97,5 +98,15 @@ public class ExperimentRunGraphView extends WebPartView
             out.println("<p>" + e.getMessage() + "</p>");
             _log.error("Error generating graph", e);
         }
+    }
+
+    public void setFocusType(String focusType)
+    {
+        _focusType = focusType;
+    }
+
+    public String getFocusType()
+    {
+        return _focusType;
     }
 }

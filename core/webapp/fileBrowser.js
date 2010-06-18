@@ -2268,6 +2268,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             var id = new URI(record.id).pathname; //Normalize paths...
             var name = record.get("name");
             var state = record.get("state");
+            var transferId = record.get('transferId');
 
             var notifyInfo =  this.notifyStates[id];
             if (!notifyInfo)
@@ -2283,7 +2284,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 pending.push({id:id, name:name, recordId:record.id});
 
             if (state == TRANSFER_STATES.success && notifyInfo.notified != TRANSFER_STATES.success)
-                newlyComplete.push({id:id, name:name});
+                newlyComplete.push({id:id, name:name, recordId:record.id});
 
             if (state != TRANSFER_STATES.retryable)
                 this.notifyStates[id] = notifyInfo;
@@ -2346,7 +2347,30 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         {
             this.fireEvent(BROWSER_EVENTS.transfercomplete, {uploadType:"applet", files:newlyComplete});
             for (var i = 0; i < newlyComplete.length; i++)
-                this.notifyStates[newlyComplete[i].id].notified = TRANSFER_STATES.success;
+            {
+                var rec = newlyComplete[i];
+                this.notifyStates[rec.id].notified = TRANSFER_STATES.success;
+
+                // remove this transfer record from the list so it doesn't appear in subsequent status requests
+                this.clearTransferFile(rec.recordId);
+            }
+        }
+    },
+
+    /**
+     * Removes the transfer record from both the local cache and the list maintained in the drop applet.
+     *
+     * @param recordId - the id of the record in the local store.
+     */
+    clearTransferFile : function(recordId)
+    {
+        var transfers = this.applet.getTransfers();
+        var tr = transfers.getById(recordId);
+        if (tr) {
+            transfers.remove(tr);
+            var idx = this.applet.getApplet().transfer_getIndex(tr.get('transferId'));
+            if (idx != -1)
+                this.applet.getApplet().transfer_removeFile(idx);
         }
     },
 
@@ -2395,14 +2419,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     for (i=0; i < pending.length; i++)
                     {
                         var item = pending[i];
-                        var tr = transfers.getById(item.recordId);
-                        if (tr)
-                        {
-                            transfers.remove(tr);
-                            var idx = this.applet.getApplet().transfer_getIndex(tr.get('transferId'));
-                            if (idx != -1)
-                                this.applet.getApplet().transfer_removeFile(idx);
-                        }
+                        this.clearTransferFile(item.recordId);
                     }
                 }
             }, this);
