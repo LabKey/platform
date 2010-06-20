@@ -23,7 +23,6 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -145,6 +144,8 @@ public class ExperimentService
          * add particular columns as needed by the client.
          */
         ExpRunTable createRunTable(String name, UserSchema schema);
+        /** Create a RunGroupMap junction table joining Runs and RunGroups. */
+        ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema);
         ExpDataTable createDataTable(String name, UserSchema schema);
         ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
         ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);

@@ -94,6 +94,14 @@ public class ExpSchema extends AbstractExpSchema
                 return expSchema.setupTable(ret);
             }
         },
+        RunGroupMap
+        {
+            public TableInfo createTable(ExpSchema expSchema)
+            {
+                ExpRunGroupMapTable ret = ExperimentService.get().createRunGroupMapTable(TableType.RunGroupMap.toString(), expSchema);
+                return expSchema.setupTable(ret);
+            }
+        },
         ProtocolApplications
         {
             public TableInfo createTable(ExpSchema expSchema)
@@ -235,6 +243,17 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Runs);
+            }
+        };
+    }
+
+    public ForeignKey getRunGroupIdForeignKey()
+    {
+        return new ExperimentLookupForeignKey("RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.RunGroups);
             }
         };
     }

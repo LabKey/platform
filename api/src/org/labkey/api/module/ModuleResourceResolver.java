@@ -34,14 +34,14 @@ import java.util.List;
 public class ModuleResourceResolver implements Resolver
 {
     static Logger _log = Logger.getLogger(ModuleResourceResolver.class);
-    private static final TTLCacheMap<Pair<Resolver, Path>, Resource> _resources = new TTLCacheMap<Pair<Resolver, Path>, Resource>(4096, Cache.HOUR, "Module resources");
+    private static final Cache RESOURCES = new Cache(4096, Cache.HOUR, "Module resources");
     private static final Resource CACHE_MISS = new AbstractResource(null, null) {
         public Resource parent()
         {
             return null;
         }
     };
-    private static boolean _devMode = AppProps.getInstance().isDevMode();
+    private static boolean DEV_MODE = AppProps.getInstance().isDevMode();
 
     Module _module;
     MergedDirectoryResource _root;
@@ -59,24 +59,26 @@ public class ModuleResourceResolver implements Resolver
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
 
-    private synchronized Resource get(Pair<Resolver, Path> cacheKey)
+    private static Resource get(String cacheKey)
     {
-        return _resources.get(cacheKey);
+        return (Resource)RESOURCES.get(cacheKey);
     }
 
-    private synchronized Resource put(Pair<Resolver, Path> cacheKey, Resource r)
+    private static void put(String cacheKey, Resource r)
     {
-        return _resources.put(cacheKey, r);
+        RESOURCES.put(cacheKey, r);
     }
 
-    private synchronized Resource put(Pair<Resolver, Path> cacheKey, Resource r, long timeToLive)
+    private static void miss(String cacheKey)
     {
-        return _resources.put(cacheKey, r, timeToLive);
+        // Cache misses in production mode for the default time period and
+        // in dev mode for a short time (about the length of a request.)
+        RESOURCES.put(cacheKey, CACHE_MISS, DEV_MODE ? Cache.DEFAULT_TIMEOUT : (15*Cache.SECOND));
     }
 
-    private synchronized Resource remove(Pair<Resolver, Path> cacheKey)
+    private static void remove(String cacheKey)
     {
-        return _resources.remove(cacheKey);
+        RESOURCES.remove(cacheKey);
     }
 
     public Path getRootPath()
@@ -90,7 +92,7 @@ public class ModuleResourceResolver implements Resolver
             return null;
 
         Path normalized = path.normalize();
-        Pair<Resolver, Path> cacheKey = new Pair<Resolver, Path>(this, normalized);
+        String cacheKey = this + ":" + normalized;
         Resource r = get(cacheKey);
         if (r == CACHE_MISS)
             return null;
@@ -99,10 +101,8 @@ public class ModuleResourceResolver implements Resolver
             r = resolve(normalized);
             if (null == r)
             {
-                // Cache misses in production mode for the default time period and
-                // in dev mode for a short time (about the length of a request.)
                 _log.debug("missed resource: " + path);
-                put(cacheKey, CACHE_MISS, _devMode ? _resources.getDefaultExpires() : (15*Cache.SECOND));
+                miss(cacheKey);
                 return null;
             }
             if (r.exists())
@@ -112,7 +112,7 @@ public class ModuleResourceResolver implements Resolver
                 return r;
             }
         }
-        else if (_devMode && !r.exists())
+        else if (DEV_MODE && !r.exists())
         {
             // remove cached resource and try again
             _log.debug("removed resource: " + r);

@@ -293,6 +293,7 @@ api/src/org/labkey/api/exp/query/ExpMaterialInputTable.java -text
 api/src/org/labkey/api/exp/query/ExpMaterialTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolApplicationTable.java -text
 api/src/org/labkey/api/exp/query/ExpProtocolTable.java -text
+api/src/org/labkey/api/exp/query/ExpRunGroupMapTable.java -text
 api/src/org/labkey/api/exp/query/ExpRunTable.java -text
 api/src/org/labkey/api/exp/query/ExpSampleSetTable.java -text
 api/src/org/labkey/api/exp/query/ExpSchema.java -text
