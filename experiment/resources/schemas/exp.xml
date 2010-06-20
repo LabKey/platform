@@ -847,9 +847,14 @@
     </ns:table>
     <ns:table tableName="RunList" tableDbType="TABLE">
       <ns:columns>
-        <ns:column columnName="ExperimentId"/>
-        <ns:column columnName="ExperimentRunId"/>
+        <ns:column columnName="ExperimentId">
+          <ns:description>Contains the unique identifier for the RunGroup</ns:description>
+        </ns:column>
+        <ns:column columnName="ExperimentRunId">
+          <ns:description>Contains the unique identifier for the Run</ns:description>
+        </ns:column>
       </ns:columns>
+      <ns:description>A junction table between Runs and RunGroups</ns:description>
     </ns:table>
     <ns:table tableName="ActiveMaterialSource" tableDbType="TABLE">
       <ns:columns>

@@ -612,6 +612,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpRunTableImpl(name, schema);
     }
 
+    public ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema)
+    {
+        return new ExpRunGroupMapTableImpl(name, schema);
+    }
+
     public ExpDataTable createDataTable(String name, UserSchema schema)
     {
         return new ExpDataTableImpl(name, schema);

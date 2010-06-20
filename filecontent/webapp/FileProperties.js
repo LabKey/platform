@@ -26,6 +26,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         this.containerPath = undefined;  // the effective container custom file properties originate from (may be a parent if inherited)
         this.defaults = {};              // contains any default values set on the domain
         this.disabled = {};              // contains any disabled fields
+        this.applyAll = false;           // is the apply all checkbox selected
 
         LABKEY.FilePropertiesPanel.superclass.constructor.call(this, config);
 
@@ -112,7 +113,6 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         if (this.files.length > 1)
         {
             this.applyCheckbox = new Ext.form.Checkbox({boxLabel:"Apply to all remaining files", scope:this, handler:this.onApplyAll });
-            this.doneButton.setDisabled(true);
 
             this.prevButton = new Ext.Button({text:'< Prev', enabled:false, scope:this, handler:this.onPrev});
             this.nextButton = new Ext.Button({text:'Next >', scope:this, handler:this.onNext});
@@ -257,7 +257,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
     onDone : function()
     {
         // perform client side validation before submitting
-        this.saveFormValues();
+        this.saveFormValues(this.applyAll);
         for (this.fileIndex = 0; this.fileIndex < this.files.length; this.fileIndex++)
         {
             this.formPanel.getForm().setValues(this.files[this.fileIndex]);
@@ -302,14 +302,14 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
 
     onApplyAll : function(checkbox, state)
     {
-        if (state)
-        {
-            for (var i = this.fileIndex + 1; i < this.files.length; i++)
-                Ext.apply(this.files[i], this.formPanel.getForm().getValues());
+        this.applyAll = state;
 
-            this.doneButton.enable();
+        // disable prev and next buttons if apply all is checked
+        if (this.files.length > 1)
+        {
+            this.prevButton.setDisabled(state);
+            this.nextButton.setDisabled(state);
         }
-        //this.updateFormState();
     },
 
     onPrev : function()
@@ -330,10 +330,19 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         this.updateFormState();
     },
 
-    saveFormValues : function()
+    saveFormValues : function(applyAll)
     {
-        var data = this.files[this.fileIndex];
-        Ext.apply(data, this.formPanel.getForm().getValues());
+        if (applyAll)
+        {
+            // apply current form to all files in this set
+            for (var i = 0; i < this.files.length; i++)
+                Ext.apply(this.files[i], this.formPanel.getForm().getFieldValues(false));
+        }
+        else
+        {
+            var data = this.files[this.fileIndex];
+            Ext.apply(data, this.formPanel.getForm().getFieldValues(false));
+        }
     },
 
     updateFormState : function()
@@ -344,7 +353,6 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
         Ext.getDom('file-props-title').innerHTML = this.fileTitle.apply({count:this.fileIndex+1, total:this.files.length, name:file.name});
         if (this.files.length > 1)
         {
-            this.doneButton.setDisabled(this.fileIndex < this.files.length - 1 && !this.applyCheckbox.getValue());
             this.prevButton.setDisabled(this.fileIndex == 0);
             this.nextButton.setDisabled(this.fileIndex == this.files.length -1);
         }

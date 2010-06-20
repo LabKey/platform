@@ -883,6 +883,7 @@ experiment/src/org/labkey/experiment/api/ExpProtocolApplicationImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpRunGroupMapTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunTableImpl.java -text
