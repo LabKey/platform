@@ -459,11 +459,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return Boolean.getBoolean("devmode");
     }
 
-    public String getJavaVersion()
-    {
-        return System.getProperties().getProperty("java.specification.version");
-    }
-
     public boolean isCachingAllowed()
     {
         return Boolean.getBoolean("caching") || !isDevMode();

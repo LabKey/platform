@@ -15,11 +15,12 @@
  */
 package org.labkey.api.module;
 
+import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.collections.Cache;
 
 /*
 * User: Dave
@@ -32,7 +33,7 @@ import org.labkey.api.collections.Cache;
  */
 public class ModuleHtmlView extends HtmlView
 {
-    private static Cache _viewdefCache = new Cache(1024, Cache.HOUR, "Module HTML view definition cache");
+    private static final CacheI<String, ModuleHtmlViewDefinition> VIEW_DEF_CACHE = CacheManager.getCache(1024, CacheManager.HOUR, "Module HTML view definition cache");
 
     private ModuleHtmlViewDefinition _viewdef = null;
 
@@ -63,11 +64,11 @@ public class ModuleHtmlView extends HtmlView
     public static ModuleHtmlViewDefinition getViewDef(Resource r)
     {
         String cacheKey = r.toString();
-        ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(cacheKey);
+        ModuleHtmlViewDefinition viewdef = VIEW_DEF_CACHE.get(cacheKey);
         if (null == viewdef || viewdef.isStale())
         {
             viewdef = new ModuleHtmlViewDefinition(r);
-            _viewdefCache.put(cacheKey, viewdef);
+            VIEW_DEF_CACHE.put(cacheKey, viewdef);
         }
         return viewdef;
     }

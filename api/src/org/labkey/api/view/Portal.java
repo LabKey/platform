@@ -18,7 +18,8 @@ package org.labkey.api.view;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
@@ -43,9 +44,10 @@ import java.util.*;
 
 public class Portal
 {
-    static WebPartBeanLoader _factory = new WebPartBeanLoader();
+    private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
+    private static final StringKeyCache<WebPart[]> WEB_PART_CACHE = CacheManager.getShared();
 
-    private static final String _portalPrefix = "Portal/";
+    private static final String PORTAL_PREFIX = "Portal/";
     private static final String SCHEMA_NAME = "portal";
 
     public static final int MOVE_UP = 0;
@@ -77,7 +79,8 @@ public class Portal
 
     public static void containerDeleted(Container c)
     {
-        Cache.getShared().removeUsingPrefix(_portalPrefix);
+        WEB_PART_CACHE.removeUsingPrefix(PORTAL_PREFIX);
+
         try
         {
             Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("PageId", c.getId()));
@@ -258,12 +261,12 @@ public class Portal
 
     public static WebPart[] getParts(String id, boolean force)
     {
-        String key = _portalPrefix + id;
+        String key = PORTAL_PREFIX + id;
         WebPart[] parts;
 
         if (!force)
         {
-            parts = (WebPart[]) Cache.getShared().get(key);
+            parts = WEB_PART_CACHE.get(key);
             if (null != parts)
                 return parts;
         }
@@ -278,7 +281,7 @@ public class Portal
             throw new RuntimeSQLException(x);
         }
 
-        Cache.getShared().put(key, parts, Cache.MINUTE);
+        WEB_PART_CACHE.put(key, parts, CacheManager.MINUTE);
         return parts;
     }
 
@@ -443,7 +446,7 @@ public class Portal
             }
 
             for (WebPart part1 : newParts) {
-                Map m = _factory.toMap(part1, null);
+                Map m = FACTORY.toMap(part1, null);
 
                 if (oldPartIds.contains(part1.getRowId()))
                     Table.update(null, getTableInfoPortalWebParts(), m, part1.getRowId());
@@ -467,7 +470,7 @@ public class Portal
 
     static void _clearCache(String id)
     {
-        Cache.getShared().remove(_portalPrefix + id);
+        WEB_PART_CACHE.remove(PORTAL_PREFIX + id);
     }
 
 

@@ -45,20 +45,10 @@ public class HomeTemplate extends PrintTemplate
         this(context, c, body, new PageConfig(context.getActionURL().getPageFlow()), new NavTree[0]);
     }
 
-    public HomeTemplate(ViewContext context, ModelAndView body, PageConfig page, NavTree[] navTrail)
-    {
-        this("/org/labkey/api/view/template/CommonTemplate.jsp", context, context.getContainer(), body, page, navTrail);
-    }
 
     public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
     {
-        this("/org/labkey/api/view/template/CommonTemplate.jsp", context, c, body, page, navTrail);
-    }
-
-
-    protected HomeTemplate(String template, ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
-    {
-        super(template, page);
+        super("/org/labkey/api/view/template/CommonTemplate.jsp", page);
         init(context, c, body, page, navTrail);
     }
 
@@ -83,7 +73,6 @@ public class HomeTemplate extends PrintTemplate
             MenuView navElements = MenuService.get().getMenuView(context, page);
             setView("menu", navElements);
         }
-
 
         WebPartView header = null;
         if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())

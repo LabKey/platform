@@ -20,8 +20,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
-import org.labkey.api.collections.Cache;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.AjaxCompletion;
@@ -172,7 +173,7 @@ public class UserManager
         if (null == user)
             return null;
 
-        DbCache.put(_core.getTableInfoUsers(), "" + userId, user, Cache.HOUR);
+        DbCache.put(_core.getTableInfoUsers(), "" + userId, user, CacheManager.HOUR);
 
         // these should really be readonly
         return user.cloneUser();
@@ -352,7 +353,7 @@ public class UserManager
         if (userList != null)
             return userList;
         userList = Table.select(_core.getTableInfoActiveUsers(), Table.ALL_COLUMNS, null, new Sort("Email"), User.class);
-        DbCache.put(_core.getTableInfoActiveUsers(),_userObjectListLookup, userList, Cache.HOUR);
+        DbCache.put(_core.getTableInfoActiveUsers(),_userObjectListLookup, userList, CacheManager.HOUR);
         return userList;
     }
 
@@ -396,7 +397,7 @@ public class UserManager
                 }
             }
 
-            DbCache.put(_core.getTableInfoActiveUsers(), _userListLookup, userList, Cache.HOUR);
+            DbCache.put(_core.getTableInfoActiveUsers(), _userListLookup, userList, CacheManager.HOUR);
         }
 
         return userList;

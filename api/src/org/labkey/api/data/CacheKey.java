@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.SQLException;

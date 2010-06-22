@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.collections;
+package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -231,7 +231,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     {
         return head.next != head ? head.next : null;
     }
-
 
     private static final List<CacheMap> KNOWN_CACHEMAPS = new LinkedList<CacheMap>();
 

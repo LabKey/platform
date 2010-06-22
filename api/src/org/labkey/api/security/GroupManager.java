@@ -21,8 +21,9 @@ import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.*;
-import org.labkey.api.collections.Cache;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
@@ -47,6 +48,8 @@ public class GroupManager
     private static final String USER_CACHE_PREFIX = "Groups/AllGroups=";
     private static final String GROUP_CACHE_PREFIX = "Groups/Groups=";
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
+
+    private static final StringKeyCache<int[]> GROUP_ID_CACHE = CacheManager.getShared();
 
     public enum PrincipalType
     {
@@ -84,12 +87,12 @@ public class GroupManager
     static int[] getAllGroupsForPrincipal(UserPrincipal user)
     {
         int userId = user.getUserId();
-        int[] groups = (int[]) Cache.getShared().get(USER_CACHE_PREFIX + userId);
+        int[] groups = GROUP_ID_CACHE.get(USER_CACHE_PREFIX + userId);
 
         if (null == groups)
         {
             groups = computeAllGroups(user);
-            Cache.getShared().put(USER_CACHE_PREFIX + userId, groups);
+            GROUP_ID_CACHE.put(USER_CACHE_PREFIX + userId, groups);
         }
 
         return groups;
@@ -103,20 +106,20 @@ public class GroupManager
 
     private static void removeFromCache(UserPrincipal principal)
     {
-        Cache.getShared().remove(USER_CACHE_PREFIX + principal.getUserId());
-        Cache.getShared().remove(GROUP_CACHE_PREFIX + principal.getUserId());
+        GROUP_ID_CACHE.remove(USER_CACHE_PREFIX + principal.getUserId());
+        GROUP_ID_CACHE.remove(GROUP_CACHE_PREFIX + principal.getUserId());
     }
 
 
     /** this method returns the immediate group membership for this principal (non-recursive) */
     public static int[] getGroupsForPrincipal(int groupId) throws SQLException
     {
-        int[] groups = (int[]) Cache.getShared().get(GROUP_CACHE_PREFIX + groupId);
+        int[] groups = GROUP_ID_CACHE.get(GROUP_CACHE_PREFIX + groupId);
         if (null == groups)
         {
             Integer[] groupsInt = Table.executeArray(_core.getSchema(), "SELECT GroupId FROM " + _core.getTableInfoMembers() + " WHERE UserId = ?", new Object[]{groupId}, Integer.class);
             groups = _toIntArray(groupsInt);
-            Cache.getShared().put(GROUP_CACHE_PREFIX + groupId, groups);
+            GROUP_ID_CACHE.put(GROUP_CACHE_PREFIX + groupId, groups);
         }
         return groups;
     }
@@ -241,7 +244,7 @@ public class GroupManager
 
             // invalidate all computed group lists (getAllGroups())
             if (principal instanceof Group)
-                Cache.getShared().removeUsingPrefix(USER_CACHE_PREFIX);
+                GROUP_ID_CACHE.removeUsingPrefix(USER_CACHE_PREFIX);
         }
 
         public void principalAddedToGroup(Group group, UserPrincipal user)

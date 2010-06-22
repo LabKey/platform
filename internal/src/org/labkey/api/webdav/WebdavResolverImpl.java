@@ -19,6 +19,7 @@ package org.labkey.api.webdav;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.AppProps;
@@ -29,7 +30,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
-import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.api.cache.TTLCacheMap;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -118,13 +119,13 @@ public class WebdavResolverImpl implements WebdavResolver
         return "webdav";
     }
 
-// Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
+    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
     // end up with just one of these.
     private class FolderCache extends TTLCacheMap<Path, WebdavResource> implements ContainerManager.ContainerListener
     {
         private FolderCache()
         {
-            super(1000, 5 * TTLCacheMap.MINUTE, "WebDAV folders");
+            super(1000, 5 * CacheManager.MINUTE, "WebDAV folders");
             ContainerManager.addContainerListener(this);
         }
 
@@ -156,11 +157,12 @@ public class WebdavResolverImpl implements WebdavResolver
             {
                 if (removeOldestEntry(entry))
                 {
-                    removeEntry(entry);
                     trackExpiration();
+                    removeEntry(entry);
                 }
                 else if (entry.getKey().startsWith(prefix))
                 {
+                    trackRemove();
                     removeEntry(entry);
                 }
             }

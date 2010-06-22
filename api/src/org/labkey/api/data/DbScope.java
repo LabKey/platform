@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.cache.TTLCacheMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -24,7 +25,6 @@ import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.collections.TTLCacheMap;
 import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
@@ -67,11 +67,14 @@ public class DbScope
     private static final ThreadLocal<Transaction> _transaction = new ThreadLocal<Transaction>();
 
 
+    // Used only for testing
     protected DbScope()
     {
     }
 
 
+    // Attempt a (non-pooled) connection to a datasource.  We don't use DbSchema or normal pooled connections here
+    // because failed connections seem to get added into the pool.
     private DbScope(String dsName, DataSource dataSource) throws ServletException, SQLException
     {
         Connection conn = null;
@@ -891,7 +894,7 @@ public class DbScope
     }
 
     // Represents a single database transaction.  Holds onto the Connection, the temporary caches to use during that
-    // transaction, and the tasks to run immediately after commit to update the shared cache with removals.
+    // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
     static class Transaction
     {
         private final Connection _conn;

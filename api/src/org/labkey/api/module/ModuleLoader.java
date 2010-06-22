@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
@@ -414,12 +415,8 @@ public class ModuleLoader implements Filter
 
     private void verifyJavaVersion() throws ServletException
     {
-        String javaVersion = AppProps.getInstance().getJavaVersion();
-
-        if (null != javaVersion && javaVersion.startsWith("1.6"))
-            return;
-
-        throw new ConfigurationException("Unsupported Java runtime version: " + javaVersion + ".  LabKey Server requires Java 1.6.");
+        if (!SystemUtils.IS_JAVA_1_6)
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ".  LabKey Server requires Java 1.6.");
     }
 
     private void removeAPIFiles(Set<File> unclaimedFiles, File webappRoot) throws IOException
@@ -458,10 +455,7 @@ public class ModuleLoader implements Filter
 
 
 
-    // Enumerate each jdbc DataSource in labkey.xml and attempt a (non-pooled) connection to each.  If connection fails,
-    // attempt to create the database.
-    //
-    // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
+    // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
     private void initializeDataSources() throws ServletException
     {
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");

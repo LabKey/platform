@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.cache;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
 
 import java.util.ArrayList;
@@ -37,7 +39,7 @@ public class DbCache
     private static Logger LOG = Logger.getLogger(DbCache.class);
     private static final Map<TableInfo, DatabaseCache<Object>> CACHES = new WeakHashMap<TableInfo, DatabaseCache<Object>>(100);
 
-    static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
+    public static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
 
     public static DatabaseCache<Object> getCache(TableInfo tinfo)
     {
@@ -109,7 +111,7 @@ public class DbCache
 
 
     /** used by Table */
-    static void invalidateAll(TableInfo tinfo)
+    public static void invalidateAll(TableInfo tinfo)
     {
         // see comment above 'getTableInfosByUnderlyingTable' for an explanation of why
         // we clear multiple caches here:

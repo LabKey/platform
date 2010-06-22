@@ -17,8 +17,9 @@
 package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.Cache;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
@@ -33,6 +34,8 @@ public class NavTreeManager
     private static final String EXPAND_CONTAINERS_KEY = NavTreeManager.class.getName() + "/expandedContainers";
     private static final String CACHE_PREFIX = NavTreeManager.class.getName() + "/";
     private static final Logger _log = Logger.getLogger(NavTreeManager.class);
+
+    private static final StringKeyCache<Collapsible> NAV_TREE_CACHE = CacheManager.getShared();
     
     public static void expandCollapsePath(ViewContext viewContext, String navTreeId, String path, boolean collapse)
     {
@@ -121,7 +124,7 @@ public class NavTreeManager
     public static void cacheTree(Collapsible navTree, User user)
     {
         collapseAll(navTree);
-        Cache.getShared().put(getCacheKey(navTree.getId(), user), navTree, Cache.MINUTE);
+        NAV_TREE_CACHE.put(getCacheKey(navTree.getId(), user), navTree, CacheManager.MINUTE);
     }
 
     /*
@@ -129,17 +132,17 @@ public class NavTreeManager
      */
     public static void uncacheTree(String treeId)
     {
-        Cache.getShared().removeUsingPrefix(getCacheKey(treeId, null));
+        NAV_TREE_CACHE.removeUsingPrefix(getCacheKey(treeId, null));
     }
 
     public static void uncacheTree(String treeId, User user)
     {
-        Cache.getShared().remove(getCacheKey(treeId, user));
+        NAV_TREE_CACHE.remove(getCacheKey(treeId, user));
     }
 
     public static Collapsible getFromCache(String navTreeId, ViewContext viewContext)
     {
-        Collapsible cached = (Collapsible) Cache.getShared().get(getCacheKey(navTreeId, viewContext.getUser()));
+        Collapsible cached = NAV_TREE_CACHE.get(getCacheKey(navTreeId, viewContext.getUser()));
         if (cached != null)
         {
             collapseAll(cached);
@@ -174,6 +177,6 @@ public class NavTreeManager
 
     public static void uncacheAll()
     {
-        Cache.getShared().removeUsingPrefix(CACHE_PREFIX);
+        NAV_TREE_CACHE.removeUsingPrefix(CACHE_PREFIX);
     }
 }

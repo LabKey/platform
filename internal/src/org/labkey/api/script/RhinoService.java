@@ -17,7 +17,8 @@ package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.resource.Resource;
@@ -81,7 +82,7 @@ class ScriptResourceRef extends ResourceRef
 
 class ScriptReferenceImpl implements ScriptReference
 {
-    private static Cache _scriptCache = new Cache(1024, Cache.HOUR, "Module JavaScript cache");
+    private static CacheI<String, ScriptResourceRef> SCRIPT_CACHE = CacheManager.getCache(1024, CacheManager.HOUR, "Module JavaScript cache");
 
     private ScriptResourceRef ref;
     private Resource r;
@@ -113,7 +114,7 @@ class ScriptReferenceImpl implements ScriptReference
         int opt = ctx.getOptimizationLevel();
         if (ref == null && opt > -1)
         {
-            ref = (ScriptResourceRef)_scriptCache.get(cacheKey);
+            ref = (ScriptResourceRef) SCRIPT_CACHE.get(cacheKey);
         }
 
         if (ref == null || ref.isStale())
@@ -126,7 +127,7 @@ class ScriptReferenceImpl implements ScriptReference
                 script = engine.compile(reader);
                 ref = new ScriptResourceRef(r, script);
                 if (opt > -1)
-                    _scriptCache.put(cacheKey, ref);
+                    SCRIPT_CACHE.put(cacheKey, ref);
             }
             catch (IOException e)
             {

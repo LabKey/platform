@@ -22,20 +22,21 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.*;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.Cache;
-import org.jetbrains.annotations.NotNull;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -72,7 +73,7 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
 
-    private static final Cache CACHE = new Cache(Integer.MAX_VALUE, Cache.DAY, "containers");
+    private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(Integer.MAX_VALUE, CacheManager.DAY, "containers");
     private static final Object DATABASE_QUERY_LOCK = new Object();
 
     // enum of properties you can see in property change events

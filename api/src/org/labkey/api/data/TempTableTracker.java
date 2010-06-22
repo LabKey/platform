@@ -17,14 +17,15 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.util.*;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ShutdownListener;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -198,7 +199,7 @@ public class TempTableTracker extends WeakReference<Object>
             createdTableNames.remove(tableName);
             appendToLog("-" + schemaName + "\t" + tableName + "\n");
 
-            if (createdTableNames.isEmpty() || System.currentTimeMillis() > lastSync + Cache.DAY)
+            if (createdTableNames.isEmpty() || System.currentTimeMillis() > lastSync + CacheManager.DAY)
                 synchronizeLog(false);
         }
     }

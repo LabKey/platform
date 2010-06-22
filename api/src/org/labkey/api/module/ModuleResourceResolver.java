@@ -16,11 +16,10 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.Cache;
-import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.resource.*;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -33,8 +32,9 @@ import java.util.List;
  */
 public class ModuleResourceResolver implements Resolver
 {
-    static Logger _log = Logger.getLogger(ModuleResourceResolver.class);
-    private static final Cache RESOURCES = new Cache(4096, Cache.HOUR, "Module resources");
+    private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
+    private static final CacheI<String, Resource> RESOURCES = CacheManager.getCache(4096, CacheManager.HOUR, "Module resources");
+
     private static final Resource CACHE_MISS = new AbstractResource(null, null) {
         public Resource parent()
         {
@@ -61,7 +61,7 @@ public class ModuleResourceResolver implements Resolver
 
     private static Resource get(String cacheKey)
     {
-        return (Resource)RESOURCES.get(cacheKey);
+        return RESOURCES.get(cacheKey);
     }
 
     private static void put(String cacheKey, Resource r)
@@ -73,7 +73,7 @@ public class ModuleResourceResolver implements Resolver
     {
         // Cache misses in production mode for the default time period and
         // in dev mode for a short time (about the length of a request.)
-        RESOURCES.put(cacheKey, CACHE_MISS, DEV_MODE ? Cache.DEFAULT_TIMEOUT : (15*Cache.SECOND));
+        RESOURCES.put(cacheKey, CACHE_MISS, DEV_MODE ? CacheManager.DEFAULT_TIMEOUT : (15*CacheManager.SECOND));
     }
 
     private static void remove(String cacheKey)
@@ -101,13 +101,13 @@ public class ModuleResourceResolver implements Resolver
             r = resolve(normalized);
             if (null == r)
             {
-                _log.debug("missed resource: " + path);
+                LOG.debug("missed resource: " + path);
                 miss(cacheKey);
                 return null;
             }
             if (r.exists())
             {
-                _log.debug("resolved resource: " + r + " -> " + normalized);
+                LOG.debug("resolved resource: " + r + " -> " + normalized);
                 put(cacheKey, r);
                 return r;
             }
@@ -115,7 +115,7 @@ public class ModuleResourceResolver implements Resolver
         else if (DEV_MODE && !r.exists())
         {
             // remove cached resource and try again
-            _log.debug("removed resource: " + r);
+            LOG.debug("removed resource: " + r);
             remove(cacheKey);
             return lookup(path);
         }

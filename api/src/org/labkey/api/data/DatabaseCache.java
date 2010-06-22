@@ -19,7 +19,8 @@ package org.labkey.api.data;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.TTLCacheMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,15 +32,10 @@ import java.sql.SQLException;
  *
  * Not a map, uses TTLCacheMap to implement a transaction aware cache
  *
- * @see DbScope
+ * @see org.labkey.api.data.DbScope
  */
-public class DatabaseCache<ValueType>
+public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 {
-    // for convenience of subclasses
-    protected final static long HOUR = TTLCacheMap.HOUR;
-    protected final static long MINUTE = TTLCacheMap.MINUTE;
-    protected final static long SECOND = TTLCacheMap.SECOND;
-
     private final TTLCacheMap<String, ValueType> _sharedMap;
     private final DbScope _scope;
 
@@ -97,7 +93,7 @@ public class DatabaseCache<ValueType>
     }
 
 
-    public synchronized void remove(final String key)
+    public synchronized ValueType remove(final String key)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -111,7 +107,7 @@ public class DatabaseCache<ValueType>
             });
         }
 
-        getMap().remove(key);
+        return getMap().remove(key);
     }
 
 
@@ -165,6 +161,7 @@ public class DatabaseCache<ValueType>
         }
 
 
+        @SuppressWarnings({"StringEquality"})
         public void testDbCache() throws Exception
         {
             MyScope scope = new MyScope();
@@ -249,12 +246,12 @@ public class DatabaseCache<ValueType>
         }
 
 
-        static class MyScope extends DbScope
+        private static class MyScope extends DbScope
         {
-            Boolean overrideTransactionActive = null;
-            Transaction overrideTransaction = null;
+            private Boolean overrideTransactionActive = null;
+            private Transaction overrideTransaction = null;
             
-            MyScope()
+            private MyScope()
             {
                 super();
             }
@@ -287,7 +284,7 @@ public class DatabaseCache<ValueType>
             public boolean isTransactionActive()
             {
                 if (null != overrideTransactionActive)
-                    return overrideTransactionActive;
+                    return overrideTransactionActive.booleanValue();
                 return super.isTransactionActive();
             }
 
@@ -302,7 +299,7 @@ public class DatabaseCache<ValueType>
                 return super.getCurrentTransaction();
             }
 
-            public void setOverrideTransactionActive(Boolean override)
+            private void setOverrideTransactionActive(Boolean override)
             {
                 overrideTransactionActive = override;
 

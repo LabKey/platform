@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.collections.TTLCacheMap;
+import org.labkey.api.cache.TTLCacheMap;
 
 /*
 * User: adam

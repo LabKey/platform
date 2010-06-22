@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.collections;
+package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
 

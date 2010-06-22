@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.labkey.api.collections;
+package org.labkey.api.cache;
 
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
@@ -30,20 +29,17 @@ import java.util.Map;
  * Date: Dec 11, 2006
  * Time: 3:49:11 PM
  */
+
+// Unsynchronized TTL cache implementation -- only for internal use by other cache implementations.
 public class TTLCacheMap<K, V> extends CacheMap<K, V>
 {
     private static final Logger LOG = Logger.getLogger(TTLCacheMap.class);
-
-    public static final long SECOND = DateUtils.MILLIS_PER_SECOND;
-    public static final long MINUTE = DateUtils.MILLIS_PER_MINUTE;
-    public static final long HOUR = DateUtils.MILLIS_PER_HOUR;
-    public static final long DAY = DateUtils.MILLIS_PER_DAY;
 
     private final int maxSize;
     private final long defaultExpires;
 
     /*
-     * NOTE: this is distinctly unlike the WeakHashMap.  The refererant here is
+     * NOTE: this is distinctly unlike the WeakHashMap.  The referent here is
      * the value, not the key.  This allows GC to reclaim large cached objects.
      *
      * NOTE: the usual way to do this is to have Entry extend SoftReference
@@ -135,7 +131,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public V put(K key, V value, long timeToLive)
     {
-        assert timeToLive == -1 || timeToLive < 7 * DAY;
+        assert timeToLive == -1 || timeToLive < 7 * CacheManager.DAY;
 
         Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);

@@ -21,7 +21,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
@@ -87,7 +88,8 @@ public abstract class DefaultModule implements Module
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
-    private static final Cache _reportDescriptorCache = new Cache(1024, Cache.DAY, "Report descriptor cache");
+
+    private static final CacheI<String, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {
@@ -587,11 +589,11 @@ public abstract class DefaultModule implements Module
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
             for(File file : keyDir.listFiles(rReportFilter))
             {
-                ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(file.getAbsolutePath());
+                ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor) REPORT_DESCRIPTOR_CACHE.get(file.getAbsolutePath());
                 if(null == descriptor || descriptor.isStale())
                 {
                     descriptor = createReportDescriptor(key, file);
-                    _reportDescriptorCache.put(file.getAbsolutePath(), descriptor);
+                    REPORT_DESCRIPTOR_CACHE.put(file.getAbsolutePath(), descriptor);
                 }
                 reportDescriptors.add(descriptor);
             }
@@ -621,12 +623,12 @@ public abstract class DefaultModule implements Module
 
         if (reportFile.exists() && reportFile.isFile())
         {
-            ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(reportFile.getAbsolutePath());
+            ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor) REPORT_DESCRIPTOR_CACHE.get(reportFile.getAbsolutePath());
 
             if (null == descriptor || descriptor.isStale())
             {
                 descriptor = createReportDescriptor(key, reportFile);
-                _reportDescriptorCache.put(reportFile.getAbsolutePath(), descriptor);
+                REPORT_DESCRIPTOR_CACHE.put(reportFile.getAbsolutePath(), descriptor);
             }
 
             return descriptor;

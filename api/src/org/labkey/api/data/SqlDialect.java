@@ -140,7 +140,7 @@ public abstract class SqlDialect
             {
                 if (null != sql)
                 {
-                    conn = ds.getConnection();
+                    conn = scope.getConnection();
                     Table.execute(conn, sql, null);
                 }
             }
@@ -150,7 +150,7 @@ public abstract class SqlDialect
             }
             finally
             {
-                try {  if (null != conn) conn.close(); } catch (SQLException e) { /**/ }
+                try {  if (null != conn) scope.releaseConnection(conn); } catch (SQLException e) { /**/ }
             }
 
             if (null != url)

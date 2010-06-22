@@ -24,7 +24,9 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.module.ModuleLoader;
@@ -67,6 +69,7 @@ public class SecurityManager
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
     private static final String GROUP_CACHE_PREFIX = "Groups/MetaData=";
+    private static final StringKeyCache<Group> GROUP_CACHE = CacheManager.getShared();
 
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
 
@@ -1287,7 +1290,7 @@ public class SecurityManager
 
     public static Group getGroup(int groupId)
     {
-        Group group = (Group) Cache.getShared().get(GROUP_CACHE_PREFIX + groupId);
+        Group group = GROUP_CACHE.get(GROUP_CACHE_PREFIX + groupId);
 
         if (null == group)
         {
@@ -1301,7 +1304,7 @@ public class SecurityManager
                 assert groups.length <= 1;
                 group = groups.length == 0 ? NULL_GROUP : groups[0];
 
-                Cache.getShared().put(GROUP_CACHE_PREFIX + groupId, group);
+                GROUP_CACHE.put(GROUP_CACHE_PREFIX + groupId, group);
             }
             catch (SQLException e)
             {
@@ -1339,13 +1342,13 @@ public class SecurityManager
 
     private static void removeGroupFromCache(int groupId)
     {
-        Cache.getShared().remove(GROUP_CACHE_PREFIX + groupId);
+        GROUP_CACHE.remove(GROUP_CACHE_PREFIX + groupId);
     }
 
 
     private static void removeAllGroupsFromCache()
     {
-        Cache.getShared().removeUsingPrefix(GROUP_CACHE_PREFIX);
+        GROUP_CACHE.removeUsingPrefix(GROUP_CACHE_PREFIX);
     }
 
 

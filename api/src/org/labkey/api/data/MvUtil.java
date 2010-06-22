@@ -15,10 +15,11 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -91,7 +92,7 @@ public class MvUtil
         String cacheKey = getCacheKey(c);
 
         //noinspection unchecked
-        Map<String,String> result = (Map<String,String>)getCache().get(cacheKey);
+        Map<String, String> result = getCache().get(cacheKey);
         if (result == null)
         {
             result = getFromDb(c);
@@ -187,9 +188,9 @@ public class MvUtil
         return CACHE_PREFIX + c.getId();
     }
 
-    private static Cache getCache()
+    private static StringKeyCache<Map<String, String>> getCache()
     {
-        return Cache.getShared();
+        return CacheManager.getShared();
     }
 
     public static void containerDeleted(Container c)
@@ -208,7 +209,7 @@ public class MvUtil
      *
      * This should only be necessary at upgrade time.
      */
-    public static Map<String,String> getDefaultMvIndicators()
+    public static Map<String, String> getDefaultMvIndicators()
     {
         Map<String,String> mvMap = new HashMap<String,String>();
         mvMap.put("Q", "Data currently under quality control review.");

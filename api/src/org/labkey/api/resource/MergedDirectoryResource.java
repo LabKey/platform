@@ -15,7 +15,7 @@
  */
 package org.labkey.api.resource;
 
-import org.labkey.api.collections.CacheMap;
+import org.labkey.api.cache.CacheMap;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
