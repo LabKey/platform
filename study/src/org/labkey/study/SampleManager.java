@@ -20,7 +20,8 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -31,10 +32,10 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.*;
 import org.labkey.study.query.StudyQuerySchema;
@@ -1378,7 +1379,7 @@ public class SampleManager
                     new Object[] { container.getId(), container.getId() }, SpecimenTypeSummaryRow.class);
 
             summary = new SpecimenTypeSummary(rows);
-            DbCache.put(StudySchema.getInstance().getTableInfoVial(), cacheKey, summary, 8 * Cache.HOUR);
+            DbCache.put(StudySchema.getInstance().getTableInfoVial(), cacheKey, summary, 8 * CacheManager.HOUR);
             return summary;
         }
         catch (SQLException e)

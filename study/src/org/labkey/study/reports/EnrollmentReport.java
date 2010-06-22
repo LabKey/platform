@@ -22,6 +22,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Table;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -30,10 +31,9 @@ import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.Cache;
-import org.labkey.api.view.*;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
@@ -114,7 +114,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                         // Chart
                         //
                         ArrayList<Date> dates = new ArrayList<Date>();
-                        Date tomorrow = new Date(System.currentTimeMillis() + Cache.DAY);
+                        Date tomorrow = new Date(System.currentTimeMillis() + CacheManager.DAY);
                         while (rs.next())
                         {
                             Timestamp t = rs.getTimestamp(indexX);

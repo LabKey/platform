@@ -20,13 +20,14 @@ import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
@@ -448,7 +449,7 @@ public class IssueManager
                 // Cache an unmodifiable version
                 initialAssignedTo = Collections.unmodifiableSet(initialAssignedTo);
 
-                DbCache.put(table, cacheKey, initialAssignedTo, Cache.HOUR);
+                DbCache.put(table, cacheKey, initialAssignedTo, CacheManager.HOUR);
             }
         }
 

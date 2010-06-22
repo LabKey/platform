@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
@@ -398,7 +398,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             synchronized (this)
             {
                 long now = System.currentTimeMillis();
-                if (_lastVerify + 5* Cache.MINUTE > now && _tinfoMaterialized != null)
+                if (_lastVerify + 5* CacheManager.MINUTE > now && _tinfoMaterialized != null)
                     return _tinfoMaterialized;
                 _lastVerify = now;
                 if (isMaterialized(_name))

@@ -16,20 +16,20 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.DbCache;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.collections.Cache;
 import org.apache.log4j.Logger;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.SQLException;
-import java.sql.ResultSet;
 
 public class ExpPropertyCache
 {
@@ -80,7 +80,7 @@ public class ExpPropertyCache
             return new PropertyDescriptor[0];
         }
 
-        DbCache.put(table, key, pds, Cache.MINUTE * 30);
+        DbCache.put(table, key, pds, CacheManager.MINUTE * 30);
         return pds;
     }
 }

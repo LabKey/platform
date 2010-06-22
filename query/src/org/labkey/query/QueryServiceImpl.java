@@ -24,7 +24,8 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
@@ -52,13 +53,13 @@ import java.util.*;
 
 public class QueryServiceImpl extends QueryService
 {
-    private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY, "Module resources cache");
+    private static final CacheI<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
 
-    public static Cache getModuleResourcesCache()
+    public static CacheI<String, Object> getModuleResourcesCache()
     {
-        return _moduleResourcesCache;
+        return MODULE_RESOURCES_CACHE;
     }
 
     static public QueryServiceImpl get()
@@ -153,7 +154,7 @@ public class QueryServiceImpl extends QueryService
 
             for (Module module : modules)
             {
-                Collection<? extends Resource> queries = null;
+                Collection<? extends Resource> queries;
 
                 //always scan the file system in dev mode
                 if (AppProps.getInstance().isDevMode())
@@ -165,13 +166,14 @@ public class QueryServiceImpl extends QueryService
                 {
                     //in production, cache the set of query defs for each module on first request
                     String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
-                    queries = (Collection<? extends Resource>)_moduleResourcesCache.get(fileSetCacheKey);
+                    //noinspection unchecked
+                    queries = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
                     if (null == queries)
                     {
                         Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
                         queries = getModuleQueries(schemaDir, ModuleQueryDef.FILE_EXTENSION);
-                        _moduleResourcesCache.put(fileSetCacheKey, queries);
+                        MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queries);
                     }
                 }
 
@@ -180,11 +182,11 @@ public class QueryServiceImpl extends QueryService
                     for (Resource query : queries)
                     {
                         String cacheKey = query.getPath().toString();
-                        ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(cacheKey);
+                        ModuleQueryDef moduleQueryDef = (ModuleQueryDef) MODULE_RESOURCES_CACHE.get(cacheKey);
                         if (null == moduleQueryDef || moduleQueryDef.isStale())
                         {
                             moduleQueryDef = new ModuleQueryDef(query, schemaName);
-                            _moduleResourcesCache.put(cacheKey, moduleQueryDef);
+                            MODULE_RESOURCES_CACHE.put(cacheKey, moduleQueryDef);
                         }
 
                         ret.put(new Pair<String,String>(schemaName, moduleQueryDef.getName()),
@@ -741,7 +743,7 @@ public class QueryServiceImpl extends QueryService
         // Finally, look for file-based definitions in modules
         for (Module module : originalContainer.getActiveModules())
         {
-            Collection<? extends Resource> queryMetadatas = null;
+            Collection<? extends Resource> queryMetadatas;
 
             //always scan the file system in dev mode
             if (AppProps.getInstance().isDevMode())
@@ -753,13 +755,14 @@ public class QueryServiceImpl extends QueryService
             {
                 //in production, cache the set of query defs for each module on first request
                 String fileSetCacheKey = QUERYDEF_METADATA_SET_CACHE_ENTRY + module.toString() + "." + schemaName;
-                queryMetadatas = (Collection<? extends Resource>)_moduleResourcesCache.get(fileSetCacheKey);
+                //noinspection unchecked
+                queryMetadatas = (Collection<? extends Resource>) MODULE_RESOURCES_CACHE.get(fileSetCacheKey);
 
                 if (null == queryMetadatas)
                 {
                     Resource schemaDir = module.getModuleResolver().lookup(new Path("queries", schemaName));
                     queryMetadatas = getModuleQueries(schemaDir, ModuleQueryDef.META_FILE_EXTENSION);
-                    _moduleResourcesCache.put(fileSetCacheKey, queryMetadatas);
+                    MODULE_RESOURCES_CACHE.put(fileSetCacheKey, queryMetadatas);
                 }
             }
 
@@ -768,11 +771,11 @@ public class QueryServiceImpl extends QueryService
                 for (Resource query : queryMetadatas)
                 {
                     String cacheKey = query.getPath().toString();
-                    ModuleQueryMetadataDef metadataDef = (ModuleQueryMetadataDef)_moduleResourcesCache.get(cacheKey);
+                    ModuleQueryMetadataDef metadataDef = (ModuleQueryMetadataDef) MODULE_RESOURCES_CACHE.get(cacheKey);
                     if (null == metadataDef || metadataDef.isStale())
                     {
                         metadataDef = new ModuleQueryMetadataDef(query);
-                        _moduleResourcesCache.put(cacheKey, metadataDef);
+                        MODULE_RESOURCES_CACHE.put(cacheKey, metadataDef);
                     }
 
                     if (metadataDef.getName().equalsIgnoreCase(tableName))

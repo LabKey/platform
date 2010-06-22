@@ -16,6 +16,7 @@
 
 package org.labkey.filecontent;
 
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 

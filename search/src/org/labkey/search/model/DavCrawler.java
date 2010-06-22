@@ -18,7 +18,7 @@ package org.labkey.search.model;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -259,7 +259,7 @@ public class DavCrawler implements ShutdownListener
             }
 
             _indexTime = new Date(System.currentTimeMillis());
-            long changeInterval = (r instanceof WebdavResolver.WebFolder) ? Cache.DAY / 2 : Cache.DAY;
+            long changeInterval = (r instanceof WebdavResolver.WebFolder) ? CacheManager.DAY / 2 : CacheManager.DAY;
             long nextCrawl = _indexTime.getTime() + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
             _nextCrawl = new Date(nextCrawl);
 

@@ -21,7 +21,8 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
@@ -724,26 +725,28 @@ public class PlateManager implements PlateService.Service
         return PlateTemplateImpl.class.getName() + "/Folder-" + container.getRowId() + "-" + idString;
     }
 
+    private static final StringKeyCache<PlateTemplateImpl> PLATE_TEMPLATE_CACHE = CacheManager.getShared();
+
     private void cache(PlateTemplateImpl template)
     {
         if (template.getRowId() == null)
             return;
-        Cache.getShared().put(getPlateTemplateCacheKey(template.getContainer(), template.getRowId().intValue()), template);
-        Cache.getShared().put(getPlateTemplateCacheKey(template.getContainer(), template.getEntityId()), template);
+        PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getRowId().intValue()), template);
+        PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getEntityId()), template);
     }
 
     private void clearCache()
     {
-        Cache.getShared().removeUsingPrefix(PlateTemplateImpl.class.getName());
+        PLATE_TEMPLATE_CACHE.removeUsingPrefix(PlateTemplateImpl.class.getName());
     }
 
     private PlateTemplateImpl getCachedPlateTemplate(Container container, int rowId)
     {
-        return (PlateTemplateImpl) Cache.getShared().get(getPlateTemplateCacheKey(container, rowId));
+        return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, rowId));
     }
 
     private PlateTemplateImpl getCachedPlateTemplate(Container container, String idString)
     {
-        return (PlateTemplateImpl) Cache.getShared().get(getPlateTemplateCacheKey(container, idString));
+        return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, idString));
     }
 }

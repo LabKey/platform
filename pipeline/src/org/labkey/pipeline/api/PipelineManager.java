@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;

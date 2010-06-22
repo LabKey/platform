@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;

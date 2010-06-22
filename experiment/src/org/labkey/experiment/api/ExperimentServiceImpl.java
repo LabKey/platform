@@ -22,6 +22,8 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
 import org.labkey.api.defaults.DefaultValueService;

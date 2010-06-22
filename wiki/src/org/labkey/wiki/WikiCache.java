@@ -17,7 +17,8 @@
 package org.labkey.wiki;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
@@ -40,8 +41,8 @@ public class WikiCache
     private static final String PAGES_NAME = "~~pages~~";
     private static final String VERSIONS_NAME = "~~versions~~";
     private static final String TOC_NAME = "~~nvtoc~~";
-    private static boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
-    private static final Cache _pageCache = new Cache(10000, Cache.DAY, "Wikis");
+    private static final boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
+    private static final StringKeyCache<Object> WIKI_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wikis, Versions, and TOC");
 
     private static String _cachedName(Container c, String name)
     {
@@ -71,7 +72,7 @@ public class WikiCache
     static void _cache(Container c, String name, Object o)
     {
         if (useCache)
-            _pageCache.put(_cachedName(c, name), o, Cache.HOUR);
+            WIKI_CACHE.put(_cachedName(c, name), o, CacheManager.HOUR);
     }
 
     static void uncache(Container c)
@@ -86,6 +87,7 @@ public class WikiCache
 
     static Map<HString, Wiki> getCachedPageMap(Container c)
     {
+        //noinspection unchecked
         return (Map<HString, Wiki>) getCached(c, WikiCache.PAGES_NAME);
     }
 
@@ -96,6 +98,7 @@ public class WikiCache
 
     static List<Wiki> getCachedOrderedPageList(Container c)
     {
+        //noinspection unchecked
         return (List<Wiki>) getCached(c, WikiCache.ORDERED_PAGE_LIST);
     }
 
@@ -106,6 +109,7 @@ public class WikiCache
 
     static Map<HString, WikiRenderer.WikiLinkable> getCachedVersionMap(Container c)
     {
+        //noinspection unchecked
         return (Map<HString, WikiRenderer.WikiLinkable>) WikiCache.getCached(c, WikiCache.VERSIONS_NAME);
     }
 
@@ -153,20 +157,20 @@ public class WikiCache
 
     public static void uncache(Container c, String name)
     {
-        _pageCache.remove(_cachedName(c, name));
+        WIKI_CACHE.remove(_cachedName(c, name));
         uncacheLists(c);
     }
 
     private static void uncacheLists(Container c)
     {
-        _pageCache.remove(_cachedName(c, ORDERED_PAGE_LIST));
-        _pageCache.remove(_cachedName(c, PAGES_NAME));
-        _pageCache.remove(_cachedName(c, VERSIONS_NAME));
+        WIKI_CACHE.remove(_cachedName(c, ORDERED_PAGE_LIST));
+        WIKI_CACHE.remove(_cachedName(c, PAGES_NAME));
+        WIKI_CACHE.remove(_cachedName(c, VERSIONS_NAME));
     }
 
     private static void uncacheUsingPrefix(Container c, String prefix)
     {
-        _pageCache.removeUsingPrefix(_cachedName(c, prefix));
+        WIKI_CACHE.removeUsingPrefix(_cachedName(c, prefix));
         uncacheLists(c);
     }
 
@@ -177,7 +181,7 @@ public class WikiCache
 
         Object cached = null;
         if (useCache)
-            cached = _pageCache.get(_cachedName(c, name));
+            cached = WIKI_CACHE.get(_cachedName(c, name));
         return cached;
     }
 }

@@ -16,9 +16,10 @@
 
 package org.labkey.issue;
 
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbCache;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
@@ -28,7 +29,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.collections.Cache;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.*;
@@ -312,7 +312,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             sb.append("</option>\n");
         }
         s = sb.toString();
-        DbCache.put(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey, s, 10 * Cache.MINUTE);
+        DbCache.put(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey, s, 10 * CacheManager.MINUTE);
         return new HString(s);
     }
 

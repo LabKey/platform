@@ -20,7 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -29,7 +30,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.reader.BeanTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -485,18 +487,20 @@ public class TypesController extends SpringActionController
         finally
         {
             expSchema.getScope().closeConnection();
-            Cache.getShared().remove("Experiment-TypesController.getSemanticTypes");
+            SEMANTIC_TYPES_CACHE.remove("Experiment-TypesController.getSemanticTypes");
 
             OntologyManager.indexConcepts(null);
         }
     }
+
+    private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getShared();
 
     public static String[] getSemanticTypes()
     {
         ResultSet rs = null;
         try
         {
-            String[] semanticTypes = (String[])Cache.getShared().get("Experiment-TypesController.getSemanticTypes");
+            String[] semanticTypes = SEMANTIC_TYPES_CACHE.get("Experiment-TypesController.getSemanticTypes");
             if (semanticTypes == null)
             {
                 TreeMap<String,String> set = new TreeMap<String,String>();
@@ -515,7 +519,7 @@ public class TypesController extends SpringActionController
                     }
                 }
                 semanticTypes = set.values().toArray(new String[set.size()]);
-                Cache.getShared().put("Experiment-TypesController.getSemanticTypes", semanticTypes, Cache.HOUR);
+                SEMANTIC_TYPES_CACHE.put("Experiment-TypesController.getSemanticTypes", semanticTypes, CacheManager.HOUR);
             }
             return semanticTypes;
         }

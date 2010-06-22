@@ -11,7 +11,7 @@ commons-discovery-0.2.jar|Commons Discovery|0.2|{link:Apache|http://jakarta.apac
 commons-fileupload-1.2.1.jar|Commons File Upload|1.2.1|{link:Apache|http://jakarta.apache.org/commons/fileupload/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Parses HTTP multipart/form-data POSTs
 commons-httpclient-3.1.jar|Commons HTTP Client|3.1|{link:Apache|http://jakarta.apache.org/commons/httpclient/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|HTTP client for requests of remote servers
 commons-io-1.4.jar|Commons I/O|1.4|{link:Apache|http://jakarta.apache.org/commons/io/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|I/O utility classes
-commons-lang-2.3.jar|Commons Lang|2.3|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers
+commons-lang-2.5.jar|Commons Lang|2.5|{link:Apache|http://jakarta.apache.org/commons/lang/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Language helpers
 commons-logging-1.1.jar|Commons Logging|1.1|{link:Apache|http://jakarta.apache.org/commons/logging/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Bridge API to different logging implementations
 commons-net-2.0.jar|Commons Net|2.0|{link:Apache|http://jakarta.apache.org/commons/net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FTPClient used to retrieve resources from other servers (e.g., GO annotations)
 commons-validator.jar|Commons Validator|1.0.4|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages

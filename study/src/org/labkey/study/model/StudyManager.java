@@ -26,7 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
-import org.labkey.api.collections.Cache;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
@@ -35,7 +36,9 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -77,9 +80,9 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -667,7 +670,7 @@ public class StudyManager
             {
                 SimpleFilter filter = new SimpleFilter("Container", container);
                 states = Table.select(StudySchema.getInstance().getTableInfoQCState(), Table.ALL_COLUMNS, filter, new Sort("Label"), QCState.class);
-                DbCache.put(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container), states, Cache.HOUR);
+                DbCache.put(StudySchema.getInstance().getTableInfoQCState(), getQCStateCacheName(container), states, CacheManager.HOUR);
             }
             return states;
         }
@@ -2554,7 +2557,7 @@ public class StudyManager
             participantMap = new LinkedHashMap<String, Participant>();
             for (Participant participant : participants)
                 participantMap.put(participant.getParticipantId(), participant);
-            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, Cache.HOUR);
+            DbCache.put(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()), participantMap, CacheManager.HOUR);
         }
         return participantMap;
     }
@@ -2729,7 +2732,7 @@ public class StudyManager
                     }
                 }
 
-                ActionURL view = dataset.clone().replaceParameter("datasetId",String.valueOf(id));
+                ActionURL view = dataset.clone().replaceParameter("datasetId", String.valueOf(id));
                 view.setExtraPath(container);
 
                 SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,

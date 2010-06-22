@@ -16,9 +16,9 @@
 
 package org.labkey.study;
 
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.DbCache;
-import org.labkey.api.collections.Cache;
 import org.labkey.study.model.StudyCachable;
 
 /**
@@ -41,7 +41,7 @@ public class StudyCache
             cachable.lock();
         if (!ENABLE_CACHING)
             return;
-        DbCache.put(tinfo, getCacheName(containerId, objectId), cachable, Cache.HOUR);
+        DbCache.put(tinfo, getCacheName(containerId, objectId), cachable, CacheManager.HOUR);
     }
 
     public static void cache(TableInfo tinfo, String containerId, String objectId, StudyCachable[] cachables)
@@ -53,7 +53,7 @@ public class StudyCache
         }
         if (!ENABLE_CACHING)
             return;
-        DbCache.put(tinfo, getCacheName(containerId, objectId), cachables, Cache.HOUR);
+        DbCache.put(tinfo, getCacheName(containerId, objectId), cachables, CacheManager.HOUR);
     }
 
     public static void cache(TableInfo tinfo, String containerId, Object cacheKey, StudyCachable cachable)
@@ -63,7 +63,7 @@ public class StudyCache
             cachable.lock();
         if (!ENABLE_CACHING)
             return;
-        DbCache.put(tinfo, getCacheName(containerId, cacheKey), cachable, Cache.HOUR);
+        DbCache.put(tinfo, getCacheName(containerId, cacheKey), cachable, CacheManager.HOUR);
     }
 
     public static void uncache(TableInfo tinfo, String containerId, Object cacheKey)

@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
