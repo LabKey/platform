@@ -281,7 +281,7 @@ public class SimpleFilter implements Filter
             String alias = _colName;
             if (colInfo != null)
             {
-                alias = colInfo.getAlias();
+                alias = dialect.getColumnSelectName(colInfo.getAlias());
             }
             SQLFragment in = new SQLFragment(alias);
 

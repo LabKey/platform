@@ -182,8 +182,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         bodyClass: 'webpart.bodyClass',
         title: 'webpart.title',
         titleHref: 'webpart.titleHref',
-        queryName: false,
-        viewName: false,
         aggregates: false,
         renderTo: false,
         sort: false,
@@ -249,18 +247,16 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         params["webpart.name"] = "Query";
         LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap, true, false);
 
-        // 10197: Add dataRegionName prefix to all QueryView parameters.  The the generated export urls will strip any non-prefix parameters.
+        // 10197: Add queryName and viewName parameters both with and without dataRegionName prefix.
+        // Unprefixed queryName and viewName parameters are required to bind when 'allowChooseQuery' or 'allowChooseView' are false.
+        // Prefixed queryName and viewName parameters are required when generating export urls -- any non-prefixed parameters will be stripped in QueryView.urlFor().
         params[this.dataRegionName + ".queryName"] = this.queryName;
         if (this.viewName)
             params[this.dataRegionName + ".viewName"] = this.viewName;
         if (this.sort)
             params[this.dataRegionName + ".sort"] = this.sort;
 
-        if(this.filters)
-        {
-            for(idx = 0; idx < this.filters.length; ++idx)
-                params[this.filters[idx].getURLParameterName(this.dataRegionName)] = this.filters[idx].getURLParameterValue();
-        }
+        LABKEY.Filter.appendFilterParams(params, this.filters, this.dataRegionName);
 
         //add user filters (already in encoded form
         if (this.userFilters)
@@ -314,7 +310,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                     Ext.onReady(function(){
                         var dr = LABKEY.DataRegions[this.dataRegionName];
                         if (!dr)
-                            throw "Couldn't get dataregion object!";
+                            throw "Couldn't get dataregion '" + this.dataRegionName + "' object.";
                         dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
                         dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
                         dr.on("beforesortchange", this.beforeSortChange, this);

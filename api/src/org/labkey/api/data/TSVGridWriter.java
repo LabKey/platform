@@ -126,6 +126,10 @@ public class TSVGridWriter extends TSVWriter
         _displayColumns = displayColumns;
     }
 
+    public Map<FieldKey, ColumnInfo> getFieldMap()
+    {
+        return _fieldMap;
+    }
 
     public void setResultSet(ResultSet rs)
     {

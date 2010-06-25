@@ -37,6 +37,22 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
         _description = description;
     }
 
+    public static void showDialog(Throwable caught)
+    {
+        showDialog(caught, null);
+    }
+
+    public static void showDialog(Throwable caught, String message)
+    {
+        ErrorDialogAsyncCallback dialog = new ErrorDialogAsyncCallback(message)
+        {
+            public void onSuccess(Object result)
+            {
+            }
+        };
+        dialog.onFailure(caught);
+    }
+
     public final void onFailure(Throwable caught)
     {
         String message = null;
@@ -45,17 +61,24 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
             StatusCodeException statusCodeException = (StatusCodeException)caught;
             switch (statusCodeException.getStatusCode())
             {
+                case 0:
+                    // Indicates the request was cancelled because the user navigated to another page
+                    // Don't bother showing any dialog at all
+                    return;
                 case 401:
                     message = "You do not have permission to perform this operation. Your session may have expired.";
                     break;
                 case 404:
                     message = "Not found.";
                     break;
+                default:
+                    message = "[Status code " + statusCodeException.getStatusCode() + "]";
+                    break;
             }
         }
         if (message == null)
         {
-            message = caught.getMessage() == null ? caught.toString() : caught.getMessage();
+            message = caught.getMessage() == null || caught.getMessage().trim().equals("") ? caught.toString() : caught.getMessage();
         }
         if (_description != null)
         {

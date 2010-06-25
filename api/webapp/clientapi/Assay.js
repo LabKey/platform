@@ -275,14 +275,7 @@ LABKEY.Assay = new function()
                     dataObject['query.maxRows'] = config.maxRows;
             }
 
-            if (config.filterArray)
-            {
-                for (var i = 0; i < config.filterArray.length; i++)
-                {
-                    var filter = config.filterArray[i];
-                    dataObject[filter.getURLParameterName()] = filter.getURLParameterValue();
-                }
-            }
+            LABKEY.Filter.appendFilterParams(dataObject, config.filterArray);
 
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;

@@ -1548,6 +1548,9 @@ public class PageFlowUtil
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
             sb.append("/ext-3.2.1/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("<link href=\"");
+            sb.append(AppProps.getInstance().getContextPath());
+            sb.append("/ext-3.2.1/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");

@@ -103,17 +103,10 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
         delete config.sort; //important...otherwise the base Ext.data.Store interprets it
 
-        if (config.filterArray)
-        {
-            for (var i = 0; i < config.filterArray.length; i++)
-            {
-                var filter = config.filterArray[i];
-                if (config.sql)
-                    qsParams[filter.getURLParameterName()] = filter.getURLParameterValue();
-                else
-                    baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
-            }
-        }
+        if (config.sql)
+            LABKEY.Filter.appendFilterParams(qsParams, config.filterArray);
+        else
+            LABKEY.Filter.appendFilterParams(baseParams, config.filterArray);
 
         if(config.viewName && !config.sql)
             baseParams['query.viewName'] = config.viewName;
@@ -444,30 +437,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 params['query.columns'] = this.columns;
 
             // These are filters that are custom created (aka not from a defined view).
-            if (this.filterArray)
-            {
-                for (var i = 0; i < this.filterArray.length; i++)
-                {
-                    var filter = this.filterArray[i];
-                    params[filter.getURLParameterName()] = filter.getURLParameterValue();
-                }
-            }
+            LABKEY.Filter.appendFilterParams(params, this.filterArray);
             
-            if(this.sortInfo)
+            if (this.sortInfo)
                 params['query.sort'] = "DESC" == this.sortInfo.direction
                         ? "-" + this.sortInfo.field
                         : this.sortInfo.field;
 
             // These are filters that are defined by the view.
-            var userFilters = this.getUserFilters();
-            if (userFilters)
-            {
-                for (var i = 0; i < userFilters.length; i++)
-                {
-                    var filter = userFilters[i];
-                    params[filter.getURLParameterName()] = filter.getURLParameterValue();
-                }
-            }
+            LABKEY.Filter.appendFilterParams(params, this.getUserFilters());
 
             var action = ("tsv" == format) ? "exportRowsTsv" : "exportRowsExcel";
             window.location = LABKEY.ActionURL.buildURL("query", action, this.containerPath, params);
@@ -577,7 +555,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
     },
 
-    onBeforeProxyLoad: function(proxy, options) {
+    onBeforeProxyLoad: function(proxy, options)
+    {
         //the selectRows.api can't handle the 'sort' and 'dir' params
         //sent by Ext, so translate them into the expected form
         if(options.sort)
@@ -585,15 +564,8 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                     ? "-" + options.sort
                     : options.sort;
 
-        var userFilters = this.getUserFilters();
-        if (userFilters)
-        {
-            for (var i = 0; i < userFilters.length; i++)
-            {
-                var filter = userFilters[i];
-                options[filter.getURLParameterName()] = filter.getURLParameterValue();
-            }
-        }
+        LABKEY.Filter.appendFilterParams(options, this.getUserFilters());
+
         delete options.dir;
         delete options.sort;
     },

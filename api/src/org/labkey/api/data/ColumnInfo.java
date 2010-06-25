@@ -1152,7 +1152,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 */
             }
 
-            col.label = reader.getDescription();
+            col.label = reader.getLabel();
+            col.description = reader.getDescription();
 
             if (nonEditableColNames.contains(col.getPropertyName()))
                 col.setUserEditable(false);

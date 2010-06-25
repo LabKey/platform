@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 
 /**
  * Created by IntelliJ IDEA.
@@ -46,6 +47,8 @@ public class TempQuerySettings extends QuerySettings
     {
         QueryDefinition qdef = QueryService.get().createQueryDef(_container, _schemaName, "temp");
         qdef.setSql(_sql);
+        if (getContainerFilterName() != null)
+            qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
         return qdef;
     }
 

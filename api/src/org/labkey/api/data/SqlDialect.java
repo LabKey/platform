@@ -354,7 +354,7 @@ public abstract class SqlDialect
     public static boolean isConstraintException(SQLException x)
     {
         String sqlState = x.getSQLState();
-        if (!sqlState.startsWith("23"))
+        if (null == sqlState || !sqlState.startsWith("23"))
             return false;
         return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
@@ -857,7 +857,7 @@ public abstract class SqlDialect
     public static abstract class ColumnMetaDataReader
     {
         protected ResultSet _rsCols;
-        protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey, _descriptionKey;
+        protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey;
 
         public ColumnMetaDataReader(ResultSet rsCols)
         {
@@ -907,9 +907,15 @@ public abstract class SqlDialect
 
         public abstract boolean isAutoIncrement() throws SQLException;
 
+        public @Nullable String getLabel() throws SQLException
+        {
+            return null;
+        }
+
         public @Nullable String getDescription() throws SQLException
         {
-            return StringUtils.trimToNull(_rsCols.getString(_descriptionKey));
+            // Default is to put REMARKS into description.  Note: SQL Server has "remarks" column, but it's always empty??
+            return StringUtils.trimToNull(_rsCols.getString("REMARKS"));
         }
 
         public @Nullable String getDatabaseFormat() throws SQLException

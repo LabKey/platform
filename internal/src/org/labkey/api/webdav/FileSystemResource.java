@@ -611,18 +611,33 @@ public class FileSystemResource extends AbstractWebdavResource
             dir = parent == null ? "" : parent.getPath().toString();
             name = getName();
         }
+
+        // translate the actions into a more meaningful message
+        if ("created".equalsIgnoreCase(message))
+        {
+            message = "file uploaded to folder: " + getContainer().getPath();
+        }
+        else if ("deleted".equalsIgnoreCase(message))
+        {
+            message = "file deleted from folder: " + getContainer().getPath();
+        }
+        else if ("replaced".equalsIgnoreCase(message))
+            message = "file replaced in folder: " + getContainer().getPath();
+
+        String subject = "File Management Tool notification: " + message;
+
         AuditLogService.get().addEvent(context.getUser(), getContainer(), FileSystemAuditViewFactory.EVENT_TYPE, dir, name, message);
         if (context instanceof ViewContext)
-            sendNotificationEmail((ViewContext)context, message);
+            sendNotificationEmail((ViewContext)context, message, subject);
         else
         {
             ViewContext viewContext = HttpView.currentContext();
             if (viewContext != null)
-                sendNotificationEmail(viewContext, message);
+                sendNotificationEmail(viewContext, message, subject);
         }
     }
 
-    private void sendNotificationEmail(ViewContext context, String message)
+    private void sendNotificationEmail(ViewContext context, String message, String subject)
     {
         try {
             EmailService.I svc = EmailService.get();
@@ -640,7 +655,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 for (User user : users)
                 {
                     EmailMessage msg = svc.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(),
-                            new String[]{user.getEmail()}, "File Management Tool notification");
+                            new String[]{user.getEmail()}, subject);
 
                     msg.addContent(EmailMessage.contentType.HTML, context,
                             new JspView<FileEmailForm>("/org/labkey/api/webdav/view/fileEmailNotify.jsp", form));

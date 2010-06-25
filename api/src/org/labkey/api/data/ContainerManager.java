@@ -1121,37 +1121,37 @@ public class ContainerManager
             {
                 core.getSchema().getScope().beginTransaction();
             }
+            ResultSet rs = null;
+
+            try
+            {
+                // check to ensure no children exist
+                rs = Table.executeQuery(core.getSchema(), "SELECT EntityId FROM " + core.getTableInfoContainers() +
+                        " WHERE Parent = ?", new Object[]{c.getId()});
+                if (rs.next())
+                {
+                    _removeFromCache(c);
+                    return false;
+                }
+            }
+            finally
+            {
+               ResultSetUtil.close(rs);
+            }
+
+            List<Throwable> errors = fireDeleteContainer(c, user);
+
+            if (errors.size() != 0)
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                   throw new RuntimeException(first);
+            }
+
             synchronized (DATABASE_QUERY_LOCK)
             {
-                ResultSet rs = null;
-
-                try
-                {
-                    // check to ensure no children exist
-                    rs = Table.executeQuery(core.getSchema(), "SELECT EntityId FROM " + core.getTableInfoContainers() +
-                            " WHERE Parent = ?", new Object[]{c.getId()});
-                    if (rs.next())
-                    {
-                        _removeFromCache(c);
-                        return false;
-                    }
-                }
-                finally
-                {
-                   ResultSetUtil.close(rs);
-                }
-
-                List<Throwable> errors = fireDeleteContainer(c, user);
-
-                if (errors.size() != 0)
-                {
-                    Throwable first = errors.get(0);
-                    if (first instanceof RuntimeException)
-                        throw (RuntimeException)first;
-                    else
-                       throw new RuntimeException(first);
-                }
-
                 try
                 {
                     Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoContainerAliases() + " WHERE ContainerId=?", new Object[]{c.getId()});

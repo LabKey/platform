@@ -24,10 +24,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartReportDescriptor;
-import org.labkey.api.reports.report.RReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -418,14 +415,15 @@ public class ReportUtil
                 String security;
                 if (descriptor.getOwner() != null)
                     security = "private";
-                else if (!SecurityManager.getPolicy(r.getDescriptor(), false).isEmpty())
+                // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
+                else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
                     security = "explicit";
                 else
                     security = "public";
 
                 record.put("permissions", security);
                 
-                String iconPath = ReportService.get().getReportIcon(context, r.getType());
+                String iconPath = ReportService.get().getReportIcon(context, r.getType());  
                 if (!StringUtils.isEmpty(iconPath))
                     record.put("icon", iconPath);
 
@@ -469,7 +467,8 @@ public class ReportUtil
                 }
 
                 record.put("runUrl", filter.getViewRunURL(user, c, view).getLocalURIString());
-                record.put("container", view.getContainer().getPath());
+                // FIXME: see 10473: ModuleCustomViewInfo has no Container or Owner.
+                record.put("container", view.getContainer() != null ? view.getContainer().getPath() : "");
                 record.put("inherited", String.valueOf(inherited));
 
                 views.add(record);

@@ -98,6 +98,27 @@ LABKEY.Filter = new function()
             EQUALS_ONE_OF : getFilterType("Equals One Of", "in", true)
         },
 
+
+        /** @private create a js object suitable for Query.selectRows, etc */
+        appendFilterParams : function (params, filterArray, dataregion)
+        {
+            dataregion = dataregion || "query";
+            params = params || {};
+            if (filterArray)
+            {
+                for (var i = 0; i < filterArray.length; i++)
+                {
+                    var filter = filterArray[i];
+                    // 10.1 compatibility: treat ~eq=null as a NOOP (ref 10482)
+                    if (filter.getFilterType().isDataValueRequired() && null == filter.getURLParameterValue())
+                        continue;
+                    params[filter.getURLParameterName(dataregion)] = filter.getURLParameterValue();
+                }
+            }
+            return params;
+        },
+
+
         /**
         * Creates a filter
         * @param {String} columnName String name of the column to filter

@@ -79,7 +79,15 @@ LABKEY.ext.ExtendedJsonReader = Ext.extend(Ext.data.JsonReader, {
             {
                 var v = this.ef[j](data);
                 var value = undefined === v ? undefined : v.value;  //MODIFIED: column value is in .value property
-                values[f.name] = f.convert((value !== undefined) ? value : f.defaultValue, data);
+                if (value == null)
+                {
+                    // Don't let Ext transforms null values to the "default" primitive values - 0, false, etc
+                    values[f.name] = value;
+                }
+                else
+                {
+                    values[f.name] = f.convert((value !== undefined) ? value : f.defaultValue, data);
+                }
             }
         }
         return values;

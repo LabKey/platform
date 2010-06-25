@@ -632,17 +632,7 @@ LABKEY.Query = new function()
             if (sort)
                 params['query.sort'] = sort;
 
-            if (filterArray)
-            {
-                for (var i = 0; i < filterArray.length; i++)
-                {
-                    var filter = filterArray[i];
-                    // 10.1 compatibility: treat ~eq=null as a NOOP (ref 10482)
-                    if (LABKEY.Filter.Types.EQUAL == filter.getFilterType() && null == filter.getURLParameterValue())
-                        continue;
-                    params[filter.getURLParameterName()] = filter.getURLParameterValue();
-                }
-            }
+            LABKEY.Filter.appendFilterParams(params, filterArray);
 
             return params;
         },
@@ -723,7 +713,13 @@ LABKEY.Query = new function()
         getQueries : function(config)
         {
             var params = {};
-            Ext.apply(params, config);
+            // Only pass the parameters that the server supports, and exclude ones like successCallback
+            LABKEY.Utils.applyTranslated(params, config,
+            {
+                schemaName: 'schemaName',
+                includeColumns: 'includeColumns',
+                includeUserQueries: 'includeUserQueries'
+            }, false, false);
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
                 method : 'GET',

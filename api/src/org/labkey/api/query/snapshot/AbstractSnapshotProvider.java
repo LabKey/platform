@@ -15,10 +15,7 @@
  */
 package org.labkey.api.query.snapshot;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -132,7 +129,7 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 
         DomainProperty prop = domain.addProperty();
         prop.setLabel(column.getLabel());
-        prop.setName(column.getName());
+        prop.setName(AliasManager.makeLegalName(column.getName(), OntologyManager.getSqlDialect()));
 
         Class clz = column.getJavaClass();
         // need to map primitives to object class equivalents

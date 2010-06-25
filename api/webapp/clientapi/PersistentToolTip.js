@@ -106,7 +106,7 @@ LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
 
     // private
     onDocMouseDown : function(e) {
-        if (this.autoHide !== true && !this.closable && !this.checkWithin(e)) {
+        if (this.autoHide !== true /*&& !this.closable*/ && !this.checkWithin(e)) {
             this.disable();
             this.doEnable.defer(100, this);
         }
