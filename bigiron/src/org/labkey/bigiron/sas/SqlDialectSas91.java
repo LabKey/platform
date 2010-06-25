@@ -53,7 +53,6 @@ public class SqlDialectSas91 extends SqlDialectSas
             _scaleKey = "SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "POSITION";
-            _descriptionKey = "COMMENT";
         }
 
         @Override
@@ -71,6 +70,19 @@ public class SqlDialectSas91 extends SqlDialectSas
         public String getDatabaseFormat() throws SQLException
         {
             return StringUtils.trimToNull(_rsCols.getString("type"));
+        }
+
+        @Override
+        public String getLabel() throws SQLException
+        {
+            // With SAS 9.1 driver, variable labels show up in "remarks" -- treat as label instead of description
+            return StringUtils.trimToNull(_rsCols.getString("COMMENT"));
+        }
+
+        @Override
+        public String getDescription() throws SQLException
+        {
+            return null;
         }
     }
 

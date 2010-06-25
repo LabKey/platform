@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.WorkDirFactory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
@@ -254,6 +255,23 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 FileUtils.copyFile(fileWork, fileCopy);
                 if (!fileCopy.renameTo(fileDest))
                 {
+                    // We failed to copy the output file to its final location
+
+                    if (fileDest.exists())
+                    {
+                        // If there's a partial file, try to clean it up 
+                        fileDest.delete();
+
+                        // TODO - change from holding a reference to FileAnalysisJobSupport to a PipelineJob directly.
+                        // It's the only implementation and the extra layer of indirection doesn't help anything.
+                        if (fileDest.exists() && _support instanceof PipelineJob)
+                        {
+                            // If it's still there, make sure we don't auto-retry because this task will think it's
+                            // already been run successfully if its expected outputs are on disk
+                            PipelineJob job = (PipelineJob) _support;
+                            job.setErrors(Math.max(1, job.getActiveTaskFactory().getAutoRetry() + 1));
+                        }
+                    }
                     throw new IOException("Failed to move file " + fileWork + " to " + fileDest);
                 }
                 fileCopy = null;

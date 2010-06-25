@@ -2126,6 +2126,8 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
 
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+            if(null == schema)
+                throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
 
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query

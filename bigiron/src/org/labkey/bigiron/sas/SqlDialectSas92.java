@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.sas;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.DbScope;
 
 import java.sql.ResultSet;
@@ -52,7 +53,6 @@ public class SqlDialectSas92 extends SqlDialectSas
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
-            _descriptionKey = "REMARKS";
         }
 
         @Override
@@ -64,6 +64,19 @@ public class SqlDialectSas92 extends SqlDialectSas
         public boolean isAutoIncrement() throws SQLException
         {
             return false;
+        }
+
+        @Override
+        public String getLabel() throws SQLException
+        {
+            // With SAS 9.2 driver, variable labels show up in "remarks" -- treat as label instead of description
+            return StringUtils.trimToNull(_rsCols.getString("REMARKS"));
+        }
+
+        @Override
+        public String getDescription() throws SQLException
+        {
+            return null;
         }
     }
 

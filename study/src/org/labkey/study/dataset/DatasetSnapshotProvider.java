@@ -145,17 +145,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 String domainURI = def.getTypeURI();
                 Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
-                Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
-
-                for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form))
-                {
-                    ColumnInfo col = dc.getColumnInfo();
-
-                    if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
-                    {
-                        columnMap.put(col.getAlias(), getPropertyURI(d, col));
-                    }
-                }
+                Map<String, String> columnMap = getColumnMap(d, view, snapshot.getColumns(), tsvWriter.getFieldMap());
 
                 // import the data
                 StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), def, new TabLoader(sb, true),
@@ -181,17 +171,22 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     /**
      * Create a column map for parsing the generated tsv from the query view. We only want to map
-     * non-default columns.
+     * non-default columns, and need to build a map that goes from TSV header to PropertyURI
      */
-    private Map<String, String> getColumnMap(Domain d, QueryView view, List<FieldKey> columns)
+    private Map<String, String> getColumnMap(Domain d, QueryView view, List<FieldKey> fieldKeys, Map<FieldKey, ColumnInfo> fieldMap)
     {
         Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
         Study study = StudyManager.getInstance().getStudy(view.getContainer());
 
-        for (ColumnInfo col : QueryService.get().getColumns(view.getTable(), columns).values())
+        for (FieldKey fieldKey : fieldKeys)
         {
-            if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
-                columnMap.put(col.getAlias(), getPropertyURI(d, col));
+            ColumnInfo col = fieldMap.get(fieldKey);
+            if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
+            {
+                // The key of the entry is the same code that generates the TSV header lines for
+                // TSVGridWriter.ColumnHeaderType.queryColumnName. It would be nice to use the code directly.
+                columnMap.put(FieldKey.fromString(col.getName()).getDisplayString(), getPropertyURI(d, col));
+            }
         }
         return columnMap;
     }
@@ -254,7 +249,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     }
                     int numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
                     Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
-                    Map<String, String> columnMap = getColumnMap(d, view, def.getColumns());
+                    Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
                     // import the new data
                     List<String> newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);

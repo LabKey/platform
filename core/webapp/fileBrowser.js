@@ -709,7 +709,7 @@ var FileSystem = Ext.extend(Ext.util.Observable, {
 
 
 // config
-// baseUrl: root of the webdav tree (http://localhost:8080/labkey/_webdav)
+// baseUrl: root of the webdav tree (http://localhost:8080/labkey/_webdav), must be an ABSOLUTE URL ("/_webdav" NOT "_webdav")
 // rootPath: root of the tree we want to browse e.g. /home/@pipeline/
 // rootName: display name for the root
 

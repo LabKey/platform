@@ -30,10 +30,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -544,10 +541,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static SchemaTableInfo getMaterializedTableInfo(TableInfo tinfoFrom, String tempName)
     {
         SchemaTableInfo tinfoMat = new SchemaTableInfo(tempName, StudySchema.getInstance().getDatasetSchema());
-        for (ColumnInfo col : tinfoFrom.getColumns())
+        for (final ColumnInfo col : tinfoFrom.getColumns())
         {
-            ColumnInfo colDirect = new ColumnInfo(col.getName());
-            colDirect.setAlias(col.getAlias());
+            ColumnInfo colDirect = new ColumnInfo(col.getName())
+            {
+                @Override
+                public String getSelectName()
+                {
+                    // It's very important that this match exactly what was used as the alias when generating the SELECT
+                    // that fed into the temp table. Hence, we ask that column directly
+                    return getSqlDialect().quoteColumnIdentifier(col.getAlias());
+                }
+            };
             colDirect.copyAttributesFrom(col);
             colDirect.copyURLFrom(col, null, null);
             colDirect.setParentTable(tinfoMat);
@@ -617,7 +622,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         return "c" + getContainer().getRowId() + "_" + getName().toLowerCase();
     }
-
 
     private synchronized TableInfo getJoinTableInfo(User user)
     {

@@ -810,7 +810,6 @@ class SqlDialectPostgreSQL extends SqlDialect
             _scaleKey = "COLUMN_SIZE";
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
-            _descriptionKey = "REMARKS";
         }
 
         public boolean isAutoIncrement() throws SQLException

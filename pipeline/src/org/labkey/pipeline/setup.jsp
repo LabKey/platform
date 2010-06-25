@@ -50,7 +50,8 @@
         File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
         if (projRoot != null)
         {
-            projectDefaultRoot = projRoot.getCanonicalPath();
+            // Show the user the path that we'd point to if using the default location
+            projectDefaultRoot = projRoot.getAbsolutePath();
         }
     }
 

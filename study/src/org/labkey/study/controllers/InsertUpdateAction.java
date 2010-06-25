@@ -17,6 +17,7 @@
 package org.labkey.study.controllers;
 
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.MvColumn;
@@ -26,6 +27,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
@@ -44,6 +46,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
 
@@ -237,59 +240,92 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         QueryUpdateService qus = datasetQueryTable.getUpdateService();
         assert qus != null;
 
-        Map<String,Object> data = updateForm.getDataMap();
-        String newLsid;
-        if (isInsert())
+        DbSchema dbschema = schema.getDbSchema();
+        boolean ownTransaction = !dbschema.getScope().isTransactionActive();
+        try
         {
-            List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data));
-            if (insertedRows.size() == 0)
-                return false;
-            Map<String, Object> insertedValues = insertedRows.get(0);
-            newLsid = (String)insertedValues.get("lsid");
+            if (ownTransaction)
+                dbschema.getScope().beginTransaction();
 
-            // save last inputs for use in default value population:
-            Domain domain = PropertyService.get().getDomain(c, ds.getTypeURI());
-            DomainProperty[] properties = domain.getProperties();
-            Map<String, Object> requestMap = updateForm.getTypedValues();
-            Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
-            for (DomainProperty property : properties)
+            Map<String,Object> data = updateForm.getDataMap();
+            String newLsid;
+
+            if (isInsert())
             {
-                ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user);
-                Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
-                if (property.isMvEnabled())
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data));
+                if (insertedRows.size() == 0)
+                    return false;
+                Map<String, Object> insertedValues = insertedRows.get(0);
+                newLsid = (String)insertedValues.get("lsid");
+
+                // save last inputs for use in default value population:
+                Domain domain = PropertyService.get().getDomain(c, ds.getTypeURI());
+                DomainProperty[] properties = domain.getProperties();
+                Map<String, Object> requestMap = updateForm.getTypedValues();
+                Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
+                for (DomainProperty property : properties)
                 {
-                    ColumnInfo mvColumn = datasetTable.getColumn(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
-                    String mvIndicator = (String)requestMap.get(updateForm.getFormFieldName(mvColumn));
-                    MvFieldWrapper mvWrapper = new MvFieldWrapper(value, mvIndicator);
-                    dataMap.put(property, mvWrapper);
+                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", user);
+                    Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
+                    if (property.isMvEnabled())
+                    {
+                        ColumnInfo mvColumn = datasetTable.getColumn(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                        String mvIndicator = (String)requestMap.get(updateForm.getFormFieldName(mvColumn));
+                        MvFieldWrapper mvWrapper = new MvFieldWrapper(value, mvIndicator);
+                        dataMap.put(property, mvWrapper);
+                    }
+                    else
+                    {
+                        dataMap.put(property, value);
+                    }
                 }
-                else
-                {
-                    dataMap.put(property, value);
-                }
+                DefaultValueService.get().setDefaultValues(c, dataMap, user);
             }
-            DefaultValueService.get().setDefaultValues(c, dataMap, user);
+            else
+            {
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
+                        Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())));
+                if (updatedRows.size() == 0)
+                    return false;
+                Map<String, Object> updatedValues = updatedRows.get(0);
+                newLsid = (String)updatedValues.get("lsid");
+            }
+
+            boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
+                    PageFlowUtil.nullSafeEquals(datasetId, study.getParticipantCohortDataSetId()));
+
+            // If this results in a change to cohort assignments, the participant ID, or the visit,
+            // we need to recompute the participant-visit map:
+            if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
+            {
+                StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singleton(ds));
+                StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(user, Collections.singleton(ds));
+            }
+
+            if (ownTransaction)
+            {
+                dbschema.getScope().commitTransaction();
+                ownTransaction = false;
+            }
         }
-        else
+        catch (SQLException x)
         {
-            List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
-                    Collections.singletonList(Collections.<String, Object>singletonMap("lsid", form.getLsid())));
-            if (updatedRows.size() == 0)
-                return false;
-            Map<String, Object> updatedValues = updatedRows.get(0);
-            newLsid = (String)updatedValues.get("lsid");
+            if (!SqlDialect.isConstraintException(x))
+                throw x;
+            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+        }
+        catch (ValidationException x)
+        {
+            errors.addAllErrors(x.toErrors(errors.getObjectName()));
+        }
+        finally
+        {
+            if (ownTransaction)
+                dbschema.getScope().closeConnection();
         }
 
-        boolean recomputeCohorts = (!study.isManualCohortAssignment() &&
-                PageFlowUtil.nullSafeEquals(datasetId, study.getParticipantCohortDataSetId()));
-
-        // If this results in a change to cohort assignments, the participant ID, or the visit,
-        // we need to recompute the participant-visit map:
-        if (recomputeCohorts || isInsert() || !newLsid.equals(form.getLsid()))
-        {
-            StudyManager.getInstance().recomputeStudyDataVisitDate(study, Collections.singleton(ds));
-            StudyManager.getInstance().getVisitManager(getStudy()).updateParticipantVisits(user, Collections.singleton(ds));
-        }
+        if (errors.hasErrors())
+            return false;
 
         return true;
     }

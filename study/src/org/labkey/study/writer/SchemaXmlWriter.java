@@ -115,7 +115,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, StudyCon
         protected String getPropertyURI(ColumnInfo column)
         {
             String propertyURI = column.getPropertyURI();
-            if (propertyURI != null && !propertyURI.startsWith(_domain.getTypeURI()) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+            // Only round-trip PropertyURIs that are special. Ones that are standard domain properties will have
+            // a new PropertyURI generated that contains the proper container id, etc on the import side.
+            if (propertyURI != null && (_domain == null || !propertyURI.startsWith(_domain.getTypeURI())) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
                 return propertyURI;
             return null;
         }

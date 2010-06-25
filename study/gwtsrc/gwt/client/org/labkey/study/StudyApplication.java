@@ -21,6 +21,7 @@ import com.google.gwt.core.client.RunAsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
+import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
@@ -128,7 +129,7 @@ public class StudyApplication implements EntryPoint
 
         public void onFailure(Throwable caught)
         {
-            Window.alert("Failed to load code for module: " + this.name());
+            ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + this.name());
         }
 
 
