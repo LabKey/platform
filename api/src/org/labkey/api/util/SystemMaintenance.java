@@ -18,6 +18,9 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.StatusAppender;
+import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.settings.AppProps;
 
 import javax.servlet.ServletContextEvent;
@@ -29,21 +32,31 @@ import java.util.*;
  * Date: Sep 29, 2006
  * Time: 2:18:53 PM
  */
-public class SystemMaintenance extends TimerTask implements ShutdownListener
+public class SystemMaintenance extends TimerTask implements ShutdownListener, StatusReportingRunnable
 {
     private static final Object _timerLock = new Object();
     private static Timer _timer = null;
     private static SystemMaintenance _timerTask = null;
-    private static final Logger _log = Logger.getLogger(SystemMaintenance.class);
     private static final List<MaintenanceTask> _tasks = new ArrayList<MaintenanceTask>(10);
     private static boolean _taskRunning = false;
 
-    private boolean _checkTime;
+    private final Logger _log;
+    private final boolean _temp;
+    private StatusAppender _appender;
 
-    // Allows manual invocation of system maintenance tasks
-    public SystemMaintenance(boolean checkTime)
+    // temp = true allows manual invocation of system maintenance tasks.  Prevents time check and creates a logger that
+    // can report status back to request threads.
+    public SystemMaintenance(boolean temp)
     {
-        _checkTime = checkTime;
+        _log = Logger.getLogger(SystemMaintenance.class);
+
+        if (temp)
+        {
+            _appender = new StatusAppender();
+            _log.addAppender(_appender);
+        }
+
+        _temp = temp;
     }
 
     public static void setTimer()
@@ -61,7 +74,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener
             // Timer has a single task that simply kicks off a thread that performs all the maintenance tasks.  This ensures that
             // the maintenance tasks run serially and will allow (if we need to in the future) to control the ordering (for example,
             // purge data first, then compact the database)
-            _timerTask = new SystemMaintenance(true);
+            _timerTask = new SystemMaintenance(false);
             ContextListener.addShutdownListener(_timerTask);
             _timer.scheduleAtFixedRate(_timerTask, getNextSystemMaintenanceTime(), DateUtils.MILLIS_PER_DAY);
         }
@@ -136,7 +149,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener
     // Start a separate thread to do all the work
     public void run()
     {
-        if (_checkTime && (System.currentTimeMillis() - scheduledExecutionTime()) > 2 * DateUtils.MILLIS_PER_HOUR)
+        if (!_temp && (System.currentTimeMillis() - scheduledExecutionTime()) > 2 * DateUtils.MILLIS_PER_HOUR)
         {
             _log.warn("Skipping system maintenance since it's two hours past the scheduled time");
         }
@@ -153,6 +166,17 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener
         }
     }
 
+    @Override
+    public boolean isRunning()
+    {
+        return _taskRunning;
+    }
+
+    @Override
+    public Collection<String> getStatus(@Nullable Integer offset)
+    {
+        return _appender.getStatus(offset); 
+    }
 
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {

@@ -5,7 +5,7 @@ package org.labkey.api.cache;
  * Date: Jun 20, 2010
  * Time: 11:28:36 AM
  */
-public interface StringKeyCache<V> extends CacheI<String, V>
+public interface StringKeyCache<V> extends Cache<String, V>
 {
     void removeUsingPrefix(String prefix);
 }

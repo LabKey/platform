@@ -19,8 +19,10 @@ package org.labkey.api.data;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.cache.TTLCacheMap;
+import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -36,12 +38,12 @@ import java.sql.SQLException;
  */
 public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 {
-    private final TTLCacheMap<String, ValueType> _sharedMap;
+    private final StringKeyCache<ValueType> _sharedCache;
     private final DbScope _scope;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
-        _sharedMap = createSharedCacheMap(maxSize, defaultTimeToLive, debugName);
+        _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
@@ -50,22 +52,22 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         this(scope, maxSize, -1, debugName);
     }
 
-    protected TTLCacheMap<String, ValueType> createSharedCacheMap(int maxSize, long defaultTimeToLive, String debugName)
+    protected StringKeyCache<ValueType> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
     {
-        return new TTLCacheMap<String, ValueType>(maxSize, defaultTimeToLive, debugName);
+        return CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
     }
 
-    private TTLCacheMap<String, ValueType> getMap()
+    private StringKeyCache<ValueType> getMap()
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
         if (null != t)
         {
-            TTLCacheMap<String, ValueType> map = t.getCache(this);
+            StringKeyCache<ValueType> map = t.getCache(this);
 
             if (null == map)
             {
-                map = new TransactionCacheMap<String, ValueType>(_sharedMap);
+                map = new TransactionCacheMap<ValueType>(_sharedCache);
                 t.addCache(this, map);
             }
 
@@ -73,7 +75,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         }
         else
         {
-            return _sharedMap;
+            return _sharedCache;
         }
     }
 
@@ -147,6 +149,42 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
+    @Override
+    public void removeUsingFilter(Filter<String> filter)
+    {
+        _sharedCache.removeUsingFilter(filter);
+    }
+
+    @Override
+    public int getMaxSize()
+    {
+        return _sharedCache.getMaxSize();
+    }
+
+    @Override
+    public int size()
+    {
+        return _sharedCache.size();
+    }
+
+    @Override
+    public long getDefaultExpires()
+    {
+        return _sharedCache.getDefaultExpires();
+    }
+
+    @Override
+    public String getDebugName()
+    {
+        return _sharedCache.getDebugName();
+    }
+
+    @Override
+    public Stats getTransactionStats()
+    {
+        return _sharedCache.getTransactionStats();
+    }
+
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
@@ -169,14 +207,9 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             // Don't let the test cache add to KNOWN_CACHES, otherwise we'll leak a TTLCacheMap for each invocation
             DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache") {
                 @Override
-                protected TTLCacheMap<String, String> createSharedCacheMap(int maxSize, long defaultTimeToLive, String debugName)
+                protected StringKeyCache<String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
                 {
-                    return new TTLCacheMap<String, String>(maxSize, defaultTimeToLive, debugName) {
-                        @Override
-                        protected void addToKnownCacheMaps()
-                        {
-                        }
-                    };
+                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
                 }
             };
 

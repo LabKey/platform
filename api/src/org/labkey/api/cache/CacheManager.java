@@ -16,13 +16,19 @@ public class CacheManager
 
     public static final long DEFAULT_TIMEOUT = HOUR;
 
-    public static <K, V> CacheI<K, V> getCache(int size, long defaultTimeToLive, String debugName)
+    public static <K, V> Cache<K, V> getCache(int size, long defaultTimeToLive, String debugName)
     {
         return new CacheImpl<K, V>(size, defaultTimeToLive, debugName);
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int size, long defaultTimeToLive, String debugName)
     {
+        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName);
+    }
+
+    public static <V> StringKeyCache<V> getTemporaryCache(int size, long defaultTimeToLive, String debugName, Stats transactionStats)
+    {
+        // TODO: Pass in transaction stats, don't add to known cachemaps
         return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName);
     }
 

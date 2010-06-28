@@ -16,7 +16,7 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.resource.*;
 import org.labkey.api.settings.AppProps;
@@ -33,7 +33,7 @@ import java.util.List;
 public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
-    private static final CacheI<String, Resource> RESOURCES = CacheManager.getCache(4096, CacheManager.HOUR, "Module resources");
+    private static final Cache<String, Resource> RESOURCES = CacheManager.getCache(4096, CacheManager.HOUR, "Module resources");
 
     private static final Resource CACHE_MISS = new AbstractResource(null, null) {
         public Resource parent()

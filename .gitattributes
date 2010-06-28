@@ -64,6 +64,9 @@ api/src/org/labkey/api/action/SimpleRedirectAction.java -text
 api/src/org/labkey/api/action/SimpleStreamAction.java -text
 api/src/org/labkey/api/action/SimpleViewAction.java -text
 api/src/org/labkey/api/action/SpringActionController.java -text
+api/src/org/labkey/api/action/StatusAppender.java -text
+api/src/org/labkey/api/action/StatusReportingRunnable.java -text
+api/src/org/labkey/api/action/StatusReportingRunnableAction.java -text
 api/src/org/labkey/api/action/UrlProvider.java -text
 api/src/org/labkey/api/action/confirmWrapper.jsp -text
 api/src/org/labkey/api/action/simpleErrorView.jsp -text
@@ -90,13 +93,14 @@ api/src/org/labkey/api/audit/query/AuditLogQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
-api/src/org/labkey/api/cache/CacheI.java -text
+api/src/org/labkey/api/cache/Cache.java -text
 api/src/org/labkey/api/cache/CacheImpl.java -text
 api/src/org/labkey/api/cache/CacheManager.java -text
 api/src/org/labkey/api/cache/CacheMap.java -text
 api/src/org/labkey/api/cache/CacheStats.java -text
 api/src/org/labkey/api/cache/DbCache.java -text
 api/src/org/labkey/api/cache/LimitedCacheMap.java -text
+api/src/org/labkey/api/cache/Stats.java -text
 api/src/org/labkey/api/cache/StringKeyCache.java -text
 api/src/org/labkey/api/cache/StringKeyCacheImpl.java -text
 api/src/org/labkey/api/cache/TTLCacheMap.java -text

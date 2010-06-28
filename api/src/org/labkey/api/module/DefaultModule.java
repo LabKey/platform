@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
@@ -89,7 +89,7 @@ public abstract class DefaultModule implements Module
     private String _sourcePath = null;
     private File _explodedPath = null;
 
-    private static final CacheI<String, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Report descriptor cache");
+    private static final Cache<String, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {

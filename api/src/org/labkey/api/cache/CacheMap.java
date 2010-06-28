@@ -18,7 +18,6 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -243,17 +242,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected Stats stats = new Stats();
     public Stats transactionStats = new Stats();
-
-    protected static class Stats
-    {
-        private AtomicLong gets = new AtomicLong(0);
-        private AtomicLong misses = new AtomicLong(0);
-        private AtomicLong puts = new AtomicLong(0);
-        private AtomicLong expirations = new AtomicLong(0);
-        private AtomicLong removes = new AtomicLong(0);
-        private AtomicLong clears = new AtomicLong(0);
-        private AtomicLong max_size = new AtomicLong(0);
-    }
 
     //
     // Map implementation

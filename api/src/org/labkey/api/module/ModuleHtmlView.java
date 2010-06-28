@@ -15,7 +15,7 @@
  */
 package org.labkey.api.module;
 
-import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.view.HtmlView;
@@ -33,7 +33,7 @@ import org.labkey.api.view.template.PageConfig;
  */
 public class ModuleHtmlView extends HtmlView
 {
-    private static final CacheI<String, ModuleHtmlViewDefinition> VIEW_DEF_CACHE = CacheManager.getCache(1024, CacheManager.HOUR, "Module HTML view definition cache");
+    private static final Cache<String, ModuleHtmlViewDefinition> VIEW_DEF_CACHE = CacheManager.getCache(1024, CacheManager.HOUR, "Module HTML view definition cache");
 
     private ModuleHtmlViewDefinition _viewdef = null;
 

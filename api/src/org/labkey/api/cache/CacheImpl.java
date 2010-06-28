@@ -16,12 +16,13 @@
 package org.labkey.api.cache;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.util.Filter;
 
 /**
  * synchronized cache implemented using TTLCacheMap
  * like DatabaseCache, but not transaction aware
  */
-public class CacheImpl<K, V> implements CacheI<K, V>
+public class CacheImpl<K, V> implements Cache<K, V>
 {
     private static Logger _log = Logger.getLogger(CacheImpl.class);
 
@@ -33,6 +34,7 @@ public class CacheImpl<K, V> implements CacheI<K, V>
     }
 
 
+    @Override
     public synchronized V put(K key, V value)
     {
         _logDebug("Cache.put(" + key + ")");
@@ -40,6 +42,7 @@ public class CacheImpl<K, V> implements CacheI<K, V>
     }
 
 
+    @Override
     public synchronized V put(K key, V value, long msToLive)
     {
         _logDebug("Cache.put(" + key + ")");
@@ -47,6 +50,7 @@ public class CacheImpl<K, V> implements CacheI<K, V>
     }
 
 
+    @Override
     public synchronized V get(K key)
     {
         V v = _cache.get(key);
@@ -55,6 +59,7 @@ public class CacheImpl<K, V> implements CacheI<K, V>
     }
 
 
+    @Override
     public synchronized V remove(K key)
     {
         _logDebug("Cache.remove(" + key + ")");
@@ -62,13 +67,15 @@ public class CacheImpl<K, V> implements CacheI<K, V>
     }
 
 
-    public synchronized void removeUsingPrefix(String key)
+    @Override
+    public synchronized void removeUsingFilter(Filter<K> filter)
     {
-        _logDebug("Cache.removeUsingPrefix(" + key + ")");
-        _cache.removeUsingPrefix(key);
+        _logDebug("Cache.removeUsingFilter");
+        _cache.removeUsingFilter(filter);
     }
 
 
+    @Override
     public synchronized void clear()
     {
         _cache.clear();
@@ -78,5 +85,35 @@ public class CacheImpl<K, V> implements CacheI<K, V>
     private void _logDebug(String msg)
     {
         _log.debug(msg);
+    }
+
+    @Override
+    public int getMaxSize()
+    {
+        return _cache.getMaxSize();
+    }
+
+    @Override
+    public int size()
+    {
+        return _cache.size();
+    }
+
+    @Override
+    public long getDefaultExpires()
+    {
+        return _cache.getDefaultExpires();
+    }
+
+    @Override
+    public String getDebugName()
+    {
+        return _cache.getDebugName();
+    }
+
+    @Override
+    public Stats getTransactionStats()
+    {
+        return null; // todo: _cache.getTransactionStats();
     }
 }

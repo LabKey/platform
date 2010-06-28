@@ -18,6 +18,7 @@ package org.labkey.api.cache;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
 
 import java.lang.ref.ReferenceQueue;
@@ -210,8 +211,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
 
-    // CONSIDER: generalize to removeAll(Filter)
-    public void removeUsingPrefix(String prefix)
+    public void removeUsingFilter(Filter<K> filter)
     {
         int corruptionDetector = 0;
 
@@ -223,7 +223,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
                 trackExpiration();
                 removeEntry(entry);
             }
-            else if (entry.getKey() instanceof String && ((String)entry.getKey()).startsWith(prefix))
+            else if (filter.accept(entry.getKey()))
             {
                 trackRemove();
                 removeEntry(entry);
@@ -237,6 +237,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
             }
         }
     }
+
 
     void purge()
     {

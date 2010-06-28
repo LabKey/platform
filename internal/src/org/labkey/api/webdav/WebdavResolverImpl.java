@@ -19,18 +19,18 @@ package org.labkey.api.webdav;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
-import org.labkey.api.cache.TTLCacheMap;
+import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -54,6 +54,7 @@ public class WebdavResolverImpl implements WebdavResolver
     private WebdavResolverImpl(Path path)
     {
         _rootPath = path;
+        ContainerManager.addContainerListener(new WebdavListener());
     }
 
     public static WebdavResolver get()
@@ -119,55 +120,9 @@ public class WebdavResolverImpl implements WebdavResolver
         return "webdav";
     }
 
-    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
-    // end up with just one of these.
-    private class FolderCache extends TTLCacheMap<Path, WebdavResource> implements ContainerManager.ContainerListener
+
+    private class WebdavListener implements ContainerManager.ContainerListener
     {
-        private FolderCache()
-        {
-            super(1000, 5 * CacheManager.MINUTE, "WebDAV folders");
-            ContainerManager.addContainerListener(this);
-        }
-
-        public synchronized WebdavResource put(Path key, WebdavResource value)
-        {
-            return super.put(key,value);
-        }
-
-        public synchronized WebdavResource get(Path key)
-        {
-            return super.get(key);
-        }
-
-        public synchronized WebdavResource remove(Path key)
-        {
-            return super.remove(key);
-        }
-
-        @Override
-        public synchronized void clear()
-        {
-            super.clear();
-        }
-
-        private synchronized void removeUsingPrefix(Path prefix)
-        {
-            // since we're touching all the Entrys anyway, might as well test expired()
-            for (Entry<Path, WebdavResource> entry = head.next; entry != head; entry = entry.next)
-            {
-                if (removeOldestEntry(entry))
-                {
-                    trackExpiration();
-                    removeEntry(entry);
-                }
-                else if (entry.getKey().startsWith(prefix))
-                {
-                    trackRemove();
-                    removeEntry(entry);
-                }
-            }
-        }
-
         public void containerCreated(Container c)
         {
             invalidate(c.getParsedPath().getParent(), false);
@@ -217,7 +172,7 @@ public class WebdavResolverImpl implements WebdavResolver
             }
             catch (Exception x)
             {
-                clear();
+                _folderCache.clear();
             }
         }
 
@@ -242,10 +197,16 @@ public class WebdavResolverImpl implements WebdavResolver
 
         void invalidate(Path containerPath, boolean recursive)
         {
-            Path path = getRootPath().append(containerPath);
-            remove(path);
+            final Path path = getRootPath().append(containerPath);
+            _folderCache.remove(path);
             if (recursive)
-                removeUsingPrefix(path);
+                _folderCache.removeUsingFilter(new Filter<Path>() {
+                    @Override
+                    public boolean accept(Path test)
+                    {
+                        return test.startsWith(path);
+                    }
+                });
             if (containerPath.size() == 0)
             {
                 synchronized (WebdavResolverImpl.this)
@@ -257,7 +218,9 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
-    private FolderCache _folderCache = new FolderCache();
+    // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
+    // end up with just one of these.
+    private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(1000, 5 * CacheManager.MINUTE, "WebDAV folders");
 
 
 //    private FolderResourceImpl lookupWebFolder(String folder)

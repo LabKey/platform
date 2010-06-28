@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.cache.TTLCacheMap;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -898,7 +898,7 @@ public class DbScope
     static class Transaction
     {
         private final Connection _conn;
-        private final Map<DatabaseCache<?>, TTLCacheMap<String, ?>> _caches = new HashMap<DatabaseCache<?>, TTLCacheMap<String, ?>>(20);
+        private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<DatabaseCache<?>, StringKeyCache<?>>(20);
         private final LinkedList<Runnable> _commitTasks = new LinkedList<Runnable>();
 
         Transaction(Connection conn)
@@ -906,12 +906,12 @@ public class DbScope
             _conn = conn;
         }
 
-        <ValueType> TTLCacheMap<String, ValueType> getCache(DatabaseCache<ValueType> cache)
+        <ValueType> StringKeyCache<ValueType> getCache(DatabaseCache<ValueType> cache)
         {
-            return (TTLCacheMap<String, ValueType>)_caches.get(cache);
+            return (StringKeyCache<ValueType>)_caches.get(cache);
         }
 
-        <ValueType> void addCache(DatabaseCache<ValueType> cache, TTLCacheMap<String, ValueType> map)
+        <ValueType> void addCache(DatabaseCache<ValueType> cache, StringKeyCache<ValueType> map)
         {
             _caches.put(cache, map);
         }
