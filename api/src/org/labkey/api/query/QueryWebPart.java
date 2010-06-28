@@ -17,10 +17,7 @@
 package org.labkey.api.query;
 
 import org.json.JSONObject;
-import org.labkey.api.data.ButtonBarConfig;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -172,10 +169,31 @@ public class QueryWebPart extends WebPartView
                         queryView.setShowRecordSelectors(false);
                 }
 
-                if (null != _extendedProperties && _extendedProperties.get("buttonBar") instanceof JSONObject)
+                if (null != _extendedProperties)
                 {
-                    ButtonBarConfig bbarConfig = new ButtonBarConfig((JSONObject)_extendedProperties.get("buttonBar"));
-                    queryView.setButtonBarConfig(bbarConfig);
+                    if (_extendedProperties.get("buttonBar") instanceof JSONObject)
+                    {
+                        ButtonBarConfig bbarConfig = new ButtonBarConfig((JSONObject)_extendedProperties.get("buttonBar"));
+                        queryView.setButtonBarConfig(bbarConfig);
+                    }
+
+                    // 10505 : add QueryWebPart filters to QuerySettings base sort/filter so they won't be changeable in the DataRegion UI.
+                    if (_extendedProperties.get("filters") instanceof JSONObject)
+                    {
+                        JSONObject filters = (JSONObject)_extendedProperties.get("filters");
+                        if (filters.size() > 0)
+                        {
+                            // UNDONE: there should be an easier way to convert into a Filter than having to serialize them onto an ActionUrl and back out.
+                            ActionURL url = new ActionURL();
+                            url.addParameters(filters);
+
+                            SimpleFilter filter = _settings.getBaseFilter();
+                            filter.addUrlFilters(url, queryView.getDataRegionName());
+
+                            Sort sort = _settings.getBaseSort();
+                            sort.addURLSort(url, queryView.getDataRegionName());
+                        }
+                    }
                 }
 
 

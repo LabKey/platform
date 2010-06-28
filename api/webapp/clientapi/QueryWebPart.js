@@ -253,10 +253,6 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         params[this.dataRegionName + ".queryName"] = this.queryName;
         if (this.viewName)
             params[this.dataRegionName + ".viewName"] = this.viewName;
-        if (this.sort)
-            params[this.dataRegionName + ".sort"] = this.sort;
-
-        LABKEY.Filter.appendFilterParams(params, this.filters, this.dataRegionName);
 
         //add user filters (already in encoded form
         if (this.userFilters)
@@ -266,7 +262,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                 params[name] = this.userFilters[name];
             }
         }
-        
+
         //handle aggregates separately
         if(this.aggregates)
         {
@@ -296,6 +292,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         var json = {};
         if (this.buttonBar && this.buttonBar.items && this.buttonBar.items.length > 0)
             json.buttonBar = this.processButtonBar();
+
+        // 10505: add non-removable sorts and filters to json (not url params).  These will be handled in QueryWebPart.java
+        json.filters = {};
+        if (this.filters)
+            LABKEY.Filter.appendFilterParams(json.filters, this.filters, this.dataRegionName);
+
+        if (this.sort)
+            json.filters[this.dataRegionName + ".sort"] = this.sort;
 
         Ext.Ajax.request({
             timeout: this.timeout || 30000,
@@ -346,7 +350,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     processButtonBarItems : function(items) {
         if (!items || !items.length || items.length <= 0)
             return;
-        
+
         var item;
         for (var idx = 0; idx < items.length; ++idx)
         {
@@ -525,4 +529,3 @@ LABKEY.AggregateTypes = {
      */
         MAX: 'max'
 };
-

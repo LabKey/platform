@@ -336,6 +336,17 @@ public class QueryView extends WebPartView<Object>
     {
         ActionURL ret = _schema.urlFor(action, _queryDef);
 
+        if (getSettings().getViewName() != null)
+            ret.addParameter(QueryParam.viewName, QueryView.DATAREGIONNAME_DEFAULT + "." + getSettings().getViewName());
+
+        // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
+        // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
+        if (getSettings().getBaseFilter() != null)
+            (getSettings().getBaseFilter()).applyToURL(ret, getDataRegionName());
+
+        if (getSettings().getBaseSort() != null)
+            getSettings().getBaseSort().applyToURL(ret, getDataRegionName());
+
         switch (action)
         {
             case deleteQuery:
@@ -1259,7 +1270,8 @@ public class QueryView extends WebPartView<Object>
             rgn.setButtonBarPosition(_buttonBarPosition);
         }
 
-        if (_customView != null && _customView.hasFilterOrSort() && !ignoreUserFilter())
+        // Apply base sorts and filters from custom view and from QuerySettings.
+        if (!ignoreUserFilter())
         {
             SimpleFilter filter;
             if (ret.getRenderContext().getBaseFilter() instanceof SimpleFilter)
@@ -1275,10 +1287,20 @@ public class QueryView extends WebPartView<Object>
             {
                 sort = new Sort();
             }
-            ActionURL url = new ActionURL();
-            _customView.applyFilterAndSortToURL(url, getDataRegionName());
-            filter.addUrlFilters(url, getDataRegionName());
-            sort.applyURLSort(url, getDataRegionName());
+
+            // We need to set the base sort/filter _before_ adding the customView sort/filter.
+            // If the user has set a sort on their custom view, we want their sort to take precedence.
+            filter.addAllClauses(getSettings().getBaseFilter());
+            sort.insertSort(getSettings().getBaseSort());
+
+            if (_customView != null && _customView.hasFilterOrSort())
+            {
+                ActionURL url = new ActionURL();
+                _customView.applyFilterAndSortToURL(url, getDataRegionName());
+                filter.addUrlFilters(url, getDataRegionName());
+                sort.addURLSort(url, getDataRegionName());
+            }
+
             ret.getRenderContext().setBaseFilter(filter);
             ret.getRenderContext().setBaseSort(sort);
         }

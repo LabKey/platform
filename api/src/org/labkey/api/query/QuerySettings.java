@@ -18,10 +18,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.Aggregate;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -62,6 +60,9 @@ public class QuerySettings
 
     private String _containerFilterName;
     private List<Aggregate> _aggregates = new ArrayList<Aggregate>();
+
+    private SimpleFilter _baseFilter;
+    private Sort _baseSort;
 
 
     public QuerySettings(String dataRegionName)
@@ -477,6 +478,38 @@ public class QuerySettings
     public void setShowHiddenFieldsWhenCustomizing(boolean showHiddenFieldsWhenCustomizing)
     {
         _showHiddenFieldsWhenCustomizing = showHiddenFieldsWhenCustomizing;
+    }
+
+    /**
+     * Base filter is applied before the custom view's filters and before any filter set by the user on the sortFilterURL.
+     * The returned SimpleFilter is not null and may be mutated in place without calling the setBaseFilter() method.
+     */
+    public @NotNull SimpleFilter getBaseFilter()
+    {
+        if (_baseFilter == null)
+            _baseFilter = new SimpleFilter();
+        return _baseFilter;
+    }
+
+    public void setBaseFilter(SimpleFilter filter)
+    {
+        _baseFilter = filter;
+    }
+
+    /**
+     * Base sort is applied before the custom view's sorts and before any sorts set by the user on the sortFilterURL.
+     * The returned Sort is not null and may be mutated in place without calling the setBaseSort() method.
+     */
+    public @NotNull Sort getBaseSort()
+    {
+        if (_baseSort == null)
+            _baseSort = new Sort();
+        return _baseSort;
+    }
+
+    public void setBaseSort(Sort baseSort)
+    {
+        _baseSort = baseSort;
     }
 
     public ActionURL getSortFilterURL()

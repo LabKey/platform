@@ -493,7 +493,7 @@ public abstract class DisplayColumn extends RenderColumn
                 if (sort == null)
                     sort = new Sort();
                 ActionURL url = ctx.getViewContext().getActionURL();
-                sort.applyURLSort(url, rgn.getName());
+                sort.addURLSort(url, rgn.getName());
                 ctx.put(rgn.getName() + ".sort", sort);
             }
 

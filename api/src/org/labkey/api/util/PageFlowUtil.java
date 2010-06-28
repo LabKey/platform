@@ -1607,6 +1607,8 @@ public class PageFlowUtil
 
     static String extDebug = "ext-3.2.1/ext-all-debug.js";
     static String extMin = "ext-3.2.1/ext-all.js";
+    static String extBaseDebug = "ext-3.2.1/adapter/ext/ext-base-debug.js";
+    static String extBase = "ext-3.2.1/adapter/ext/ext-base.js";
 
     static String[] clientExploded = new String[]
     {
@@ -1657,7 +1659,7 @@ public class PageFlowUtil
         scripts.add("util.js");
 
         // EXT
-        scripts.add("ext-3.2.1/adapter/ext/ext-base.js");
+        scripts.add(AppProps.getInstance().isDevMode() ? extBaseDebug : extBase);
         if (explodedExt)
         {
             String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/ext-3.2.1/ext.jsb2")));

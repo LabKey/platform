@@ -329,7 +329,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         Sort baseSort = getBaseSort();
         Sort sort = null != baseSort ? baseSort : new Sort();
-        sort.applyURLSort(url, name);
+        sort.addURLSort(url, name);
         return sort;
     }
 

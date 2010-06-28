@@ -714,18 +714,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
 
 
-    public void translatePrefix(URLHelper source, String oldPrefix, String newPrefix)
-    {
-        for (String key : source.getKeysByPrefix(oldPrefix))
-        {
-            String newKey = newPrefix + oldPrefix.substring(key.length());
-            for (String value : source.getParameters(key))
-            {
-                addParameter(newKey, value);
-            }
-        }
-    }
-
     // CONSIDER: translate internal representation to use PropertyValues
     public void addParameters(PropertyValues pvs)
     {

@@ -501,6 +501,27 @@ public class SimpleFilter implements Filter
         return ret.toString();
     }
 
+    /**
+     * Apply the filters in this SimpleFilter to the url scoped by the regionName prefix.
+     * @param url The url to be modified.
+     * @param regionName The prefix used to scope the filters.
+     */
+    public void applyToURL(URLHelper url, String regionName)
+    {
+        String prefix = regionName == null ? "" : regionName + ".";
+        for (FilterClause fc : _clauses)
+        {
+            if (fc instanceof CompareClause)
+            {
+                CompareClause cc = (CompareClause) fc;
+                String key = prefix + cc._colName + "~" + cc._comparison.getPreferredUrlKey();
+                String value = cc.getParamVals() != null && cc.getParamVals()[0] != null ?
+                        cc.getParamVals()[0].toString() : null;
+                url.addParameter(key, value);
+            }
+        }
+    }
+
     /*
     // UNDONE encode()
     public String getParamString()

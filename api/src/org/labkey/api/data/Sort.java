@@ -146,7 +146,7 @@ public class Sort
     }
 
 
-    public void applyURLSort(URLHelper urlhelp, String regionName)
+    public void addURLSort(URLHelper urlhelp, String regionName)
     {
         String[] sortParams = urlhelp.getParameters(regionName + SORT_KEY);
         String[] sortKeys;
@@ -165,6 +165,16 @@ public class Sort
         }
     }
 
+
+    /**
+     * Add a column to the sort.
+     *
+     * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
+     */
+    public void insertSortColumn(String columnName)
+    {
+        insertSortColumn(columnName, false);
+    }
 
     /**
      * Add a column to the sort.
@@ -346,6 +356,17 @@ public class Sort
             ret.append(sf.toUrlString());
         }
         return ret.toString();
+    }
+
+    /**
+     * Replace the sort parameter on the url with this Sort scoped by the region name prefix.
+     * @param url The url to be modified.
+     * @param regionName The dataRegion used to scope the sort.
+     */
+    public void applyToURL(URLHelper url, String regionName)
+    {
+        String key = (regionName == null ? "" : regionName) + SORT_KEY;
+        url.replaceParameter(key, getURLParamValue());
     }
 
     static public Sort fromURLParamValue(String str)
