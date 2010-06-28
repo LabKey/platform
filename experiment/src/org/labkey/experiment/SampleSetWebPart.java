@@ -78,6 +78,7 @@ public class SampleSetWebPart extends QueryView
         {
             settings.setContainerFilterName(ContainerFilter.CurrentPlusProjectAndShared.class.getSimpleName());
         }
+        settings.getBaseSort().insertSortColumn("Name");
         return settings;
     }
 
@@ -149,30 +150,6 @@ public class SampleSetWebPart extends QueryView
     public void setSampleSetError(String sampleSetError)
     {
         _sampleSetError = sampleSetError;
-    }
-
-    public static class SampleSetRenderContext extends RenderContext
-    {
-        public SampleSetRenderContext(ViewContext context)
-        {
-            super(context);
-        }
-
-        protected SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name)
-        {
-            SimpleFilter result = super.buildFilter(tinfo, url, name);
-            result.deleteConditions("Container");
-            Object[] params = { getContainer().getProject().getId(), ContainerManager.getSharedContainer().getProject().getId(), ContainerManager.getSharedContainer().getId() };
-            result.addWhereClause("(Project = ? OR Project = ? OR Container = ?)", params, "Project");
-            return result;
-        }
-    }
-
-    protected void setupDataView(DataView ret)
-    {
-        Sort sort = new Sort("Name");
-        ret.getRenderContext().setBaseSort(sort);
-        super.setupDataView(ret);
     }
 
 }

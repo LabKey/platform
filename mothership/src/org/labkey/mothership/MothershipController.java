@@ -143,8 +143,9 @@ public class MothershipController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
             settings.setAllowChooseQuery(false);
+            settings.getBaseSort().insertSortColumn("-SVNRevision");
             
-            ReleaseQueryView queryView = new ReleaseQueryView(schema, settings);
+            QueryView queryView = new QueryView(schema, settings, errors);
 
             return new VBox(linkView, queryView);
         }
@@ -349,8 +350,9 @@ public class MothershipController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
             settings.setAllowChooseQuery(false);
+            settings.getBaseSort().insertSortColumn("-ExceptionStackTraceId");
 
-            ExceptionSummaryQueryView queryView = new ExceptionSummaryQueryView(schema, settings);
+            QueryView queryView = new QueryView(schema, settings, errors);
             queryView.setShowDetailsColumn(false);
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
@@ -410,8 +412,14 @@ public class MothershipController extends SpringActionController
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
+            settings.getBaseSort().insertSortColumn("-LastPing");
 
-            ServerInstallationGridView gridView = new ServerInstallationGridView(schema, settings);
+            List<Aggregate> aggregates = new ArrayList<Aggregate>();
+            aggregates.add(new Aggregate("DaysActive", Aggregate.Type.AVG));
+            aggregates.add(new Aggregate("ExceptionCount", Aggregate.Type.AVG));
+            settings.setAggregates(aggregates);
+
+            QueryView gridView = new QueryView(schema, settings, errors);
 
             return new VBox(linkView, gridView);
         }
@@ -498,7 +506,14 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
             settings.setAllowChooseQuery(false);
-            SessionExceptionReportGridView exceptionGridView = new SessionExceptionReportGridView(schema, settings, session.getServerSessionId());
+            settings.getBaseSort().insertSortColumn("-Created");
+            settings.getBaseFilter().addCondition("ServerSessionId", session.getServerSessionId());
+
+            QueryView exceptionGridView = new QueryView(schema, settings, errors);
+            exceptionGridView.setShadeAlternatingRows(true);
+            exceptionGridView.setShowBorders(true);
+            exceptionGridView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+            exceptionGridView.setShowExportButtons(false);
 
             return new VBox(detailView, exceptionGridView);
         }
@@ -526,7 +541,12 @@ public class MothershipController extends SpringActionController
             settings.setAllowChooseQuery(false);
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName("ServerSessions");
-            ServerSessionGridView sessionGridView = new ServerSessionGridView(schema, settings, installation.getServerInstallationId());
+            settings.getBaseSort().insertSortColumn("-ServerSessionId");
+            settings.getBaseFilter().addCondition("ServerInstallationId", installation.getServerInstallationId());
+
+            QueryView sessionGridView = new QueryView (schema, settings, errors);
+            sessionGridView.setShowExportButtons(false);
+            
             return new VBox(updateView, sessionGridView);
         }
 
@@ -552,7 +572,13 @@ public class MothershipController extends SpringActionController
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
             settings.setAllowChooseQuery(false);
-            ExceptionReportSummaryGridView summaryGridView = new ExceptionReportSummaryGridView(schema, settings, stackTrace.getExceptionStackTraceId());
+            settings.getBaseSort().insertSortColumn("-Created");
+            settings.getBaseFilter().addCondition("ExceptionStackTraceId", stackTrace.getExceptionStackTraceId());
+
+            QueryView summaryGridView = new QueryView(schema, settings, errors);
+            summaryGridView.setShowBorders(true);
+            summaryGridView.setShadeAlternatingRows(true);
+            summaryGridView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
             return new VBox(updateView, summaryGridView);
         }
 
@@ -1173,150 +1199,6 @@ public class MothershipController extends SpringActionController
         public void setSqlState(String sqlState)
         {
             _sqlState = sqlState;
-        }
-    }
-
-    public class ExceptionSummaryQueryView extends QueryView
-    {
-        public ExceptionSummaryQueryView(MothershipSchema schema, QuerySettings settings) throws SQLException, ServletException
-        {
-            super(schema, settings);
-        }
-
-        @Override
-        public DataView createDataView()
-        {
-            DataView result = super.createDataView();
-            result.getRenderContext().setBaseSort(new Sort("-ExceptionStackTraceId"));
-            return result;
-        }
-    }
-
-    public class ServerInstallationGridView extends QueryView
-    {
-        public ServerInstallationGridView(MothershipSchema schema, QuerySettings settings)
-        {
-            super(schema, settings);
-        }
-
-        public DataView createDataView()
-        {
-            DataView result = super.createDataView();
-            result.getRenderContext().setBaseSort(new Sort("-LastPing"));
-            return result;
-        }
-
-        protected DataRegion createDataRegion()
-        {
-            DataRegion result = super.createDataRegion();
-            List<Aggregate> aggregates = new ArrayList<Aggregate>();
-            if (getTable().getColumn("DaysActive") != null)
-            {
-                aggregates.add(new Aggregate(getTable().getColumn("DaysActive"), Aggregate.Type.AVG));
-            }
-            if (getTable().getColumn("ExceptionCount") != null)
-            {
-                aggregates.add(new Aggregate(getTable().getColumn("ExceptionCount"), Aggregate.Type.AVG));
-            }
-            result.setAggregates(aggregates);
-            return result;
-        }
-    }
-
-    public class ReleaseQueryView extends QueryView
-    {
-        public ReleaseQueryView(MothershipSchema schema, QuerySettings settings)
-        {
-            super(schema, settings);
-        }
-
-        protected void setupDataView(DataView view)
-        {
-            view.getRenderContext().setBaseSort(new Sort("-SVNRevision"));
-            super.setupDataView(view);
-        }
-    }
-
-
-    public class ExceptionReportSummaryGridView extends QueryView
-    {
-        private final int _exceptionStackTraceId;
-
-        public ExceptionReportSummaryGridView(MothershipSchema schema, QuerySettings settings, int exceptionStackTraceId) throws ServletException
-        {
-            super(schema, settings);
-
-            _exceptionStackTraceId = exceptionStackTraceId;
-            setShowBorders(true);
-            setShadeAlternatingRows(true);
-            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
-        }
-
-        protected void setupDataView(DataView view)
-        {
-            view.getRenderContext().setBaseSort(new Sort("-Created"));
-            super.setupDataView(view);
-        }
-
-        protected TableInfo createTable()
-        {
-            FilteredTable table = ((MothershipSchema) getSchema()).createExceptionReportTable();
-            table.addCondition(table.getRealTable().getColumn("ExceptionStackTraceId"), _exceptionStackTraceId);
-            return table;
-        }
-    }
-
-    public static class SessionExceptionReportGridView extends QueryView
-    {
-        private final int _sessionId;
-
-        public SessionExceptionReportGridView(MothershipSchema schema, QuerySettings settings, int sessionId)
-        {
-            super(schema, settings);
-            _sessionId = sessionId;
-            setShadeAlternatingRows(true);
-            setShowBorders(true);
-            setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-            setShowExportButtons(false);
-        }
-
-        protected void setupDataView(DataView view)
-        {
-            view.getRenderContext().setBaseSort(new Sort("-Created"));
-            super.setupDataView(view);
-        }
-
-        protected TableInfo createTable()
-        {
-            FilteredTable table = ((MothershipSchema) getSchema()).createExceptionReportTableWithStack();
-            table.addCondition(table.getRealTable().getColumn("ServerSessionId"), _sessionId);
-            return table;
-        }
-    }
-
-    public class ServerSessionGridView extends QueryView
-    {
-        private final int _serverInstallationId;
-
-        public ServerSessionGridView(MothershipSchema schema, QuerySettings settings, int serverInstallationId) throws ServletException
-        {
-            super(schema, settings);
-
-            _serverInstallationId = serverInstallationId;
-            setShowExportButtons(false);
-        }
-
-        protected void setupDataView(DataView view)
-        {
-            view.getRenderContext().setBaseSort(new Sort("-ServerSessionId"));
-            super.setupDataView(view);
-        }
-
-        protected TableInfo createTable()
-        {
-            FilteredTable table = ((MothershipSchema) getSchema()).createServerSessionTable();
-            table.addCondition(table.getRealTable().getColumn("ServerInstallationId"), _serverInstallationId);
-            return table;
         }
     }
 

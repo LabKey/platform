@@ -540,6 +540,12 @@ public class UserController extends SpringActionController
             QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(true);
+            settings.getBaseSort().insertSortColumn("email");
+            SimpleFilter filter = authorizeAndGetProjectMemberFilter();
+            if (!form.isInactive())
+                filter.addCondition("Active", true); //filter out active users by default
+            settings.getBaseFilter().addAllClauses(filter);
+
             final boolean forExport2 = forExport;
             QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings, errors)
             {
@@ -555,12 +561,6 @@ public class UserController extends SpringActionController
                         SimpleDisplayColumn securityDetails = new UrlColumn(StringExpressionFactory.createURL(permissions), "permissions");
                         ret.getDataRegion().addDisplayColumn(1, securityDetails);
                     }
-
-                    ret.getRenderContext().setBaseSort(new Sort("email"));
-                    SimpleFilter filter = authorizeAndGetProjectMemberFilter();
-                    if (!form.isInactive())
-                        filter.addCondition("Active", true); //filter out active users by default
-                    ret.getRenderContext().setBaseFilter(filter);
                 }
 
                 @Override

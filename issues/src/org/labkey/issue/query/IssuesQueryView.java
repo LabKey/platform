@@ -43,6 +43,7 @@ public class IssuesQueryView extends QueryView
         setShowDetailsColumn(false);
         setShowRecordSelectors(true);
         getSettings().setAllowChooseQuery(false);
+        getSettings().getBaseSort().insertSortColumn("-IssueId");
     }
 
     // MAB: I just want a resultset....
@@ -106,7 +107,7 @@ public class IssuesQueryView extends QueryView
         url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "open");
         Sort sort = new Sort("AssignedTo/DisplayName");
         sort.insertSortColumn("Milestone", true);
-        sort.applyURLSort(url, getDataRegionName());
+        sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());        
         item = new NavTree("open", url);
         if (currentView == "")
@@ -117,7 +118,7 @@ public class IssuesQueryView extends QueryView
         url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.EQUAL, "resolved");
         sort = new Sort("AssignedTo/DisplayName");
         sort.insertSortColumn("Milestone", true);
-        sort.applyURLSort(url, getDataRegionName());
+        sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
         if (currentView == "")
@@ -130,7 +131,7 @@ public class IssuesQueryView extends QueryView
             url.addFilter("Issues", FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext()));
             url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
             sort = new Sort("-Milestone");
-            sort.applyURLSort(url, getDataRegionName());
+            sort.addURLSort(url, getDataRegionName());
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
             if (currentView == "")
@@ -196,14 +197,6 @@ public class IssuesQueryView extends QueryView
 
         ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.EmailPrefsAction.class).getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
         bar.add(prefsButton);
-    }
-
-    protected void setupDataView(DataView view)
-    {
-        // We need to set the base sort _before_ calling super.setupDataView.  If the user
-        // has set a sort on their custom view, we want their sort to take precedence.
-        view.getRenderContext().setBaseSort(new Sort("-IssueId"));
-        super.setupDataView(view);
     }
 
     public ActionURL getCustomizeURL()

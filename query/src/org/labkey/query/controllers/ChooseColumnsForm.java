@@ -292,7 +292,7 @@ public class ChooseColumnsForm extends DesignForm
         }
 
         Sort sort = new Sort();
-        sort.applyURLSort(url, dataRegionName);
+        sort.addURLSort(url, dataRegionName);
         url.replaceParameter(dataRegionName+".sort",sort.getURLParamValue());
     }
     

@@ -96,6 +96,7 @@ public class RunGroupWebPart extends QueryView
             settings.setContainerFilterName(ContainerFilter.Type.CurrentAndParents.name());
         }
         settings.setQueryName(ExpSchema.TableType.RunGroups.toString());
+        settings.getBaseSort().insertSortColumn("Name");
         return settings;
     }
 
@@ -103,13 +104,6 @@ public class RunGroupWebPart extends QueryView
     {
         ExpSchema schema = (ExpSchema) getSchema();
         return schema.getTable(ExpSchema.TableType.RunGroups);
-    }
-
-    protected void setupDataView(DataView ret)
-    {
-        Sort sort = new Sort("Name");
-        ret.getRenderContext().setBaseSort(sort);
-        super.setupDataView(ret);
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bb)

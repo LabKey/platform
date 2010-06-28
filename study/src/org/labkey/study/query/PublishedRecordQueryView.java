@@ -50,6 +50,14 @@ public class PublishedRecordQueryView extends DataSetQueryView
         _sourceLsid = sourceLsid;
         _protocolId = protocolId;
         _recordCount = recordCount;
+
+        if (_sourceLsid != null)
+        {
+            SimpleFilter filter = new SimpleFilter();
+
+            filter.addCondition("SourceLSID", _sourceLsid, CompareType.EQUAL);
+            getSettings().getBaseFilter().addAllClauses(filter);
+        }
     }
 
     private static QCStateSet getStateSet(Container container)
@@ -67,23 +75,6 @@ public class PublishedRecordQueryView extends DataSetQueryView
         if (sourceLsidCol != null)
             sourceLsidCol.setHidden(false);
         return table;
-    }
-
-    protected void setupDataView(DataView view)
-    {
-        if (_sourceLsid != null)
-        {
-            SimpleFilter filter = new SimpleFilter();
-
-            filter.addCondition("SourceLSID", _sourceLsid, CompareType.EQUAL);
-            SimpleFilter baseFilter = (SimpleFilter) view.getRenderContext().getBaseFilter();
-            if (baseFilter != null)
-                baseFilter.addAllClauses(filter);
-            else
-                baseFilter = filter;
-            view.getRenderContext().setBaseFilter(baseFilter);
-        }
-        super.setupDataView(view);
     }
 
     protected DataRegion createDataRegion()
