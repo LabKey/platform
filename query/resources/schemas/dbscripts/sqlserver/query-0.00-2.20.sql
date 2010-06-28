@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* query-0.00-2.00.sql */
 
 /* query-1.50-1.60.sql */
 

@@ -2117,19 +2117,12 @@ public class AdminController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class RunSystemMaintenanceAction extends SimpleViewAction
+    public class SystemMaintenanceAction extends StatusReportingRunnableAction<SystemMaintenance>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        @Override
+        protected SystemMaintenance createRunnable()
         {
-            SystemMaintenance sm = new SystemMaintenance(false);
-            sm.run();
-
-            return new HtmlView("System maintenance task started");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendAdminNavTrail(root, "System Maintenance", this.getClass());
+            return new SystemMaintenance(true);
         }
     }
 

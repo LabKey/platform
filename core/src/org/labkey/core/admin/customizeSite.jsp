@@ -89,6 +89,11 @@ function testSequest()
     sequestForm.action = "<%= request.getContextPath() %>/ms2/sequestTest.view";
     sequestForm.submit();
 }
+
+function submitSystemMaintenance()
+{
+    document.forms['systemMaintenance'].submit();
+}
 </script>
 
 <form name="preferences" enctype="multipart/form-data" method="post"><labkey:csrf />
@@ -230,7 +235,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td></td>
-    <td>[<a href="runSystemMaintenance.view" target="systemMaintenance">Run system maintenance now</a>]</td>
+    <td>[<a href="javascript:submitSystemMaintenance()">Run system maintenance now</a>]</td>
 </tr>
 
 <tr>
@@ -425,3 +430,4 @@ Click the Save button at any time to accept the current settings and continue.</
     <input type="hidden" name="networkDriveUser" value="" />
     <input type="hidden" name="networkDrivePassword" value="" />
 </form>
+<form name="systemMaintenance" action="systemMaintenance.post" method="post" target="systemMaintenance"></form>

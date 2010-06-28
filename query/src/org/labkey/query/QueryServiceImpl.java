@@ -24,7 +24,7 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.CacheI;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
@@ -53,11 +53,11 @@ import java.util.*;
 
 public class QueryServiceImpl extends QueryService
 {
-    private static final CacheI<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Module resources cache");
+    private static final Cache<String, Object> MODULE_RESOURCES_CACHE = CacheManager.getCache(1024, CacheManager.DAY, "Module resources cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
 
-    public static CacheI<String, Object> getModuleResourcesCache()
+    public static Cache<String, Object> getModuleResourcesCache()
     {
         return MODULE_RESOURCES_CACHE;
     }
