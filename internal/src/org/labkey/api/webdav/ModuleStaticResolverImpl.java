@@ -264,7 +264,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
-    private static final CacheMap<Path, Map<String, WebdavResource>> CHILDREN_CACHE = new CacheMap<Path, Map<String, WebdavResource>>(50, "StaticResourceCache");
+    private static final CacheMap<Path, Map<String, WebdavResource>> CHILDREN_CACHE = new CacheMap<Path, Map<String, WebdavResource>>(50, "StaticResourceCache", true);
 
     private class StaticResource extends _PublicResource
     {

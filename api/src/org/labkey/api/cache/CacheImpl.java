@@ -28,9 +28,9 @@ public class CacheImpl<K, V> implements Cache<K, V>
 
     private final TTLCacheMap<K, V> _cache;
 
-    public CacheImpl(int size, long defaultTimeToLive, String debugName)
+    public CacheImpl(int size, long defaultTimeToLive, String debugName, boolean track)
     {
-        _cache = new TTLCacheMap<K, V>(size, defaultTimeToLive, debugName);
+        _cache = new TTLCacheMap<K, V>(size, defaultTimeToLive, debugName, track);
     }
 
 

@@ -18,18 +18,18 @@ public class CacheManager
 
     public static <K, V> Cache<K, V> getCache(int size, long defaultTimeToLive, String debugName)
     {
-        return new CacheImpl<K, V>(size, defaultTimeToLive, debugName);
+        return new CacheImpl<K, V>(size, defaultTimeToLive, debugName, true);
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int size, long defaultTimeToLive, String debugName)
     {
-        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName);
+        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, true);
     }
 
     public static <V> StringKeyCache<V> getTemporaryCache(int size, long defaultTimeToLive, String debugName, Stats transactionStats)
     {
-        // TODO: Pass in transaction stats, don't add to known cachemaps
-        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName);
+        // TODO: Pass in transaction stats
+        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, false);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");

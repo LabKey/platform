@@ -4,9 +4,7 @@ import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
 
 /**
 * User: adam
@@ -15,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 */
 public class StatusAppender extends AppenderSkeleton
 {
-    private final List<String> _status = new CopyOnWriteArrayList<String>();
+    private final List<String> _status = Collections.synchronizedList(new ArrayList<String>());
 
     @Override
     protected void append(LoggingEvent event)
@@ -38,9 +36,13 @@ public class StatusAppender extends AppenderSkeleton
     {
         int firstIndex = 0;
 
-        if (null != offset && offset.intValue() > 0)
-            firstIndex = Math.min(_status.size(), offset.intValue());
+        // Synchronize since we're iterating the sublist and to ensure size() is consistent
+        synchronized (_status)
+        {
+            if (null != offset && offset.intValue() > 0)
+                firstIndex = Math.min(_status.size(), offset.intValue());
 
-        return _status.subList(firstIndex, _status.size());
+            return new LinkedList<String>(_status.subList(firstIndex, _status.size()));
+        }
     }
 }

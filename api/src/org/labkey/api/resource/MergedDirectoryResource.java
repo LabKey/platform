@@ -29,7 +29,7 @@ import java.util.*;
  */
 public class MergedDirectoryResource extends AbstractResourceCollection
 {
-    private static final CacheMap<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = new CacheMap<Pair<Resolver, Path>, Map<String, Resource>>(50, "MergedDirectoryResourceCache");
+    private static final CacheMap<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = new CacheMap<Pair<Resolver, Path>, Map<String, Resource>>(50, "MergedDirectoryResourceCache", true);
 
     List<File> _dirs;
     Resource[] _additional;

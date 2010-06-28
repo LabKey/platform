@@ -251,21 +251,20 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
      * size is max expected entries
      */
 
-    public CacheMap(int initialSize, String debugName)
+    public CacheMap(int initialSize, String debugName, boolean track)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0, null);
         assert debugName.length() > 0;
         _debugName = debugName;
-        addToKnownCacheMaps();
-    }
 
-
-    protected void addToKnownCacheMaps()
-    {
-        synchronized (KNOWN_CACHEMAPS)
+        // We track "permanent" caches so memtracker can clear them
+        if (track)
         {
-            KNOWN_CACHEMAPS.add(this);
+            synchronized (KNOWN_CACHEMAPS)
+            {
+                KNOWN_CACHEMAPS.add(this);
+            }
         }
     }
 
