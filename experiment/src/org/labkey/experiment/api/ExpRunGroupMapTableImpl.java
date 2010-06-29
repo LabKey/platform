@@ -56,7 +56,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         addColumn(Column.RunGroup).setFk(schema.getRunGroupIdForeignKey());
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
 
-        List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
+        List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>();
         defaultVisibleColumns.add(FieldKey.fromParts(Column.RunGroup));
         defaultVisibleColumns.add(FieldKey.fromParts(Column.Run));
         setDefaultVisibleColumns(defaultVisibleColumns);
