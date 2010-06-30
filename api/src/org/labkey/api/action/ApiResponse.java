@@ -18,9 +18,8 @@ package org.labkey.api.action;
 import java.util.Map;
 
 /**
- * Base class for API Responses.
+ * Interface for API Responses.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 13, 2008
  * Time: 2:02:12 PM

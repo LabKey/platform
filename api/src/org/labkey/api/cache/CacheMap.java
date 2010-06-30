@@ -259,6 +259,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
         _debugName = debugName;
 
         // We track "permanent" caches so memtracker can clear them
+        // TODO: We should move this tracking and purging to CacheManager so it works with all cache implementations.
         if (track)
         {
             synchronized (KNOWN_CACHEMAPS)

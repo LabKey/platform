@@ -11,6 +11,10 @@ import java.util.*;
 * Date: Jun 27, 2010
 * Time: 12:17:25 AM
 */
+// An appender that can be added to any log4j Logger to help accumulate and report status; meant to be used within a
+// StatusReportingRunnable to report status to StatusReportingRunnableAction.  The appender will accumulate and report
+// all log statements sent to the Logger.  If you add this appender, you will most likely want to create a new Logger
+// on each invocation of your task, otherwise the appender will accumulate status across multiple invocations.
 public class StatusAppender extends AppenderSkeleton
 {
     private final List<String> _status = Collections.synchronizedList(new ArrayList<String>());

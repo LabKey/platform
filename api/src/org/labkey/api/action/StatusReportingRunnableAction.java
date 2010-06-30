@@ -2,16 +2,14 @@ package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -19,49 +17,83 @@ import java.util.*;
 * Date: Jun 26, 2010
 * Time: 10:37:05 PM
 */
-public abstract class StatusReportingRunnableAction<K extends StatusReportingRunnable> extends FormViewAction<StatusReportingRunnableAction.StatusReportingRunnableForm>
+
+// Base action class that starts a background task and dynamically reports status of that task back to the initiating
+// user and any other user who attempts to invoke the task.  Sort of like a very simple, single-task "pipeline".
+//
+// To use it, create a class that implements the StatusReportingRunnable interface (just Runnable with a couple status
+// reporting methods).  Subclass this base action in your controller, add the appropriate permissions annotation, and
+// implement newStatusReportingRunnable() to return an instance of your StatusReportingRunnable.  Then, via a link or
+// button, POST to your new action with no parameters.  The action will:
+//
+// - Check to see if your StatusReportingRunnable is already running; if not, it will create one and start it.
+// - Return a status update page that uses AJAX to report the status of the task, updating it once per second.  The
+//   action holds onto the StatusReportingRunnable after it finishes, so status can be viewed for completed tasks.
+//
+// Note that the base action ensures that only one instance of your task executes at any time.  If a request is made
+// to start a task that's already running, the status of the currently running task will be reported.  Once a task is
+// complete, a new request will start a new instance of that task.
+//
+// Your StatusReportingRunnable can track its status any way it wants to, but StatusAppender provides an easy way to do
+// this via standard log4j mechanisms.  See the StatusAppender comments for more details.
+public abstract class StatusReportingRunnableAction<K extends StatusReportingRunnable> extends FormApiAction<StatusReportingRunnableAction.StatusReportingRunnableForm>
 {
     private static final Map<Class<? extends StatusReportingRunnableAction>, StatusReportingRunnable> EXISTING_RUNNABLES = new HashMap<Class<? extends StatusReportingRunnableAction>, StatusReportingRunnable>();
 
-    @Override
-    public void validateCommand(StatusReportingRunnableForm form, Errors errors)
-    {
-    }
+    protected abstract K newStatusReportingRunnable();
 
     @Override
-    public ModelAndView getView(StatusReportingRunnableForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(StatusReportingRunnableForm form, BindException errors) throws Exception
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
-        K runnable = getRunnable();
-
-        if (null == runnable)
-            return new HtmlView("Error: Task has not been run");
-
-        final Collection<String> status = runnable.getStatus(form.getOffset());
-
-        return new WebPartView() {
-            @Override
-            protected void renderView(Object model, PrintWriter out) throws Exception
-            {
-                for (String line : status)
-                {
-                    out.print(line);
-                    out.print("<br>\n");
-                }
-            }
-        };
+        return new JspView("/org/labkey/api/action/statusReport.jsp");
     }
 
     @Override
-    public boolean handlePost(StatusReportingRunnableForm form, BindException errors) throws Exception
+    public ModelAndView handlePost() throws Exception
     {
-        synchronized (this.getClass())
+        ActionURL url = getViewContext().getActionURL();
+
+        // Offset parameter means browser is requesting status; if this parameter is not specified, attempt to start the task.
+        if (null != url.getParameter("offset"))
+        {
+            return super.handlePost();
+        }
+        else
         {
             ensureRunning();
+
+            // Redirect to current URL to render the view.  We could call handleGet() to render it directly, but then
+            // the browser would be left with a POST that can't be refreshed as easily.
+            return HttpView.redirect(url);
+        }
+    }
+
+    @Override
+    public ApiResponse execute(StatusReportingRunnableForm form, BindException errors) throws Exception
+    {
+        K runnable = getRunnable();
+
+        Collection<String> status;
+        boolean complete;
+
+        if (null == runnable)
+        {
+            status = Collections.singleton("Error: Task has not been run");
+            complete = true;
+        }
+        else
+        {
+            status = runnable.getStatus(form.getOffset());
+            complete = !runnable.isRunning();
         }
 
-        return true;
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("status", status);
+        map.put("complete", complete);
+
+        return new ApiSimpleResponse(map);
     }
 
     private @Nullable K getRunnable()
@@ -81,7 +113,7 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
 
             if (null == runnable || !runnable.isRunning())
             {
-                runnable = createRunnable();
+                runnable = newStatusReportingRunnable();
                 runnable.run();
                 EXISTING_RUNNABLES.put(this.getClass(), runnable);
             }
@@ -89,14 +121,6 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
             //noinspection unchecked
             return (K) runnable;
         }
-    }
-
-    protected abstract K createRunnable();
-
-    @Override
-    public URLHelper getSuccessURL(StatusReportingRunnableForm form)
-    {
-        return getViewContext().getActionURL();
     }
 
     @Override
