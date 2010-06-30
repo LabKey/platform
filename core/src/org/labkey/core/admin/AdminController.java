@@ -2120,7 +2120,7 @@ public class AdminController extends SpringActionController
     public class SystemMaintenanceAction extends StatusReportingRunnableAction<SystemMaintenance>
     {
         @Override
-        protected SystemMaintenance createRunnable()
+        protected SystemMaintenance newStatusReportingRunnable()
         {
             return new SystemMaintenance(true);
         }

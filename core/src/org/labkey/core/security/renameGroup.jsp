@@ -25,7 +25,7 @@
     ViewContext context = HttpView.currentContext();
     Group group = (Group)HttpView.currentModel();
     ActionURL manageURL = new ActionURL(SecurityController.GroupAction.class, context.getContainer());
-    manageURL.addParameter("id",group.getUserId());
+    manageURL.addParameter("id", group.getUserId());
 %>
 
 <script type="text/javascript">

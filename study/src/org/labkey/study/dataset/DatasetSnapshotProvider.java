@@ -454,15 +454,18 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         public void run()
         {
-            try {
-                while (true) {
+            try
+            {
+                while (true)
+                {
                     DataSet def = _queue.take();
                     if (def != null)
                     {
                         _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
                         for (QuerySnapshotDefinition snapshotDef : getDependencies(def))
                         {
-                            try {
+                            try
+                            {
                                 _log.debug("Updating snapshot definition : " + snapshotDef.getName());
                                 autoUpdateSnapshot(snapshotDef, null);//HttpView.currentContext().getActionURL());
                             }

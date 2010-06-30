@@ -2687,7 +2687,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin  // TODO: NYI
     public class InsertMultipleExternalSchemasAction extends FormViewAction<ExternalSchemaForm>
     {
         public void validateCommand(ExternalSchemaForm form, Errors errors)

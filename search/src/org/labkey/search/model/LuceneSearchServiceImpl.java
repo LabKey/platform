@@ -471,7 +471,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             return;
         }
 
-        // TREAT files over the size limit as empty files
+        // Treat files over the size limit as empty files
         if (isTooBig(fs,r.getContentType()))
         {
             logAsWarning(r, "The document is too large");
