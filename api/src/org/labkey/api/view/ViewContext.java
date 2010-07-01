@@ -24,6 +24,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.PreferenceService;
@@ -61,6 +63,8 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     private String _scopePrefix = "";
     private Container _c = null;
     private int _perm = -1;
+    private Set<Role> _contextualRoles = new HashSet<Role>();
+
     PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object
 
     public ViewContext()
@@ -210,7 +214,12 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
-    // TODO: addContextualRole() and modify hasPermission() to check them  
+    public void addContextualRole(Class<? extends Role> role)
+    {
+        _contextualRoles.add(RoleManager.getRole(role));
+    }
+
+    // TODO: addContextualRole() and modify hasPermission() to check them
 
     public boolean hasPermission(Class<? extends Permission> perm) throws NotFoundException
     {
@@ -218,7 +227,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         User user = getUser();
         if (null == policy || null == user)
             return false;
-        return policy.hasPermission(user, perm);
+        return policy.hasPermission(user, perm, _contextualRoles);
     }
 
 
@@ -444,6 +453,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         _webApplicationContext = webApplicationContext;
     }
 
+    @Deprecated
     public void requiresPermission(int perm) throws ServletException
     {
         if (!hasPermission(perm))

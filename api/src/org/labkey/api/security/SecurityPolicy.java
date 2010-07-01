@@ -190,7 +190,7 @@ public class SecurityPolicy
 
     /**
      * Returns true if this policy is empty (i.e., no role assignments).
-     * This method is useful for distiguishing between a policy that has
+     * This method is useful for distinguishing between a policy that has
      * been established for a SecurableResource and a cached "miss"
      * (i.e., no explicit policy defined).
      * @return True if this policy is empty

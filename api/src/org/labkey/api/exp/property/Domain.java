@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
@@ -36,7 +37,7 @@ public interface Domain extends IPropertyType
     String getTypeURI();
 
     Container[] getInstanceContainers();
-    Container[] getInstanceContainers(User user, int perm);
+    Container[] getInstanceContainers(User user, Class<? extends Permission> perm);
 
     void setDescription(String description);
     void setPropertyIndex(DomainProperty prop, int index);

@@ -16,7 +16,7 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -44,8 +44,8 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
     {
-        if (!portalCtx.hasPermission(ACL.PERM_READ))
-            return new HtmlView("Datasets", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+        if (!portalCtx.hasPermission(ReadPermission.class))
+            return new HtmlView("Not Authorized", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
         return cls.newInstance();
     }

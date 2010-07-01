@@ -25,6 +25,8 @@ import org.labkey.api.collections.RowMap;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -725,10 +727,14 @@ public class DataRegion extends DisplayElement
 
     protected void _renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
         {
-            out.write("You do not have permission to read this data");
-            return;
+            // TODO: Remove this check
+            if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+            {
+                out.write("You do not have permission to read this data");
+                return;
+            }
         }
 
         ResultSet rs = null;
@@ -1488,7 +1494,8 @@ public class DataRegion extends DisplayElement
 
     public void _renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+        // TODO: Eliminate ACL version
+        if (!ctx.getViewContext().hasPermission(ACL.PERM_READ) && !ctx.getViewContext().hasPermission(ReadPermission.class))
         {
             out.write("You do not have permission to read this data");
             return;
@@ -1951,9 +1958,10 @@ public class DataRegion extends DisplayElement
 
         List<DisplayColumn> renderers = getDisplayColumns();
         Set<String> renderedColumns = new HashSet<String>();
+        ViewContext viewContext = ctx.getViewContext();
 
         //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !ctx.getViewContext().hasPermission(ACL.PERM_INSERT)) || (action == MODE_UPDATE && !ctx.getViewContext().hasPermission(ACL.PERM_UPDATE)))
+        if ((action == MODE_INSERT && !viewContext.hasPermission(ACL.PERM_INSERT)) || (action == MODE_UPDATE && !(viewContext.hasPermission(ACL.PERM_UPDATE) || viewContext.hasPermission(UpdatePermission.class))))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
