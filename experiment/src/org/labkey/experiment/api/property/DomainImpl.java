@@ -26,8 +26,9 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -132,7 +133,7 @@ public class DomainImpl implements Domain
         }
     }
 
-    public Container[] getInstanceContainers(User user, int perm)
+    public Container[] getInstanceContainers(User user, Class<? extends Permission> perm)
     {
         Container[] all = getInstanceContainers();
         List<Container> ret = new ArrayList<Container>();
@@ -459,7 +460,7 @@ public class DomainImpl implements Domain
 
             private Map.Entry<TableInfo, ColumnInfo> getTableInfo()
             {
-                return type.getTableInfo(user, domain, getInstanceContainers(user, ACL.PERM_READ));
+                return type.getTableInfo(user, domain, getInstanceContainers(user, ReadPermission.class));
             }
 
             public StringExpression getURL(ColumnInfo parent)

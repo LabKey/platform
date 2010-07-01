@@ -16,18 +16,18 @@
 
 package org.labkey.experiment.api.flag;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.security.ACL;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.util.UnexpectedException;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 
 public class FlagColumnRenderer extends DataColumn
 {
@@ -75,7 +75,7 @@ public class FlagColumnRenderer extends DataColumn
         {
             src = displayField.urlFlag(true);
         }
-        boolean canUpdate = ctx.getViewContext().hasPermission(ACL.PERM_UPDATE);
+        boolean canUpdate = ctx.getViewContext().hasPermission(UpdatePermission.class);
         if (canUpdate)
         {
             out.write("<a href=\"#\" onclick=\"return setFlag(");

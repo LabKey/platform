@@ -18,9 +18,9 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.query.QueryForm" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.persist.CstmView" %>
@@ -48,7 +48,7 @@
     Container c = getViewContext().getContainer();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList<CstmView>();
-    if (form.getViewContext().hasPermission(ACL.PERM_UPDATE))
+    if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
         views.addAll(Arrays.asList(mgr.getCstmViews(c, null, null, null, null, false)));
     }
@@ -91,7 +91,7 @@
         <th>Owner</th>
         <th>Inherit</th>
     </tr>
-    <% if (form.getViewContext().hasPermission(ACL.PERM_UPDATE))
+    <% if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
         for (CstmView view : views)
         {%>

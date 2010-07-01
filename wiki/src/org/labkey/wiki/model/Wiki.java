@@ -234,4 +234,10 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     {
         _showAttachments = showAttachments;
     }
+
+    @Override
+    public String toString()
+    {
+        return "Wiki: \"" + getName() + "\" (" + rowId + ")";
+    }
 }

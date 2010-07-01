@@ -16,11 +16,13 @@
 
 package org.labkey.list.view;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.security.ACL;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.springframework.validation.BindException;
@@ -59,12 +61,12 @@ public class ListQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar, _exportAsWebPage);
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE) && _list.getAllowUpload())
+        if (getViewContext().hasPermission(UpdatePermission.class) && _list.getAllowUpload())
         {
             ActionButton btnUpload = new ActionButton("Import Data", getList().urlFor(ListController.Action.uploadListItems));
             bar.add(btnUpload);
         }
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE))
+        if (getViewContext().hasPermission(UpdatePermission.class))
         {
             ActionURL designURL = getList().urlFor(ListController.Action.editListDefinition);
             designURL.addReturnURL(getViewContext().getActionURL());

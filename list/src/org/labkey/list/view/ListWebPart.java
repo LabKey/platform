@@ -16,12 +16,12 @@
 
 package org.labkey.list.view;
 
-import org.labkey.api.view.*;
-import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.security.ACL;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -40,7 +40,7 @@ public class ListWebPart extends WebPartView<ViewContext>
     {
         super(new ViewContext(portalCtx));
         setTitle("Lists");
-        if (getModelBean().hasPermission(ACL.PERM_UPDATE))
+        if (getModelBean().hasPermission(UpdatePermission.class))
         {
             setTitleHref(ListController.getBeginURL(getViewContext().getContainer()));
         }

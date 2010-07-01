@@ -17,14 +17,14 @@
 package org.labkey.experiment.controllers.exp;
 
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
-import java.util.Set;
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -113,7 +113,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             }
 
             out.write("<input type=\"checkbox\" name=\"experimentMembership\" ");
-            if (ctx.getViewContext().hasPermission(ACL.PERM_UPDATE))
+            if (ctx.getViewContext().hasPermission(UpdatePermission.class))
             {
                 out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + getExpId(ctx) + ", " + getRunId(ctx) + ", this.checked, '" + PageFlowUtil.filter(ctx.getCurrentRegion().getName()) + "');\"");
             }

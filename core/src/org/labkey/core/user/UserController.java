@@ -30,10 +30,8 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -1115,7 +1113,7 @@ public class UserController extends SpringActionController
             }
 
             DetailsView detailsView = new DetailsView(rgn, _detailsUserId);
-            detailsView.getViewContext().setPermissions(ACL.PERM_READ);
+            detailsView.getViewContext().addContextualRole(ReaderRole.class);
 
             VBox view = new VBox(detailsView);
 
@@ -1174,7 +1172,8 @@ public class UserController extends SpringActionController
                     rgn.addHiddenFormField(ReturnUrlForm.Params.returnUrl, returnUrl);
 
                 view = new UpdateView(rgn, form, errors);
-                view.getViewContext().setPermissions(ACL.PERM_UPDATE + ACL.PERM_READ);
+                view.getViewContext().addContextualRole(ReadPermission.class);
+                view.getViewContext().addContextualRole(UpdatePermission.class);
             }
             else
                 HttpView.throwUnauthorized();
