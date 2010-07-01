@@ -20,8 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -264,7 +264,7 @@ public class SpecimenUtils
         }
 
 
-        if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+        if (getViewContext().hasPermission(AdminPermission.class))
         {
             ActionButton upload = new ActionButton("button", "Import Specimens");
             upload.setURL(new ActionURL("Study-Samples", "showUploadSpecimens", getContainer()));

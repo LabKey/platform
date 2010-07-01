@@ -20,7 +20,8 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -153,7 +154,7 @@ public class DataHeader extends HttpView
 
         if (_gridView)
         {
-            if (!getViewContext().getUser().isGuest() && getViewContext().hasPermission(ACL.PERM_READ))
+            if (!getViewContext().getUser().isGuest() && getViewContext().hasPermission(ReadPermission.class))
             {
                 out.printf("&nbsp;[<a href=\"%s\">Customize View</a>] ", _customizeURL);
             }
@@ -179,7 +180,7 @@ public class DataHeader extends HttpView
         else
         {
             boolean showDelete = false;
-            if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+            if (getViewContext().hasPermission(AdminPermission.class))
                 showDelete = true;
             else if (NumberUtils.isDigits(viewName))
                 showDelete = ReportManager.get().canDeleteReport(getViewContext().getUser(),

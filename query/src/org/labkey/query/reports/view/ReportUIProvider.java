@@ -26,9 +26,9 @@ import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.view.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.ACL;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -84,7 +84,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         }
 
         // query snapshot
-        if (context.hasPermission(ACL.PERM_ADMIN))
+        if (context.hasPermission(AdminPermission.class))
         {
             QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
             if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))

@@ -6386,7 +6386,7 @@ public class StudyController extends BaseStudyController
             if (study == null)
             {
                 List<NavTree> buttons;
-                if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+                if (getViewContext().hasPermission(AdminPermission.class))
                     buttons = Collections.singletonList(new NavTree("Create Study", new ActionURL(CreateStudyAction.class, getContainer())));
                 else
                     buttons = Collections.emptyList();

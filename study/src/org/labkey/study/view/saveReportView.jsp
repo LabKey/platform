@@ -18,7 +18,7 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -120,7 +120,7 @@
     </td>
     </tr>
 <%
-    if (context.hasPermission(ACL.PERM_ADMIN)) {
+    if (context.hasPermission(AdminPermission.class)) {
 %>
         <tr>
             <td><input type="checkbox" value="true" name="shareReport" <%=bean.getShareReport() ? "checked" : ""%>>Make this view available to all users.</td>

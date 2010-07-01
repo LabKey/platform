@@ -25,7 +25,9 @@
 <%@ page import="org.labkey.api.files.MissingRootDirectoryException" %>
 <%@ page import="org.labkey.api.files.UnsetRootDirectoryException" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -93,7 +95,7 @@
 
     if (me.isWide())
     {
-        boolean canDelete = me.isShowAdmin() && context.hasPermission(ACL.PERM_DELETE);
+        boolean canDelete = me.isShowAdmin() && context.hasPermission(DeletePermission.class);
 %>
     <table>
         <tr>
@@ -155,7 +157,7 @@
 <%      }
     }%>
 <br>
-<% if (context.hasPermission(ACL.PERM_INSERT))
+<% if (context.hasPermission(InsertPermission.class))
 {
     ActionURL dropURL = new ActionURL("ftp","drop", context.getContainer());
     // UNDONE: use yahoo dialog to avoid pop-under
@@ -170,7 +172,7 @@
     %>[<a href="#uploadFiles" onclick="window.open('<%=h(dropURL.addParameter("fileSetName",parent.getLabel()).getLocalURIString())%>', '_blank', 'height=600,width=1000,resizable=yes');">Upload Multiple Files</a>]&nbsp;<%
     }}
 }
-if (context.hasPermission(ACL.PERM_UPDATE))
+if (context.hasPermission(UpdatePermission.class))
 {
     ActionURL manage = new ActionURL("FileContent", "begin", c);
     if (null != fileSetName)

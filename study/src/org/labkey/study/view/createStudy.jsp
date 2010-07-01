@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     StudyController.StudyPropertiesForm form = (StudyController.StudyPropertiesForm) getModelBean();
-    if (!getViewContext().hasPermission(ACL.PERM_ADMIN))
+    if (!getViewContext().hasPermission(AdminPermission.class))
     {%>
         A study has not been created in this folder. Please contact an administrator.
 <%  } else { %>

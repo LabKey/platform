@@ -16,34 +16,37 @@
 
 package org.labkey.query.metadata;
 
-import org.labkey.query.metadata.client.MetadataService;
-import org.labkey.query.metadata.client.GWTTableInfo;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.metadata.client.GWTColumnInfo;
+import org.labkey.query.metadata.client.GWTTableInfo;
+import org.labkey.query.metadata.client.MetadataService;
 import org.labkey.query.metadata.client.MetadataUnavailableException;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.QueryServiceImpl;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.*;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.exp.property.DomainEditorServiceBase;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.security.ACL;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
-import org.labkey.data.xml.ColumnType;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MetadataServiceImpl extends DomainEditorServiceBase implements MetadataService
 {
@@ -498,7 +501,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
     private void validatePermissions()
     {
-        if (!getViewContext().hasPermission(ACL.PERM_ADMIN))
+        if (!getViewContext().hasPermission(AdminPermission.class))
         {
             throw new IllegalStateException("You do not have permissions to modify the metadata");
         }

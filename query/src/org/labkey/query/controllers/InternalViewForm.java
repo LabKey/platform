@@ -16,7 +16,7 @@
 
 package org.labkey.query.controllers;
 
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
@@ -59,7 +59,7 @@ public class InternalViewForm extends ViewForm
             HttpView.throwUnauthorized();
         if (view.getCustomViewOwner() == null)
         {
-            if (!context.hasPermission(ACL.PERM_UPDATE))
+            if (!context.hasPermission(UpdatePermission.class))
                 HttpView.throwUnauthorized();
         }
         else

@@ -20,8 +20,9 @@
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -35,7 +36,6 @@
 <%@ page import="org.labkey.study.reports.EnrollmentReport" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -98,7 +98,7 @@
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
                 buttons.push({
                     text:'Customize <%= h(StudyService.get().getSubjectNounSingular(study.getContainer())) %> View',
-                    disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                    disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                     listeners:{click:function(button, event) {window.location = '<%=customizeParticipantURL%>';}}
                 });
                 return buttons;
@@ -201,7 +201,7 @@
                             '<tr><td></td><td>',
                                 '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
                                 '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl>',
-                            <% if (context.hasPermission(ACL.PERM_ADMIN)) { %>
+                            <% if (context.hasPermission(AdminPermission.class)) { %>
                                 '<tpl if="!queryView && !inherited">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
                             <% } %>
                                 '<tpl if="queryView && !inherited">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>make top-level view</a>]</tpl></td></tr>',
@@ -217,13 +217,13 @@
             },{
                 id: 'create_gridView',
                 text:'Grid View',
-                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 icon: '<%=ReportService.get().getReportIcon(getViewContext(), StudyQueryReport.TYPE)%>',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_crosstabView',
                 text:'Crosstab View',
-                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_exportXlsView',
@@ -233,12 +233,12 @@
             },{
                 id: 'create_staticView',
                 text:'Static View',
-                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ShowUploadReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_enrollmentView',
                 text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "Enrollment View"%>',
-                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                disabled: <%=!context.hasPermission(AdminPermission.class)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer())%>';}}
             }],
 

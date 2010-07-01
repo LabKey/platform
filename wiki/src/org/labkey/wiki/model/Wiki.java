@@ -238,6 +238,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     @Override
     public String toString()
     {
-        return "Wiki: \"" + getName() + "\" (" + rowId + ")";
+        return "Wiki: \"" + getName() + "\" (rowId:" + rowId + ")";
     }
 }

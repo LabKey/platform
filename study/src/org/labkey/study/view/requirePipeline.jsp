@@ -16,7 +16,7 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -25,7 +25,7 @@ directory where uploaded data will be stored.<br><br>
 
 <%
     ViewContext context = HttpView.currentContext();
-    if (context.hasPermission(ACL.PERM_ADMIN))
+    if (context.hasPermission(AdminPermission.class))
     {
         ActionURL pipelineUrl = context.cloneActionURL();
         pipelineUrl.setPageFlow("Pipeline").setAction("setup.view");

@@ -27,8 +27,9 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -181,7 +182,7 @@ public class ExternalReport extends AbstractReport
                 rs = ReportManager.get().getReportResultSet(viewContext, getDatasetId(), getVisitRowId());
             else
             {
-                UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ACL.PERM_READ, viewContext);
+                UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ReadPermission.class, viewContext);
                 TableInfo mainTable = schema.getTable(getQueryName());
                 if (mainTable == null)
                     return new HtmlView("Unable to get TableInfo for query: " + getQueryName());
@@ -258,10 +259,10 @@ public class ExternalReport extends AbstractReport
         }
     }
 
-    protected StudyQuerySchema getStudyQuerySchema(User user, int perm, ViewContext context) throws ServletException
+    protected StudyQuerySchema getStudyQuerySchema(User user, Class<? extends Permission> perm, ViewContext context) throws ServletException
     {
-        if (perm != ACL.PERM_READ)
-            throw new IllegalArgumentException("only PERM_READ supported");
+        if (perm != ReadPermission.class)
+            throw new IllegalArgumentException("only ReadPermission supported");
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         //boolean mustCheckUserPermissions = mustCheckDatasetPermissions(user, perm);
         return new StudyQuerySchema(study, user, false);

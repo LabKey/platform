@@ -16,6 +16,8 @@
 
 package org.labkey.study.controllers.designer;
 
+import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import jxl.Range;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
@@ -30,26 +32,24 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.files.FileContentService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.designer.*;
-import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
-import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
@@ -212,8 +212,8 @@ public class DesignerController extends SpringActionController
                 revision = revInteger.intValue();
             }
             params.put("revision", Integer.toString(revision));
-            params.put("edit", getViewContext().hasPermission(ACL.PERM_UPDATE) && form.isEdit() ? "true" : "false");
-            boolean canEdit = getViewContext().hasPermission(ACL.PERM_UPDATE);
+            params.put("edit", getViewContext().hasPermission(UpdatePermission.class) && form.isEdit() ? "true" : "false");
+            boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
             params.put("canEdit",  Boolean.toString(canEdit));
             params.put("canCreateRepository", Boolean.toString(canEdit && null != info && !info.isActive()));
             if (null != StringUtils.trimToNull(form.getFinishURL()))

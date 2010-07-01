@@ -16,28 +16,29 @@
 
 package org.labkey.cbcassay;
 
+import org.labkey.api.data.*;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.data.*;
-import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.cbcassay.data.CBCDataProperty;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.cbcassay.data.CBCDataDisplayColumn;
+import org.labkey.cbcassay.data.CBCDataProperty;
 import org.labkey.cbcassay.data.DisplayColumnDecorator;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 import java.util.ListIterator;
-import java.io.Writer;
-import java.io.IOException;
 
 /**
  * User: kevink
@@ -76,7 +77,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
 
     protected boolean canEdit()
     {
-        return getUser().isAdministrator() && getViewContext().hasPermission(ACL.PERM_UPDATE | ACL.PERM_DELETE);
+        return getUser().isAdministrator() && (getViewContext().hasPermission(UpdatePermission.class) || getViewContext().hasPermission(DeletePermission.class));
     }
 
     protected boolean canDelete()

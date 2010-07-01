@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.cbcassay.CBCAssayProvider" %>
 <%@ page import="org.labkey.cbcassay.data.CBCData" %>
@@ -42,7 +42,7 @@
 <%
     data = (CBCData)this.getModelBean();
 
-    boolean canEdit = getViewContext().hasPermission(ACL.PERM_UPDATE);
+    boolean canEdit = getViewContext().hasPermission(UpdatePermission.class);
 %>
 
 <table>

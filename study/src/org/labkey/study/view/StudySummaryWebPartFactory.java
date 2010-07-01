@@ -16,7 +16,7 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.*;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyImpl;
@@ -41,7 +41,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
     {
-        if (!portalCtx.hasPermission(ACL.PERM_READ))
+        if (!portalCtx.hasPermission(ReadPermission.class))
             return new HtmlView(NAME, portalCtx.getUser().isGuest() ? "Please log in to see this data" : "You do not have permission to see this data");
 
         StudyImpl study = StudyManager.getInstance().getStudy(portalCtx.getContainer());

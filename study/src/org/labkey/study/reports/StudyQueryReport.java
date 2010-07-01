@@ -17,13 +17,11 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang.math.NumberUtils;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
@@ -31,13 +29,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
-import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.List;
@@ -126,14 +121,6 @@ public class StudyQueryReport extends QueryReport
         String queryName = getDescriptor().getProperty(QueryParam.queryName.name());
 
         return QueryService.get().getCustomView(context.getUser(), context.getContainer(), StudyManager.getSchemaName(), queryName, viewName);
-    }
-
-    protected StudyQuerySchema getStudyQuerySchema(User user, int perm, Container c) throws ServletException
-    {
-        if (perm != ACL.PERM_READ)
-            throw new IllegalArgumentException("only PERM_READ supported");
-        StudyImpl study = StudyManager.getInstance().getStudy(c);
-        return new StudyQuerySchema(study, user, true);
     }
 
     public void beforeDelete(ContainerUser context)

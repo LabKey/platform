@@ -36,7 +36,6 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -380,7 +379,7 @@ public class ReportsController extends BaseStudyController
             org.labkey.api.reports.Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudy(), true);
             if (report.getDescriptor().getProperty(DataSetDefinition.DATASETKEY) == null)
             {
-                if (!getViewContext().hasPermission(ACL.PERM_ADMIN))
+                if (!getViewContext().hasPermission(AdminPermission.class))
                     return new HtmlView("<font class=labkey-error>This view must be configured by an administrator.</font>");
 
                 return HttpView.redirect(getViewContext().getActionURL().relativeUrl("configureEnrollmentReport", null));
@@ -468,7 +467,7 @@ public class ReportsController extends BaseStudyController
 
             VBox v = new VBox(designer, resultView);
 
-            if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+            if (getViewContext().hasPermission(AdminPermission.class))
                 v.addView(new SaveReportWidget(extReport));
 
             return v;

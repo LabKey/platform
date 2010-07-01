@@ -22,7 +22,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.query.AssayBaseQueryView;
@@ -82,7 +82,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
     protected boolean canDelete()
     {
         return getViewContext().getUser().isAdministrator() &&
-               getViewContext().hasPermission(ACL.PERM_DELETE);
+               getViewContext().hasPermission(DeletePermission.class);
     }
 
     @Override

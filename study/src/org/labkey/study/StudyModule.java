@@ -36,8 +36,8 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
@@ -296,7 +296,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
         {
-            if (!portalCtx.hasPermission(ACL.PERM_READ))
+            if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
@@ -315,7 +315,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
         {
-            if (!portalCtx.hasPermission(ACL.PERM_READ))
+            if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
@@ -335,7 +335,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
         {
-            if (!portalCtx.hasPermission(ACL.PERM_READ))
+            if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
@@ -354,7 +354,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
         {
-            if (!portalCtx.hasPermission(ACL.PERM_READ))
+            if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Datasets", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))

@@ -94,11 +94,6 @@ public class NormalMessageBoardPermissions implements Permissions
         return new SimpleFilter();
     }
 
-    protected boolean hasPermission(int perm)
-    {
-        return _c.hasPermission(_user, perm);
-    }
-
     protected boolean hasPermission(Class<? extends Permission> perm)
     {
         return _c.hasPermission(_user, perm);
