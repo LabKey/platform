@@ -177,13 +177,13 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
-    /**
-     * WARNING: use this carefully.  This method allows you to implement "runas"
-     * type functionality, by manually poking the permissions you want to give
-     * this user in this context.
-     *
-     * @param perm
+    /*
+        1. Get rid of all usages of setPermissions() (remove or use addContextualRole()).  This lets us...
+        2. Get rid of all usages of hasPermissions() (convert to Permissions version).  This lets us...
+        3. Get rid of getPermissions()
+        4. Also need to convert requiresPermissions()
      */
+
     @Deprecated // Use contextual roles instead
     public void setPermissions(int perm)
     {
@@ -219,7 +219,6 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
         _contextualRoles.add(RoleManager.getRole(role));
     }
 
-    // TODO: addContextualRole() and modify hasPermission() to check them
 
     public boolean hasPermission(Class<? extends Permission> perm) throws NotFoundException
     {
@@ -467,7 +466,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
             throw new TermsOfUseException();
     }
 
-    /* return PropertyValues object used to bind the current commmand object */
+    /* return PropertyValues object used to bind the current command object */
     public PropertyValues getBindPropertyValues()
     {
         if (null != _pvsBind)

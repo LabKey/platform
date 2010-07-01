@@ -19,6 +19,7 @@ package org.labkey.api.view;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -236,7 +237,7 @@ public class Overview
         _actions.add(action);
     }
 
-    public boolean hasPermission(int perm)
+    public boolean hasPermission(Class<? extends Permission> perm)
     {
         return _container.hasPermission(_user, perm);
     }

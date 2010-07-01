@@ -51,11 +51,6 @@ public class QueryReport extends AbstractReport
         return QueryReportDescriptor.TYPE;
     }
 
-    public boolean canHavePermissions()
-    {
-        return true;
-    }
-
     public HttpView renderReport(ViewContext context)
     {
         ReportDescriptor reportDescriptor = getDescriptor();
