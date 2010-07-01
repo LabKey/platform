@@ -21,6 +21,7 @@ import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -81,8 +82,14 @@ public class AuditQueryViewImpl extends AuditLogQueryView
                 filter = _filter;
             view.getRenderContext().setBaseFilter(filter);
         }
-        if (_sort != null && view.getRenderContext().getBaseSort() == null)
-            view.getRenderContext().setBaseSort(_sort);
+        if (_sort != null)
+        {
+            Sort sort = view.getRenderContext().getBaseSort();
+            if (sort == null)
+                sort = new Sort();
+            sort.insertSort(_sort);
+            view.getRenderContext().setBaseSort(sort);
+        }
 
         for (DisplayColumn dc : _displayColumns)
             view.getDataRegion().addDisplayColumn(dc);
