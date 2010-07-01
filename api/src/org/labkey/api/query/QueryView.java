@@ -336,9 +336,6 @@ public class QueryView extends WebPartView<Object>
     {
         ActionURL ret = _schema.urlFor(action, _queryDef);
 
-        if (getSettings().getViewName() != null)
-            ret.addParameter(QueryParam.viewName, QueryView.DATAREGIONNAME_DEFAULT + "." + getSettings().getViewName());
-
         // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
         // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
         if (getSettings().getBaseFilter() != null)
