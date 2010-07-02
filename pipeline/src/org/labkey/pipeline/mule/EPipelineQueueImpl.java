@@ -15,8 +15,10 @@
  */
 package org.labkey.pipeline.mule;
 
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
@@ -30,6 +32,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.io.File;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -134,10 +137,28 @@ public class EPipelineQueueImpl implements PipelineQueue
 
     public void addJob(PipelineJob job) throws IOException
     {
-        // Make sure status file path and Job ID are in synch.
-        File statusFile = job.getLogFile();
-        if (statusFile != null)
-            PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
+        // Duplicate code from PipelineQueueImpl, should be refactored into a superclass
+        File logFile = job.getLogFile();
+        try
+        {
+            if (logFile != null)
+            {
+                // Check if we have an existing entry in the database
+                PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile.getAbsolutePath());
+                if (pipelineStatusFile == null)
+                {
+                    // Insert it if we don't
+                    PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.WAITING_STATUS, null, true);
+                }
+
+                // Reset the ID in case this was a resubmit
+                PipelineStatusManager.resetJobId(job.getLogFile().getAbsolutePath(), job.getJobGUID());
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         if (job.setQueue(this, PipelineJob.WAITING_STATUS))
         {

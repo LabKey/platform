@@ -415,7 +415,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             if (sb.length() == 0)
             {
-                return "&nbsp;";
+                return "";
             }
             return sb.toString();
         }

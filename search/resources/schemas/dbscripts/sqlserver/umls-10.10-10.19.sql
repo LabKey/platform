@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* umls-10.10-10.11.sql */
+
 /* umls-0.00-10.10.sql */
 
 EXEC sp_addapprole 'umls', 'password'

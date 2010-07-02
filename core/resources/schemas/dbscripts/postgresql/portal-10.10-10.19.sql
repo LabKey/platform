@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
--- Store the exception's message, which would otherwise be lost when we de-dupe stack traces
-ALTER TABLE mothership.ExceptionReport ADD ExceptionMessage VARCHAR(1000)
-GO
+/* portal-10.11-10.12.sql */
+
+ALTER TABLE Portal.PortalWebParts
+    ADD COLUMN RowId SERIAL NOT NULL,
+    DROP CONSTRAINT PK_PortalWebParts,
+    ADD CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId);

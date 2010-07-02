@@ -14,5 +14,8 @@
  * limitations under the License.
  */
 
+/* mothership-10.10-10.11.sql */
+
 -- Store the exception's message, which would otherwise be lost when we de-dupe stack traces
-ALTER TABLE mothership.ExceptionReport ADD ExceptionMessage VARCHAR(1000);
+ALTER TABLE mothership.ExceptionReport ADD ExceptionMessage VARCHAR(1000)
+GO

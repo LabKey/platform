@@ -30,7 +30,6 @@ import java.util.Collections;
 public class CBCAssayModule extends DefaultModule
 {
     public static final String NAME = "CBCAssay";
-    private static final double VERSION = 10.10;
 
     @Override
     public String getName()
@@ -41,7 +40,7 @@ public class CBCAssayModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return VERSION;
+        return 10.19;
     }
 
     @Override

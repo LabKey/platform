@@ -14,4 +14,11 @@
  * limitations under the License.
  */
 
-delete from prop.Properties where name='themeName' and value='Kim';
+/* exp-10.10-10.11.sql */
+
+ALTER TABLE exp.list
+    ADD COLUMN IndexMetaData BOOLEAN NOT NULL DEFAULT TRUE;
+
+/* exp-10.11-10.12.sql */
+
+SELECT core.executeJavaUpgradeCode('version_10_2_upgrade');

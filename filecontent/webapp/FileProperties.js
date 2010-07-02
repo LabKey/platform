@@ -122,27 +122,30 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             buttons = [this.doneButton];
         buttons.push({text:'Cancel', scope:this, handler:function(){this.win.close();}});
 
+        // build the defaults map so we can apply to the files form
+        for (var i=0; i < this.fileFields.length; i++)
+        {
+            var field = this.fileFields[i];
+            if (field.defaultValue)
+                this.defaults[field.name] = field.defaultValue;
+
+            if (field.defaultValueType && field.defaultValueType == 'FIXED_NON_EDITABLE')
+                this.disabled[field.name] = true;
+        }
+
         this.formPanel = new LABKEY.ext.FormPanel({
             addAllFields: true,
             border: false,
             autoScroll: true,
             flex: 1,
             columnModel: cm,
-            metaData: {fields: fields}
+            metaData: {fields: fields},
+            values: this.defaults
         });
         this.formPanel.add({name: 'uri', xtype: 'hidden', value: 0});
 
-        for (var i=0; i < this.fileFields.length; i++)
-        {
-            var field = this.fileFields[i];
-            if (field.defaultValue)
-                this.defaults[field.name] = field.defaultDisplayValue;
-
-            if (field.defaultValueType && field.defaultValueType == 'FIXED_NON_EDITABLE')
-                this.disabled[field.name] = true;
-        }
-        var values = this.applyDefaults(this.files[this.fileIndex], this.defaults);
-        this.formPanel.getForm().setValues(values);
+        //var values = this.applyDefaults(this.files[this.fileIndex], this.defaults);
+        //this.formPanel.getForm().setValues(values);
 
         for (var a in this.disabled)
         {

@@ -94,7 +94,7 @@ else
                 if (null != DbScope.getDbScope(def.getDataSource()))
                 {
             %>
-            <td><labkey:link text="view data" href="<%=h(urlView)%>" /></td>
+            <td><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
             <% if (isAdmin) {%><td><labkey:link text="edit definition" href="<%=h(urlEdit)%>" /></td><%}%>
             <td><labkey:link text="reload" href="<%=h(urlReload)%>" /></td>
             <% if (isAdmin) {%><td><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%><%

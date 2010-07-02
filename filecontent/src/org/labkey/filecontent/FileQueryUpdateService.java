@@ -208,7 +208,10 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                         Object value = row.get(prop.getName());
 
                         data.setProperty(user, prop.getPropertyDescriptor(), value);
-                        sb.append(delim).append(prop.getLabel() != null ? prop.getLabel() : prop.getName()).append('=').append(String.valueOf(value));
+
+                        // format the value so we resolve lookups values
+                        String displayValue = DomainUtil.getFormattedDefaultValue(user, prop, value);
+                        sb.append(delim).append(prop.getLabel() != null ? prop.getLabel() : prop.getName()).append('=').append(displayValue);
                         delim = ",";
                     }
                 }

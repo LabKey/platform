@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-UPDATE audit.AuditLog SET ContainerId =
-  (SELECT EntityId FROM core.containers WHERE Parent IS NULL)
-    WHERE ContainerId IS NULL;
+-- Fix SQL Server-only issue -- old schema defs need editable set to default value and then change column to NOT NULL
+UPDATE query.ExternalSchema SET Editable = 0 WHERE Editable IS NULL
+GO
 
-ALTER TABLE audit.AuditLog ALTER COLUMN ContainerId SET NOT NULL;
+ALTER TABLE query.ExternalSchema
+    ALTER COLUMN Editable BIT NOT NULL
+GO
