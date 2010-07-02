@@ -52,9 +52,4 @@ abstract public class ContextPage extends JspBase
     {
         return _context.getUser();
     }
-
-    public boolean hasPermission(int perm)
-    {
-        return getContainer().hasPermission(_context.getUser(), perm);
-    }
 }

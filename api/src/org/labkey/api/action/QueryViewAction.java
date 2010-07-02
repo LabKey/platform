@@ -19,7 +19,6 @@ package org.labkey.api.action;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -53,25 +52,21 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     {
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {
-            getViewContext().requiresPermission(ACL.PERM_READ);
             createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse());
             return null;
         }
         else if (QueryAction.exportRowsTsv.name().equals(form.getExportType()))
         {
-            getViewContext().requiresPermission(ACL.PERM_READ);
             createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
             return null;
         }
         else if ("excelWebQuery".equals(form.getExportType()))
         {
-            getViewContext().requiresPermission(ACL.PERM_READ);
             createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcelWebQuery(getViewContext().getResponse());
             return null;
         }
         else if (QueryAction.printRows.name().equals(form.getExportType()))
         {
-            getViewContext().requiresPermission(ACL.PERM_READ);
             ViewType result = createInitializedQueryView(form, errors, false, form.getExportRegion());
             _print = true;
             getPageConfig().setTemplate(PageConfig.Template.Print);
@@ -85,7 +80,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else
         {
-            getViewContext().requiresPermission(ACL.PERM_READ);
             return getHtmlView(form, errors);
         }
     }

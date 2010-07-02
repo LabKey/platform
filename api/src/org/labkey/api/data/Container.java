@@ -261,6 +261,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      * @return something you don't want anymore
      * @deprecated Use hasPermission(User user, Class&lt;? extends Permission&gt; perm) instead
      */
+    @Deprecated
     public boolean hasPermission(User user, int perm)
     {
         if (isForbiddenProject(user))
@@ -270,6 +271,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return policy.hasPermissions(user, getPermissionsForIntPerm(perm));
     }
 
+    @Deprecated
     private Set<Class<? extends Permission>> getPermissionsForIntPerm(int perm)
     {
         Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();

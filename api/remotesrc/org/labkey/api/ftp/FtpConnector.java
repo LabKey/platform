@@ -43,8 +43,8 @@ public interface FtpConnector
     void audit(int userid, String path, String msg);
 
     // This class describes the labkey web server state
-    // it is not meant to indicate the existance or non-existance of file system directories
-    // NOTE: fsRoot and pipelineRoot are non-null only if explictly set for this folder
+    // it is not meant to indicate the existence or non-existence of file system directories
+    // NOTE: fsRoot and pipelineRoot are non-null only if explicitly set for this folder
     public static class WebFolderInfo implements Serializable
     {
         public String url;
@@ -52,7 +52,7 @@ public interface FtpConnector
         public String name;
         public long created;
         public int perm;
-        public FileSystemRoot  fsRoot;
+        public FileSystemRoot fsRoot;
         public String[] subfolders;
     }
 

@@ -40,7 +40,6 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -177,43 +176,7 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     }
 
 
-    /*
-        1. Get rid of all usages of setPermissions() (remove or use addContextualRole()).  This lets us...
-        2. Get rid of all usages of hasPermissions() (convert to Permissions version).  This lets us...
-        3. Get rid of getPermissions()
-        4. Also need to convert requiresPermissions()
-     */
-
-    @Deprecated // Use contextual roles instead
-    public void setPermissions(int perm)
-    {
-        _perm = perm;
-    }
-
-
-    @Deprecated
-    private int getPermissions() throws NotFoundException
-    {
-        if (_perm == -1)
-        {
-            SecurityPolicy policy = getContainer().getPolicy();
-            User user = getUser();
-            if (null == policy || null == user)
-                _perm = 0;
-            else
-                _perm = policy.getPermsAsOldBitMask(user);
-        }
-        return _perm;
-    }
-
-
-    @Deprecated // use Permission class variant instead
-    public boolean hasPermission(int perm) throws NotFoundException
-    {
-        return (getPermissions() & perm) == perm;
-    }
-
-
+    // Allows actions to override standard container permission checks; use with caution.
     public void addContextualRole(Class<? extends Role> role)
     {
         _contextualRoles.add(RoleManager.getRole(role));
@@ -450,20 +413,6 @@ public class ViewContext extends BoundMap implements MessageSource, ContainerCon
     public void setWebApplicationContext(WebApplicationContext webApplicationContext)
     {
         _webApplicationContext = webApplicationContext;
-    }
-
-    @Deprecated
-    public void requiresPermission(int perm) throws ServletException
-    {
-        if (!hasPermission(perm))
-            HttpView.throwUnauthorized();
-        requiresTermsOfUse();
-    }
-
-    public void requiresTermsOfUse() throws TermsOfUseException
-    {
-        if (!hasAgreedToTermsOfUse())
-            throw new TermsOfUseException();
     }
 
     /* return PropertyValues object used to bind the current command object */

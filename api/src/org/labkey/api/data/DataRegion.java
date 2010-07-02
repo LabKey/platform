@@ -24,7 +24,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.HString;
@@ -578,7 +578,7 @@ public class DataRegion extends DisplayElement
      * Has the side-effect of setting the ResultSet and this DataRegion
      * on the RenderContext and selecting any aggregates
      * (including the row count aggregate, unless pagination or pagination count are false.)
-     * Callers should check for ACL.PERM_READ permission before requesting a ResultSet.
+     * Callers should check for ReadPermission before requesting a ResultSet.
      * @param ctx The RenderContext
      * @return A new ResultSet or the existing ResultSet in the RenderContext or null if no READ permission.
      * @throws SQLException SQLException
@@ -586,7 +586,7 @@ public class DataRegion extends DisplayElement
      */
     final public ResultSet getResultSet(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
             return null;
 
         DataRegion oldRegion = ctx.getCurrentRegion();
@@ -729,12 +729,8 @@ public class DataRegion extends DisplayElement
     {
         if (!ctx.getViewContext().hasPermission(ReadPermission.class))
         {
-            // TODO: Remove this check
-            if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
-            {
-                out.write("You do not have permission to read this data");
-                return;
-            }
+            out.write("You do not have permission to read this data");
+            return;
         }
 
         ResultSet rs = null;
@@ -1494,8 +1490,7 @@ public class DataRegion extends DisplayElement
 
     public void _renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        // TODO: Eliminate ACL version
-        if (!ctx.getViewContext().hasPermission(ACL.PERM_READ) && !ctx.getViewContext().hasPermission(ReadPermission.class))
+        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
         {
             out.write("You do not have permission to read this data");
             return;
@@ -1710,7 +1705,7 @@ public class DataRegion extends DisplayElement
         Set<String> renderedColumns = new HashSet<String>();
 
         //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !ctx.getViewContext().hasPermission(ACL.PERM_INSERT)) || (action == MODE_UPDATE && !ctx.getViewContext().hasPermission(ACL.PERM_UPDATE)))
+        if ((action == MODE_INSERT && !ctx.getViewContext().hasPermission(InsertPermission.class)) || (action == MODE_UPDATE && !ctx.getViewContext().hasPermission(UpdatePermission.class)))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
@@ -1961,7 +1956,7 @@ public class DataRegion extends DisplayElement
         ViewContext viewContext = ctx.getViewContext();
 
         //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !viewContext.hasPermission(ACL.PERM_INSERT)) || (action == MODE_UPDATE && !(viewContext.hasPermission(ACL.PERM_UPDATE) || viewContext.hasPermission(UpdatePermission.class))))
+        if ((action == MODE_INSERT && !viewContext.hasPermission(InsertPermission.class)) || (action == MODE_UPDATE && !viewContext.hasPermission(UpdatePermission.class)))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +

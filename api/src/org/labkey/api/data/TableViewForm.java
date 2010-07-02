@@ -24,7 +24,10 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -111,7 +114,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _tinfo;
     }
 
-    public boolean hasPermission(int perm)
+    public boolean hasPermission(Class<? extends Permission> perm)
     {
         return _c.hasPermission(_user, perm);
     }
@@ -133,7 +136,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         if (!isValid())
             throw new SQLException("Form is not valid.");
-        if (!hasPermission(ACL.PERM_INSERT))
+        if (!hasPermission(InsertPermission.class))
             HttpView.throwUnauthorized();
         if (null != _tinfo.getColumn("container"))
             set("container", _c.getId());
@@ -154,7 +157,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         if (!isValid())
             throw new SQLException("Form is not valid.");
-        if (!hasPermission(ACL.PERM_UPDATE))
+        if (!hasPermission(UpdatePermission.class))
             HttpView.throwUnauthorized();
 
         if (null != _tinfo.getColumn("container"))
@@ -176,7 +179,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         assert null != _tinfo;
         assert null != getPkVals();
 
-        if (!hasPermission(ACL.PERM_DELETE))
+        if (!hasPermission(DeletePermission.class))
             HttpView.throwUnauthorized();
 
         if (null != _selectedRows && _selectedRows.length > 0)
