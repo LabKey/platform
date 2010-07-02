@@ -63,8 +63,7 @@ public abstract class BaseStudyQueryView extends QueryView
             _cohortFilter.addFilterCondition(view.getTable(), getContainer(), filter);
 
         view.getRenderContext().setBaseFilter(filter);
-        if (view.getRenderContext().getBaseSort() == null)
-            view.getRenderContext().setBaseSort(_sort);
+        view.getRenderContext().getBaseSort().insertSort(_sort);
         if (_buttons != null)
         {
             ButtonBar bbar = view.getDataRegion().getButtonBar(DataRegion.MODE_GRID);
