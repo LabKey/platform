@@ -300,10 +300,11 @@ abstract public class PipelineJob extends Job implements Serializable
         return _activeTaskStatus;
     }
 
-    public void setActiveTaskStatus(TaskStatus activeTaskStatus)
+    /** @return whether or not the status was set successfully */
+    public boolean setActiveTaskStatus(TaskStatus activeTaskStatus)
     {
         _activeTaskStatus = activeTaskStatus;
-        updateStatusForTask();
+        return updateStatusForTask();
     }
 
     public TaskFactory getActiveTaskFactory()
@@ -586,7 +587,13 @@ abstract public class PipelineJob extends Job implements Serializable
             if (task == null)
                 return; // Bad task key.
 
-            setActiveTaskStatus(TaskStatus.running);
+            if (!setActiveTaskStatus(TaskStatus.running))
+            {
+                // The user has deleted (cancelled) the job.
+                // Throwing this exception will cause the job to go to the ERROR state and stop running
+                throw new PipelineJobException("Job no longer in database - aborting");
+            }
+
             WorkDirectory workDirectory = null;
             RecordedActionSet actions;
 

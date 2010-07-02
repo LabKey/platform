@@ -1,8 +1,22 @@
-/*
- * Copyright (c) 2008-2010 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
- */
+/**
+* @fileOverview
+* @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
+* @version 10.2
+* @license Copyright (c) 2008-2010 LabKey Corporation
+* <p/>
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* <p/>
+* http://www.apache.org/licenses/LICENSE-2.0
+* <p/>
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License. 
+* <p/>
+*/
 
 /**
  * @namespace The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
@@ -198,7 +212,7 @@ LABKEY.DataRegion = function (config)
      * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
      * <li><b>response:</b> The XMLHttpResponse object</li>
      * </ul>
-     * @param {Function} [config.errorCallback] The function to call upon error of the request.
+     * @param {Function} [config.failureCallback] The function to call upon error of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -312,7 +326,7 @@ LABKEY.DataRegion = function (config)
      * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
      * <li><b>response:</b> The XMLHttpResponse object</li>
      * </ul>
-     * @param {Function} [config.errorCallback] The function to call upon error of the request.
+     * @param {Function} [config.failureCallback] The function to call upon error of the request.
      * The callback will be passed the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -624,7 +638,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             };
         }
 
-        var btns = Ext.DomQuery.select("*[labkey-requires-selection=" + this.name + "]");
+        // escape ' and \
+        var escaped = this.name.replace(/('|\\)/g, "\\$1");
+        var btns = Ext.DomQuery.select("*[labkey-requires-selection='" + escaped + "']");
         Ext.each(btns, fn);
 
         this.fireEvent('selectchange', this, hasSelected);
@@ -739,7 +755,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
  * <li><b>data:</b> an object with the property 'count' to indicate the updated selection count.
  * <li><b>response:</b> The XMLHttpResponse object</li>
  * </ul>
- * @param {Function} [config.errorCallback] The function to call upon error of the request.
+ * @param {Function} [config.failureCallback] The function to call upon error of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -776,7 +792,7 @@ LABKEY.DataRegion.setSelected = function (config)
  * <li><b>data:</b> an object with the property 'count' of 0 to indicate an empty selection.
  * <li><b>response:</b> The XMLHttpResponse object</li>
  * </ul>
- * @param {Function} [config.errorCallback] The function to call upon error of the request.
+ * @param {Function} [config.failureCallback] The function to call upon error of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -805,7 +821,7 @@ LABKEY.DataRegion.clearSelected = function (config)
  * <li><b>data:</b> an object with the property 'selected' that is an array of the primary keys for the selected rows.
  * <li><b>response:</b> The XMLHttpResponse object</li>
  * </ul>
- * @param {Function} [config.errorCallback] The function to call upon error of the request.
+ * @param {Function} [config.failureCallback] The function to call upon error of the request.
  * The callback will be passed the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
