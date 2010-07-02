@@ -23,7 +23,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -53,8 +52,8 @@ import static org.labkey.pipeline.api.PipelineStatusManager.*;
 
 public class StatusController extends SpringActionController
 {
-    private static Logger _log = Logger.getLogger(StatusController.class);
-    private static DefaultActionResolver _resolver = new DefaultActionResolver(StatusController.class);
+    private static final Logger _log = Logger.getLogger(StatusController.class);
+    private static final DefaultActionResolver _resolver = new DefaultActionResolver(StatusController.class);
 
     protected static final String _newline = System.getProperty("line.separator");
     protected static final String DATAREGION_STATUS = "dataregion_StatusFiles";
@@ -264,7 +263,6 @@ public class StatusController extends SpringActionController
             if (c == null || c.isRoot())
             {
                 detailsView.getRenderContext().setUseContainerFilter(false);
-                detailsView.getViewContext().setPermissions(ACL.PERM_READ);
             }
             return detailsView;
         }

@@ -83,7 +83,6 @@ public class PipelineQueryView extends QueryView
         view.getRenderContext().setBaseSort(new Sort("-Created"));
         if (_context.getContainer() == null || _context.getContainer().isRoot())
         {
-            view.getViewContext().setPermissions(ACL.PERM_READ);
             view.getRenderContext().setUseContainerFilter(false);
         }
         return view;

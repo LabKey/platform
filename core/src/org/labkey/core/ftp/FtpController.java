@@ -178,7 +178,7 @@ public class FtpController extends SpringActionController
 
             info.created = resource.getCreated();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
-            info.perm = ((WebdavResolver.WebFolder)resource).getIntPermissions(user);
+            info.perm = ((WebdavResolver.WebFolder)resource).getIntPermissions(user);   // TODO: Unused?
             List<String> webFoldersNames = ((WebdavResolver.WebFolder)resource).getWebFoldersNames(user);
 
             // Filter out wiki and files webdav trees - they're not supported over FTP

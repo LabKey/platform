@@ -282,7 +282,7 @@ public class CoreUpgradeCode implements UpgradeCode
                 {
                     //if the acl is empty, that means no group still in existence has permissions to this object
                     //but parts of our code generally check explicitly for user.isAdmin() to
-                    //allow admins access to the object. The real equivallent is to assign
+                    //allow admins access to the object. The real equivalent is to assign
                     //the administrators group to the site admin role for this object
                     //and that's all.
                     Table.execute(CoreSchema.getInstance().getSchema(), insertAssignmentSql,
