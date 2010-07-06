@@ -734,7 +734,7 @@ loop:
             }
             sql.append(col.getInternalSql());
             sql.append(" AS ");
-            sql.append(dialect.quoteColumnIdentifier(alias));
+            sql.append(dialect.makeLegalIdentifier(alias));
             sql.nextPrefix(",\n");
             count++;
         }

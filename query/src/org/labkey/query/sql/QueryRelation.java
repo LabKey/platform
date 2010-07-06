@@ -159,7 +159,7 @@ public abstract class QueryRelation
 
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment(StringUtils.defaultString(tableAlias, getTable().getAlias()) + "." + getDialect(this).quoteColumnIdentifier(getAlias()));
+            return new SQLFragment(StringUtils.defaultString(tableAlias, getTable().getAlias()) + "." + getDialect(this).makeLegalIdentifier(getAlias()));
         }
 
         abstract void copyColumnAttributesTo(ColumnInfo to);

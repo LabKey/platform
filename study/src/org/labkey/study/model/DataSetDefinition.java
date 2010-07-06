@@ -517,12 +517,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         Table.snapshot(tinfoFrom, tinfoMat.toString());
 
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().getTableSelectName("IX_" + tempName + "_seq") +
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_seq") +
                 " ON " + tinfoMat + "(SequenceNum)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().getTableSelectName("IX_" + tempName + "_ptidsequencekey") +
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_ptidsequencekey") +
                 " ON " + tinfoMat + "(ParticipantSequenceKey)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().getTableSelectName("IX_" + tempName + "_ptid_seq") +
-                " ON " + tinfoMat + "(" + StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_ptid_seq") +
+                " ON " + tinfoMat + "(" + StudyService.get().getSubjectColumnName(getContainer()) + ", SequenceNum)", null);
 
         //noinspection ConstantConditions
         if (debug)
@@ -550,7 +550,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     // It's very important that this match exactly what was used as the alias when generating the SELECT
                     // that fed into the temp table. Hence, we ask that column directly
-                    return getSqlDialect().quoteColumnIdentifier(col.getAlias());
+                    return getSqlDialect().makeLegalIdentifier(col.getAlias());
                 }
             };
             colDirect.copyAttributesFrom(col);
@@ -608,7 +608,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private void dropMaterializedTable(String tempName)
             throws SQLException
     {
-        Table.execute(StudySchema.getInstance().getDatasetSchema(), "DROP TABLE studydataset." + getScope().getSqlDialect().getTableSelectName(tempName), new Object[0]);
+        Table.execute(StudySchema.getInstance().getDatasetSchema(), "DROP TABLE studydataset." + getScope().getSqlDialect().makeLegalIdentifier(tempName), new Object[0]);
     }
 
 
@@ -1653,7 +1653,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     try
                     {
                         statement = conn.createStatement();
-                        statement.execute("DROP TABLE " + StudySchema.getInstance().getDatasetSchema().getName() + "." + scope.getSqlDialect().getTableSelectName(tableName));
+                        statement.execute("DROP TABLE " + StudySchema.getInstance().getDatasetSchema().getName() + "." + scope.getSqlDialect().makeLegalIdentifier(tableName));
                     }
                     finally
                     {
