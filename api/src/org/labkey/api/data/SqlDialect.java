@@ -524,28 +524,23 @@ public abstract class SqlDialect
 
     public String getColumnSelectName(String columnName)
     {
-        // Consider: just use quoteColumnIdentifier()?
-        if (!"*".equals(columnName) && (reservedWordSet.contains(columnName) || !AliasManager.isLegalName(columnName)))
-            return "\"" + columnName.replaceAll("\"", "\"\"") + "\"";
-        else
+        // Special case "*"... otherwise, just makeLegalIdentifier()
+        if ("*".equals(columnName))
             return columnName;
+        else
+            return makeLegalIdentifier(columnName);
     }
 
 
-    // quote column identifier if necessary
-    public String quoteColumnIdentifier(String id)
+    // If necessary, escape quotes and quote the identifier
+    public String makeLegalIdentifier(String id)
     {
-        if (!AliasManager.isLegalName(id) || reservedWordSet.contains(id))
+        if (reservedWordSet.contains(id) || !AliasManager.isLegalName(id))
             return "\"" + id.replaceAll("\"", "\"\"") + "\"";
         else
             return id;
     }
 
-
-    public String getTableSelectName(String tableName)
-    {
-        return getColumnSelectName(tableName);   // Same as column names
-    }
 
     // String version for convenience
     public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)

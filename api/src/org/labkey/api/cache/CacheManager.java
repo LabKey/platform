@@ -1,6 +1,7 @@
 package org.labkey.api.cache;
 
 import org.apache.commons.lang.time.DateUtils;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: adam
@@ -18,18 +19,18 @@ public class CacheManager
 
     public static <K, V> Cache<K, V> getCache(int size, long defaultTimeToLive, String debugName)
     {
-        return new CacheImpl<K, V>(size, defaultTimeToLive, debugName, true);
+        return new CacheImpl<K, V>(size, defaultTimeToLive, debugName, true, null);
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int size, long defaultTimeToLive, String debugName)
     {
-        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, true);
+        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, true, null);
     }
 
-    public static <V> StringKeyCache<V> getTemporaryCache(int size, long defaultTimeToLive, String debugName, Stats transactionStats)
+    public static <V> StringKeyCache<V> getTemporaryCache(int size, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        // TODO: Pass in transaction stats
-        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, false);
+        // Temporary caches are not tracked and their statistics can accumulate to another caches stats
+        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, false, stats);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");

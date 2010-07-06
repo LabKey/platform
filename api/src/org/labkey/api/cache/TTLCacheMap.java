@@ -17,6 +17,7 @@
 package org.labkey.api.cache;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
@@ -97,10 +98,10 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         return new TTLCacheEntry(hash, key, -1);
     }
 
-    public TTLCacheMap(int maxSize, long defaultExpires, String debugName, boolean track)
+    public TTLCacheMap(int maxSize, long defaultExpires, String debugName, boolean track, @Nullable Stats stats)
     {
         // Limit the initial size of the underlying map (it will grow if necessary)
-        super(Math.min(10000, maxSize), debugName, track);
+        super(Math.min(10000, maxSize), debugName, track, stats);
         this.lru = true;
         this.maxSize = maxSize;
         this.defaultExpires = defaultExpires;
@@ -109,7 +110,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public TTLCacheMap(int maxSize, String debugName)
     {
-        this(maxSize, -1, debugName, true);
+        this(maxSize, -1, debugName, true, null);
     }
 
 

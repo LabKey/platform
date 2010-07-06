@@ -79,8 +79,8 @@ public class SchemaTableInfo implements TableInfo
         this(parentSchema);
 
         this.name = tableName;
-        String name = getSqlDialect().getTableSelectName(parentSchema.getName())
-                + "." + getSqlDialect().getTableSelectName(tableName);
+        String name = getSqlDialect().makeLegalIdentifier(parentSchema.getName())
+                + "." + getSqlDialect().makeLegalIdentifier(tableName);
         this.selectName = new SQLFragment(name);
     }
 
@@ -632,7 +632,7 @@ public class SchemaTableInfo implements TableInfo
                 if (fk.isJoinWithContainer())
                     out.write(", Container");
                 out.write(") REFERENCES ");
-                out.write(dialect.getTableSelectName(fk.getLookupTableName()));
+                out.write(dialect.makeLegalIdentifier(fk.getLookupTableName()));
                 out.write("(");
                 out.write(dialect.getColumnSelectName(fk.getLookupColumnName()));
                 if (fk.isJoinWithContainer())

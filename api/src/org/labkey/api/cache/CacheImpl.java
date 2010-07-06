@@ -24,13 +24,13 @@ import org.labkey.api.util.Filter;
  */
 public class CacheImpl<K, V> implements Cache<K, V>
 {
-    private static Logger _log = Logger.getLogger(CacheImpl.class);
+    private static final Logger _log = Logger.getLogger(CacheImpl.class);
 
     private final TTLCacheMap<K, V> _cache;
 
-    public CacheImpl(int size, long defaultTimeToLive, String debugName, boolean track)
+    public CacheImpl(int size, long defaultTimeToLive, String debugName, boolean track, Stats stats)
     {
-        _cache = new TTLCacheMap<K, V>(size, defaultTimeToLive, debugName, track);
+        _cache = new TTLCacheMap<K, V>(size, defaultTimeToLive, debugName, track, stats);
     }
 
 
@@ -54,7 +54,7 @@ public class CacheImpl<K, V> implements Cache<K, V>
     public synchronized V get(K key)
     {
         V v = _cache.get(key);
-        _logDebug("Cache.get(" + key + ") " + (null == v ? " not found" : "found"));
+        _logDebug("Cache.get(" + key + ") " + (null == v ? "not found" : "found"));
         return v;
     }
 
@@ -114,6 +114,6 @@ public class CacheImpl<K, V> implements Cache<K, V>
     @Override
     public Stats getTransactionStats()
     {
-        return null; // todo: _cache.getTransactionStats();
+        return _cache.getTransactionStats();
     }
 }

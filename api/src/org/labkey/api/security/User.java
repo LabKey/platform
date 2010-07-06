@@ -29,8 +29,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 {
     static Logger _log = Logger.getLogger(User.class);
 
-    static int[] _noGroups = new int[0];
-    static int[] _guestGroups = new int[]{Group.groupGuests};
+    private static final int[] _guestGroups = new int[]{Group.groupGuests};
 
     private String _firstName = null;
     private String _lastName = null;
@@ -43,7 +42,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private String _phone;
 
     public static final User guest = new GuestUser("guest");
-    static final User search = new GuestUser("search");
+    private static final User search = new GuestUser("search");
 
     private static class GuestUser extends User
     {

@@ -32,7 +32,7 @@ import java.sql.SQLException;
  * Date: Dec 12, 2006
  * Time: 9:54:06 AM
  *
- * Not a map, uses TTLCacheMap to implement a transaction aware cache
+ * Not a map, uses a StringKeyCache to implement a transaction aware cache
  *
  * @see org.labkey.api.data.DbScope
  */

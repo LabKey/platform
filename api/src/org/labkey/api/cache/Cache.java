@@ -8,6 +8,7 @@ import org.labkey.api.util.Filter;
  * Time: 10:07:01 AM
  */
 
+// A thread-safe Cache implementation
 public interface Cache<K, V>
 {
     V put(K key, V value);

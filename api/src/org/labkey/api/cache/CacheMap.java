@@ -240,8 +240,8 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     protected int size = 0;
     protected boolean lru = false;
 
-    protected Stats stats = new Stats();
-    public Stats transactionStats = new Stats();
+    private final Stats _stats;
+    private final Stats _transactionStats = new Stats();
 
     //
     // Map implementation
@@ -251,12 +251,13 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
      * size is max expected entries
      */
 
-    public CacheMap(int initialSize, String debugName, boolean track)
+    public CacheMap(int initialSize, String debugName, boolean track, Stats stats)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0, null);
         assert debugName.length() > 0;
         _debugName = debugName;
+        _stats = (null != stats ? stats : new Stats());
 
         // We track "permanent" caches so memtracker can clear them
         // TODO: We should move this tracking and purging to CacheManager so it works with all cache implementations.
@@ -340,10 +341,10 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     protected V trackGet(V value)
     {
-        stats.gets.incrementAndGet();
+        _stats.gets.incrementAndGet();
 
         if (value == null)
-            stats.misses.incrementAndGet();
+            _stats.misses.incrementAndGet();
 
         return value;
     }
@@ -352,42 +353,48 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     protected void trackPut(V value)
     {
         assert null != value : "Attempt to cache null into " + getDebugName() + "; must use marker for null instead.";
-        stats.puts.incrementAndGet();
+        _stats.puts.incrementAndGet();
 
-        long maxSize = stats.max_size.get();
+        long maxSize = _stats.max_size.get();
         long currentSize = size();
         if (currentSize > maxSize)
-            stats.max_size.compareAndSet(maxSize, currentSize);
+            _stats.max_size.compareAndSet(maxSize, currentSize);
     }
 
 
     protected void trackExpiration()
     {
-        stats.expirations.incrementAndGet();
+        _stats.expirations.incrementAndGet();
     }
 
 
     protected void trackRemove()
     {
-        stats.removes.incrementAndGet();
+        _stats.removes.incrementAndGet();
     }
 
 
     protected void trackClear()
     {
-        stats.clears.incrementAndGet();
+        _stats.clears.incrementAndGet();
+    }
+
+
+    public Stats getTransactionStats()
+    {
+        return _transactionStats;
     }
 
 
     public CacheStats getCacheStats()
     {
-        return getCacheStats(stats, size);
+        return getCacheStats(_stats, size);
     }
 
 
     public CacheStats getTransactionCacheStats()
     {
-        return getCacheStats(transactionStats, 0);
+        return getCacheStats(_transactionStats, 0);
     }
 
 
