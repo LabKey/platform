@@ -37,7 +37,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 {
     private static final Logger LOG = Logger.getLogger(TTLCacheMap.class);
 
-    private final int _maxSize;
+    private final int _limit;
     private final long _defaultExpires;
 
     /*
@@ -98,26 +98,21 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         return new TTLCacheEntry(hash, key, -1);
     }
 
-    TTLCacheMap(int maxSize, long defaultExpires, String debugName, boolean track, @Nullable Stats stats)
+    TTLCacheMap(int limit, long defaultExpires, String debugName, boolean track, @Nullable Stats stats)
     {
         // Limit the initial size of the underlying map (it will grow if necessary)
-        super(Math.min(10000, maxSize), debugName, track, stats);
+        super(Math.min(10000, limit), debugName, stats);
         this.lru = true;
-        this._maxSize = maxSize;
-        this._defaultExpires = defaultExpires;
+        _limit = limit;
+        _defaultExpires = defaultExpires;
     }
     
 
-    TTLCacheMap(int maxSize, String debugName)
+    TTLCacheMap(int limit, String debugName)
     {
-        this(maxSize, -1, debugName, true, null);
+        this(limit, -1, debugName, true, null);
     }
 
-
-    public int getMaxSize()
-    {
-        return _maxSize;
-    }
 
     public long getDefaultExpires()
     {
@@ -208,7 +203,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     protected boolean removeOldestEntry(Map.Entry<K, V> mapEntry)
     {
         purge();
-        return size > _maxSize || ((TTLCacheEntry) mapEntry).expired();
+        return size > _limit || ((TTLCacheEntry) mapEntry).expired();
     }
 
 
@@ -252,6 +247,6 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     @Override
     protected int getLimit()
     {
-        return _maxSize;
+        return _limit;
     }
 }

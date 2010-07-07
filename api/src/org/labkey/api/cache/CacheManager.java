@@ -51,12 +51,12 @@ public class CacheManager
         return (StringKeyCache<V>)SHARED_CACHE;
     }
 
+    // We track "permanent" caches so memtracker can clear them and admin console can report statistics
     private static void addToKnownCaches(Clearable cache)
     {
         synchronized (KNOWN_CACHES)
         {
             KNOWN_CACHES.add(cache);
-            assert KNOWN_CACHES.size() == CacheMap.getKnownCacheMaps().size();
         }
     }
 
@@ -99,7 +99,7 @@ public class CacheManager
     @Deprecated
     public static <K, V> CacheMap<K, V> getCacheMap(int initialSize, String debugName)
     {
-        CacheMap<K, V> cache = new CacheMap<K, V>(initialSize, debugName, true, null);
+        CacheMap<K, V> cache = new CacheMap<K, V>(initialSize, debugName, null);
         addToKnownCaches(cache);
         return cache;
     }

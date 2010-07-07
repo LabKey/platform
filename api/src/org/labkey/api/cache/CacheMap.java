@@ -231,8 +231,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
         return head.next != head ? head.next : null;
     }
 
-    private static final List<CacheMap> KNOWN_CACHEMAPS = new LinkedList<CacheMap>();
-
     private final String _debugName;
 
     protected Entry<K, V>[] buckets;
@@ -251,40 +249,13 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
      * size is max expected entries
      */
 
-    CacheMap(int initialSize, String debugName, boolean track, @Nullable Stats stats)
+    CacheMap(int initialSize, String debugName, @Nullable Stats stats)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0, null);
         assert debugName.length() > 0;
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
-
-        // We track "permanent" caches so memtracker can clear them
-        // TODO: We should move this tracking and purging to CacheManager so it works with all cache implementations.
-        if (track)
-        {
-            synchronized (KNOWN_CACHEMAPS)
-            {
-                KNOWN_CACHEMAPS.add(this);
-            }
-        }
-    }
-
-
-    @Deprecated  // Remove once we've verified new mechanism is working properly
-    public static List<CacheMap> getKnownCacheMaps()
-    {
-        List<CacheMap> copy = new ArrayList<CacheMap>();
-
-        synchronized (KNOWN_CACHEMAPS)
-        {
-            for (CacheMap cachemap : KNOWN_CACHEMAPS)
-            {
-                copy.add(cachemap);
-            }
-        }
-
-        return copy;
     }
 
 
@@ -378,24 +349,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
     public Stats getTransactionStats()
     {
         return _transactionStats;
-    }
-
-
-    public CacheStats getCacheStats()
-    {
-        return getCacheStats(_stats, size);
-    }
-
-
-    public CacheStats getTransactionCacheStats()
-    {
-        return getCacheStats(_transactionStats, 0);
-    }
-
-
-    private CacheStats getCacheStats(Stats stats, int size)
-    {
-        return new CacheStats(getDebugName(), stats, size, getLimit());
     }
 
 

@@ -29,7 +29,7 @@ class LimitedCacheMap<K, V> extends CacheMap<K, V>
 
     LimitedCacheMap(int initialSize, int limit, String debugName)
     {
-        super(initialSize, debugName, true, null);
+        super(initialSize, debugName, null);
         _limit = limit;
     }
 
