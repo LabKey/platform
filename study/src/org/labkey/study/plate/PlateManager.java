@@ -725,7 +725,7 @@ public class PlateManager implements PlateService.Service
         return PlateTemplateImpl.class.getName() + "/Folder-" + container.getRowId() + "-" + idString;
     }
 
-    private static final StringKeyCache<PlateTemplateImpl> PLATE_TEMPLATE_CACHE = CacheManager.getShared();
+    private static final StringKeyCache<PlateTemplateImpl> PLATE_TEMPLATE_CACHE = CacheManager.getSharedCache();
 
     private void cache(PlateTemplateImpl template)
     {

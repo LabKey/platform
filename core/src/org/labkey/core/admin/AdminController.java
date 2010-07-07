@@ -32,9 +32,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.CacheMap;
-import org.labkey.api.cache.CacheStats;
-import org.labkey.api.cache.TTLCacheMap;
+import org.labkey.api.cache.*;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.exp.OntologyManager;
@@ -1984,28 +1982,19 @@ public class AdminController extends SpringActionController
         {
             StringBuilder html = new StringBuilder();
 
-            List<CacheMap> cacheMaps = CacheMap.getKnownCacheMaps();
-            List<CacheStats> cmStats = new ArrayList<CacheStats>();
-            List<CacheStats> ttlStats = new ArrayList<CacheStats>();
-            List<CacheStats> transStats = new ArrayList<CacheStats>();
+            List<Cache> caches = CacheManager.getKnownCaches();
+            List<CacheStats> cacheStats = new ArrayList<CacheStats>();
+            List<CacheStats> transactionStats = new ArrayList<CacheStats>();
 
-            for (CacheMap cm : cacheMaps)
+            for (Cache cache : caches)
             {
-                if (cm instanceof TTLCacheMap)
-                {
-                    ttlStats.add(cm.getCacheStats());
-                    transStats.add(cm.getTransactionCacheStats());
-                }
-                else
-                {
-                    cmStats.add(cm.getCacheStats());
-                }
+                cacheStats.add(CacheManager.getCacheStats(cache));
+                transactionStats.add(CacheManager.getTransactionCacheStats(cache));
             }
 
             html.append("<table>\n");
-            appendStats(html, "Cache Maps", cmStats);
-            appendStats(html, "TTL Cache Maps", ttlStats);
-            appendStats(html, "Transaction Cache Maps", transStats);
+            appendStats(html, "Caches", cacheStats);
+            appendStats(html, "Transaction Caches", transactionStats);
             html.append("</table>\n");
 
             return new HtmlView(html.toString());
@@ -2150,8 +2139,8 @@ public class AdminController extends SpringActionController
             {
                 LOG.info("Clearing Introspector caches");
                 Introspector.flushCaches();
-                LOG.info("Purging all CacheMap caches");
-                CacheMap.purgeAllCaches();
+                LOG.info("Purging all caches");
+                CacheManager.clearAllKnownCaches();
                 SearchService ss = ServiceRegistry.get().getService(SearchService.class);
                 if (null != ss)
                 {

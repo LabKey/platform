@@ -493,7 +493,7 @@ public class TypesController extends SpringActionController
         }
     }
 
-    private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getShared();
+    private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
 
     public static String[] getSemanticTypes()
     {
