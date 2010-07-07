@@ -69,7 +69,7 @@ public class SecurityManager
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> _viewFactories = new ArrayList<ViewFactory>();
     private static final String GROUP_CACHE_PREFIX = "Groups/MetaData=";
-    private static final StringKeyCache<Group> GROUP_CACHE = CacheManager.getShared();
+    private static final StringKeyCache<Group> GROUP_CACHE = CacheManager.getSharedCache();
 
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
 

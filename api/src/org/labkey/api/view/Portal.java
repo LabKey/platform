@@ -45,7 +45,7 @@ import java.util.*;
 public class Portal
 {
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
-    private static final StringKeyCache<WebPart[]> WEB_PART_CACHE = CacheManager.getShared();
+    private static final StringKeyCache<WebPart[]> WEB_PART_CACHE = CacheManager.getSharedCache();
 
     private static final String PORTAL_PREFIX = "Portal/";
     private static final String SCHEMA_NAME = "portal";

@@ -29,7 +29,7 @@ import java.util.*;
  * It is intended to be used as a base class for customized caching functionality
  */
 
-public class CacheMap<K, V> extends AbstractMap<K, V>
+public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
 {
     //
     // Internal implementation of hash table of Map.Entry
@@ -104,7 +104,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
     
 
-    protected Entry<K, V> findEntry(Object key)
+    public Entry<K, V> findEntry(Object key)
     {
         return findEntry(hash(key), key);
     }
@@ -251,7 +251,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
      * size is max expected entries
      */
 
-    public CacheMap(int initialSize, String debugName, boolean track, Stats stats)
+    CacheMap(int initialSize, String debugName, boolean track, @Nullable Stats stats)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0, null);
@@ -271,18 +271,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    public static void purgeAllCaches()
-    {
-        synchronized (KNOWN_CACHEMAPS)
-        {
-            for (CacheMap cmap : KNOWN_CACHEMAPS)
-            {
-                cmap.clear();
-            }
-        }
-    }
-
-
+    @Deprecated  // Remove once we've verified new mechanism is working properly
     public static List<CacheMap> getKnownCacheMaps()
     {
         List<CacheMap> copy = new ArrayList<CacheMap>();
@@ -380,6 +369,12 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
+    public Stats getStats()
+    {
+        return _stats;
+    }
+
+
     public Stats getTransactionStats()
     {
         return _transactionStats;
@@ -400,7 +395,7 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
 
     private CacheStats getCacheStats(Stats stats, int size)
     {
-        return new CacheStats(getDebugName(), stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get(), getLimit());
+        return new CacheStats(getDebugName(), stats, size, getLimit());
     }
 
 
@@ -537,9 +532,9 @@ public class CacheMap<K, V> extends AbstractMap<K, V>
     }
 
 
-    protected @Nullable Long getLimit()
+    protected int getLimit()
     {
-        return null;   // Unlimited... subclasses may implement a limit
+        return Integer.MAX_VALUE;   // Effectively unlimited... subclasses may implement a limit
     }
 
 

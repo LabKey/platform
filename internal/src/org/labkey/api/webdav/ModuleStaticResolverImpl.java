@@ -15,6 +15,7 @@
  */
 package org.labkey.api.webdav;
 
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
@@ -264,7 +265,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
-    private static final CacheMap<Path, Map<String, WebdavResource>> CHILDREN_CACHE = new CacheMap<Path, Map<String, WebdavResource>>(50, "StaticResourceCache", true, null);
+    private static final CacheMap<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCacheMap(50, "StaticResourceCache");
 
     private class StaticResource extends _PublicResource
     {

@@ -156,12 +156,6 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
     @Override
-    public int getMaxSize()
-    {
-        return _sharedCache.getMaxSize();
-    }
-
-    @Override
     public int size()
     {
         return _sharedCache.size();
@@ -177,6 +171,18 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     public String getDebugName()
     {
         return _sharedCache.getDebugName();
+    }
+
+    @Override
+    public int getLimit()
+    {
+        return _sharedCache.getLimit();
+    }
+
+    @Override
+    public Stats getStats()
+    {
+        return _sharedCache.getStats();
     }
 
     @Override

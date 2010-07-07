@@ -88,9 +88,9 @@ public class CacheImpl<K, V> implements Cache<K, V>
     }
 
     @Override
-    public int getMaxSize()
+    public int getLimit()
     {
-        return _cache.getMaxSize();
+        return _cache.getLimit();
     }
 
     @Override
@@ -109,6 +109,12 @@ public class CacheImpl<K, V> implements Cache<K, V>
     public String getDebugName()
     {
         return _cache.getDebugName();
+    }
+
+    @Override
+    public Stats getStats()
+    {
+        return _cache.getStats();
     }
 
     @Override

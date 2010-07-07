@@ -23,25 +23,25 @@ import java.util.Map;
  * Date: May 19, 2006
  * Time: 6:11:59 AM
  */
-public class LimitedCacheMap<K, V> extends CacheMap<K, V>
+class LimitedCacheMap<K, V> extends CacheMap<K, V>
 {
-    private final int _maxSize;
+    private final int _limit;
 
-    public LimitedCacheMap(int initialSize, int maxSize, String debugName)
+    LimitedCacheMap(int initialSize, int limit, String debugName)
     {
         super(initialSize, debugName, true, null);
-        _maxSize = maxSize;
+        _limit = limit;
     }
 
     protected boolean removeOldestEntry(Map.Entry entry)
     {
-        return (size() >= _maxSize);
+        return (size() >= _limit);
     }
 
     @Override
-    protected Long getLimit()
+    protected int getLimit()
     {
-        return new Long(_maxSize);
+        return _limit;
     }
 }
 

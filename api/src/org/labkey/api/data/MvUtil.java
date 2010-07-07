@@ -190,7 +190,7 @@ public class MvUtil
 
     private static StringKeyCache<Map<String, String>> getCache()
     {
-        return CacheManager.getShared();
+        return CacheManager.getSharedCache();
     }
 
     public static void containerDeleted(Container c)

@@ -36,7 +36,7 @@ public class TransactionCacheMap<V> implements StringKeyCache<V>
     // point it switches to using a private cache for the remainder of the transaction.
     public TransactionCacheMap(StringKeyCache<V> sharedCache)
     {
-        _privateCache = CacheManager.getTemporaryCache(sharedCache.getMaxSize(), sharedCache.getDefaultExpires(), "transaction cache: " + sharedCache.getDebugName(), sharedCache.getTransactionStats());
+        _privateCache = CacheManager.getTemporaryCache(sharedCache.getLimit(), sharedCache.getDefaultExpires(), "transaction cache: " + sharedCache.getDebugName(), sharedCache.getTransactionStats());
         _sharedCache = sharedCache;
     }
 
@@ -92,9 +92,15 @@ public class TransactionCacheMap<V> implements StringKeyCache<V>
     }
 
     @Override
-    public int getMaxSize()
+    public int getLimit()
     {
-        return _privateCache.getMaxSize();
+        return _privateCache.getLimit();
+    }
+
+    @Override
+    public Stats getStats()
+    {
+        return _privateCache.getStats();
     }
 
     @Override

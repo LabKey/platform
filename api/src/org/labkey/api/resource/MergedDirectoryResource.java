@@ -15,6 +15,7 @@
  */
 package org.labkey.api.resource;
 
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheMap;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
@@ -29,7 +30,7 @@ import java.util.*;
  */
 public class MergedDirectoryResource extends AbstractResourceCollection
 {
-    private static final CacheMap<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = new CacheMap<Pair<Resolver, Path>, Map<String, Resource>>(50, "MergedDirectoryResourceCache", true, null);
+    private static final CacheMap<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCacheMap(50, "MergedDirectoryResourceCache");
 
     List<File> _dirs;
     Resource[] _additional;

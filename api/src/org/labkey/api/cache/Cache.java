@@ -9,7 +9,7 @@ import org.labkey.api.util.Filter;
  */
 
 // A thread-safe Cache implementation
-public interface Cache<K, V>
+public interface Cache<K, V> extends Clearable
 {
     V put(K key, V value);
 
@@ -23,11 +23,13 @@ public interface Cache<K, V>
 
     void clear();
 
-    int getMaxSize();
+    int getLimit();
 
     long getDefaultExpires();
 
     String getDebugName();
+
+    Stats getStats();
 
     Stats getTransactionStats();
 

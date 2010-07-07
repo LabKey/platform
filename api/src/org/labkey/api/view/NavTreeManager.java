@@ -35,7 +35,7 @@ public class NavTreeManager
     private static final String CACHE_PREFIX = NavTreeManager.class.getName() + "/";
     private static final Logger _log = Logger.getLogger(NavTreeManager.class);
 
-    private static final StringKeyCache<Collapsible> NAV_TREE_CACHE = CacheManager.getShared();
+    private static final StringKeyCache<Collapsible> NAV_TREE_CACHE = CacheManager.getSharedCache();
     
     public static void expandCollapsePath(ViewContext viewContext, String navTreeId, String path, boolean collapse)
     {

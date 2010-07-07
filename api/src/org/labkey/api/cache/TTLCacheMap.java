@@ -37,8 +37,8 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 {
     private static final Logger LOG = Logger.getLogger(TTLCacheMap.class);
 
-    private final int maxSize;
-    private final long defaultExpires;
+    private final int _maxSize;
+    private final long _defaultExpires;
 
     /*
      * NOTE: this is distinctly unlike the WeakHashMap.  The referent here is
@@ -98,17 +98,17 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         return new TTLCacheEntry(hash, key, -1);
     }
 
-    public TTLCacheMap(int maxSize, long defaultExpires, String debugName, boolean track, @Nullable Stats stats)
+    TTLCacheMap(int maxSize, long defaultExpires, String debugName, boolean track, @Nullable Stats stats)
     {
         // Limit the initial size of the underlying map (it will grow if necessary)
         super(Math.min(10000, maxSize), debugName, track, stats);
         this.lru = true;
-        this.maxSize = maxSize;
-        this.defaultExpires = defaultExpires;
+        this._maxSize = maxSize;
+        this._defaultExpires = defaultExpires;
     }
     
 
-    public TTLCacheMap(int maxSize, String debugName)
+    TTLCacheMap(int maxSize, String debugName)
     {
         this(maxSize, -1, debugName, true, null);
     }
@@ -116,18 +116,18 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     public int getMaxSize()
     {
-        return maxSize;
+        return _maxSize;
     }
 
     public long getDefaultExpires()
     {
-        return defaultExpires;
+        return _defaultExpires;
     }
 
     @Override
     public V put(K key, V value)
     {
-        return put(key, value, defaultExpires);
+        return put(key, value, _defaultExpires);
     }
 
 
@@ -208,7 +208,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     protected boolean removeOldestEntry(Map.Entry<K, V> mapEntry)
     {
         purge();
-        return size > maxSize || ((TTLCacheEntry) mapEntry).expired();
+        return size > _maxSize || ((TTLCacheEntry) mapEntry).expired();
     }
 
 
@@ -250,8 +250,8 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
     @Override
-    protected Long getLimit()
+    protected int getLimit()
     {
-        return new Long(maxSize);
+        return _maxSize;
     }
 }

@@ -49,7 +49,7 @@ public class GroupManager
     private static final String GROUP_CACHE_PREFIX = "Groups/Groups=";
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
 
-    private static final StringKeyCache<int[]> GROUP_ID_CACHE = CacheManager.getShared();
+    private static final StringKeyCache<int[]> GROUP_ID_CACHE = CacheManager.getSharedCache();
 
     public enum PrincipalType
     {
