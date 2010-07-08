@@ -9,9 +9,9 @@ import org.labkey.api.util.Filter;
  */
 public class StringKeyCacheImpl<V> extends CacheImpl<String, V> implements StringKeyCache<V>
 {
-    public StringKeyCacheImpl(int size, long defaultTimeToLive, String debugName, boolean track, Stats stats)
+    public StringKeyCacheImpl(int size, long defaultTimeToLive, String debugName, Stats stats)
     {
-        super(size, defaultTimeToLive, debugName, track, stats);
+        super(size, defaultTimeToLive, debugName, stats);
     }
 
     public void removeUsingPrefix(final String prefix)

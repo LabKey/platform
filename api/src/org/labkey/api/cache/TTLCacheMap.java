@@ -98,7 +98,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         return new TTLCacheEntry(hash, key, -1);
     }
 
-    TTLCacheMap(int limit, long defaultExpires, String debugName, boolean track, @Nullable Stats stats)
+    TTLCacheMap(int limit, long defaultExpires, String debugName, @Nullable Stats stats)
     {
         // Limit the initial size of the underlying map (it will grow if necessary)
         super(Math.min(10000, limit), debugName, stats);
@@ -110,7 +110,7 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
 
     TTLCacheMap(int limit, String debugName)
     {
-        this(limit, -1, debugName, true, null);
+        this(limit, -1, debugName, null);
     }
 
 

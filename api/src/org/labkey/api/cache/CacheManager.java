@@ -26,14 +26,14 @@ public class CacheManager
 
     public static <K, V> Cache<K, V> getCache(int size, long defaultTimeToLive, String debugName)
     {
-        Cache<K, V> cache = new CacheImpl<K, V>(size, defaultTimeToLive, debugName, true, null);
+        Cache<K, V> cache = new CacheImpl<K, V>(size, defaultTimeToLive, debugName, null);
         addToKnownCaches(cache);
         return cache;
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int size, long defaultTimeToLive, String debugName)
     {
-        StringKeyCacheImpl<V> cache = new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, true, null);
+        StringKeyCacheImpl<V> cache = new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, null);
         addToKnownCaches(cache);
         return cache;
     }
@@ -41,7 +41,7 @@ public class CacheManager
     public static <V> StringKeyCache<V> getTemporaryCache(int size, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
         // Temporary caches are not tracked and their statistics can accumulate to another cache's stats
-        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, false, stats);
+        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, stats);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
