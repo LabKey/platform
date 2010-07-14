@@ -2061,7 +2061,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                     node.reload();
                 }
                 // Refresh the list view to make sure that we get rid of the deleted entry there too
-                //this.refreshDirectory();
+                this.refreshDirectory();
             }
         }
 

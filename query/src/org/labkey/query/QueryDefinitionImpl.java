@@ -626,21 +626,26 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
         public ViewOptionsImpl(String metadataXml)
         {
-            try {
-                if (!StringUtils.isBlank(metadataXml))
-                    _document = TablesDocument.Factory.parse(metadataXml);
-                else
+            if (!StringUtils.isBlank(metadataXml))
+            {
+                try
                 {
-                    _document = TablesDocument.Factory.newInstance();
-                    TableType table = _document.addNewTables().addNewTable();
-
-                    table.setTableName(getName());
-                    table.setTableDbType("NOT_IN_DB");
+                    _document = TablesDocument.Factory.parse(metadataXml);
+                }
+                catch (XmlException e)
+                {
+                    // Don't completely die if someone specified invalid metadata XML. Log a warning
+                    // and render without the custom metadata.
+                    log.warn("Unable to parse metadata XML for " + getSchemaName() + "." + getName() + " in " + getContainer(), e);
                 }
             }
-            catch (XmlException e)
+            if (_document == null)
             {
-                throw new RuntimeException(e);
+                _document = TablesDocument.Factory.newInstance();
+                TableType table = _document.addNewTables().addNewTable();
+
+                table.setTableName(getName());
+                table.setTableDbType("NOT_IN_DB");
             }
         }
 

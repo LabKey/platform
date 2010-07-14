@@ -29,6 +29,7 @@
 
 
 <script type="text/javascript">
+    Ext.QuickTips.init();
     window.onbeforeunload = LABKEY.beforeunload();
 
     function reorder(grid, moveUp)

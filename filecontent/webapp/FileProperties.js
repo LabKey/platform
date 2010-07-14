@@ -132,6 +132,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             if (field.defaultValueType && field.defaultValueType == 'FIXED_NON_EDITABLE')
                 this.disabled[field.name] = true;
         }
+        var values = this.applyDefaults(this.files[this.fileIndex], this.defaults);
 
         this.formPanel = new LABKEY.ext.FormPanel({
             addAllFields: true,
@@ -140,7 +141,7 @@ LABKEY.FilePropertiesPanel = Ext.extend(Ext.util.Observable, {
             flex: 1,
             columnModel: cm,
             metaData: {fields: fields},
-            values: this.defaults
+            values: values
         });
         this.formPanel.add({name: 'uri', xtype: 'hidden', value: 0});
 

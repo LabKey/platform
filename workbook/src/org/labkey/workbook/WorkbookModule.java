@@ -39,7 +39,7 @@ public class WorkbookModule extends DefaultModule
 
     public double getVersion()
     {
-        return 10.19;
+        return 10.20;
     }
 
     public boolean hasScripts()

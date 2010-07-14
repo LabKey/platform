@@ -16,6 +16,7 @@
 
 package org.labkey.audit.query;
 
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
@@ -62,7 +63,8 @@ public class AuditQuerySchema extends UserSchema
 
     public TableInfo createTable(String name)
     {
-        if (AUDIT_TABLE_NAME.equalsIgnoreCase(name))
+        // event specific audit views are implemented as queries off of the audit schema
+        if (AUDIT_TABLE_NAME.equalsIgnoreCase(name) || (AuditLogService.get().getAuditViewFactory(name) != null))
         {
             return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
         }

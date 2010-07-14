@@ -17,6 +17,7 @@ package org.labkey.issue.model;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +34,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.issue.IssuesController;
@@ -148,6 +150,10 @@ public class IssueManager
             return;
         for (Issue.Comment comment : comments)
         {
+            // NOTE: form has already validated comment text, but let's be extra paranoid.
+            if (!ViewServlet.validChars(comment.getComment()))
+                throw new ConversionException("comment has invalid characters");
+
             Map<String, Object> m = new HashMap<String, Object>();
             m.put("issueId", new Integer(issue.getIssueId()));
             m.put("comment", comment.getComment());
@@ -1068,6 +1074,24 @@ public class IssueManager
                 Iterator it = issue.getComments().iterator();
                 assertEquals("new issue", ((Issue.Comment) it.next()).getComment().getSource());
                 assertEquals("what was I thinking", ((Issue.Comment) it.next()).getComment().getSource());
+            }
+
+            //
+            // ADD INVALID COMMENT
+            //
+            {
+                Issue issue = IssueManager.getIssue(c, issueId);
+                issue.addComment(user, new HString("invalid character <\u0010>"));
+                try
+                {
+                    IssueManager.saveIssue(user, c, issue);
+                    fail("Expected to throw exception for an invalid character.");
+                }
+                catch (ConversionException ex)
+                {
+                    // expected exception.
+                    assertEquals("comment has invalid characters", ex.getMessage());
+                }
             }
 
             //

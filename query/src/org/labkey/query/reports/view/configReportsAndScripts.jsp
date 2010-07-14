@@ -37,6 +37,7 @@
 </style>
 
 <script type="text/javascript">
+    Ext.QuickTips.init();
     var R_EXTENSIONS = 'R,r';
     var PERL_EXTENSIONS = 'pl';
 

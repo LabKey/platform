@@ -347,6 +347,12 @@ public class StudyServiceImpl implements StudyService.Service
             map.put(col.getPropertyURI(), value);
         }
 
+        if (origData.containsKey(DataSetTable.QCSTATE_LABEL_COLNAME))
+        {
+            // DataSetDefinition.importDatasetData() pulls this one out by name instead of PropertyURI
+            map.put(DataSetTable.QCSTATE_LABEL_COLNAME, origData.get(DataSetTable.QCSTATE_LABEL_COLNAME));
+        }
+
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         result.add(map);
         return result;

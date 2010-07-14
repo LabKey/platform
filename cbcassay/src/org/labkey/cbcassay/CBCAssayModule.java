@@ -40,7 +40,7 @@ public class CBCAssayModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 10.19;
+        return 10.20;
     }
 
     @Override

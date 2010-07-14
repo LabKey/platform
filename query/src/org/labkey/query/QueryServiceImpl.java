@@ -687,7 +687,8 @@ public class QueryServiceImpl extends QueryService
         {
             QueryDef queryDef = findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
 
-            if (queryDef != null)
+            // Only bother parsing if there's some actual content, otherwise skip the override completely
+            if (queryDef != null && StringUtils.isNotBlank(queryDef.getMetaData()))
             {
                 XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
                 List<XmlError> xmlErrors = new ArrayList<XmlError>();

@@ -241,16 +241,17 @@
         <% if (view.getOwner() == null) { %>
             <input type="hidden" name="ff_saveForAllUsers" value="true">
         <% } %>
-    <% } %>
-    <b>View Name:</b> <input type="text" name="ff_columnListName" maxlength="50" value="<%= canEdit ? h(form.ff_columnListName) : (form.ff_columnListName == null ? "CustomizedView" : form.ff_columnListName + "Copy") %>">
-    <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
-    <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
-    <% if (!canEdit) { %><br/>You must save this view with an alternate name.<% } %>
-    <br>
-    <% if (form.canSaveForAllUsers()) { %>
-        <input type="checkbox" name="ff_saveForAllUsers" value="true"<%=view != null && view.getOwner() == null ? " checked" : ""%> onclick="updateViewNameDescription(this)"> Make
-        this grid view available to all users<br>
-        <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders<br>
+    <% } else { %>
+        <b>View Name:</b> <input type="text" name="ff_columnListName" maxlength="50" value="<%= canEdit ? h(form.ff_columnListName) : (form.ff_columnListName == null ? "CustomizedView" : form.ff_columnListName + "Copy") %>">
+        <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
+        <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
+        <% if (!canEdit) { %><br/>You must save this view with an alternate name.<% } %>
+        <br>
+        <% if (form.canSaveForAllUsers()) { %>
+            <input type="checkbox" name="ff_saveForAllUsers" value="true"<%=view != null && view.getOwner() == null ? " checked" : ""%> onclick="updateViewNameDescription(this)"> Make
+            this grid view available to all users<br>
+            <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders<br>
+        <% } %>
     <% } %>
 
     <% if (form.hasFilterOrSort()) { %>

@@ -158,42 +158,59 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return oldRow;
     }
 
+    /*
+    if it's a dataset of kind demographic
+    ask the study (StudyImpl, or Study?) what is the column name for the participant/subject?
+    then use that to resolve the lsid in the same manner as a managed key
+     */
+
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
         Object lsid = map.get("lsid");
-        if(null == lsid && _dataset.getKeyManagementType() != DataSetDefinition.KeyManagementType.None)
-        {
-            Object id = map.get(_dataset.getKeyPropertyName());
-            if (id == null)
-            {
-                id = map.get("Key");
-            }
-            if (id != null)
-            {
-                try
-                {
-                    String[] lsids = Table.executeArray(getQueryTable(), getQueryTable().getColumn("LSID"), new SimpleFilter(_dataset.getKeyPropertyName(), id), null, String.class);
-                    if (lsids.length == 1)
-                    {
-                        map.put("lsid", lsids[0]);
-                        return lsids[0];
-                    }
-                    if (lsids.length > 1)
-                    {
-                        throw new IllegalStateException("More than one row matched for key '" + id + "' in column " +
-                                _dataset.getKeyPropertyName() + " in dataset " +
-                                _dataset.getName() + " in folder " +
-                                _dataset.getContainer().getPath());
-                    }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-            }
+        if (lsid != null) {
+            return lsid.toString();
         }
-        if (null == lsid)
-            throw new InvalidKeyException("No value provided for 'lsid' key column!", map);
-        return lsid.toString();
+        // if there was no explicit lsid and KeyManagementType == None, there is no non-lsid key that is unique by itself
+        if (_dataset.getKeyManagementType() == DataSetDefinition.KeyManagementType.None) {
+            throw new InvalidKeyException("No lsid, and no KeyManagement");
+        }
+
+        // No lsid, look for the other types of key
+        Object id = map.get(_dataset.getKeyPropertyName());
+        if (null == id) {
+           id = map.get("Key");
+        }
+
+        // if there was no other type of key, this query is invalid
+        if (id == null) {
+            throw new InvalidKeyException(String.format("key needs one of 'lsid', '%s' or 'Key'", _dataset.getKeyPropertyName()));
+        }
+        // now look up lsid
+        // if one is found, return that
+        // if 0, it's legal to return null
+        // if > 1, there is an integrity problem that should raise alarm
+        String[] lsids;
+        try
+        {
+            lsids = Table.executeArray(getQueryTable(), getQueryTable().getColumn("LSID"), new SimpleFilter(_dataset.getKeyPropertyName(), id), null, String.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        if (lsids.length == 0) {
+            return null;
+        }
+        else if (lsids.length > 1)
+        {
+            throw new IllegalStateException("More than one row matched for key '" + id + "' in column " +
+                    _dataset.getKeyPropertyName() + " in dataset " +
+                    _dataset.getName() + " in folder " +
+                    _dataset.getContainer().getPath());
+        }
+        else return lsids[0];
+
     }
+
 }

@@ -197,6 +197,8 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     },
 
     initComponent : function() {
+        Ext.QuickTips.init();
+
         this.bodyStyle = "padding: 5px";
 
         LABKEY.ext.QueryDetailsPanel.superclass.initComponent.apply(this, arguments);

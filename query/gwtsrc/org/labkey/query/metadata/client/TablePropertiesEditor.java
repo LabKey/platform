@@ -155,11 +155,6 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
         buttonPanel.add(getWrapFieldButton());
     }
 
-    protected int getExtraPropertiesHeight()
-    {
-        return 130;
-    }
-
     protected List<PropertyPane<GWTTableInfo, GWTColumnInfo>> createPropertyPanes(DockPanel propertyDock)
     {
         PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");

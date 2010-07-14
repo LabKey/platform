@@ -3,6 +3,9 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
+Ext.QuickTips.init();
+
 Ext.grid.RowExpander = function(config){
     Ext.apply(this, config);
 

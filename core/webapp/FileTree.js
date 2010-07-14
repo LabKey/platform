@@ -183,6 +183,7 @@ LABKEY.ext.FileTreeNodeUI = Ext.extend(Ext.ux.tree.TreeGridNodeUI, {
 
 LABKEY.ext.FileTree = function (config)
 {
+    Ext.QuickTips.init();
     Ext.apply(this, config);
 
     this.path = config.path || _concatPaths(LABKEY.ActionURL.getContainer(),(this.browsePipeline ? "/@pipeline" : ""));

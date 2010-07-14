@@ -1960,9 +1960,10 @@ public class AnnouncementsController extends SpringActionController
 
         public AnnouncementForm()
         {
-            super(Announcement.class, null, new String[]{"parentid"});
+            super(Announcement.class, null, Collections.<String, Class>singletonMap("parentid", GuidString.class));
         }
 
+        // XXX: change return value to typed GuidString
         public String getParentId()
         {
             return _stringValues.get("parentid");

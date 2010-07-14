@@ -161,7 +161,8 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
         Long visitDate = toMs(map.get(_visitDatePropertyURI));
         assert _dataset.isDemographicData() || _study.getTimepointType() == TimepointType.VISIT || null != visitDate;
         String sourceLsid = (String) map.get(sourceLsidURI);
-        Integer qcState = (Integer) map.get(qcStateURI);
+        // Values coming in from the client API might get here as Doubles, though we really want an Integer
+        Number qcState = (Number) map.get(qcStateURI);
 
         _stmt.setString(3, ptid);
         _stmt.setDouble(4, visit); // SequenceNum

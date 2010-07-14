@@ -51,6 +51,7 @@
 <script type="text/javascript">
 LABKEY.requiresCss("SecurityAdmin.css");
 LABKEY.requiresScript("SecurityAdmin.js", true);
+Ext.QuickTips.init();
 </script>
 <script type="text/javascript">
 var isFolderAdmin = <%=c.hasPermission(user, AdminPermission.class) ? "true" : "false"%>;

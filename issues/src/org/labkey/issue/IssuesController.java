@@ -919,6 +919,9 @@ public class IssuesController extends SpringActionController
         {
             int issueId = form.getIssueId();
             _issue = getIssue(issueId);
+            if (_issue == null)
+                HttpView.throwNotFound();
+
             Issue prevIssue = (Issue)_issue.clone();
 
             User user = getUser();
@@ -1897,15 +1900,26 @@ public class IssuesController extends SpringActionController
     {
         public IssuesForm()
         {
-            super(Issue.class, IssuesSchema.getInstance().getTableInfoIssues(), new String[]{"action", "comment", "callbackURL"});
+            super(Issue.class, IssuesSchema.getInstance().getTableInfoIssues(), extraProps());
             setValidateRequired(false);
         }
 
+        private static Map<String, Class> extraProps()
+        {
+            Map<String, Class> map = new LinkedHashMap<String, Class>();
+            map.put("action", HString.class);
+            map.put("comment", HString.class);
+            map.put("callbackURL", ReturnURLString.class);
+            return map;
+        }
+
+        // XXX: change return value to typed HString
         public String getAction()
         {
             return _stringValues.get("action");
         }
 
+        // XXX: change return value to typed HString
         public String getComment()
         {
             return _stringValues.get("comment");
@@ -1916,6 +1930,7 @@ public class IssuesController extends SpringActionController
             return _stringValues.get("notifyList");
         }
 
+        // XXX: change return value to typed ReturnURLString
         public String getCallbackURL()
         {
             return _stringValues.get("callbackURL");

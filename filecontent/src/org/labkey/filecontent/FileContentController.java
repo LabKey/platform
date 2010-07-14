@@ -1000,7 +1000,10 @@ public class FileContentController extends SpringActionController
                         {
                             for (Map.Entry<String, Object> entry : jobj.entrySet())
                             {
-                                fileProps.put(entry.getKey(), entry.getValue());
+                                if (entry.getValue() instanceof String)
+                                    fileProps.put(entry.getKey(), StringUtils.trimToNull((String)entry.getValue()));
+                                else
+                                    fileProps.put(entry.getKey(), entry.getValue());
                             }
                         }
                         files.add(fileProps);

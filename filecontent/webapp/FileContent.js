@@ -392,7 +392,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         }
 
         if (toolbar && buttons.length)
+        {
             toolbar.addButton(buttons);
+            // force a relayout on this component
+            toolbar.doLayout();
+        }
     },
 
     adjustAction : function(action, hideText, hideIcon)

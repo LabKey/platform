@@ -2060,7 +2060,6 @@ public class DavController extends SpringActionController
             if (resource == null)
                 return notFound();
             boolean exists = resource.exists();
-            boolean overwrite = getOverwriteParameter();
 
             boolean deleteFileOnFail = false;
             boolean temp = false;
@@ -2080,11 +2079,6 @@ public class DavController extends SpringActionController
                     if (temp)
                         markTempFile(resource);
                     deleteFileOnFail = true;
-                }
-                else
-                {
-                    if (!overwrite)
-                        throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
                 }
 
                 File file = resource.getFile();
