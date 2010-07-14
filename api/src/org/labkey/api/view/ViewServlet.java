@@ -606,4 +606,26 @@ public class ViewServlet extends HttpServlet
         }
         return true;
     }
+
+    /**
+     * Replace any invalid characters with the unicode inverted question mark.
+     * @param s Character sequence to be fixed.
+     * @return The fixed String.
+     */
+    public static String replaceInvalid(CharSequence s)
+    {
+        int len = s.length();
+        StringBuilder sb = new StringBuilder(len);
+
+        for (int i = 0; i < len; i++)
+        {
+            char c = s.charAt(i);
+            if (validChar(c))
+                sb.append(c);
+            else
+                sb.append('\u00BF'); // inverted question mark
+        }
+
+        return sb.toString();
+    }
 }

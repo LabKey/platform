@@ -30,11 +30,10 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.Event;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.Arrays;
 import java.util.List;
@@ -212,17 +211,20 @@ public class LookupEditorPanel extends LayoutContainer
 
     String lastFolderTableStore = null;
     String lastSchemaTableStore = null;
+    PropertyType lastKeyType = null;
     
     void populateTableStore(final ComboStore store, String f, final String schema)
     {
         final String folder = null==f ? "" : f;
         if (null == schema) throw new IllegalArgumentException();
 
-        if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore))
+        // If it's the same target folder and schema, and the same key as last time, we don't need to requery
+        if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore) && PropertyUtil.nullSafeEquals(_keyType, lastKeyType))
             return;
 
         lastFolderTableStore = folder;
         lastSchemaTableStore = schema;
+        lastKeyType = _keyType;
 
         store.removeAll();
 

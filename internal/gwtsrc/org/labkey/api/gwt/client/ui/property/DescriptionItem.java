@@ -22,6 +22,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.DOM;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
  * User: jeckels
@@ -51,7 +52,7 @@ public class DescriptionItem<DomainType extends GWTDomain<FieldType>, FieldType 
 
     public boolean copyValuesToPropertyDescriptor(FieldType pd)
     {
-        boolean changed = !nullSafeEquals(pd.getDescription(), trimValue(_descriptionTextArea.getText()));
+        boolean changed = !PropertyUtil.nullSafeEquals(pd.getDescription(), trimValue(_descriptionTextArea.getText()));
         pd.setDescription(trimValue(_descriptionTextArea.getText()));
         return changed;
     }

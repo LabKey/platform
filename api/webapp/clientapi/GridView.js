@@ -92,6 +92,8 @@
 
 LABKEY.GridView = function(config)
 {
+    Ext.QuickTips.init();
+    
     Date.patterns = {
         ISO8601Long:"Y-m-d H:i:s",
         ISO8601Short:"Y-m-d"

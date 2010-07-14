@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.NotFoundException;
 
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.Map;
 import java.util.TreeMap;
@@ -92,13 +93,14 @@ public class SamplesSchema extends AbstractExpSchema
         return getSampleTable(ss);
     }
 
+    /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
     public ExpMaterialTable getSampleTable(ExpSampleSet ss)
     {
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this);
         if (_containerFilter != null)
             ret.setContainerFilter(_containerFilter);
         ret.populate(ss, true);
-        QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, null);
+        QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, new ArrayList<QueryException>());
         return ret;
     }
 
@@ -110,7 +112,7 @@ public class SamplesSchema extends AbstractExpSchema
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
                 ret.populate(ss, false);
-                QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, null);
+                QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, new ArrayList<QueryException>());
                 return ret;
             }
         };

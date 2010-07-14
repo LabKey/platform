@@ -40,7 +40,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
     }
 
 
-    public BeanViewForm(Class<K> clss, TableInfo tinfo, String[] extraProps)
+    public BeanViewForm(Class<K> clss, TableInfo tinfo, Map<String, Class> extraProps)
     {
         super(StringBeanDynaClass.createDynaClass(clss, extraProps), tinfo);
         _wrappedClass = clss;

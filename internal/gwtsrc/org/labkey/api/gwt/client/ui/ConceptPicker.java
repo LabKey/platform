@@ -311,9 +311,10 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             GWTPropertyDescriptor pd = new GWTPropertyDescriptor();
             if (null != type)
                 type.apply(pd);
-            _lookupEditorPanel.setValue(pd);
 
+            // Be sure to set the new key type before calling setValue() so that it initializes correctly 
             _lookupEditorPanel.setKeyType(picker.isRangeEditable ? null : null==type ? null : type.getPropertyType());
+            _lookupEditorPanel.setValue(pd);
 
             for (int i=allradios.size()-1 ; i>=0 ; i--)
             {

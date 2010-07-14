@@ -99,6 +99,13 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
     }
 
     @Override
+    public void addError(ObjectError error)
+    {
+        checkError(error);
+        super.addError(error);
+    }
+
+    @Override
     public void addAllErrors(Errors errors)
     {
         checkErrors(errors);
@@ -111,13 +118,16 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
         ExceptionUtil.logExceptionToMothership(null, new Exception(message));
     }
 
+    private static void checkError(ObjectError error)
+    {
+        if (error.getCode() == null && error.getDefaultMessage() == null)
+            err("Please supply an errorCode or a defaultMessage");
+    }
+
     private static void checkErrors(Errors errors)
     {
         for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
-        {
-            if (error.getCode() == null && error.getDefaultMessage() == null)
-                err("Please supply an errorCode or a defaultMessage");
-        }
+            checkError(error);
     }
 
 }

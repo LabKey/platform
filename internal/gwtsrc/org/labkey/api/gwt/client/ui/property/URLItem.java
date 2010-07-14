@@ -21,6 +21,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
  * User: jeckels
@@ -65,7 +66,7 @@ public class URLItem<DomainType extends GWTDomain<FieldType>, FieldType extends 
 
     public boolean copyValuesToPropertyDescriptor(FieldType pd)
     {
-        boolean changed = !nullSafeEquals(pd.getURL(), trimValue(_textBox.getText()));
+        boolean changed = !PropertyUtil.nullSafeEquals(pd.getURL(), trimValue(_textBox.getText()));
         pd.setURL(trimValue(_textBox.getText()));
         return changed;
     }

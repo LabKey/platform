@@ -38,6 +38,7 @@
     LABKEY.requiresScript("PipelineAction.js");
     LABKEY.requiresScript("FileProperties.js");
     LABKEY.requiresScript("FileContent.js");
+    Ext.QuickTips.init();
 </script>
 
 <%

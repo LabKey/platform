@@ -53,14 +53,31 @@ Ext.namespace("LABKEY","LABKEY.ext");
 &lt;script type="text/javascript"&gt;
     function onSuccess(data) // e.g. callback from Query.selectRows
     {
-        var form = new LABKEY.ext.FormPanel(
+        var recordConstructor = Ext.data.Record.create(data.metaData.fields);
+
+        function submitHandler(formPanel)
+        {
+            var form = formPanel.getForm();
+            if (form.isValid())
+            {
+                var record = new recordConstructor({});
+                form.updateRecord(record);
+                save(record.data);
+            }
+            else
+            {
+                Ext.MessageBox.alert("Error Saving", "There are errors in the form.");
+            }
+        }
+
+        var formPanel = new LABKEY.ext.FormPanel(
         {
             selectRowsResults:data,
             addAllFields:true,
-            buttons:["submit"],
+            buttons:[{text:"Submit", handler: function (b, e) { submitHandler(formPanel); }}, {text: "Cancel", handler: cancelHandler}],
             items:[{name:'myField', fieldLabel:'My Field', helpPopup:{title:'help', html:'read the manual'}}]
         });
-        form.render('formDiv');
+        formPanel.render('formDiv');
     }
 &lt;/script&gt;
 &lt;div id='formDiv'/&gt;

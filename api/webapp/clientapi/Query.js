@@ -396,7 +396,7 @@ LABKEY.Query = new function()
             if(config.offset)
                 dataObject['query.offset'] = config.offset;
 
-            if(config.maxRows)
+            if(config.maxRows != undefined)
             {
                 if(config.maxRows < 0)
                     dataObject['query.showRows'] = "all";

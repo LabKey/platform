@@ -111,16 +111,6 @@ public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, 
         };
     }
 
-    protected boolean nullSafeEquals(Object o1, Object o2)
-    {
-        if (o1 == o2)
-        {
-            return true;
-        }
-
-        return o1 != null && o1.equals(o2);
-    }
-
     protected String trimValue(String text)
     {
         if (text == null)

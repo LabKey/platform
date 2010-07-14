@@ -73,7 +73,7 @@ public class ModuleResourceResolver implements Resolver
     {
         // Cache misses in production mode for the default time period and
         // in dev mode for a short time (about the length of a request.)
-        RESOURCES.put(cacheKey, CACHE_MISS, DEV_MODE ? CacheManager.DEFAULT_TIMEOUT : (15*CacheManager.SECOND));
+        RESOURCES.put(cacheKey, CACHE_MISS, DEV_MODE ? (15*CacheManager.SECOND) : CacheManager.DEFAULT_TIMEOUT);
     }
 
     private static void remove(String cacheKey)

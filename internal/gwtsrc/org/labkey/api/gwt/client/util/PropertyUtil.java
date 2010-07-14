@@ -94,4 +94,15 @@ public class PropertyUtil
             action = action + ".view";
         return getContextPath() + "/" + pageFlow + encodedPath + action;
     }
+
+    /** @return true if the two arguments are both null, or are .equals() */
+    public static boolean nullSafeEquals(Object o1, Object o2)
+    {
+        if (o1 == o2)
+        {
+            return true;
+        }
+
+        return o1 != null && o1.equals(o2);
+    }
 }

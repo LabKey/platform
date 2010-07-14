@@ -19,10 +19,7 @@
  */
 
 Ext.namespace('LABKEY', 'LABKEY.ext');
-Ext.QuickTips.init();
-Ext.apply(Ext.QuickTips.getQuickTip(), {
-    dismissDelay: 15000
-});
+
 /**
  * Constructs a new LabKey EditorGridPanel using the supplied configuration.
  * @class LabKey extension to the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a>,
@@ -122,6 +119,12 @@ Ext.onReady(function(){
  */
 LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     initComponent : function() {
+
+        Ext.QuickTips.init();
+        Ext.apply(Ext.QuickTips.getQuickTip(), {
+            dismissDelay: 15000
+        });
+
         //set config defaults
         Ext.applyIf(this, {
             lookups: true,

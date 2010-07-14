@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
  * User: jeckels
@@ -88,7 +89,7 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
     {
         if (_formatTextBox.isEnabled())
         {
-            boolean changed = !nullSafeEquals(field.getFormat(), trimValue(_formatTextBox.getText()));
+            boolean changed = !PropertyUtil.nullSafeEquals(field.getFormat(), trimValue(_formatTextBox.getText()));
             field.setFormat(trimValue(_formatTextBox.getText()));
             return changed;
         }

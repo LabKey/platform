@@ -38,7 +38,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
         this(beanClass, null);
     }
 
-    protected StringBeanDynaClass(Class beanClass, String[] extras)
+    protected StringBeanDynaClass(Class beanClass, Map<String, Class> extras)
     {
         _beanClass = beanClass;
         PropertyDescriptor propDescriptors[] = PropertyUtils.getPropertyDescriptors(beanClass);
@@ -49,11 +49,15 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
             propTypes.put(propDescriptor.getName(), propDescriptor.getPropertyType());
         if (null != extras)
         {
-            for (String prop : extras)
+            for (Map.Entry<String, Class> entry : extras.entrySet())
             {
+                String prop = entry.getKey();
                 if (propTypes.containsKey(prop))
                     throw new IllegalArgumentException("bean already contains property " + prop);
-                propTypes.put(prop, String.class);
+                Class type = entry.getValue();
+                if (type == null)
+                    type = String.class;
+                propTypes.put(prop, type);
             }
         }
 
@@ -84,7 +88,7 @@ public class StringBeanDynaClass extends StringWrapperDynaClass
     }
 
 
-    public static StringBeanDynaClass createDynaClass(Class beanClass, String[] extraProps)
+    public static StringBeanDynaClass createDynaClass(Class beanClass, Map<String, Class> extraProps)
     {
 
         /*
