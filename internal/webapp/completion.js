@@ -163,9 +163,13 @@ function complete()
         hideCompletionDiv();
     else
     {
-        var url = _completionURLPrefix + escape(typedString);
-        var ajax = new XMLRequest(url, postProcess);
-        ajax.get();
+        Ext.Ajax.request({
+            url: _completionURLPrefix + escape(typedString),
+            success: function (response, options) {
+                if (response && response.responseXML)
+                    postProcess(response.responseXML);
+            }
+        });
     }
 }
 

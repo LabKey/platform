@@ -239,44 +239,7 @@ function notifyExpandCollapse(url, collapse)
 {
     if (collapse)
         url += "&collapse=true";
-    var xmlhttp = new XMLRequest(url);
-    xmlhttp.get();
-}
-
-function XMLRequest(url, callback)
-{
-    var req = init();
-    req.onreadystatechange = processRequest;
-
-    function init()
-    {
-        if (window.XMLHttpRequest)
-            return new XMLHttpRequest();
-        else if (window.ActiveXObject)
-            return new ActiveXObject("Microsoft.XMLHTTP");
-    }
-
-    function processRequest()
-    {
-        if (req.readyState == 4 && req.status == 200 && callback)
-            callback(req.responseXML);
-    }
-
-    this.post = function(postdata)
-    {
-        this.send("POST", postdata);
-    };
-
-    this.get = function()
-    {
-        this.send("GET", null);
-    };
-
-    this.send = function(method, postdata)
-    {
-        req.open(method, url, true);
-        req.send(postdata);
-    };
+    Ext.Ajax.request({url: url});
 }
 
 var _helpDiv = null;
