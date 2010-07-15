@@ -473,6 +473,10 @@ public class ExceptionUtil
                 {
                     // Give up at this point
                 }
+                catch (IllegalStateException e)
+                {
+                    // Give up at this point
+                }
             }
         }
         else

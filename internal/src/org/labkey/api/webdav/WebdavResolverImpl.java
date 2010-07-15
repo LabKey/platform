@@ -300,7 +300,7 @@ public class WebdavResolverImpl implements WebdavResolver
 //        return resource;
 //    }
 
-    public class WebFolderResource extends AbstractWebdavResourceCollection implements WebFolder
+    public class WebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
         WebdavResolver _resolver;
         final Container _c;
@@ -325,11 +325,6 @@ public class WebdavResolverImpl implements WebdavResolver
             return path.encode("/", "/");
         }
 
-        public int getIntPermissions(User user)
-        {
-            return getPolicy().getPermsAsOldBitMask(user);
-        }
-
         public Container getContainer()
         {
             return _c;
@@ -345,7 +340,7 @@ public class WebdavResolverImpl implements WebdavResolver
             return exists();
         }
 
-        public synchronized List<String> getWebFoldersNames(User user)
+        public synchronized List<String> getWebFoldersNames()
         {
             if (null == _children)
             {
@@ -362,17 +357,7 @@ public class WebdavResolverImpl implements WebdavResolver
                 }
             }
 
-            if (null == user || _children.size() == 0)
-                return _children;
-
-            ArrayList<String> ret = new ArrayList<String>();
-            for (String name : _children)
-            {
-                WebdavResource r = lookup(this.getPath().append(name));
-                if (null != r && r.canRead(user))
-                    ret.add(name);
-            }
-            return ret;
+            return _children;
         }
 
 
@@ -414,7 +399,7 @@ public class WebdavResolverImpl implements WebdavResolver
             Set<String> set = new TreeSet<String>();
 //            if (null != _attachmentResource)
 //                set.addAll(_attachmentResource.listNames());
-            set.addAll(getWebFoldersNames(null));
+            set.addAll(getWebFoldersNames());
             ArrayList<String> list = new ArrayList<String>(set);
             Collections.sort(list);
             return list;
@@ -424,7 +409,7 @@ public class WebdavResolverImpl implements WebdavResolver
         public WebdavResource find(String child)
         {
             String name = null;
-            for (String folder : getWebFoldersNames(null))
+            for (String folder : getWebFoldersNames())
             {
                 if (folder.equalsIgnoreCase(child))
                 {

@@ -53,9 +53,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String BASE_SERVER_URL_PROP = "baseServerURL";
     protected static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
     protected static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";    
-    protected static final String PIPELINE_FTPHOST_PROP = "pipelineFTPHost";
-    protected static final String PIPELINE_FTPPORT_PROP = "pipelineFTPPort";
-    protected static final String PIPELINE_FTPSECURE_PROP = "pipelineFTPSecure";
     protected static final String SEQUEST_SERVER_PROP = "SequestServer";
     protected static final String SSL_REQUIRED = "sslRequired";
     protected static final String SSL_PORT = "sslPort";
@@ -407,21 +404,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public String getMascotHTTPProxy()
     {
         return lookupStringValue(MASCOT_HTTPPROXY_PROP, "");
-    }
-
-    public String getPipelineFTPHost()
-    {
-        return lookupStringValue(PIPELINE_FTPHOST_PROP,"");
-    }
-
-    public String getPipelineFTPPort()
-    {
-        return lookupStringValue(PIPELINE_FTPPORT_PROP,"");
-    }
-
-    public boolean isPipelineFTPSecure()
-    {
-        return lookupBooleanValue(PIPELINE_FTPSECURE_PROP, false);
     }
 
     public String getNetworkDriveLetter()

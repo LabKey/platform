@@ -140,21 +140,6 @@ public class WriteableAppProps extends AppProps
         storeStringValue(SEQUEST_SERVER_PROP, sequestServer);
     }
 
-    public void setPipelineFTPHost(String pipelineFTPHost)
-    {
-        storeStringValue(PIPELINE_FTPHOST_PROP, pipelineFTPHost);
-    }
-
-    public void setPipelineFTPPort(String pipelineFTPPort)
-    {
-        storeStringValue(PIPELINE_FTPPORT_PROP, pipelineFTPPort);
-    }
-
-    public void setPipelineFTPSecure(boolean pipelineFTPSecure)
-    {
-        storeBooleanValue(PIPELINE_FTPSECURE_PROP, pipelineFTPSecure);
-    }
-
     public void setSSLRequired(boolean sslRequired)
     {
         storeBooleanValue(SSL_REQUIRED, sslRequired);

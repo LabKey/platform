@@ -47,11 +47,7 @@ public interface WebdavResolver extends Resolver
     }
 
 
-    // marker interfaces for web folder, see FtpConnectorImpl
-    public static interface WebFolder
-    {
-        int getIntPermissions(User user);
-        List<String> getWebFoldersNames(User user);
-    }
-    
+    // marker interfaces for web folder
+    public static interface WebFolder {}
+
 }
