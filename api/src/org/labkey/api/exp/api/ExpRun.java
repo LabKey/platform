@@ -41,6 +41,7 @@ public interface ExpRun extends ExpObject
     public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
 
     /** Stored in the exp.experiment table */
+    // TODO - Merge this with getComment() (backed by ontology manager) on ExpObject
     String getComments();
     /** Stored in the exp.experiment table */
     void setComments(String comments);

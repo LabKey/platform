@@ -45,6 +45,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     Object getProperty(DomainProperty prop);
 
     /** Stored in ontology manager */
+    // TODO - Merge this with getComments() (backed by hard columns) on various subclasses
     String getComment();
     /** Stored in ontology manager */
     void setComment(User user, String comment) throws ValidationException;

@@ -692,6 +692,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 {
                     if (!this.panelButtonContents[panelButton.id])
                     {
+                        var minWidth = 0;
+                        var tabContentWidth = 0;
+                        
                         // New up the TabPanel if we haven't already
                         // Only create one per button, even if that button is rendered both above and below the grid
                         tabPanelConfig.tabPosition = 'left';
@@ -704,8 +707,20 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                             newItems[i].contentEl = Ext.get(tabPanelConfig.items[i].contentEl);
                             newItems[i].title = tabPanelConfig.items[i].title;
                             newItems[i].autoScroll = true;
+
+                            //FF and IE won't auto-resize the tab panel to fit the content 
+                            //so we need to calculate the min size and set it explicitly
+                            if (Ext.isGecko || Ext.isIE)
+                            {
+                                newItems[i].contentEl.removeClass("x-hide-display");
+                                tabContentWidth = newItems[i].contentEl.getWidth();
+                                newItems[i].contentEl.addClass("x-hide-display");
+                                minWidth = Math.max(minWidth, tabContentWidth);
+                            }
                         }
                         tabPanelConfig.items = newItems;
+                        if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && regionHeader.getWidth() < minWidth)
+                            tabPanelConfig.width = minWidth; 
                         this.panelButtonContents[panelButton.id] = new Ext.ux.VerticalTabPanel(tabPanelConfig);
                     }
                     else
