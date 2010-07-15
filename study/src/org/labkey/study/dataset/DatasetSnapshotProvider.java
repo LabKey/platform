@@ -247,12 +247,23 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         schema.getScope().beginTransaction();
                         startedTransaction = true;
                     }
-                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
-                    Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
-                    Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
-                    // import the new data
-                    List<String> newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);
+                    int numRowsDeleted;
+                    List<String> newRows;
+
+                    // Synchronize on dataset definition to avoid Java-database deadlock if this thread does
+                    // the purge, which locks tables, and another thread gets the dataset's monitor when trying
+                    // to materialize it, which blocks due to our table lock. We then block waiting for it to release
+                    // the materialization lock during the call to importDatasetData(), deadlocking.
+                    synchronized (dsDef)
+                    {
+                        numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
+                        Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
+                        Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
+
+                        // import the new data
+                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);
+                    }
 
                     if (!errors.isEmpty())
                         return null;
