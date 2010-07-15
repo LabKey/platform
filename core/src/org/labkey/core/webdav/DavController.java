@@ -2727,7 +2727,7 @@ public class DavController extends SpringActionController
 
 
 
-    Path extPath = new Path("ext-3.2.1");
+    Path extPath = new Path(PageFlowUtil.extJsRoot());
     Path yuiPath = new Path("_yui");
     Path mcePath = new Path("timymce3");
     
