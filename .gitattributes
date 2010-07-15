@@ -515,10 +515,6 @@ core/src/org/labkey/core/attachment/confirmDelete.jsp -text
 core/src/org/labkey/core/attachment/refreshParent.jsp -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
-core/src/org/labkey/core/ftp/FtpController.java -text
-core/src/org/labkey/core/ftp/FtpPage.java -text
-core/src/org/labkey/core/ftp/drop.jsp -text
-core/src/org/labkey/core/ftp/ftpdetails.jsp -text
 core/src/org/labkey/core/junit/JunitManager.java -text
 core/src/org/labkey/core/junit/JunitRunner.java -text
 core/src/org/labkey/core/login/DbLoginAuthenticationProvider.java -text
@@ -1010,7 +1006,6 @@ filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
 filecontent/src/org/labkey/filecontent/ManageWebPart.java -text
 filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/configureEmail.jsp -text
-filecontent/src/org/labkey/filecontent/view/davfiles.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 filecontent/webapp/ActionsAdmin.js -text

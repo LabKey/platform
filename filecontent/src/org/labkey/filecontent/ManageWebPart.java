@@ -26,9 +26,6 @@ import org.labkey.api.files.view.FilesWebPart;
  */
 public class ManageWebPart extends FilesWebPart
 {
-    private static final String JSP = "/org/labkey/filecontent/view/davfiles.jsp";
-
-
     public ManageWebPart(Container c)
     {
         super(c);

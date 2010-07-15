@@ -218,9 +218,6 @@ public class DavCrawler implements ShutdownListener
         Date _nextCrawl=null;
         Date _indexTime = null;
         
-        /**
-         * @param path
-         */
         IndexDirectoryJob(Path path, Date last, Date next)
         {
             _path = path;

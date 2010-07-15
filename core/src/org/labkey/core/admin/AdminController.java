@@ -186,6 +186,7 @@ public class AdminController extends SpringActionController
         public String userName = System.getProperty("user.name");
         public String userHomeDir = System.getProperty("user.home");
         public String webappDir = ModuleLoader.getServletContext().getRealPath("");
+        public String workingDir = new File("file").getAbsoluteFile().getParent();
         public String osName = System.getProperty("os.name");
         public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
         public String asserts = "disabled";
@@ -907,9 +908,6 @@ public class AdminController extends SpringActionController
             props.setMascotUserAccount(form.getMascotUserAccount());
             props.setMascotUserPassword(form.getMascotUserPassword());
             props.setMascotHTTPProxy(form.getMascotHTTPProxy());
-            props.setPipelineFTPHost(form.getPipelineFTPHost());
-            props.setPipelineFTPPort(form.getPipelineFTPPort());
-            props.setPipelineFTPSecure(form.isPipelineFTPSecure());
 
             props.setMicroarrayFeatureExtractionServer(form.getMicroarrayFeatureExtractionServer());
 
@@ -991,7 +989,6 @@ public class AdminController extends SpringActionController
     public static class SiteSettingsBean
     {
         public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin")).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
-        public String ftpHelpLink = "<a href=\"" + (new HelpTopic("configureFtp")).getHelpTopicLink() + "\" target=\"labkey\">help configuring ftp...</a>";
         public String caBigHelpLink = "<a href=\"" + (new HelpTopic("cabig")).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public boolean upgradeInProgress;
         public boolean testInPage;
@@ -1240,9 +1237,6 @@ public class AdminController extends SpringActionController
         private String _mascotUserAccount;
         private String _mascotUserPassword;
         private String _mascotHTTPProxy;
-        private String _pipelineFTPHost;
-        private String _pipelineFTPPort;
-        private boolean _pipelineFTPSecure;
 
         private String _networkDriveLetter;
         private String _networkDrivePath;
@@ -1291,36 +1285,6 @@ public class AdminController extends SpringActionController
         public void setMascotHTTPProxy(String mascotHTTPProxy)
         {
             _mascotHTTPProxy = mascotHTTPProxy;
-        }
-
-        public String getPipelineFTPHost()
-        {
-            return _pipelineFTPHost;
-        }
-
-        public void setPipelineFTPHost(String pipelineFTPHost)
-        {
-            _pipelineFTPHost = pipelineFTPHost;
-        }
-
-        public String getPipelineFTPPort()
-        {
-            return _pipelineFTPPort;
-        }
-
-        public void setPipelineFTPPort(String pipelineFTPPort)
-        {
-            _pipelineFTPPort = pipelineFTPPort;
-        }
-
-        public boolean isPipelineFTPSecure()
-        {
-            return _pipelineFTPSecure;
-        }
-
-        public void setPipelineFTPSecure(boolean pipelineFTPSecure)
-        {
-            _pipelineFTPSecure = pipelineFTPSecure;
         }
 
         public void setDefaultDomain(String defaultDomain)

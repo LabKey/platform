@@ -109,6 +109,7 @@
     <tr><td>User Home Dir</td><td><%=bean.userHomeDir%></td></tr>
     <tr><td>Webapp Dir</td><td><%=bean.webappDir%></td></tr>
     <tr><td>OS</td><td><%=bean.osName%></td></tr>
+    <tr><td>Working Dir</td><td><%=bean.workingDir%></td></tr>
 
     <tr><td>&nbsp;</td></tr>
 </table>

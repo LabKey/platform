@@ -297,32 +297,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td>&nbsp;</td>
 </tr>
-<tr>
-    <td colspan=2>Configure file system server (<%=bean.ftpHelpLink%>)</td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Server name</td>
-    <td><input type="text" name="pipelineFTPHost" size="64" value="<%=appProps.getPipelineFTPHost()%>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Port</td>
-    <td><input type="text" name="pipelineFTPPort" size="5" value="<%=appProps.getPipelineFTPPort()%>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Use SSL to connect (FTP server must be configured)</td>
-    <td><input type="checkbox" name="pipelineFTPSecure" <%=appProps.isPipelineFTPSecure() ? "checked" : ""%>></td>
-</tr>
-<!--
-<tr>
-    <td></td>
-    <td>[<a href="javascript:testPipelineFTP()">Test FTP Settings</a>]
-</td>
-</tr>
--->
 
-<tr>
-    <td>&nbsp;</td>
-</tr>
 <tr>
     <td colspan=2>Configure Mascot settings (<%=bean.helpLink%>)</td>
 </tr>

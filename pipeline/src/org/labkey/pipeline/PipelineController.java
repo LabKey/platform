@@ -20,12 +20,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.DomainDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
@@ -342,7 +337,7 @@ public class PipelineController extends SpringActionController
 
                 main.addView(leftBox);
 
-                if (pipeRoot != null && root != null) // && StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost()) != null)
+                if (pipeRoot != null && root != null)
                 {
                     main.addView(new PermissionView(SecurityManager.getPolicy(pipeRoot)));
                 }
@@ -513,8 +508,6 @@ public class PipelineController extends SpringActionController
 
             // keep actions in consistent order for display
             entry.orderActions();
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-
             JSONArray actions = new JSONArray();
             for (PipelineAction action : entry.getActions())
             {
@@ -768,141 +761,11 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    /////////////////////////////////////////////////////////////////////////
-    //  FTP support
-
     public class PermissionView extends JspView<SecurityPolicy>
     {
         PermissionView(SecurityPolicy policy)
         {
             super(PipelineController.class, "permission.jsp", policy);
-        }
-    }
-
-    public class TestFtpLoginAction extends SimpleStreamAction
-    {
-        public String getMimeType()
-        {
-            return "text/html";
-        }
-
-        public void setResponseProperties(HttpServletResponse response)
-        {
-            response.setHeader("Cache-Control", "no-store");
-        }
-
-        public void render(Object o, BindException errors, PrintWriter out) throws Exception
-        {
-            if (!AppProps.getInstance().isDevMode())
-                HttpView.throwUnauthorized();
-
-            out.write("<html><body>\n");
-            out.write("<form method=\"POST\" action=\"ftpLogin.post\">\n");
-            out.write("<input type=\"text\" name=\"user\"/><br/>\n");
-            out.write("<input type=\"password\" name=\"password\"/><br/>\n");
-            out.write("<input type=\"hidden\" name=\"devMode\" value=\"true\"/>\n");
-            out.write("<input type=\"submit\"/>\n");
-            out.write("</form>\n");
-            out.write("</body></html>\n");
-        }
-    }
-
-    public class FtpLoginAction extends SimpleStreamAction<FtpLoginForm>
-    {
-        public void setResponseProperties(HttpServletResponse response)
-        {
-            // No caching, since this really RPC
-            response.setHeader("Cache-Control", "no-store");
-            response.setCharacterEncoding("UTF-8");            
-        }
-
-        public void render(FtpLoginForm form, BindException errors, PrintWriter out) throws Exception
-        {
-            boolean isDevMode = AppProps.getInstance().isDevMode() && form.isDevMode();
-            try
-            {
-                User u = AuthenticationManager.authenticate(form.getUser(), form.getPassword());
-
-                if (!(getViewContext().getContainer().hasPermission(u, ReadPermission.class)))
-                {
-                    HttpView.throwUnauthorized();
-                    return;
-                }
-
-                PipelineService service = PipelineService.get();
-                Container c = getContainer();
-
-                PipeRoot root = service.findPipelineRoot(c);
-                URI uriRoot = (root != null) ? root.getUri() : null;
-                if (uriRoot == null || !URIUtil.exists(root.getUri()))
-                {
-                    HttpView.throwNotFound();
-                    return;
-                }
-
-                File f = new File(uriRoot);
-                NetworkDrive drive = NetworkDrive.getNetworkDrive(f.getPath());
-
-                out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-                out.write("<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n");
-                out.write("<properties version=\"1.0\">");
-                if (drive != null)
-                {
-                    out.write("<entry key=\"drive.path\">"+drive.getPath()+"</entry>\n");
-                    out.write("<entry key=\"drive.user\">"+drive.getUser()+"</entry>\n");
-                    out.write("<entry key=\"drive.password\">"+drive.getPassword()+"</entry>\n");
-                }
-                out.write("<entry key=\"home\">"+f.getAbsolutePath()+"</entry>\n");
-                out.write("</properties>");
-            }
-            catch(Exception e)
-            {
-                //on any exception pretend like the page doesn't exist if this isn't dev mode
-                if (isDevMode) throw e;
-                HttpView.throwNotFound();
-            }
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    public static class FtpLoginForm
-    {
-        String user;
-        String password;
-        boolean devMode;
-
-        public String getUser()
-        {
-            return user;
-        }
-
-        public void setUser(String user)
-        {
-            this.user = user;
-        }
-
-        public String getPassword()
-        {
-            return password;
-        }
-
-        public void setPassword(String password)
-        {
-            this.password = password;
-        }
-
-        public boolean isDevMode()
-        {
-            return devMode;
-        }
-
-        public void setDevMode(boolean devMode)
-        {
-            this.devMode = devMode;
         }
     }
 

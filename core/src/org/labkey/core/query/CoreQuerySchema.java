@@ -56,7 +56,8 @@ public class CoreQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME);
+        return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
+                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
     }
 
 
