@@ -1547,10 +1547,10 @@ public class PageFlowUtil
         {
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-3.2.1/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("/" + extJsRoot + "/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/ext-3.2.1/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("/" + extJsRoot + "/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");
@@ -1599,16 +1599,17 @@ public class PageFlowUtil
 
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-        sb.append("LABKEY.loadedScripts('ext-3.2.1/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
+        sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
         sb.append("</script>\n");
 
         return sb.toString();
     }
 
-    static String extDebug = "ext-3.2.1/ext-all-debug.js";
-    static String extMin = "ext-3.2.1/ext-all.js";
-    static String extBaseDebug = "ext-3.2.1/adapter/ext/ext-base-debug.js";
-    static String extBase = "ext-3.2.1/adapter/ext/ext-base.js";
+    static final String extJsRoot = "ext-3.2.2";
+    static final String extDebug = extJsRoot + "/ext-all-debug.js";
+    static final String extMin = extJsRoot + "/ext-all.js";
+    static final String extBaseDebug = extJsRoot + "/adapter/ext/ext-base-debug.js";
+    static final String extBase = extJsRoot + "/adapter/ext/ext-base.js";
 
     static String[] clientExploded = new String[]
     {
@@ -1645,6 +1646,10 @@ public class PageFlowUtil
     static String clientDebug = "clientapi/clientapi.js";
     static String clientMin = "clientapi/clientapi.min.js";
 
+    public static String extJsRoot()
+    {
+        return extJsRoot;
+    }
 
     /** scripts are the explicitly included scripts,
      * @param scripts   the scripts that should be explicitly included
@@ -1662,7 +1667,7 @@ public class PageFlowUtil
         scripts.add(AppProps.getInstance().isDevMode() ? extBaseDebug : extBase);
         if (explodedExt)
         {
-            String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/ext-3.2.1/ext.jsb2")));
+            String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/" + extJsRoot + "/ext.jsb2")));
             JSONObject json = new JSONObject(jsonString);
             Map<String, JSONObject> packages = new HashMap<String, JSONObject>();
             for (JSONObject pkgObject : json.getJSONArray("pkgs").toJSONObjectArray())
@@ -1676,7 +1681,7 @@ public class PageFlowUtil
                 JSONObject dependency = packages.get(allPackageDeps.getString(i));
                 for (JSONObject fileInclude : dependency.getJSONArray("fileIncludes").toJSONObjectArray())
                 {
-                    scripts.add("ext-3.2.1/" + fileInclude.getString("path") + fileInclude.getString("text"));
+                    scripts.add(extJsRoot + "/" + fileInclude.getString("path") + fileInclude.getString("text"));
                 }
             }
         }
@@ -1826,13 +1831,7 @@ public class PageFlowUtil
 
 
 
-    static final String extJsRoot = "ext-3.2.1";
     static Integer serverHash = null;
-
-    public static String extJsRoot()
-    {
-        return extJsRoot;
-    }
 
     public static String jsInitObject()
     {
