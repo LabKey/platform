@@ -1,7 +1,9 @@
 package org.labkey.api.cache;
 
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.implementation.*;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -12,8 +14,23 @@ import java.util.List;
  * Date: Jun 20, 2010
  * Time: 10:05:07 AM
  */
+
+/*
+    TODO:
+
+    - MemTrack all caches?
+    - Document getTemporaryCache -- must close().  FastaDbLoader needs to close().
+    - TransactionCacheMap -> TransactionCache
+    - CacheWrapper -> TrackingCacheWrapper?
+    - Track expirations
+    - Change remove() to void.
+    - DatabaseCache: remove synchronization, getMap() -> getCache()
+
+ */
 public class CacheManager
 {
+    private static final Logger LOG = Logger.getLogger(CacheManager.class);
+
     public static final long SECOND = DateUtils.MILLIS_PER_SECOND;
     public static final long MINUTE = DateUtils.MILLIS_PER_MINUTE;
     public static final long HOUR = DateUtils.MILLIS_PER_HOUR;
@@ -21,27 +38,28 @@ public class CacheManager
 
     public static final long DEFAULT_TIMEOUT = HOUR;
 
-    // TODO: Change this to List<Cache> once we eliminate direct usages of TTLCacheMap and CacheMap
-    private static final List<Clearable> KNOWN_CACHES = new LinkedList<Clearable>();
+    // Swap providers here to test Ehcache vs. LabKey's TTLCacheMap implementation
+    private static final CacheProvider PROVIDER = EhCacheProvider.getInstance(); // TTLCacheProvider.getInstance();
+    private static final List<Cache> KNOWN_CACHES = new LinkedList<Cache>();
 
-    public static <K, V> Cache<K, V> getCache(int size, long defaultTimeToLive, String debugName)
+    public static <K, V> Cache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
     {
-        Cache<K, V> cache = new CacheImpl<K, V>(size, defaultTimeToLive, debugName, null);
+        Cache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getBasicCache(debugName, limit, defaultTimeToLive), debugName, null);
         addToKnownCaches(cache);
         return cache;
     }
 
-    public static <V> StringKeyCache<V> getStringKeyCache(int size, long defaultTimeToLive, String debugName)
+    public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        StringKeyCacheImpl<V> cache = new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, null);
+        StringKeyCache<V> cache = new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive), debugName, null);
         addToKnownCaches(cache);
         return cache;
     }
 
-    public static <V> StringKeyCache<V> getTemporaryCache(int size, long defaultTimeToLive, String debugName, @Nullable Stats stats)
+    public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
         // Temporary caches are not tracked and their statistics can accumulate to another cache's stats
-        return new StringKeyCacheImpl<V>(size, defaultTimeToLive, debugName, stats);
+        return new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive), debugName, stats);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
@@ -52,11 +70,13 @@ public class CacheManager
     }
 
     // We track "permanent" caches so memtracker can clear them and admin console can report statistics
-    private static void addToKnownCaches(Clearable cache)
+    private static void addToKnownCaches(Cache cache)
     {
         synchronized (KNOWN_CACHES)
         {
             KNOWN_CACHES.add(cache);
+
+            LOG.debug("Known caches: " + KNOWN_CACHES.size());
         }
     }
 
@@ -64,9 +84,11 @@ public class CacheManager
     {
         synchronized (KNOWN_CACHES)
         {
-            for (Clearable cache : KNOWN_CACHES)
+            for (Cache cache : KNOWN_CACHES)
                 cache.clear();
         }
+
+        clearAllKnownCacheMaps();
     }
 
     // We report statistics only for the Cache instances
@@ -76,11 +98,8 @@ public class CacheManager
 
         synchronized (KNOWN_CACHES)
         {
-            for (Clearable clearable : KNOWN_CACHES)
-            {
-                if (clearable instanceof Cache)
-                    copy.add((Cache)clearable);
-            }
+            for (Cache cache : KNOWN_CACHES)
+                copy.add(cache);
         }
 
         return copy;
@@ -96,11 +115,35 @@ public class CacheManager
         return new CacheStats(cache.getDebugName(), cache.getTransactionStats(), cache.size(), cache.getLimit());
     }
 
+
+    // TODO: Migrate all direct usages of cache implementations and delete everything below here
+
+    private static final List<CacheMap> KNOWN_CACHEMAPS = new LinkedList<CacheMap>();
+
+    // We track "permanent" cache maps so memtracker can clear them and admin console can report statistics
+    private static void addToKnownCacheMaps(CacheMap cacheMap)
+    {
+        synchronized (KNOWN_CACHEMAPS)
+        {
+            KNOWN_CACHEMAPS.add(cacheMap);
+        }
+    }
+
+
+    public static void clearAllKnownCacheMaps()
+    {
+        synchronized (KNOWN_CACHEMAPS)
+        {
+            for (CacheMap cache : KNOWN_CACHEMAPS)
+                cache.clear();
+        }
+    }
+
     @Deprecated
     public static <K, V> CacheMap<K, V> getCacheMap(int initialSize, String debugName)
     {
-        CacheMap<K, V> cache = new CacheMap<K, V>(initialSize, debugName, null);
-        addToKnownCaches(cache);
+        CacheMap<K, V> cache = new CacheMap<K, V>(initialSize, debugName);
+        addToKnownCacheMaps(cache);
         return cache;
     }
 
@@ -108,7 +151,7 @@ public class CacheManager
     public static <K, V> CacheMap<K, V> getLimitedCacheMap(int initialSize, int limit, String debugName)
     {
         CacheMap<K, V> cache = new LimitedCacheMap<K, V>(initialSize, limit, debugName);
-        addToKnownCaches(cache);
+        addToKnownCacheMaps(cache);
         return cache;
     }
 
@@ -116,7 +159,7 @@ public class CacheManager
     public static <K, V> CacheMap<K, V> getTTLCacheMap(int limit, String debugName)
     {
         TTLCacheMap<K, V> cache = new TTLCacheMap<K, V>(limit, debugName);
-        addToKnownCaches(cache);
+        addToKnownCacheMaps(cache);
         return cache;
     }
 }

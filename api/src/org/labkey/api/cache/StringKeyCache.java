@@ -7,5 +7,5 @@ package org.labkey.api.cache;
  */
 public interface StringKeyCache<V> extends Cache<String, V>
 {
-    void removeUsingPrefix(String prefix);
+    int removeUsingPrefix(String prefix);
 }

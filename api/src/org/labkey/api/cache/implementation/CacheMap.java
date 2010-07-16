@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.cache;
-
-import org.jetbrains.annotations.Nullable;
+package org.labkey.api.cache.implementation;
 
 import java.util.*;
 
@@ -29,7 +27,7 @@ import java.util.*;
  * It is intended to be used as a base class for customized caching functionality
  */
 
-public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
+public class CacheMap<K, V> extends AbstractMap<K, V>
 {
     //
     // Internal implementation of hash table of Map.Entry
@@ -238,9 +236,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
     protected int size = 0;
     protected boolean lru = false;
 
-    private final Stats _stats;
-    private final Stats _transactionStats = new Stats();
-
     //
     // Map implementation
     //
@@ -249,13 +244,12 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
      * size is max expected entries
      */
 
-    CacheMap(int initialSize, String debugName, @Nullable Stats stats)
+    public CacheMap(int initialSize, String debugName)
     {
         buckets = new Entry[(int) (initialSize * 1.5)];
         head = newEntry(0, null);
-        assert debugName.length() > 0;
+//        assert debugName.length() > 0;
         _debugName = debugName;
-        _stats = (null != stats ? stats : new Stats());
     }
 
 
@@ -266,7 +260,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
         size = 0;
         head.prev = head;
         head.next = head;
-        trackClear();
     }
 
 
@@ -284,7 +277,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
         Entry<K, V> e = findOrAddEntry(key);
         V prev = e.setValue(value);
         testOldestEntry();
-        trackPut(value);
         return prev;
     }
 
@@ -294,61 +286,8 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
     {
         Entry<K, V> e = findEntry(key);
         if (null == e)
-            return trackGet(null);
-        return trackGet(e.getValue());
-    }
-
-
-    protected V trackGet(V value)
-    {
-        _stats.gets.incrementAndGet();
-
-        if (value == null)
-            _stats.misses.incrementAndGet();
-
-        return value;
-    }
-
-
-    protected void trackPut(V value)
-    {
-        assert null != value : "Attempt to cache null into " + getDebugName() + "; must use marker for null instead.";
-        _stats.puts.incrementAndGet();
-
-        long maxSize = _stats.max_size.get();
-        long currentSize = size();
-        if (currentSize > maxSize)
-            _stats.max_size.compareAndSet(maxSize, currentSize);
-    }
-
-
-    protected void trackExpiration()
-    {
-        _stats.expirations.incrementAndGet();
-    }
-
-
-    protected void trackRemove()
-    {
-        _stats.removes.incrementAndGet();
-    }
-
-
-    protected void trackClear()
-    {
-        _stats.clears.incrementAndGet();
-    }
-
-
-    public Stats getStats()
-    {
-        return _stats;
-    }
-
-
-    public Stats getTransactionStats()
-    {
-        return _transactionStats;
+            return null;
+        return e.getValue();
     }
 
 
@@ -358,7 +297,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
         Entry<K, V> e = removeEntry((K)key);
         if (null != e)
         {
-            trackRemove();
             return e.getValue();
         }
         return null;
@@ -373,7 +311,6 @@ public class CacheMap<K, V> extends AbstractMap<K, V> implements Clearable
         if (!removeOldestEntry(eldest))
             return false;
         removeEntry(eldest);
-        trackExpiration();
         return true;
     }
 

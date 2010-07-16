@@ -19,7 +19,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheMap;
+import org.labkey.api.cache.implementation.CacheMap;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
@@ -182,7 +182,7 @@ public class StringExpressionFactory
 
 
     //
-    // StringExpression implementatations
+    // StringExpression implementations
     //
     
 

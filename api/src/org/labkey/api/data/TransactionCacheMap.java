@@ -71,10 +71,10 @@ public class TransactionCacheMap<V> implements StringKeyCache<V>
     }
 
     @Override
-    public void removeUsingFilter(Filter<String> filter)
+    public int removeUsingFilter(Filter<String> filter)
     {
         _hasWritten = true;
-        _privateCache.removeUsingFilter(filter);
+        return _privateCache.removeUsingFilter(filter);
     }
 
     @Override
@@ -85,16 +85,28 @@ public class TransactionCacheMap<V> implements StringKeyCache<V>
     }
 
     @Override
-    public void removeUsingPrefix(String prefix)
+    public int removeUsingPrefix(String prefix)
     {
         _hasWritten = true;
-        _privateCache.removeUsingPrefix(prefix);
+        return _privateCache.removeUsingPrefix(prefix);
     }
 
     @Override
     public int getLimit()
     {
         return _privateCache.getLimit();
+    }
+
+    @Override
+    public CacheType getCacheType()
+    {
+        return _sharedCache.getCacheType();
+    }
+
+    @Override
+    public void close()
+    {
+        _privateCache.close();
     }
 
     @Override

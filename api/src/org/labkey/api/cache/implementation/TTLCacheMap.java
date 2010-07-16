@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.cache;
+package org.labkey.api.cache.implementation;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
@@ -98,19 +98,19 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         return new TTLCacheEntry(hash, key, -1);
     }
 
-    TTLCacheMap(int limit, long defaultExpires, String debugName, @Nullable Stats stats)
+    TTLCacheMap(int limit, long defaultExpires, String debugName)
     {
         // Limit the initial size of the underlying map (it will grow if necessary)
-        super(Math.min(10000, limit), debugName, stats);
+        super(Math.min(10000, limit), debugName);
         this.lru = true;
         _limit = limit;
         _defaultExpires = defaultExpires;
     }
     
 
-    TTLCacheMap(int limit, String debugName)
+    public TTLCacheMap(int limit, String debugName)
     {
-        this(limit, -1, debugName, null);
+        this(limit, -1, debugName);
     }
 
 
@@ -134,7 +134,6 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         V prev = e.setValue(value);
         ((TTLCacheEntry) e)._expires = timeToLive == -1 ? -1 : HeartBeat.currentTimeMillis() + timeToLive;
         testOldestEntry();
-        trackPut(value);
         return prev;
     }
 
@@ -144,14 +143,14 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     {
         TTLCacheEntry e = (TTLCacheEntry)findEntry(key);
         if (null == e)
-            return trackGet(null);
+            return null;
         if (e.expired())
         {
             removeEntry(e);
             testOldestEntry();
-            return trackGet(null);
+            return null;
         }
-        return trackGet(e.getValue());
+        return e.getValue();
     }
 
 
@@ -207,8 +206,9 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
     }
 
 
-    public void removeUsingFilter(Filter<K> filter)
+    public int removeUsingFilter(Filter<K> filter)
     {
+        int removes = 0;
         int corruptionDetector = 0;
 
         // since we're touching all the Entrys anyway, might as well test expired()
@@ -216,12 +216,11 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
         {
             if (removeOldestEntry(entry))
             {
-                trackExpiration();
                 removeEntry(entry);
             }
             else if (filter.accept(entry.getKey()))
             {
-                trackRemove();
+                removes++;
                 removeEntry(entry);
             }
 
@@ -232,6 +231,8 @@ public class TTLCacheMap<K, V> extends CacheMap<K, V>
                 break;
             }
         }
+
+        return removes;
     }
 
 

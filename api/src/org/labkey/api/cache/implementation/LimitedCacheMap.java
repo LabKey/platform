@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.cache;
+package org.labkey.api.cache.implementation;
 
 import java.util.Map;
 
@@ -23,13 +23,13 @@ import java.util.Map;
  * Date: May 19, 2006
  * Time: 6:11:59 AM
  */
-class LimitedCacheMap<K, V> extends CacheMap<K, V>
+public class LimitedCacheMap<K, V> extends CacheMap<K, V>
 {
     private final int _limit;
 
-    LimitedCacheMap(int initialSize, int limit, String debugName)
+    public LimitedCacheMap(int initialSize, int limit, String debugName)
     {
-        super(initialSize, debugName, null);
+        super(initialSize, debugName);
         _limit = limit;
     }
 

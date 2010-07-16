@@ -16,7 +16,7 @@
 package org.labkey.api.resource;
 
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheMap;
+import org.labkey.api.cache.implementation.CacheMap;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Pair;

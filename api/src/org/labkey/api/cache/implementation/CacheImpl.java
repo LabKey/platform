@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.cache;
+package org.labkey.api.cache.implementation;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.cache.BasicCache;
 import org.labkey.api.util.Filter;
 
 /**
  * synchronized cache implemented using TTLCacheMap
  * like DatabaseCache, but not transaction aware
  */
-public class CacheImpl<K, V> implements Cache<K, V>
+class CacheImpl<K, V> implements BasicCache<K, V>
 {
     private static final Logger _log = Logger.getLogger(CacheImpl.class);
 
     private final TTLCacheMap<K, V> _cache;
 
-    public CacheImpl(int size, long defaultTimeToLive, String debugName, Stats stats)
+    public CacheImpl(int limit, long defaultTimeToLive)
     {
-        _cache = new TTLCacheMap<K, V>(size, defaultTimeToLive, debugName, stats);
+        _cache = new TTLCacheMap<K, V>(limit, defaultTimeToLive, null);   // TODO: remove last param?
     }
 
 
@@ -68,10 +69,10 @@ public class CacheImpl<K, V> implements Cache<K, V>
 
 
     @Override
-    public synchronized void removeUsingFilter(Filter<K> filter)
+    public synchronized int removeUsingFilter(Filter<K> filter)
     {
         _logDebug("Cache.removeUsingFilter");
-        _cache.removeUsingFilter(filter);
+        return _cache.removeUsingFilter(filter);
     }
 
 
@@ -81,11 +82,6 @@ public class CacheImpl<K, V> implements Cache<K, V>
         _cache.clear();
     }
 
-
-    private void _logDebug(String msg)
-    {
-        _log.debug(msg);
-    }
 
     @Override
     public int getLimit()
@@ -106,20 +102,18 @@ public class CacheImpl<K, V> implements Cache<K, V>
     }
 
     @Override
-    public String getDebugName()
+    public CacheType getCacheType()
     {
-        return _cache.getDebugName();
+        return CacheType.DeterministicLRU;
     }
 
     @Override
-    public Stats getStats()
+    public void close()
     {
-        return _cache.getStats();
     }
 
-    @Override
-    public Stats getTransactionStats()
+    private void _logDebug(String msg)
     {
-        return _cache.getTransactionStats();
+        _log.debug(msg);
     }
 }

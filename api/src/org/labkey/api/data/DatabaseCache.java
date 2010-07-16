@@ -113,7 +113,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
-    public synchronized void removeUsingPrefix(final String prefix)
+    public synchronized int removeUsingPrefix(final String prefix)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -127,7 +127,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             });
         }
 
-        getMap().removeUsingPrefix(prefix);
+        return getMap().removeUsingPrefix(prefix);
     }
 
 
@@ -149,10 +149,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
-    @Override
-    public void removeUsingFilter(Filter<String> filter)
+    @Override     // TODO: Is this right?
+    public int removeUsingFilter(Filter<String> filter)
     {
-        _sharedCache.removeUsingFilter(filter);
+        return _sharedCache.removeUsingFilter(filter);
     }
 
     @Override
@@ -177,6 +177,18 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     public int getLimit()
     {
         return _sharedCache.getLimit();
+    }
+
+    @Override
+    public CacheType getCacheType()
+    {
+        return _sharedCache.getCacheType();
+    }
+
+    @Override
+    public void close()
+    {
+        _sharedCache.close();
     }
 
     @Override
@@ -210,7 +222,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         {
             MyScope scope = new MyScope();
 
-            // Don't let the test cache add to KNOWN_CACHES, otherwise we'll leak a TTLCacheMap for each invocation
+            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation
             DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache") {
                 @Override
                 protected StringKeyCache<String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
@@ -219,33 +231,74 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 }
             };
 
-            // basic TTL testing
+            // basic cache testing
 
-            // currently the TTLMapCache uses SoftReferences to values, so hold values here
+            // Hold values so we can test equality below
             String[] values = new String[40];
-            for (int i=0 ; i<values.length ; i++)
+
+            for (int i = 0; i < values.length; i++)
                 values[i] = "value_" + i;
 
-            for (int i=1 ; i<=20 ; i++)
+            for (int i = 1; i <= 20; i++)
             {
                 cache.put("key_" + i, values[i]);
                 assertTrue(cache.getMap().size() <= 10);
             }
+
+            int correctCount = 0;
+
             // access in reverse order
-            for (int i=10 ; i>=1 ; i--)
+            for (int i = 10; i >= 1; i--)
             {
-                assertTrue(null == cache.get("key_" + i));
-                assertTrue(cache.get("key_" + (i+10)) == values[i+10]);
+                if (null == cache.get("key_" + i))
+                    correctCount++;
+
+                if (cache.get("key_" + (i + 10)) == values[i + 10])
+                    correctCount++;
             }
-            // add 5 more (should kick out 16-20 which are now LRU)
-            for (int i=21 ; i<=25 ; i++)
+
+            switch (cache.getCacheType())
+            {
+                case DeterministicLRU:
+                    assertEquals("Count was " + correctCount, correctCount, 20);
+                    break;
+                case NonDeterministicLRU:
+                    assertTrue("Count was " + correctCount, correctCount > 11);
+                    break;
+                default:
+                    fail("Unknown cache type");
+            }
+
+            // add 5 more (if deterministic, should kick out 16-20 which are now LRU)
+            for (int i = 21; i <= 25; i++)
                 cache.put("key_" + i, values[i]);
 
             assertTrue(cache.getMap().size() == 10);
-            for (int i=11 ; i<=15 ; i++)
+            correctCount = 0;
+
+            for (int i = 11; i <= 15; i++)
             {
-                assertTrue(cache.get("key_" + i) == values[i]);
-                assertTrue(cache.get("key_" + (i + 10)) == values[i+10]);
+                if (cache.get("key_" + i) == values[i])
+                    correctCount++;
+
+                if (cache.get("key_" + (i + 10)) == values[i + 10])
+                    correctCount++;
+            }
+
+            switch (cache.getCacheType())
+            {
+                case DeterministicLRU:
+                    assertEquals("Count was " + correctCount, correctCount, 10);
+                    break;
+                case NonDeterministicLRU:
+                    assertTrue("Count was " + correctCount, correctCount > 4);
+
+                    // Make sure key_11 is in the cache
+                    cache.put("key_11", values[11]);
+                    assertTrue(cache.get("key_11") == values[11]);
+                    break;
+                default:
+                    fail("Unknown cache type");
             }
 
             // transaction testing
@@ -255,7 +308,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             // Test read-through transaction cache
             assertTrue(cache.get("key_11") == values[11]);
 
-            cache.remove("key_" + 11);
+            cache.remove("key_11");
             assertTrue(null == cache.get("key_11"));
 
             // imitate another thread: toggle transaction and test

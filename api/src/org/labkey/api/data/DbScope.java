@@ -414,6 +414,7 @@ public class DbScope
                 _log.error("Failed to close connection", e);
             }
 
+            t.closeCaches();
             _transaction.remove();
         }
     }
@@ -929,12 +930,21 @@ public class DbScope
         private void clearCommitTasks()
         {
             _commitTasks.clear();
+            closeCaches();
         }
 
         private void runCommitTasks()
         {
             while (!_commitTasks.isEmpty())
                 _commitTasks.removeFirst().run();
+
+            closeCaches();
+        }
+
+        private void closeCaches()
+        {
+            for (StringKeyCache<?> cache : _caches.values())
+                cache.close();
         }
     }
 

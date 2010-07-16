@@ -16,7 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.CacheMap;
+import org.labkey.api.cache.implementation.CacheMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
