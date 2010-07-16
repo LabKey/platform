@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 LabKey Corporation
+ * Copyright (c) 2009-2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,6 @@
 
 ALTER TABLE study.Dataset
   ADD COLUMN protocolid INT NULL;
-
-/* study-8.31-8.32.sql */
-
-ALTER TABLE study.SpecimenEvent
-    ADD COLUMN SpecimenNumber VARCHAR(50);
-
-UPDATE study.SpecimenEvent SET SpecimenNumber =
-    (SELECT SpecimenNumber FROM study.Specimen WHERE study.SpecimenEvent.SpecimenId = study.Specimen.RowId);
-
-ALTER TABLE study.Specimen
-    DROP COLUMN SpecimenNumber;
 
 /* study-8.32-8.33.sql */
 
@@ -92,50 +81,50 @@ UPDATE study.SpecimenEvent SET ExternalId = ScharpId;
 ALTER TABLE study.SpecimenEvent DROP COLUMN ScharpId;
 
 UPDATE study.Specimen SET
-    PrimaryTypeId = (SELECT RowId FROM study.SpecimenPrimaryType WHERE
-        ExternalId = study.Specimen.PrimaryTypeId AND study.SpecimenPrimaryType.Container = study.Specimen.Container),
-    DerivativeTypeId = (SELECT RowId FROM study.SpecimenDerivative WHERE
-        ExternalId = study.Specimen.DerivativeTypeId AND study.SpecimenDerivative.Container = study.Specimen.Container),
-    AdditiveTypeId = (SELECT RowId FROM study.SpecimenAdditive WHERE
-        ExternalId = study.Specimen.AdditiveTypeId AND study.SpecimenAdditive.Container = study.Specimen.Container);
+	PrimaryTypeId = (SELECT RowId FROM study.SpecimenPrimaryType WHERE
+		ExternalId = study.Specimen.PrimaryTypeId AND study.SpecimenPrimaryType.Container = study.Specimen.Container),
+	DerivativeTypeId = (SELECT RowId FROM study.SpecimenDerivative WHERE
+		ExternalId = study.Specimen.DerivativeTypeId AND study.SpecimenDerivative.Container = study.Specimen.Container),
+	AdditiveTypeId = (SELECT RowId FROM study.SpecimenAdditive WHERE
+		ExternalId = study.Specimen.AdditiveTypeId AND study.SpecimenAdditive.Container = study.Specimen.Container);
 
 ALTER TABLE study.Site
-    ADD COLUMN Repository BOOLEAN,
-    ADD COLUMN Clinic BOOLEAN,
-    ADD COLUMN SAL BOOLEAN,
-    ADD COLUMN Endpoint BOOLEAN;
+	ADD COLUMN Repository BOOLEAN,
+	ADD COLUMN Clinic BOOLEAN,
+	ADD COLUMN SAL BOOLEAN,
+	ADD COLUMN Endpoint BOOLEAN;
 
 UPDATE study.Site SET Repository = IsRepository, Clinic = IsClinic, SAL = IsSAL, Endpoint = IsEndpoint;
 
 
 ALTER TABLE study.Site
-    DROP COLUMN IsRepository,
-    DROP COLUMN IsClinic,
-    DROP COLUMN IsSAL,
-    DROP COLUMN IsEndpoint;
+	DROP COLUMN IsRepository,
+	DROP COLUMN IsClinic,
+	DROP COLUMN IsSAL,
+	DROP COLUMN IsEndpoint;
 
 SELECT core.executeJavaUpgradeCode('upgradeMissingProtocols');
 
 /* study-8.38-8.39.sql */
 
 /*
-LDMS Name   Export Name             Association
-dervst2     derivative_type_id_2    the vial
-froztm      frozen_time             the vial
-proctm      processing_time         the vial
-frlab       shipped_from_lab        single vial location
-tolab       shipped_to_lab          single vial location
-privol      primary_volume          the draw
-pvlunt      primary_volume_units    the draw
+LDMS Name 	Export Name 			Association
+dervst2 	derivative_type_id_2 	the vial
+froztm 	    frozen_time 			the vial
+proctm 	    processing_time  		the vial
+frlab       shipped_from_lab 	 	single vial location
+tolab 	    shipped_to_lab 	 		single vial location
+privol      primary_volume 	 		the draw
+pvlunt 	    primary_volume_units 	the draw
 */
 
 ALTER TABLE study.Specimen
-    ADD DerivativeTypeId2 INT,
-    ADD FrozenTime TIMESTAMP,
-    ADD ProcessingTime TIMESTAMP,
-    ADD PrimaryVolume FLOAT,
-    ADD PrimaryVolumeUnits VARCHAR(20),
-    ADD CONSTRAINT FK_Specimens_Derivatives2 FOREIGN KEY (DerivativeTypeId2) REFERENCES study.SpecimenDerivative(RowId);
+  ADD DerivativeTypeId2 INT,
+  ADD FrozenTime TIMESTAMP,
+  ADD ProcessingTime TIMESTAMP,
+  ADD PrimaryVolume FLOAT,
+  ADD PrimaryVolumeUnits VARCHAR(20),
+  ADD CONSTRAINT FK_Specimens_Derivatives2 FOREIGN KEY (DerivativeTypeId2) REFERENCES study.SpecimenDerivative(RowId);
 
 ALTER TABLE study.SpecimenEvent
     ADD ShippedFromLab INT,
@@ -193,24 +182,24 @@ AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment 
 
 -- Flip the properties to hang from the batch
 UPDATE exp.ObjectProperty SET ObjectId =
-    (SELECT oBatch.ObjectId
-        FROM exp.Object oRun, exp.Object oBatch WHERE exp.ObjectProperty.ObjectId = oRun.ObjectId AND
-        REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(oRun.ObjectURI, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment') = oBatch.ObjectURI
-    )
+	(SELECT oBatch.ObjectId
+		FROM exp.Object oRun, exp.Object oBatch WHERE exp.ObjectProperty.ObjectId = oRun.ObjectId AND
+		REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(oRun.ObjectURI, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment') = oBatch.ObjectURI
+	)
 WHERE
-    PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
-    AND ObjectId IN (SELECT o.ObjectId FROM exp.Object o, exp.ExperimentRun er WHERE o.ObjectURI = er.LSID AND er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%'
-    AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL));
+	PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
+	AND ObjectId IN (SELECT o.ObjectId FROM exp.Object o, exp.ExperimentRun er WHERE o.ObjectURI = er.LSID AND er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%'
+	AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL));
 
 -- Point the runs at their new batches
 INSERT INTO exp.RunList (ExperimentRunId, ExperimentId)
-    SELECT er.RowId, e.RowId FROM exp.ExperimentRun er, exp.Experiment e
-    WHERE
-        e.LSID = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.LSID, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment')
-        AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL);
+	SELECT er.RowId, e.RowId FROM exp.ExperimentRun er, exp.Experiment e
+	WHERE
+		e.LSID = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.LSID, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment')
+		AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL);
 
 -- Clean out the duplicated batch properties on the runs
 DELETE FROM exp.ObjectProperty
-    WHERE
-        ObjectId IN (SELECT o.ObjectId FROM exp.Object o WHERE o.ObjectURI LIKE 'urn:lsid:%:%AssayRun.Folder-%:%')
-        AND PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%');
+	WHERE
+		ObjectId IN (SELECT o.ObjectId FROM exp.Object o WHERE o.ObjectURI LIKE 'urn:lsid:%:%AssayRun.Folder-%:%')
+		AND PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%');

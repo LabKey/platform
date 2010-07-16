@@ -20,22 +20,22 @@ CREATE SCHEMA test;
 
 CREATE TABLE test.TestTable
 (
-	_ts TIMESTAMP DEFAULT now(),
-	EntityId ENTITYID NOT NULL,
-	RowId SERIAL,
-	CreatedBy USERID,
-	Created TIMESTAMP,
+    _ts TIMESTAMP DEFAULT now(),
+    EntityId ENTITYID NOT NULL,
+    RowId SERIAL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
 
-	Container ENTITYID,		--container/path
-	Text VARCHAR(195),		--filename
-	
-	IntNull INT NULL,
-	IntNotNull INT NOT NULL,
-	DatetimeNull TIMESTAMP NULL,
-	DatetimeNotNull TIMESTAMP NOT NULL,
-	RealNull REAL NULL,
-	BitNull BOOLEAN NULL,
-	BitNotNull BOOLEAN NOT NULL,
+    Container ENTITYID,        --container/path
+    Text VARCHAR(195),        --filename
 
-	CONSTRAINT PK_TestTable PRIMARY KEY (RowId)
+    IntNull INT NULL,
+    IntNotNull INT NOT NULL,
+    DatetimeNull TIMESTAMP NULL,
+    DatetimeNotNull TIMESTAMP NOT NULL,
+    RealNull REAL NULL,
+    BitNull BOOLEAN NULL,
+    BitNotNull BOOLEAN NOT NULL,
+
+    CONSTRAINT PK_TestTable PRIMARY KEY (RowId)
 );

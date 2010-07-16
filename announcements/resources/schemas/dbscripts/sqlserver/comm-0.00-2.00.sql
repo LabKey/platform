@@ -24,41 +24,41 @@ GO
 
 CREATE TABLE comm.Announcements
 (
-	RowId INT IDENTITY(1,1) NOT NULL,
-	EntityId ENTITYID NOT NULL,
-	CreatedBy USERID,
-	Created DATETIME,
-	ModifiedBy USERID,
-	Modified DATETIME,
-	Owner USERID,
-	Container ENTITYID NOT NULL,
-	Parent ENTITYID,
-	Title NVARCHAR(255),
-	Expires DATETIME,
-	Body NTEXT,
+    RowId INT IDENTITY(1,1) NOT NULL,
+    EntityId ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created DATETIME,
+    ModifiedBy USERID,
+    Modified DATETIME,
+    Owner USERID,
+    Container ENTITYID NOT NULL,
+    Parent ENTITYID,
+    Title NVARCHAR(255),
+    Expires DATETIME,
+    Body NTEXT,
 
-	CONSTRAINT PK_Announcements PRIMARY KEY (RowId),
-	CONSTRAINT UQ_Announcements UNIQUE CLUSTERED (Container, Parent, RowId)
+    CONSTRAINT PK_Announcements PRIMARY KEY (RowId),
+    CONSTRAINT UQ_Announcements UNIQUE CLUSTERED (Container, Parent, RowId)
 )
 GO
 
 
 CREATE TABLE comm.Pages
 (
-	RowId INT IDENTITY(1,1) NOT NULL,
-	EntityId ENTITYID NOT NULL,
-	CreatedBy USERID,
-	Created DATETIME,
-	ModifiedBy USERID,
-	Modified DATETIME,
-	Owner USERID,
-	Container ENTITYID NOT NULL,
-	Name NVARCHAR(255) NOT NULL,
-	Parent INT NOT NULL,
-	DisplayOrder FLOAT NOT NULL
+    RowId INT IDENTITY(1,1) NOT NULL,
+    EntityId ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created DATETIME,
+    ModifiedBy USERID,
+    Modified DATETIME,
+    Owner USERID,
+    Container ENTITYID NOT NULL,
+    Name NVARCHAR(255) NOT NULL,
+    Parent INT NOT NULL,
+    DisplayOrder FLOAT NOT NULL
 
-	CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
-	CONSTRAINT UQ_Pages UNIQUE CLUSTERED (Container, Name)
+    CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
+    CONSTRAINT UQ_Pages UNIQUE CLUSTERED (Container, Name)
 )
 GO
 
@@ -89,10 +89,10 @@ GO
 
 CREATE TABLE comm.EmailOptions
 (
-	EmailOptionId INT NOT NULL,
-	EmailOption NVARCHAR(50),
+    EmailOptionId INT NOT NULL,
+    EmailOption NVARCHAR(50),
 
-	CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
+    CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
 )
 GO
 
@@ -105,10 +105,10 @@ GO
 
 CREATE TABLE comm.EmailFormats
 (
-	EmailFormatId INT NOT NULL,
-	EmailFormat NVARCHAR(20),
+    EmailFormatId INT NOT NULL,
+    EmailFormat NVARCHAR(20),
 
-	CONSTRAINT PK_EmailFormats PRIMARY KEY (EmailFormatId)
+    CONSTRAINT PK_EmailFormats PRIMARY KEY (EmailFormatId)
 )
 GO
 
@@ -118,10 +118,10 @@ INSERT INTO comm.EmailFormats (EmailFormatId, EmailFormat) VALUES (1, 'HTML')
 
 CREATE TABLE comm.PageTypes
 (
-	PageTypeId INT NOT NULL,
-	PageType NVARCHAR(20),
+    PageTypeId INT NOT NULL,
+    PageType NVARCHAR(20),
 
-	CONSTRAINT PK_PageTypes PRIMARY KEY (PageTypeId)
+    CONSTRAINT PK_PageTypes PRIMARY KEY (PageTypeId)
 )
 GO
 
@@ -131,18 +131,18 @@ GO
 
 CREATE TABLE comm.EmailPrefs
 (
-	Container ENTITYID,
-	UserId USERID,
-	EmailOptionId INT NOT NULL,
-	EmailFormatId INT NOT NULL,
-	PageTypeId INT NOT NULL,
+    Container ENTITYID,
+    UserId USERID,
+    EmailOptionId INT NOT NULL,
+    EmailFormatId INT NOT NULL,
+    PageTypeId INT NOT NULL,
 
-	CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
-	CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-	CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
-	CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES comm.EmailOptions (EmailOptionId),
-	CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
-	CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
+    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
+    CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
+    CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES comm.EmailOptions (EmailOptionId),
+    CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
+    CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
 )
 GO
 
@@ -163,10 +163,10 @@ GO
 -- Discussions can be private, constrained to a certain subset of users (like a Cc: line)
 CREATE TABLE comm.UserList
 (
-	MessageId INT NOT NULL,
-	UserId USERID NOT NULL,
+    MessageId INT NOT NULL,
+    UserId USERID NOT NULL,
 
-	CONSTRAINT PK_UserList PRIMARY KEY (MessageId, UserId)
+    CONSTRAINT PK_UserList PRIMARY KEY (MessageId, UserId)
 )
 GO
 

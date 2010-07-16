@@ -17,5 +17,5 @@
 /* pipeline-9.30-9.31.sql */
 
 ALTER TABLE pipeline.PipelineRoots
-  ADD Searchable BIT NOT NULL DEFAULT 0
+    ADD Searchable BIT NOT NULL DEFAULT 0
 GO

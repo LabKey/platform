@@ -27,10 +27,10 @@ CREATE VIEW core.ActiveUsers AS
 GO
 
 CREATE VIEW core.Contacts AS
-	SELECT DISTINCT Users.FirstName + ' ' + Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Groups.OwnerId, Groups.Container
-	FROM core.Principals Groups
-	    INNER JOIN core.Members Members ON Groups.UserId = Members.GroupId
-	    INNER JOIN core.ActiveUsers Users ON Members.UserId = Users.UserId
+    SELECT DISTINCT Users.FirstName + ' ' + Users.LastName AS Name, Users.Email, Users.DisplayName, Users.Phone, Users.UserId, Groups.OwnerId, Groups.Container
+    FROM core.Principals Groups
+        INNER JOIN core.Members Members ON Groups.UserId = Members.GroupId
+        INNER JOIN core.ActiveUsers Users ON Members.UserId = Users.UserId
 GO
 
 CREATE VIEW core.UserSearchTerms AS

@@ -41,30 +41,30 @@ CREATE VIEW study.SpecimenSummary AS SELECT * FROM study.Specimen
 GO
 
 CREATE VIEW study.SpecimenDetail AS
-	SELECT Vial.*,
-      Specimen.Ptid,
-      Specimen.ParticipantSequenceKey,
-      Specimen.TotalVolume,
-      Specimen.AvailableVolume,
-      Specimen.VisitDescription,
-      Specimen.VisitValue,
-      Specimen.VolumeUnits,
-      Specimen.PrimaryTypeId,
-      Specimen.AdditiveTypeId,
-      Specimen.DerivativeTypeId,
-      Specimen.DerivativeTypeId2,
-      Specimen.SubAdditiveDerivative,
-      Specimen.DrawTimestamp,
-      Specimen.SalReceiptDate,
-      Specimen.ClassId,
-      Specimen.ProtocolNumber,
-      Specimen.OriginatingLocationId,
-      Specimen.VialCount,
-      Specimen.LockedInRequestCount,
-      Specimen.AtRepositoryCount,
-      Specimen.AvailableCount,
-      Specimen.ExpectedAvailableCount
+    SELECT Vial.*,
+        Specimen.Ptid,
+        Specimen.ParticipantSequenceKey,
+        Specimen.TotalVolume,
+        Specimen.AvailableVolume,
+        Specimen.VisitDescription,
+        Specimen.VisitValue,
+        Specimen.VolumeUnits,
+        Specimen.PrimaryTypeId,
+        Specimen.AdditiveTypeId,
+        Specimen.DerivativeTypeId,
+        Specimen.DerivativeTypeId2,
+        Specimen.SubAdditiveDerivative,
+        Specimen.DrawTimestamp,
+        Specimen.SalReceiptDate,
+        Specimen.ClassId,
+        Specimen.ProtocolNumber,
+        Specimen.OriginatingLocationId,
+        Specimen.VialCount,
+        Specimen.LockedInRequestCount,
+        Specimen.AtRepositoryCount,
+        Specimen.AvailableCount,
+        Specimen.ExpectedAvailableCount
     FROM study.Vial AS Vial
-	INNER JOIN study.Specimen AS Specimen
+    INNER JOIN study.Specimen AS Specimen
       ON Vial.SpecimenId = Specimen.RowId
 GO

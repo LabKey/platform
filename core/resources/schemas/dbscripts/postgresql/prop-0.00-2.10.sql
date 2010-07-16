@@ -31,44 +31,44 @@ CREATE SCHEMA prop;
 --
 CREATE TABLE prop.PropertySets
 (
-	Set SERIAL,
-	ObjectId UNIQUEIDENTIFIER NULL,  -- e.g. EntityId or ContainerID
-	Category VARCHAR(255) NULL,      -- e.g. "org.labkey.api.MailingList", may be NULL
-	UserId USERID,
+    Set SERIAL,
+    ObjectId UNIQUEIDENTIFIER NULL,  -- e.g. EntityId or ContainerID
+    Category VARCHAR(255) NULL,      -- e.g. "org.labkey.api.MailingList", may be NULL
+    UserId USERID,
 
-	CONSTRAINT PK_PropertySets PRIMARY KEY (Set),
-	CONSTRAINT UQ_PropertySets UNIQUE (ObjectId, UserId, Category)
+    CONSTRAINT PK_PropertySets PRIMARY KEY (Set),
+    CONSTRAINT UQ_PropertySets UNIQUE (ObjectId, UserId, Category)
 );
 
 
 CREATE TABLE prop.Properties
 (
-	Set INT NOT NULL,
-	Name VARCHAR(255) NOT NULL,
-	Value VARCHAR(2000) NOT NULL,
+    Set INT NOT NULL,
+    Name VARCHAR(255) NOT NULL,
+    Value VARCHAR(2000) NOT NULL,
 
-	CONSTRAINT PK_Properties PRIMARY KEY (Set, Name)
+    CONSTRAINT PK_Properties PRIMARY KEY (Set, Name)
 );
 
 
 CREATE FUNCTION prop.Property_setValue(int, text, text) RETURNS void AS '
-	DECLARE
-		propertySet ALIAS FOR $1;
-		propertyName ALIAS FOR $2;
-		propertyValue ALIAS FOR $3;
+    DECLARE
+        propertySet ALIAS FOR $1;
+        propertyName ALIAS FOR $2;
+        propertyValue ALIAS FOR $3;
 
-		rowCount int;
-	BEGIN
-		IF (propertyValue IS NULL) THEN
-			DELETE FROM prop.Properties WHERE Set = propertySet AND Name = propertyName;
-		ELSE
-			UPDATE prop.Properties SET Value = propertyValue WHERE Set = propertySet AND Name = propertyName;
+        rowCount int;
+    BEGIN
+        IF (propertyValue IS NULL) THEN
+            DELETE FROM prop.Properties WHERE Set = propertySet AND Name = propertyName;
+        ELSE
+            UPDATE prop.Properties SET Value = propertyValue WHERE Set = propertySet AND Name = propertyName;
 
-			IF NOT FOUND THEN
-				INSERT INTO prop.Properties VALUES (propertySet, propertyName, propertyValue);
-			END IF;
-        	END IF;
+            IF NOT FOUND THEN
+                INSERT INTO prop.Properties VALUES (propertySet, propertyName, propertyValue);
+            END IF;
+            END IF;
 
-		RETURN;
-	END;
-	' LANGUAGE plpgsql;
+        RETURN;
+    END;
+    ' LANGUAGE plpgsql;

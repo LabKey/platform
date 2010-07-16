@@ -18,16 +18,16 @@ CREATE SCHEMA demo;
 
 CREATE TABLE demo.Person
 (
-	-- standard fields
-	_ts TIMESTAMP DEFAULT now(),
-	RowId SERIAL,
-	CreatedBy USERID,
-	Created TIMESTAMP,
-	ModifiedBy USERID,
-	Modified TIMESTAMP,
-	Owner USERID NULL,
+    -- standard fields
+    _ts TIMESTAMP DEFAULT now(),
+    RowId SERIAL,
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    ModifiedBy USERID,
+    Modified TIMESTAMP,
+    Owner USERID NULL,
 
-	-- other fields
+    -- other fields
     Container ENTITYID NOT NULL,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,

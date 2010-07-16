@@ -26,14 +26,14 @@ CREATE VIEW cabig.propertyvalue AS
 SELECT ((4294967296 * op.propertyid) + op.objectid) AS valueid, op.objectid, op.propertyid,
     CASE WHEN op.floatvalue IS NOT NULL THEN CAST(op.floatvalue AS CHAR(255))
         WHEN op.datetimevalue IS NOT NULL THEN CAST(op.datetimevalue AS CHAR(255))
-		ELSE op.stringvalue END AS strvalue
-	, pd.propertyuri, pd.name, pd.rangeuri
---	, pd.propertyid, pd.ontologyuri, pd.description, pd.concepturi
---	, op.typetag, op.floatvalue, op.datetimevalue, op.stringvalue
+        ELSE op.stringvalue END AS strvalue
+    , pd.propertyuri, pd.name, pd.rangeuri
+--    , pd.propertyid, pd.ontologyuri, pd.description, pd.concepturi
+--    , op.typetag, op.floatvalue, op.datetimevalue, op.stringvalue
 FROM exp.objectproperty op
-	INNER JOIN exp.propertydescriptor pd ON (op.propertyid = pd.propertyid)
-	INNER JOIN exp.object o ON (op.objectid = o.objectid)
-	INNER JOIN cabig.containers c ON (o.container = c.entityid);
+    INNER JOIN exp.propertydescriptor pd ON (op.propertyid = pd.propertyid)
+    INNER JOIN exp.object o ON (op.objectid = o.objectid)
+    INNER JOIN cabig.containers c ON (o.container = c.entityid);
 
 CREATE VIEW cabig.propertydescriptor AS
     SELECT pd.propertyid, pd.propertyuri, pd.name, pd.ontologyuri, pd.description, pd.rangeuri, pd.concepturi
@@ -137,7 +137,7 @@ CREATE VIEW cabig.protocolapplicationparameter AS
             WHEN pap.doublevalue IS NOT NULL THEN CAST(pap.doublevalue AS CHAR)
             WHEN pap.datetimevalue IS NOT NULL THEN CAST(pap.datetimevalue AS CHAR)
             ELSE pap.stringvalue END AS paramvalue
-    --	, pap.stringvalue, pap.integervalue, pap.doublevalue, pap.datetimevalue
+    --    , pap.stringvalue, pap.integervalue, pap.doublevalue, pap.datetimevalue
     FROM exp.protocolapplicationparameter pap
         INNER JOIN exp.protocolapplication pa ON (pap.protocolapplicationid = pa.rowid)
         INNER JOIN exp.ExperimentRun er ON er.rowid =pa.runid
@@ -149,7 +149,7 @@ CREATE VIEW cabig.protocolparameter AS
             WHEN pp.doublevalue IS NOT NULL THEN CAST(pp.doublevalue AS CHAR)
             WHEN pp.datetimevalue IS NOT NULL THEN CAST(pp.datetimevalue AS CHAR)
             ELSE pp.stringvalue END AS defaultvalue
-    --	, pp.stringvalue, pp.integervalue, pp.doublevalue, pp.datetimevalue
+    --    , pp.stringvalue, pp.integervalue, pp.doublevalue, pp.datetimevalue
     FROM exp.protocolparameter pp
         INNER JOIN exp.protocol p ON pp.protocolid = p.rowid
         INNER JOIN cabig.containers c ON c.entityid = p.container;
@@ -347,7 +347,7 @@ CREATE VIEW cabig.ProtSequences AS
         AND s.SeqId IN (
         SELECT fs.SeqId
         FROM prot.FastaSequences fs
-        WHERE fs.FastaId IN (	SELECT FastaId FROM cabig.MS2RunsFilter));
+        WHERE fs.FastaId IN (SELECT FastaId FROM cabig.MS2RunsFilter));
 
 CREATE VIEW cabig.materialsource AS
     SELECT ms.rowid, ms.name, ms.lsid, ms.materiallsidprefix, ms.description, c.rowid AS containerid, dd.domainid

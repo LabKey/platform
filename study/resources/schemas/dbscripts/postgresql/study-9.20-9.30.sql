@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* study-9.201-9.30.sql */
+
 /* study-9.201-9.21.sql */
 
 ALTER TABLE study.Visit ADD COLUMN ChronologicalOrder INTEGER NOT NULL DEFAULT 0;
@@ -92,8 +94,8 @@ ALTER TABLE study.UploadLog ADD
 UPDATE exp.objectproperty SET typetag = 'f', floatvalue =
     (SELECT MAX(userid) FROM
         (SELECT displayname AS name, userid FROM core.users UNION
-         SELECT email AS name, userid from core.users) AS x
-     WHERE stringvalue = name)
+        SELECT email AS name, userid from core.users) AS x
+    WHERE stringvalue = name)
 WHERE propertyid IN (SELECT pd.propertyid FROM exp.propertydescriptor pd, exp.propertydomain pdlink, exp.domaindescriptor dd, study.dataset d
 WHERE pd.propertyid=pdlink.propertyid AND pdlink.domainid = dd.domainid
 AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string');

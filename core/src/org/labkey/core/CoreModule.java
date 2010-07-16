@@ -289,6 +289,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
         GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
+        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
 
         // Other containers inherit permissions from root; admins get all permissions, users & guests none
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);

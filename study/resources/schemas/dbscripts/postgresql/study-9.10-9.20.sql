@@ -43,25 +43,25 @@ ALTER TABLE study.SpecimenEvent
   ADD PrimaryVolumeUnits VARCHAR(20);
 
 UPDATE study.SpecimenEvent SET
-	Ptid = study.Specimen.Ptid,
-	DrawTimestamp = study.Specimen.DrawTimestamp,
-	SalReceiptDate = study.Specimen.SalReceiptDate,
-	ClassId = study.Specimen.ClassId,
-	VisitValue = study.Specimen.VisitValue,
-	ProtocolNumber = study.Specimen.ProtocolNumber,
-	VisitDescription = study.Specimen.VisitDescription,
-	Volume = study.Specimen.Volume,
-	VolumeUnits = study.Specimen.VolumeUnits,
-	SubAdditiveDerivative = study.Specimen.SubAdditiveDerivative,
-	PrimaryTypeId = study.Specimen.PrimaryTypeId,
-	DerivativeTypeId = study.Specimen.DerivativeTypeId,
-	AdditiveTypeId = study.Specimen.AdditiveTypeId,
-	DerivativeTypeId2 = study.Specimen.DerivativeTypeId2,
-	OriginatingLocationId = study.Specimen.OriginatingLocationId,
-	FrozenTime = study.Specimen.FrozenTime,
-	ProcessingTime = study.Specimen.ProcessingTime,
-	PrimaryVolume = study.Specimen.PrimaryVolume,
-	PrimaryVolumeUnits = study.Specimen.PrimaryVolumeUnits
+    Ptid = study.Specimen.Ptid,
+    DrawTimestamp = study.Specimen.DrawTimestamp,
+    SalReceiptDate = study.Specimen.SalReceiptDate,
+    ClassId = study.Specimen.ClassId,
+    VisitValue = study.Specimen.VisitValue,
+    ProtocolNumber = study.Specimen.ProtocolNumber,
+    VisitDescription = study.Specimen.VisitDescription,
+    Volume = study.Specimen.Volume,
+    VolumeUnits = study.Specimen.VolumeUnits,
+    SubAdditiveDerivative = study.Specimen.SubAdditiveDerivative,
+    PrimaryTypeId = study.Specimen.PrimaryTypeId,
+    DerivativeTypeId = study.Specimen.DerivativeTypeId,
+    AdditiveTypeId = study.Specimen.AdditiveTypeId,
+    DerivativeTypeId2 = study.Specimen.DerivativeTypeId2,
+    OriginatingLocationId = study.Specimen.OriginatingLocationId,
+    FrozenTime = study.Specimen.FrozenTime,
+    ProcessingTime = study.Specimen.ProcessingTime,
+    PrimaryVolume = study.Specimen.PrimaryVolume,
+    PrimaryVolumeUnits = study.Specimen.PrimaryVolumeUnits
 FROM study.Specimen WHERE study.Specimen.RowId = study.SpecimenEvent.SpecimenId;
 
 /* study-9.11-9.12.sql */
@@ -74,11 +74,11 @@ ALTER TABLE study.SampleRequestSpecimen
   ADD Orphaned BOOLEAN NOT NULL DEFAULT False;
 
 UPDATE study.SampleRequestSpecimen SET Orphaned = True WHERE RowId IN (
-	SELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen
-	LEFT OUTER JOIN study.Specimen ON
-		study.Specimen.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND
-		study.Specimen.Container = study.SampleRequestSpecimen.Container
-	WHERE study.Specimen.GlobalUniqueId IS NULL
+    SELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen
+    LEFT OUTER JOIN study.Specimen ON
+        study.Specimen.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND
+        study.Specimen.Container = study.SampleRequestSpecimen.Container
+    WHERE study.Specimen.GlobalUniqueId IS NULL
 );
 
 /* study-9.12-9.13.sql */
@@ -195,12 +195,12 @@ JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
 WHERE InnerSpecimen.RowId = study.Specimen.RowId);
 
 UPDATE study.SpecimenComment SET SpecimenHash =
-	(SELECT SpecimenHash FROM study.Specimen
-	WHERE study.SpecimenComment.Container = study.Specimen.Container AND study.SpecimenComment.GlobalUniqueId = study.Specimen.GlobalUniqueId);
+    (SELECT SpecimenHash FROM study.Specimen
+    WHERE study.SpecimenComment.Container = study.Specimen.Container AND study.SpecimenComment.GlobalUniqueId = study.Specimen.GlobalUniqueId);
 
 -- Rename 'specimen' to 'vial' to correct a long-standing bad name
 ALTER TABLE study.Specimen
-	DROP CONSTRAINT FK_SpecimenOrigin_Site;
+    DROP CONSTRAINT FK_SpecimenOrigin_Site;
 
 DROP INDEX study.IX_Specimen_AdditiveTypeId;
 DROP INDEX study.IX_Specimen_DerivativeTypeId;
@@ -218,26 +218,27 @@ ALTER INDEX study.IX_Specimen_GlobalUniqueId RENAME TO IX_Vial_GlobalUniqueId;
 ALTER INDEX study.IX_Specimen_SpecimenHash RENAME TO IX_Vial_Container_SpecimenHash;
 
 -- Next, we create the specimen table, which will hold static properties of a specimen draw (versus a vial)
-CREATE TABLE study.Specimen (
-	RowId SERIAL NOT NULL,
-	Container ENTITYID NOT NULL,
-	SpecimenHash VARCHAR(256),
-	Ptid VARCHAR(32),
-	VisitDescription VARCHAR(10),
-	VisitValue NUMERIC(15,4),
-	VolumeUnits VARCHAR(20),
-	PrimaryVolume FLOAT,
-	PrimaryVolumeUnits VARCHAR(20),
-	PrimaryTypeId INTEGER,
-	AdditiveTypeId INTEGER,
-	DerivativeTypeId INTEGER,
-	DerivativeTypeId2 INTEGER,
-	SubAdditiveDerivative VARCHAR(50),
-	DrawTimestamp TIMESTAMP,
-	SalReceiptDate TIMESTAMP,
-	ClassId VARCHAR(20),
-	ProtocolNumber VARCHAR(20),
-	OriginatingLocationId INTEGER,
+CREATE TABLE study.Specimen
+(
+    RowId SERIAL NOT NULL,
+    Container ENTITYID NOT NULL,
+    SpecimenHash VARCHAR(256),
+    Ptid VARCHAR(32),
+    VisitDescription VARCHAR(10),
+    VisitValue NUMERIC(15,4),
+    VolumeUnits VARCHAR(20),
+    PrimaryVolume FLOAT,
+    PrimaryVolumeUnits VARCHAR(20),
+    PrimaryTypeId INTEGER,
+    AdditiveTypeId INTEGER,
+    DerivativeTypeId INTEGER,
+    DerivativeTypeId2 INTEGER,
+    SubAdditiveDerivative VARCHAR(50),
+    DrawTimestamp TIMESTAMP,
+    SalReceiptDate TIMESTAMP,
+    ClassId VARCHAR(20),
+    ProtocolNumber VARCHAR(20),
+    OriginatingLocationId INTEGER,
     TotalVolume FLOAT,
     AvailableVolume FLOAT,
     VialCount INTEGER,
@@ -245,7 +246,7 @@ CREATE TABLE study.Specimen (
     AtRepositoryCount INTEGER,
     AvailableCount INTEGER,
     ExpectedAvailableCount INTEGER,
-	CONSTRAINT PK_Specimen PRIMARY KEY (RowId)
+    CONSTRAINT PK_Specimen PRIMARY KEY (RowId)
 );
 
 CREATE INDEX IX_Specimen_AdditiveTypeId ON study.Specimen(AdditiveTypeId);
@@ -279,9 +280,9 @@ INSERT INTO study.Specimen (Container, SpecimenHash, Ptid, VisitDescription, Vis
 ALTER TABLE study.Vial ADD SpecimenId INTEGER;
 
 UPDATE study.Vial SET SpecimenId = (
-	SELECT RowId FROM study.Specimen
-	WHERE study.Specimen.SpecimenHash = study.Vial.SpecimenHash AND
-		study.Specimen.Container = study.Vial.Container
+    SELECT RowId FROM study.Specimen
+    WHERE study.Specimen.SpecimenHash = study.Vial.SpecimenHash AND
+        study.Specimen.Container = study.Vial.Container
 );
 
 ALTER TABLE study.Vial ALTER COLUMN SpecimenId SET NOT NULL;
@@ -318,8 +319,8 @@ UPDATE study.Specimen SET
     AvailableCount = VialCounts.AvailableCount,
     ExpectedAvailableCount = VialCounts.ExpectedAvailableCount
 FROM (SELECT
-	Container, SpecimenHash,
-	SUM(Volume) AS TotalVolume,
+    Container, SpecimenHash,
+    SUM(Volume) AS TotalVolume,
         SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
         COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,

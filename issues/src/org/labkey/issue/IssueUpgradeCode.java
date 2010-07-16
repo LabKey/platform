@@ -15,16 +15,14 @@
  */
 package org.labkey.issue;
 
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.issues.IssuesSchema;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.http.HttpServletResponse;
@@ -76,47 +74,6 @@ public class IssueUpgradeCode implements UpgradeCode
                 comment = ViewServlet.replaceInvalid(comment);
                 Table.execute(tinfo.getSchema(), sql, new Object[] { comment, row.get("CommentId"), row.get("IssueId") });
             }
-        }
-    }
-
-    // Invoked from issues-8.10-8.20.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void populateCommentEntityIds(ModuleContext moduleContext)
-    {
-        if (!moduleContext.isNewInstall())
-        {
-            try
-            {
-                doPopulateCommentEntityIds();
-            }
-            catch (Exception e)
-            {
-                String msg = "Error running afterSchemaUpdate doPopulateCommentEntityIds on IssueModule, upgrade from version " + String.valueOf(moduleContext.getInstalledVersion());
-                _log.error(msg + " \n Caused by " + e);
-                ExperimentException ex = new ExperimentException(msg, e);
-                //following sends an exception report to mothership if site is configured to do so, but doesn't abort schema upgrade
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, null, false, false);
-            }
-        }
-    }
-
-    private void doPopulateCommentEntityIds() throws SQLException
-    {
-        TableInfo tinfo = IssuesSchema.getInstance().getTableInfoComments();
-        Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumns(), null, null);
-        String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE CommentId = ? AND IssueId = ?";
-
-        try
-        {
-            while (rs.next())
-            {
-                Map<String, Object> row = rs.getRowMap();
-                Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), row.get("CommentId"), row.get("IssueId")});
-            }
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
         }
     }
 }

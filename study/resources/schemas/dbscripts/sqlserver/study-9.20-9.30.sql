@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* study-9.201-9.30.sql */
+
 /* study-9.201-9.21.sql */
 
 ALTER TABLE study.Visit ADD ChronologicalOrder INTEGER NOT NULL DEFAULT 0

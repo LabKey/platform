@@ -32,7 +32,7 @@ GO
 
 -- Add Active column to Principals table
 ALTER TABLE core.Principals ADD
-	Active bit NOT NULL DEFAULT 1
+    Active bit NOT NULL DEFAULT 1
 
 EXEC core.executeJavaUpgradeCode 'migrateLookAndFeelSettings'
 

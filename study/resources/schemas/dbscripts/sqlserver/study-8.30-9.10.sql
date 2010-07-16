@@ -23,15 +23,15 @@ GO
 /* study-8.31-8.32.sql */
 
 ALTER TABLE study.SpecimenEvent
-	ADD SpecimenNumber NVARCHAR(50);
+    ADD SpecimenNumber NVARCHAR(50);
 GO
 
 UPDATE study.SpecimenEvent SET SpecimenNumber =
-	(SELECT SpecimenNumber FROM study.Specimen WHERE study.SpecimenEvent.SpecimenId = study.Specimen.RowId);
+    (SELECT SpecimenNumber FROM study.Specimen WHERE study.SpecimenEvent.SpecimenId = study.Specimen.RowId);
 GO
 
 ALTER TABLE study.Specimen
-	DROP COLUMN SpecimenNumber;
+    DROP COLUMN SpecimenNumber;
 GO
 
 /* study-8.32-8.33.sql */
@@ -136,14 +136,14 @@ GO
 /* study-8.38-8.39.sql */
 
 /*
-LDMS Name 	Export Name 			Association
-dervst2 	derivative_type_id_2 	the vial
-froztm 	    frozen_time 			the vial
-proctm 	    processing_time  		the vial
-frlab       shipped_from_lab 	 	single vial location
-tolab 	    shipped_to_lab 	 		single vial location
-privol      primary_volume 	 		the draw
-pvlunt 	    primary_volume_units 	the draw
+LDMS Name   Export Name             Association
+dervst2     derivative_type_id_2    the vial
+froztm      frozen_time             the vial
+proctm      processing_time         the vial
+frlab       shipped_from_lab        single vial location
+tolab       shipped_to_lab          single vial location
+privol      primary_volume          the draw
+pvlunt      primary_volume_units    the draw
 */
 
 ALTER TABLE study.Specimen ADD
@@ -218,27 +218,27 @@ GO
 
 -- Flip the properties to hang from the batch
 UPDATE exp.ObjectProperty SET ObjectId =
-	(SELECT oBatch.ObjectId
-		FROM exp.Object oRun, exp.Object oBatch WHERE exp.ObjectProperty.ObjectId = oRun.ObjectId AND
-		REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(oRun.ObjectURI, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment') = oBatch.ObjectURI
-	)
+    (SELECT oBatch.ObjectId
+        FROM exp.Object oRun, exp.Object oBatch WHERE exp.ObjectProperty.ObjectId = oRun.ObjectId AND
+        REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(oRun.ObjectURI, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment') = oBatch.ObjectURI
+    )
 WHERE
-	PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
-	AND ObjectId IN (SELECT o.ObjectId FROM exp.Object o, exp.ExperimentRun er WHERE o.ObjectURI = er.LSID AND er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%'
-	AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL))
+    PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
+    AND ObjectId IN (SELECT o.ObjectId FROM exp.Object o, exp.ExperimentRun er WHERE o.ObjectURI = er.LSID AND er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%'
+    AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL))
 GO
 
 -- Point the runs at their new batches
 INSERT INTO exp.RunList (ExperimentRunId, ExperimentId)
-	SELECT er.RowId, e.RowId FROM exp.ExperimentRun er, exp.Experiment e
-	WHERE
-		e.LSID = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.LSID, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment')
-		AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL)
+    SELECT er.RowId, e.RowId FROM exp.ExperimentRun er, exp.Experiment e
+    WHERE
+        e.LSID = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.LSID, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment')
+        AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL)
 GO
 
 -- Clean out the duplicated batch properties on the runs
 DELETE FROM exp.ObjectProperty
-	WHERE
-		ObjectId IN (SELECT o.ObjectId FROM exp.Object o WHERE o.ObjectURI LIKE 'urn:lsid:%:%AssayRun.Folder-%:%')
-		AND PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
+    WHERE
+        ObjectId IN (SELECT o.ObjectId FROM exp.Object o WHERE o.ObjectURI LIKE 'urn:lsid:%:%AssayRun.Folder-%:%')
+        AND PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
 GO

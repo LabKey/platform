@@ -22,14 +22,14 @@ CREATE SCHEMA portal;
 
 CREATE TABLE portal.PortalWebParts
 (
-	PageId ENTITYID NOT NULL,
-	Index INT NOT NULL,
-	Name VARCHAR(64),
-	Location VARCHAR(16),	-- 'body', 'left', 'right'
+    PageId ENTITYID NOT NULL,
+    Index INT NOT NULL,
+    Name VARCHAR(64),
+    Location VARCHAR(16),    -- 'body', 'left', 'right'
 
-	Properties VARCHAR(4000),	-- url encoded properties
+    Properties VARCHAR(4000),    -- url encoded properties
 
-	CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, Index)
+    CONSTRAINT PK_PortalWebParts PRIMARY KEY (PageId, Index)
 );
 
 /* portal-1.50-1.60.sql */

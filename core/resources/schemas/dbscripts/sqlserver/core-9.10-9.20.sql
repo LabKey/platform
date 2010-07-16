@@ -17,22 +17,22 @@
 /* core-9.10-9.11.sql */
 
 CREATE TABLE core.QcValues
-	(
-	Container ENTITYID NOT NULL,
+(
+    Container ENTITYID NOT NULL,
     QcValue VARCHAR(64) NOT NULL,
     Label VARCHAR(255),
 
     CONSTRAINT PK_QcValues_Container_QcValue PRIMARY KEY (Container, QcValue)
-	)
+)
 GO
 
 /* core-9.11-9.12.sql */
 
 /* SQL Server */
 
-exec core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
+EXEC core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
 
-create table core.RoleAssignments
+CREATE TABLE core.RoleAssignments
 (
     ResourceId entityid not null,
     UserId userid not null,
@@ -49,21 +49,21 @@ create table core.RoleAssignments
 /* SQL Server */
 
 CREATE TABLE core.MvIndicators
-	(
-	Container ENTITYID NOT NULL,
+(
+    Container ENTITYID NOT NULL,
     MvIndicator VARCHAR(64) NOT NULL,
     Label VARCHAR(255),
 
     CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
-	)
+)
 
 GO
 
 INSERT INTO core.MvIndicators (Container, MvIndicator, Label)
 (
-  SELECT Container, QcValue, Label
-  FROM
-  core.QcValues
+    SELECT Container, QcValue, Label
+    FROM
+    core.QcValues
 )
 
 GO
@@ -79,12 +79,12 @@ GO
 -- scrub ACLs where container is null
 -- some old databases might have saved ACLs like these
 -- but they are no longer retrievable anyway
-delete from core.ACLs where Container is null;
+DELETE FROM core.ACLs where Container IS NULL;
 
 -- create Policies and RoleAssignments tables
-exec core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
+EXEC core.fn_dropifexists 'RoleAssignments', 'core', 'TABLE', null;
 
-create table core.Policies
+CREATE TABLE core.Policies
 (
     ResourceId entityid not null,
     ResourceClass varchar(1000),
@@ -94,7 +94,7 @@ create table core.Policies
     constraint PK_Policies primary key(ResourceId)
 );
 
-create table core.RoleAssignments
+CREATE TABLE core.RoleAssignments
 (
     ResourceId entityid not null,
     UserId userid not null,
@@ -105,6 +105,6 @@ create table core.RoleAssignments
     constraint FK_RA_UP foreign key(UserId) references core.Principals(UserId)
 );
 
-exec core.executeJavaUpgradeCode 'migrateAcls'
+EXEC core.executeJavaUpgradeCode 'migrateAcls'
 
-drop table core.ACLs;
+DROP TABLE core.ACLs;

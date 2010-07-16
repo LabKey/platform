@@ -18,24 +18,24 @@ EXEC sp_addapprole 'test', 'password'
 GO
 
 CREATE TABLE test.TestTable
-	(
-	_ts TIMESTAMP,
-	EntityId ENTITYID DEFAULT NEWID(),
-	RowId INT IDENTITY(1,1),
-	CreatedBy USERID,
-	Created DATETIME,
+(
+    _ts TIMESTAMP,
+    EntityId ENTITYID DEFAULT NEWID(),
+    RowId INT IDENTITY(1,1),
+    CreatedBy USERID,
+    Created DATETIME,
 
-	Container ENTITYID,			--container/path
-	Text NVARCHAR(195),		--filename
-	
-	IntNull INT NULL,
-	IntNotNull INT NOT NULL,
-	DatetimeNull DATETIME NULL,
-	DatetimeNotNull DATETIME NOT NULL,
-	RealNull REAL NULL,
-	BitNull Bit NULL,
-	BitNotNull Bit NOT NULL,
+    Container ENTITYID,            --container/path
+    Text NVARCHAR(195),        --filename
 
-	CONSTRAINT PK_TestTable PRIMARY KEY (RowId)
-	)
+    IntNull INT NULL,
+    IntNotNull INT NOT NULL,
+    DatetimeNull DATETIME NULL,
+    DatetimeNotNull DATETIME NOT NULL,
+    RealNull REAL NULL,
+    BitNull Bit NULL,
+    BitNotNull Bit NOT NULL,
+
+    CONSTRAINT PK_TestTable PRIMARY KEY (RowId)
+)
 GO

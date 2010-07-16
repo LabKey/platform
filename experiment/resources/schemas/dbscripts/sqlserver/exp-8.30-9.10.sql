@@ -116,19 +116,19 @@ GO
 -- that we know should be entered every time :
 UPDATE exp.PropertyDescriptor SET DefaultValueType = 'LAST_ENTERED' WHERE PropertyId IN
 (
-	SELECT exp.PropertyDescriptor.propertyid FROM exp.PropertyDescriptor
-	JOIN exp.PropertyDomain ON
-		exp.PropertyDescriptor.PropertyId = exp.PropertyDomain.PropertyId
-	JOIN exp.DomainDescriptor ON
-		exp.PropertyDomain.DomainId = exp.DomainDescriptor.DomainId
-	-- get all assay domains except data domains:
-	WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%' AND
-	exp.DomainDescriptor.DomainURI NOT LIKE '%:AssayDomain-Data%' AND NOT
-		-- first, check for these properties in sample well group domains:
-	      ( exp.PropertyDescriptor.PropertyURI LIKE '%#SpecimenID' OR
-		exp.PropertyDescriptor.PropertyURI LIKE '%#VisitID' OR
-		exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
-		exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
+    SELECT exp.PropertyDescriptor.propertyid FROM exp.PropertyDescriptor
+    JOIN exp.PropertyDomain ON
+        exp.PropertyDescriptor.PropertyId = exp.PropertyDomain.PropertyId
+    JOIN exp.DomainDescriptor ON
+        exp.PropertyDomain.DomainId = exp.DomainDescriptor.DomainId
+    -- get all assay domains except data domains:
+    WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%' AND
+    exp.DomainDescriptor.DomainURI NOT LIKE '%:AssayDomain-Data%' AND NOT
+        -- first, check for these properties in sample well group domains:
+          ( exp.PropertyDescriptor.PropertyURI LIKE '%#SpecimenID' OR
+        exp.PropertyDescriptor.PropertyURI LIKE '%#VisitID' OR
+        exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
+        exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
 )
 GO
 
@@ -136,19 +136,19 @@ GO
 -- that we know should be entered every time:
 UPDATE exp.PropertyDescriptor SET DefaultValueType = 'FIXED_EDITABLE' WHERE PropertyId IN
 (
-	SELECT exp.PropertyDescriptor.propertyid FROM exp.PropertyDescriptor
-	JOIN exp.PropertyDomain ON
-		exp.PropertyDescriptor.PropertyId = exp.PropertyDomain.PropertyId
-	JOIN exp.DomainDescriptor ON
-		exp.PropertyDomain.DomainId = exp.DomainDescriptor.DomainId
-	-- get all assay domains except data domains:
-	WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%' AND
-	exp.DomainDescriptor.DomainURI NOT LIKE '%:AssayDomain-Data%' AND
-		-- first, check for these properties in sample well group domains:
-	      ( exp.PropertyDescriptor.PropertyURI LIKE '%#SpecimenID' OR
-		exp.PropertyDescriptor.PropertyURI LIKE '%#VisitID' OR
-		exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
-		exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
+    SELECT exp.PropertyDescriptor.propertyid FROM exp.PropertyDescriptor
+    JOIN exp.PropertyDomain ON
+        exp.PropertyDescriptor.PropertyId = exp.PropertyDomain.PropertyId
+    JOIN exp.DomainDescriptor ON
+        exp.PropertyDomain.DomainId = exp.DomainDescriptor.DomainId
+    -- get all assay domains except data domains:
+    WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%' AND
+    exp.DomainDescriptor.DomainURI NOT LIKE '%:AssayDomain-Data%' AND
+        -- first, check for these properties in sample well group domains:
+          ( exp.PropertyDescriptor.PropertyURI LIKE '%#SpecimenID' OR
+        exp.PropertyDescriptor.PropertyURI LIKE '%#VisitID' OR
+        exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
+        exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
 )
 GO
 

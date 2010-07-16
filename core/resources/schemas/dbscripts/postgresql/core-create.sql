@@ -20,20 +20,20 @@ CREATE VIEW core.Users AS
     WHERE Type = 'u';
 
 CREATE OR REPLACE RULE Users_Update AS
-	ON UPDATE TO core.Users DO INSTEAD
-		UPDATE core.UsersData SET
-			ModifiedBy = NEW.ModifiedBy,
-			Modified = NEW.Modified,
-			FirstName = NEW.FirstName,
-			LastName = NEW.LastName,
-			Phone = NEW.Phone,
-			Mobile = NEW.Mobile,
-			Pager = NEW.Pager,
-			IM = NEW.IM,
-			Description = NEW.Description,
-			LastLogin = NEW.LastLogin,
-			DisplayName = NEW.DisplayName
-		WHERE UserId = NEW.UserId;
+    ON UPDATE TO core.Users DO INSTEAD
+        UPDATE core.UsersData SET
+            ModifiedBy = NEW.ModifiedBy,
+            Modified = NEW.Modified,
+            FirstName = NEW.FirstName,
+            LastName = NEW.LastName,
+            Phone = NEW.Phone,
+            Mobile = NEW.Mobile,
+            Pager = NEW.Pager,
+            IM = NEW.IM,
+            Description = NEW.Description,
+            LastLogin = NEW.LastLogin,
+            DisplayName = NEW.DisplayName
+        WHERE UserId = NEW.UserId;
 
 CREATE VIEW core.ActiveUsers AS
     SELECT *

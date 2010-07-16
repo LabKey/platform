@@ -18,10 +18,11 @@ package org.labkey.core;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.*;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.core.login.DbLoginManager;
@@ -42,13 +43,6 @@ public class CoreUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(CoreUpgradeCode.class);
 
-    // Invoked by core-8.10-8.20.sql
-    public void bootstrapDevelopersGroup(ModuleContext moduleContext)
-    {
-        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
-    }
-
-
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
     //  ContainerManager's assumptions. For example, older installations don't have a description column until
     //  the 10.1 scripts run (see #9927).
@@ -61,40 +55,6 @@ public class CoreUpgradeCode implements UpgradeCode
         catch (SQLException e)
         {
             return null;
-        }
-    }
-
-
-    // Invoked by core-8.10-8.20.sql
-    public void migrateLdapSettings(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        try
-        {
-            Map<String, String> props = PropertyManager.getProperties(-1, getRootId(), "SiteConfig");
-
-            String domain = props.get("LDAPDomain");
-
-            if (null != domain && domain.trim().length() > 0)
-            {
-                PropertyManager.PropertyMap map = PropertyManager.getWritableProperties("LDAPAuthentication", true);
-                map.put("Servers", props.get("LDAPServers"));
-                map.put("Domain", props.get("LDAPDomain"));
-                map.put("PrincipalTemplate", props.get("LDAPPrincipalTemplate"));
-                map.put("SASL", props.get("LDAPAuthentication"));
-                PropertyManager.saveProperties(map);
-                saveAuthenticationProviders(true);
-            }
-            else
-            {
-                saveAuthenticationProviders(false);
-            }
-        }
-        catch (Exception e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 

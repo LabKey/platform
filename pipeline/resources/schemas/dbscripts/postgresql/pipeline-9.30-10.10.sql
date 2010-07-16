@@ -17,4 +17,4 @@
 /* pipeline-9.30-9.31.sql */
 
 ALTER TABLE pipeline.PipelineRoots
-  ADD Searchable BOOLEAN NOT NULL DEFAULT FALSE;
+    ADD Searchable BOOLEAN NOT NULL DEFAULT FALSE;
