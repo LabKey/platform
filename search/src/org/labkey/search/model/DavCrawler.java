@@ -549,16 +549,7 @@ public class DavCrawler implements ShutdownListener
     
     boolean skipFile(WebdavResource r)
     {
-        if (!getSearchService().accept(r))
-            return true;
-        String name = r.getName();
-        String ext = "";
-        int i = name.lastIndexOf(".");
-        if (i != -1)
-            ext = name.substring(i+1).toLowerCase();
-        if (ext.equals("mzxml") || ext.equals("mzml"))
-            return true;
-        return false;
+        return !getSearchService().accept(r);
     }
     
 

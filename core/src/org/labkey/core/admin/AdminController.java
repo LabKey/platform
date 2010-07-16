@@ -122,6 +122,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root));
@@ -1689,7 +1690,7 @@ public class AdminController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            showErrors(response, _errorMark);
+            showLogFile(response, _errorMark, getErrorLogFile());
         }
     }
 
@@ -1699,10 +1700,20 @@ public class AdminController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            showErrors(response, 0);
+            showLogFile(response, 0, getErrorLogFile());
         }
     }
 
+    @AdminConsoleAction
+    public class ShowPrimaryLogAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            File tomcatHome = new File(System.getProperty("catalina.home"));
+            File logFile = new File(tomcatHome, "logs/labkey.log");
+            showLogFile(response, 0, logFile);
+        }
+    }
 
     private File getErrorLogFile()
     {
@@ -1710,16 +1721,14 @@ public class AdminController extends SpringActionController
         return new File(tomcatHome, "logs/labkey-errors.log");
     }
 
-
-    public void showErrors(HttpServletResponse response, long startingOffset) throws Exception
+    public void showLogFile(HttpServletResponse response, long startingOffset, File logFile) throws Exception
     {
-        File errorLogFile = getErrorLogFile();
-        if (errorLogFile.exists())
+        if (logFile.exists())
         {
             FileInputStream fIn = null;
             try
             {
-                fIn = new FileInputStream(errorLogFile);
+                fIn = new FileInputStream(logFile);
                 //noinspection ResultOfMethodCallIgnored
                 fIn.skip(startingOffset);
                 OutputStream out = response.getOutputStream();
