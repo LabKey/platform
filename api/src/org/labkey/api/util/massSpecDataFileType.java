@@ -37,7 +37,7 @@ public class massSpecDataFileType extends FileType
      */
     public massSpecDataFileType()
     {
-        super(".mzXML",gzSupportLevel.SUPPORT_GZ);
+        super(".mzXML", gzSupportLevel.SUPPORT_GZ);
         addMzmlIfAvailable(); // shall we add mzml to the list?
     }
 
