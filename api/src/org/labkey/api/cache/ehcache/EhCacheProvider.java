@@ -177,7 +177,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         @Override
         public long getDefaultExpires()
         {
-            return _cache.getCacheConfiguration().getTimeToLiveSeconds();
+            return _cache.getCacheConfiguration().getTimeToLiveSeconds() * 1000;
         }
 
         @Override
