@@ -50,7 +50,6 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.util.WebUtils;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;

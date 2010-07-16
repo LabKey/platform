@@ -1,4 +1,4 @@
-package org.labkey.api.cache.implementation;
+package org.labkey.api.cache.ehcache;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -99,8 +99,8 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         @Override
         public V put(K key, V value, long timeToLive)
         {
-            // TODO: timeToLive
             Element element = new Element(key, value);
+            element.setTimeToLive((int)timeToLive / 1000);
             _cache.put(element);
             return null;
         }

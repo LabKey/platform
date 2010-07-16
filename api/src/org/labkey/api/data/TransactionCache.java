@@ -26,7 +26,7 @@ import org.labkey.api.util.Filter;
 * Date: Nov 9, 2009
 * Time: 10:49:04 PM
 */
-public class TransactionCacheMap<V> implements StringKeyCache<V>
+public class TransactionCache<V> implements StringKeyCache<V>
 {
     private boolean _hasWritten = false;
     private final StringKeyCache<V> _sharedCache;
@@ -34,7 +34,7 @@ public class TransactionCacheMap<V> implements StringKeyCache<V>
 
     // A read-through transaction cache.  Reads through to the passed-in shared cache until any write occurs, at which
     // point it switches to using a private cache for the remainder of the transaction.
-    public TransactionCacheMap(StringKeyCache<V> sharedCache)
+    public TransactionCache(StringKeyCache<V> sharedCache)
     {
         _privateCache = CacheManager.getTemporaryCache(sharedCache.getLimit(), sharedCache.getDefaultExpires(), "transaction cache: " + sharedCache.getDebugName(), sharedCache.getTransactionStats());
         _sharedCache = sharedCache;

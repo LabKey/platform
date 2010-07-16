@@ -20,8 +20,7 @@ import org.labkey.api.cache.BasicCache;
 import org.labkey.api.util.Filter;
 
 /**
- * synchronized cache implemented using TTLCacheMap
- * like DatabaseCache, but not transaction aware
+ *  Synchronized BasicCache implemented using TTLCacheMap
  */
 class CacheImpl<K, V> implements BasicCache<K, V>
 {

@@ -104,9 +104,9 @@ api/src/org/labkey/api/cache/Stats.java -text
 api/src/org/labkey/api/cache/StringKeyCache.java -text
 api/src/org/labkey/api/cache/StringKeyCacheWrapper.java -text
 api/src/org/labkey/api/cache/Tracking.java -text
+api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/implementation/CacheImpl.java -text
 api/src/org/labkey/api/cache/implementation/CacheMap.java -text
-api/src/org/labkey/api/cache/implementation/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/implementation/LimitedCacheMap.java -text
 api/src/org/labkey/api/cache/implementation/TTLCacheMap.java -text
 api/src/org/labkey/api/cache/implementation/TTLCacheProvider.java -text
@@ -207,7 +207,7 @@ api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TransactedBlock.java -text
-api/src/org/labkey/api/data/TransactionCacheMap.java -text
+api/src/org/labkey/api/data/TransactionCache.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text
 api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text

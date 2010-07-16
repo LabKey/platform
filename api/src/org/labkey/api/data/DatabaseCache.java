@@ -57,7 +57,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         return CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
     }
 
-    private StringKeyCache<ValueType> getMap()
+    private StringKeyCache<ValueType> getCache()
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -67,7 +67,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
             if (null == map)
             {
-                map = new TransactionCacheMap<ValueType>(_sharedCache);
+                map = new TransactionCache<ValueType>(_sharedCache);
                 t.addCache(this, map);
             }
 
@@ -81,17 +81,17 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
     public synchronized ValueType put(String key, ValueType value)
     {
-        return getMap().put(key, value);
+        return getCache().put(key, value);
     }
 
     public synchronized ValueType put(String key, ValueType value, long timeToLive)
     {
-        return getMap().put(key, value, timeToLive);
+        return getCache().put(key, value, timeToLive);
     }
 
     public synchronized ValueType get(String key)
     {
-        return getMap().get(key);
+        return getCache().get(key);
     }
 
 
@@ -109,7 +109,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             });
         }
 
-        return getMap().remove(key);
+        return getCache().remove(key);
     }
 
 
@@ -127,7 +127,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             });
         }
 
-        return getMap().removeUsingPrefix(prefix);
+        return getCache().removeUsingPrefix(prefix);
     }
 
 
@@ -145,7 +145,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             });
         }
 
-        getMap().clear();
+        getCache().clear();
     }
 
 
@@ -242,7 +242,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             for (int i = 1; i <= 20; i++)
             {
                 cache.put("key_" + i, values[i]);
-                assertTrue(cache.getMap().size() <= 10);
+                assertTrue(cache.getCache().size() <= 10);
             }
 
             int correctCount = 0;
@@ -257,6 +257,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                     correctCount++;
             }
 
+            // A DeterministicLRU cache guarantees that the least recently used element is always kicked out when capacity
+            // is reached. A NonDeterministicLRU cache (e.g., an Ehcache implementation) attempts to kick out the least
+            // recently used element, but provides no guarantee since it uses sampling for performance reasons. This test
+            // is not very useful for a NonDeterministicLRU cache. Adjust the check below if this test fails.    
             switch (cache.getCacheType())
             {
                 case DeterministicLRU:
@@ -273,7 +277,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             for (int i = 21; i <= 25; i++)
                 cache.put("key_" + i, values[i]);
 
-            assertTrue(cache.getMap().size() == 10);
+            assertTrue(cache.getCache().size() == 10);
             correctCount = 0;
 
             for (int i = 11; i <= 15; i++)
@@ -285,6 +289,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                     correctCount++;
             }
 
+            // As above, this test isn't very useful for a NonDeterministicLRU cache.
             switch (cache.getCacheType())
             {
                 case DeterministicLRU:
@@ -321,7 +326,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             assertTrue(null == cache.get("key_11"));
 
             cache.removeUsingPrefix("key");
-            assert cache.getMap().size() == 0;
+            assert cache.getCache().size() == 0;
 
             scope.closeConnection();
         }
