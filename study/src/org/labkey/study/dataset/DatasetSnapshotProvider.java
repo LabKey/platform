@@ -255,7 +255,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     // the purge, which locks tables, and another thread gets the dataset's monitor when trying
                     // to materialize it, which blocks due to our table lock. We then block waiting for it to release
                     // the materialization lock during the call to importDatasetData(), deadlocking.
-                    synchronized (dsDef)
+                    synchronized (dsDef.getMaterializationLockObject())
                     {
                         numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
                         Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());

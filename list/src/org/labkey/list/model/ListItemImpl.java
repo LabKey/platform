@@ -483,13 +483,7 @@ public class ListItemImpl implements ListItem
                             if (rowMap == null)
                             {
                                 TableInfo table = _list.getTable(user);
-                                DetailsView details = new DetailsView(new QueryUpdateForm(table, HttpView.currentContext(), null));
-                                RenderContext ctx = details.getRenderContext();
-
-                                ctx.setMode(DataRegion.MODE_DETAILS);
-                                ctx.setBaseFilter(new PkFilter(table, _itm.getKey()));
-
-                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
+                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), new PkFilter(table, _itm.getKey()), null, 0, 0);
                                 rs.next();
                                 rowMap = ResultSetUtil.mapRow(rs);
                                 rs.close();

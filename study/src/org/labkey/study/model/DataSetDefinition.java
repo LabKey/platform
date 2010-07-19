@@ -317,13 +317,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      *
      * see StudyManager.importDatasetTSV()
      */
-    public synchronized TableInfo getTableInfo(User user) throws UnauthorizedException
+    public TableInfo getTableInfo(User user) throws UnauthorizedException
     {
         return getTableInfo(user, true, true);
     }
 
 
-    public synchronized TableInfo getTableInfo(@NotNull User user, boolean checkPermission, boolean materialized) throws UnauthorizedException
+    public TableInfo getTableInfo(@NotNull User user, boolean checkPermission, boolean materialized) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null)
@@ -390,31 +390,28 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _name = name;
         }
 
-        SchemaTableInfo getExitingTableInfo(DataSetDefinition dataset, User user)
+        synchronized SchemaTableInfo getExitingTableInfo(DataSetDefinition dataset, User user)
         {
-            synchronized (this)
-            {
-                long now = System.currentTimeMillis();
-                if (_lastVerify + 5* CacheManager.MINUTE > now && _tinfoMaterialized != null)
-                    return _tinfoMaterialized;
-                _lastVerify = now;
-                if (isMaterialized(_name))
-                {
-                    if (_tinfoMaterialized == null)
-                    {
-                        if (_tinfoOntology == null)
-                        {
-                            _tinfoOntology = dataset.getJoinTableInfo(user);
-                        }
-                        _tinfoMaterialized = getMaterializedTableInfo(_tinfoOntology, _name);
-                    }
-                }
-                else
-                {
-                    _tinfoMaterialized = null;
-                }
+            long now = System.currentTimeMillis();
+            if (_lastVerify + 5* CacheManager.MINUTE > now && _tinfoMaterialized != null)
                 return _tinfoMaterialized;
+            _lastVerify = now;
+            if (isMaterialized(_name))
+            {
+                if (_tinfoMaterialized == null)
+                {
+                    if (_tinfoOntology == null)
+                    {
+                        _tinfoOntology = dataset.getJoinTableInfo(user);
+                    }
+                    _tinfoMaterialized = getMaterializedTableInfo(_tinfoOntology, _name);
+                }
             }
+            else
+            {
+                _tinfoMaterialized = null;
+            }
+            return _tinfoMaterialized;
         }
     }
 
@@ -448,21 +445,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
 
 
-    public synchronized TableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
+    public TableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
     {
-        String tempName = getCacheString();
-
-        MaterializedLockObject mlo;
-
-        synchronized(materializedCache)
-        {
-            mlo = materializedCache.get(tempName);
-            if (null == mlo)
-            {
-                mlo = new MaterializedLockObject(tempName);
-                materializedCache.put(tempName, mlo);
-            }
-        }
+        MaterializedLockObject mlo = getMaterializationLockObject();
 
         // prevent multiple threads from materializing the same dataset
         synchronized(mlo)
@@ -481,14 +466,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         msg.append("  cachedFrom:  ").append(StringUtils.join(new TreeSet<String>(cachedFrom.getColumnNameSet()),",")).append("\n");
                         msg.append("  currentFrom: ").append(StringUtils.join(new TreeSet<String>(currentFrom.getColumnNameSet()), ",")).append("\n");
                         _log.error(msg);
-                        dropMaterializedTable(tempName);
+                        dropMaterializedTable();
                         result = null;
                     }
                 }
                 
                 if (result == null && forceMaterialization)
                 {
-                    result = materialize(currentFrom, tempName);
+                    result = materialize(currentFrom);
                     result.setButtonBarConfig(currentFrom.getButtonBarConfig());
 
                     mlo._tinfoMaterialized = result;
@@ -504,8 +489,22 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+    public MaterializedLockObject getMaterializationLockObject()
+    {
+        synchronized(materializedCache)
+        {
+            String tempName = getCacheString();
+            MaterializedLockObject mlo = materializedCache.get(tempName);
+            if (null == mlo)
+            {
+                mlo = new MaterializedLockObject(tempName);
+                materializedCache.put(tempName, mlo);
+            }
+            return mlo;
+        }
+    }
 
-    private SchemaTableInfo materialize(TableInfo tinfoFrom, String tempName)
+    private SchemaTableInfo materialize(TableInfo tinfoFrom)
             throws SQLException
     {
         //noinspection UnusedAssignment
@@ -513,9 +512,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //noinspection ConstantConditions
         assert debug=true;
 
-        SchemaTableInfo tinfoMat = getMaterializedTableInfo(tinfoFrom, tempName);
+        SchemaTableInfo tinfoMat = getMaterializedTableInfo(tinfoFrom, getCacheString());
 
         Table.snapshot(tinfoFrom, tinfoMat.toString());
+        String tempName = getCacheString();
 
         Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_seq") +
                 " ON " + tinfoMat + "(SequenceNum)", null);
@@ -576,7 +576,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     try
                     {
-                        dropMaterializedTable(tempName);
+                        dropMaterializedTable();
                         _log.debug("DataSetDefinition unmaterialize(" + getName() + ")");
                     }
                     catch (SQLException e)
@@ -605,10 +605,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         task.run();
     }
 
-    private void dropMaterializedTable(String tempName)
+    private void dropMaterializedTable()
             throws SQLException
     {
-        Table.execute(StudySchema.getInstance().getDatasetSchema(), "DROP TABLE studydataset." + getScope().getSqlDialect().makeLegalIdentifier(tempName), new Object[0]);
+        Table.execute(StudySchema.getInstance().getDatasetSchema(), "DROP TABLE studydataset." + getScope().getSqlDialect().makeLegalIdentifier(getCacheString()), new Object[0]);
     }
 
 
