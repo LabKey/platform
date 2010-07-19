@@ -32,7 +32,10 @@ import java.sql.SQLException;
  * Date: Dec 12, 2006
  * Time: 9:54:06 AM
  *
- * Not a map, uses a StringKeyCache to implement a transaction aware cache
+ * Not a map, uses a StringKeyCache to implement a thread-safe, transaction-aware cache
+ *
+ * No synchronization is necessary in this class since the underlying shared cache and transaction cache are both
+ * thread-safe, and the transaction cache creation is single-threaded since the Transaction is thread local.  
  *
  * @see org.labkey.api.data.DbScope
  */
@@ -63,15 +66,15 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
 
         if (null != t)
         {
-            StringKeyCache<ValueType> map = t.getCache(this);
+            StringKeyCache<ValueType> transactionCache = t.getCache(this);
 
-            if (null == map)
+            if (null == transactionCache)
             {
-                map = new TransactionCache<ValueType>(_sharedCache);
-                t.addCache(this, map);
+                transactionCache = new TransactionCache<ValueType>(_sharedCache);
+                t.addCache(this, transactionCache);
             }
 
-            return map;
+            return transactionCache;
         }
         else
         {
@@ -79,23 +82,23 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         }
     }
 
-    public synchronized ValueType put(String key, ValueType value)
+    public ValueType put(String key, ValueType value)
     {
         return getCache().put(key, value);
     }
 
-    public synchronized ValueType put(String key, ValueType value, long timeToLive)
+    public ValueType put(String key, ValueType value, long timeToLive)
     {
         return getCache().put(key, value, timeToLive);
     }
 
-    public synchronized ValueType get(String key)
+    public ValueType get(String key)
     {
         return getCache().get(key);
     }
 
 
-    public synchronized ValueType remove(final String key)
+    public ValueType remove(final String key)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -113,7 +116,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
-    public synchronized int removeUsingPrefix(final String prefix)
+    public int removeUsingPrefix(final String prefix)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -131,7 +134,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
-    public synchronized void clear()
+    public void clear()
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -222,7 +225,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         {
             MyScope scope = new MyScope();
 
-            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation
+            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
             DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache") {
                 @Override
                 protected StringKeyCache<String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
@@ -321,6 +324,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             assertTrue(cache.get("key_11") == values[11]);
             scope.setOverrideTransactionActive(null);
 
+            // This should close the transaction caches
             scope.commitTransaction();
             // Test that remove got applied to shared cache
             assertTrue(null == cache.get("key_11"));
@@ -328,6 +332,8 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             cache.removeUsingPrefix("key");
             assert cache.getCache().size() == 0;
 
+            // This should close the (temporary) shared cache
+            cache.close();
             scope.closeConnection();
         }
 

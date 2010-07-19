@@ -133,7 +133,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
             if (null == e)
                 return null;
             else
-                return  (V)e.getObjectValue();
+                return (V)e.getObjectValue();
         }
 
         @Override
