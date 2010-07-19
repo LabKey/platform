@@ -149,7 +149,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return super.getSummary(c);
     }
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

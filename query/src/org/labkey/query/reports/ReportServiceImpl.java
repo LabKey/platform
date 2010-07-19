@@ -34,7 +34,6 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
@@ -166,7 +165,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return getSchema().getTable(TABLE_NAME);
     }
 
-    public void containerCreated(Container c) {}
+    public void containerCreated(Container c, User user) {}
     public void propertyChange(PropertyChangeEvent evt) {}
 
     public void containerDeleted(Container c, User user)

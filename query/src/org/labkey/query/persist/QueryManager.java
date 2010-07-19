@@ -446,7 +446,7 @@ public class QueryManager
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()
     {
-        public void containerCreated(Container c)
+        public void containerCreated(Container c, User user)
         {
 
         }

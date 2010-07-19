@@ -21,7 +21,6 @@ import org.labkey.api.data.ContainerManager.ContainerListener;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.DavCrawler;
 
@@ -29,7 +28,7 @@ import java.beans.PropertyChangeEvent;
 
 public class SearchContainerListener implements ContainerListener
 {
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)

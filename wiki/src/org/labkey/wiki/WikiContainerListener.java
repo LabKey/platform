@@ -33,7 +33,7 @@ public class WikiContainerListener implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(WikiContainerListener.class);
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

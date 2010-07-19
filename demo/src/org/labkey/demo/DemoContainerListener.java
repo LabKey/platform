@@ -33,7 +33,7 @@ public class DemoContainerListener implements ContainerListener
 {
     private static final Logger _log = Logger.getLogger(DemoContainerListener.class);
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

@@ -211,7 +211,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
-            public void containerCreated(Container c)
+            public void containerCreated(Container c, User user)
             {
             }
 

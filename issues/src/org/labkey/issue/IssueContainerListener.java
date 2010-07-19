@@ -29,7 +29,7 @@ import java.beans.PropertyChangeEvent;
  */
 public class IssueContainerListener implements ContainerListener
 {
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

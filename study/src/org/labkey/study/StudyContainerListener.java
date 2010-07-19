@@ -33,7 +33,7 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
 {
     private static final Logger _log = Logger.getLogger(StudyContainerListener.class);
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

@@ -76,7 +76,7 @@ public class PortalModule extends DefaultModule
     {
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
-            public void containerCreated(Container c)
+            public void containerCreated(Container c, User user)
             {
             }
 

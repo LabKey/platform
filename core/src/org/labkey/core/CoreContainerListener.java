@@ -23,9 +23,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
@@ -39,17 +36,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(CoreContainerListener.class);
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
-        User user = UserManager.getGuestUser();
-        try {
-            ViewContext context = HttpView.currentContext();
-            if (context != null)
-            {
-                user = context.getUser();
-            }
-        }
-        catch (RuntimeException e){}
         String message = c.isProject() ? "Project " + c.getName() + " was created" :
                 "Folder " + c.getName() + " was created";
         addAuditEvent(user, c, message);

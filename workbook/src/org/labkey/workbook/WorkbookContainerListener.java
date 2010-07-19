@@ -24,7 +24,7 @@ import java.beans.PropertyChangeEvent;
 
 public class WorkbookContainerListener implements ContainerListener
 {
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

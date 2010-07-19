@@ -36,7 +36,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
 {
     private static Logger _log = Logger.getLogger(AnnouncementListener.class);
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

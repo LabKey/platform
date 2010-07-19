@@ -382,7 +382,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         }
     }
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
         try
         {
