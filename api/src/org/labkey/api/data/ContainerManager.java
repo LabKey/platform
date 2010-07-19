@@ -139,7 +139,7 @@ public class ContainerManager
 
     public static Container createContainer(Container parent, String name, String description, User user)
     {
-        return createContainer(parent, name, description, false, null);
+        return createContainer(parent, name, description, false, user);
     }
     
     private static Container createContainer(Container parent, String name, String description, boolean workbook, User user)
@@ -246,7 +246,7 @@ public class ContainerManager
 
         if (null == c)
         {
-                c = createContainer(parent, name);
+            c = createContainer(parent, name);
         }
         return c;
     }
