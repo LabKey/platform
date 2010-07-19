@@ -1350,7 +1350,7 @@ public class WikiController extends SpringActionController
             HString pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            return new VersionsAction(_wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
+            return new VersionAction(_wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
         }
     }
 
@@ -1403,13 +1403,24 @@ public class WikiController extends SpringActionController
     }
 
 
+    private ActionURL getVersionsURL(HString name)
+    {
+        ActionURL url = new ActionURL(VersionsAction.class, getContainer());
+        url.addParameter("name", name);
+        return url;
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class) //requires update or update_own; will check below
     public class VersionsAction extends SimpleViewAction<WikiNameForm>
     {
         Wiki _wiki;
         WikiVersion _wikiversion;
 
-        public VersionsAction() {}
+        @SuppressWarnings({"UnusedDeclaration"})
+        public VersionsAction()
+        {
+        }
 
         public VersionsAction(Wiki wiki, WikiVersion wikiversion)
         {
@@ -1433,7 +1444,19 @@ public class WikiController extends SpringActionController
 
             TableInfo tinfoVersions = CommSchema.getInstance().getTableInfoPageVersions();
             TableInfo tinfoPages = CommSchema.getInstance().getTableInfoPages();
-            DataRegion dr = new DataRegion();
+
+            // Highlight the current version in the history grid
+            final int version = _wikiversion.getVersion();
+            DataRegion dr = new DataRegion() {
+                @Override
+                protected String getRowClass(RenderContext ctx, int rowIndex)
+                {
+                    if (((Integer)ctx.get("Version")).intValue() == version)
+                        return "labkey-alternate-row";
+                    else
+                        return "labkey-row";
+                }
+            };
 
             //look up page name
             LookupColumn entityIdLookup = new LookupColumn(tinfoVersions.getColumn("PageEntityId"),
@@ -1478,7 +1501,7 @@ public class WikiController extends SpringActionController
 
             LinkBarView lb = new LinkBarView(
                     new Pair<String, String>("return to page", getViewContext().cloneActionURL().setAction("page").toString()),
-                    new Pair<String, String>("view versioned content", getViewContext().cloneActionURL().setAction("version").toString())
+                    new Pair<String, String>("view current version", getViewContext().cloneActionURL().setAction("version").toString())
                     );
             lb.setDrawLine(true);
             lb.setTitle("History");
@@ -1498,7 +1521,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getUrl()
         {
-            return getVersionURL(_wiki.getName());
+            return getVersionsURL(_wiki.getName());
         }
     }
 

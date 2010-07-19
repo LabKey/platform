@@ -82,37 +82,39 @@ else
                <i>date:</i> <%=bean.created%><br>
            </td>
            <td align=right>
-               [<a href="<%=h(bean.pageLink)%>">page</a>]&nbsp;
-               [<a href="<%=h(bean.versionsLink)%>">history</a>]&nbsp;<%
+               [<a href="<%=h(bean.pageLink)%>">page</a>]&nbsp;[<a href="<%=h(bean.versionsLink)%>">history</a>]&nbsp;<%
 
         WikiVersion[] versions = WikiManager.getAllVersions(bean.wiki);
 
-        MenuButton compare = new MenuButton("Compare With...");
-        String baseCompareLink = bean.compareLink + "&version1=" + nCurVersion;
-
-        for (int i = versions.length - 1; i >= 0; i--)
+        if (versions.length > 1)
         {
-            WikiVersion v = versions[i];
-            int n = v.getVersion();
-            User author = UserManager.getUser(v.getCreatedBy()); 
+            MenuButton compare = new MenuButton("Compare With...");
+            String baseCompareLink = bean.compareLink + "&version1=" + nCurVersion;
 
-            if (n != bean.wikiVersion.getVersion())
+            for (int i = versions.length - 1; i >= 0; i--)
             {
-                // Show the author who created the version if available, or skip if that user's been deleted
-                compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayName(ctx) + ")"), baseCompareLink + "&version2=" + n);
+                WikiVersion v = versions[i];
+                int n = v.getVersion();
+                User author = UserManager.getUser(v.getCreatedBy());
+
+                if (n != bean.wikiVersion.getVersion())
+                {
+                    // Show the author who created the version if available, or skip if that user's been deleted
+                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayName(ctx) + ")"), baseCompareLink + "&version2=" + n);
+                }
             }
+
+            compare.render(new RenderContext(getViewContext()), out);
         }
 
-        compare.render(new RenderContext(getViewContext()), out);
-
-        out.print("&nbsp;[versions:");
+        out.print("[versions:");
 
         for (WikiVersion v : versions)
         {
             int n = v.getVersion();
             if (n == bean.wikiVersion.getVersion())
             {%>
-               <b><%=n%></b><%
+                <b><%=n%></b><%
             }
             else
             {%>
