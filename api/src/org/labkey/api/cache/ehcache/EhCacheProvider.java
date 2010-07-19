@@ -24,6 +24,7 @@ import org.labkey.api.cache.BasicCache;
 import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ShutdownListener;
 
 import javax.servlet.ServletContextEvent;
@@ -68,7 +69,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
     }
 
     @Override
-    public <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive)
+    public <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive, boolean temporary)
     {
         // Every Ehcache requires a unique name.  We create many temporary caches with overlapping names, so append a unique counter.
         // Consider: a cache pool for temporary caches?
@@ -90,6 +91,10 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
 
             LOG.debug(sb);
         }
+
+        // Memtrack temporary caches to ensure they're destroyed
+        if (temporary)
+            MemTracker.put(ehCache);
 
         return new EhBasicCache<K, V>(ehCache);
     }
@@ -189,11 +194,9 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         @Override
         public void close()
         {
-            int before = MANAGER.getCacheNames().length;
             MANAGER.removeCache(_cache.getName());
-            int after = MANAGER.getCacheNames().length;
 
-            LOG.debug("Closing \"" + _cache.getName() + "\"  Before: " + before + ", After: " + after); 
+            LOG.debug("Closing \"" + _cache.getName() + "\".  Ehcaches: " + MANAGER.getCacheNames().length);
         }
     }
 }

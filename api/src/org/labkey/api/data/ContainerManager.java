@@ -184,7 +184,7 @@ public class ContainerManager
         
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
-        fireCreateContainer(c);
+        fireCreateContainer(c, user);
         return c;
     }
 
@@ -1498,7 +1498,7 @@ public class ContainerManager
     {
         enum Order {First, Last}
 
-        void containerCreated(Container c);
+        void containerCreated(Container c, User user);
 
         void containerDeleted(Container c, User user);
     }
@@ -1556,13 +1556,14 @@ public class ContainerManager
     }
 
 
-    protected static void fireCreateContainer(Container c)
+    protected static void fireCreateContainer(Container c, User user)
     {
         List<ContainerListener> list = getListeners();
+
         for (ContainerListener cl : list)
             try
             {
-                cl.containerCreated(c);
+                cl.containerCreated(c, user);
             }
             catch (Throwable t)
             {
@@ -1890,7 +1891,7 @@ public class ContainerManager
         }
 
 
-        public void containerCreated(Container c)
+        public void containerCreated(Container c, User user)
         {
             if (null == _testRoot || !c.getParsedPath().startsWith(_testRoot.getParsedPath()))
                 return;

@@ -260,7 +260,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             // A DeterministicLRU cache guarantees that the least recently used element is always kicked out when capacity
             // is reached. A NonDeterministicLRU cache (e.g., an Ehcache implementation) attempts to kick out the least
             // recently used element, but provides no guarantee since it uses sampling for performance reasons. This test
-            // is not very useful for a NonDeterministicLRU cache. Adjust the check below if this test fails.    
+            // is not very useful for a NonDeterministicLRU cache. Adjust the check below if the test fails.
             switch (cache.getCacheType())
             {
                 case DeterministicLRU:

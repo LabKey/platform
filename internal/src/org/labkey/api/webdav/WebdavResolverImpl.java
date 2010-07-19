@@ -123,7 +123,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
     private class WebdavListener implements ContainerManager.ContainerListener
     {
-        public void containerCreated(Container c)
+        public void containerCreated(Container c, User user)
         {
             invalidate(c.getParsedPath().getParent(), false);
         }

@@ -257,7 +257,7 @@ public class SecurityManager
     private static class SecurityContainerListener implements ContainerManager.ContainerListener
     {
         //void wantsToDelete(Container c, List<String> messages);
-        public void containerCreated(Container c)
+        public void containerCreated(Container c, User user)
         {
         }
 

@@ -190,7 +190,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         return SimpleController.getBeginViewUrl(this, c);
     }
 
-    public void containerCreated(Container c)
+    public void containerCreated(Container c, User user)
     {
     }
 

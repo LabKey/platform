@@ -22,5 +22,5 @@ package org.labkey.api.cache;
  */
 public interface CacheProvider
 {
-    <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive);
+    <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive, boolean temporary);
 }

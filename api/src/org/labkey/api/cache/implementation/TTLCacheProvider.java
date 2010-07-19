@@ -17,6 +17,7 @@ package org.labkey.api.cache.implementation;
 
 import org.labkey.api.cache.BasicCache;
 import org.labkey.api.cache.CacheProvider;
+import org.labkey.api.util.MemTracker;
 
 /**
  * User: adam
@@ -37,8 +38,14 @@ public class TTLCacheProvider implements CacheProvider
     }
 
     @Override
-    public <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive)
+    public <K, V> BasicCache<K, V> getBasicCache(String debugName, int limit, long defaultTimeToLive, boolean temporary)
     {
-        return new CacheImpl<K, V>(limit, defaultTimeToLive);
+        BasicCache<K, V> cache = new CacheImpl<K, V>(limit, defaultTimeToLive);
+
+        // No one should be holding onto temporary caches
+        if (temporary)
+            MemTracker.put(cache);
+
+        return cache;
     }
 }

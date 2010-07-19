@@ -36,7 +36,6 @@ import java.util.List;
 /*
     TODO:
 
-    - GuessOrgBySharedIdents needs to close() its cache.
     - CacheWrapper -> TrackingCacheWrapper?
     - Track expirations
     - Change remove() to void.
@@ -60,14 +59,14 @@ public class CacheManager
 
     public static <K, V> Cache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
     {
-        Cache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getBasicCache(debugName, limit, defaultTimeToLive), debugName, null);
+        Cache<K, V> cache = new CacheWrapper<K, V>(PROVIDER.<K, V>getBasicCache(debugName, limit, defaultTimeToLive, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         return cache;
     }
 
     public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        StringKeyCache<V> cache = new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive), debugName, null);
+        StringKeyCache<V> cache = new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive, false), debugName, null);
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         return cache;
     }
@@ -75,7 +74,7 @@ public class CacheManager
     // Temporary caches must be closed when no longer needed.  Their statistics can accumulate to another cache's stats.
     public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        return new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive), debugName, stats);
+        return new StringKeyCacheWrapper<V>(PROVIDER.<String, V>getBasicCache(debugName, limit, defaultTimeToLive, true), debugName, stats);
     }
 
     private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
