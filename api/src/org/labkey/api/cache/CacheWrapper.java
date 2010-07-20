@@ -45,17 +45,17 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     }
 
     @Override
-    public V put(K key, V value)
+    public void put(K key, V value)
     {
         _cache.put(key, value);
-        return trackPut(value);
+        trackPut(value);
     }
 
     @Override
-    public V put(K key, V value, long timeToLive)
+    public void put(K key, V value, long timeToLive)
     {
         _cache.put(key, value, timeToLive);
-        return trackPut(value);
+        trackPut(value);
     }
 
     @Override
@@ -65,9 +65,10 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     }
 
     @Override
-    public V remove(K key)
+    public void remove(K key)
     {
-        return trackRemove(_cache.remove(key));
+        _cache.remove(key);
+        trackRemove();
     }
 
     @Override
@@ -147,7 +148,7 @@ public class CacheWrapper<K, V> implements Cache<K, V>
         return value;
     }
 
-    private V trackPut(V value)
+    private void trackPut(V value)
     {
         assert null != value : "Attempt to cache null into " + getDebugName() + "; must use marker for null instead.";
         _stats.puts.incrementAndGet();
@@ -156,8 +157,6 @@ public class CacheWrapper<K, V> implements Cache<K, V>
         long currentSize = size();
         if (currentSize > maxSize)
             _stats.max_size.compareAndSet(maxSize, currentSize);
-
-        return value;
     }
 
     private void trackExpiration()
@@ -165,10 +164,9 @@ public class CacheWrapper<K, V> implements Cache<K, V>
         _stats.expirations.incrementAndGet();
     }
 
-    private V trackRemove(V value)
+    private void trackRemove()
     {
         _stats.removes.incrementAndGet();
-        return value;
     }
 
     private int trackRemoves(int removes)

@@ -35,18 +35,18 @@ class CacheImpl<K, V> implements BasicCache<K, V>
 
 
     @Override
-    public synchronized V put(K key, V value)
+    public synchronized void put(K key, V value)
     {
         _logDebug("Cache.put(" + key + ")");
-        return _cache.put(key, value);
+        _cache.put(key, value);
     }
 
 
     @Override
-    public synchronized V put(K key, V value, long msToLive)
+    public synchronized void put(K key, V value, long msToLive)
     {
         _logDebug("Cache.put(" + key + ")");
-        return _cache.put(key, value, msToLive);
+        _cache.put(key, value, msToLive);
     }
 
 
@@ -60,10 +60,10 @@ class CacheImpl<K, V> implements BasicCache<K, V>
 
 
     @Override
-    public synchronized V remove(K key)
+    public synchronized void remove(K key)
     {
         _logDebug("Cache.remove(" + key + ")");
-        return _cache.remove(key);
+        _cache.remove(key);
     }
 
 

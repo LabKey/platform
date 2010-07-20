@@ -82,14 +82,14 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         }
     }
 
-    public ValueType put(String key, ValueType value)
+    public void put(String key, ValueType value)
     {
-        return getCache().put(key, value);
+        getCache().put(key, value);
     }
 
-    public ValueType put(String key, ValueType value, long timeToLive)
+    public void put(String key, ValueType value, long timeToLive)
     {
-        return getCache().put(key, value, timeToLive);
+        getCache().put(key, value, timeToLive);
     }
 
     public ValueType get(String key)
@@ -98,7 +98,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
-    public ValueType remove(final String key)
+    public void remove(final String key)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -112,7 +112,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             });
         }
 
-        return getCache().remove(key);
+        getCache().remove(key);
     }
 
 

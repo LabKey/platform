@@ -109,20 +109,18 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         }
 
         @Override
-        public V put(K key, V value)
+        public void put(K key, V value)
         {
             Element element = new Element(key, value);
             _cache.put(element);
-            return null;
         }
 
         @Override
-        public V put(K key, V value, long timeToLive)
+        public void put(K key, V value, long timeToLive)
         {
             Element element = new Element(key, value);
             element.setTimeToLive((int)timeToLive / 1000);
             _cache.put(element);
-            return null;
         }
 
         @Override
@@ -137,10 +135,9 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         }
 
         @Override
-        public V remove(K key)
+        public void remove(K key)
         {
             _cache.remove(key);
-            return null;
         }
 
         @Override

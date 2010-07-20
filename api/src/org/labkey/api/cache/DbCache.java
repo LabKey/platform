@@ -65,11 +65,11 @@ public class DbCache
     }
 
 
-    public static Object put(TableInfo tinfo, String name, Object obj, long millisToLive)
+    public static void put(TableInfo tinfo, String name, Object obj, long millisToLive)
     {
         assert !(tinfo instanceof FilteredTable) : "FilteredTable instances cannot be cached since they are short-lived.  Attempted to cache " + tinfo.getName();
         DatabaseCache<Object> cache = getCache(tinfo);
-        return cache.put(name, obj, millisToLive);
+        cache.put(name, obj, millisToLive);
     }
 
 

@@ -39,7 +39,6 @@ import java.util.List;
     - CacheWrapper -> TrackingCacheWrapper?
     - Track expirations
     - Change remove() to void.
-    - DatabaseCache: remove synchronization
 
  */
 public class CacheManager

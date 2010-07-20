@@ -50,24 +50,24 @@ public class TransactionCache<V> implements StringKeyCache<V>
     }
 
     @Override
-    public V put(String key, V value)
+    public void put(String key, V value)
     {
         _hasWritten = true;
-        return _privateCache.put(key, value);
+        _privateCache.put(key, value);
     }
 
     @Override
-    public V put(String key, V value, long timeToLive)
+    public void put(String key, V value, long timeToLive)
     {
         _hasWritten = true;
-        return _privateCache.put(key, value, timeToLive);
+        _privateCache.put(key, value, timeToLive);
     }
 
     @Override
-    public V remove(String key)
+    public void remove(String key)
     {
         _hasWritten = true;
-        return _privateCache.remove(key);
+        _privateCache.remove(key);
     }
 
     @Override
