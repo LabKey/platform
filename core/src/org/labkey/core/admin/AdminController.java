@@ -4179,12 +4179,12 @@ public class AdminController extends SpringActionController
             }
             catch (NumberFormatException x) {}
             LoggingEvent[] events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
-            ArrayList<Map> list = new ArrayList<Map>(events.length);
+            ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>(events.length);
             for (LoggingEvent e : events)
             {
                 if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
                 {
-                    HashMap m = new HashMap();
+                    HashMap<String, Object> m = new HashMap<String, Object>();
                     m.put("eventId", e.getProperty("eventId"));
                     m.put("level", e.getLevel().toString());
                     m.put("message", e.getMessage());
@@ -4252,6 +4252,46 @@ public class AdminController extends SpringActionController
         LoggingView()
         {
             super(AdminController.class, "logging.jsp", null);
+        }
+    }
+
+
+    public static class LogForm
+    {
+        private String _message;
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+    }
+
+
+    // Simple action that writes "message" parameter to the labkey log. Used by the test harness to indicate when
+    // each test begins and ends. Message parameter is output as sent, except that \n is translated to newline.
+    @RequiresSiteAdmin
+    public class LogAction extends SimpleViewAction<LogForm>
+    {
+        @Override
+        public ModelAndView getView(LogForm logForm, BindException errors) throws Exception
+        {
+            // Can use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
+            // \n to newlines to allow them at the beginning or end of the message.
+            String message = StringUtils.replace(logForm.getMessage(), "\\n", "\n");
+
+            LOG.info(message);
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 }

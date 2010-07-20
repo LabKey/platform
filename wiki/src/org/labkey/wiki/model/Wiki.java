@@ -87,21 +87,19 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     public String getDeleteLink()
     {
-        if (null == name || 0 == rowId)
+        if (null == name)
             return "";
         ActionURL deleteLink = getWikiLink("delete", name);
-        if (0 != rowId)
-            deleteLink.replaceParameter("rowId", Integer.toString(rowId));
+
         return deleteLink.getLocalURIString();
     }
 
     public String getManageLink()
     {
-        if (null == name || 0 == rowId)
+        if (null == name)
             return "";
         ActionURL manageLink = getWikiLink("manage", name);
-        if (0 != rowId)
-            manageLink.addParameter("rowId", Integer.toString(rowId));
+
         return manageLink.getLocalURIString();
     }
 

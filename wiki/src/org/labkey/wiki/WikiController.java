@@ -485,7 +485,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getUrl()
         {
-            return new ActionURL(ManageAction.class, getContainer()).addParameter("name", _wiki.getName()).addParameter("rowId", "" + _wiki.getRowId());
+            return new ActionURL(ManageAction.class, getContainer()).addParameter("name", _wiki.getName());
         }
     }
 
@@ -1592,7 +1592,6 @@ public class WikiController extends SpringActionController
 
     public static class WikiManageForm
     {
-        private HString _rowId;
         private HString _originalName;
         private HString _name;
         private HString _title;
@@ -1696,16 +1695,6 @@ public class WikiController extends SpringActionController
             _parent = parent;
         }
 
-        public HString getRowId()
-        {
-            return _rowId;
-        }
-
-        public void setRowId(HString rowId)
-        {
-            _rowId = rowId;
-        }
-
         public HString getNextAction()
         {
             return _nextAction;
@@ -1738,7 +1727,6 @@ public class WikiController extends SpringActionController
      {
          private HString _name;
          private HString _redirect;
-         private int _rowId;
          private int _parent;
          private int _version;
 
@@ -1780,16 +1768,6 @@ public class WikiController extends SpringActionController
          public void setRedirect(HString redirect)
          {
              _redirect = redirect;
-         }
-
-         public int getRowId()
-         {
-             return _rowId;
-         }
-
-         public void setRowId(int rowId)
-         {
-             _rowId = rowId;
          }
      }
 
@@ -2640,7 +2618,6 @@ public class WikiController extends SpringActionController
     public static class SaveWikiForm
     {
         private GuidString _entityId;
-        private Integer _rowId = -1;
         private HString _name;
         private HString _title;
         private String _body;
@@ -2658,16 +2635,6 @@ public class WikiController extends SpringActionController
         public void setEntityId(GuidString entityId)
         {
             _entityId = entityId;
-        }
-
-        public Integer getRowId()
-        {
-            return _rowId;
-        }
-
-        public void setRowId(Integer rowId)
-        {
-            _rowId = rowId;
         }
 
         public HString getName()
@@ -2871,7 +2838,7 @@ public class WikiController extends SpringActionController
             return resp;
         }
 
-        protected HashMap<String,Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
+        protected HashMap<String, Object> getWikiProps(Wiki wiki, WikiVersion wikiversion)
         {
             HashMap<String,Object> wikiProps = new HashMap<String,Object>();
             wikiProps.put("entityId", wiki.getEntityId());
