@@ -598,8 +598,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         // If it's not a file in the file system then return the resource path and the container path
         String name = r.getPath().toString();
         Container c = ContainerManager.getForId(r.getContainerId());
+        String url = r.getExecuteHref(null);
 
-        return name + (null != c ? " (folder: " + c.getPath() + ")" : "");
+        return name + (null != c ? " (folder: " + c.getPath() + ")" : "") + " (" + url + ")";
     }
 
     private void logAsPreProcessingException(WebdavResource r, Throwable e)
