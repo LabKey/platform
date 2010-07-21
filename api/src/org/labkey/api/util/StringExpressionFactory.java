@@ -412,10 +412,13 @@ public class StringExpressionFactory
         {
             Object value = map.get(key);
 
-            // TODO: HACK!  Fix in 10.3.  Assert value non-null and fix up usages.  See #10398
-            // See also QueryController.DetailsQueryRowAction, ExternalSchemaController.UpdateAction
-            if (null == value && key.getParts().size() == 1)
-                value = map.get(key.getName());
+            // TODO: Remove all this once we've tested assert.  See #10398
+            {
+                assert null != value : "No replacement value found for FieldKey " + key.toString() + ". Could be a FieldKey vs. alias/column name mismatch.";
+
+                if (null == value && key.getParts().size() == 1)
+                    value = map.get(key.getName());
+            }
 
             return PageFlowUtil.encodePath(valueOf(value));
         }
