@@ -28,6 +28,7 @@ import java.io.IOException;
 public interface CustomView extends CustomViewInfo
 {
     QueryDefinition getQueryDefinition();
+    void setName(String name);
     void setCanInherit(boolean f);
     void setIsHidden(boolean f);
     void setColumns(List<FieldKey> columns);

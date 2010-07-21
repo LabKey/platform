@@ -455,7 +455,7 @@ public class ReportUtil
                 record.put("query", view.getQueryName());
                 record.put("schema", view.getSchemaName());
                 record.put("type", "query view");
-                record.put("editable", "false");
+                record.put("editable", String.valueOf(view.isEditable()));
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
                 record.put("permissions", view.getOwner() != null ? "private" : "public");
 

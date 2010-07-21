@@ -79,6 +79,13 @@ public class QueryForm implements HasViewContext, HasBindParameters
         _queryName = queryName;
     }
 
+    protected QueryForm(String schemaName, String queryName, String viewName)
+    {
+        _schemaName = new IdentifierString(schemaName);
+        _queryName = queryName;
+        _viewName = viewName;
+    }
+
     public void setViewContext(ViewContext context)
     {
         _context = context;
