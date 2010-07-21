@@ -17,16 +17,16 @@
 package org.labkey.query.data;
 
 import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.module.SimpleModuleUserSchema;
+import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.data.xml.TableType;
-import org.labkey.query.controllers.externalschema.ExternalSchemaController;
 import org.labkey.query.ExternalSchema;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 public class ExternalSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
 {
@@ -86,14 +86,6 @@ public class ExternalSchemaTable extends SimpleModuleUserSchema.SimpleModuleTabl
         return null != _container ? _container : s.getContainer();
     }
 
-
-    public ActionURL urlFor(ExternalSchemaController.Action action)
-    {
-        ActionURL url = getUserSchema().getContainer().urlFor(action);
-        url.addParameter(QueryParam.schemaName.toString(), getUserSchema().getSchemaName());
-        url.addParameter(QueryParam.queryName.toString(), getName());
-        return url;
-    }
 
     @Override
     public QueryUpdateService getUpdateService()

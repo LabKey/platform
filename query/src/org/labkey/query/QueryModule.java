@@ -16,42 +16,40 @@
 
 package org.labkey.query;
 
+import junit.framework.TestCase;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RExportScriptFactory;
-import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.query.controllers.QueryController;
-import org.labkey.query.controllers.externalschema.ExternalSchemaController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.SchemaReloadMaintenanceTask;
 import org.labkey.query.reports.*;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
-import org.labkey.query.view.QueryWebPartFactory;
-import org.labkey.query.sql.SqlParser;
 import org.labkey.query.sql.Query;
+import org.labkey.query.sql.SqlParser;
+import org.labkey.query.view.QueryWebPartFactory;
 
 import javax.script.ScriptEngineManager;
 import java.util.*;
-
-import junit.framework.TestCase;
 
 
 public class QueryModule extends DefaultModule
@@ -70,7 +68,6 @@ public class QueryModule extends DefaultModule
     {
         addController("query", QueryController.class);
         addController("reports", ReportsController.class);
-        addController("externalschema", ExternalSchemaController.class);
 
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);
