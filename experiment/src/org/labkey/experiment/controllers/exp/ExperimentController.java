@@ -564,7 +564,7 @@ public class ExperimentController extends SpringActionController
                 StringExpression expr = queryDef.urlExpr(QueryAction.updateQueryRow, ss.getContainer());
                 if (expr != null)
                 {
-                    String url = expr.eval(Collections.singletonMap("RowId", _material.getRowId()));
+                    String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
                     updateLinks.append("[<a href=\"").append(url).append("\">edit</a>] ");
                 }
             }
