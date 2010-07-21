@@ -51,7 +51,7 @@ Ext.onReady(function(){
         fields : eventRecord
     });
     
-    var url = LABKEY.ActionURL.buildURL("admin", "getSessionLogEvents.api", "/", {eventId:0});
+    var url = LABKEY.ActionURL.buildURL("admin", "getSessionLogEvents.api", "/");
 
     var eventStore = new Ext.data.Store(
     {
@@ -59,24 +59,7 @@ Ext.onReady(function(){
         url : url
     });
 
-/*
-    var grid = new Ext.grid.GridPanel({
-        width:800, height:400,
-        store: eventStore,
-        colModel: new Ext.grid.ColumnModel(
-        {
-                defaults: {
-                    width: 120,
-                    sortable: false
-                },
-                columns: [
-                    {dataIndex: 'level'},
-                    {dataIndex: 'timestamp', renderer:timestampRenderer},
-                    {dataIndex: 'message', width:550}
-                ]
-        }),
-    });
-*/
+    var lastEventId = 0;
 
     var listView = new Ext.list.ListView({
         store: eventStore,
@@ -88,17 +71,21 @@ Ext.onReady(function(){
             header: 'Time',
             width: 0.15,
             dataIndex: 'timestamp',
-            //renderer:timestampRenderer,
             tpl: '{timestamp:date("H:i:s")}',
             align: 'right'
         },{
-            width: .6,
+            width: 0.85,
             header: 'Message',
             dataIndex: 'message',
-            tpl: '{message:htmlEncode()}'
+            tpl: '<pre>{message:htmlEncode()}</pre>'
         }]
     });
-    var vp = new Ext.Viewport({layout:'fit', ctCls:'extContainer', items:[listView]});
+    var panel = new Ext.Panel({
+        layout:'fit',
+        items:[listView],
+        tbar:[{text:'Clear', handler:function(){if (eventStore) eventStore.removeAll();}}]
+    });
+    var vp = new Ext.Viewport({layout:'fit', ctCls:'extContainer', items:[panel]});
 
     var autoScrollToBottom = true;
 
@@ -113,10 +100,9 @@ Ext.onReady(function(){
         var sc = scrollContainer();
         autoScrollToBottom = sc.scrollTop+sc.clientHeight == sc.scrollHeight;
 
-        var eventId = 0;
         if (eventStore.getCount() > 0)
-            eventId = eventStore.getAt(eventStore.getCount()-1).data.eventId;
-        eventStore.load({params:{eventId:eventId}});
+            lastEventId = eventStore.getAt(eventStore.getCount()-1).data.eventId;
+        eventStore.load({add:true, params:{eventId:lastEventId}});
     }
 
     function onAdd()
