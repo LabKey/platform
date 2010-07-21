@@ -19,7 +19,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.security.permissions.Permission"%>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission"%>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -29,9 +31,6 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -56,9 +55,6 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    ActionURL exportSchemaURL = new ActionURL(StudyController.ExportDatasetSchemaAction.class, context.getContainer());
-    exportSchemaURL.addParameter("datasetId", dataset.getDataSetId());
-
     %><br><%=PageFlowUtil.generateButton("View Data", viewDatasetURL)%><%
     if (study.getTimepointType() != TimepointType.CONTINUOUS)
     {
@@ -67,7 +63,6 @@
     %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL)%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Export Fields", exportSchemaURL)%><%
 }
 if (permissions.contains(UpdatePermission.class))
 {

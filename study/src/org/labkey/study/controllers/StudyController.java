@@ -17,6 +17,7 @@
 package org.labkey.study.controllers;
 
 import gwt.client.org.labkey.study.StudyApplication;
+import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
@@ -80,7 +81,6 @@ import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
-import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.*;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
@@ -97,7 +97,6 @@ import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.writer.SchemaTsvWriter;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
 import org.springframework.validation.BindException;
@@ -1875,26 +1874,6 @@ public class StudyController extends BaseStudyController
                 }
             }
             return root;
-        }
-    }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ExportDatasetSchemaAction extends ExportAction<DataSetForm>
-    {
-        public void export(DataSetForm form, HttpServletResponse response, BindException errors) throws Exception
-        {
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-
-            if (null == def)
-                throw new NotFoundException("Dataset not found");
-
-            response.setContentType("text/tab-separated-values");
-            response.setHeader("Content-disposition", "attachment; filename=\"dataset_schema_" + Math.round(Math.random() * 100000) + ".tsv\"");
-            PrintWriter pw = response.getWriter();
-            SchemaTsvWriter schemaWriter = new SchemaTsvWriter();
-            schemaWriter.writeDatasetSchema(getUser(), Collections.singletonList(def), pw);
-            pw.close();
         }
     }
 
