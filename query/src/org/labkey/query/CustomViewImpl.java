@@ -73,6 +73,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         return _queryDef;
     }
 
+    public void setName(String name)
+    {
+        edit().setName(name);
+    }
+
     static String encodeProperties(List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list)
     {
         StringBuilder ret = new StringBuilder();
@@ -195,6 +200,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
             throw new QueryException("Error", e);
         }
     }
+
     public void delete(User user, HttpServletRequest request) throws QueryException
     {
         try

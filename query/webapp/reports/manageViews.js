@@ -435,9 +435,9 @@ LABKEY.ViewsPanel.prototype = {
             return;
         }
 
-        if (selections[0].data.queryView)
+        if (!selections[0].data.editable)
         {
-            Ext.Msg.alert("Rename Views", "Custom query views cannot be renamed.");
+            Ext.Msg.alert("Rename Views", "This view is not editable.");
             return;
         }
         doEditRecord(button, this.grid, selections[0].data);
@@ -456,8 +456,8 @@ LABKEY.ViewsPanel.prototype = {
                     {text: 'View', disabled : data.runUrl == undefined, handler: function(){window.location = data.runUrl;}},
                     {text: 'Source', disabled : data.editUrl == undefined, handler: function(){window.location = data.editUrl;}},
                         '-',
-                    {text: 'Rename', disabled : (data.inherited || data.queryView), handler: function(){doEditRecord(null, grid, data);}},
-                    {text: 'Delete', disabled : data.inherited, handler: function(){deleteView(grid, data);}}
+                    {text: 'Rename', disabled : (!data.editable || data.inherited), handler: function(){doEditRecord(null, grid, data);}},
+                    {text: 'Delete', disabled : (!data.editable || data.inherited), handler: function(){deleteView(grid, data);}}
                 ]
             });
         }
@@ -606,27 +606,37 @@ function editRecord(button, grid, record, o)
 
 function doEditRecord(button, grid, record)
 {
-    var formPanel = new Ext.FormPanel({
-        bodyStyle:'padding:5px',
-        defaultType: 'textfield',
-        items: [{
-            fieldLabel: 'View Name',
-            name: 'viewName',
-            allowBlank:false,
-            width: 250,
-            value: record.name
-        },{
+    var items = [{
+        fieldLabel: 'View Name',
+        name: 'viewName',
+        allowBlank:false,
+        width: 250,
+        value: record.name
+    }];
+
+    if (!record.queryView)
+    {
+        items[items.length] = {
             fieldLabel: 'Description',
             name: 'description',
             xtype: 'textarea',
             width: 250,
             value: record.description
-        },{
-            name: 'reportId',
-            xtype: 'hidden',
-            value: record.reportId
-        }]
+        }
+    }
+
+    var formPanel = new Ext.FormPanel({
+        bodyStyle:'padding:5px',
+        defaultType: 'textfield',
+        items: items
     });
+
+    var params = [];
+    if (record.queryView)
+        params.push("viewId=" + record.reportId);
+    else
+        params.push("reportId=" + record.reportId);
+
     var win = new Ext.Window({
         title: 'Edit View',
         layout:'form',
@@ -639,7 +649,7 @@ function doEditRecord(button, grid, record)
         buttons: [{
             text: 'Submit',
             id: 'btn_submit',
-            handler: function(){submitForm(win, formPanel, grid);}
+            handler: function(){submitForm(win, formPanel, params, grid);}
         },{
             text: 'Cancel',
             id: 'btn_cancel',
@@ -660,7 +670,7 @@ function doAdvancedEdit(config)
     });
 }
 
-function submitForm(win, panel, grid)
+function submitForm(win, panel, params, grid)
 {
     var items = panel.items;
 
@@ -673,7 +683,7 @@ function submitForm(win, panel, grid)
     }
 
     form.submit({
-        url: LABKEY.ActionURL.buildURL("reports", "manageViewsEditReports"),
+        url: LABKEY.ActionURL.buildURL("reports", "manageViewsEditReports") + '?' + params.join('&'),
         waitMsg:'Submiting Form...',
         method: 'POST',
         success: function(){

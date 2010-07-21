@@ -39,6 +39,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -49,6 +50,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.query.ViewFilterItemImpl;
+import org.labkey.query.controllers.ChooseColumnsForm;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1320,10 +1322,47 @@ public class ReportsController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class ManageViewsEditReportsAction extends ExtFormAction<EditViewsForm>
     {
+        private CustomView _view;
         private Report _report;
 
         @Override
         public void validateForm(EditViewsForm form, Errors errors)
+        {
+            if (form.getViewId() != null)
+                validateEditView(form, errors);
+            else
+                validateEditReport(form, errors);
+        }
+
+        private void validateEditView(EditViewsForm form, Errors errors)
+        {
+            try
+            {
+                QueryForm queryForm = getQueryForm(getViewContext(), form.getViewId());
+                _view = queryForm.getCustomView();
+                if (_view != null)
+                {
+                    ChooseColumnsForm.canEdit(_view, getContainer(), errors);
+
+                    if (_view.getOwner() == null && !getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                        errors.reject(null, "You don't have permission to edit shared views");
+
+                    if (!StringUtils.equals(_view.getName(), form.getViewName()))
+                    {
+                        if (null != QueryService.get().getCustomView(getUser(), getContainer(), _view.getSchemaName(), _view.getQueryName(), form.getViewName()))
+                            errors.rejectValue("viewName", ERROR_MSG, "There is already a view with the name of: " + form.getViewName());
+                    }
+                }
+                else
+                    errors.rejectValue("viewName", ERROR_MSG, "An error occurred saving the view.");
+            }
+            catch (Exception e)
+            {
+                errors.rejectValue("viewName", ERROR_MSG, "An error occurred saving the view.");
+            }
+        }
+
+        private void validateEditReport(EditViewsForm form, Errors errors)
         {
             try {
                 _report = form.getReportId().getReport();
@@ -1351,7 +1390,15 @@ public class ReportsController extends SpringActionController
 
         public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
         {
-            if (_report != null)
+            if (_view != null)
+            {
+                if (!StringUtils.equals(_view.getName(), form.getViewName()))
+                {
+                    _view.setName(form.getViewName());
+                    _view.save(getUser(), getViewContext().getRequest());
+                }
+            }
+            else if (_report != null)
             {
                 boolean doSave = false;
 
@@ -1370,6 +1417,7 @@ public class ReportsController extends SpringActionController
                 if (doSave)
                     ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
             }
+            
             return new ApiSimpleResponse("success", true);
         }
     }
@@ -1377,6 +1425,7 @@ public class ReportsController extends SpringActionController
     static class EditViewsForm
     {
         ReportIdentifier _reportId;
+        String _viewId;
         String _viewName;
         String _description;
 
@@ -1388,6 +1437,16 @@ public class ReportsController extends SpringActionController
         public void setReportId(ReportIdentifier reportId)
         {
             _reportId = reportId;
+        }
+
+        public String getViewId()
+        {
+            return _viewId;
+        }
+
+        public void setViewId(String viewId)
+        {
+            _viewId = viewId;
         }
 
         public String getViewName()
@@ -1442,18 +1501,24 @@ public class ReportsController extends SpringActionController
 
             for (String viewId : _viewId)
             {
-                Map<String, String> map = PageFlowUtil.mapFromQueryString(viewId);
-                QueryForm form = new QueryForm();
-
-                form.setSchemaName(new IdentifierString(map.get(QueryParam.schemaName.name())));
-                form.setQueryName(map.get(QueryParam.queryName.name()));
-                form.setViewName(map.get(QueryParam.viewName.name()));
-                form.setViewContext(context);
-
+                QueryForm form = getQueryForm(context, viewId);
                 forms.add(form);
             }
             return forms;
         }
+    }
+
+    private static QueryForm getQueryForm(ViewContext context, String viewId)
+    {
+        Map<String, String> map = PageFlowUtil.mapFromQueryString(viewId);
+        QueryForm form = new QueryForm();
+
+        form.setSchemaName(new IdentifierString(map.get(QueryParam.schemaName.name())));
+        form.setQueryName(map.get(QueryParam.queryName.name()));
+        form.setViewName(map.get(QueryParam.viewName.name()));
+        form.setViewContext(context);
+
+        return form;
     }
 
     @RequiresPermissionClass(ReadPermission.class)

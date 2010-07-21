@@ -57,6 +57,12 @@ public class ModuleCustomView implements CustomView
         return _customViewDef.getName();
     }
 
+    public void setName(String name)
+    {
+        throw new UnsupportedOperationException("Can't set name on a module-based custom view!");
+    }
+
+
     public User getOwner()
     {
         //module-based reports have no owner

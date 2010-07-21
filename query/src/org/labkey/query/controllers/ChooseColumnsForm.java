@@ -18,6 +18,7 @@ package org.labkey.query.controllers;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
@@ -321,24 +322,29 @@ public class ChooseColumnsForm extends DesignForm
     public boolean canEdit(Errors errors)
     {
         CustomView view = getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), ff_columnListName);
-        if (view != null && view.canInherit())
+        return canEdit(view, getContainer(), errors);
+    }
+
+    public static boolean canEdit(CustomView view, Container c, Errors errors)
+    {
+        if (view != null)
         {
-            if (!getContainer().getId().equals(view.getContainer().getId()))
+            if (view.canInherit())
+            {
+                if (!c.getId().equals(view.getContainer().getId()))
+                {
+                    if (errors != null)
+                        errors.reject(null, "Inherited view '" + (view.getName() == null ? "<default>" : view.getName()) + "' can only be edited from the folder in which it is defined, " + c.getPath());
+                    return false;
+                }
+            }
+
+            if (!view.isEditable())
             {
                 if (errors != null)
-                {
-                    errors.reject(null, "Inherited view '" + (view.getName() == null ? "<default>" : view.getName()) + "' can only be edited from the folder in which it is defined, " + getContainer().getPath());
-                }
+                    errors.reject(null, "The view '" + (view.getName() == null ? "<default>" : view.getName()) + "' is read-only and cannot be edited");
                 return false;
             }
-        }
-        if (view != null && !view.isEditable())
-        {
-            if (errors != null)
-            {
-                errors.reject(null, "The view '" + (view.getName() == null ? "<default>" : view.getName()) + "' is read-only and cannot be edited");
-            }
-            return false;
         }
         return true;
     }
