@@ -33,7 +33,7 @@ import java.util.Map;
  */
 
 // Unsynchronized TTL cache implementation -- only for internal use by other cache implementations.
-public class TTLCacheMap<K, V> extends CacheMap<K, V>
+class TTLCacheMap<K, V> extends CacheMap<K, V>
 {
     private static final Logger LOG = Logger.getLogger(TTLCacheMap.class);
 

@@ -15,8 +15,8 @@
  */
 package org.labkey.api.resource;
 
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.implementation.CacheMap;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Pair;
@@ -31,7 +31,7 @@ import java.util.*;
  */
 public class MergedDirectoryResource extends AbstractResourceCollection
 {
-    private static final CacheMap<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCacheMap(50, "MergedDirectoryResourceCache");
+    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCache(50, CacheManager.DAY, "MergedDirectoryResourceCache");
     private static final long VERSION_STAMP_CACHE_TIME = AppProps.getInstance().isDevMode() ? (15*CacheManager.SECOND) : CacheManager.DEFAULT_TIMEOUT;
 
 
@@ -71,7 +71,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     {
         synchronized (_lock)
         {
-            Pair<Resolver, Path> cacheKey = new Pair(_resolver, getPath());
+            Pair<Resolver, Path> cacheKey = new Pair<Resolver, Path>(_resolver, getPath());
             Map<String, Resource> children = CHILDREN_CACHE.get(cacheKey);
             // Check isStale() first to establish the versionStamp the first time through.
             if (isStale() || null == children)

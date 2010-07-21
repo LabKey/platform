@@ -15,32 +15,31 @@
  */
 package org.labkey.api.webdav;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import org.apache.log4j.Logger;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.implementation.CacheMap;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.services.ServiceRegistry;
-import org.apache.log4j.Logger;
 
 import javax.servlet.ServletContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.net.URL;
-import java.net.MalformedURLException;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 /**
  * Created by IntelliJ IDEA.
@@ -265,7 +264,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
-    private static final CacheMap<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCacheMap(50, "StaticResourceCache");
+    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(50, CacheManager.DAY, "StaticResourceCache");
 
     private class StaticResource extends _PublicResource
     {

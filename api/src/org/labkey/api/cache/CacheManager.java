@@ -19,9 +19,6 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
-import org.labkey.api.cache.implementation.CacheMap;
-import org.labkey.api.cache.implementation.LimitedCacheMap;
-import org.labkey.api.cache.implementation.TTLCacheMap;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -38,7 +35,6 @@ import java.util.List;
 
     - CacheWrapper -> TrackingCacheWrapper?
     - Track expirations
-    - Change remove() to void.
 
  */
 public class CacheManager
@@ -101,11 +97,9 @@ public class CacheManager
             for (Cache cache : KNOWN_CACHES)
                 cache.clear();
         }
-
-        clearAllKnownCacheMaps();
     }
 
-    // We report statistics only for the Cache instances
+    // Return a copy of the KNOWN_CACHES for reporting statistics
     public static List<Cache> getKnownCaches()
     {
         List<Cache> copy = new ArrayList<Cache>();
@@ -127,53 +121,5 @@ public class CacheManager
     public static CacheStats getTransactionCacheStats(Cache cache)
     {
         return new CacheStats(cache.getDebugName(), cache.getTransactionStats(), cache.size(), cache.getLimit());
-    }
-
-
-    // TODO: Migrate all direct usages of cache implementations and delete everything below here
-
-    private static final List<CacheMap> KNOWN_CACHEMAPS = new LinkedList<CacheMap>();
-
-    // We track "permanent" cache maps so memtracker can clear them and admin console can report statistics
-    private static void addToKnownCacheMaps(CacheMap cacheMap)
-    {
-        synchronized (KNOWN_CACHEMAPS)
-        {
-            KNOWN_CACHEMAPS.add(cacheMap);
-        }
-    }
-
-
-    public static void clearAllKnownCacheMaps()
-    {
-        synchronized (KNOWN_CACHEMAPS)
-        {
-            for (CacheMap cache : KNOWN_CACHEMAPS)
-                cache.clear();
-        }
-    }
-
-    @Deprecated
-    public static <K, V> CacheMap<K, V> getCacheMap(int initialSize, String debugName)
-    {
-        CacheMap<K, V> cache = new CacheMap<K, V>(initialSize, debugName);
-        addToKnownCacheMaps(cache);
-        return cache;
-    }
-
-    @Deprecated
-    public static <K, V> CacheMap<K, V> getLimitedCacheMap(int initialSize, int limit, String debugName)
-    {
-        CacheMap<K, V> cache = new LimitedCacheMap<K, V>(initialSize, limit, debugName);
-        addToKnownCacheMaps(cache);
-        return cache;
-    }
-
-    @Deprecated
-    public static <K, V> CacheMap<K, V> getTTLCacheMap(int limit, String debugName)
-    {
-        TTLCacheMap<K, V> cache = new TTLCacheMap<K, V>(limit, debugName);
-        addToKnownCacheMaps(cache);
-        return cache;
     }
 }

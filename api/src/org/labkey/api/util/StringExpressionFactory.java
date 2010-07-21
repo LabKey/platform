@@ -18,8 +18,8 @@ package org.labkey.api.util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.implementation.CacheMap;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
@@ -40,8 +40,8 @@ import java.util.*;
  */
 public class StringExpressionFactory
 {
-    private static CacheMap<String, StringExpression> templates = CacheManager.getLimitedCacheMap(1000, 1000, "StringExpression templates");
-    private static CacheMap<String, StringExpression> templatesUrl = CacheManager.getLimitedCacheMap(1000, 1000, "StringExpression template URLs");
+    private static Cache<String, StringExpression> templates = CacheManager.getCache(1000, CacheManager.DAY, "StringExpression templates");
+    private static Cache<String, StringExpression> templatesUrl = CacheManager.getCache(1000, CacheManager.DAY, "StringExpression template URLs");
 
     public static final StringExpression NULL_STRING = new ConstantStringExpression(null);
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");

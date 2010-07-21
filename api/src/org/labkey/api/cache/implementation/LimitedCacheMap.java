@@ -23,7 +23,8 @@ import java.util.Map;
  * Date: May 19, 2006
  * Time: 6:11:59 AM
  */
-public class LimitedCacheMap<K, V> extends CacheMap<K, V>
+@Deprecated   // Use CacheManager.getCache() with a large TTL (or -1?) instead
+class LimitedCacheMap<K, V> extends CacheMap<K, V>
 {
     private final int _limit;
 

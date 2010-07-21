@@ -27,7 +27,7 @@ import java.util.*;
  * It is intended to be used as a base class for customized caching functionality
  */
 
-public class CacheMap<K, V> extends AbstractMap<K, V>
+class CacheMap<K, V> extends AbstractMap<K, V>
 {
     //
     // Internal implementation of hash table of Map.Entry
