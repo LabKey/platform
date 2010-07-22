@@ -39,13 +39,13 @@ if (model.getIqyURL() != null)
                 <tr>
                     <td valign="center">Export to Excel as:</td>
                     <td valign="center"><input type="radio" id="<%= guid %>" name="excelExportType" value="<%= PageFlowUtil.filter(model.getXlsURL()) %>" checked="true" /></td>
-                    <td valign="center">Standard File (.xls)</td>
+                    <td valign="center"><label for="<%=guid%>">Standard File (.xls)</label></td>
                 </tr>
                 <% if (model.getIqyURL() != null) { %>
                 <tr>
                     <td/>
-                    <td valign="center"><input type="radio" name="excelExportType" value="<%= PageFlowUtil.filter(model.getIqyURL()) %>" /></td>
-                    <td valign="center">Refreshable Web Query (.iqy)</td>
+                    <td valign="center"><input type="radio" id="excelWebQuery" name="excelExportType" value="<%= PageFlowUtil.filter(model.getIqyURL()) %>" /></td>
+                    <td valign="center"><label for="excelWebQuery">Refreshable Web Query (.iqy)</label></td>
                 </tr>
                 <% } %>
             </table>            
