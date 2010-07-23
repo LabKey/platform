@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.query.DetailsURL;
@@ -40,6 +41,8 @@ import java.util.*;
  */
 public class StringExpressionFactory
 {
+    private static final Logger LOG = Logger.getLogger(StringExpressionFactory.class);
+
     private static Cache<String, StringExpression> templates = CacheManager.getCache(1000, CacheManager.DAY, "StringExpression templates");
     private static Cache<String, StringExpression> templatesUrl = CacheManager.getCache(1000, CacheManager.DAY, "StringExpression template URLs");
 
@@ -408,20 +411,19 @@ public class StringExpressionFactory
         {
             key = FieldKey.decode(s);
         }
+
         String getValue(Map map)
         {
             Object value = map.get(key);
 
-            // TODO: Remove all this once we've tested assert.  See #10398
-            {
-                assert null != value : "No replacement value found for FieldKey " + key.toString() + ". Could be a FieldKey vs. alias/column name mismatch.";
-
-                if (null == value && key.getParts().size() == 1)
-                    value = map.get(key.getName());
-            }
+            // See #10398.  MS1Bvt hits this warning -- but perhaps MS1 is intentionally including URL parameter substitutions
+            // whose values can be null.  TODO: Fix cases that cause this warning or remove the warning.
+            if (null == value)
+                LOG.warn("No replacement value found for FieldKey " + key.toString() + ". Could be a FieldKey vs. alias/column name mismatch.");
 
             return PageFlowUtil.encodePath(valueOf(value));
         }
+
         @Override
         public String toString()
         {
