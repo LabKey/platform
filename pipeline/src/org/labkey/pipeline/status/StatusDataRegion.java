@@ -15,17 +15,19 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.data.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipelineStatusManager;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 
 /**
