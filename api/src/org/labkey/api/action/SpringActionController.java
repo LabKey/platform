@@ -351,10 +351,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
-            if (null != errorURL)
-                ExceptionUtil.doErrorRedirect(response, errorURL.toString());
-            throwable = x;
+            handleException(action, request, response, x);
         }
         finally
         {
@@ -364,6 +361,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _actionResolver.addTime(action, System.currentTimeMillis() - startTime);
         }
         return null;
+    }
+
+
+    protected void handleException(Controller action, HttpServletRequest request, HttpServletResponse response, Throwable x)
+    {
+        ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
+        if (null != errorURL)
+            ExceptionUtil.doErrorRedirect(response, errorURL.toString());
     }
 
 
