@@ -114,10 +114,10 @@ public class QueryUnion extends QueryRelation
     {
         if (_unionColumns.isEmpty())
         {
-            List<RelationColumn> all = _termList.get(0).getAllColumns();
-            for (RelationColumn c : all)
+            Map<String,RelationColumn> all = _termList.get(0).getAllColumns();
+            for (Map.Entry<String,RelationColumn> e : all.entrySet())
             {
-                _unionColumns.put(c.getName(), new UnionColumn(c.getName(), c));
+                _unionColumns.put(e.getKey(), new UnionColumn(e.getKey(), e.getValue()));
             }
         }
 
@@ -125,8 +125,8 @@ public class QueryUnion extends QueryRelation
         {
             for (QueryRelation relation : _termList)
             {
-                for (RelationColumn c : relation.getAllColumns())
-                    _allColumns.add(new UnionColumn(c.getName(), c));
+                for (Map.Entry<String,RelationColumn> e  : relation.getAllColumns().entrySet())
+                    _allColumns.add(new UnionColumn(e.getKey(), e.getValue()));
             }
         }
 
@@ -271,10 +271,10 @@ public class QueryUnion extends QueryRelation
     }
 
 
-    protected List<RelationColumn> getAllColumns()
+    protected Map<String,RelationColumn> getAllColumns()
     {
         initColumns();
-        return new ArrayList<RelationColumn>(_unionColumns.values());
+        return new LinkedHashMap<String,RelationColumn>(_unionColumns);
     }
 
 
@@ -322,16 +322,17 @@ public class QueryUnion extends QueryRelation
 
     class UnionColumn extends RelationColumn
     {
-        String _name;
+        FieldKey _name;
         RelationColumn _first;
 
         UnionColumn(String name, RelationColumn col)
         {
-            _name = name;
+            _name = new FieldKey(null, name);
             _first = col;
         }
         
-        public String getName()
+        @Override
+        public FieldKey getFieldKey()
         {
             return _name;
         }

@@ -18,6 +18,8 @@ package org.labkey.query.sql;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -334,6 +336,7 @@ public class Query
         }
         catch (RuntimeException x)
         {
+            Logger.getLogger(Query.class).error("error", x);
             throw Query.wrapRuntimeException(x, _querySource);
         }
     }
@@ -600,8 +603,77 @@ public class Query
 			countColumns = cols;
 			countRows = rows;
 		}
+
+        void validate(Query.TestCase test)
+        {
+            CachedRowSetImpl rs = null;
+            try
+            {
+                rs = test.resultset(sql);
+                ResultSetMetaData md = rs.getMetaData();
+                if (countColumns >= 0)
+                    TestCase.assertEquals(sql, countColumns, md.getColumnCount());
+                if (countRows >= 0)
+                    TestCase.assertEquals(sql, countRows, rs.getSize());
+
+				if (name != null)
+				{
+                    QueryDefinition existing = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", name);
+                    if (null != existing)
+                        existing.delete(TestContext.get().getUser());
+					QueryDefinition q = QueryService.get().createQueryDef(JunitUtil.getTestContainer(), "lists", name);
+					q.setSql(sql);
+					if (null != metadata)
+						q.setMetadataXml(metadata);
+					q.save(TestContext.get().getUser(), JunitUtil.getTestContainer());
+				}
+            }
+            catch (Exception x)
+            {
+                TestCase.fail(x.getMessage() + "\n" + sql);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
     }
 
+
+    static class FailTest extends SqlTest
+    {
+        FailTest(String sql)
+        {
+            super(sql);
+        }
+
+        @Override
+        void validate(Query.TestCase test)
+        {
+            CachedRowSetImpl rs = null;
+            try
+            {
+                rs = (CachedRowSetImpl)QueryService.get().select(test.lists, sql);
+                TestCase.fail("should fail: " + sql);
+            }
+            catch (SQLException x)
+            {
+                // should fail with SQLException not runtime exception
+            }
+            catch (QueryParseException x)
+            {
+                // OK
+            }
+            catch (Exception x)
+            {
+                TestCase.fail("unexpected exception: " + x.toString());
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+    }
 
 
     static int Rcolumns = TestDataLoader.COLUMNS.length + 2; // rowid, entityid
@@ -610,6 +682,7 @@ public class Query
 
     static SqlTest[] tests = new SqlTest[]
     {
+        new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
         new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
@@ -723,13 +796,15 @@ public class Query
 
 	static SqlTest[] negative = new SqlTest[]
 	{
-		new SqlTest("SELECT S.d, S.seven FROM S"),
-		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
-		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
-		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5"),
-        new SqlTest("SELECT * FROM R"),
-        new SqlTest("SELECT SUM(*) FROM R")
+		new FailTest("SELECT S.d, S.seven FROM S"),
+		new FailTest("SELECT S.d, S.seven FROM Folder.S"),
+		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
+		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
+        new FailTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5"),
+        new FailTest("SELECT * FROM R"),
+        new FailTest("SELECT SUM(*) FROM R"),
+        new FailTest("SELECT d FROM R A inner join R B on 1=1"),         // ambiguous
+        new FailTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),  // ambiguous
 	};
 
 
@@ -845,7 +920,7 @@ public class Query
 
 
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-        private CachedRowSetImpl resultset(String sql) throws Exception
+        CachedRowSetImpl resultset(String sql) throws Exception
         {
 			try
 			{
@@ -864,68 +939,6 @@ public class Query
 				return null;
 			}
         }
-
-
-        private void validate(SqlTest test) throws Exception
-        {
-            CachedRowSetImpl rs = null;
-            try
-            {
-                rs = resultset(test.sql);
-                ResultSetMetaData md = rs.getMetaData();
-                if (test.countColumns >= 0)
-                    assertEquals(test.sql, test.countColumns, md.getColumnCount());
-                if (test.countRows >= 0)
-                    assertEquals(test.sql, test.countRows, rs.getSize());
-
-				if (test.name != null)
-				{
-                    QueryDefinition existing = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
-                    if (null != existing)
-                        existing.delete(TestContext.get().getUser());
-					QueryDefinition q = QueryService.get().createQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
-					q.setSql(test.sql);
-					if (null != test.metadata)
-						q.setMetadataXml(test.metadata);
-					q.save(TestContext.get().getUser(), JunitUtil.getTestContainer());
-				}
-            }
-            catch (Exception x)
-            {
-                fail(x.getMessage() + "\n" + test.sql);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
-        }
-
-
-		private void failidate(SqlTest test) throws Exception
-		{
-			CachedRowSetImpl rs = null;
-			try
-			{
-				rs = (CachedRowSetImpl)QueryService.get().select(lists, test.sql);
-				fail("should fail: " + test.sql);
-			}
-			catch (SQLException x)
-			{
-				// should fail with SQLException not runtime exception
-			}
-			catch (QueryParseException x)
-			{
-				// OK
-			}
-			catch (Exception x)
-			{
-				fail("unexpected exception: " + x.toString());
-			}
-			finally
-			{
-				ResultSetUtil.close(rs);
-			}
-		}
 
 
         public void testSQL() throws Exception
@@ -950,7 +963,7 @@ public class Query
             assertNotNull(Sinfo);
 
             // custom tests
-			String sql = "SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
+			String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
             CachedRowSetImpl rs = resultset(sql);
             ResultSetMetaData md = rs.getMetaData();
             assertTrue(sql, 0 < rs.findColumn("d"));
@@ -971,18 +984,18 @@ public class Query
             // simple tests
             for (SqlTest test : tests)
             {
-                validate(test);
+                test.validate(this);
             }
 			if (DefaultSchema.get(user, JunitUtil.getTestContainer()).getSchema("lists").getDbSchema().getSqlDialect().allowSortOnSubqueryWithoutLimit())
 			{
 				for (SqlTest test : postgres)
-					{
-						validate(test);
-					}
+                {
+					test.validate(this);
+                }
 			}
 			for (SqlTest test : negative)
 			{
-				failidate(test);
+				test.validate(this);
 			}
 
             for (SqlTest test : tests)

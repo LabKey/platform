@@ -33,6 +33,9 @@ import java.util.Map;
  * User: matthewb
  * Date: Feb 17, 2009
  * Time: 2:18:05 PM
+ *
+ * A query relation represent a portion of a query with column list.  All columns exported by a relation
+ * must have a one part name.  
  */
 public abstract class QueryRelation
 {
@@ -93,7 +96,12 @@ public abstract class QueryRelation
 
     abstract TableInfo getTableInfo();
 
-    abstract protected List<RelationColumn> getAllColumns();
+    /**
+     * Return a list all the columns it is possible to select from this relation, NOT including lookup columns
+     * These are the columns that will be returned by SELECT *
+     * @return
+     */
+    abstract protected Map<String,RelationColumn> getAllColumns();
 
     abstract @Nullable RelationColumn getColumn(@NotNull String name);
 
@@ -117,10 +125,10 @@ public abstract class QueryRelation
     
 
     /** declare that this FieldKey is referenced somewhere in this query (or subquery) */
-    protected RelationColumn declareField(FieldKey key)
+    protected RelationColumn declareField(FieldKey key, QExpr location)
     {
         if (_parent != null && !_inFromClause)
-            return _parent.declareField(key);
+            return _parent.declareField(key, location);
         return null;
     }
 
@@ -152,7 +160,7 @@ public abstract class QueryRelation
      */
     public abstract static class RelationColumn // implements SqlColumn
     {
-        public abstract String getName();
+        public abstract FieldKey getFieldKey();     // field key does NOT include table name/alias
         abstract String getAlias();
         abstract QueryRelation getTable();
         public abstract int getSqlTypeInt();
@@ -173,6 +181,7 @@ public abstract class QueryRelation
         void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
         }
+
         public ForeignKey getFk()
         {
             return null;
@@ -192,7 +201,8 @@ public abstract class QueryRelation
 
         public RelationColumnInfo(TableInfo parent, RelationColumn column)
         {
-            super(column.getName(), parent);
+            super(column.getFieldKey().getName(), parent);
+            assert null == column.getFieldKey().getParent() : "relation column can't wrap multipart name";
             setAlias(column.getAlias());
             column.copyColumnAttributesTo(this);
             _column = column;

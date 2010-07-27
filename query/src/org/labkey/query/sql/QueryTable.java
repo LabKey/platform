@@ -76,17 +76,17 @@ public class QueryTable extends QueryRelation
     }
 
 
-    protected List<RelationColumn> getAllColumns()
+    protected Map<String,RelationColumn> getAllColumns()
     {
         List<ColumnInfo> columns = _tableInfo.getColumns();
-        ArrayList<RelationColumn> list = new ArrayList<RelationColumn>(columns.size());
+        LinkedHashMap<String,RelationColumn> map = new LinkedHashMap<String,RelationColumn>(columns.size()*2);
         for (ColumnInfo ci : columns)
         {
             RelationColumn r = getColumn(ci.getName());
             assert null != r;
-            list.add(r);
+            map.put(ci.getName(),r);
         }
-        return list;
+        return map;
     }
     
 
@@ -244,9 +244,9 @@ public class QueryTable extends QueryRelation
             return _col.getValueSql(_innerAlias);
         }
 
-        public String getName()
+        public FieldKey getFieldKey()
         {
-            return _alias;
+            return _key;
         }
 
         QueryRelation getTable()

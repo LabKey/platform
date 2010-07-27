@@ -133,15 +133,15 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
-    protected List<RelationColumn> getAllColumns()
+    protected Map<String,RelationColumn> getAllColumns()
     {
-        List<RelationColumn> all = _source.getAllColumns();
-        List<RelationColumn> ret = new ArrayList<RelationColumn>(all.size());
-        for (RelationColumn c : all)
+        Map<String,RelationColumn> all = _source.getAllColumns();
+        Map<String,RelationColumn> ret = new LinkedHashMap<String,RelationColumn>(2*all.size());
+        for (Map.Entry<String,RelationColumn> e : all.entrySet())
         {
-            RelationColumn out = getColumn(c.getName());
+            RelationColumn out = getColumn(e.getKey());
             assert null != out;
-            ret.add(out);
+            ret.put(e.getKey(), out);
         }
         return ret;
     }
@@ -253,20 +253,19 @@ public class QueryLookupWrapper extends QueryRelation
     {
         final QueryRelation _table;
         final FieldKey _key;
-        final String _name;
         final String _alias;
         
         _WrapperColumn(QueryRelation table, FieldKey key, String alias)
         {
             _table = table;
             _key = key;
-            _name = key.getName();
             _alias = alias;
         }
 
-        public String getName()
+        @Override
+        public FieldKey getFieldKey()
         {
-            return _name;
+            return _key;
         }
 
         QueryRelation getTable()
@@ -308,7 +307,7 @@ public class QueryLookupWrapper extends QueryRelation
             if (_fk == null)
             {
                 //noinspection ThrowableInstanceNeverThrown
-                _table._query.getParseErrors().add(new QueryParseException("Could not resolve ForeignKey on column '" + getName() + "'", null, 0, 0));
+                _table._query.getParseErrors().add(new QueryParseException("Could not resolve ForeignKey on column '" + getFieldKey().getName() + "'", null, 0, 0));
             }
             return _fk;
         }

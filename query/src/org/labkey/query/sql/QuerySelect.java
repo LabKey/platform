@@ -189,8 +189,8 @@ public class QuerySelect extends QueryRelation
                             parseError("Can't resolve column: " + node.getSourceText(), node);
                             continue;
                         }
-                        for (RelationColumn tableCol :  r.getAllColumns())
-                            columnList.add(new SelectColumn(new FieldKey(parent,tableCol.getName())));
+                        for (Map.Entry<String,RelationColumn> e :  r.getAllColumns().entrySet())
+                            columnList.add(new SelectColumn(new FieldKey(parent,e.getKey())));
                         continue;
                     }
                 }
@@ -418,33 +418,36 @@ loop:
      * Also, if expr is a child of a QMethodCall, then the FieldKey may refer to a {@link org.labkey.query.sql.Method}
      * or a {@link org.labkey.api.data.TableInfo#getMethod}
      *
+     * CONSIDER: mark method identifiers...
      */
     @Override
     protected QField getField(FieldKey key, QNode expr)
     {
-        QField ret;
-        if (key.getTable() == null)
-        {
-            ret = new QField(null, key.getName(), expr);
-        }
-        else
+        return getField(key, expr, false);
+    }
+
+    private QField getField(FieldKey key, QNode expr, boolean methodName)
+    {
+        if (!methodName)
         {
             RelationColumn column = _declaredFields.get(key);
             if (column != null)
-            {
                 return new QField(column, expr);
-            }
-            else
-            {
-                QueryRelation table = getTable(key.getTable());
-                if (table != null)
-                {
-                    return new QField(table, key.getName(), expr);
-                }
-                return super.getField(key,expr);
-            }
         }
-        return ret;
+
+        if (key.getTable() == null)
+        {
+            return new QField(null, key.getName(), expr);
+        }
+        else
+        {
+            QueryRelation table = getTable(key.getTable());
+            if (table != null)
+            {
+                return new QField(table, key.getName(), expr);
+            }
+            return super.getField(key,expr);
+        }
     }
 
 
@@ -452,31 +455,68 @@ loop:
      * Indicate that a particular ColumnInfo is used by this query.
      */
     @Override
-    protected RelationColumn declareField(FieldKey key)
+    protected RelationColumn declareField(FieldKey declareKey, QExpr location)
     {
-        RelationColumn colTry = _declaredFields.get(key);
+        RelationColumn colTry = _declaredFields.get(declareKey);
         if (colTry != null)
             return colTry;
 
-        List<String> parts = key.getParts();
-        if (parts.size() < 2)
-            return null;
-        QueryRelation table = getTable(new FieldKey(null, parts.get(0)));
-        if (table == null)
+        List<String> parts = declareKey.getParts();
+        QueryRelation table = null;
+        FieldKey tableKey = null;
+        boolean qualified = true;
+
+        if (parts.size() >= 2)
         {
-            return super.declareField(key);
+            tableKey = new FieldKey(null, parts.get(0));
+            table = getTable(tableKey);
+            if (table != null)
+                parts.remove(0);
         }
-        key = FieldKey.fromParts(parts.get(0), parts.get(1));
+
+        if (null == table)
+        {
+            String name = parts.get(0);
+            for (Map.Entry<FieldKey,QueryRelation> e : _tables.entrySet())
+            {
+                if (null != e.getValue().getColumn(name))
+                {
+                    if (null != table)
+                    {
+                        parseError("Ambiguous field: " + name, location);
+                        return null;
+                    }
+                    table = e.getValue();
+                    tableKey = e.getKey();
+                }
+            }
+            if (null == table)
+                return super.declareField(declareKey, location);
+
+            FieldKey fullKey = FieldKey.fromParts(tableKey,declareKey);
+            colTry = _declaredFields.get(fullKey);
+            if (colTry != null)
+            {
+                _declaredFields.put(declareKey, colTry);
+                return colTry;
+            }
+            qualified = false;
+        }
+
+        FieldKey key = new FieldKey(tableKey, parts.get(0));
         RelationColumn colParent = _declaredFields.get(key);
         if (colParent == null)
         {
             RelationColumn relColumn = table.getColumn(key.getName());
             if (relColumn == null)
+            {
+                parseError("Unknown field " + key.getDisplayString(), location);
                 return null;
+            }
             _declaredFields.put(key, relColumn);
             colParent = relColumn;
         }
-        for (int i = 2; i < parts.size(); i ++)
+        for (int i = 1; i < parts.size(); i ++)
         {
             key = new FieldKey(key, parts.get(i));
             RelationColumn nextColumn = _declaredFields.get(key);
@@ -484,12 +524,19 @@ loop:
             {
                 nextColumn = table.getLookupColumn(colParent, key.getName());
                 if (nextColumn == null)
+                {
+                    parseError("Unknown field " + key.getDisplayString(), location);
                     return null;
+                }
 
                 _declaredFields.put(key, nextColumn);
             }
             colParent = nextColumn;
         }
+
+        // if table name was not specified, add the actual requested field as well
+        if (!qualified)
+            _declaredFields.put(declareKey, colParent);
         return colParent;
     }
 
@@ -534,11 +581,8 @@ loop:
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
-            RelationColumn column = declareField(key);
-            if (column == null)
-            {
-                parseError("Unknown field " + key.getDisplayString(), expr);
-            }
+            RelationColumn column = declareField(key, expr);
+            assert null!=column || getParseErrors().size() > 0;
             return;
         }
         for (QNode child : expr.children())
@@ -619,9 +663,26 @@ loop:
             return ret;
         }
 
+        // We need to recognize method call identifiers, so we handle
+        // unqualified column names that are the same as a built-in method.
+        // e.g. SELECT Floor, Floor(1.4) FROM ...
+        QExpr methodName = null;
+        if (expr instanceof QMethodCall)
+        {
+            methodName = (QExpr)expr.childList().get(0);
+            if (null == methodName.getFieldKey())
+                methodName = null;
+        }
+
         QExpr ret = (QExpr) expr.clone();
 		for (QNode child : expr.children())
-            ret.appendChild(resolveFields((QExpr)child, expr));
+        {
+            //
+            if (child == methodName)
+                ret.appendChild(getField(((QExpr)child).getFieldKey(), expr, true));
+            else
+                ret.appendChild(resolveFields((QExpr)child, expr));
+        }
 
         QueryParseException error = ret.fieldCheck(parent);
         if (error != null)
@@ -1010,9 +1071,15 @@ loop:
     }
 
 
-    protected List<RelationColumn> getAllColumns()
+    protected Map<String,RelationColumn> getAllColumns()
     {
-        return new ArrayList<RelationColumn>(_columns.values());
+        LinkedHashMap<String,RelationColumn> ret = new LinkedHashMap<String, RelationColumn>(_columns.size()*2);
+        for (Map.Entry<FieldKey,SelectColumn> e : _columns.entrySet())
+        {
+            if (null == e.getKey().getParent())
+                ret.put(e.getKey().getName(), e.getValue());
+        }
+        return ret;
     }
 
 
@@ -1159,6 +1226,12 @@ loop:
                 return null;
         }
 
+        // QuerySelect always returns one part field key, QueryLookupWrapper handles lookups
+        @Override public FieldKey getFieldKey()
+        {
+            return new FieldKey(null, getName());    
+        }
+
         public String getAlias()
         {
             return _alias;
@@ -1192,15 +1265,9 @@ loop:
             to.copyAttributesFrom(col);
 
             // copy URL if possible
-            FieldKey fk = null != getField() ? getField().getFieldKey() : null;
+            FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)
-            {
-                // need to strip table alias off the front of this fk
-                List<String> parts = fk.getParts();
-                parts.remove(0);
-                fk = FieldKey.fromParts(parts);
                 to.copyURLFromStrict(col, Collections.singletonMap(fk,to.getFieldKey()));
-            }
         }
 
         public void appendSource(SourceBuilder builder)
