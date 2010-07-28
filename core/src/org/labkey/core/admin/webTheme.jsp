@@ -279,7 +279,7 @@ if (null == webThemeErrors)
 <tr>
     <td colspan=2>Choose an existing web theme or define a new one. (<a href="<%=helpLink%>" target="_new">examples...</a>)</td>
 </tr>
-<tr><td colspan=3 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class="labkey-title-area-line"></td></tr>
 <tr>
     <td class="labkey-form-label">Web site theme (color scheme)</td>
     <td>
@@ -386,22 +386,17 @@ if (null == webThemeErrors)
 </tr>
 
 <tr>
-  <td colspan="3">&nbsp;</td>
+  <td colspan="2">&nbsp;</td>
 </tr>
 
 <tr>
-  <td colspan="3" class="labkey-full-screen-background">
-    <table class="labkey-full-screen-table">
-      <tr class="labkey-full-screen-table-panel"><td height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
-      <tr><td class="labkey-wp-body" style="padding: 10px;" align="left" height="100%" valign="top"><div>
-        <table>
-          <tr><td colspan="2">Changes to full-screen color preferences will be displayed here.</td></tr>
-          <tr><td colspan="2">&nbsp;</td></tr>
-        </table>
-      </div></td></tr>
-      <tr class="labkey-full-screen-table-panel"><td height="20"><img src="login_files/_.gif" height="1" width="100%"></td></tr>
-    </table>
-   </td>
+  <td colspan="2" class="labkey-full-screen-background">
+    <div class="labkey-full-screen-table">
+      <div id="dialogBody" class="labkey-dialog-body">
+          Changes to full-screen color preferences will be displayed here.<br>
+      </div>
+    </div>
+  </td>
 </tr>
 </table>
 <!-- end of dialog preview -->

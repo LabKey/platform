@@ -71,7 +71,7 @@
         <td class="labkey-announcement-title" width="20%" align="center"><%=h(a.getCreatedByName(bean.includeGroups, me.getViewContext()))%></td>
         <td class="labkey-announcement-title" width="40%" align="right" nowrap><%=DateUtil.formatDateTime(a.getCreated())%></td>
     </tr>
-    <tr><td colspan=3 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+    <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
     <tr><td colspan=3 class="labkey-force-word-break"><%=a.translateBody(c)%></td></tr>
 <%
     if (a.getAttachments().size() > 0)

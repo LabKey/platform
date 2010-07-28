@@ -47,7 +47,7 @@
 <tr>
     <td colspan=2>Security defaults</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">New folders should inherit permissions by default</td>
     <td><input type="checkbox" name="shouldInherit" size="50" <%= org.labkey.api.security.SecurityManager.shouldNewSubfoldersInheritPermissions(c) ? "checked" : "" %>></td>
@@ -60,7 +60,7 @@
 <tr>
     <td colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">System description (used in emails)</td>
     <td><input type="text" name="systemDescription" size="50" value="<%= h(laf.getDescription()) %>"></td>
@@ -157,7 +157,7 @@ if (AppProps.getInstance().isDevMode())
 <tr>
     <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">System email address (<i>from</i> address for system notification emails)</td>
     <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"></td>

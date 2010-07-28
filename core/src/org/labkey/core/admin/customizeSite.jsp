@@ -121,7 +121,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Set default domain for user sign in and base server url (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">System default domain (default domain for user log in)</td>
     <td><input type="text" id="defaultDomain" name="defaultDomain" size="50" value="<%= h(appProps.getDefaultDomain()) %>"></td>
@@ -139,7 +139,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td colspan=2>Automatically check for updates to LabKey Server and
         report anonymous usage statistics to the LabKey team (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label" valign="top" style="padding-top:2;">Check for updates and report usage to labkey.org.
         All data is transmitted securely over SSL.</td>
@@ -166,7 +166,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Automatically report exceptions to the LabKey team (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label" valign="top">Report exceptions to www.labkey.org. All data is transmitted securely over SSL.</td>
     <td>
@@ -197,7 +197,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Customize LabKey system properties (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Default Life Sciences Identifier (LSID) authority</td>
     <td><input type="text" name="defaultLsidAuthority" size="50" value="<%= h(appProps.getDefaultLsidAuthority()) %>"></td>
@@ -217,7 +217,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>System maintenance (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Perform regular system maintenance</td>
     <td>
@@ -245,7 +245,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Configure SSL (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Require SSL connections (users must connect via SSL)</td>
     <td><input type="checkbox" name="sslRequired" <%=appProps.isSSLRequired() ? "checked" : ""%>></td>
@@ -261,7 +261,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Configure pipeline settings (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Pipeline tools directory</td>
     <td><input type="text" name="pipelineToolsDirectory" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
@@ -356,7 +356,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Configure caBIG&trade; (<%=bean.caBigHelpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Allow publishing folders to caBIG&trade;</td>
     <td><input type="checkbox" name="caBIGEnabled" <%=appProps.isCaBIGEnabled() ? "checked" : ""%>></td>
@@ -367,7 +367,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td colspan=2>Put web site in administrative mode (<%=bean.helpLink%>)</td>
 </tr>
-<tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Admin only mode (only site admins may log in)</td>
     <td><input type="checkbox" name="adminOnlyMode" <%=appProps.isUserRequestedAdminOnlyMode() ? "checked" : ""%>></td>

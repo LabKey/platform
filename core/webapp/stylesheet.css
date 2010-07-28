@@ -32,6 +32,11 @@ body, div, td, th, table, img, form
     margin: 0px;
 }
 
+html, body
+{
+    height: 100%;
+}
+
 img
 {
     border: 0 none;
@@ -612,7 +617,6 @@ span.labkey-help-pop-up
     padding: 30px;
     height: 100%;
     vertical-align: middle;
-    text-align: center;
 }
 
 .labkey-full-screen-table
@@ -621,12 +625,8 @@ span.labkey-help-pop-up
     width: 100%;
     background-color: #FFFFFF;
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-}
-
-td.labkey-full-screen-table-panel, .labkey-full-screen-table-panel
-{
-    background-color: #DDDDDD;
-    height: 20px;
+    border-top: 20px #DDDDDD solid;
+    border-bottom: 20px #DDDDDD solid;
 }
 
 /* Used for the middle part of full-screen pages */
@@ -916,6 +916,7 @@ img.labkey-grid-filter-icon
 /* The body tag for the page */
 #bodyElement
 {
+    height: 100%;
     margin-top:0;
     margin-left:0;
     margin-right:0;
@@ -991,6 +992,11 @@ td.labkey-main-icon
     margin-left: auto;
     margin-right: auto;
     padding: 8px 4px 8px 0px;
+}
+
+td.labkey-main-icon img
+{
+    display: block;
 }
 
 /* The middle of the header panel */
@@ -1137,6 +1143,7 @@ FORM.labkey-search-form
 .labkey-site-nav-expander
 {
     width: 146px;
+    height: 0px;
 }
 
 /* The table that contains the expandable nav panels */
@@ -1259,8 +1266,7 @@ tr.labkey-nav-tree-row:hover
 td.labkey-nav-tree-node
 {
     padding: 0px;
-    padding-top: 0.5em;
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 /* The link in an expandable nav menu */

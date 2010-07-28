@@ -103,7 +103,7 @@ if (bean.perm.allowUpdate(announcement) && !bean.print)
 %>&nbsp;<%=h(DateUtil.formatDateTime(announcement.getCreated()))%></td>
 </tr>
 <tr>
-    <td colspan=3 class="labkey-title-area-line"><img alt="" height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td>
+    <td colspan=3 class="labkey-title-area-line"></td>
 </tr><%
 
 if (settings.hasMemberList() && null != announcement.getEmailList())

@@ -75,7 +75,7 @@ else
                 <%=PageFlowUtil.generateSubmitButton("Make Current")%></form></td></tr><%
         }%>
 
-       <tr><td colspan=2 class="labkey-title-area-line"><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
+       <tr><td colspan=2 class="labkey-title-area-line"></td></tr>
        <tr>
            <td align=left>
                <i>created by:</i> <%=bean.createdBy%><br>

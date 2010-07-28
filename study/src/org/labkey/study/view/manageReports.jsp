@@ -130,7 +130,7 @@
             out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
             out.write(PageFlowUtil.filter(title));
             out.write("</span></td></tr>");
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
+            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
         }
     }
 

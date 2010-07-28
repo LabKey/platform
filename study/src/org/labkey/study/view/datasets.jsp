@@ -88,14 +88,14 @@ int datasetsPerCol = userDatasets.size() / 3;
                 sb.append("<tr><td class=\"labkey-announcement-title\"><span>");
                 sb.append(h(category == null ? "Uncategorized" : category));
                 sb.append("</span></td></tr>\n");
-                sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
+                sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
             }
             else if (null != category)
             {
                 sb.append("<tr><td class=\"labkey-announcement-title\"><span>");
                 sb.append(h(category)).append(" (Continued)");
                 sb.append("</span></td></tr>\n");
-                sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
+                sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
             }
 
             for (DataSet dataSet : datasets.subList(startIndex, endIndex))
@@ -104,7 +104,7 @@ int datasetsPerCol = userDatasets.size() / 3;
                 {
                     category = dataSet.getCategory();
                     sb.append("<tr><td class=\"labkey-announcement-title\"><span>").append(h(category == null ? "Uncategorized" : category)).append("</span></td></tr>\n");
-                    sb.append("<tr><td class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"/labkey/_.gif\"/></td></tr>\n");
+                    sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
                 }
 
                 String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
