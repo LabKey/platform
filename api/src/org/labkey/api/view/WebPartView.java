@@ -513,7 +513,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             if (null != href)
                 out.write("</a>");
             out.write("</span></td></tr>");
-            out.write("<tr><td class=\"labkey-title-area-line\"><img height=1 width=1 src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
+            out.write("<tr><td class=\"labkey-title-area-line\"></td></tr>");
             out.write("<tr><td colspan=3 class=\"" + className + "\">");
         }
         catch (IOException x)

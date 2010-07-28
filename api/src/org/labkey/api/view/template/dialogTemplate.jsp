@@ -30,6 +30,7 @@
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", pageConfig.getFrameOption().name());
 %>
+<!DOCTYPE html>
 <html>
 <head>
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
@@ -47,22 +48,19 @@
         <td><% me.include(me.getView("header"), out); %></td>
     </tr>
     <tr>
-        <td class="labkey-title-area-line"><IMG height=1 alt="" src="<%=contextPath%>/_.gif" width=1></td>
+        <td class="labkey-title-area-line"></td>
     </tr><%
     } %>
     <tr>
         <td class="labkey-full-screen-background">
-            <table class="labkey-full-screen-table">
-                <tr><td class="labkey-full-screen-table-panel"><img src="<%=contextPath%>/_.gif" width=400 height=1></td></tr>
-                <tr>
+            <div class="labkey-full-screen-table">
+                <div id="dialogBody" class="labkey-dialog-body">
                     <script type="text/javascript">
                         LABKEY.requiresClientAPI();
                     </script>
-                    <td id="dialogBody" class="labkey-dialog-body"><% me.include(me.getBody(), out);%>
-
-                    </td></tr>
-                <tr><td class="labkey-full-screen-table-panel">&nbsp;</td></tr>
-            </table>
+                    <% me.include(me.getBody(), out);%>
+                </div>
+            </div>
         </td>
     </tr>
     </table>

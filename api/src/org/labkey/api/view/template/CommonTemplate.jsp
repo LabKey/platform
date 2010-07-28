@@ -41,6 +41,7 @@
     if (bean.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
 %>
+<!DOCTYPE html>
 <html>
 <head>
     <%if (bean.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
@@ -108,7 +109,7 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
             <td id="leftmenupanel" class="labkey-site-nav-panel">
 <%            if (HttpView.currentContext().isShowFolders())
                 {%>
-    		    <img src="<%= request.getContextPath() %>/_.gif" class="labkey-site-nav-expander" height=1><br>
+    		    <div class="labkey-site-nav-expander"></div>
             <%  } %>
                 <% me.include(me.getView("menu") ,out); %>
             </td>

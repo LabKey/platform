@@ -146,7 +146,7 @@ public class ContainerTree
     protected void renderNodeStart(StringBuilder html, Container c, ActionURL url, boolean isAuthorized, int level)
     {
         html.append("<tr><td style=\"padding-left:");
-        html.append(10 * level);
+        html.append(10 * level).append("px");
         html.append("\">");
     }
 
