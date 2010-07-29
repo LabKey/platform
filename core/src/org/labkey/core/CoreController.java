@@ -241,6 +241,7 @@ public class CoreController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public class ThemeStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
