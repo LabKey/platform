@@ -1520,11 +1520,11 @@ public class PageFlowUtil
 
         sb.append("    <link rel=\"shortcut icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
-        sb.append("\" />\n");
+        sb.append("\" >\n");
 
         sb.append("    <link rel=\"icon\" href=\"");
         sb.append(PageFlowUtil.filter(faviconURL));
-        sb.append("\" />\n");
+        sb.append("\" >\n");
 
         return sb;
     }
@@ -1540,25 +1540,25 @@ public class PageFlowUtil
         // Combined CSS
         if (combinedCSS)
         {
-            sb.append("<link href=\"").append(filter(coreUrls.getCombinedStylesheetURL(c))).append("\" type=\"text/css\" rel=\"stylesheet\">\n");
+            sb.append("<link href=\"").append(filter(coreUrls.getCombinedStylesheetURL(c))).append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
         }
         else
         {
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/" + extJsRoot + "/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("/" + extJsRoot + "/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" >\n");
             sb.append("<link href=\"");
             sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/" + extJsRoot + "/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" />\n");
+            sb.append("/" + extJsRoot + "/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" >\n");
 
             ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
             sb.append("<link href=\"");
             sb.append(PageFlowUtil.filter(stylesheetURL));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
 
             sb.append("<link href=\"");
             sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+            sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
@@ -1566,7 +1566,7 @@ public class PageFlowUtil
             {
                 sb.append("<link href=\"");
                 sb.append(PageFlowUtil.filter(rootCustomStylesheetURL));
-                sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+                sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
             }
 
             if (!c.isRoot())
@@ -1577,7 +1577,7 @@ public class PageFlowUtil
                 {
                     sb.append("<link href=\"");
                     sb.append(PageFlowUtil.filter(containerThemeStylesheetURL));
-                    sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+                    sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
                 }
 
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
@@ -1586,7 +1586,7 @@ public class PageFlowUtil
                 {
                     sb.append("<link href=\"");
                     sb.append(PageFlowUtil.filter(containerCustomStylesheetURL));
-                    sb.append("\" type=\"text/css\" rel=\"stylesheet\"/>\n");
+                    sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
                 }
             }
         }
@@ -1594,7 +1594,7 @@ public class PageFlowUtil
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());
         sb.append("<link href=\"");
         sb.append(filter(printStyleURL));
-        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\"/>\n");
+        sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\" >\n");
 
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
