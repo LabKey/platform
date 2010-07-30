@@ -72,6 +72,11 @@
  *          <li><b>url</b>: The URL to navigate to when the button is clicked. You may use LABKEY.ActionURL to build URLs to controller actions.
  *                          Specify this or a handler function, but not both.</li>
  *          <li><b>handler</b>: A reference to the JavaScript function you want called when the button is clicked.</li>
+ *          <li><b>permission</b>: Optional. Permission that the current user must possess to see the button. 
+ *                          Valid options are 'READ', 'INSERT', 'UPDATE', 'DELETE', and 'ADMIN'.
+ *                          Default is 'READ' if permissionClass is not specified.</li>
+ *          <li><b>permissionClass</b>: Optional. If permission (see above) is not specified, the fully qualified Java class
+ *                           name of the permission that the user must possess to view the button.</li>
  *          <li><b>items</b>: To create a drop-down menu button, set this to an array of menu item configurations.
  *                          Each menu item configuration can specify any of the following properties:
  *              <ul>

@@ -106,6 +106,13 @@ LABKEY.Utils = new function()
         */
         displayAjaxErrorResponse: function(responseObj, exceptionObj)
         {
+            if (responseObj.status == 0)
+            {
+                // Don't show an error dialog if the user cancelled the request in the browser, like navigating
+                // to another page
+                return;
+
+            }
             var error;
             if (responseObj &&
                 responseObj.responseText &&
@@ -292,12 +299,24 @@ LABKEY.Utils.convertToExcel(
                     json = Ext.util.JSON.decode(response.responseText);
 
                 if(!json && isErrorCallback)
-                    json = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
+                {
+                    json = new Object();
+                }
+
+                if (!json.exception && isErrorCallback)
+                {
+                    // Try to make sure we don't show an empty error message
+                    json.exception = (response && response.statusText ? response.statusText : "Communication failure.");
+                }
 
                 if(fn)
                     fn.call(scope || this, json, response, options);
-                else if(isErrorCallback)
+                else if(isErrorCallback && response.status != 0)
+                {
+                    // Don't show an error dialog if the user cancelled the request in the browser, like navigating
+                    // to another page
                     Ext.Msg.alert("Error", json.exception);
+                }
             };
         },
 

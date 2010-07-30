@@ -99,80 +99,96 @@ public class JsonWriter
         JSONObject ext = new JSONObject();
         props.put("ext",ext);
 
-        props.put("name", (null != fieldKeyPrefix ? FieldKey.fromString(fieldKeyPrefix, cinfo.getName()) : cinfo.getName()));
-        if (null != cinfo.getDescription())
+        // Some DisplayColumns aren't backed by a ColumnInfo, so handle null when determining metadata
+        String name = cinfo == null ? dc.getName() : cinfo.getName();
+        props.put("name", (null != fieldKeyPrefix ? FieldKey.fromString(fieldKeyPrefix, name) : name));
+        if (cinfo != null && null != cinfo.getDescription())
             props.put("description", cinfo.getDescription());
 
-        props.put("friendlyType", cinfo.getFriendlyTypeName());
-        props.put("type", useFriendlyAsType ? cinfo.getFriendlyTypeName() : dc.getJsonTypeName());
+        String friendlyTypeName = cinfo == null ? ColumnInfo.getFriendlyTypeName(dc.getDisplayValueClass()) : cinfo.getFriendlyTypeName();
+        props.put("friendlyType", friendlyTypeName);
+        props.put("type", useFriendlyAsType ? friendlyTypeName : dc.getJsonTypeName());
         props.put("jsonType", dc.getJsonTypeName());
 
-        if (null != cinfo.getFieldKey())
+        if (cinfo != null && null != cinfo.getFieldKey())
             props.put("fieldKey", cinfo.getFieldKey().toString());
 
         // Duplicate booleans with alternate property name for backwards compatibility
-        props.put("isAutoIncrement", cinfo.isAutoIncrement());
-        props.put("autoIncrement", cinfo.isAutoIncrement());
-        props.put("isHidden", cinfo.isHidden());
-        props.put("hidden", cinfo.isHidden());
-        props.put("isKeyField", cinfo.isKeyField());
-        props.put("keyField", cinfo.isKeyField());
-        props.put("isMvEnabled", cinfo.isMvEnabled());
-        props.put("mvEnabled", cinfo.isMvEnabled());
-        props.put("isNullable", cinfo.isNullable());
-        props.put("nullable", cinfo.isNullable());
-        props.put("isReadOnly", cinfo.isReadOnly());
-        props.put("readOnly", cinfo.isReadOnly());
-        props.put("isUserEditable", cinfo.isUserEditable());
-        props.put("userEditable", cinfo.isUserEditable());
-        props.put("isVersionField", cinfo.isVersionColumn());
-        props.put("versionField", cinfo.isVersionColumn());
-        props.put("isSelectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
-        props.put("selectable", !cinfo.isUnselectable()); //avoid double-negative boolean name
+        boolean autoIncrement = cinfo != null && cinfo.isAutoIncrement();
+        props.put("isAutoIncrement", autoIncrement);
+        props.put("autoIncrement", autoIncrement);
+        boolean hidden = cinfo != null && cinfo.isHidden();
+        props.put("isHidden", hidden);
+        props.put("hidden", hidden);
+        boolean keyField = cinfo != null && cinfo.isKeyField();
+        props.put("isKeyField", keyField);
+        props.put("keyField", keyField);
+        boolean mvEnabled = cinfo != null && cinfo.isMvEnabled();
+        props.put("isMvEnabled", mvEnabled);
+        props.put("mvEnabled", mvEnabled);
+        boolean nullable = cinfo != null && cinfo.isNullable();
+        props.put("isNullable", nullable);
+        props.put("nullable", nullable);
+        boolean readOnly = cinfo != null && cinfo.isReadOnly();
+        props.put("isReadOnly", readOnly);
+        props.put("readOnly", readOnly);
+        boolean userEditable = cinfo != null && cinfo.isUserEditable();
+        props.put("isUserEditable", userEditable);
+        props.put("userEditable", userEditable);
+        boolean versionColumn = cinfo != null && cinfo.isVersionColumn();
+        props.put("isVersionField", versionColumn);
+        props.put("versionField", versionColumn);
+        boolean selectable = cinfo != null && !cinfo.isUnselectable();
+        props.put("isSelectable", selectable); //avoid double-negative boolean name
+        props.put("selectable", selectable); //avoid double-negative boolean name
 
         // These fields are new and don't need to have the "is" prefix for backwards compatibility
-        props.put("shownInInsertView", cinfo.isShownInInsertView());
-        props.put("shownInUpdateView", cinfo.isShownInUpdateView());
-        props.put("shownInDetailsView", cinfo.isShownInDetailsView());
+        props.put("shownInInsertView", cinfo != null && cinfo.isShownInInsertView());
+        props.put("shownInUpdateView", cinfo != null && cinfo.isShownInUpdateView());
+        props.put("shownInDetailsView", cinfo == null || cinfo.isShownInDetailsView());
 
-        if (!cinfo.getImportAliasesSet().isEmpty())
+        if (cinfo != null)
         {
-            props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasesSet()));
-        }
 
-        if (cinfo.getTsvFormatString() != null)
-        {
-            props.put("tsvFormat", cinfo.getTsvFormatString());
-        }
-        if (cinfo.getFormat() != null)
-        {
-            props.put("format", cinfo.getTsvFormatString());
-        }
-        if (cinfo.getExcelFormatString() != null)
-        {
-            props.put("excelFormat", cinfo.getExcelFormatString());
-        }
-
-        props.put("inputType", cinfo.getInputType());
-        // UNDONE ext info for other field typesxtype: checkbox, combo, datefield, field, hidden, htmleditor, numberfield, radio, textarea, textfield, timefield
-        //fmdata.put("xtype","");
-        if ("textarea".equals(cinfo.getInputType()))
-        {
-            if (dc instanceof DataColumn)
+            if (!cinfo.getImportAliasesSet().isEmpty())
             {
-                int cols = ((DataColumn)dc).getInputLength();
-                if (cols > 0)
-                    props.put("cols", Math.min(1000,cols));
-                int rows = ((DataColumn)dc).getInputRows();
-                if (rows > 0)
-                    props.put("rows", Math.min(1000,rows));
+                props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasesSet()));
             }
-            ext.put("xtype","textarea");
+
+            if (cinfo.getTsvFormatString() != null)
+            {
+                props.put("tsvFormat", cinfo.getTsvFormatString());
+            }
+            if (cinfo.getFormat() != null)
+            {
+                props.put("format", cinfo.getTsvFormatString());
+            }
+            if (cinfo.getExcelFormatString() != null)
+            {
+                props.put("excelFormat", cinfo.getExcelFormatString());
+            }
+
+            props.put("inputType", cinfo.getInputType());
+            // UNDONE ext info for other field typesxtype: checkbox, combo, datefield, field, hidden, htmleditor, numberfield, radio, textarea, textfield, timefield
+            //fmdata.put("xtype","");
+            if ("textarea".equals(cinfo.getInputType()))
+            {
+                if (dc instanceof DataColumn)
+                {
+                    int cols = ((DataColumn)dc).getInputLength();
+                    if (cols > 0)
+                        props.put("cols", Math.min(1000,cols));
+                    int rows = ((DataColumn)dc).getInputRows();
+                    if (rows > 0)
+                        props.put("rows", Math.min(1000,rows));
+                }
+                ext.put("xtype","textarea");
+            }
         }
 
         props.put("caption", dc.getCaption());
 
-        if (includeLookup)
+        if (includeLookup && cinfo != null)
         {
             Map<String, Object> lookupJSON = getLookupInfo(cinfo);
             if (lookupJSON != null)

@@ -50,8 +50,4 @@ public class UrlColumn extends SimpleDisplayColumn
             out.write("</a>]");
         }
     }
-
-    public void addQueryColumns(Set<ColumnInfo> set)
-    {
-    }
 }

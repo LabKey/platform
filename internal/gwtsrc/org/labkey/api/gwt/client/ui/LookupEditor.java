@@ -16,6 +16,8 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
@@ -126,9 +128,9 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         FlexTable buttonTable = new FlexTable();
         int buttonIndex = 0;
 
-        ImageButton clear = new ImageButton("Clear", new ClickListener()
+        ImageButton clear = new ImageButton("Clear", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 if (_txtContainer != null)
                 {
@@ -141,9 +143,9 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         });
         buttonTable.setWidget(row, buttonIndex++, clear);
 
-        ImageButton cancel = new ImageButton("Cancel", new ClickListener()
+        ImageButton cancel = new ImageButton("Cancel", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 _pd = null;
                 LookupEditor.this.hide();
@@ -151,9 +153,9 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         });
         buttonTable.setWidget(row, buttonIndex++, cancel);
 
-        ImageButton close = new ImageButton("Close", new ClickListener()
+        ImageButton close = new ImageButton("Close", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 LookupEditor.this.hide();
             }
@@ -399,7 +401,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
         return _tableName.getString();
     }
 
-    private class PopupList extends PopupPanel implements ChangeListener
+    private class PopupList extends PopupPanel implements ChangeHandler
     {
         IPropertyWrapper _prop;
         ListBox _list = new ListBox();
@@ -414,7 +416,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             for (int i=0; i<values.size(); i++)
                 _list.addItem(items.get(i), values.get(i));
 
-            _list.addChangeListener(this);
+            _list.addChangeHandler(this);
             _list.setVisibleItemCount(10);
             _list.setWidth("200px");
             setWidget(_list);
@@ -444,7 +446,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             return _value;
         }
 
-        public void onChange(Widget sender)
+        public void onChange(ChangeEvent e)
         {
             _value = _list.getValue(_list.getSelectedIndex());
             hide();

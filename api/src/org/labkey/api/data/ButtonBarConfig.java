@@ -16,12 +16,15 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.ButtonBarItem;
 import org.labkey.data.xml.ButtonBarOptions;
 import org.labkey.data.xml.ButtonMenuItem;
+import org.labkey.data.xml.PermissionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +46,8 @@ public class ButtonBarConfig
     private List<ButtonConfig> _items = new ArrayList<ButtonConfig>();
     private boolean _includeStandardButtons = false;
     private String[] _scriptIncludes;
+
+    private static final Logger LOG = Logger.getLogger(ButtonBarConfig.class);
 
     public ButtonBarConfig()
     {
@@ -75,6 +80,35 @@ public class ButtonBarConfig
                         BeanUtils.populate(button, obj);
                     }
                     catch (Exception ignore) {}
+
+                    String permissionString = obj.getString("permission");
+
+                    if ("READ".equalsIgnoreCase(permissionString))
+                    {
+                        button.setPermission(ReadPermission.class);
+                    }
+                    else if ("INSERT".equalsIgnoreCase(permissionString))
+                    {
+                        button.setPermission(InsertPermission.class);
+                    }
+                    else if ("UPDATE".equalsIgnoreCase(permissionString))
+                    {
+                        button.setPermission(UpdatePermission.class);
+                    }
+                    else if ("DELETE".equalsIgnoreCase(permissionString))
+                    {
+                        button.setPermission(DeletePermission.class);
+                    }
+                    else if ("ADMIN".equalsIgnoreCase(permissionString))
+                    {
+                        button.setPermission(AdminPermission.class);
+                    }
+                    else if (json.getString("permissionClass") != null)
+                    {
+                        // permission has precedence, but if it's not specified look at permissionClass instead
+                        setPermissionClass(button, json.getString("permissionClass"));
+                    }
+
 
                     //if the object has an "items" prop, load those as NavTree
                     //items recursively (for menu buttons)
@@ -131,6 +165,32 @@ public class ButtonBarConfig
             buttonConfig.setOnClick(item.getOnClick());
             buttonConfig.setRequiresSelection(item.getRequiresSelection());
 
+            if (item.getPermission() == PermissionType.READ)
+            {
+                buttonConfig.setPermission(ReadPermission.class);
+            }
+            else if (item.getPermission() == PermissionType.INSERT)
+            {
+                buttonConfig.setPermission(InsertPermission.class);
+            }
+            else if (item.getPermission() == PermissionType.UPDATE)
+            {
+                buttonConfig.setPermission(UpdatePermission.class);
+            }
+            else if (item.getPermission() == PermissionType.DELETE)
+            {
+                buttonConfig.setPermission(DeletePermission.class);
+            }
+            else if (item.getPermission() == PermissionType.ADMIN)
+            {
+                buttonConfig.setPermission(AdminPermission.class);
+            }
+            else if (item.getPermissionClass() != null)
+            {
+                // permission has precedence, but if it's not specified look at permissionClass instead
+                setPermissionClass(buttonConfig, item.getPermissionClass());
+            }
+
             ButtonMenuItem[] subItems = item.getItemArray();
             if (subItems != null && subItems.length > 0)
             {
@@ -140,6 +200,26 @@ public class ButtonBarConfig
                 buttonConfig.setMenuItems(menuItems);
             }
             return buttonConfig;
+        }
+    }
+
+    private void setPermissionClass(UserDefinedButtonConfig buttonConfig, String permissionClassName)
+    {
+        try
+        {
+            Class c = Class.forName(permissionClassName);
+            if (Permission.class.isAssignableFrom(c))
+            {
+                buttonConfig.setPermission((Class<? extends Permission>)c);
+            }
+            else
+            {
+                LOG.warn("Resolved class " + permissionClassName + " but it was not of the expected type, " + Permission.class);
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            LOG.warn("Could not find permission class " + permissionClassName);
         }
     }
 

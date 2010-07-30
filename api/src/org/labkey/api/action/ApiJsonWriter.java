@@ -109,7 +109,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             getResponse().setStatus(500);
 
         JSONObject jsonObj = new JSONObject();
-        jsonObj.put("exception", e.getMessage());
+        jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
         jsonObj.put("exceptionClass", e.getClass().getName());
         jsonObj.put("stackTrace", e.getStackTrace());
 

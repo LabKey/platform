@@ -90,7 +90,7 @@ LABKEY.Pipeline = new function(){
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
                     if(config.successCallback)
                         config.successCallback(data.protocols, data.defaultProtocolName, response);
-                }, this),
+                }, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
@@ -136,7 +136,7 @@ LABKEY.Pipeline = new function(){
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
                     if(config.successCallback)
                         config.successCallback(data.files, data.submitType, response);
-                }, this),
+                }, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },

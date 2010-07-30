@@ -15,20 +15,14 @@
  */
 package org.labkey.api.data;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,6 +42,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
     private String _onClick;
     private ActionButton.Action _action;
     private boolean _requiresSelection = false;
+    /** Permission that a user must have in order to see the button */
+    private Class<? extends Permission> _permission;
     private List<NavTree> _menuItems;
 
     public String getText()
@@ -105,6 +101,16 @@ public class UserDefinedButtonConfig implements ButtonConfig
         _requiresSelection = requiresSelection;
     }
 
+    public Class<? extends Permission> getPermission()
+    {
+        return _permission;
+    }
+
+    public void setPermission(Class<? extends Permission> permission)
+    {
+        _permission = permission;
+    }
+
     private String processURL(RenderContext ctx, String url)
     {
         StringExpression urlExpr = StringExpressionFactory.createURL(url);
@@ -150,6 +156,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
                 btn.addMenuItem(toAdd);
             }
             btn.setRequiresSelection(_requiresSelection);
+            btn.setDisplayPermission(_permission);
             return btn;
         }
         else
@@ -158,6 +165,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
             // a button with only an onClick handler.
             ActionButton btn = new ActionButton();
             btn.setCaption(_text);
+            btn.setDisplayPermission(_permission);
             btn.setURL(_url != null ? processURL(ctx, _url) : "#");
             if (null != _onClick)
                 btn.setScript(getWrappedOnClick(ctx, _onClick), false);

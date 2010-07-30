@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 
 /**
@@ -35,9 +37,9 @@ public class SaveButtonBar extends HorizontalPanel
         super();
         owner = s;
 
-        finishButton = new ImageButton("Save & Close", new ClickListener()
+        finishButton = new ImageButton("Save & Close", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 owner.finish();
             }
@@ -45,9 +47,9 @@ public class SaveButtonBar extends HorizontalPanel
 
         add(finishButton);
 
-        saveButton = new ImageButton("Save", new ClickListener()
+        saveButton = new ImageButton("Save", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 owner.save();
             }
@@ -55,9 +57,9 @@ public class SaveButtonBar extends HorizontalPanel
         add(saveButton);
 
 
-        cancelButton = new ImageButton("Cancel", new ClickListener()
+        cancelButton = new ImageButton("Cancel", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 owner.cancel();
             }
