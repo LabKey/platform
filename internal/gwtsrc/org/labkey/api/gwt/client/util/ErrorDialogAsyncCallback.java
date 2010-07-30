@@ -76,6 +76,17 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
                     break;
             }
         }
+        else
+        {
+            // We really want to be able to check for instances of
+            // com.google.gwt.core.client.impl.AsyncFragmentLoader.HttpDownloadFailure
+            // and treat them like StatusCodeExceptions, but it's a private class so just do a string check for the
+            // abort case
+            if ("HTTP download failed with status 0".equals(caught.getMessage()))
+            {
+                return;
+            }
+        }
         if (message == null)
         {
             message = caught.getMessage() == null || caught.getMessage().trim().equals("") ? caught.toString() : caught.getMessage();
