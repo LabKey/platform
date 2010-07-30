@@ -180,50 +180,6 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
-    private static class ListDetailsColumn extends DetailsColumn
-    {
-        private ColumnInfo _containerId;
-        private ColumnInfo _rowId;
-
-        public ListDetailsColumn(ColumnInfo rowId, ColumnInfo containerId)
-        {
-            super(null);
-
-            _rowId = rowId;
-            _containerId = containerId;
-        }
-
-        @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Integer id = (Integer)ctx.get("RowId");
-            if (id != null)
-            {
-                AuditLogEvent event = AuditLogService.get().getEvent(id);
-                if (event != null && event.getLsid() != null)
-                {
-                    super.renderGridCellContents(ctx, out);
-                    return;
-                }
-            }
-            out.write("&nbsp;");
-        }
-
-        @Override
-        public String renderURL(RenderContext ctx)
-        {
-            Integer id = (Integer)ctx.get("RowId");
-            return new ActionURL(ListController.HistoryDetailAction.class, ctx.getContainer()).addParameter("eventId", id).getLocalURIString();
-        }
-
-        @Override
-        public void addQueryColumns(Set<ColumnInfo> set)
-        {
-            set.add(_containerId);
-            set.add(_rowId);
-        }
-    }
-
     private static class ListItemDetailsColumn extends DetailsColumn
     {
         private Map<String, ColumnInfo> _columns;

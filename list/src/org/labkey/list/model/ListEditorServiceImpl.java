@@ -167,7 +167,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             throw new UnauthorizedException();
 
         DbScope scope = ListManager.get().getSchema().getScope();
-        
+
         ListDef def = ListManager.get().getList(getContainer(), list.getListId());
         if (def.getDomainId() != orig.getDomainId() || def.getDomainId() != dd.getDomainId() || !orig.getDomainURI().equals(dd.getDomainURI()))
             throw new IllegalArgumentException();
@@ -195,7 +195,11 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             try
             {
-                super.updateDomainDescriptor(orig, dd);
+                List<String> errors = super.updateDomainDescriptor(orig, dd);
+                if (errors != null && !errors.isEmpty())
+                {
+                    return errors;
+                }
             }
             catch (ChangePropertyDescriptorException e)
             {
