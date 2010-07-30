@@ -87,7 +87,7 @@
     // If we're using automatic assignment, the user can't alter the specific assignments,
     // but we want to show a read-only view of them
     %>
-    <table>
+    <table id="participant-cohort-assignments">
         <tr>
             <th><%= h(StudyService.get().getSubjectColumnName(getViewContext().getContainer())) %></th>
             <th>Current Cohort</th>
