@@ -2162,9 +2162,7 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
-                QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
-                qs.setSchemaName(querySchema.getSchemaName());
-                qs.setQueryName(def.getLabel());
+                QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
 
                 if (!def.canRead(getUser()))
                 {
@@ -2676,9 +2674,7 @@ public class StudyController extends BaseStudyController
                     return Collections.emptyList();
             }
             StudyQuerySchema querySchema = new StudyQuerySchema(study, context.getUser(), true);
-            QuerySettings qs = new QuerySettings(context, DataSetQueryView.DATAREGION);
-            qs.setSchemaName(querySchema.getSchemaName());
-            qs.setQueryName(def.getLabel());
+            QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
             qs.setViewName(viewName);
             DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, visit, cohortFilter, qcStateSet);
 

@@ -34,6 +34,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -190,9 +191,8 @@ public class AssayManager implements AssayService.Interface
     public WebPartView createAssayListView(ViewContext context, boolean portalView)
     {
         String name = "AssayList";
-        QuerySettings settings = new QuerySettings(context, name);
-        settings.setSchemaName(AssaySchema.NAME);
-        settings.setQueryName(name);
+        UserSchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
+        QuerySettings settings = schema.getSettings(context, name, name);
         QueryView queryView;
         if (portalView)
             queryView = new AssayListPortalView(context, settings);

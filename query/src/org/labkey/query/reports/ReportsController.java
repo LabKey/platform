@@ -1195,8 +1195,8 @@ public class ReportsController extends SpringActionController
                 baseItemMap.put(item, item);
         }
 
-        QuerySettings settings = new QuerySettings(getViewContext(), null, form.getQueryName());
-        settings.setSchemaName(form.getSchemaName());
+        UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), form.getSchemaName());
+        QuerySettings settings = schema.getSettings(getViewContext(), null, form.getQueryName());
 
         // build the list available view types by combining the available types and the built in item filter types
         for (ReportService.UIProvider provider : ReportService.get().getUIProviders())

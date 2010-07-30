@@ -154,9 +154,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenRequest";
-        QuerySettings qs = new QuerySettings(context, queryName);
-        qs.setSchemaName(schema.getSchemaName());
-        qs.setQueryName(queryName);
+        QuerySettings qs = schema.getSettings(context, queryName, queryName);
         return new SpecimenRequestQueryView(context, schema, qs, addFilterClauses(context, filter), createDefaultSort());
     }
     

@@ -226,9 +226,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
     public GWTChartRenderer[] getChartRenderers(GWTChart chart)
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
-        QuerySettings qs = new QuerySettings(_context, null);
-        qs.setSchemaName(schema.getSchemaName());
-        qs.setQueryName(chart.getQueryName());
+        QuerySettings qs = schema.getSettings(_context, null, chart.getQueryName());
         qs.setViewName(chart.getViewName());
 
         QueryView view = new QueryView(schema, qs, null);

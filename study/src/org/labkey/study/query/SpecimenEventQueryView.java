@@ -45,9 +45,7 @@ public class SpecimenEventQueryView extends BaseStudyQueryView
         StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
         StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
         String queryName = "SpecimenEvent";
-        QuerySettings qs = new QuerySettings(context, queryName);
-        qs.setSchemaName(schema.getSchemaName());
-        qs.setQueryName(queryName);
+        QuerySettings qs = schema.getSettings(context, queryName, queryName);
         SimpleFilter filter = new SimpleFilter("VialId", specimen.getRowId());
         Sort sort = new Sort("-ShipDate");
         return new SpecimenEventQueryView(context, schema, qs, filter, sort);

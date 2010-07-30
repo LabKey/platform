@@ -84,7 +84,7 @@ public class RunGroupWebPart extends QueryView
 
     private QuerySettings createQuerySettings(ViewContext portalCtx, String dataRegionName)
     {
-        QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
+        QuerySettings settings = getSchema().getSettings(portalCtx, dataRegionName);
         settings.setSchemaName(getSchema().getSchemaName());
         settings.setAllowChooseQuery(false);
         if (_narrow)

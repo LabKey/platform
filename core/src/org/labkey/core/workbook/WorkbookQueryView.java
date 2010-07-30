@@ -40,9 +40,7 @@ public class WorkbookQueryView extends QueryView
     {
         super(schema);
 
-        QuerySettings settings = new QuerySettings(ctx, QueryView.DATAREGIONNAME_DEFAULT);
-        settings.setSchemaName(schema.getSchemaName());
-        settings.setQueryName(CoreQuerySchema.WORKBOOKS_TABLE_NAME);
+        QuerySettings settings = schema.getSettings(ctx, QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.WORKBOOKS_TABLE_NAME);
         settings.setAllowChooseQuery(false);
         //settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
         setSettings(settings);

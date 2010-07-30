@@ -139,17 +139,16 @@ public class CBCAssayController extends SpringActionController
             _protocol = form.getProtocol(true);
             int runId = form.getRunId();
 
+            AssaySchema schema = AssayService.get().createSchema(form.getUser(), form.getContainer());
+
             String name = AssayService.get().getResultsTableName(_protocol);
-            QuerySettings settings = new QuerySettings(form.getViewContext(), name); //provider.getResultsQuerySettings();
-            settings.setSchemaName(AssaySchema.NAME);
-            settings.setQueryName(name);
+            QuerySettings settings = schema.getSettings(form.getViewContext(), name); //provider.getResultsQuerySettings();
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
             settings.setMaxRows(0);
             settings.setShowRows(ShowRows.ALL);
 
-            AssaySchema schema = AssayService.get().createSchema(form.getUser(), form.getContainer());
             EditResultsQueryView queryView = new EditResultsQueryView(_protocol, schema, settings, runId, form.getReturnURL());
             queryView.setShowDetailsColumn(false);
             queryView.setShowExportButtons(false);

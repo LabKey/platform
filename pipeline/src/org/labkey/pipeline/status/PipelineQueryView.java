@@ -45,7 +45,8 @@ public class PipelineQueryView extends QueryView
 
     public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ApiAction> apiAction, boolean minimal)
     {
-        super(new PipelineQuerySchema(context.getUser(), context.getContainer()), new QuerySettings(context, "StatusFiles", "job"), errors);
+        super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
+        setSettings(createSettings(context));
         _minimal = minimal;
         getSettings().setAllowChooseQuery(false);
         _context = context;
@@ -57,6 +58,11 @@ public class PipelineQueryView extends QueryView
         setButtonBarPosition(minimal ? DataRegion.ButtonBarPosition.TOP : DataRegion.ButtonBarPosition.BOTH);
 
         setShowRecordSelectors(!minimal && (getContainer().hasPermission(getUser(), UpdatePermission.class) || getContainer().isRoot()));
+    }
+
+    private QuerySettings createSettings(ViewContext context)
+    {
+        return getSchema().getSettings(context, "StatusFiles", "job");
     }
 
     @Override

@@ -324,10 +324,9 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     QuerySettings getResultsQuerySettings(ViewContext context, ExpProtocol protocol)
     {
+        AssaySchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
         String name = AssayService.get().getResultsTableName(protocol);
-        QuerySettings settings = new QuerySettings(context, name);
-        settings.setSchemaName(AssaySchema.NAME);
-        settings.setQueryName(name);
+        QuerySettings settings = schema.getSettings(context, name);
         return settings;
     }
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -66,14 +67,13 @@ public class SampleSetWebPart extends QueryView
 
     private QuerySettings createQuerySettings(ViewContext portalCtx, String dataRegionName)
     {
-        QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
-        settings.setSchemaName(getSchema().getSchemaName());
+        UserSchema schema = getSchema();
+        QuerySettings settings = schema.getSettings(portalCtx, dataRegionName, ExpSchema.TableType.SampleSets.toString());
         settings.setAllowChooseQuery(false);
         if (_narrow)
         {
             settings.setViewName("NameOnly");
         }
-        settings.setQueryName(ExpSchema.TableType.SampleSets.toString());
         if (settings.getContainerFilterName() == null)
         {
             settings.setContainerFilterName(ContainerFilter.CurrentPlusProjectAndShared.class.getSimpleName());

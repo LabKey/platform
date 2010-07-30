@@ -70,9 +70,7 @@ public class ReportQueryViewFactory
         StudyQuerySchema schema = getStudyQuerySchema(context, ReadPermission.class, descriptor);
         if (schema != null)
         {
-            QuerySettings settings = new QuerySettings(context, descriptor.getProperty(QueryParam.dataRegionName.toString()));
-            settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName(queryName);
+            QuerySettings settings = schema.getSettings(context, descriptor.getProperty(QueryParam.dataRegionName.toString()), queryName);
             settings.setViewName(viewName);
             // need to reset the report id since we want to render the data grid, not the report
             settings.setReportId(null);

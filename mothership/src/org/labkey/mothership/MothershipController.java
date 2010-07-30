@@ -139,13 +139,11 @@ public class MothershipController extends SpringActionController
             HtmlView linkView = new HtmlView(getLinkBarHTML());
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "softwareReleases");
-            settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-SVNRevision");
             
-            QueryView queryView = new QueryView(schema, settings, errors);
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
 
             return new VBox(linkView, queryView);
         }
@@ -346,13 +344,11 @@ public class MothershipController extends SpringActionController
             HtmlView linkView = new HtmlView(getLinkBarHTML());
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionSummary");
-            settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName(MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), "ExceptionSummary", MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-ExceptionStackTraceId");
 
-            QueryView queryView = new QueryView(schema, settings, errors);
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
             queryView.setShowDetailsColumn(false);
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
@@ -408,9 +404,8 @@ public class MothershipController extends SpringActionController
             HtmlView linkView = new HtmlView(getLinkBarHTML());
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "serverInstallations");
+            QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
             settings.setAllowChooseQuery(false);
             settings.getBaseSort().insertSortColumn("-LastPing");
 
@@ -419,7 +414,7 @@ public class MothershipController extends SpringActionController
             aggregates.add(new Aggregate("ExceptionCount", Aggregate.Type.AVG));
             settings.setAggregates(aggregates);
 
-            QueryView gridView = new QueryView(schema, settings, errors);
+            QueryView gridView = schema.createView(getViewContext(), settings, errors);
 
             return new VBox(linkView, gridView);
         }
@@ -537,14 +532,12 @@ public class MothershipController extends SpringActionController
             ServerInstallationUpdateView updateView = new ServerInstallationUpdateView(form, getViewContext().getActionURL(), errors);
 
             MothershipSchema schema = new MothershipSchema(MothershipController.this.getUser(), MothershipController.this.getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "ServerSessions");
+            QuerySettings settings = schema.getSettings(getViewContext(), "ServerSessions", "ServerSessions");
             settings.setAllowChooseQuery(false);
-            settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName("ServerSessions");
             settings.getBaseSort().insertSortColumn("-ServerSessionId");
             settings.getBaseFilter().addCondition("ServerInstallationId", installation.getServerInstallationId());
 
-            QueryView sessionGridView = new QueryView (schema, settings, errors);
+            QueryView sessionGridView = schema.createView(getViewContext(), settings, errors);
             sessionGridView.setShowExportButtons(false);
             
             return new VBox(updateView, sessionGridView);

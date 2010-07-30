@@ -815,13 +815,10 @@ public class ReportsController extends BaseStudyController
 
         private Map<String, ColumnInfo> getColumns(CrosstabDesignBean form) throws ServletException
         {
-
-            QuerySettings settings = new QuerySettings(getViewContext(), "Dataset");
-            settings.setQueryName(form.getQueryName());
-            settings.setSchemaName(form.getSchemaName());
-            settings.setViewName(form.getViewName());
-
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+
+            QuerySettings settings = schema.getSettings(form.getViewContext(), "Dataset");
+
             QueryView qv = schema.createView(getViewContext(), settings);
             List<DisplayColumn> cols = qv.getDisplayColumns();
             Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();

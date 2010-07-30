@@ -312,11 +312,8 @@ public class ExperimentController extends SpringActionController
             ensureCorrectContainer(getContainer(), _source, getViewContext());
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "Material");
+            QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
             settings.setAllowChooseQuery(false);
-            settings.setSchemaName(schema.getSchemaName());
-            settings.setQueryName(_source.getName());
-            final String sourceName = _source.getName();
             QueryView queryView = new QueryView(schema, settings, errors)
             {
                 protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -382,7 +379,7 @@ public class ExperimentController extends SpringActionController
             if (_source.canImportMoreSamples())
             {
                 ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getViewContext().getContainer());
-                urlUploadSamples.addParameter("name", sourceName);
+                urlUploadSamples.addParameter("name", _source.getName());
                 urlUploadSamples.addParameter("importMoreSamples", "true");
                 ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
                 uploadButton.setDisplayPermission(UpdatePermission.class);
@@ -405,10 +402,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "Materials");
-            settings.setSchemaName(schema.getSchemaName());
+            QuerySettings settings = schema.getSettings(getViewContext(), "Materials", ExpSchema.TableType.Materials.toString());
             settings.setAllowChooseQuery(false);
-            settings.setQueryName(ExpSchema.TableType.Materials.toString());
             QueryView view = new QueryView(schema, settings, errors)
             {
                 protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -632,20 +627,19 @@ public class ExperimentController extends SpringActionController
             else
                 ss = null;
 
-            QuerySettings settings = new QuerySettings(getViewContext(), dataRegionName);
+            QuerySettings settings;
             UserSchema schema;
             if (ss == null)
             {
                 schema = new ExpSchema(getUser(), getContainer());
-                settings.setQueryName(ExpSchema.TableType.Materials.toString());
+                settings = schema.getSettings(getViewContext(), dataRegionName, ExpSchema.TableType.Materials.toString());
             }
             else
             {
                 schema = new SamplesSchema(getUser(), getContainer());
-                settings.setQueryName(ss.getName());
+                settings = schema.getSettings(getViewContext(), dataRegionName, ss.getName());
             }
-            settings.setSchemaName(schema.getSchemaName());
-            settings.setAllowChooseQuery(false);
+                settings.setAllowChooseQuery(false);
             QueryView materialsView = new QueryView(schema, settings, null)
             {
                 protected TableInfo createTable()

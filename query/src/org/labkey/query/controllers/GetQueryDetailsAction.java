@@ -136,7 +136,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
     protected Map<String,Object> getDefaultViewProps(UserSchema schema, String queryName)
     {
         //build a query view
-        QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
+        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
         QueryView view = new QueryView(schema, settings, null);
 
         Map<String,Object> defViewProps = new HashMap<String,Object>();
