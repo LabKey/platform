@@ -62,8 +62,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    ViewBackgroundInfo info,
                                    String protocolName,
                                    File fileParameters,
-                                   File filesInput[]
-    ) throws IOException
+                                   File filesInput[]) throws IOException
     {
         super(providerName, info);
 

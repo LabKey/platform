@@ -325,23 +325,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _logFile = fileLog;
         _logger = null;
 
-        // Truncate the any existing log.
-        FileOutputStream fos = null;
-        try
-        {
-            fos = new FileOutputStream(_logFile);
-        }
-        catch (FileNotFoundException e)
-        {
-        }
-        finally
-        {
-            if (fos != null)
-            {
-                try { fos.close(); }
-                catch (IOException e) {}
-            }
-        }
+        // Intentionally leave any existing log output in the file
     }
 
     public File getLogFile()
