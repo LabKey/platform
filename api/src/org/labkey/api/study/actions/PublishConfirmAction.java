@@ -220,9 +220,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         // Show the form
         String name = AssayService.get().getResultsTableName(_protocol);
-        QuerySettings settings = new QuerySettings(context, name);
-        settings.setSchemaName(AssaySchema.NAME);
-        settings.setQueryName(name);
+        QuerySettings settings = schema.getSettings(context, name, name);
         settings.setAllowChooseView(false);
         PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, schema, settings,
                 allObjects, targetStudy, postedVisits, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);

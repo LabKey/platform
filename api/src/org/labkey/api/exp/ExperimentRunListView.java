@@ -55,12 +55,10 @@ public class ExperimentRunListView extends QueryView
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
     {
-        QuerySettings settings = new QuerySettings(model, tableName);
-        settings.setSchemaName(schema.getSchemaName());
+        QuerySettings settings = schema.getSettings(model, tableName, tableName);
         settings.getQueryDef(schema);
         settings.setAllowChooseQuery(false);
         settings.setAllowChooseView(allowCustomizations);
-        settings.setQueryName(tableName);
         return settings;
     }
 

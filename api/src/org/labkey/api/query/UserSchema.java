@@ -30,6 +30,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -183,9 +184,15 @@ abstract public class UserSchema extends AbstractSchema
         return ret;
     }
 
+    @Deprecated
     public QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
     {
         return new QueryView(this, settings);
+    }
+
+    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors) throws ServletException
+    {
+        return new QueryView(this, settings, errors);
     }
 
     public List<String> getTableAndQueryNames(boolean visibleOnly)
@@ -247,6 +254,14 @@ abstract public class UserSchema extends AbstractSchema
     {
         QuerySettings settings = getSettings(context, dataRegionName);
         settings.setQueryName(queryName);
+
+        return settings;
+    }
+
+    public final QuerySettings getSettings(ViewContext context, String dataRegionName, String queryName, String viewName)
+    {
+        QuerySettings settings = getSettings(context, dataRegionName, queryName);
+        settings.setViewName(viewName);
 
         return settings;
     }

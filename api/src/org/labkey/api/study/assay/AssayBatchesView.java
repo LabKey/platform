@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.actions.AssayBatchDetailsAction;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.util.PageFlowUtil;
@@ -40,8 +41,9 @@ public class AssayBatchesView extends AbstractAssayView
         AssayProvider provider = AssayService.get().getProvider(protocol);
         ViewContext context = getViewContext();
 
+        UserSchema schema = provider.getProviderSchema(context.getUser(), context.getContainer(), protocol);
         String tableName = AssayService.get().getBatchesTableName(protocol);
-        QuerySettings settings = new QuerySettings(context, tableName, tableName);
+        QuerySettings settings = schema.getSettings(context, tableName, tableName);
         settings.setAllowChooseQuery(false);
 
         BatchListQueryView batchesView = new BatchListQueryView(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);

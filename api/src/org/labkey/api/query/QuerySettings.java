@@ -65,13 +65,14 @@ public class QuerySettings
     private Sort _baseSort;
 
 
-    public QuerySettings(String dataRegionName)
+    protected QuerySettings(String dataRegionName)
     {
         _dataRegionName = dataRegionName;
     }
 
     /**
-     * Init the QuerySettings using all the request parameters, from context.getPropertyValues()
+     * Init the QuerySettings using all the request parameters, from context.getPropertyValues().
+     * @see UserSchema#getSettings(org.labkey.api.view.ViewContext, String)
      */
     public QuerySettings(ViewContext context, String dataRegionName)
     {
@@ -80,7 +81,10 @@ public class QuerySettings
     }
 
 
-    /** Init the QuerySettings using all the request parameters, from context.getPropertyValues() */
+    /**
+     * Init the QuerySettings using all the request parameters, from context.getPropertyValues().
+     * @see UserSchema#getSettings(org.labkey.api.view.ViewContext, String, String)
+     */
     public QuerySettings(ViewContext context, String dataRegionName, String queryName)
     {
         _dataRegionName = dataRegionName;
@@ -92,6 +96,7 @@ public class QuerySettings
     /**
      * @param params    all parameters from URL or POST, inluding dataregion.filter parameters
      * @param dataRegionName    prefix for filter params etc
+     * @see UserSchema#getSettings(org.springframework.beans.PropertyValues, String) 
      */
     public QuerySettings(PropertyValues params, String dataRegionName)
     {

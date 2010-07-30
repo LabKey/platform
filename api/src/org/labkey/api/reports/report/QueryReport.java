@@ -78,9 +78,7 @@ public class QueryReport extends AbstractReport
                             if (queryName != null)
                             {
                                 String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-                                QuerySettings qs = new QuerySettings(context, "Report");
-                                qs.setSchemaName(schema.getSchemaName());
-                                qs.setQueryName(queryName);
+                                QuerySettings qs = schema.getSettings(context, "Report", queryName);
                                 QueryDefinition queryDef = qv.getQueryDef();
                                 if (queryDef.getCustomView(null, context.getRequest(), viewName) == null)
                                 {

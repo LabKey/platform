@@ -79,9 +79,7 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     public AuditLogQueryView createQueryView(ViewContext context, SimpleFilter filter)
     {
         UserSchema schema = createSchema(context.getUser(), context.getContainer());
-        QuerySettings settings = new QuerySettings(context, getTableName());
-        settings.setSchemaName(schema.getSchemaName());
-        settings.setQueryName(getTableName());
+        QuerySettings settings = schema.getSettings(context, getTableName(), getTableName());
 
         return new DefaultAuditQueryView(schema, settings, filter);
     }
