@@ -374,6 +374,10 @@ public class AnalysisController extends SpringActionController
             }
             else if (fileInputName != null)
             {
+                if (protocol == null)
+                {
+                    return UNKNOWN_STATUS;
+                }
                 File fileInput = new File(dirData, fileInputName);
                 FileType ft = protocol.findInputType(fileInput);
                 if (ft != null)

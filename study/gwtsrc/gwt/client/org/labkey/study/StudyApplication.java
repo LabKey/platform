@@ -126,24 +126,12 @@ public class StudyApplication implements EntryPoint
         //
         // RunAsyncCallback
         //
-
         public void onFailure(Throwable caught)
         {
             ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + this.name());
         }
-
-
-// doesn't work.  creates trival split points
-//        public void onSuccess()
-//        {
-//            RootPanel panel = getRootPanel();
-//            if (null != panel)
-//                panel.clear();  // clear Loading...
-//            getEntryPoint().onModuleLoad();
-//        }
     }
     
-
     public static RootPanel getRootPanel()
     {
         String name = PropertyUtil.getServerProperty("RootPanel");
