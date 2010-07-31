@@ -1360,7 +1360,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), AssaySchema.NAME);
         String name = AssayService.get().getResultsTableName(protocol);
-        QuerySettings settings = schema.getSettings(context, name);
+        QuerySettings settings = schema.getSettings(context, name, name);
         ResultsQueryView queryView = new ResultsQueryView(protocol, context, settings);
 
         if (hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
