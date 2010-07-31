@@ -41,12 +41,12 @@ public class AssayBatchesView extends AbstractAssayView
         AssayProvider provider = AssayService.get().getProvider(protocol);
         ViewContext context = getViewContext();
 
-        UserSchema schema = provider.getProviderSchema(context.getUser(), context.getContainer(), protocol);
+        AssaySchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
         String tableName = AssayService.get().getBatchesTableName(protocol);
         QuerySettings settings = schema.getSettings(context, tableName, tableName);
         settings.setAllowChooseQuery(false);
 
-        BatchListQueryView batchesView = new BatchListQueryView(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
+        BatchListQueryView batchesView = new BatchListQueryView(protocol, schema, settings);
 
         // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
