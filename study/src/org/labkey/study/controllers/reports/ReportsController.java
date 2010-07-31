@@ -817,7 +817,7 @@ public class ReportsController extends BaseStudyController
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
 
-            QuerySettings settings = schema.getSettings(form.getViewContext(), "Dataset");
+            QuerySettings settings = schema.getSettings(form.getViewContext(), "Dataset", form.getQueryName());
 
             QueryView qv = schema.createView(getViewContext(), settings);
             List<DisplayColumn> cols = qv.getDisplayColumns();
