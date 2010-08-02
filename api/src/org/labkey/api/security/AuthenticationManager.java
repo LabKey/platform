@@ -407,7 +407,7 @@ public class AuthenticationManager
             provider.logout(request);
 
         AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                user.getEmail() + " logged out.");
+            user.getEmail() + " logged out.");
     }
 
 

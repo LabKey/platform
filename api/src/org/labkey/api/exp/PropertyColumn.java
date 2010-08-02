@@ -30,8 +30,8 @@ import java.util.Map;
  */
 public class PropertyColumn extends LookupColumn
 {
-    protected PropertyDescriptor pd;
-    protected String containerId;
+    protected PropertyDescriptor _pd;
+    protected String _containerId;
     protected boolean _mvIndicator = false;
     protected boolean _parentIsObjectId = false;
 
@@ -60,7 +60,7 @@ public class PropertyColumn extends LookupColumn
         }
         setDescription(description);
         setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
-        this.pd = pd;
+        _pd = pd;
         setSqlTypeName(getPropertySqlType(OntologyManager.getSqlDialect()));
         String format = StringUtils.trimToNull(pd.getFormat());
         if (null != format)
@@ -73,7 +73,7 @@ public class PropertyColumn extends LookupColumn
         setURL(pd.getURL());
         setImportAliasesSet(pd.getImportAliasesSet());
 
-        this.containerId = containerId;
+        _containerId = containerId;
 
         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
         {
@@ -98,7 +98,7 @@ public class PropertyColumn extends LookupColumn
     public void setMvIndicator(boolean mv)
     {
         _mvIndicator = mv;
-        this.setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(PropertyType.STRING.getSqlType()));
+        setSqlTypeName(getSqlDialect().sqlTypeNameFromSqlType(PropertyType.STRING.getSqlType()));
     }
 
 
@@ -116,18 +116,18 @@ public class PropertyColumn extends LookupColumn
         {
             sql.append("MvIndicator");
         }
-        else if (pd.getPropertyType() == PropertyType.BOOLEAN)
+        else if (_pd.getPropertyType() == PropertyType.BOOLEAN)
         {
             sql.append("CASE FloatValue WHEN 1.0 THEN 1 ELSE 0 END");
         }
         else
         {
-            sql.append(getPropertyCol(pd));
+            sql.append(getPropertyCol(_pd));
         }
-        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
+        sql.append(" FROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + _pd.getPropertyId());
         sql.append(" AND exp.ObjectProperty.ObjectId = ");
         if (_parentIsObjectId)
-            sql.append(foreignKey.getValueSql(tableAlias));
+            sql.append(_foreignKey.getValueSql(tableAlias));
         else
             sql.append(getTableAlias(tableAlias) + ".ObjectId");
         sql.append(")");
@@ -156,7 +156,7 @@ public class PropertyColumn extends LookupColumn
     
     private int getPropertySqlTypeInt()
     {
-        return pd.getPropertyType().getSqlType();
+        return _pd.getPropertyType().getSqlType();
     }
 
 
@@ -180,7 +180,7 @@ public class PropertyColumn extends LookupColumn
     {
         if (_mvIndicator)
             return null;
-        PropertyType pt = pd.getPropertyType();
+        PropertyType pt = _pd.getPropertyType();
         if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt)
             return null;
         else if (PropertyType.INTEGER == pt)
@@ -194,7 +194,7 @@ public class PropertyColumn extends LookupColumn
 
     public PropertyDescriptor getPropertyDescriptor()
     {
-        return pd;
+        return _pd;
     }
 
     public String getPropertyURI()
@@ -210,25 +210,25 @@ public class PropertyColumn extends LookupColumn
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
-        if (containerId == null)
+        if (_containerId == null)
         {
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + containerId + "'");
+        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + _containerId + "'");
         return strJoinNoContainer;
     }
 
     public String getTableAlias(String baseAlias)
     {
-        if (containerId == null)
+        if (_containerId == null)
             return super.getTableAlias(baseAlias);
         return super.getTableAlias(baseAlias) + "_C";
     }
 
     public String getInputType()
     {
-        if (pd.getPropertyType() == PropertyType.FILE_LINK || pd.getPropertyType() == PropertyType.ATTACHMENT)
+        if (_pd.getPropertyType() == PropertyType.FILE_LINK || _pd.getPropertyType() == PropertyType.ATTACHMENT)
             return "file";
         else
             return super.getInputType();

@@ -50,23 +50,23 @@ public class LookupColumn extends ColumnInfo
         return ret;
     }
 
-    protected ColumnInfo foreignKey;
-    protected ColumnInfo lookupKey;
-    protected ColumnInfo lookupColumn;
-    protected boolean joinOnContainer;
+    protected ColumnInfo _foreignKey;
+    protected ColumnInfo _lookupKey;
+    protected ColumnInfo _lookupColumn;
+    protected boolean _joinOnContainer;
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn, boolean joinOnContainer)
     {
         // Bug 1166: always report that our parent table is the leftmost table, so the dataregion knows which
         // table to select from
         super(new FieldKey(foreignKey.getFieldKey(), lookupColumn.getName()), foreignKey.getParentTable());
-        this.foreignKey = foreignKey;
-        this.lookupKey = lookupKey;
+        _foreignKey = foreignKey;
+        _lookupKey = lookupKey;
         assert lookupKey.getValueSql("test") != null;
-        this.lookupColumn = lookupColumn;
+        _lookupColumn = lookupColumn;
         setSqlTypeName(lookupColumn.getSqlTypeName());
         setAlias(foreignKey.getAlias() + "$" + lookupColumn.getAlias());
-        this.joinOnContainer = joinOnContainer;
+        _joinOnContainer = joinOnContainer;
     }
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
@@ -77,16 +77,16 @@ public class LookupColumn extends ColumnInfo
 
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return lookupColumn.getValueSql(getTableAlias(tableAliasName));
+        return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         return getJoinConditionHelper(
-            foreignKey.getTableAlias(tableAliasName), foreignKey.getValueSql(tableAliasName), foreignKey.getSqlTypeInt(),
-            getTableAlias(tableAliasName), lookupKey.getValueSql(getTableAlias(tableAliasName)), lookupKey.getSqlTypeInt(),
-            joinOnContainer, getSqlDialect().isPostgreSQL()
+            _foreignKey.getTableAlias(tableAliasName), _foreignKey.getValueSql(tableAliasName), _foreignKey.getSqlTypeInt(),
+            getTableAlias(tableAliasName), _lookupKey.getValueSql(getTableAlias(tableAliasName)), _lookupKey.getSqlTypeInt(),
+                _joinOnContainer, getSqlDialect().isPostgreSQL()
         );
     }
 
@@ -129,19 +129,10 @@ public class LookupColumn extends ColumnInfo
 
         if (assertEnabled || !map.containsKey(colTableAlias))
         {
-            foreignKey.declareJoins(baseAlias, map);
-            TableInfo lookupTable = lookupKey.getParentTable();
+            _foreignKey.declareJoins(baseAlias, map);
             SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
 
-            String selectName = lookupTable.getSelectName();
-            if (null != selectName)
-                strJoin.append(selectName);
-            else
-            {
-                strJoin.append("(");
-                strJoin.append(lookupTable.getFromSQL());
-                strJoin.append(")");
-            }
+            addLookupSql(strJoin, _lookupKey.getParentTable());
 
             strJoin.append(" AS ").append(colTableAlias);
             strJoin.append(" ON ");
@@ -149,7 +140,29 @@ public class LookupColumn extends ColumnInfo
             assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
             map.put(colTableAlias, strJoin);
         }
-        this.lookupColumn.declareJoins(colTableAlias, map);
+
+        if (includeLookupJoins())
+            _lookupColumn.declareJoins(colTableAlias, map);
+    }
+
+
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable)
+    {
+        String selectName = lookupTable.getSelectName();
+        if (null != selectName)
+            strJoin.append(selectName);
+        else
+        {
+            strJoin.append("(");
+            strJoin.append(lookupTable.getFromSQL());
+            strJoin.append(")");
+        }
+    }
+
+
+    protected boolean includeLookupJoins()
+    {
+        return true;
     }
 
 
@@ -162,7 +175,7 @@ public class LookupColumn extends ColumnInfo
      */
     public String getTableAlias(String baseAlias)
     {
-        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + foreignKey.getAlias() + "$";
+        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + _foreignKey.getAlias() + "$";
         alias = AliasManager.truncate(alias, 64);
         return alias;
     }
@@ -170,11 +183,11 @@ public class LookupColumn extends ColumnInfo
     
     public void setJoinOnContainer(boolean joinOnContainer)
     {
-        this.joinOnContainer = joinOnContainer;
+        _joinOnContainer = joinOnContainer;
     }
 
     public String getColumnName()
     {
-        return lookupColumn.getName();
+        return _lookupColumn.getName();
     }
 }

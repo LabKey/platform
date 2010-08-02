@@ -198,7 +198,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             // We want the left hand table, not the lookup that we're joining to
             if (getFieldKey().getName().equals(AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME))
             {
-                return lookupColumn.getValueSql(tableAlias);
+                return _lookupColumn.getValueSql(tableAlias);
             }
             else
             {
@@ -283,7 +283,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 // Last join to the specimen table based on RowId
                 sql.append("\n\tLEFT OUTER JOIN ");
 
-                TableInfo lookupTable = lookupKey.getParentTable();
+                TableInfo lookupTable = _lookupKey.getParentTable();
                 String selectName = lookupTable.getSelectName();
                 if (null != selectName)
                     sql.append(selectName);

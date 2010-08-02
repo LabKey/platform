@@ -532,6 +532,22 @@ quickScan:
     
     final static int BUFFERSIZE = 32*1024;
 
+    // Closes input stream
+    public static long copyData(InputStream is, File file) throws IOException
+    {
+        FileOutputStream fos = new FileOutputStream(file);
+
+        try
+        {
+            return copyData(is, fos);
+        }
+        finally
+        {
+            if (is != null) try { is.close(); } catch (IOException e) {  }
+            try { fos.close(); } catch (IOException e) {  }
+        }
+    }
+
     /** Does not close input or output stream */
     public static long copyData(InputStream is, OutputStream os) throws IOException
     {

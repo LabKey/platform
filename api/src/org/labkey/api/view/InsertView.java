@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -54,7 +55,7 @@ public class InsertView extends DataView
     }
 
 
-    public InsertView(ColumnInfo[] cols, BindException errors)
+    public InsertView(List<ColumnInfo> cols, BindException errors)
     {
         super(new DataRegion(), errors);
         getDataRegion().setColumns(cols);

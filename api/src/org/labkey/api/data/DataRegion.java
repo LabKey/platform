@@ -210,15 +210,6 @@ public class DataRegion extends DisplayElement
         removeColumns(eachCol);
     }
 
-    @Deprecated
-    public void setColumns(ColumnInfo[] cols)
-    {
-        clearColumns();
-
-        for (ColumnInfo column : cols)
-            addColumn(column);
-    }
-
     public void setColumns(List<ColumnInfo> cols)
     {
         clearColumns();
@@ -1085,18 +1076,6 @@ public class DataRegion extends DisplayElement
         _noRowsMessage = noRowsMessage;
     }
 
-    /**
-     * Just sets parameters on context and calls render.
-     */
-    @Deprecated
-    public void renderTable(ViewContext context, Writer out, Filter baseFilter, Sort baseSort) throws SQLException, IOException
-    {
-        RenderContext ctx = new RenderContext(context, null);
-        ctx.setBaseFilter(baseFilter);
-        ctx.setBaseSort(baseSort);
-        renderTable(ctx, out);
-    }
-
     private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = { "RowId", "DisplayName", "Description", "Label", "Caption", "Value" };
     protected String getFilterDescription(RenderContext ctx) throws IOException
     {
@@ -1131,8 +1110,10 @@ public class DataRegion extends DisplayElement
                     return formatted;
                 }
             }));
+
             return filterDesc.toString();
         }
+
         return null;
     }
 
@@ -2270,41 +2251,18 @@ public class DataRegion extends DisplayElement
         renderOldValues(out, map);
     }
 
-    public static ColumnInfo[] colInfoFromMetaData(ResultSetMetaData md) throws SQLException
+
+    public static List<ColumnInfo> colInfosFromMetaData(ResultSetMetaData md) throws SQLException
     {
         int columnCount = md.getColumnCount();
-        ColumnInfo[] cols = new ColumnInfo[columnCount];
-        for (int i = 1; i <= columnCount; i++)
-            cols[i - 1] = new ColumnInfo(md, i);
-        return cols;
-    }
-
-
-    public static ColumnInfo[] colInfoFromMetaData(ResultSetMetaData md, TableInfo[] tables)
-            throws SQLException
-    {
-        int columnCount = md.getColumnCount();
-        ColumnInfo[] cols = new ColumnInfo[columnCount];
+        List<ColumnInfo> cols = new LinkedList<ColumnInfo>();
 
         for (int i = 1; i <= columnCount; i++)
-        {
-            ColumnInfo colInfo = null;
-            String colName = md.getColumnName(i);
-            for (TableInfo table : tables)
-            {
-                colInfo = table.getColumn(colName);
-                if (colInfo != null)
-                    break;
-            }
-            if (colInfo == null)
-                colInfo = new ColumnInfo(colName);
-            cols[i - 1] = colInfo;
-        }
+            cols.add(new ColumnInfo(md, i));
 
         return cols;
     }
 
-    private static String FILTER_WRITTEN_KEY = "DATAREGION_FILTER_WRITTEN";
 
     /**
      * Render the data region. All rendering SHOULD go through this function
