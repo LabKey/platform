@@ -340,8 +340,8 @@ function ColumnPicker(tableInfoService)
     {
         var trChildren = document.getElementById("children_" + key);
         var elExpand = document.getElementById("expand_" + key);
-        var strExpanded = contextPath + "/_images/minus.gif";
-        var strCollapsed = contextPath + "/_images/plus.gif";
+        var strExpanded = LABKEY.contextPath + "/_images/minus.gif";
+        var strCollapsed = LABKEY.contextPath + "/_images/plus.gif";
         if (trChildren)
         {
             if (trChildren.getAttribute("collapsed"))
@@ -452,7 +452,7 @@ function ColumnPicker(tableInfoService)
                 var img = doc.createElement('img');
                 img.id = 'expand_' + column.key;
                 img.border = 0;
-                img.src = contextPath + '/_images/plus.gif';
+                img.src = LABKEY.contextPath + '/_images/plus.gif';
                 a.appendChild(img);
                 td.appendChild(a);
                 td.appendChild(doc.createTextNode('\240'));
@@ -460,7 +460,7 @@ function ColumnPicker(tableInfoService)
             else
             {
                 var img = doc.createElement('img');
-                img.src = contextPath + '/_.gif';
+                img.src = LABKEY.contextPath + '/_.gif';
                 img.width = 9;
                 td.appendChild(img);
                 td.appendChild(doc.createTextNode('\240'));

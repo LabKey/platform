@@ -49,7 +49,6 @@
 <script type="text/javascript" src="<%=contextPath%>/query/columnPicker.js"></script>
 <script type="text/javascript" src="<%=contextPath%>/query/queryDesigner.js"></script>
 <script type="text/javascript">
-    var contextPath = <%=q(contextPath)%>;
     var designer = new QueryDesigner(<%=q(urlCheckSyntax.toString())%>, new TableInfoService(<%=q(urlTableInfo.toString())%>));
     <% if (form.getDefaultTab() != null)
     { %>
@@ -60,7 +59,7 @@
 <table class="labkey-no-spacing">
     <tr>
         <th>
-            <table class="labkey-no-spacing" width="100%">
+            <table class="labkey-no-spacing" style="width:100%">
                 <tr>
                     <td class="labkey-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
@@ -68,7 +67,7 @@
                     <td class="labkey-tab-selected" style="cursor:pointer">
                         Available&nbsp;Fields
                     </td>
-                    <td class="labkey-tab-space" width=100%>
+                    <td class="labkey-tab-space" style="width:100%">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
                 </tr>
@@ -76,7 +75,7 @@
         </th>
         <th></th>
         <th colspan="3" align="left">
-            <table class="labkey-no-spacing" width="100%">
+            <table class="labkey-no-spacing" style="width:100%">
                 <tr>
                     <td class="labkey-tab-space">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
@@ -99,7 +98,7 @@
                         onclick="designerx.setActiveTab(designerx.tabs.sort)">
                         Order&nbsp;By
                     </td>  --%>
-                    <td class="labkey-tab-space" width=100%>
+                    <td class="labkey-tab-space" style="width:100%">
                         <img src="<%=contextPath%>/_.gif" height=1 width=5>
                     </td>
                 </tr>

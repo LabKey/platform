@@ -791,7 +791,7 @@ function SQLBuilder(designer, title, value)
         {
             var doc = parent.ownerDocument;
             var img = doc.createElement('img');
-            img.src = contextPath + '/designerx/wand.gif';
+            img.src = LABKEY.contextPath + '/designerx/wand.gif';
             img.onclick = function()
             {
                 showSQLEditor(designer, title, value);
@@ -1257,7 +1257,7 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
             var aExpand = document.createElement('a');
             aExpand.href = "#";
             var imgExpand = document.createElement('img');
-            imgExpand.src = contextPath + '/_images/plus.gif';
+            imgExpand.src = LABKEY.contextPath + '/_images/plus.gif';
             imgExpand.onclick = expandColumnScript(this.columnPicker, key);
             imgExpand.id = 'expand_' + key;
             imgExpand.style.cursor = 'pointer';

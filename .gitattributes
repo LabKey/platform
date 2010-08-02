@@ -1891,14 +1891,10 @@ query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/webapp/query/columnPicker.js -text
 query/webapp/query/columnProperties.gif -text
 query/webapp/query/delete.gif -text
-query/webapp/query/demo.html -text
-query/webapp/query/demo.js -text
-query/webapp/query/demo.xml -text
 query/webapp/query/movedown.gif -text
 query/webapp/query/moveup.gif -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
-query/webapp/query/tableInfo.js -text
 query/webapp/query/validateQueries.js -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/grid.gif -text

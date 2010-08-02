@@ -55,7 +55,6 @@
     return;
 }%>
 <script type="text/javascript">
-    var contextPath = <%=q(request.getContextPath())%>;
     var designer = new ViewDesigner(new TableInfoService(<%=q(urlTableInfo.toString())%>));
     <% if (form.getDefaultTab() != null)
     { %>
@@ -91,7 +90,7 @@
 </script>
 
 <p>
-<table width="100%">
+<table style="width:100%">
     <tr class="labkey-wp-header"><td align="left">
     Grid View :
         <% if (view != null) { %>
@@ -102,15 +101,15 @@
         <% } %>
     </td></tr>
 </table>
-</p>
 
+<p>
 <% if (getViewContext().getUser().isGuest()) { %>
     <p><b>You are not currently logged in.  Changes you make here will only persist for the duration of your session.</b></p>
 <% } %>
 <table class="labkey-customize-view">
     <tr>
         <th>
-            <table width="100%">
+            <table style="width:100%">
                 <tr>
                     <td class="labkey-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
@@ -118,7 +117,7 @@
                     <td class="labkey-tab-selected" style="cursor:pointer">
                         Available&nbsp;Fields
                     </td>
-                    <td class="labkey-tab-space" style="text-align:right;" width=100%>
+                    <td class="labkey-tab-space" style="text-align:right;width:100%">
                         <labkey:helpPopup title="Available Fields">
                             <p>Click on the available fields to select them.  Click the 'Add' button to add selected fields to the grid view.</p>
                             <p>Expand elements of the tree to add related fields from other tables.</p>
@@ -129,7 +128,7 @@
         </th>
         <th></th>
         <th colspan="2" align="left">
-            <table width="100%">
+            <table style="width:100%">
                 <tr>
                     <td class="labkey-tab-space">
                         <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
