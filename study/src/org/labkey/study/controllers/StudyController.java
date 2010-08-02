@@ -3829,18 +3829,7 @@ public class StudyController extends BaseStudyController
                     InputStream is = file.getInputStream();
 
                     File zipFile = File.createTempFile("study", ".zip");
-                    FileOutputStream fos = new FileOutputStream(zipFile);
-
-                    try
-                    {
-                        FileUtil.copyData(is, fos);
-                    }
-                    finally
-                    {
-                        if (is != null) try { is.close(); } catch (IOException e) {  }
-                        try { fos.close(); } catch (IOException e) {  }
-                    }
-
+                    FileUtil.copyData(is, zipFile);
                     importStudy(errors, zipFile, file.getOriginalFilename());
                 }
             }

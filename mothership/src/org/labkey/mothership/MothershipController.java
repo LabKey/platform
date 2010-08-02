@@ -752,7 +752,7 @@ public class MothershipController extends SpringActionController
             getDataRegion().setTable(exceptionTableInfo);
             ResultSet rs = Table.executeQuery(exceptionTableInfo.getSchema(), sql, null);
             setResultSet(rs);
-            getDataRegion().setColumns(DataRegion.colInfoFromMetaData(rs.getMetaData()));
+            getDataRegion().setColumns(DataRegion.colInfosFromMetaData(rs.getMetaData()));
             getDataRegion().setSortable(false);
             getDataRegion().setShowFilters(false);
             getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);

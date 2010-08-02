@@ -22,19 +22,20 @@
 <%@ page import="org.labkey.biotrue.controllers.ServerForm" %>
 <%@ page import="org.labkey.biotrue.datamodel.BtManager" %>
 <%@ page import="org.labkey.biotrue.objectmodel.BtServer" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <% ServerForm form = (ServerForm) __form;
     BtServer server = form.getServer();
     DataRegion region = new DataRegion();
     TableInfo table = BtManager.get().getTinfoServer();
-    region.setColumns(new ColumnInfo[]{
+    region.setColumns(Arrays.asList(
             table.getColumn("Name"),
             table.getColumn("WsdlURL"),
             table.getColumn("ServiceNamespaceURI"),
             table.getColumn("ServiceLocalPart"),
             table.getColumn("Username"),
             table.getColumn("PhysicalRoot")
-    });
+    ));
     ButtonBar bb = new ButtonBar();
     if (getContainer().hasPermission(getUser(), UpdatePermission.class))
     {

@@ -18,14 +18,12 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView.UpdateBean"%>
 <%@ page import="org.labkey.announcements.model.Announcement" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
-<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AnnouncementUpdateView me = (AnnouncementUpdateView) HttpView.currentView();

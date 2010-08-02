@@ -232,7 +232,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 rs = AnnouncementManager.getEmailPrefsResultset(c);
                 gridView.setResultSet(rs);
-                rgn.setColumns(DataRegion.colInfoFromMetaData(rs.getMetaData()));
+                rgn.setColumns(DataRegion.colInfosFromMetaData(rs.getMetaData()));
             }
             finally
             {
