@@ -69,7 +69,10 @@ public interface QueryDefinition
     List<QueryException> getParseErrors(QuerySchema schema);
 
     ActionURL urlFor(QueryAction action);
+    /** Used for URLs that don't require row-level info, like insert or grid URLs */
     ActionURL urlFor(QueryAction action, Container container);
+    /** Used for URLs that require row-level info, like details or update URLs */
+    ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pkValues);
     StringExpression urlExpr(QueryAction action, Container container);
     UserSchema getSchema();
 

@@ -43,6 +43,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
@@ -766,7 +767,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         @Override
         public String getErrors(String paramName)
         {
-            BindException errors = getErrors();
+            Errors errors = getErrors();
             if (errors != null && errors.getErrorCount() > MAX_ERRORS)
             {
                 List list;

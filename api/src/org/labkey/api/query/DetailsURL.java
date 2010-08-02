@@ -114,11 +114,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         _url = url.clone();
     }
 
-
-    public DetailsURL(ActionURL url, Map<String,? extends Object> columnParams)
+    /**
+     * @param url base URL to which parameters may be added
+     * @param columnParams map from URL parameter name to source column identifier, which may be a String, FieldKey, or ColumnInfo
+     */
+    public DetailsURL(ActionURL url, Map<String, ?> columnParams)
     {
         url = url.clone();
-        for (Map.Entry<String,? extends Object> e : columnParams.entrySet())
+        for (Map.Entry<String, ?> e : columnParams.entrySet())
         {
             Object v = e.getValue();
             String strValue;
@@ -134,7 +137,6 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         }
         _url = url;
     }
-
 
     public DetailsURL(ActionURL baseURL, String param, FieldKey subst)
     {

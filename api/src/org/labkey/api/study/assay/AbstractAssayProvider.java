@@ -1372,7 +1372,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             params.put("dataRowId", "ObjectId");
 
             AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
-            ati.addDetailsURL(new DetailsURL(resultDetailsURL, params));
+            ati.setDetailsURL(new DetailsURL(resultDetailsURL, params));
             queryView.setShowDetailsColumn(true);
         }
 

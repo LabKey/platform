@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -27,7 +27,7 @@ public class GridView extends DataView
 {
     private static Logger _log = Logger.getLogger(GridView.class);
 
-    public GridView(DataRegion dataRegion, BindException errors)
+    public GridView(DataRegion dataRegion, Errors errors)
     {
         super(dataRegion, errors);
         setupSelectionKey(dataRegion);

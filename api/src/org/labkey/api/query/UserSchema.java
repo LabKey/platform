@@ -167,6 +167,9 @@ abstract public class UserSchema extends AbstractSchema
         return queryDef.urlFor(action, getContainer());
     }
 
+    /**
+     * Gets a pre-substitution expression for use in row-specific URLs, such as details or update views 
+     */
     public StringExpression urlExpr(QueryAction action, QueryDefinition queryDef)
     {
         return queryDef.urlExpr(action, getContainer());

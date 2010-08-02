@@ -59,8 +59,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected DetailsURL _gridURL;
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
+    protected DetailsURL _detailsURL;
     protected ButtonBarConfig _buttonBarConfig;
-    private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(0);
 
     public List<ColumnInfo> getPkColumns()
     {
@@ -99,13 +99,9 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
                  if (c.getURL() instanceof DetailsURL)
                      ((DetailsURL)c.getURL()).setContainer(this);
              }
-             if (null != _detailsURLs)
+             if (null != _detailsURL)
              {
-                 for (StringExpression se : _detailsURLs)
-                 {
-                    if (se instanceof DetailsURL)
-                         ((DetailsURL)se).setContainer(this);
-                 }
+                 _detailsURL.setContainer(this);
              }
          }
      }
@@ -364,8 +360,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         if (_gridURL != null)
         {
-            ActionURL url = _gridURL.copy(container).getActionURL();
-            return url;
+            return _gridURL.copy(container).getActionURL();
         }
         return null;
     }
@@ -374,28 +369,25 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         if (_insertURL != null)
         {
-            ActionURL url = _insertURL.copy(container).getActionURL();
-            return url;
+            return _insertURL.copy(container).getActionURL();
         }
         return null;
     }
 
     public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
     {
-        if (_updateURL != null)
+        if (_updateURL != null && _updateURL.validateFieldKeys(columns))
         {
-            if (_updateURL.validateFieldKeys(columns))
-                return _updateURL.copy(container);
+            return _updateURL.copy(container);
         }
         return null;
     }
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        for (DetailsURL dUrl : _detailsURLs)
+        if (_detailsURL != null && _detailsURL.validateFieldKeys(columns))
         {
-            if (dUrl.validateFieldKeys(columns))
-                return dUrl.copy(container);
+            return _detailsURL.copy(container);
         }
         return null;
     }
@@ -407,13 +399,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setDetailsURL(DetailsURL detailsURL)
     {
-        _detailsURLs.clear();
-        _detailsURLs.add(detailsURL);
-    }
-
-    public void addDetailsURL(DetailsURL detailsURL)
-    {
-        _detailsURLs.add(detailsURL);
+        _detailsURL = detailsURL;
     }
 
     public void setGridURL(DetailsURL gridURL)
@@ -643,7 +629,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     /**
      * return true if all rows from this table come from a single container.
      * if true, getContainer(Map) must return non-null value
-     * @return
      */
     public boolean hasContainerContext()
     {

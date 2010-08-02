@@ -2121,7 +2121,7 @@ public class Table
 
     static public LinkedHashMap<FieldKey,ColumnInfo> createFieldKeyMap(TableInfo table)
     {
-        LinkedHashMap ret = new LinkedHashMap<FieldKey,ColumnInfo>();
+        LinkedHashMap<FieldKey,ColumnInfo> ret = new LinkedHashMap<FieldKey,ColumnInfo>();
         for (ColumnInfo column : table.getColumns())
         {
             ret.put(column.getFieldKey(), column);

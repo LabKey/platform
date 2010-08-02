@@ -27,7 +27,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.MessageSourceResolvable;
-import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     static private final Logger _log = Logger.getLogger(RenderContext.class);
     private boolean _useContainerFilter = true;
     private ViewContext _viewContext;
-    private org.springframework.validation.BindException _errors;
+    private Errors _errors;
     private TableViewForm _form;
     private DataRegion _currentRegion;
     private Filter _baseFilter;
@@ -62,7 +62,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         this(context, null);
     }
 
-    public RenderContext(ViewContext context, BindException errors)
+    public RenderContext(ViewContext context, Errors errors)
     {
         setBean(this);
         _viewContext = context;
@@ -80,12 +80,12 @@ public class RenderContext extends BoundMap // extends ViewContext
         _viewContext = context;
     }
 
-    public BindException getErrors()
+    public Errors getErrors()
     {
         return _errors;
     }
 
-    public void setErrors(BindException errors)
+    public void setErrors(Errors errors)
     {
         _errors = errors;
     }
@@ -438,8 +438,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     /**
      * Overrides isEmpty() to include current row
-     *
-     * @return
      */
     @Override
     public boolean isEmpty()
@@ -449,8 +447,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     /**
      * Overrides containsKey() to include current row
-     *
-     * @return
      */
     @Override
     public boolean containsKey(Object key)
@@ -460,8 +456,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     /**
      * Overrides containsValue() to include current row
-     *
-     * @return
      */
     @Override
     public boolean containsValue(Object value)
@@ -471,8 +465,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     /**
      * Overrides values() to combine keys from map and current row
-     *
-     * @return
      */
     @Override
     public Collection values()
@@ -486,8 +478,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     /**
      * Overrides entrySet to combine entries from map and current row
-     *
-     * @return
      */
     @Override
     public Set entrySet()
@@ -504,8 +494,6 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     /**
      * Overrides keySet to combine keys from map and current row
-     *
-     * @return
      */
     @Override
     public Set keySet()
@@ -621,21 +609,13 @@ public class RenderContext extends BoundMap // extends ViewContext
     }
 
 
-    protected BindException getBindException()
-    {
-        if (null != _errors)
-            return _errors;
-        // CONSIDER: look in root view context?
-        return null;
-    }
-
     /*
      * Moved getErrors() from TableViewForm
      * 4927 : DataRegion needs to support Spring errors collection
      */
     public String getErrors(String paramName)
     {
-        BindException errors = getBindException();
+        Errors errors = getErrors();
         if (null == errors)
             return "";
         List list;

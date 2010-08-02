@@ -18,7 +18,7 @@ package org.labkey.api.view;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
 import org.labkey.api.data.*;
-import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -45,20 +45,20 @@ public abstract class DataView extends WebPartView<RenderContext>
     }
 
 
-    public DataView(DataRegion dataRegion, BindException errors)
+    public DataView(DataRegion dataRegion, Errors errors)
     {
         _model = new RenderContext(getViewContext(), errors);
         _dataRegion = dataRegion;
     }
 
     
-    public DataView(DataRegion dataRegion, TableViewForm form, BindException errors)
+    public DataView(DataRegion dataRegion, TableViewForm form, Errors errors)
     {
         this(dataRegion, errors);
         getRenderContext().setForm(form);
     }
 
-    public DataView(TableViewForm form, BindException errors)
+    public DataView(TableViewForm form, Errors errors)
     {
         this(null, form, errors);
     }

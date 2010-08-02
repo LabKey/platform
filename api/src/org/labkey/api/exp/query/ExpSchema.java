@@ -291,7 +291,7 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
-    private abstract static class ExperimentLookupForeignKey extends LookupForeignKey
+    public abstract static class ExperimentLookupForeignKey extends LookupForeignKey
     {
         public ExperimentLookupForeignKey(String pkColumnName)
         {

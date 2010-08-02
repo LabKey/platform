@@ -36,7 +36,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -89,7 +89,7 @@ public class QueryView extends WebPartView<Object>
     private QueryDefinition _queryDef;
     private CustomView _customView;
     private UserSchema _schema;
-    private BindException _errors;
+    private Errors _errors;
     private List<QueryException> _parseErrors = new ArrayList<QueryException>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
@@ -126,7 +126,7 @@ public class QueryView extends WebPartView<Object>
 
     TableInfo _table;
 
-    public QueryView(QueryForm form, BindException errors)
+    public QueryView(QueryForm form, Errors errors)
     {
         this(form.getSchema(), form.getQuerySettings(), errors);
     }
@@ -144,7 +144,7 @@ public class QueryView extends WebPartView<Object>
         this(schema, settings, null);
     }
 
-    public QueryView(UserSchema schema, QuerySettings settings, BindException errors)
+    public QueryView(UserSchema schema, QuerySettings settings, Errors errors)
     {
         setSchema(schema);
         if (null != settings)
@@ -601,7 +601,7 @@ public class QueryView extends WebPartView<Object>
         {
             if (canDelete())
             {
-                ActionButton deleteButton = createDeleteButton(bar);
+                ActionButton deleteButton = createDeleteButton();
                 if (deleteButton != null)
                 {
                     bar.add(deleteButton);
@@ -622,7 +622,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    public ActionButton createDeleteButton(ButtonBar bar)
+    public ActionButton createDeleteButton()
     {
         ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
         if (urlDelete != null)
