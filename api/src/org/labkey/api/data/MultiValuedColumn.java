@@ -79,15 +79,19 @@ public class MultiValuedColumn extends LookupColumn
             strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t\t"));
         }
 
+        // TODO: Add ORDER BY?
+
         strJoin.append("\n\t\tGROUP BY kt.");
         strJoin.append(_foreignKey.getSelectName());
         strJoin.append("\n\t)");
     }
 
-    // Use COUNT for now... need to replace with GroupConcat()
+    // By default, return common-separated list of values.  Override to apply a different aggregate.
+    // TODO: This is PostgreSQL only; need to add SQL Server support (see ViabilityAssaySchema for code)
     protected String getAggregateFunction(String selectName)
     {
-        return "COUNT(" + selectName + ")";
+//        return "COUNT(" + selectName + ")";
+        return "array_to_string(viability.array_accum(" + selectName + "), ',')";
     }
 
     @Override
