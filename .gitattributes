@@ -273,6 +273,7 @@ core/resources/schemas/core.xml -text
 core/resources/schemas/dbscripts/postgresql/core-0.00-8.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-10.10-10.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-10.12-10.13.sql -text
+core/resources/schemas/dbscripts/postgresql/core-10.20-10.21.sql -text
 core/resources/schemas/dbscripts/postgresql/core-8.20-8.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-8.30-9.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-9.10-9.20.sql -text
