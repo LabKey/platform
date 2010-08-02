@@ -102,11 +102,17 @@ public class MultiValuedColumn extends LookupColumn
     }
 
     // By default, return common-separated list of values.  Override to apply a different aggregate.
-    // TODO: This is PostgreSQL only; need to add SQL Server support (see ViabilityAssaySchema for code)
+    // TODO: This supports PostgreSQL only; need to add SQL Server support (see ViabilityAssaySchema for code)
     protected String getAggregateFunction(String selectName)
     {
 //        return "COUNT(" + selectName + ")";
         return "array_to_string(viability.array_accum(" + selectName + "), ',')";
+    }
+
+    @Override  // Must match the type of the aggregate function specified above.
+    public String getSqlDataTypeName()
+    {
+        return "varchar";
     }
 
     @Override
