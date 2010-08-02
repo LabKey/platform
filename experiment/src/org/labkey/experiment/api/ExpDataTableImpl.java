@@ -30,7 +30,6 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.*;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -40,7 +39,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
@@ -85,7 +83,6 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         setTitleColumn("Name");
         ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
-        addDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("LSID", "LSID")));
 
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         String domainURI = svc.getDomainURI(getContainer());
@@ -112,13 +109,6 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
         return svc.getFilePropsUpdateService(this, getContainer());
     }
-
-    @Override
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
-    {
-        return super.getDetailsURL(columns, container);
-    }
-
 
     public ColumnInfo createColumn(String alias, Column column)
     {

@@ -110,7 +110,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(")");
         ColumnInfo ret = new ExprColumn(this, name, sql, Types.INTEGER);
 
-        ret.setFk(new LookupForeignKey("RowId")
+        ret.setFk(new ExpSchema.ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {

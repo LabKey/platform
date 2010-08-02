@@ -44,6 +44,7 @@ public class WellGroupTable extends BasePlateTable
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         addWrapColumn(_rootTable.getColumn("RowId"));
         addWrapColumn(_rootTable.getColumn("Name"));
+        visibleColumns.add(FieldKey.fromParts("Name"));
         setTitleColumn("Name");
         ColumnInfo typeCol = _rootTable.getColumn("TypeName");
         addWrapColumn(typeCol);
@@ -51,6 +52,7 @@ public class WellGroupTable extends BasePlateTable
             addCondition(typeCol, groupType.name());
         ColumnInfo templateCol = _rootTable.getColumn("Template");
         addWrapColumn(templateCol);
+        visibleColumns.add(FieldKey.fromParts(templateCol.getName()));
         addCondition(templateCol, "0");
         ColumnInfo plateIdColumn = new AliasedColumn(this, "Plate", _rootTable.getColumn("PlateId"));
         plateIdColumn.setFk(new LookupForeignKey(null, (String) null, "RowId", null)
@@ -61,6 +63,7 @@ public class WellGroupTable extends BasePlateTable
             }
         });
         addColumn(plateIdColumn);
+        visibleColumns.add(FieldKey.fromParts(plateIdColumn.getName()));
 
         //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
 

@@ -410,6 +410,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return url;
     }
 
+    public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
+    {
+        ActionURL url = urlFor(action, container);
+        for (Map.Entry<String, Object> pk : pks.entrySet())
+        {
+            if (pk.getValue() != null)
+            {
+                url.addParameter(pk.getKey(), pk.getValue().toString());
+            }
+        }
+        return url;
+    }
+
     public StringExpression urlExpr(QueryAction action, Container container)
     {
         // UNDONE: use getMainTable().urlExpr(action, container) instead

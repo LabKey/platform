@@ -27,8 +27,10 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -100,11 +102,14 @@ public class StudyDataTable extends FilteredTable
         }
 
         setDefaultVisibleColumns(defaultColumns);
-    }
 
-    public ActionURL getParticipantURL()
-    {
-        return new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
+        setDescription("Contains one row for every row in every dataset in this folder with the columns that are common " +
+                "across all the datasets");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("lsid", "LSID");
+        params.put("datasetId", "Dataset");
+        setDetailsURL(new DetailsURL(new ActionURL(StudyController.DatasetDetailRedirectAction.class, getContainer()), params));
     }
 
     public ActionURL getDataSetURL()

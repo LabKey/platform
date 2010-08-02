@@ -21,14 +21,10 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.assay.PlateUrls;
-
-import java.util.Map;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -43,16 +39,10 @@ public abstract class BasePlateTable extends FilteredTable
     {
         super(info, schema.getContainer());
         _schema = schema;
+
+        ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_schema.getContainer());
+        setDetailsURL(new DetailsURL(url, "rowId", FieldKey.fromParts(getPlateIdColumnName())));
     }
 
     protected abstract String getPlateIdColumnName();
-
-    @Override
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
-    {
-        if (!columns.contains(new FieldKey(null,getPlateIdColumnName())))
-            return null;
-        ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_schema.getContainer());
-        return new DetailsURL(url, "rowId", new FieldKey(null,getPlateIdColumnName()));
-    }
 }

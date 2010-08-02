@@ -157,13 +157,6 @@ public class ListTable extends FilteredTable
         return _list.getContainer();
     }
 
-
-    @Override
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
-    {
-        return super.getDetailsURL(columns, container);
-    }
-
     private String findTitleColumn(ListDefinition listDef, ColumnInfo colKey)
     {
         if (listDef.getTitleColumn() != null)

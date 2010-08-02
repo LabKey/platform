@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -43,9 +42,12 @@ public class AssayListTable extends FilteredTable
 
         _schema = schema;
 
+        ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _schema.getContainer());
+        DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"));
+
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
-        nameCol.setURL(getDetailsURL(Collections.singleton(new FieldKey(null,"RowId")), null));
+        nameCol.setURL(detailsURL);
         ColumnInfo desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
         addColumn(desc);
         addWrapColumn(_rootTable.getColumn("Created"));
@@ -79,14 +81,7 @@ public class AssayListTable extends FilteredTable
 
         // TODO - this is a horrible way to filter out non-assay protocols
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = exp.protocol.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
-    }
 
-    @Override
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
-    {
-        if (!columns.contains(FieldKey.fromParts("RowId")))
-            return null;
-        ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _schema.getContainer());
-        return new DetailsURL(url, "rowId", new FieldKey(null,"RowId"));
+        setDetailsURL(detailsURL);
     }
 }

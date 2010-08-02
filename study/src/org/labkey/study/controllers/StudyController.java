@@ -113,6 +113,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -6295,6 +6296,75 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    private static class DatasetDetailRedirectForm
+    {
+        private int _datasetId;
+        private String _lsid;
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getLsid()
+        {
+            return _lsid;
+        }
+
+        public void setLsid(String lsid)
+        {
+            _lsid = lsid;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
+    {
+        private ActionURL _url;
+
+        @Override
+        public URLHelper getSuccessURL(DatasetDetailRedirectForm form)
+        {
+            return _url;
+        }
+
+        @Override
+        public boolean doAction(DatasetDetailRedirectForm datasetDetailRedirectForm, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        @Override
+        public void validateCommand(DatasetDetailRedirectForm form, Errors errors)
+        {
+            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            if (study == null)
+            {
+                throw new NotFoundException("No study found");
+            }
+            DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
+            if (dataset == null)
+            {
+                throw new NotFoundException("Could not find dataset " + form.getDatasetId());
+            }
+
+            if (form.getLsid() == null)
+            {
+                throw new NotFoundException("No LSID specified");
+            }
+
+            StudyQuerySchema schema = new StudyQuerySchema(study, getUser(), true);
+
+            QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, dataset.getName());
+            assert queryDef != null : "Dataset was found but couldn't get a corresponding TableInfo";
+            _url = queryDef.urlFor(QueryAction.detailsQueryRow, getContainer(), Collections.singletonMap("lsid", (Object)form.getLsid()));
+        }
+    }
 
     @RequiresNoPermission
     public class CheckForReload extends ManageReloadAction    // Subclassing makes it easier to redisplay errors, etc.

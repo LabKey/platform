@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Set;
@@ -99,19 +100,13 @@ public class ParticipantTable extends FilteredTable
         addWrapColumn(_rootTable.getColumn("CurrentSiteId")).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("StartDate"));
         setTitleColumn(StudyService.get().getSubjectColumnName(getContainer()));
+
+        setDetailsURL(new DetailsURL(getBaseDetailsURL(), "participantId",
+                FieldKey.fromParts(StudyService.get().getSubjectColumnName(_schema.getContainer()))));
     }
 
     public ActionURL getBaseDetailsURL()
     {
-        return new ActionURL("Study", "participant", _schema.getContainer());
-    }
-
-    @Override
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container c)
-    {
-        if (!columns.contains(FieldKey.fromParts(StudyService.get().getSubjectColumnName(_schema.getContainer()))))
-            return null;
-        return new DetailsURL(getBaseDetailsURL(), "participantId",
-                new FieldKey(null,StudyService.get().getSubjectColumnName(_schema.getContainer())));
+        return new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
     }
 }

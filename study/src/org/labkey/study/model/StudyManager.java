@@ -357,7 +357,7 @@ public class StudyManager
                 scope.beginTransaction();
                 fTransaction=true;
             }
-            DataSet old = getDataSetDefinition(dataSetDefinition.getContainer(), dataSetDefinition.getDataSetId());
+            DataSet old = getDataSetDefinition(dataSetDefinition.getStudy(), dataSetDefinition.getDataSetId());
             if (null == old)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
             Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
@@ -1238,12 +1238,6 @@ public class StudyManager
         def.unmaterialize();
     }
 
-
-    /** @deprecated */
-    public DataSet getDataSetDefinition(Container c, int id) throws SQLException
-    {
-        return _dataSetHelper.get(c, id, "DataSetId");
-    }
 
     public Map<VisitMapKey,Boolean> getRequiredMap(Study study)
     {

@@ -17,9 +17,7 @@
 package org.labkey.query;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpressionFactory;
@@ -29,8 +27,11 @@ import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
 
 import java.net.URISyntaxException;
+import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class TableQueryDefinition extends QueryDefinitionImpl
 {
@@ -75,6 +76,60 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         }
 
         return url != null ? url : super.urlFor(action, container);
+    }
+
+    public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
+    {
+        ActionURL url = null;
+        List<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo table = getTable(getSchema(), errors, true);
+        if (table != null)
+        {
+            switch (action)
+            {
+                case detailsQueryRow:
+                    Map<FieldKey, ColumnInfo> selectCols = QueryService.get().getColumns(table, Collections.<FieldKey>emptySet(), table.getColumns());
+                    StringExpression expr = table.getDetailsURL(selectCols.keySet(), container);
+                    // See if there's a details URL available with the set of columns that we can offer, and
+                    // we have enough PK values to uniquely identify the row
+                    if (expr != null && pks.keySet().containsAll(table.getPkColumnNames()))
+                    {
+                        Table.TableResultSet rs = null;
+                        try
+                        {
+                            SimpleFilter filter = new SimpleFilter();
+                            for (Map.Entry<String, Object> pk : pks.entrySet())
+                            {
+                                filter.addCondition(pk.getKey(), pk.getValue());
+                            }
+                            rs = Table.selectForDisplay(table, selectCols.values(), filter, null, 1, 0);
+                            if (rs.next())
+                            {
+                                RenderContext ctx = new RenderContext(null);
+                                ctx.setResultSet(rs, selectCols);
+                                ctx.setRow(rs.getRowMap());
+                                return new ActionURL(expr.eval(ctx));
+                            }
+                            else
+                            {
+                                return null;
+                            }
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
+                        finally
+                        {
+                            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+                        }
+
+                    }
+                    break;
+            }
+        }
+
+        return url != null ? url : super.urlFor(action, container, pks);
     }
 
     public StringExpression urlExpr(QueryAction action, Container container)

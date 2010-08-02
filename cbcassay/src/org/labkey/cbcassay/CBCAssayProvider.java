@@ -178,7 +178,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
         showDetailsUrl.addParameter("rowId", protocol.getRowId());
         Map<String, String> params = new HashMap<String, String>();
         params.put("dataRowId", "ObjectId");
-        table.addDetailsURL(new DetailsURL(showDetailsUrl, params));
+        table.setDetailsURL(new DetailsURL(showDetailsUrl, params));
 
         ActionURL updateUrl = new ActionURL(CBCAssayController.UpdateAction.class, null);
         table.setUpdateURL(new DetailsURL(updateUrl, "objectId", FieldKey.fromString("ObjectId")));
