@@ -40,28 +40,34 @@
 <link rel="stylesheet" href="<%=request.getContextPath()%>/utils/dialogBox.css" type="text/css"/>
 
 <script type="text/javascript">
-    LABKEY.requiresYahoo("yahoo");
-    LABKEY.requiresYahoo("event");
-    LABKEY.requiresYahoo("dom");
-    LABKEY.requiresYahoo("dragdrop");
-    LABKEY.requiresYahoo("animation");
-    LABKEY.requiresYahoo("container");
-    LABKEY.requiresScript("utils/dialogBox.js");
+    LABKEY.requiresScript("designer/designer.js", true);
+    LABKEY.requiresScript("query/columnPicker.js", true);
+    LABKEY.requiresScript("query/queryDesigner.js", true);
 </script>
-<script type="text/javascript" src="<%=request.getContextPath()%>/designer/designer.js"></script>
-<script type="text/javascript" src="<%=request.getContextPath()%>/query/columnPicker.js"></script>
-<script type="text/javascript" src="<%=request.getContextPath()%>/query/queryDesigner.js"></script>
 <% if (form.ff_designXML == null) {
     return;
 }%>
 <script type="text/javascript">
-    var designer = new ViewDesigner(new TableInfoService(<%=q(urlTableInfo.toString())%>));
-    <% if (form.getDefaultTab() != null)
-    { %>
-        designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
-    <% } %>
-    designer.setShowHiddenFields(<%= form.getQuerySettings().isShowHiddenFieldsWhenCustomizing() %>);
-    designerInit();
+    var designer = null;
+    function init()
+    {
+        designer = new ViewDesigner(new TableInfoService(<%=q(urlTableInfo.toString())%>));
+        <% if (form.getDefaultTab() != null)
+        { %>
+            designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
+        <% } %>
+        designer.setShowHiddenFields(<%= form.getQuerySettings().isShowHiddenFieldsWhenCustomizing() %>);
+        initDesigner();
+    }
+
+    Ext.onReady(function () {
+        LABKEY.Utils.onTrue({
+            testCallback: function () { return window.ViewDesigner != undefined; },
+            successCallback: init,
+            errorCallback: console.error
+        });
+    });
+
     function updateViewNameDescription(elCheckbox)
     {
         var elShared = document.getElementById("sharedViewNameDescription");
@@ -343,12 +349,3 @@
     } %>
     <br>
 </form>
-<div id="columnPropertiesDialog">
-<div class="hd">Set Column Caption</div>
-<div class="bd">
-    <p><span id="columnPropertiesDialogName"></span></p>
-    <p><label for="columnPropertiesDialogLabel">Column Caption:</label><input type="textbox" name="label" id="columnPropertiesDialogLabel"/></p>
-    <p><labkey:button id="columnPropertiesDialogOK" text="OK" /> <labkey:button id="columnPropertiesDialogCancel" text="Cancel" /></p>
-
-</div>
-</div>

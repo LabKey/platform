@@ -1413,15 +1413,9 @@ function ViewDesigner(tableInfoService)
         this.tableInfoService.processOutputColumns(XMLUtil.getChildWithTagName(nlTables[1], 'metadata', nsQuery));
         var dnTable = XMLUtil.getChildWithTagName(dnFrom, 'table', nsQuery);
         this.columnPicker.addTable(elColumnPicker, table, 0);
-        this.initDialog();
-    }
-    ret.initDialog = function()
-    {
-        this.columnPropertiesDialog = new LABKEY.widget.DialogBox("columnPropertiesDialog", {width:"300px", height:"300px" });
     }
     ret.showColumnProperties = function()
     {
-        var columnPropertiesDialog = this.columnPropertiesDialog;
         var designer = this;
         if (this.tabs.columns.selectedNodes.length == 0)
         {
@@ -1434,7 +1428,6 @@ function ViewDesigner(tableInfoService)
         }
         var dn = this.tabs.columns.selectedNodes[0];
         var bind = new Bind_Metadata(this, dn, "columnTitle");
-        bind.strDef = dnField
         var dnValue = XMLUtil.getChildWithTagName(dn, "value", nsQuery);
         if (!dnValue)
         {
@@ -1450,26 +1443,17 @@ function ViewDesigner(tableInfoService)
         {
             bind.strDef = oField.label;
         }
-        XMLUtil.setInnerText(YAHOO.util.Dom.get("columnPropertiesDialogName"), FieldKey.fromString(XMLUtil.getInnerText(dnField)).toDisplayString());
-        var elLabel = YAHOO.util.Dom.get("columnPropertiesDialogLabel");
-        elLabel.value = bind.getValue();
-        YAHOO.util.Dom.get("columnPropertiesDialogOK").onclick = okClicked;
-        YAHOO.util.Dom.get("columnPropertiesDialogCancel").onclick = cancelClicked;
+        var title = "Set Caption For '" + FieldKey.fromString(XMLUtil.getInnerText(dnField)).toDisplayString() + "' Column";
 
-        function okClicked()
+        function onClose(buttonId, newValue)
         {
-            bind.setValue(elLabel.value);
-            cancelClicked();
-            designer.tabs.columns.updateDisplay();
+            if (buttonId == "ok")
+            {
+                bind.setValue(newValue);
+                designer.tabs.columns.updateDisplay();
+            }
         }
-        function cancelClicked()
-        {
-            columnPropertiesDialog.hide();
-        }
-
-        this.columnPropertiesDialog.render();
-        this.columnPropertiesDialog.center();
-        this.columnPropertiesDialog.show();
+        Ext.MessageBox.prompt(title, "Column Caption:", onClose, window, false, bind.getValue());
     }
     ret.setShowHiddenFields = function(show)
     {
@@ -1561,23 +1545,14 @@ Bind_FieldKey.prototype =
 };
 
 var needToPrompt = true;
-function designerInit()
+
+function initDesigner(event)
 {
-    function initDesigner(event)
+    window.onbeforeunload = function()
     {
-        window.onbeforeunload = function()
-        {
-            if (needToPrompt && document.getElementById("ff_dirty").value == "true")
-                return "Your changes have not been saved.";
-        };
-        designer.setDesignDocument(XMLUtil.loadXML(document.getElementById("ff_designXML").value));
-    }
-    if (window.addEventListener)
-    {
-        window.addEventListener("load", initDesigner, false);
-    }
-    else if (window.attachEvent)
-    {
-        window.attachEvent("onload", initDesigner);
-    }
+        if (needToPrompt && document.getElementById("ff_dirty").value == "true")
+            return "Your changes have not been saved.";
+    };
+    designer.setDesignDocument(XMLUtil.loadXML(document.getElementById("ff_designXML").value));
 }
+

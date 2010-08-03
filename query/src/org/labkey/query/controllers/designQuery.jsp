@@ -37,24 +37,23 @@
     urlTableInfo.addParameter("design", "1");
 %>
 <script type="text/javascript">
-    LABKEY.requiresYahoo("yahoo");
-    LABKEY.requiresYahoo("event");
-    LABKEY.requiresYahoo("dom");
-    LABKEY.requiresYahoo("dragdrop");
-    LABKEY.requiresYahoo("animation");
-    LABKEY.requiresYahoo("container");
-    LABKEY.requiresScript("utils/dialogBox.js");
+    LABKEY.requiresScript("designer/designer.js", true);
+    LABKEY.requiresScript("query/columnPicker.js", true);
+    LABKEY.requiresScript("query/queryDesigner.js", true);
 </script>
-<script type="text/javascript" src="<%=contextPath%>/designer/designer.js"></script>
-<script type="text/javascript" src="<%=contextPath%>/query/columnPicker.js"></script>
-<script type="text/javascript" src="<%=contextPath%>/query/queryDesigner.js"></script>
 <script type="text/javascript">
-    var designer = new QueryDesigner(<%=q(urlCheckSyntax.toString())%>, new TableInfoService(<%=q(urlTableInfo.toString())%>));
-    <% if (form.getDefaultTab() != null)
-    { %>
-        designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
-    <% } %>
-    designerInit();
+    var designer = null;
+    function init()
+    {
+        designer = new QueryDesigner(<%=q(urlCheckSyntax.toString())%>, new TableInfoService(<%=q(urlTableInfo.toString())%>));
+        <% if (form.getDefaultTab() != null)
+        { %>
+            designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
+        <% } %>
+        initDesigner();
+    }
+
+    Ext.onReady(init);
 </script>
 <table class="labkey-no-spacing">
     <tr>
