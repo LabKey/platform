@@ -9,6 +9,7 @@
 }
 
 .labkey-data-region .labkey-details,
+.labkey-data-region .labkey-update,
 .labkey-data-region .labkey-selectors
 {
     visibility: collapse;

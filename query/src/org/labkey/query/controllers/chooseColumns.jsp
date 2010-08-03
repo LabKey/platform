@@ -36,9 +36,6 @@
 
     boolean canEdit = form.canEdit();
 %>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/_yui/build/container/assets/container.css" type="text/css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/utils/dialogBox.css" type="text/css"/>
-
 <script type="text/javascript">
     LABKEY.requiresScript("designer/designer.js", true);
     LABKEY.requiresScript("query/columnPicker.js", true);
