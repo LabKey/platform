@@ -26,17 +26,16 @@ import org.labkey.api.util.Filter;
 // Cache providers return caches that implement this interface.  BasicCache implementations must be thread-safe.
 public interface BasicCache<K, V>
 {
-    // Returns previous value or null
     void put(K key, V value);
 
-    // Returns previous value or null
     void put(K key, V value, long timeToLive);
 
     V get(K key);
 
     void remove(K key);
 
-    // Returns the number of elements that were removed
+    // Removes every element in the cache where filter.accept(K key) evaluates to true.
+    // Returns the number of elements that were removed.
     int removeUsingFilter(Filter<K> filter);
 
     void clear();
