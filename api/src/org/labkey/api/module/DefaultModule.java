@@ -681,6 +681,11 @@ public abstract class DefaultModule implements Module
         return null;
     }
 
+    public void clearResourceCache()
+    {
+        _resolver.clear();
+    }
+
     @Override
     public String toString()
     {

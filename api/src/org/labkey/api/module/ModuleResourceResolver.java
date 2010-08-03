@@ -16,8 +16,8 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.resource.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Path;
@@ -33,7 +33,8 @@ import java.util.List;
 public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
-    private static final Cache<String, Resource> RESOURCES = CacheManager.getCache(4096, CacheManager.HOUR, "Module resources");
+    private static final StringKeyCache<Resource> RESOURCES = CacheManager.getStringKeyCache(4096, CacheManager.HOUR, "Module resources");
+    private static final boolean DEV_MODE = AppProps.getInstance().isDevMode();
 
     private static final Resource CACHE_MISS = new AbstractResource(null, null) {
         public Resource parent()
@@ -41,20 +42,19 @@ public class ModuleResourceResolver implements Resolver
             return null;
         }
     };
-    private static boolean DEV_MODE = AppProps.getInstance().isDevMode();
 
-    Module _module;
-    MergedDirectoryResource _root;
-    ClassResourceCollection[] _classes;
+    private final Module _module;
+    private final MergedDirectoryResource _root;
+    private final ClassResourceCollection[] _classes;
 
     ModuleResourceResolver(Module module, List<File> dirs, Class... classes)
     {
-        _module = module;
-
         List<ClassResourceCollection> additional = new ArrayList<ClassResourceCollection>(classes.length);
+
         for (Class clazz : classes)
             additional.add(new ClassResourceCollection(clazz, this));
 
+        _module = module;
         _root = new MergedDirectoryResource(this, Path.emptyPath, dirs);
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
@@ -81,6 +81,14 @@ public class ModuleResourceResolver implements Resolver
         RESOURCES.remove(cacheKey);
     }
 
+    // Clear all resources from the cache for just this module
+    public void clear()
+    {
+        String prefix = this.toString();  // Remove all entries having a key that starts with this module name
+        RESOURCES.removeUsingPrefix(prefix);
+        _root.clearChildren();
+    }
+
     public Path getRootPath()
     {
         return Path.emptyPath;
@@ -94,17 +102,21 @@ public class ModuleResourceResolver implements Resolver
         Path normalized = path.normalize();
         String cacheKey = this + ":" + normalized;
         Resource r = get(cacheKey);
+
         if (r == CACHE_MISS)
             return null;
+
         if (r == null)
         {
             r = resolve(normalized);
+
             if (null == r)
             {
                 LOG.debug("missed resource: " + path);
                 miss(cacheKey);
                 return null;
             }
+
             if (r.exists())
             {
                 LOG.debug("resolved resource: " + r + " -> " + normalized);

@@ -34,17 +34,17 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCache(50, CacheManager.DAY, "MergedDirectoryResourceCache");
     private static final long VERSION_STAMP_CACHE_TIME = AppProps.getInstance().isDevMode() ? (15*CacheManager.SECOND) : CacheManager.DEFAULT_TIMEOUT;
 
+    private final List<File> _dirs;
+    private final Resource[] _additional;
+    private final Pair<Resolver, Path> _cacheKey;
+    private final Object _lock = new Object();
 
-    List<File> _dirs;
-    Resource[] _additional;
-    long versionStamp;
-    long versionStampTime;
+    private long _versionStamp;
+    private long _versionStampTime;
 
-    final Object _lock = new Object();
-
-    private class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
+    private static class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
     {
-        CaseInsensitiveTreeMap()
+        private CaseInsensitiveTreeMap()
         {
             super(new Comparator<String>(){
                     public int compare(String s1, String s2)
@@ -60,6 +60,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         super(path, resolver);
         _dirs = dirs;
         _additional = children;
+        _cacheKey = new Pair<Resolver, Path>(_resolver, getPath());
     }
 
     public Resource parent()
@@ -67,17 +68,18 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         return _resolver.lookup(getPath().getParent());
     }
 
-    Map<String, Resource> getChildren()
+    private Map<String, Resource> getChildren()
     {
         synchronized (_lock)
         {
-            Pair<Resolver, Path> cacheKey = new Pair<Resolver, Path>(_resolver, getPath());
-            Map<String, Resource> children = CHILDREN_CACHE.get(cacheKey);
+            Map<String, Resource> children = CHILDREN_CACHE.get(_cacheKey);
+
             // Check isStale() first to establish the versionStamp the first time through.
             if (isStale() || null == children)
             {
                 //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: " + ((children == null) ? "null" : "stale") + " cache: " + this);
                 Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<ArrayList<File>>();
+
                 for (File dir : _dirs)
                 {
                     if (!dir.isDirectory())
@@ -103,7 +105,9 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                         }
                     }
                 }
+
                 children = new CaseInsensitiveTreeMap<Resource>();
+
                 for (Map.Entry<String, ArrayList<File>> e : map.entrySet())
                 {
                     Path path = getPath().append(e.getKey());
@@ -113,12 +117,22 @@ public class MergedDirectoryResource extends AbstractResourceCollection
                             new MergedDirectoryResource(_resolver, path, files);
                     children.put(e.getKey(), r);
                 }
+
                 for (Resource r : _additional)
                     children.put(r.getName(), r);
 
-                CHILDREN_CACHE.put(cacheKey, children);
+                CHILDREN_CACHE.put(_cacheKey, children);
             }
+
             return children;
+        }
+    }
+
+    public void clearChildren()
+    {
+        synchronized (_lock)
+        {
+            CHILDREN_CACHE.remove(_cacheKey);
         }
     }
 
@@ -151,29 +165,28 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     protected boolean isStale()
     {
-        return versionStamp != getVersionStamp();
+        return _versionStamp != getVersionStamp();
     }
 
     public long getVersionStamp()
     {
         // To not hit the disk too often, wait a minimum amount of time before getting the lastModified time.
-        if (_dirs != null && HeartBeat.currentTimeMillis() > versionStampTime + VERSION_STAMP_CACHE_TIME)
+        if (_dirs != null && HeartBeat.currentTimeMillis() > _versionStampTime + VERSION_STAMP_CACHE_TIME)
         {
             //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: checking timestamps: " + this);
             long version = 0;
             for (File d : _dirs)
                 version += d.lastModified();
 
-            versionStampTime = HeartBeat.currentTimeMillis();
-            versionStamp = version;
+            _versionStampTime = HeartBeat.currentTimeMillis();
+            _versionStamp = version;
         }
 
-        return versionStamp;
+        return _versionStamp;
     }
 
     public long getLastModified()
     {
         return exists() ? _dirs.get(0).lastModified() : Long.MIN_VALUE;
     }
-
 }

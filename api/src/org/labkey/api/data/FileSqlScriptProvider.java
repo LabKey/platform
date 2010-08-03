@@ -90,11 +90,11 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     }
 
 
-    /* Returns filenames in the specified directory matching one of the following patterns:
+    /*
+        Returns filenames in the specified directory matching one of the following patterns:
 
             schemaName == null          *.sql
             schemaName == <schema>      <schema>*.sql
-
     */
     private Set<String> getScriptFilenames(String schemaName) throws SqlScriptException
     {
@@ -210,7 +210,16 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         finally
         {
             if (null != fw)
-                fw.close();
+            {
+                try
+                {
+                    fw.close();
+                }
+                finally
+                {
+                    _module.clearResourceCache();
+                }
+            }
         }
     }
 
