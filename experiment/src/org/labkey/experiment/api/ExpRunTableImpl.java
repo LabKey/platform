@@ -344,6 +344,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
+        addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));
 
         List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments));
