@@ -451,9 +451,9 @@ public abstract class DisplayColumn extends RenderColumn
         NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
         if (navtree != null)
         {
-            out.write(" onclick=\"showMenu(this, '");
-            out.write(PageFlowUtil.filter(navtree.getId()));
-            out.write("', null);\"");
+            out.write(" onclick=\"showMenu(this, ");
+            out.write(PageFlowUtil.jsString(navtree.getId()));
+            out.write(", null);\"");
         }
         out.write(">\n");
         out.write("<div>");
@@ -469,11 +469,6 @@ public abstract class DisplayColumn extends RenderColumn
         {
             PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
             popup.renderMenuScript(out);
-
-            // 6821: hover pseudo-class doesn't work in IE7 in quirks mode
-            out.write("<script type='text/javascript'>\n");
-            out.write("Ext.fly(" + PageFlowUtil.jsString(baseId + ":header") + ").addClassOnOver('hover');\n");
-            out.write("</script>\n");
         }
 
         out.write("</td>");
@@ -543,7 +538,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (addSortItems || addFilterItems)
         {
             navtree = new NavTree();
-            navtree.setId(PageFlowUtil.filter(baseId + ":menu"));
+            navtree.setId(baseId + ":menu"); //PageFlowUtil.filter(baseId + ":menu"));
 
             if (addSortItems)
             {
@@ -559,7 +554,7 @@ public abstract class DisplayColumn extends RenderColumn
 
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 NavTree asc = new NavTree("Sort Ascending");
-                asc.setId(PageFlowUtil.filter(baseId + ":asc"));
+                asc.setId(baseId + ":asc"); //PageFlowUtil.filter(baseId + ":asc"));
                 asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
                 asc.setSelected(selected);
                 asc.setDisabled(primarySort && selected);
@@ -567,7 +562,7 @@ public abstract class DisplayColumn extends RenderColumn
 
                 selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 NavTree desc = new NavTree("Sort Descending");
-                desc.setId(PageFlowUtil.filter(baseId + ":desc"));
+                desc.setId(baseId + ":desc"); //PageFlowUtil.filter(baseId + ":desc"));
                 desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
                 desc.setSelected(selected);
                 desc.setDisabled(primarySort && selected);
@@ -586,13 +581,13 @@ public abstract class DisplayColumn extends RenderColumn
                     navtree.addSeparator();
 
                 NavTree filterItem = new NavTree("Filter...");
-                filterItem.setId(PageFlowUtil.filter(baseId + ":filter"));
+                filterItem.setId(baseId + ":filter");//PageFlowUtil.filter(baseId + ":filter"));
                 filterItem.setScript(getFilterOnClick(ctx));
                 //filterItem.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
                 navtree.addChild(filterItem);
                 
                 NavTree clearFilterItem = new NavTree("Clear Filter");
-                clearFilterItem.setId(PageFlowUtil.filter(baseId + ":clear-filter"));
+                clearFilterItem.setId(baseId + ":clear-filter");//PageFlowUtil.filter(baseId + ":clear-filter"));
                 clearFilterItem.setDisabled(!filtered);
                 clearFilterItem.setScript(getClearFilter(ctx));
                 navtree.addChild(clearFilterItem);

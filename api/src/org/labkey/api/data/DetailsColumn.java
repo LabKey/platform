@@ -23,7 +23,7 @@ public class DetailsColumn extends UrlColumn
     public DetailsColumn(StringExpression urlExpression)
     {
         super(urlExpression, "details");
-        addGridHeaderClass("labkey-header");
+        setGridHeaderClass("");
         addDisplayClass("labkey-details");
     }
 }

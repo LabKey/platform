@@ -101,7 +101,7 @@ public class PopupMenu extends DisplayElement
             assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
             out.append("[");
             out.append("<a href='javascript:void(0)'");
-            out.append("onclick=\"showMenu(this, '").append(getId()).append("','").append(_align.getExtPosition()).append("');\">");
+            out.append("onclick=\"showMenu(this, ").append(PageFlowUtil.jsString(getId())).append(",'").append(_align.getExtPosition()).append("');\">");
             out.append(PageFlowUtil.filter(_navTree.getKey())).append(" &gt;&gt;");
             out.append("</a>");
             out.append("]");
@@ -113,13 +113,13 @@ public class PopupMenu extends DisplayElement
                 attributes = "labkey-requires-selection=\"" + PageFlowUtil.filter(requiresSelectionDataRegion) + "\"";
             out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
                     (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
-                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');", attributes));
+                    "showMenu(this, " + PageFlowUtil.jsString(getId()) + ",'" + _align.getExtPosition() + "');", attributes));
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {
             assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
+                    "showMenu(this, " + PageFlowUtil.jsString(getId()) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
         }
     }
 

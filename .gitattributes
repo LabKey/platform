@@ -210,6 +210,7 @@ api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TransactedBlock.java -text
 api/src/org/labkey/api/data/TransactionCache.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text
+api/src/org/labkey/api/data/UpdateColumn.java -text
 api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
 api/src/org/labkey/api/data/UserDefinedButtonConfig.java -text

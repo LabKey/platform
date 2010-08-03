@@ -241,6 +241,8 @@ public class QueryView extends WebPartView<Object>
 
         URLHelper target = urlRefreshQuery();
         NavTreeMenuButton button = new NavTreeMenuButton(label);
+        NavTree menu = button.getNavTree();
+        menu.setId(getDataRegionName() + ".Menu." + label);
 
         if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
         {
@@ -253,12 +255,12 @@ public class QueryView extends WebPartView<Object>
                 button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
             }
             NavTree editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
-            editQueryItem.setId("Query:EditSource");
+            editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
             button.addMenuItem(editQueryItem);
             if (_queryDef.isMetadataEditable())
             {
                 NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, _queryDef));
-                editMetadataItem.setId("Query:EditMetadata");
+                editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
                 button.addMenuItem(editMetadataItem);
             }
         }
@@ -272,7 +274,7 @@ public class QueryView extends WebPartView<Object>
         for (String query : getSchema().getTableAndQueryNames(true))
         {
             NavTree item = new NavTree(query, target.clone().replaceParameter(param(QueryParam.queryName), query).getLocalURIString());
-            item.setId(label + ":" + query);
+            item.setId(getDataRegionName() + ":" + label + ":" + query);
             if (query.equals(current))
                 item.setHighlighted(true);
             item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
@@ -822,11 +824,11 @@ public class QueryView extends WebPartView<Object>
                     if (submenu == null)
                     {
                         submenu = menu.addChild("Create");
-                        submenu.setId("Views:Create");
+                        submenu.setId(getDataRegionName() + ":Views:Create");
                     }
 
                     NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
-                    item.setId("Views:Create:" + designer.getLabel());
+                    item.setId(getDataRegionName() + ":Views:Create:" + designer.getLabel());
                     item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), designer.getReportType()));
 
                     submenu.addChild(item);
@@ -912,7 +914,7 @@ public class QueryView extends WebPartView<Object>
                 item = new NavTree(label, url.toString());
                 item.setSelected(true);
             }
-            item.setId("Views:" + label);
+            item.setId(getDataRegionName() + ":Views:" + label);
             button.addMenuItem(item);
         }
 
@@ -920,7 +922,7 @@ public class QueryView extends WebPartView<Object>
         {
             button.addSeparator();
             NavTree containerFilterItem = new NavTree("Folder Filter");
-            containerFilterItem.setId("Views:Folder Filter");
+            containerFilterItem.setId(getDataRegionName() + ":Views:Folder Filter");
             button.addMenuItem(containerFilterItem);
 
             ContainerFilterable table = (ContainerFilterable)getTable();
@@ -936,7 +938,7 @@ public class QueryView extends WebPartView<Object>
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
 
-                filterItem.setId("Views:Folder Filter:" + filterType.toString());
+                filterItem.setId(getDataRegionName() + ":Views:Folder Filter:" + filterType.toString());
 
                 if(selectedFilter.getType() == filterType)
                 {
@@ -958,7 +960,7 @@ public class QueryView extends WebPartView<Object>
         if (!isReport)
             item.setScript(changeViewScript.replace("<viewname>", ""));
 
-        item.setId("Views:default");
+        item.setId(getDataRegionName() + ":Views:default");
         if ("".equals(currentView))
             item.setHighlighted(true);
         item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
@@ -989,7 +991,7 @@ public class QueryView extends WebPartView<Object>
             item = new NavTree(label, (isReport ? target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString(): "#"));
             if (!isReport)
                 item.setScript(changeViewScript.replace("<viewname>", label));
-            item.setId("Views:" + label);
+            item.setId(getDataRegionName() + ":Views:" + label);
             if (label.equals(currentView))
                 item.setHighlighted(true);
             if (null != view.getCustomIconUrl())
@@ -1030,7 +1032,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String reportId = report.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
-                item.setId("Views:" + report.getDescriptor().getReportName());
+                item.setId(getDataRegionName() + ":Views:" + report.getDescriptor().getReportName());
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setHighlighted(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
@@ -1069,7 +1071,7 @@ public class QueryView extends WebPartView<Object>
         if (_report == null)
         {
             NavTree item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
-            item.setId("Views:Customize View");
+            item.setId(getDataRegionName() + ":Views:Customize View");
 
             button.addMenuItem(item);
         }
@@ -1080,7 +1082,7 @@ public class QueryView extends WebPartView<Object>
             if (provider != null)
             {
                 NavTree item = button.addMenuItem("Edit Snapshot", provider.getEditSnapshotURL(getSettings(), getViewContext()));
-                item.setId("Views:Edit Snapshot");
+                item.setId(getDataRegionName() + ":Views:Edit Snapshot");
             }
         }
     }
@@ -1091,7 +1093,8 @@ public class QueryView extends WebPartView<Object>
         for (Map.Entry<String, String> entry : params.entrySet())
             url.addParameter(entry.getKey(), entry.getValue());
 
-        button.addMenuItem("Manage Views", url);
+        NavTree item = button.addMenuItem("Manage Views", url);
+        item.setId(getDataRegionName() + ":Views:Manage Views");
     }
 
     public String getDataRegionName()
@@ -1601,7 +1604,7 @@ public class QueryView extends WebPartView<Object>
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
             if (urlUpdate != null)
             {
-                ret.add(0, new UrlColumn(urlUpdate, "edit"));
+                ret.add(0, new UpdateColumn(urlUpdate));
             }
         }
 
