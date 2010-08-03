@@ -70,14 +70,6 @@ public abstract class EmailPrefsSelector
     }
 
 
-    // All users with an email preference -- they have not been authorized!
-    // TODO: I don't like exposing the email prefs to callers -- should probably return a list of Users and create a User -> EmailPref map for shouldSend() to use
-    public List<EmailPref> getEmailPrefs()
-    {
-        return _emailPrefs;
-    }
-
-
     // All users with an email preference plus project users who get the default email preference -- they have not been authorized!
     public Collection<User> getUsers()
     {
@@ -95,8 +87,9 @@ public abstract class EmailPrefsSelector
         int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 
         User user = ep.getUser();
+
         //if user is inactive, don't sent email
-        if(!user.isActive())
+        if (!user.isActive())
             return false;
 
         DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);

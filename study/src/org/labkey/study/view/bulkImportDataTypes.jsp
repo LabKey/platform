@@ -44,8 +44,8 @@ Use this page to import the schema for multiple datasets.  Paste in a tab-delimi
 columns and any of the optional columns.
 </p>
 <p>
-The first five columns mentioned below are properties of the dataset; the value must be identical for all column
-definitions within each dataset.  The remaining properties are column properties; these will change within each dataset.
+The first five columns mentioned below are properties of the dataset; the value must be identical for all field
+definitions within each dataset.  The remaining properties are field properties; these will change within each dataset.
 </p>
 <p>
 For more information about the schema definition format, see
@@ -88,37 +88,37 @@ documentation page</a>.
     </tr>
     <tr>
         <th align=left valign=top nowrap>Property<span class="labkey-error">*</span></th>
-        <td valign=top>The column name as it appears in the data to be imported</td>
+        <td valign=top>The field name as it appears in the data to be imported</td>
         <td valign=top><code>PTID</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>RangeURI<span class="labkey-error">*</span></th>
-        <td valign=top>The storage type of this column</td>
+        <td valign=top>The storage type of this field</td>
         <td valign=top><code>xsd:int</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>Label</th>
-        <td valign=top>Display name for this column</td>
+        <td valign=top>Display name for this field</td>
         <td valign=top><code>Participant ID</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>ConceptURI</th>
-        <td valign=top>Concept associated with this column</td>
+        <td valign=top>Concept associated with this field</td>
         <td valign=top><code>SCHARP#Participant_ID</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>Key</th>
-        <td valign=top>Indicates that this column is an extra key (int, max 1 per dataset)</td>
+        <td valign=top>Indicates that this field is an extra key (int, max 1 per dataset)</td>
         <td valign=top><code>0</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>AutoKey</th>
-        <td valign=top>Indicates that this extra key column should be auto-incrementing, and managed by the server</td>
+        <td valign=top>Indicates that this extra key field should be auto-incrementing, and managed by the server</td>
         <td valign=top><code>false</code></td>
     </tr>
     <tr>
         <th align=left valign=top nowrap>MvEnabled</th>
-        <td valign=top>Indicates whether this column supports missing value indicators (e.g. "Q" or "N")</td>
+        <td valign=top>Indicates whether this field supports missing value indicators (e.g. "Q" or "N")</td>
         <td valign=top><code>false</code></td>
     </tr>
     <tr>
