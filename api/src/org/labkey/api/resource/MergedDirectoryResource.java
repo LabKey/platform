@@ -18,6 +18,7 @@ package org.labkey.api.resource;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -42,18 +43,22 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     private long _versionStamp;
     private long _versionStampTime;
 
-    private static class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
+
+    // Static method that operates on the shared cache; removes all children associated with this resolver.
+    public static void clearResourceCache(final Resolver resolver)
     {
-        private CaseInsensitiveTreeMap()
-        {
-            super(new Comparator<String>(){
-                    public int compare(String s1, String s2)
-                    {
-                        return s1.compareToIgnoreCase(s2);
-                    }
-                });
-        }
+            int count = CHILDREN_CACHE.removeUsingFilter(new Filter<Pair<Resolver, Path>>()
+            {
+                @Override
+                public boolean accept(Pair<Resolver, Path> key)
+                {
+                    return key.first == resolver;
+                }
+            });
+
+            System.out.println("Deleted: " + count);
     }
+
 
     public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
     {
@@ -128,14 +133,6 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         }
     }
 
-    public void clearChildren()
-    {
-        synchronized (_lock)
-        {
-            CHILDREN_CACHE.remove(_cacheKey);
-        }
-    }
-
     public Collection<Resource> list()
     {
         Map<String, Resource> children = getChildren();
@@ -154,8 +151,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     public Resource find(String name)
     {
-        Resource r = getChildren().get(name);
-        return r;
+        return getChildren().get(name);
     }
 
     public Collection<String> listNames()
@@ -188,5 +184,19 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     public long getLastModified()
     {
         return exists() ? _dirs.get(0).lastModified() : Long.MIN_VALUE;
+    }
+
+
+    private static class CaseInsensitiveTreeMap<V> extends TreeMap<String,V>
+    {
+        private CaseInsensitiveTreeMap()
+        {
+            super(new Comparator<String>(){
+                    public int compare(String s1, String s2)
+                    {
+                        return s1.compareToIgnoreCase(s2);
+                    }
+                });
+        }
     }
 }

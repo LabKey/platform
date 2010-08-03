@@ -86,7 +86,7 @@ public class ModuleResourceResolver implements Resolver
     {
         String prefix = this.toString();  // Remove all entries having a key that starts with this module name
         RESOURCES.removeUsingPrefix(prefix);
-        _root.clearChildren();
+        MergedDirectoryResource.clearResourceCache(this);
     }
 
     public Path getRootPath()
