@@ -47,16 +47,14 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     // Static method that operates on the shared cache; removes all children associated with this resolver.
     public static void clearResourceCache(final Resolver resolver)
     {
-            int count = CHILDREN_CACHE.removeUsingFilter(new Filter<Pair<Resolver, Path>>()
+        CHILDREN_CACHE.removeUsingFilter(new Filter<Pair<Resolver, Path>>()
+        {
+            @Override
+            public boolean accept(Pair<Resolver, Path> key)
             {
-                @Override
-                public boolean accept(Pair<Resolver, Path> key)
-                {
-                    return key.first == resolver;
-                }
-            });
-
-            System.out.println("Deleted: " + count);
+                return key.first == resolver;
+            }
+        });
     }
 
 
