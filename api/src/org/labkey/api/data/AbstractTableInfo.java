@@ -59,8 +59,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     protected DetailsURL _gridURL;
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
-    protected DetailsURL _detailsURL;
     protected ButtonBarConfig _buttonBarConfig;
+    private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(1);
 
     public List<ColumnInfo> getPkColumns()
     {
@@ -92,16 +92,16 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void afterConstruct()
     {
-        if (hasContainerContext())
+         if (hasContainerContext())
          {
              for (ColumnInfo c : getColumns())
              {
                  if (c.getURL() instanceof DetailsURL)
                      ((DetailsURL)c.getURL()).setContainer(this);
              }
-             if (null != _detailsURL)
+             for (DetailsURL detailsURL : _detailsURLs)
              {
-                 _detailsURL.setContainer(this);
+                 detailsURL.setContainer(this);
              }
          }
      }
@@ -385,9 +385,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        if (_detailsURL != null && _detailsURL.validateFieldKeys(columns))
+        for (DetailsURL dUrl : _detailsURLs)
         {
-            return _detailsURL.copy(container);
+            if (dUrl.validateFieldKeys(columns))
+                return dUrl.copy(container);
         }
         return null;
     }
@@ -399,7 +400,13 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setDetailsURL(DetailsURL detailsURL)
     {
-        _detailsURL = detailsURL;
+        _detailsURLs.clear();
+        _detailsURLs.add(detailsURL);
+    }
+
+    public void addDetailsURL(DetailsURL detailsURL)
+    {
+        _detailsURLs.add(detailsURL);
     }
 
     public void setGridURL(DetailsURL gridURL)
