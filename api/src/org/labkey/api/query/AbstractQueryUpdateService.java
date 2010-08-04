@@ -32,6 +32,7 @@ import java.util.*;
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
     private TableInfo _queryTable = null;
+    private boolean _auditLog = true;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -193,4 +194,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    public void setAuditLog(boolean auditLog)
+    {
+        _auditLog = auditLog;
+    }
+
+    public boolean isAuditLog()
+    {
+        return _auditLog;
+    }
 }

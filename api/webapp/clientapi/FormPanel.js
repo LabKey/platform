@@ -512,6 +512,9 @@ LABKEY.ext.FormHelper =
                 queryName: c.lookup.table,
                 containerPath: c.lookup.container || c.containerPath || LABKEY.container.path
             };
+            
+            if (c.lookup.viewName)
+                config.viewName = c.lookup.viewName;
             var columns = [];
             if (c.lookup.keyColumn)
                 columns.push(c.lookup.keyColumn);

@@ -110,4 +110,11 @@ public interface QueryUpdateService
     public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
 
+    /**
+     * Whether to do audit logging of all updates. The default is true.
+     * @param audit whether to write all updates to the audit log
+     */
+    public void setAuditLog(boolean audit);
+
+    public boolean isAuditLog();
 }

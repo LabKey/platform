@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
@@ -34,6 +35,8 @@ import org.springframework.validation.Errors;
 import javax.script.*;
 import java.io.*;
 import java.lang.ref.WeakReference;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.util.*;
 
@@ -431,26 +434,37 @@ class SandboxContextFactory extends ContextFactory
         
         HashSet<String> allowedClasses = new HashSet<String>();
         allowedClasses.add(ArrayList.class.getName());
+        allowedClasses.add(Arrays.class.getName());
+        allowedClasses.add(BigDecimal.class.getName());
+        allowedClasses.add(BigInteger.class.getName());
         allowedClasses.add(BindException.class.getName());
         allowedClasses.add(Boolean.class.getName());
         allowedClasses.add(Byte.class.getName());
         allowedClasses.add(Calendar.class.getName());
         allowedClasses.add(CaseInsensitiveHashMap.class.getName());
+        allowedClasses.add(CaseInsensitiveHashSet.class.getName());
         allowedClasses.add(Character.class.getName());
+        allowedClasses.add(Collections.class.getName());
         allowedClasses.add(Collections.class.getName() + "$*"); // allow inner-classes
         allowedClasses.add(Date.class.getName());
+        allowedClasses.add(java.sql.Date.class.getName());
         allowedClasses.add(Double.class.getName());
         allowedClasses.add(EcmaError.class.getName());
         allowedClasses.add(Errors.class.getName());
         allowedClasses.add(Float.class.getName());
+        allowedClasses.add(GregorianCalendar.class.getName());
         allowedClasses.add(HashMap.class.getName());
+        allowedClasses.add(HashSet.class.getName());
         allowedClasses.add(Integer.class.getName());
         allowedClasses.add(JavaScriptException.class.getName());
         allowedClasses.add(org.json.JSONObject.class.getName());
         allowedClasses.add(LinkedHashMap.class.getName());
+        allowedClasses.add(LinkedHashSet.class.getName());
+        allowedClasses.add(LinkedList.class.getName());
         allowedClasses.add(List.class.getName());
         allowedClasses.add(Long.class.getName());
         allowedClasses.add(Math.class.getName());
+        allowedClasses.add(Number.class.getName());
         allowedClasses.add(PrintStream.class.getName());
         allowedClasses.add(PrintWriter.class.getName());
         allowedClasses.add(RhinoException.class.getName());
@@ -458,7 +472,12 @@ class SandboxContextFactory extends ContextFactory
         allowedClasses.add(Short.class.getName());
         allowedClasses.add(SimpleScriptContext.class.getName());
         allowedClasses.add(String.class.getName());
+        allowedClasses.add(java.sql.Time.class.getName());
+        allowedClasses.add(java.sql.Timestamp.class.getName());
+        allowedClasses.add(TreeMap.class.getName());
+        allowedClasses.add(TreeSet.class.getName());
         allowedClasses.add(URI.class.getName());
+
         ALLOWED_CLASSES = Collections.unmodifiableSet(allowedClasses);
     }
 
