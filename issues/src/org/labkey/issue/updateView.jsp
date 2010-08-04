@@ -138,8 +138,13 @@
                         var resolutionSelect = document.getElementById('resolution');
                         function updateDuplicateInput()
                         {
-                            if (resolutionSelect.value == 'Duplicate')
+                            // The options don't have an explicit value set, so look for the display text instead of
+                            // the value
+                            if (resolutionSelect.selectedIndex >= 0 &&
+                                resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
+                            {
                                 duplicateInput.disabled = false;
+                            }
                             else
                             {
                                 duplicateInput.disabled = true;

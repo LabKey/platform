@@ -80,6 +80,9 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             GWTDataset ds = new GWTDataset();
             PropertyUtils.copyProperties(ds, dd);
             ds.setDatasetId(dd.getDataSetId()); // upper/lowercase problem
+            // Need to support GUID type as well in the UI, but for now just handle
+            // RowId since that's all we let you save in the UI
+            ds.setKeyPropertyManaged(dd.getKeyManagementType() == DataSet.KeyManagementType.RowId);
 
             CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             Map<String, String> cohortMap = new HashMap<String, String>();
@@ -228,6 +231,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 }
             }
             updated.setKeyPropertyName(keyPropertyName);
+            // Map boolean property to Enum value. Still need to add support for GUID managed keys
+            updated.setKeyManagementType(ds.getKeyPropertyManaged() ? DataSet.KeyManagementType.RowId : DataSet.KeyManagementType.None);
 
             if (!def.getLabel().equals(updated.getLabel()))
             {

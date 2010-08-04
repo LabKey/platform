@@ -141,6 +141,15 @@ public enum Method
 
 
     ifnull(Types.OTHER, 2, 2),
+    // NOTE CAST is identical to CONVERT just with a slightly odd syntax handled in the parser
+    cast(Types.OTHER, 2, 2)
+            {
+                @Override
+                public MethodInfo getMethodInfo()
+                {
+                    return new ConvertInfo();
+                }
+            },
     convert(Types.OTHER, 2, 2)
             {
                 @Override
@@ -308,7 +317,7 @@ public enum Method
                 ret.append(" AS ");
                 ret.append(fragments[1]);
             }
-            ret.append(")");
+            ret.append(")");                            
             return ret;
         }
 

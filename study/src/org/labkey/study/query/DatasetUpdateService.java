@@ -158,32 +158,31 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return oldRow;
     }
 
-    /*
-    if it's a dataset of kind demographic
-    ask the study (StudyImpl, or Study?) what is the column name for the participant/subject?
-    then use that to resolve the lsid in the same manner as a managed key
-     */
-
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
         Object lsid = map.get("lsid");
         if (lsid != null) {
             return lsid.toString();
         }
-        // if there was no explicit lsid and KeyManagementType == None, there is no non-lsid key that is unique by itself
-        if (_dataset.getKeyManagementType() == DataSetDefinition.KeyManagementType.None) {
+
+        boolean isDemographic = _dataset.isDemographicData();
+
+        // if there was no explicit lsid and KeyManagementType == None, there is no non-lsid key that is unique by itself.
+        // Unless of course it is a demographic table.
+        if (!isDemographic && _dataset.getKeyManagementType() == DataSetDefinition.KeyManagementType.None) {
             throw new InvalidKeyException("No lsid, and no KeyManagement");
         }
 
-        // No lsid, look for the other types of key
-        Object id = map.get(_dataset.getKeyPropertyName());
+        String keyPropertyName = isDemographic ? _dataset.getStudy().getSubjectColumnName() : _dataset.getKeyPropertyName();
+        Object id = map.get(keyPropertyName);
+
         if (null == id) {
            id = map.get("Key");
         }
 
         // if there was no other type of key, this query is invalid
-        if (id == null) {
-            throw new InvalidKeyException(String.format("key needs one of 'lsid', '%s' or 'Key'", _dataset.getKeyPropertyName()));
+        if (null == id) {
+            throw new InvalidKeyException(String.format("key needs one of 'lsid', '%s' or 'Key', none of which were found in %s", keyPropertyName, map));
         }
         // now look up lsid
         // if one is found, return that
@@ -192,7 +191,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         String[] lsids;
         try
         {
-            lsids = Table.executeArray(getQueryTable(), getQueryTable().getColumn("LSID"), new SimpleFilter(_dataset.getKeyPropertyName(), id), null, String.class);
+            lsids = Table.executeArray(getQueryTable(), getQueryTable().getColumn("LSID"), new SimpleFilter(keyPropertyName, id), null, String.class);
         }
         catch (SQLException e)
         {

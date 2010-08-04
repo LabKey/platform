@@ -33,6 +33,7 @@ import java.util.Map;
  */
 public class DummyUpdateService implements QueryUpdateService
 {
+    private boolean _auditLog;
 
     public DummyUpdateService()
     {
@@ -91,5 +92,17 @@ public class DummyUpdateService implements QueryUpdateService
             throw UnexpectedException.wrap(e);
         }
         return keys;
+    }
+
+    @Override
+    public void setAuditLog(boolean audit)
+    {
+        _auditLog = audit;
+    }
+
+    @Override
+    public boolean isAuditLog()
+    {
+        return _auditLog;
     }
 }

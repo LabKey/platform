@@ -104,7 +104,7 @@ public class ListItemImpl implements ListItem
         return _new;
     }
 
-    public void delete(User user, Container c) throws SQLException
+    public void delete(User user, Container c, boolean isAuditLog) throws SQLException
     {
         if (isNew())
             return;
@@ -117,7 +117,11 @@ public class ListItemImpl implements ListItem
                 fTransaction = true;
             }
             ensureProperties();
-            addAuditEvent(user, "An existing list record was deleted", _itm.getEntityId(), _formatItemRecord(user, _properties, null, _itm.getKey()), null);
+            
+            if (isAuditLog)
+            {
+                addAuditEvent(user, "An existing list record was deleted", _itm.getEntityId(), _formatItemRecord(user, _properties, null, _itm.getKey()), null);
+            }
 
             SimpleFilter filter = new SimpleFilter("Key", _itm.getKey());
             filter.addCondition("ListId", _itm.getListId());
@@ -136,6 +140,12 @@ public class ListItemImpl implements ListItem
                 ExperimentService.get().rollbackTransaction();
             }
         }
+    }
+
+    @Override
+    public void delete(User user, Container c) throws SQLException
+    {
+        delete(user, c, true);
     }
 
     // Used by single item delete as well as entire list delete

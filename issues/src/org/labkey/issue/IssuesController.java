@@ -959,8 +959,11 @@ public class IssuesController extends SpringActionController
     {
         HString requiredFields = IssueManager.getRequiredIssueFields(getContainer());
         final Map<String, String> newFields = form.getStrings();
-        if ("0".equals(newFields.get("issueId")))
-            requiredFields = requiredFields.concat(requiredFields.isEmpty() ? "comment" : ";comment");
+        if (!"0".equals(newFields.get("issueId")) && requiredFields.indexOf("comment") != -1)
+        {
+            // When updating an existing issue (which will have a unique IssueId), never require a comment
+            requiredFields = requiredFields.replace("comment", "");
+        }
         if (requiredFields.isEmpty())
             return;
 

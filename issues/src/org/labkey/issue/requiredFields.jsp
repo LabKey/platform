@@ -34,12 +34,13 @@
         <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields for <%=bean.getEntryTypeNames().pluralName%></b></div></td></tr>
         <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=bean.getEntryTypeNames().singularName%>:</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
+        <tr><td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%> value="comment">Comments (new issues only)</td>
     <%
         List<ColumnInfo> columns = bean.getColumns();
         for (int i = 0; i < columns.size(); i++)
         {
             ColumnInfo info = columns.get(i);
-            boolean startNewRow = i % 2 == 0;
+            boolean startNewRow = i % 2 == 1;
             if (startNewRow)
             {
     %>

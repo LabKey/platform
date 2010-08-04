@@ -85,7 +85,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     {
         ListItem item = get(user, container, key);
         if(null != item)
-            item.delete(user, container);
+            item.delete(user, container, isAuditLog());
     }
 
     public Object keyFromMap(Map<String, Object> map) throws InvalidKeyException
@@ -190,7 +190,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     {
         try
         {
-            item.save(user);
+            item.save(user, isAuditLog());
         }
         catch(AttachmentService.DuplicateFilenameException e)
         {

@@ -1874,9 +1874,9 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                         window.location = this.selectedRecord.data.uri + "?contentDisposition=attachment";
                     }
                 }
-                else if (fileBrowser.currentDirectory.data.uri)
+                else if (this.currentDirectory.data.uri)
                 {
-                    var url = fileBrowser.currentDirectory.data.uri + "?method=zip&depth=-1";
+                    var url = this.currentDirectory.data.uri + "?method=zip&depth=-1";
                     for (var i = 0; i < selections.length; i++)
                     {
                         url = url + "&file=" + encodeURIComponent(selections[i].data.name);

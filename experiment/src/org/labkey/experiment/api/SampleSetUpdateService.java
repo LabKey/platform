@@ -46,6 +46,7 @@ class SampleSetUpdateService implements QueryUpdateService
 {
     private ExpMaterialTableImpl _table;
     private ExpSampleSet _ss;
+    private boolean _isAuditLog;
 
     public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
     {
@@ -185,6 +186,17 @@ class SampleSetUpdateService implements QueryUpdateService
 
         ExperimentServiceImpl.get().deleteMaterialByRowIds(container, ids);
         return result;
+    }
+
+    @Override
+    public void setAuditLog(boolean audit)
+    {
+        _isAuditLog = audit;
+    }
+    
+    public boolean isAuditLog ()
+    {
+        return _isAuditLog;
     }
 
 }
