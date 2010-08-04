@@ -101,12 +101,11 @@ public class MultiValuedColumn extends LookupColumn
         strJoin.append("\n\t)");
     }
 
-    // By default, return common-separated list of values.  Override to apply a different aggregate.
-    // TODO: This supports PostgreSQL only; need to add SQL Server support (see ViabilityAssaySchema for code)
+    // By default, use GROUP_CONCAT aggregate function, which returns a common-separated list of values.  Override this
+    // and (for non-varchar aggregate function) getSqlDataTypeName() to apply a different aggregate.
     protected String getAggregateFunction(String selectName)
     {
-//        return "COUNT(" + selectName + ")";
-        return "array_to_string(viability.array_accum(" + selectName + "), ',')";
+        return getSqlDialect().getGroupConcatAggregateFunction(selectName);
     }
 
     @Override  // Must match the type of the aggregate function specified above.
@@ -116,7 +115,8 @@ public class MultiValuedColumn extends LookupColumn
     }
 
     @Override
-    // Any lookup columns are owned by the parent... the joins must take place within the sub-select above. 
+    // The multivalued column joins take place within the aggregate function sub-select; we don't want super class
+    // including these columns as top-level joins.
     protected boolean includeLookupJoins()
     {
         return false;

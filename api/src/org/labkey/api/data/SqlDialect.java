@@ -440,6 +440,8 @@ public abstract class SqlDialect
 
     public abstract String getSubstringFunction(String s, String start, String length);
 
+    public abstract String getGroupConcatAggregateFunction(String selectName);
+
     public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException;
 
     public abstract String getMasterDataBaseName();
