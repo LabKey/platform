@@ -612,14 +612,14 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
             return;
         if (this.showRecordSelectors)
         {
-            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name.escape() + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
+            msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
             var showOpts = new Array();
             if (this.showRows != "all")
-                showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name.escape() + "\"].showAll();' title='Show all rows'>All</span>");
+                showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showAll();' title='Show all rows'>All</span>");
             if (this.showRows != "selected")
-               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name.escape() + "\"].showSelected();' title='Show all selected rows'>Selected</span>");
+               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showSelected();' title='Show all selected rows'>Selected</span>");
             if (this.showRows != "unselected")
-               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name.escape() + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>");
+               showOpts.push("<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showUnselected();' title='Show all unselected rows'>Unselected</span>");
             msg += "&nbsp; Show: " + showOpts.join(", ");
         }
         this.showMessage(msg);
