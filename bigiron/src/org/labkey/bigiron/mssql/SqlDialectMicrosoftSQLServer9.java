@@ -76,4 +76,11 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
         sql.append(offset + rowCount);
         return sql;
     }
+
+    @Override
+    public String getGroupConcatAggregateFunction(String selectName)
+    {
+        // TODO: Replace this with SQL Server 2005+ group concat SQL: see XML PATH code in ViabilityAssaySchema
+        return super.getGroupConcatAggregateFunction(selectName);
+    }
 }

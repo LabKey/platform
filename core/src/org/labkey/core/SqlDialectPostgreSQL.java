@@ -266,6 +266,12 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "substr(" + s + ", " + start + ", " + length + ")"; 
     }
 
+    @Override
+    public String getGroupConcatAggregateFunction(String selectName)
+    {
+        return "array_to_string(core.array_accum(" + selectName + "), ',')";
+    }
+
     protected String getSystemTableNames()
     {
         return "pg_logdir_ls";

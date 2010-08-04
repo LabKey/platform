@@ -265,6 +265,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "substring(" + s + ", " + start + ", " + length + ")";
     }
 
+    @Override
+    public String getGroupConcatAggregateFunction(String selectName)
+    {
+        return "MIN(" + selectName + ")";    // No GROUP_CONCAT support for SQL Server 2000
+    }
+
     public String getTempTableKeyword()
     {
         return "";

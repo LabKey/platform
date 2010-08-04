@@ -165,6 +165,12 @@ public abstract class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @Override
+    public String getGroupConcatAggregateFunction(String selectName)
+    {
+        return "MIN(" + selectName + ")";
+    }
+
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
         //To change body of implemented methods use File | Settings | File Templates.
