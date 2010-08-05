@@ -144,8 +144,7 @@ public class DailyDigest
 
                 try
                 {
-                    MailHelper.send(m);
-                    MailHelper.addAuditEvent(m);
+                    MailHelper.send(m, null, c);
                 }
                 catch (MessagingException e)
                 {

@@ -272,6 +272,9 @@
             <ns:column columnName="Int2"/>
             <ns:column columnName="String1"/>
             <ns:column columnName="String2"/>
+            <ns:column columnName="String3"/>
+            <ns:column columnName="String4"/>
+            <ns:column columnName="String5"/>
             <ns:column columnName="NotifyList"/>
             <ns:column columnName="LastIndexed">
                 <ns:isReadOnly>true</ns:isReadOnly>

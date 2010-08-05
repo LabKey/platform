@@ -45,31 +45,31 @@
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "insert")))%></td><%
+        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class)))%></td><%
     }%>
 
-    <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), "list")))%></td><%
+    <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class)))%></td><%
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("update", IssuesController.issueURL(context.getContainer(), "update").addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("update", IssuesController.issueURL(context.getContainer(), IssuesController.UpdateAction.class).addParameter("issueId", issueId))%></td><%
     }
 
     if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("resolve", IssuesController.issueURL(context.getContainer(), "resolve").addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("resolve", IssuesController.issueURL(context.getContainer(), IssuesController.ResolveAction.class).addParameter("issueId", issueId))%></td><%
     }
     else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("close", IssuesController.issueURL(context.getContainer(), "close").addParameter("issueId", issueId))%></td>
-        <td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), "reopen").addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("close", IssuesController.issueURL(context.getContainer(), IssuesController.CloseAction.class).addParameter("issueId", issueId))%></td>
+        <td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), IssuesController.ReopenAction.class).addParameter("issueId", issueId))%></td><%
     }
     else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), "reopen").addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), IssuesController.ReopenAction.class).addParameter("issueId", issueId))%></td><%
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
-    <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), "emailPrefs").addParameter("issueId", issueId))%></td>
+    <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=names.singularName%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
 </form><%
@@ -124,6 +124,9 @@
             }
             %><%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1)%>
             <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2)%>
+            <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3)%>
+            <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4)%>
+            <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5)%>
         </table></td>
     </tr>
 </table>

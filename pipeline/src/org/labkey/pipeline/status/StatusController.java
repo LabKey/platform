@@ -668,8 +668,7 @@ public class StatusController extends SpringActionController
                 if (!StringUtils.isEmpty(recipients))
                 {
                     m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(recipients));
-                    MailHelper.send(m);
-                    MailHelper.addAuditEvent(getUser(), getContainer(), m);
+                    MailHelper.send(m, getUser(), getContainer());
                 }
             }
             catch (Exception e)

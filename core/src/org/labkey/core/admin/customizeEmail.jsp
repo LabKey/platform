@@ -24,45 +24,90 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.CustomEmailForm> me = (JspView<AdminController.CustomEmailForm>) HttpView.currentView();
     AdminController.CustomEmailForm bean = me.getModelBean();
     Container c = getViewContext().getContainer();
 
-    EmailTemplate[] emailTemplates = EmailTemplateService.get().getEmailTemplates();
+    List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
     String errorHTML = formatMissedErrors("form");
 %>
 <%=errorHTML%>
 
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
+<form action="customizeEmail.view" method="post">
+    <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
+    <table>
+        <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
+        <tr><td></td></tr>
+        <tr><td class="labkey-form-label">Email Type:</td>
+            <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
+<%
+        for (EmailTemplate et : emailTemplates)
+        {
+%>
+            <option value="<%=et.getClass().getName()%>" <%=et.getClass().getName().equals(bean.getTemplateClass()) ? "selected" : ""%>><%=et.getName()%></option>
+<%
+        }
+%>
+        </select></td></tr>
+        <tr><td class="labkey-form-label">Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
+        <tr><td class="labkey-form-label">Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
+        <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
+        <tr>
+            <td></td><td>
+            <%=PageFlowUtil.generateSubmitButton("Save")%>
+            <%=PageFlowUtil.generateButton("Cancel", bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL()))%>
+            <%=PageFlowUtil.generateSubmitButton("Reset to Default Template", "this.form.action='deleteCustomEmail.view'", "id='siteResetButton' style='display: none;'")%>
+            <%=PageFlowUtil.generateSubmitButton("Delete Folder-Level Template", "this.form.action='deleteCustomEmail.view'", "id='folderResetButton' style='display: none;'")%>
+        </tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td></td><td><i>An email subject or message can contain a mixture of static text and substitution parameters.
+            A substitution parameter is inserted into the text when the email is generated. The syntax of a
+            substitution param is : %&lt;param name&gt;% where &lt;param name&gt; is the name of the substitution
+            param.<br/><br/>
+            The list of valid substitutions for this email type is (current values appear to the right, although
+            some are not known until the email is generated):</i></td>
+        </tr>
+        <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td></td><td><i>The values of many of these parameters can be configured on
+            the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
+        </tr>
+    </table>
+</form><br/><br/>
+
 <script type="text/javascript">
 
 <%
     // create the map of email template names to template properties
     out.write("var emailTemplates = [");
     String sep = "{";
-    for (org.labkey.api.util.emailTemplate.EmailTemplate et : emailTemplates)
+    for (EmailTemplate et : emailTemplates)
     {
         out.write(sep);
-        out.write("\"name\":\"" + et.getClass().getName() + "\",");
-        out.write("\"description\":" + PageFlowUtil.jsString(et.getDescription()) + ",");
-        out.write("\"subject\":" + PageFlowUtil.jsString(et.getSubject()) + ",");
-        out.write("\"message\":" + PageFlowUtil.jsString(et.getBody()) + ",");
-        out.write("\"replacements\":[");
+        out.write("\t\"name\":\"" + et.getClass().getName() + "\",\n");
+        out.write("\t\"description\":" + PageFlowUtil.jsString(et.getDescription()) + ",\n");
+        out.write("\t\"subject\":" + PageFlowUtil.jsString(et.getSubject()) + ",\n");
+        out.write("\t\"message\":" + PageFlowUtil.jsString(et.getBody()) + ",\n");
+        // Let users delete the folder-scoped template only if it's been stored in the same folder they're in, and they're
+        // not in the root where they'd be doing a site-level template
+        out.write("\t\"showFolderReset\":" + (c.equals(et.getContainer()) && !c.isRoot()) + ",\n");
+        // Let users delete a site-scoped template if they're in the root and the template is stored in the root
+        out.write("\t\"showSiteReset\":" + (c.isRoot() && c.equals(et.getContainer())) + ",\n");
+        out.write("\t\"replacements\":[\n");
 
-        String innerSep = "{";
+        String innerSep = "\t{";
         for (EmailTemplate.ReplacementParam param : et.getValidReplacements())
         {
             out.write(innerSep);
-            out.write("\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",");
-            out.write("\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",");
-            out.write("\"paramValue\":" + PageFlowUtil.jsString("&nbsp;" + StringUtils.trimToEmpty(param.getValue(c))));
+            out.write("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
+            out.write("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
+            out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString("&nbsp;" + StringUtils.trimToEmpty(param.getValue(c))) + "\n");
             out.write("}");
 
-            innerSep = ",{";
+            innerSep = "\t,{";
         }
         out.write("]}");
 
@@ -73,10 +118,10 @@
 %>
     function changeEmailTemplate()
     {
-        var selection = YAHOO.util.Dom.get('templateClass');
-        var subject = YAHOO.util.Dom.get('emailSubject');
-        var message = YAHOO.util.Dom.get('emailMessage');
-        var description = YAHOO.util.Dom.get('emailDescription');
+        var selection = Ext.get('templateClass').dom;
+        var subject = Ext.get('emailSubject').dom;
+        var message = Ext.get('emailMessage').dom;
+        var description = Ext.get('emailDescription').dom;
 
         for (var i=0; i < this.emailTemplates.length; i++)
         {
@@ -85,6 +130,8 @@
                 subject.value = this.emailTemplates[i].subject;
                 description.innerHTML = this.emailTemplates[i].description;
                 message.value = this.emailTemplates[i].message;
+                Ext.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
+                Ext.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
 
                 changeValidSubstitutions(this.emailTemplates[i]);
                 return;
@@ -97,7 +144,7 @@
 
     function clearValidSubstitutions()
     {
-        var table = YAHOO.util.Dom.get('validSubstitutions');
+        var table = Ext.get('validSubstitutions').dom;
         if (table != undefined)
         {
             // delete all rows first
@@ -116,7 +163,7 @@
 
         if (record.replacements == undefined)
         {
-            var selection = YAHOO.util.Dom.get('templateClass');
+            var selection = Ext.get('templateClass').dom;
             for (var i=0; i < this.emailTemplates.length; i++)
             {
                 if (this.emailTemplates[i].name == selection.value)
@@ -126,7 +173,7 @@
                 }
             }
         }
-        var table = YAHOO.util.Dom.get('validSubstitutions');
+        var table = Ext.get('validSubstitutions').dom;
         var row;
         var cell;
 
@@ -148,51 +195,18 @@
         }
     }
 <%
-    if (StringUtils.isEmpty(errorHTML))
-        out.write("YAHOO.util.Event.addListener(window, \"load\", changeEmailTemplate)");
-    else
-        out.write("YAHOO.util.Event.addListener(window, \"load\", changeValidSubstitutions)");
-%>
+    if (StringUtils.isEmpty(errorHTML)) { %>
+    Ext.onReady(function()
+        {
+            if (LABKEY.ActionURL.getParameter('templateClass'))
+            {
+                Ext.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClassName');
+            }
+            changeEmailTemplate();
+        });
+<% } else { %>
+        Ext.onReady(changeValidSubstitutions);
+<% } %>
 </script>
 
-<form action="customizeEmail.view" method="post">
-    <table>
-        <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
-        <tr><td colspan=2>Customize user emails:</td></tr>
-        <tr><td></td></tr>
-        <tr><td class="labkey-form-label">Email Type:</td>
-            <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
-<%
-        for (EmailTemplate et : emailTemplates)
-        {
-%>
-            <option value="<%=et.getClass().getName()%>" <%=et.getClass().getName().equals(bean.getTemplateClass()) ? "selected" : ""%>><%=et.getName()%></option>
-<%
-        }
-%>
-        </select></td></tr>
-        <tr><td class="labkey-form-label">Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
-        <tr><td class="labkey-form-label">Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=bean.getEmailSubject()%>"></td><td></td></tr>
-        <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=bean.getEmailMessage()%></textarea></td></tr>
-        <tr>
-            <td></td><td>
-            <%=PageFlowUtil.generateButton("Cancel", urlProvider(AdminUrls.class).getAdminConsoleURL())%>&nbsp;
-            <%=PageFlowUtil.generateSubmitButton("Reset to Default", "this.form.action='deleteCustomEmail.view'")%>&nbsp;
-            <%=PageFlowUtil.generateSubmitButton("Update")%>&nbsp;
-        </tr>
-        <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td><i>An email subject or message can contain a mixture of static text and substitution parameters.
-            A substitution parameter is inserted into the text when the email is generated. The syntax of a
-            substitution param is : %&lt;param name&gt;% where &lt;param name&gt; is the name of the substitution
-            param.<br/><br/>
-            The list of valid substitutions for this email type is (current values appear to the right, although
-            some are not known until the email is generated):</i></td>
-        </tr>
-        <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
-        <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td><i>The values of many of these parameters can be configured on
-            the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
-        </tr>
-    </table>
-</form><br/><br/>
 

@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.issue.IssueUpdateEmailTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
@@ -34,7 +36,10 @@
 %>
 <br>
 <table>
-<tr><td><%=PageFlowUtil.generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%></td></tr>
+<tr><td>
+    <%=PageFlowUtil.generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?.lastFilter=true")%>
+    <%=PageFlowUtil.generateButton("Customize Email Template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%></td>
+</tr>
 <tr><td>&nbsp;</td></tr>
 </table>
 <% me.include(bean.keywordView, out); %>
@@ -54,6 +59,9 @@
         <tr><td>Integer2</td><td><input name="int2" value="<%=h(captions.get("int2"))%>" size=20></td></tr>
         <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string1" <%=pickListColumns.contains("string1") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td>String2</td><td><input name="string2" value="<%=h(captions.get("string2"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string2" <%=pickListColumns.contains("string2") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String3</td><td><input name="string3" value="<%=h(captions.get("string3"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string3" <%=pickListColumns.contains("string3") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string4" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string5" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td colspan=2 align="center"><%=PageFlowUtil.generateSubmitButton("Update Custom Fields")%></td></tr>
         </table>

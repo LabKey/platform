@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -51,13 +52,15 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     public double getVersion()
     {
-        return 10.20;
+        return 10.21;
     }
 
     protected void init()
     {
         addController("issues", IssuesController.class);
-        IssuesQuerySchema.register();        
+        IssuesQuerySchema.register();
+
+        EmailTemplateService.get().registerTemplate(IssueUpdateEmailTemplate.class);
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()

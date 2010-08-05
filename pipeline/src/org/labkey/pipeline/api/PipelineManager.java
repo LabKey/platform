@@ -249,7 +249,7 @@ public class PipelineManager
             if (!"0".equals(interval) && interval != null) return;
 
             message = createPipelineMessage(c, statusFile,
-                    (PipelineEmailTemplate)EmailTemplateService.get().getEmailTemplate(PipelineJobSuccess.class.getName()),
+                    EmailTemplateService.get().getEmailTemplate(PipelineJobSuccess.class),
                     PipelineEmailPreferences.get().getNotifyOwnerOnSuccess(c),
                     PipelineEmailPreferences.get().getNotifyUsersOnSuccess(c));
         }
@@ -264,7 +264,7 @@ public class PipelineManager
 
             _log.info("Creating error notification email");
             message = createPipelineMessage(c, statusFile,
-                    (PipelineEmailTemplate)EmailTemplateService.get().getEmailTemplate(PipelineJobFailed.class.getName()),
+                    EmailTemplateService.get().getEmailTemplate(PipelineJobFailed.class),
                     PipelineEmailPreferences.get().getNotifyOwnerOnError(c),
                     PipelineEmailPreferences.get().getNotifyUsersOnError(c));
             if (message == null)
@@ -278,8 +278,7 @@ public class PipelineManager
             if (message != null)
             {
                 Message m = message.createMessage();
-                MailHelper.send(m);
-                MailHelper.addAuditEvent(m);
+                MailHelper.send(m, null, c);
             }
         }
         catch (MessagingException me)
@@ -291,8 +290,8 @@ public class PipelineManager
     public static void sendNotificationEmail(PipelineStatusFileImpl[] statusFiles, Container c, Date min, Date max, boolean isSuccess)
     {
         PipelineDigestTemplate template = isSuccess ?
-                (PipelineDigestTemplate)EmailTemplateService.get().getEmailTemplate(PipelineDigestJobSuccess.class.getName()) :
-                (PipelineDigestTemplate)EmailTemplateService.get().getEmailTemplate(PipelineDigestJobFailed.class.getName());
+                EmailTemplateService.get().getEmailTemplate(PipelineDigestJobSuccess.class) :
+                EmailTemplateService.get().getEmailTemplate(PipelineDigestJobFailed.class);
 
         PipelineDigestMessage[] messages = createPipelineDigestMessage(c, statusFiles, template,
                 PipelineEmailPreferences.get().getNotifyOwnerOnSuccess(c),
@@ -305,8 +304,7 @@ public class PipelineManager
                 for (PipelineDigestMessage msg : messages)
                 {
                     Message m = msg.createMessage();
-                    MailHelper.send(m);
-                    MailHelper.addAuditEvent(m);
+                    MailHelper.send(m, null, c);
                 }
             }
         }

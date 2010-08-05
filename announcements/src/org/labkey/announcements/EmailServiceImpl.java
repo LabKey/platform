@@ -43,27 +43,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 22, 2010
  * Time: 11:37:19 AM
- * To change this template use File | Settings | File Templates.
  */
 public class EmailServiceImpl implements EmailService.I
 {
     private static final Logger _log = Logger.getLogger(EmailService.class);
 
     @Override
-    public void sendMessage(EmailMessage msg) throws MessagingException
+    public void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException
     {
-        MailHelper.send(msg.createMessage());
+        MailHelper.send(msg.createMessage(), user, c);
     }
 
     @Override
-    public void sendMessage(EmailMessage[] msgs)
+    public void sendMessage(EmailMessage[] msgs, User user, Container c)
     {
         // send the email messages from a background thread
-        BulkEmailer emailer = new BulkEmailer();
+        BulkEmailer emailer = new BulkEmailer(user, c);
         for (EmailMessage msg : msgs)
             emailer.addMessage(msg);
 
@@ -269,7 +267,15 @@ public class EmailServiceImpl implements EmailService.I
     // Sends one or more email messages in a background thread.  Add message(s) to the emailer, then call start().
     public static class BulkEmailer extends Thread
     {
-        private List<EmailMessage> _messages = new ArrayList();
+        private List<EmailMessage> _messages = new ArrayList<EmailMessage>();
+        private Container _container;
+        private User _user;
+
+        public BulkEmailer(User user, Container c)
+        {
+            _user = user;
+            _container = c;
+        }
 
         public void addMessage(EmailMessage msg)
         {
@@ -282,9 +288,7 @@ public class EmailServiceImpl implements EmailService.I
             {
                 try {
                     Message m = msg.createMessage();
-
-                    MailHelper.send(m);
-                    MailHelper.addAuditEvent(m);
+                    MailHelper.send(m, _user, _container);
                 }
                 catch (MessagingException e)
                 {

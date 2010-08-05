@@ -48,8 +48,8 @@
 
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
 <table><tr>
-    <td><%= textLink("new " + names.singularName.toLowerCase(), IssuesController.issueURL(context.getContainer(), "insert").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
-    <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+    <td><%= textLink("new " + names.singularName.toLowerCase(), IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+    <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("print", printLink)%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=names.singularName%>: <input type="text" size="5" name="issueId"/></td>
 </tr></table>
@@ -99,6 +99,9 @@
 
             <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1)%>
             <%=bean.writeCustomColumn(c, new HString("string2"), issue.getString2(), IssuesController.ISSUE_STRING2)%>
+            <%=bean.writeCustomColumn(c, new HString("string3"), issue.getString3(), IssuesController.ISSUE_STRING3)%>
+            <%=bean.writeCustomColumn(c, new HString("string4"), issue.getString4(), IssuesController.ISSUE_STRING4)%>
+            <%=bean.writeCustomColumn(c, new HString("string5"), issue.getString5(), IssuesController.ISSUE_STRING5)%>
         </table></td>
     </tr>
 </table>

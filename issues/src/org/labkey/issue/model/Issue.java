@@ -60,6 +60,9 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     protected HString string1;
     protected HString string2;
+    protected HString string3;
+    protected HString string4;
+    protected HString string5;
     protected Integer int1;
     protected Integer int2;
 
@@ -74,23 +77,18 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public void Change(User u)
+    public void change(User u)
     {
         beforeUpdate(u);
     }
 
-    public void Open(Container c, User u) throws SQLException
-    {
-        Open(c, u, false);
-    }
-
-    public void Open(Container c, User u, boolean fSave) throws SQLException
+    public void open(Container c, User u) throws SQLException
     {
         if (0 == getCreatedBy()) // TODO: Check for brand new issue (vs. reopen)?  What if guest opens issue?
         {
             beforeInsert(u, c.getId());
         }
-        Change(u);
+        change(u);
 
         status = statusOPEN;
     }
@@ -122,9 +120,9 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public void Resolve(User u)
+    public void resolve(User u)
     {
-        Change(u);
+        change(u);
         status = statusRESOLVED;
 
         resolvedBy = getModifiedBy();
@@ -132,9 +130,9 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public void Close(User u)
+    public void close(User u)
     {
-        Change(u);
+        change(u);
         status = statusCLOSED;
 
         closedBy = getModifiedBy();
@@ -397,6 +395,36 @@ public class Issue extends Entity implements Serializable, Cloneable
     public void setString1(HString string1)
     {
         this.string1 = string1;
+    }
+
+    public HString getString3()
+    {
+        return string3;
+    }
+
+    public void setString3(HString string3)
+    {
+        this.string3 = string3;
+    }
+
+    public HString getString4()
+    {
+        return string4;
+    }
+
+    public void setString4(HString string4)
+    {
+        this.string4 = string4;
+    }
+
+    public HString getString5()
+    {
+        return string5;
+    }
+
+    public void setString5(HString string5)
+    {
+        this.string5 = string5;
     }
 
     public Integer getInt2()

@@ -72,7 +72,7 @@
         return true;
     }
 </script>
-<form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
+<form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(), bean.getAction())%>">
 
     <table>
     <%
@@ -89,7 +89,7 @@
     </table>
     <table><tr>
         <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"", true, true)%></td>
-        <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+        <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
 
     <table>
@@ -182,11 +182,11 @@
                     if (issue.getIssueId() == 0)
                     {
 %>
-                        <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), "emailPrefs"))%>
+                        <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class))%>
 <%
                     } else {
 %>
-                        <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), "emailPrefs").addParameter("issueId", issue.getIssueId()))%>
+                        <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%>
 <%
                     }
 %>
@@ -202,6 +202,9 @@
 %>
                 <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1)%>
                 <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2)%>
+                <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3)%>
+                <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4)%>
+                <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5)%>
             </table></td>
         </tr>
     </table>
@@ -244,7 +247,7 @@
     }
 %>
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
-    <input type="hidden" name="action" value="<%=bean.getAction()%>">
+    <input type="hidden" name="action" value="<%=bean.getAction().getName()%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
 </form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById("<%=focusId%>").focus();} catch (x) {}</script>

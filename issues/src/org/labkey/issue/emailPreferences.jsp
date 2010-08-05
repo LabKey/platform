@@ -78,11 +78,11 @@
     <%=PageFlowUtil.generateSubmitButton("Update")%><%
     if (issueId > 0)
     {
-        %><%= generateButton("Back to " + names.singularName, IssuesController.issueURL(context.getContainer(), "details").addParameter("issueId", bean.getIssueId())) %><%
+        %><%= generateButton("Back to " + names.singularName, IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {
-        %><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
+        %><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
     }
 %>
 </form>

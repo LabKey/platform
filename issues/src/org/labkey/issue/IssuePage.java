@@ -33,6 +33,8 @@ import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.*;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.mvc.Controller;
+
 import java.io.IOException;
 import java.util.*;
 
@@ -51,7 +53,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private Set<String> _editable = Collections.emptySet();
     private String _callbackURL;
     private BindException _errors;
-    private String _action;
+    private Class<? extends Controller> _action;
     private String _body;
     private boolean _hasUpdatePermissions;
     private HString _requiredFields;
@@ -138,12 +140,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _errors = errors;
     }
 
-    public String getAction()
+    public Class<? extends Controller> getAction()
     {
         return _action;
     }
 
-    public void setAction(String action)
+    public void setAction(Class<? extends Controller> action)
     {
         _action = action;
     }
@@ -220,7 +222,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public HString writeInput(HString field, HString value, HString extra)
     {
         if (!isEditable(field.getSource()))
-            return filter(value);
+            return new HString(filter(value.getSource(), false, true));
         final HStringBuilder sb = new HStringBuilder();
 
         sb.append("<input name=\"");

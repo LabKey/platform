@@ -27,8 +27,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.notification.EmailMessage;
-import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -42,6 +40,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
@@ -54,6 +53,7 @@ import org.labkey.issue.query.IssuesQueryView;
 import org.labkey.issue.query.IssuesTable;
 import org.springframework.validation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.servlet.ServletException;
@@ -79,6 +79,9 @@ public class IssuesController extends SpringActionController
     public static final int ISSUE_STRING2 = 5;
     public static final int ISSUE_PRIORITY = 6;
     public static final int ISSUE_RESOLUTION = 7;
+    public static final int ISSUE_STRING3 = 8;
+    public static final int ISSUE_STRING4 = 9;
+    public static final int ISSUE_STRING5 = 10;
 
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
@@ -118,15 +121,15 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private ActionURL issueURL(String action)
+    private ActionURL issueURL(Class<? extends Controller> action)
     {
-        return new ActionURL("issues", action, getContainer());
+        return new ActionURL(action, getContainer());
     }
 
 
-    public static ActionURL issueURL(Container c, String action)
+    public static ActionURL issueURL(Container c, Class<? extends Controller> action)
     {
-        return new ActionURL("issues", action, c);
+        return new ActionURL(action, c);
     }
 
 
@@ -268,7 +271,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getURL()
         {
-            return issueURL("list").addParameter(".lastFilter","true");
+            return issueURL(ListAction.class).addParameter(".lastFilter","true");
         }
     }
 
@@ -335,8 +338,7 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setTitle("" + _issue.getIssueId() + " : " + _issue.getTitle().getSource());
 
-            JspView v = new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
-            return v;
+            return new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -347,7 +349,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getURL()
         {
-            return issueURL("details").addParameter("issueId", _issue.getIssueId());
+            return issueURL(DetailsAction.class).addParameter("issueId", _issue.getIssueId());
         }
     }
 
@@ -451,15 +453,18 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            _issue.Open(getContainer(), getUser());
-            setNewIssueDefaults(_issue);
+            _issue.open(getContainer(), getUser());
+            if (!reshow)
+            {
+                setNewIssueDefaults(_issue);
+            }
 
             IssuePage page = new IssuePage();
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
-            page.setAction("insert");
+            page.setAction(InsertAction.class);
             page.setIssue(_issue);
             page.setPrevIssue(_issue);
             page.setCustomColumnConfiguration(ccc);
@@ -490,8 +495,10 @@ public class IssuesController extends SpringActionController
             User user = getUser();
 
             _issue = form.getBean();
-            _issue.Open(c, user);
+            _issue.open(c, user);
             validateNotifyList(_issue, form, errors);
+
+            ChangeSummary changeSummary;
 
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
             boolean ownsTransaction = !scope.isTransactionActive();
@@ -501,11 +508,11 @@ public class IssuesController extends SpringActionController
                     scope.beginTransaction();
                 // for new issues, the original is always the default.
                 Issue orig = new Issue();
-                orig.Open(getContainer(), getUser());
+                orig.open(getContainer(), getUser());
 
-                Issue.Comment comment = addComment(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(user, c, _issue);
-                AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
+                AttachmentService.get().addAttachments(user, changeSummary.getComment(), getAttachmentFileList());
                 if (ownsTransaction)
                     scope.commitTransaction();
             }
@@ -513,8 +520,8 @@ public class IssuesController extends SpringActionController
             {
                 Throwable ex = x.getCause() == null ? x : x.getCause();
                 String error = ex.getMessage();
-                _log.debug("IssuesContoller.doInsert", x);
-                _issue.Open(c, user);
+                _log.debug("IssuesController.doInsert", x);
+                _issue.open(c, user);
 
                 errors.addError(new LabkeyError(error));
                 return false;
@@ -529,9 +536,9 @@ public class IssuesController extends SpringActionController
 
             final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), getViewContext());
             if (assignedTo != null)
-                sendUpdateEmail(_issue, null, url, "opened and assigned to " + assignedTo, form.getAction());
+                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened and assigned to " + assignedTo, form.getAction());
             else
-                sendUpdateEmail(_issue, null, url, "opened", form.getAction());
+                sendUpdateEmail(_issue, null, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), url, "opened", form.getAction());
 
             return true;
         }
@@ -567,6 +574,9 @@ public class IssuesController extends SpringActionController
         issue.setMilestone(defaults.get(ISSUE_MILESTONE));
         issue.setString1(defaults.get(ISSUE_STRING1));
         issue.setString2(defaults.get(ISSUE_STRING2));
+        issue.setString3(defaults.get(ISSUE_STRING3));
+        issue.setString4(defaults.get(ISSUE_STRING4));
+        issue.setString5(defaults.get(ISSUE_STRING5));
 
         HString priority = defaults.get(ISSUE_PRIORITY);
         issue.setPriority(null != priority ? priority.parseInt() : 3);
@@ -590,15 +600,20 @@ public class IssuesController extends SpringActionController
             ActionURL detailsUrl;
 
             // clear resolution, resolvedBy, and duplicate fields
-            if ("reopen".equals(form.getAction()))
+            if (ReopenAction.class.equals(form.getAction()))
                 issue.beforeReOpen();
 
             Issue duplicateOf = null;
-            if ("resolve".equals(form.getAction()) &&
+            if (ResolveAction.class.equals(form.getAction()) &&
                     issue.getResolution().getSource().equals("Duplicate") &&
                     issue.getDuplicate() != null &&
                     !issue.getDuplicate().equals(prevIssue.getDuplicate()))
             {
+                if (issue.getDuplicate().intValue() == issue.getIssueId())
+                {
+                    errors.rejectValue("Duplicate", ERROR_MSG, "An issue may not be a duplicate of itself");
+                    return false;
+                }
                 duplicateOf = IssueManager.getIssue(c, issue.getDuplicate().intValue());
                 if (duplicateOf == null)
                 {
@@ -606,6 +621,8 @@ public class IssuesController extends SpringActionController
                     return false;
                 }
             }
+
+            ChangeSummary changeSummary;
 
             DbScope scope = IssuesSchema.getInstance().getSchema().getScope();
             boolean ownsTransaction = !scope.isTransactionActive();
@@ -615,18 +632,18 @@ public class IssuesController extends SpringActionController
                     scope.beginTransaction();
                 detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
 
-                if ("resolve".equals(form.getAction()))
-                    issue.Resolve(user);
-                else if ("open".equals(form.getAction()) || "reopen".equals(form.getAction()))
-                    issue.Open(c, user, true);
-                else if ("close".equals(form.getAction()))
-                    issue.Close(user);
+                if (ResolveAction.class.equals(form.getAction()))
+                    issue.resolve(user);
+                else if (InsertAction.class.equals(form.getAction()) || ReopenAction.class.equals(form.getAction()))
+                    issue.open(c, user);
+                else if (CloseAction.class.equals(form.getAction()))
+                    issue.close(user);
                 else
-                    issue.Change(user);
+                    issue.change(user);
 
-                Issue.Comment comment = addComment(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
+                changeSummary = createChangeSummary(issue, prevIssue, duplicateOf, user, form.getAction(), form.getComment(), getColumnCaptions(), getViewContext());
                 IssueManager.saveIssue(user, c, issue);
-                AttachmentService.get().addAttachments(user, comment, getAttachmentFileList());
+                AttachmentService.get().addAttachments(user, changeSummary.getComment(), getAttachmentFileList());
 
                 if (duplicateOf != null)
                 {
@@ -654,15 +671,8 @@ public class IssuesController extends SpringActionController
             // Send update email...
             //    ...if someone other than "created by" is closing a bug
             //    ...if someone other than "assigned to" is updating, reopening, or resolving a bug
-            if ("close".equals(form.getAction()))
-            {
-                sendUpdateEmail(issue, prevIssue, detailsUrl, "closed", form.getAction());
-            }
-            else
-            {
-                String change = ("open".equals(form.getAction()) || "reopen".equals(form.getAction()) ? "reopened" : form.getAction() + "d");
-                sendUpdateEmail(issue, prevIssue, detailsUrl, change, form.getAction());
-            }
+            String change = ReopenAction.class.equals(form.getAction()) ? "reopened" : getActionName(form.getAction()) + "d";
+            sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, form.getAction());
             return true;
         }
 
@@ -771,7 +781,7 @@ public class IssuesController extends SpringActionController
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
-            page.setAction("update");
+            page.setAction(UpdateAction.class);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
@@ -791,7 +801,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private Set<String> getEditableFields(String action, IssueManager.CustomColumnConfiguration ccc)
+    private Set<String> getEditableFields(Class<? extends Controller> action, IssueManager.CustomColumnConfiguration ccc)
     {
         final Set<String> editable = new HashSet<String>(20);
 
@@ -810,7 +820,7 @@ public class IssuesController extends SpringActionController
         //if (!"insert".equals(action))
         editable.add("notifyList");
 
-        if ("resolve".equals(action))
+        if (ResolveAction.class.equals(action))
         {
             editable.add("resolution");
             editable.add("duplicate");
@@ -851,7 +861,7 @@ public class IssuesController extends SpringActionController
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
-            page.setAction("resolve");
+            page.setAction(ResolveAction.class);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
@@ -885,14 +895,14 @@ public class IssuesController extends SpringActionController
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
-            _issue.Close(user);
+            _issue.close(user);
 
             IssuePage page = new IssuePage();
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
-            page.setAction("close");
+            page.setAction(CloseAction.class);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
@@ -928,14 +938,14 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, _issue);
 
             _issue.beforeReOpen();
-            _issue.Open(getContainer(), user);
+            _issue.open(getContainer(), user);
 
             IssuePage page = new IssuePage();
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
-            page.setAction("reopen");
+            page.setAction(ReopenAction.class);
             page.setIssue(_issue);
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(ccc);
@@ -1083,7 +1093,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void sendUpdateEmail(Issue issue, Issue prevIssue, ActionURL detailsURL, String change, String action) throws ServletException
+    private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, Class<? extends Controller> action) throws ServletException
     {
         final String[] allAddresses = getEmailAddresses(issue, prevIssue, action);
         for (String to : allAddresses)
@@ -1094,22 +1104,18 @@ public class IssuesController extends SpringActionController
                 String messageId = "<" + issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 String references = messageId + " <" + issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
                 MailHelper.ViewMessage m = MailHelper.createMessage(LookAndFeelProperties.getInstance(getContainer()).getSystemEmailAddress(), to);
-                HttpServletRequest request = AppProps.getInstance().createMockRequest();  // Use base server url for root of links in email
                 Address[] addresses = m.getAllRecipients();
                 if (addresses != null && addresses.length > 0)
                 {
-                    m.setMultipart(true);
-                    m.setSubject("Issue #" + issue.getIssueId() + ", \"" + issue.getTitle().getSource() + ",\" has been " + change);
+                    IssueUpdateEmailTemplate template = EmailTemplateService.get().getEmailTemplate(IssueUpdateEmailTemplate.class, getContainer());
+                    template.init(issue, detailsURL, change, comment, fieldChanges);
+
+                    m.setSubject(template.renderSubject(getContainer()));
                     m.setHeader("References", references);
+                    String body = template.renderBody(getContainer());
+                    m.setText(body);
 
-                    JspView viewPlain = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true));
-                    m.setTemplateContent(request, viewPlain, "text/plain");
-
-                    JspView viewHtml = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, false));
-                    m.setTemplateContent(request, viewHtml, "text/html");
-
-                    MailHelper.send(m);
-                    MailHelper.addAuditEvent(getUser(), getContainer(), m);
+                    MailHelper.send(m, getUser(), getContainer());
                 }
             }
             catch (Exception e)
@@ -1123,7 +1129,7 @@ public class IssuesController extends SpringActionController
      * Builds the list of email addresses for notification based on the user
      * preferences and the explicit notification list.
      */
-    private String[] getEmailAddresses(Issue issue, Issue prevIssue, String action) throws ServletException
+    private String[] getEmailAddresses(Issue issue, Issue prevIssue, Class<? extends Controller> action) throws ServletException
     {
         final Set<String> emailAddresses = new HashSet<String>();
         final Container c = getContainer();
@@ -1132,7 +1138,7 @@ public class IssuesController extends SpringActionController
         int assignedToPrevPref = assignedToPrev != 0 ? IssueManager.getUserEmailPreferences(c, prevIssue.getAssignedTo()) : 0;
         int createdByPref = IssueManager.getUserEmailPreferences(c, issue.getCreatedBy());
 
-        if ("insert".equals(action))
+        if (InsertAction.class.equals(action))
         {
             if ((assignedToPref & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)
                 emailAddresses.add(UserManager.getEmailForId(issue.getAssignedTo()));
@@ -1250,7 +1256,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getUrl()
         {
-            return issueURL("admin");
+            return issueURL(AdminAction.class);
         }
     }
 
@@ -1263,7 +1269,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getSuccessURL(AdminForm adminForm)
         {
-            return issueURL("admin");
+            return issueURL(AdminAction.class);
         }
     }
 
@@ -1380,7 +1386,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getSuccessURL(EntryTypeNamesForm form)
         {
-            return issueURL("admin");
+            return issueURL(AdminAction.class);
         }
     }
 
@@ -1419,7 +1425,7 @@ public class IssuesController extends SpringActionController
 
         public ActionURL getSuccessURL(AssignedToGroupForm form)
         {
-            return issueURL("admin");
+            return issueURL(AdminAction.class);
         }
     }
 
@@ -1502,7 +1508,7 @@ public class IssuesController extends SpringActionController
 
         private ActionURL getUrl()
         {
-            return issueURL("rss");
+            return issueURL(RssAction.class);
         }
     }
 
@@ -1628,35 +1634,72 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void _appendChange(StringBuilder sb, String field, HString from, HString to)
+    static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String field, HString from, HString to)
     {
         from = from == null ? HString.EMPTY : from;
         to = to == null ? HString.EMPTY : to;
         if (!from.equals(to))
         {
+            sbText.append(field);
+            sbText.append(" changed from ");
+            sbText.append(HString.EMPTY.equals(from) ? "blank" : from.getSource());
+            sbText.append(" to ");
+            sbText.append(HString.EMPTY.equals(to) ? "blank" : to.getSource());
+            sbText.append("\n");
             HString encFrom = PageFlowUtil.filter(from);
             HString encTo = PageFlowUtil.filter(to);
-            sb.append("<tr><td>").append(field).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
+            sbHTML.append("<tr><td>").append(field).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
         }
     }
 
-
-    static Issue.Comment addComment(Issue issue, Issue previous, Issue duplicateOf, User user, String action, String comment, Map<String, String> customColumns, ViewContext context)
+    private static class ChangeSummary
     {
-        StringBuilder sbChanges = new StringBuilder();
-        if (!action.equals("insert") && !action.equals("update"))
-        {
-            sbChanges.append("<b>").append(action);
+        private Issue.Comment _comment;
+        private String _textChanges;
+        private String _summary;
 
-            if (action.equals("resolve"))
+        private ChangeSummary(Issue.Comment comment, String textChanges, String summary)
+        {
+            _comment = comment;
+            _textChanges = textChanges;
+            _summary = summary;
+        }
+
+        public Issue.Comment getComment()
+        {
+            return _comment;
+        }
+
+        public String getTextChanges()
+        {
+            return _textChanges;
+        }
+
+        public String getSummary()
+        {
+            return _summary;
+        }
+    }
+
+    static ChangeSummary createChangeSummary(Issue issue, Issue previous, Issue duplicateOf, User user, Class<? extends Controller> action, String comment, Map<String, String> customColumns, ViewContext context)
+    {
+        StringBuilder sbHTMLChanges = new StringBuilder();
+        StringBuilder sbTextChanges = new StringBuilder();
+        String summary = null;
+        if (!action.equals(InsertAction.class) && !action.equals(UpdateAction.class))
+        {
+            summary = getActionName(action).toLowerCase();
+
+            if (action.equals(ResolveAction.class))
             {
                 // Add the resolution; e.g. "resolve as Fixed"
-                sbChanges.append(" as ").append(issue.getResolution());
+                summary += " as " + issue.getResolution();
                 if (duplicateOf != null)
-                    sbChanges.append(" of ").append(duplicateOf.getIssueId());
+                    summary += " of " + duplicateOf.getIssueId();
             }
 
-            sbChanges.append("</b><br>\n");
+            sbHTMLChanges.append("<b>").append(summary);
+            sbHTMLChanges.append("</b><br>\n");
         }
         
         // CONSIDER: write changes in wiki
@@ -1664,28 +1707,31 @@ public class IssuesController extends SpringActionController
         if (null != previous)
         {
             // issueChanges is not defined yet, but it leaves things flexible
-            sbChanges.append("<table class=issues-Changes>");
-            _appendChange(sbChanges, "Title", previous.getTitle(), issue.getTitle());
-            _appendChange(sbChanges, "Status", previous.getStatus(), issue.getStatus());
-            _appendChange(sbChanges, "Assigned To", previous.getAssignedToName(context), issue.getAssignedToName(context));
-            _appendChange(sbChanges, "Notify", previous.getNotifyList(), issue.getNotifyList());
-            _appendChange(sbChanges, "Type", previous.getType(), issue.getType());
-            _appendChange(sbChanges, "Area", previous.getArea(), issue.getArea());
-            _appendChange(sbChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()));
-            _appendChange(sbChanges, "Milestone", previous.getMilestone(), issue.getMilestone());
+            sbHTMLChanges.append("<table class=issues-Changes>");
+            _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle());
+            _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus());
+            _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(context), issue.getAssignedToName(context));
+            _appendChange(sbHTMLChanges, sbTextChanges, "Notify", previous.getNotifyList(), issue.getNotifyList());
+            _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType());
+            _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea());
+            _appendChange(sbHTMLChanges, sbTextChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()));
+            _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone());
 
-            _appendCustomColumnChange(sbChanges, "int1", HString.valueOf(previous.getInt1()), HString.valueOf(issue.getInt1()), customColumns);
-            _appendCustomColumnChange(sbChanges, "int2", HString.valueOf(previous.getInt2()), HString.valueOf(issue.getInt2()), customColumns);
-            _appendCustomColumnChange(sbChanges, "string1", previous.getString1(), issue.getString1(), customColumns);
-            _appendCustomColumnChange(sbChanges, "string2", previous.getString2(), issue.getString2(), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", HString.valueOf(previous.getInt1()), HString.valueOf(issue.getInt1()), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", HString.valueOf(previous.getInt2()), HString.valueOf(issue.getInt2()), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string1", previous.getString1(), issue.getString1(), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string2", previous.getString2(), issue.getString2(), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string3", previous.getString3(), issue.getString3(), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string4", previous.getString4(), issue.getString4(), customColumns);
+            _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "string5", previous.getString5(), issue.getString5(), customColumns);
 
-            sbChanges.append("</table>\n");
+            sbHTMLChanges.append("</table>\n");
         }
 
         //why we are wrapping issue comments in divs???
         HStringBuilder formattedComment = new HStringBuilder();
         formattedComment.append("<div class=\"wiki\">");
-        formattedComment.append(sbChanges);
+        formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
         WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if(null != wikiService)
@@ -1698,15 +1744,15 @@ public class IssuesController extends SpringActionController
 
         formattedComment.append("</div>");
 
-        return issue.addComment(user, formattedComment.toHString());
+        return new ChangeSummary(issue.addComment(user, formattedComment.toHString()), sbTextChanges.toString(), summary);
     }
 
-    private static void _appendCustomColumnChange(StringBuilder sb, String field, HString from, HString to, Map<String, String> columnCaptions)
+    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String field, HString from, HString to, Map<String, String> columnCaptions)
     {
         String caption = columnCaptions.get(field);
 
         if (null != caption)
-            _appendChange(sb, caption, from, to);
+            _appendChange(sbHtml, sbText, caption, from, to);
     }
 
 
@@ -1727,6 +1773,9 @@ public class IssuesController extends SpringActionController
             keywordView.addKeyword("Resolution", ISSUE_RESOLUTION);
             keywordView.addCustomColumn("string1", ISSUE_STRING1);
             keywordView.addCustomColumn("string2", ISSUE_STRING2);
+            keywordView.addCustomColumn("string3", ISSUE_STRING3);
+            keywordView.addCustomColumn("string4", ISSUE_STRING4);
+            keywordView.addCustomColumn("string5", ISSUE_STRING5);
 
             List<String> columnNames = new ArrayList<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
@@ -1916,10 +1965,26 @@ public class IssuesController extends SpringActionController
             return map;
         }
 
-        // XXX: change return value to typed HString
-        public String getAction()
+        public Class<? extends Controller> getAction()
         {
-            return _stringValues.get("action");
+            String className = _stringValues.get("action");
+            if (className == null)
+            {
+                throw new NotFoundException("No action specified");
+            }
+            try
+            {
+                Class result = Class.forName(className);
+                if (Controller.class.isAssignableFrom(result))
+                {
+                    return result;
+                }
+                throw new NotFoundException("Resolved class but it was not an action: " + className);
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new NotFoundException("Could not find action " + className);
+            }
         }
 
         // XXX: change return value to typed HString
@@ -2002,7 +2067,7 @@ public class IssuesController extends SpringActionController
 
             bean.listURL = getListURL(c).deleteParameters();
 
-            bean.insertURL = IssuesController.issueURL(context.getContainer(), "insert");
+            bean.insertURL = IssuesController.issueURL(context.getContainer(), InsertAction.class);
 
             try
             {

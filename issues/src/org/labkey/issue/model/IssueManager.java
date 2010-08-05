@@ -329,9 +329,9 @@ public class IssueManager
     public static class CustomColumnConfiguration
     {
         public static final String PICK_LIST_NAME = "pickListColumns";
-        private static String[] _tableColumns = new String[]{"int1", "int2", "string1", "string2"};
+        private static String[] _tableColumns = new String[]{"int1", "int2", "string1", "string2", "string3", "string4", "string5"};
         private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>(5);
-        private Set<String> _pickListColumns = new HashSet<String>(2);
+        private Set<String> _pickListColumns = new HashSet<String>(5);
 
         public CustomColumnConfiguration(@NotNull Map<String, ?> map)
         {
@@ -1033,7 +1033,7 @@ public class IssueManager
             //
             {
                 Issue issue = new Issue();
-                issue.Open(c, user);
+                issue.open(c, user);
                 issue.setAssignedTo(new Integer(user.getUserId()));
                 issue.setTitle(new HString("This is a junit test bug",false));
                 issue.setTag(new HString("junit",false));
@@ -1100,7 +1100,7 @@ public class IssueManager
             {
                 Issue issue = IssueManager.getIssue(c, issueId);
                 assertNotNull("issue not found", issue);
-                issue.Resolve(user);
+                issue.resolve(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
                 copy.setResolution(new HString("fixed"));
@@ -1121,7 +1121,7 @@ public class IssueManager
             {
                 Issue issue = getIssue(c, issueId);
                 assertNotNull("issue not found", issue);
-                issue.Close(user);
+                issue.close(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
                 copy.addComment(user, new HString("closed"));

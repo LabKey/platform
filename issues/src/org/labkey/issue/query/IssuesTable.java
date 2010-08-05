@@ -47,7 +47,7 @@ public class IssuesTable extends FilteredTable
         addAllColumns();
 
         setDefaultVisibleColumns(getDefaultColumns());
-        ActionURL base = IssuesController.issueURL(_schema.getContainer(), "details");
+        ActionURL base = IssuesController.issueURL(_schema.getContainer(), IssuesController.DetailsAction.class);
         setDetailsURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
         setTitleColumn("Title");
     }

@@ -285,6 +285,25 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        public ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnURL)
+        {
+            return getCustomizeEmailURL(c, selectedTemplate == null ? null : selectedTemplate.getName(), returnURL);
+        }
+
+        public ActionURL getCustomizeEmailURL(Container c, String selectedTemplate, URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(CustomizeEmailAction.class, c);
+            if (selectedTemplate != null)
+            {
+                url.addParameter("templateClass", selectedTemplate);
+            }
+            if (returnURL != null)
+            {
+                url.addParameter("returnUrl", returnURL.toString());
+            }
+            return url;
+        }
+
         public ActionURL getResetLookAndFeelPropertiesURL(Container c)
         {
             return new ActionURL(ResetPropertiesAction.class, c);
@@ -3136,7 +3155,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminPermission.class)
     public class CustomizeEmailAction extends FormViewAction<CustomEmailForm>
     {
         public void validateCommand(CustomEmailForm target, Errors errors)
@@ -3145,11 +3164,22 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors) throws Exception
         {
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+            {
+                // Must be a site admin to customize in the root, which is where the site-wide templates are stored
+                throw new UnauthorizedException();
+            }
             return new JspView<CustomEmailForm>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
         }
 
         public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
         {
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+            {
+                // Must be a site admin to customize in the root, which is where the site-wide templates are stored
+                throw new UnauthorizedException();
+            }
+
             if (form.getTemplateClass() != null)
             {
                 EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
@@ -3159,7 +3189,7 @@ public class AdminController extends SpringActionController
 
                 String[] errorStrings = new String[1];
                 if (template.isValid(errorStrings))  // TODO: Pass in errors collection directly?  Should also build a list of all validation errors and display them all.
-                    EmailTemplateService.get().saveEmailTemplate(template);
+                    EmailTemplateService.get().saveEmailTemplate(template, getContainer());
                 else
                     errors.reject(ERROR_MSG, errorStrings[0]);
             }
@@ -3185,24 +3215,31 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(CustomEmailForm form) throws Exception
         {
+            if (getContainer().isRoot() && !getUser().isAdministrator())
+            {
+                // Must be a site admin to customize in the root, which is where the site-wide templates are stored
+                throw new UnauthorizedException();
+            }
+            
             if (form.getTemplateClass() != null)
             {
                 EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
                 template.setSubject(form.getEmailSubject());
                 template.setBody(form.getEmailMessage());
 
-                EmailTemplateService.get().deleteEmailTemplate(template);
+                EmailTemplateService.get().deleteEmailTemplate(template, getContainer());
             }
-            return getCustomizeEmailURL(form.getTemplateClass());
+            return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnURLHelper());
         }
     }
 
 
-    public static class CustomEmailForm
+    public static class CustomEmailForm extends ReturnUrlForm
     {
         private String _templateClass;
         private String _emailSubject;
         private String _emailMessage;
+        private String _returnURL;
 
         public void setTemplateClass(String name){_templateClass = name;}
         public String getTemplateClass(){return _templateClass;}
@@ -4090,8 +4127,7 @@ public class AdminController extends SpringActionController
 
                 try
                 {
-                    MailHelper.send(msg);
-                    MailHelper.addAuditEvent(getUser(), getContainer(), msg);
+                    MailHelper.send(msg, getUser(), getContainer());
                 }
                 catch(MessagingException e)
                 {

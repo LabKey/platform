@@ -1025,6 +1025,7 @@ issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-8.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-10.10-10.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-10.19-10.191.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-10.20-10.21.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
@@ -1043,6 +1044,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-9.31.sql -tex
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-8.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-10.10-10.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-10.19-10.191.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-10.20-10.21.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
@@ -1064,6 +1066,7 @@ issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-9.30-9.31.sql -text
 issues/src/org/labkey/issue/IssueContainerListener.java -text
 issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssuePage.java -text
+issues/src/org/labkey/issue/IssueUpdateEmailTemplate.java -text
 issues/src/org/labkey/issue/IssueUpgradeCode.java -text
 issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesListView.java -text
