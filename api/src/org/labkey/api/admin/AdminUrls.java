@@ -19,6 +19,8 @@ package org.labkey.api.admin;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -41,6 +43,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getProjectSettingsURL(Container c);
     ActionURL getProjectSettingsMenuURL(Container c);
     ActionURL getProjectSettingsFileURL(Container c);
+    ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnURL);
     ActionURL getFilesSiteSettingsURL(boolean upgrade);
 
     NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);

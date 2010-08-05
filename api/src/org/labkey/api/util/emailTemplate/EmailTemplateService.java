@@ -17,8 +17,11 @@
 package org.labkey.api.util.emailTemplate;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.view.NotFoundException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -32,13 +35,14 @@ public class EmailTemplateService
 {
     static Logger _log = Logger.getLogger(EmailTemplateService.class);
 
+    private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
     private static final String EMAIL_TEMPLATE_PROPERTY = "emailTemplateProperty";
     private static final String MESSAGE_SUBJECT_PART = "subject";
     private static final String MESSAGE_BODY_PART = "body";
     private static final String EMAIL_TEMPLATE_DELIM = "/";
 
     private static final EmailTemplateService instance = new EmailTemplateService();
-    private Set<Class> _templates = new LinkedHashSet<Class>();
+    private final Set<Class<? extends EmailTemplate>> _templates = new LinkedHashSet<Class<? extends EmailTemplate>>();
 
     public static EmailTemplateService get()
     {
@@ -46,7 +50,7 @@ public class EmailTemplateService
     }
     private EmailTemplateService(){}
 
-    public void registerTemplate(Class templateClass)
+    public void registerTemplate(Class<? extends EmailTemplate> templateClass)
     {
         synchronized(_templates)
         {
@@ -60,16 +64,35 @@ public class EmailTemplateService
         }
     }
 
-    public EmailTemplate getEmailTemplate(String templateClassName)
+    /** Looks only at site-level and default templates */
+    public <T extends EmailTemplate> T getEmailTemplate(Class<T> templateClass)
     {
-        return _getEmailTemplates().get(templateClassName);
+        return getEmailTemplate(templateClass, ContainerManager.getRoot());
     }
 
-    public EmailTemplate[] getEmailTemplates()
+    /** Looks at folder-level, site-level and default templates */
+    public <T extends EmailTemplate> T getEmailTemplate(Class<T> templateClass, Container c)
     {
-        EmailTemplate[] templates = _getEmailTemplates().values().toArray(new EmailTemplate[0]);
+        return (T)_getEmailTemplates(c).get(templateClass);
+    }
 
-        Arrays.sort(templates, new Comparator<EmailTemplate>(){
+    public List<EmailTemplate> getEditableEmailTemplates(Container c)
+    {
+        List<EmailTemplate> templates = new ArrayList<EmailTemplate>(_getEmailTemplates(c).values());
+
+        if (!c.isRoot())
+        {
+            Iterator<EmailTemplate> i = templates.iterator();
+            while (i.hasNext())
+            {
+                if (!i.next().getEditableScopes().isEditableIn(c))
+                {
+                    i.remove();
+                }
+            }
+        }
+
+        Collections.sort(templates, new Comparator<EmailTemplate>(){
 
             public int compare(EmailTemplate o1, EmailTemplate o2)
             {
@@ -87,28 +110,68 @@ public class EmailTemplateService
         return templates;
     }
 
-    private Map<String, EmailTemplate> _getEmailTemplates()
+    private Map<String, String> getProperties(Container c, boolean writable)
     {
-        Map<String, EmailTemplate> templates = new HashMap<String, EmailTemplate>();
-        Map<String, String> map = UserManager.getUserPreferences(false);
+        if (c.isRoot())
+        {
+            // Originally all email templates were stored at the root
+            // Unfortunately, they were stored as user preferences, so keep looking for them there
+            return UserManager.getUserPreferences(writable);
+        }
+        else
+        {
+            if (writable)
+                return PropertyManager.getWritableProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
+            else
+                return PropertyManager.getProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
+        }
+    }
 
+    private Map<Class<? extends EmailTemplate>, EmailTemplate> _getEmailTemplates(Container c)
+    {
+        Map<Class<? extends EmailTemplate>, EmailTemplate> templates = new HashMap<Class<? extends EmailTemplate>, EmailTemplate>();
+        // Populate map in override sequence, so that the most specific override will be used
+
+        // First, the default templates
+        for (Class<? extends EmailTemplate> et : _templates)
+        {
+            templates.put(et, createTemplate(et));
+        }
+
+        // Second, the site-wide templates stored in the database
+        addTemplates(templates, ContainerManager.getRoot());
+
+        // Finally, the folder-scoped templates stored in the database
+        addTemplates(templates, c);
+
+        return templates;
+    }
+
+    private void addTemplates(Map<Class<? extends EmailTemplate>, EmailTemplate> templates, Container c)
+    {
+        Map<String, String> map = getProperties(c, false);
         for (Map.Entry<String, String> entry : map.entrySet())
         {
             final String key = entry.getKey();
 
             if (key.startsWith(EMAIL_TEMPLATE_PROPERTY))
             {
+                // Key format is "emailTemplateProperty/<TEMPLATE_CLASS_NAME>/<subject or body>"
                 String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
 
                 if (parts.length == 3)
                 {
-                    EmailTemplate et = templates.get(parts[1]);
-                    try {
+                    try
+                    {
+                        EmailTemplate et = templates.get(getTemplateClass(parts[1]));
                         if (et == null)
                         {
                             et = createTemplate(parts[1]);
-                            templates.put(parts[1], et);
+                            templates.put(et.getClass(), et);
                         }
+                        et.setContainer(c);
+
+                        // Subject and bodies are stored as two separate key-value pairs in the map
                         if (MESSAGE_SUBJECT_PART.equals(parts[2]))
                             et.setSubject(entry.getValue());
                         else
@@ -122,37 +185,35 @@ public class EmailTemplateService
                 }
             }
         }
-
-        for (Class et : _templates)
-        {
-            if (!templates.containsKey(et.getName()))
-            {
-                templates.put(et.getName(), createTemplate(et));
-            }
-        }
-
-        return templates;
     }
 
-    public EmailTemplate createTemplate(String templateClass)
+    public Class<? extends EmailTemplate> getTemplateClass(String className)
     {
         try {
-            return createTemplate(Class.forName(templateClass));
+            Class c = Class.forName(className);
+            if (EmailTemplate.class.isAssignableFrom(c))
+            {
+                return (Class<? extends EmailTemplate>)c;
+            }
+            throw new IllegalArgumentException("The specified class: " + c.getName() + " is not an instance of EmailTemplate");
         }
         catch (Exception e)
         {
-            throw new IllegalArgumentException("The specified class could not be found: " + templateClass);
+            throw new IllegalArgumentException("The specified class could not be found: " + className);
         }
+
     }
 
-    public EmailTemplate createTemplate(Class templateClass)
+    public EmailTemplate createTemplate(String className)
     {
-        try {
-            if (EmailTemplate.class.isAssignableFrom(templateClass))
-            {
-                return (EmailTemplate)templateClass.newInstance();
-            }
-            throw new IllegalArgumentException("The specified class: " + templateClass.getName() + " is not an instance of EmailTemplate");
+        return createTemplate(getTemplateClass(className));
+    }
+
+    public EmailTemplate createTemplate(Class<? extends EmailTemplate> templateClass)
+    {
+        try
+        {
+            return templateClass.newInstance();
         }
         catch (Exception e)
         {
@@ -160,8 +221,13 @@ public class EmailTemplateService
         }
     }
 
-    public void saveEmailTemplate(EmailTemplate template) throws SQLException {
-        Map<String, String> map = UserManager.getUserPreferences(true);
+    public void saveEmailTemplate(EmailTemplate template, Container c) throws SQLException
+    {
+        if (!template.getEditableScopes().isEditableIn(c))
+        {
+            throw new NotFoundException("Cannot save template " + c + " in " + c);
+        }
+        Map<String, String> map = getProperties(c, true);
 
         final String className = template.getClass().getName();
         map.put(EMAIL_TEMPLATE_PROPERTY + EMAIL_TEMPLATE_DELIM + className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART,
@@ -171,9 +237,9 @@ public class EmailTemplateService
         PropertyManager.saveProperties(map);
     }
 
-    public void deleteEmailTemplate(EmailTemplate template) throws SQLException
+    public void deleteEmailTemplate(EmailTemplate template, Container c) throws SQLException
     {
-        Map<String, String> map = UserManager.getUserPreferences(true);
+        Map<String, String> map = getProperties(c, true);
 
         final String className = template.getClass().getName();
         map.remove(EMAIL_TEMPLATE_PROPERTY + EMAIL_TEMPLATE_DELIM + className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);

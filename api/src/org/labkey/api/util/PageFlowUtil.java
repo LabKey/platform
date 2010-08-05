@@ -219,9 +219,7 @@ public class PageFlowUtil
                     if (encodeLinks)
                     {
                         String sub = s.substring(i);
-                        if (c == 'f' && sub.startsWith("ftp://") ||
-                                c == 'h' && (sub.startsWith("http://") || sub.startsWith("https://")) ||
-                                c == 'm' && sub.startsWith("mailto://"))
+                        if ((c == 'f' || c == 'h' || c == 'm') && StringUtilsLabKey.startsWithURL(sub))
                         {
                             Matcher m = urlPatternStart.matcher(sub);
                             if (m.find())

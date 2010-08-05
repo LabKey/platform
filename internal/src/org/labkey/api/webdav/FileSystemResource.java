@@ -665,7 +665,7 @@ public class FileSystemResource extends AbstractWebdavResource
                     messages.add(msg);
                 }
                 // send messages in bulk
-                svc.sendMessage(messages.toArray(new EmailMessage[messages.size()]));
+                svc.sendMessage(messages.toArray(new EmailMessage[messages.size()]), context == null ? null : context.getUser(), getContainer());
              }
        }
         catch (Exception e)

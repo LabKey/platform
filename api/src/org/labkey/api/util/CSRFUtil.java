@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- * Created by IntelliJ IDEA.
+ * Anti-cross-site request forgery utility methods
  * User: matthewb
  * Date: May 10, 2010
  * Time: 1:53:33 PM

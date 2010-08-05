@@ -30,6 +30,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -276,6 +277,26 @@ public class DataColumn extends DisplayColumn
         if (null != o)
         {
             String url = renderURL(ctx);
+
+            if (url == null)
+            {
+                // See if the value is itself a URL
+                Object value = ctx.get(_displayColumn.getFieldKey());
+                if (value != null)
+                {
+                    String toString = value.toString();
+                    if (StringUtilsLabKey.startsWithURL(toString) &&
+                            !toString.contains(" ") &&
+                            !toString.contains("\n") &&
+                            !toString.contains("\r") &&
+                            !toString.contains("\t"))
+                    {
+                        // Could do more sophisticated URL extraction to try to pull out, but this is likely
+                        // to link most real URLs
+                        url = toString;
+                    }
+                }
+            }
 
             if (null != url)
             {

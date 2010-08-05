@@ -22,11 +22,9 @@ import org.labkey.api.services.ServiceRegistry;
 import javax.mail.MessagingException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: klum
  * Date: Apr 21, 2010
  * Time: 12:04:33 PM
- * To change this template use File | Settings | File Templates.
  */
 public class EmailService
 {
@@ -42,8 +40,21 @@ public class EmailService
         EmailMessage createMessage(String from, String[] to, String subject);
         EmailMessage createMessage(String from, String[] to, String subject, String message);
 
-        void sendMessage(EmailMessage msg) throws MessagingException;
-        void sendMessage(EmailMessage[] msgs);
+        /**
+         * Send the email message synchronously from the caller thread
+         * @param msg message to send
+         * @param user for auditing purposes, the user who is considered to have originated the message
+         * @param c for auditing purposes, the container that is considered to have originated the message
+         */
+        void sendMessage(EmailMessage msg, User user, Container c) throws MessagingException;
+
+        /**
+         * Send the email message asynchronously in a background thread
+         * @param msgs messages to send
+         * @param user for auditing purposes, the user who is considered to have originated the message
+         * @param c for auditing purposes, the container that is considered to have originated the message
+         */
+        void sendMessage(EmailMessage[] msgs, User user, Container c);
 
         /**
          * Returns the email configuration for the user/container combination as described by

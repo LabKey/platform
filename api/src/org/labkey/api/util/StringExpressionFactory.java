@@ -107,7 +107,7 @@ public class StringExpressionFactory
         {
             if (str.startsWith("mailto:"))
                 expr = new FieldKeyStringExpression(str);
-            else if (str.startsWith("http://") || str.startsWith("https://") || str.startsWith("mailto:"))
+            else if (StringUtilsLabKey.startsWithURL(str))
                 expr = new URLStringExpression(str);
             else if (null == DetailsURL.validateURL(str))
                 expr = DetailsURL.fromString(str);

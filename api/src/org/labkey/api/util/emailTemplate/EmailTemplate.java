@@ -35,11 +35,40 @@ public abstract class EmailTemplate
     private static Pattern scriptPattern = Pattern.compile("%(.*?)%");
     private static List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
 
+    public enum Scope
+    {
+        Site
+        {
+            @Override
+            public boolean isEditableIn(Container c)
+            {
+                return c.isRoot();
+            }
+        },
+        SiteOrFolder
+        {
+            @Override
+            public boolean isEditableIn(Container c)
+            {
+                return true;
+            }};
+
+        public abstract boolean isEditableIn(Container c);
+    }
+
     private String _name;
     private String _body;
     private String _subject;
     private String _description;
     private int _priority = 50;
+    /** Scope is the locations in which the user should be able to edit this template. It should always be the same
+     * for a given subclass, regardless of the instances */
+    private Scope _scope = Scope.Site;
+    /**
+     * Container in which this template is stored. Null for the default templates defined in code, the root
+     * container for site level templates, or a specific folder.
+     */
+    private Container _container = null;
 
     static
     {
@@ -91,6 +120,10 @@ public abstract class EmailTemplate
     public int getPriority(){return _priority;}
     public String getDescription(){return _description;}
     public void setDescription(String description){_description = description;}
+    public Scope getEditableScopes(){return _scope;}
+    public void setEditableScopes(Scope scope){_scope = scope;}
+    public Container getContainer(){return _container;}
+    /* package */ void setContainer(Container c){_container = c;}
 
     public boolean isValid(String[] error)
     {

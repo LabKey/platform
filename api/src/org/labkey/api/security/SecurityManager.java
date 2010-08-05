@@ -808,8 +808,7 @@ public class SecurityManager
     public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
         MimeMessage m = createMessage(c, user, message, to, verificationURL);
-        MailHelper.send(m);
-        MailHelper.addAuditEvent(user, c, m);
+        MailHelper.send(m, user, c);
     }
 
     public static void renderEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
@@ -2350,8 +2349,8 @@ public class SecurityManager
         SecurityMessage sm = new SecurityMessage();
 
         EmailTemplate et = EmailTemplateService.get().getEmailTemplate(
-                isAdminCopy ? RegistrationAdminEmailTemplate.class.getName()
-                            : RegistrationEmailTemplate.class.getName());
+                isAdminCopy ? RegistrationAdminEmailTemplate.class
+                            : RegistrationEmailTemplate.class);
         sm.setMessagePrefix(mailPrefix);
         sm.setEmailTemplate((SecurityEmailTemplate)et);
         sm.setType("User Registration Email");
@@ -2364,8 +2363,8 @@ public class SecurityManager
         SecurityMessage sm = new SecurityMessage();
 
         EmailTemplate et = EmailTemplateService.get().getEmailTemplate(
-                isAdminCopy ? PasswordResetAdminEmailTemplate.class.getName()
-                            : PasswordResetEmailTemplate.class.getName());
+                isAdminCopy ? PasswordResetAdminEmailTemplate.class
+                            : PasswordResetEmailTemplate.class);
         sm.setEmailTemplate((SecurityEmailTemplate)et);
         sm.setType("Reset Password Email");
         return sm;

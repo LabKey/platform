@@ -21,6 +21,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * Tags an action as implementing protection against cross-site request forgery attempts by including a hidden
+ * form parameter that matches the value stored in a session attribute on the server. This should be added to the form
+ * by embedding the <labkey:csrf/> taglib in the JSP that renders the page. 
  * User: matthewb
  * Date: Jan 11, 2007
  * Time: 11:35:28 AM

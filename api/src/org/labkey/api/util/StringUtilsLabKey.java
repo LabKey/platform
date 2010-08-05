@@ -73,4 +73,15 @@ public class StringUtilsLabKey
 
         return sb.toString();
     }
+
+    /** Recognizes strings that start with http://, https://, ftp://, or mailto: */
+    public static boolean startsWithURL(String s)
+    {
+        if (s == null)
+        {
+            return false;
+        }
+        s = s.toLowerCase();
+        return s.startsWith("http://") || s.startsWith("https://") || s.startsWith("ftp://") || s.startsWith("mailto:");
+    }
 }

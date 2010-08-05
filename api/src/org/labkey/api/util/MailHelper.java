@@ -147,12 +147,16 @@ public class MailHelper
      * the caller.  The caller should avoid double-logging the failure, but may want
      * to handle the exception in some other way, e.g. displaying a message to the
      * user.
+     * @param m the message to send
+     * @param user for auditing purposes, the user who originated the message
+     * @param c for auditing purposes, the container in which this message originated
      */
-    public static void send(Message m) throws MessagingException
+    public static void send(Message m, User user, Container c) throws MessagingException
     {
         try
         {
             Transport.send(m);
+            addAuditEvent(user, c, m);
         }
         catch (NoSuchProviderException e)
         {
@@ -170,12 +174,7 @@ public class MailHelper
         }
     }
 
-    public static void addAuditEvent(Message m) throws MessagingException
-    {
-        addAuditEvent(null, null, m);
-    }
-
-    public static void addAuditEvent(User user, Container c, Message m) throws MessagingException
+    private static void addAuditEvent(User user, Container c, Message m) throws MessagingException
     {
         AuditLogEvent event = new AuditLogEvent();
 
@@ -404,8 +403,7 @@ public class MailHelper
                     try
                     {
                         m.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
-                        MailHelper.send(m);
-                        MailHelper.addAuditEvent(_user, null, m);
+                        MailHelper.send(m, _user, null);
                     }
                     catch(MessagingException e)
                     {
