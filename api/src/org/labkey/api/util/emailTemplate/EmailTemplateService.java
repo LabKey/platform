@@ -36,7 +36,6 @@ public class EmailTemplateService
     static Logger _log = Logger.getLogger(EmailTemplateService.class);
 
     private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
-    private static final String EMAIL_TEMPLATE_PROPERTY = "emailTemplateProperty";
     private static final String MESSAGE_SUBJECT_PART = "subject";
     private static final String MESSAGE_BODY_PART = "body";
     private static final String EMAIL_TEMPLATE_DELIM = "/";
@@ -112,19 +111,10 @@ public class EmailTemplateService
 
     private Map<String, String> getProperties(Container c, boolean writable)
     {
-        if (c.isRoot())
-        {
-            // Originally all email templates were stored at the root
-            // Unfortunately, they were stored as user preferences, so keep looking for them there
-            return UserManager.getUserPreferences(writable);
-        }
+        if (writable)
+            return PropertyManager.getWritableProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
         else
-        {
-            if (writable)
-                return PropertyManager.getWritableProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
-            else
-                return PropertyManager.getProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
-        }
+            return PropertyManager.getProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
     }
 
     private Map<Class<? extends EmailTemplate>, EmailTemplate> _getEmailTemplates(Container c)
@@ -154,34 +144,33 @@ public class EmailTemplateService
         {
             final String key = entry.getKey();
 
-            if (key.startsWith(EMAIL_TEMPLATE_PROPERTY))
+            // Key format is "<TEMPLATE_CLASS_NAME>/<subject or body>"
+            String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
+
+            if (parts.length == 2)
             {
-                // Key format is "emailTemplateProperty/<TEMPLATE_CLASS_NAME>/<subject or body>"
-                String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
-
-                if (parts.length == 3)
+                try
                 {
-                    try
+                    String className = parts[0];
+                    String partType = parts[1];
+                    EmailTemplate et = templates.get(getTemplateClass(className));
+                    if (et == null)
                     {
-                        EmailTemplate et = templates.get(getTemplateClass(parts[1]));
-                        if (et == null)
-                        {
-                            et = createTemplate(parts[1]);
-                            templates.put(et.getClass(), et);
-                        }
-                        et.setContainer(c);
+                        et = createTemplate(className);
+                        templates.put(et.getClass(), et);
+                    }
+                    et.setContainer(c);
 
-                        // Subject and bodies are stored as two separate key-value pairs in the map
-                        if (MESSAGE_SUBJECT_PART.equals(parts[2]))
-                            et.setSubject(entry.getValue());
-                        else
-                            et.setBody(entry.getValue());
-                    }
-                    // do nothing, we don't necessarily care about stale template properties
-                    catch (Exception e)
-                    {
-                        //_log.error("Unable to create a template for: " + parts[1], e);
-                    }
+                    // Subject and bodies are stored as two separate key-value pairs in the map
+                    if (MESSAGE_SUBJECT_PART.equals(partType))
+                        et.setSubject(entry.getValue());
+                    else
+                        et.setBody(entry.getValue());
+                }
+                // do nothing, we don't necessarily care about stale template properties
+                catch (Exception e)
+                {
+                    //_log.error("Unable to create a template for: " + parts[1], e);
                 }
             }
         }
@@ -230,9 +219,9 @@ public class EmailTemplateService
         Map<String, String> map = getProperties(c, true);
 
         final String className = template.getClass().getName();
-        map.put(EMAIL_TEMPLATE_PROPERTY + EMAIL_TEMPLATE_DELIM + className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART,
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART,
                 template.getSubject());
-        map.put(EMAIL_TEMPLATE_PROPERTY + EMAIL_TEMPLATE_DELIM + className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART,
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART,
                 template.getBody());
         PropertyManager.saveProperties(map);
     }
@@ -242,8 +231,41 @@ public class EmailTemplateService
         Map<String, String> map = getProperties(c, true);
 
         final String className = template.getClass().getName();
-        map.remove(EMAIL_TEMPLATE_PROPERTY + EMAIL_TEMPLATE_DELIM + className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);
-        map.remove(EMAIL_TEMPLATE_PROPERTY + EMAIL_TEMPLATE_DELIM + className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART);
+        map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);
+        map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART);
         PropertyManager.saveProperties(map);
+    }
+
+    public void upgradeTo102()
+    {
+        // We used to store templates as specially prefixed key/values in the user preferences properties map
+        // They should now be stored in a separate property set, and we're changing from using % as the delimiter to ^
+        Map<String, String> oldProperties = UserManager.getUserPreferences(true);
+        Map<String, String> newProperties = getProperties(ContainerManager.getRoot(), true);
+
+        // Iterate over a copy so we can modify the real map as we go 
+        for (Map.Entry<String, String> entry : new HashMap<String, String>(oldProperties).entrySet())
+        {
+            String key = entry.getKey();
+            if (key.startsWith("emailTemplateProperty"))
+            {
+                // Old key format is three parts - "emailTemplateProperty/<TEMPLATE_CLASS_NAME>/<subject or body>"
+                String[] parts = key.split(EMAIL_TEMPLATE_DELIM);
+
+                if (parts.length == 3)
+                {
+                    // Change the delimiter
+                    String value = entry.getValue();
+                    value = value.replace('%', '^');
+
+                    // New key format is two parts - "<TEMPLATE_CLASS_NAME>/<subject or body>"
+                    newProperties.put(parts[1] + EMAIL_TEMPLATE_DELIM + parts[2], value);
+                }
+                // Get rid of it in the old location
+                oldProperties.remove(key);
+            }
+        }
+        PropertyManager.saveProperties(oldProperties);
+        PropertyManager.saveProperties(newProperties);
     }
 }

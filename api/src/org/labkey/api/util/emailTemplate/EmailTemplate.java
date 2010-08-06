@@ -16,12 +16,16 @@
 
 package org.labkey.api.util.emailTemplate;
 
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Formatter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,8 +36,9 @@ import java.util.regex.Pattern;
  */
 public abstract class EmailTemplate
 {
-    private static Pattern scriptPattern = Pattern.compile("%(.*?)%");
+    private static Pattern scriptPattern = Pattern.compile("\\^(.*?)\\^");
     private static List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
+    private static final String FORMAT_DELIMITER = "|";
 
     public enum Scope
     {
@@ -89,6 +94,18 @@ public abstract class EmailTemplate
         });
         _replacements.add(new ReplacementParam("systemEmail", "From address for system notification emails"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
+        });
+        _replacements.add(new ReplacementParam("currentDateTime", "Current date and time of the server"){
+            public Object getValue(Container c) {return new Date();}
+        });
+        _replacements.add(new ReplacementParam("folderName", "Name of the folder that generated the email, if it is scoped to a folder"){
+            public Object getValue(Container c) {return c.isRoot() ? null : c.getName();}
+        });
+        _replacements.add(new ReplacementParam("folderPath", "Path of the folder that generated the email, if it is scoped to a folder"){
+            public Object getValue(Container c) {return c.isRoot() ? null : c.getPath();}
+        });
+        _replacements.add(new ReplacementParam("folderURL", "URL to the folder that generated the email, if it is scoped to a folder"){
+            public Object getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
         });
         _replacements.add(new ReplacementParam("homePageURL", "The home page of this installation"){
             public String getValue(Container c) {
@@ -155,22 +172,58 @@ public abstract class EmailTemplate
         return true;
     }
 
-    protected boolean isValidReplacement(String value)
+    protected boolean isValidReplacement(String paramNameAndFormat)
     {
+        String paramName = getParameterName(paramNameAndFormat);
         for (ReplacementParam param : getValidReplacements())
         {
-            if (param.getName().equals(value))
+            if (param.getName().equalsIgnoreCase(paramName))
                 return true;
         }
         return false;
     }
 
-    public String getReplacement(Container c, String value)
+    private String getParameterName(String paramNameAndFormat)
     {
+        int i = paramNameAndFormat.indexOf(FORMAT_DELIMITER);
+        if (i != -1)
+        {
+            return paramNameAndFormat.substring(0, i);
+        }
+        return paramNameAndFormat;
+    }
+
+    private String getFormat(String paramNameAndFormat)
+    {
+        int i = paramNameAndFormat.indexOf(FORMAT_DELIMITER);
+        if (i != -1)
+        {
+            return paramNameAndFormat.substring(i + 1);
+        }
+        return null;
+    }
+
+    public String getReplacement(Container c, String paramNameAndFormat)
+    {
+        String paramName = getParameterName(paramNameAndFormat);
         for (ReplacementParam param : getValidReplacements())
         {
-            if (param.getName().equals(value))
-                return param.getValue(c);
+            if (param.getName().equalsIgnoreCase(paramName))
+            {
+                Object value = param.getValue(c);
+                if (value == null || "".equals(value))
+                {
+                    return "";
+                }
+                String format = getFormat(paramNameAndFormat);
+                if (format != null)
+                {
+                    Formatter formatter = new Formatter();
+                    formatter.format(format, value);
+                    return formatter.toString();
+                }
+                return value.toString();
+            }
         }
         return null;
     }
@@ -220,6 +273,6 @@ public abstract class EmailTemplate
         }
         public String getName(){return _name;}
         public String getDescription(){return _description;}
-        public abstract String getValue(Container c);
+        public abstract Object getValue(Container c);
     }
 }
