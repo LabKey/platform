@@ -142,7 +142,7 @@ else
 %><br>
 <div id="add-members">
 Add New Members (enter one email address per line):<br>
-<textarea name="names" cols="30" rows="8"
+<textarea name="names" cols="60" rows="8"
          onKeyDown="return ctrlKeyCheck(event);"
          onBlur="hideCompletionDiv();"
          autocomplete="off"
@@ -155,7 +155,7 @@ if (null != bean.ldapDomain)
 }
 %> users.<br><br>
 Include the following message with the new user mail (optional):<br>
-    <textarea rows="8" cols="30" name="mailPrefix"></textarea><br>
+    <textarea rows="8" cols="60" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= bean.groupName %>">
 <%=PageFlowUtil.generateSubmitButton("Update Group Membership", "return confirmRemoveUsers();")%>
 </div>
