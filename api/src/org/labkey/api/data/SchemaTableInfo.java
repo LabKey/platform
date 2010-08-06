@@ -26,6 +26,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -424,52 +425,36 @@ public class SchemaTableInfo implements TableInfo
         loadColumnsFromMetaData(dbmd, catalogName, schemaName);
         ResultSet rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName);
 
-        // TODO: Change this to add directly to list
-
-        String[] pkColArray = new String[5]; //Assume no more than 5
-        int maxKeySeq = 0;
-
+        // Use TreeMap to order columns by keySeq
+        Map<Integer, String> pkMap = new TreeMap<Integer, String>();
+        int columnCount = 0;
         SqlDialect.PkMetaDataReader reader = getSqlDialect().getPkMetaDataReader(rs);
 
-        while (rs.next())
+        try
         {
-            String colName = reader.getName();
-            ColumnInfo colInfo = getColumn(colName);
-
-            if (null == colInfo)
+            while (rs.next())
             {
-                // TODO: Temp hack for PostgreSQL 9.0 bug with renamed columns
-                if ("dbuserschemaid".equals(colName))
-                    colName = "externalschemaid";
-
-                if ("databaseid".equals(colName))
-                    colName = "fastaid";
-
-                colInfo = getColumn(colName);
-
+                columnCount++;
+                String colName = reader.getName();
+                ColumnInfo colInfo = getColumn(colName);
                 assert null != colInfo;
+
+                colInfo.setKeyField(true);
+                int keySeq = reader.getKeySeq();
+
+                // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
+                if (0 == keySeq)
+                    keySeq = columnCount;
+
+                pkMap.put(keySeq, colName);
             }
-
-            colInfo.setKeyField(true);
-            int keySeq = reader.getKeySeq();
-
-            // SAS doesn't return sequence information -- we could just increment a counter as a backup
-            if (0 == keySeq)
-                continue;
-
-            pkColArray[keySeq - 1] = colInfo.getName();
-            if (keySeq > maxKeySeq)
-                maxKeySeq = keySeq;
-            //BUG? Assume all non-string key fields are autoInc. (Should use XML instead)
-            //if (!ColumnInfo.isStringType(colInfo.getSqlTypeInt()))
-            //    colInfo.setAutoIncrement(true);
         }
-        rs.close();
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
 
-        String[] pkColumnNames = new String[maxKeySeq];
-        System.arraycopy(pkColArray, 0, pkColumnNames, 0, maxKeySeq);
-
-        _pkColumnNames = Arrays.asList(pkColumnNames);
+        _pkColumnNames = new ArrayList<String>(pkMap.values());
     }
 
 
