@@ -63,12 +63,24 @@
             <%=PageFlowUtil.generateSubmitButton("Delete Folder-Level Template", "this.form.action='deleteCustomEmail.view'", "id='folderResetButton' style='display: none;'")%>
         </tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td><i>An email subject or message can contain a mixture of static text and substitution parameters.
-            A substitution parameter is inserted into the text when the email is generated. The syntax of a
-            substitution param is : %&lt;param name&gt;% where &lt;param name&gt; is the name of the substitution
-            param.<br/><br/>
-            The list of valid substitutions for this email type is (current values appear to the right, although
-            some are not known until the email is generated):</i></td>
+        <tr>
+            <td></td>
+            <td>
+                An email subject or message can contain a mix of static text and substitution parameters.
+                A substitution parameter is inserted into the text when the email is generated. The syntax is:
+                <pre>^&lt;param name&gt;^</pre>
+                where &lt;param name&gt; is the name of the substitution parameter shown below. For example:
+                <pre>^systemDescription^</pre>
+
+                You may also supply an optional format string. If the value of the parameter is not blank, it
+                will be used to format the value in the outgoing email. For the full set of format options available,
+                see the <a target="_blank" href="http://download-llnw.oracle.com/javase/6/docs/api/java/util/Formatter.html">documentation for java.util.Formatter</a>. The syntax is:
+                <pre>^&lt;param name&gt;|&lt;format string&gt;^</pre>
+                For example:
+                <pre>^currentDateTime|The current date is: %1$tb %1$te, %1$tY^
+^siteShortName|The site short name is not blank and its value is: %s^</pre>
+                <br/>
+            </td>
         </tr>
         <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
@@ -104,7 +116,8 @@
             out.write(innerSep);
             out.write("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
             out.write("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
-            out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString("&nbsp;" + StringUtils.trimToEmpty(param.getValue(c))) + "\n");
+            Object value=param.getValue(c);
+            out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString(value == null ? null : value.toString()) + "\n");
             out.write("}");
 
             innerSep = "\t,{";
@@ -177,6 +190,19 @@
         var row;
         var cell;
 
+        row = table.insertRow(table.rows.length);
+        cell = row.insertCell(0);
+        cell.className = "labkey-form-label";
+        cell.innerHTML = '<strong>Parameter Name</strong>';
+
+        cell = row.insertCell(1);
+        cell.className = "labkey-form-label";
+        cell.innerHTML = "<strong>Description</strong>";
+
+        cell = row.insertCell(2);
+        cell.className = "labkey-form-label";
+        cell.innerHTML = "<strong>Current Value</strong>";
+
         if (record.replacements != undefined)
         {
             for (var i = 0; i < record.replacements.length; i++)
@@ -190,7 +216,8 @@
                 cell.innerHTML = record.replacements[i].paramDesc;
 
                 cell = row.insertCell(2);
-                cell.innerHTML = record.replacements[i].paramValue;
+                var paramValue = record.replacements[i].paramValue;
+                cell.innerHTML = paramValue != '' ? paramValue : "<em>not available in designer</em>";
             }
         }
     }

@@ -19,12 +19,12 @@ import java.util.List;
 public class IssueUpdateEmailTemplate extends EmailTemplate
 {
     protected static final String DEFAULT_SUBJECT =
-            "Issue #%issueId%, \"%title%,\" has been %action%";
+            "Issue #^issueId^, \"^title^,\" has been ^action^";
     protected static final String DEFAULT_BODY =
-            "You can review this issue here: %detailsURL%\n" +
-            "Modified by: %user%\n" +
-            "%modifiedFields%\n\n" +
-            "%comment%";
+            "You can review this issue here: ^detailsURL^\n" +
+            "Modified by: ^user^\n" +
+            "^modifiedFields^\n" +
+            "^comment^";
     private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
     private Issue _newIssue;
     private ActionURL _detailsURL;

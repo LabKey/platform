@@ -491,10 +491,10 @@ public class PipelineManager
         protected String _status;
         private List<ReplacementParam> _replacements = new ArrayList<ReplacementParam>();
 
-        protected static final String DEFAULT_BODY = "Job description: %jobDescription%\n" +
-                "Created: %timeCreated%\n" +
-                "Status: %status%\n" +
-                "Additional details for this job can be obtained by navigating to this link:\n\n%dataURL%";
+        protected static final String DEFAULT_BODY = "Job description: ^jobDescription^\n" +
+                "Created: ^timeCreated^\n" +
+                "Status: ^status^\n" +
+                "Additional details for this job can be obtained by navigating to this link:\n\n^dataURL^";
 
         protected PipelineEmailTemplate(String name)
         {
@@ -526,7 +526,7 @@ public class PipelineManager
         public PipelineJobSuccess()
         {
             super("Pipeline job succeeded");
-            setSubject("The pipeline job: %jobDescription% has completed successfully");
+            setSubject("The pipeline job: ^jobDescription^ has completed successfully");
             setBody(DEFAULT_BODY);
             setDescription("Sent to users who have been configured to receive notifications when a pipeline job completes successfully");
             setPriority(10);
@@ -538,7 +538,7 @@ public class PipelineManager
         public PipelineJobFailed()
         {
             super("Pipeline job failed");
-            setSubject("The pipeline job: %jobDescription% did not complete successfully");
+            setSubject("The pipeline job: ^jobDescription^ did not complete successfully");
             setBody(DEFAULT_BODY);
             setDescription("Sent to users who have been configured to receive notifications when a pipeline job fails");
             setPriority(11);
@@ -552,8 +552,8 @@ public class PipelineManager
         private String _startTime;
         private String _endTime;
 
-        protected static final String DEFAULT_BODY = "The following jobs have completed between the time of: %startTime% " +
-                "and the end time of: %endTime%:\n\n%pipelineJobs%";
+        protected static final String DEFAULT_BODY = "The following jobs have completed between the time of: ^startTime^ " +
+                "and the end time of: ^endTime^:\n\n^pipelineJobs^";
 
         protected PipelineDigestTemplate(String name)
         {

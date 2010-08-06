@@ -25,6 +25,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.login.PasswordRule;
@@ -326,6 +327,16 @@ public class CoreUpgradeCode implements UpgradeCode
             config.setStrength(PasswordRule.Weak.toString());
             config.setExpiration(PasswordExpiration.Never.toString());
             DbLoginManager.saveProperties(config);
+        }
+    }
+
+    // invoked by prop-10.20-10.21.sql
+    public void migrateEmailTemplates(ModuleContext context)
+    {
+        // Change the replacement delimeter character and change to a different PropertyManager node
+        if (!context.isNewInstall())
+        {
+            EmailTemplateService.get().upgradeTo102();
         }
     }
 }
