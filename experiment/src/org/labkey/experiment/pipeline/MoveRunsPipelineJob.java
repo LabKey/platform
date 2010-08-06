@@ -22,7 +22,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,9 +42,9 @@ public class MoveRunsPipelineJob extends PipelineJob
         _runIds = runIds;
         _sourceContainer = sourceContainer;
         PipeRoot root = PipelineService.get().findPipelineRoot(info.getContainer());
-        if (root == null || !NetworkDrive.exists(root.getRootPath()))
+        if (root == null || !root.isValid())
         {
-            throw new FileNotFoundException("Could not find pipeline root on disk: " + (root == null ? null : root.getRootPath()));
+            throw new FileNotFoundException("Could not find pipeline root on disk for folder " + info.getContainer());
         }
         File moveRunLogsDir = ExperimentPipelineProvider.getMoveDirectory(root);
         moveRunLogsDir.mkdirs();

@@ -3986,16 +3986,24 @@ public class StudyController extends BaseStudyController
             {
                 case 0:
                 {
-                    File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
-                    File exportDir = new File(rootDir, "export");
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root == null || !root.isValid())
+                    {
+                        throw new NotFoundException("No valid pipeline root found");
+                    }
+                    File exportDir = root.resolvePath("export");
                     writer.write(study, ctx, new FileSystemFile(exportDir));
                     _successURL = new ActionURL(ManageStudyAction.class, getContainer());
                     break;
                 }
                 case 1:
                 {
-                    File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
-                    File exportDir = new File(rootDir, "export");
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root == null || !root.isValid())
+                    {
+                        throw new NotFoundException("No valid pipeline root found");
+                    }
+                    File exportDir = root.resolvePath("export");
                     exportDir.mkdir();
                     ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(study.getLabel(), "study.zip"));
                     writer.write(study, ctx, zip);

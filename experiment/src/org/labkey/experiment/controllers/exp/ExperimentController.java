@@ -1007,9 +1007,9 @@ public class ExperimentController extends SpringActionController
                 PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(expRun.getContainer());
                 if (pipelineRoot != null)
                 {
-                    if (URIUtil.isDescendant(pipelineRoot.getUri(), runRoot.toURI()))
+                    if (pipelineRoot.isUnderRoot(runRoot))
                     {
-                        String path = runRoot.toURI().toString().substring(pipelineRoot.getUri().toString().length());
+                        String path = pipelineRoot.relativePath(runRoot);
                         sb.append("[<a href=\"");
                         sb.append(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(expRun.getContainer(), null, path));
                         sb.append("\">files view</a>] ");
@@ -1146,23 +1146,19 @@ public class ExperimentController extends SpringActionController
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 if (root != null)
                 {
-                    URI uri = root.getUri();
-                    if (uri != null)
+                    File rootFile = root.getRootPath();
+                    File dataFile = _data.getFile();
+                    if (dataFile != null)
                     {
-                        File rootFile = new File(uri);
-                        File dataFile = _data.getFile();
-                        if (dataFile != null)
+                        File dataParent = dataFile.getParentFile();
+                        while (dataParent != null)
                         {
-                            File dataParent = dataFile.getParentFile();
-                            while (dataParent != null)
+                            if (dataParent.equals(rootFile))
                             {
-                                if (dataParent.equals(rootFile))
-                                {
-                                    relativePath = FileUtil.relativizeUnix(rootFile, dataFile.getParentFile(), true);
-                                    break;
-                                }
-                                dataParent = dataParent.getParentFile();
+                                relativePath = FileUtil.relativizeUnix(rootFile, dataFile.getParentFile(), true);
+                                break;
                             }
+                            dataParent = dataParent.getParentFile();
                         }
                     }
                 }
@@ -2593,7 +2589,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
-            if (!hasValidPipelineURI(getContainer()))
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
                 return new NoPipelineRootSetView(getContainer(), "upload a XAR");
             }
@@ -2606,7 +2602,7 @@ public class ExperimentController extends SpringActionController
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
 
-            if (!hasValidPipelineURI(getContainer()))
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
                 return false;
             }
@@ -2975,13 +2971,12 @@ public class ExperimentController extends SpringActionController
                 exporter.write(getViewContext().getResponse().getOutputStream());
                 return null;
             case PIPELINE_FILE:
-                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-                File pipeRootDir = pipeRoot == null ? null : pipeRoot.getRootPath();
-                if (pipeRootDir == null || !pipeRootDir.exists())
+                if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 {
                     throw new IllegalStateException("You must set a valid pipeline root before you can export a XAR to it.");
                 }
-                XarExportPipelineJob job = new XarExportPipelineJob(getViewBackgroundInfo(), pipeRootDir, fileName, lsidRelativizer, selection, xarXmlFileName);
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+                XarExportPipelineJob job = new XarExportPipelineJob(getViewBackgroundInfo(), pipeRoot, fileName, lsidRelativizer, selection, xarXmlFileName);
                 PipelineService.get().queueJob(job);
                 return PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer());
             default:
@@ -3381,7 +3376,7 @@ public class ExperimentController extends SpringActionController
             HttpView view;
 
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
-            if (root == null || !NetworkDrive.exists(root.getRootPath()))
+            if (root == null || !root.isValid())
             {
                 ActionURL pipelineURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
                 view = new HtmlView("You must <a href=\"" + pipelineURL + "\">configure a valid pipeline root for this folder</a> before deriving samples.");
@@ -4056,28 +4051,6 @@ public class ExperimentController extends SpringActionController
             root.addChild(new NavTree("Selected Protocol Applications"));
             return root;
         }
-    }
-
-    public static File getPipelineRoot(Container c) throws SQLException
-    {
-        PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-        if (pr == null)
-            return null;
-
-        URI uri = pr.getUri();
-        if (uri == null)
-        {
-            return null;
-        }
-        File rootFile = new File(uri);
-        NetworkDrive.ensureDrive(rootFile.getAbsolutePath());
-        return rootFile;
-    }
-
-    public static boolean hasValidPipelineURI(Container c) throws SQLException
-    {
-        File rootFile = getPipelineRoot(c);
-        return rootFile != null && NetworkDrive.exists(rootFile) && rootFile.isDirectory();
     }
 
     @RequiresPermissionClass(InsertPermission.class)

@@ -312,23 +312,20 @@ public class PipelineController extends SpringActionController
                     root = pipeRoot.getUri();
                     File fileRoot = pipeRoot.getRootPath();
 
-                    if (root != null && fileRoot != null)
+                    if (!NetworkDrive.exists(fileRoot))
                     {
-                        if (!NetworkDrive.exists(fileRoot))
-                        {
-                            errors.addError(new LabkeyError("Pipeline root does not exist."));
-                            root = null;
-                        }
-                        else if (URIUtil.resolve(root, root, "test") == null)
-                        {
-                            errors.addError(new LabkeyError("Pipeline root is invalid."));
-                            root = null;
-                        }
+                        errors.addError(new LabkeyError("Pipeline root does not exist."));
+                        root = null;
+                    }
+                    else if (URIUtil.resolve(root, root, "test") == null)
+                    {
+                        errors.addError(new LabkeyError("Pipeline root is invalid."));
+                        root = null;
+                    }
 
-                        if (root != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
-                        {
-                            bean.setConfirmMessage("The pipeline root was set to '" + fileRoot.getPath() + "'.");
-                        }
+                    if (root != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
+                    {
+                        bean.setConfirmMessage("The pipeline root was set to '" + fileRoot.getPath() + "'.");
                     }
                 }
 
@@ -468,13 +465,11 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
 
             PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-            if (pr == null || !URIUtil.exists(pr.getUri()))
+            if (pr == null || !pr.getRootPath().exists())
             {
                 HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
                 return null;
             }
-
-            URI uriRoot = pr.getUri();
 
             String path = form.getPath();
             if (null == path || "./".equals(path))
@@ -482,21 +477,19 @@ public class PipelineController extends SpringActionController
             if (path.startsWith("/"))
                 path = path.substring(1);
 
-            URI uriCurrent = URIUtil.resolve(uriRoot, PageFlowUtil.encodePath(path));
-            if (uriCurrent == null)
-            {
-                HttpView.throwNotFound();
-                return null;
-            }
-
-            File fileCurrent = new File(uriCurrent);
+            File fileCurrent = pr.resolvePath(path);
             if (!fileCurrent.exists())
-                HttpView.throwNotFound("File not found: " + uriCurrent.getPath());
+                HttpView.throwNotFound("File not found: " + form.getPath());
 
             ActionURL browseURL = new ActionURL(BrowseAction.class, c);
-            browseURL.replaceParameter("path", toRelativePath(uriRoot, uriCurrent));
+            String browseParam = pr.relativePath(fileCurrent);
+            if ("".equals(browseParam))
+            {
+                browseParam = "./";
+            }
+            browseURL.replaceParameter("path", browseParam);
 
-            PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(uriCurrent, browseURL);
+            PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(fileCurrent, browseURL);
             List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
             Set<Module> activeModules = c.getActiveModules();
             for (PipelineProvider provider : providers)
@@ -568,7 +561,7 @@ public class PipelineController extends SpringActionController
             User user = getViewContext().getUser();
 
             PipeRoot pr = PipelineService.get().findPipelineRoot(container);
-            if (pr == null || !URIUtil.exists(pr.getUri()))
+            if (pr == null || !pr.isValid())
             {
                 HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
                 return null;
@@ -670,7 +663,7 @@ public class PipelineController extends SpringActionController
             PipeRoot pipeRoot = getPipelineRoot(c);
             assert null == pipeRoot || pipeRoot.getContainer().getId().equals(c.getId());
 
-            if (null != pipeRoot && null != pipeRoot.getUri())
+            if (null != pipeRoot)
             {
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(pipeRoot);
                 if (form.isEnable())
@@ -1139,14 +1132,6 @@ public class PipelineController extends SpringActionController
         if (p != null && p.getContainer() != null && p.getContainer().getId().equals(c.getId()))
             return p;
         return null;
-    }
-
-    private String toRelativePath(URI uriRoot, URI parent)
-    {
-        String path = URIUtil.relativize(uriRoot, parent).toString();
-        // don't return "" since we can't tell the difference between
-        // browse.view? and browse.view?path=
-        return path.equals("") ? "./" : path;
     }
 
 /////////////////////////////////////////////////////////////////////////////

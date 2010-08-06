@@ -15,12 +15,11 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -50,9 +49,9 @@ public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFac
         return _pipeline.getId().getName();
     }
 
-    public String getDefaultParametersXML(File dirRoot) throws FileNotFoundException, IOException
+    public String getDefaultParametersXML(PipeRoot root) throws FileNotFoundException, IOException
     {
-        String xml = super.getDefaultParametersXML(dirRoot);
+        String xml = super.getDefaultParametersXML(root);
         if (xml != null)
             return xml;
         

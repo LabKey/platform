@@ -122,37 +122,6 @@ public class PipelineManager
         return root.getPath();
     }
 
-    static public PipelineRoot[] getOverlappingRoots(Container container, String type) throws SQLException
-    {
-        PipelineRoot root1 = getPipelineRootObject(container, type);
-        if (root1 == null)
-            return new PipelineRoot[0];
-
-        PipelineRoot[] roots = Table.select(pipeline.getTableInfoPipelineRoots(),
-                Table.ALL_COLUMNS, null, new Sort("Path"), PipelineRoot.class);
-        if (roots.length == 0)
-            return roots;
-
-        final String rootPath1 = root1.getPath();
-        List<PipelineRoot> rootsList = new ArrayList<PipelineRoot>();
-        for (PipelineRoot root2 : roots)
-        {
-            // Skip roots of the wrong type:
-            if (!root2.getType().equals(type))
-                continue;
-
-            // Skip the container itself.
-            if (root1.getContainerId().equals(root2.getContainerId()))
-                continue;
-
-            final String rootPath2 = root2.getPath();
-            if (rootPath1.startsWith(rootPath2) || rootPath2.startsWith(rootPath1))
-                rootsList.add(root2);
-        }
-        return rootsList.toArray(new PipelineRoot[rootsList.size()]);
-    }
-
-
     static public void setPipelineRoot(User user, Container container, String path, String type,
                                        GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException
     {

@@ -2837,7 +2837,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-        if (pipeRoot == null || !NetworkDrive.exists(pipeRoot.getRootPath()))
+        if (pipeRoot == null || !pipeRoot.isValid())
         {
             throw new ExperimentException("The child sample's folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
         }

@@ -544,14 +544,10 @@ public class AssayPublishManager implements AssayPublishService.Service
     public UploadLog saveUploadData(User user, DataSet dsd, String tsv) throws IOException
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
-        if (null == pipelineRoot)
+        if (null == pipelineRoot || !pipelineRoot.isValid())
             throw new IOException("Please have your administrator set up a pipeline root for this folder.");
-        File rootFile = pipelineRoot.getRootPath();
 
-        if (!NetworkDrive.exists(rootFile))
-            throw new IOException("Pipeline directory: " + rootFile + " does not exist. Please see your administrator.");
-
-        File dir = new File(rootFile, DIR_NAME);
+        File dir = pipelineRoot.resolvePath(DIR_NAME);
         if (!dir.exists())
         {
             boolean success = dir.mkdir();

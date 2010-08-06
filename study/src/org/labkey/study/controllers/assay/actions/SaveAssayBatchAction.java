@@ -300,7 +300,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             String pipelinePath = dataObject.getString(ExperimentJSONConverter.PIPELINE_PATH);
 
             //check to see if this is already an ExpData
-            File file = new File(pipelineRoot.getRootPath(), pipelinePath);
+            File file = pipelineRoot.resolvePath(pipelinePath);
             URI uri = file.toURI();
             data = expSvc.getExpDataByURL(uri.toString(), container);
 
@@ -335,8 +335,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         {
             String absolutePath = dataObject.getString(ExperimentJSONConverter.ABSOLUTE_PATH);
             File f = new File(absolutePath);
-            URI uri = f.toURI();
-            if (!URIUtil.isDescendant(pipelineRoot.getUri(), uri))
+            if (!pipelineRoot.isUnderRoot(f))
             {
                 throw new IllegalArgumentException("File with path " + absolutePath + " is not under the pipeline root for this folder");
             }
@@ -353,7 +352,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 DataType type = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
                 String lsid = expSvc.generateLSID(container, type, name);
                 data = expSvc.createData(container, name, lsid);
-                data.setDataFileURI(uri);
+                data.setDataFileURI(f.toURI());
                 data.save(getViewContext().getUser());
             }
         }

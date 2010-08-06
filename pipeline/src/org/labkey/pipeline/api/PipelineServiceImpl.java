@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.files.FileContentService;
@@ -55,9 +54,6 @@ import java.util.*;
 
 public class PipelineServiceImpl extends PipelineService
 {
-    public static String PARAM_Provider = "provider";
-    public static String PARAM_Action = "action";
-    public static String PROP_Mirror = "mirror-containers";
     public static String PREF_LASTPATH = "lastpath";
     public static String PREF_LASTPROTOCOL = "lastprotocol";
     public static String PREF_LASTSEQUENCEDB = "lastsequencedb";
@@ -81,12 +77,6 @@ public class PipelineServiceImpl extends PipelineService
             _mapPipelineProviders.put(alias, provider);
     }
 
-    public GlobusKeyPair createGlobusKeyPair(byte[] keyBytes, String keyPassword, byte[] certBytes)
-    {
-        return new GlobusKeyPairImpl(keyBytes, keyPassword, certBytes);
-    }
-
-
     public PipeRoot findPipelineRoot(Container container)
     {
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
@@ -109,9 +99,6 @@ public class PipelineServiceImpl extends PipelineService
     /**
      * Try to locate a default pipeline root from the site file root. Default pipeline roots only
      * extend to the project level and are inherited by sub folders.
-     *
-     * @param container
-     * @return
      */
     private PipeRoot getDefaultPipelineRoot(Container container, String type)
     {
@@ -178,22 +165,8 @@ public class PipelineServiceImpl extends PipelineService
     @Override
     public boolean hasValidPipelineRoot(Container container)
     {
-        PipelineService service = PipelineService.get();
-        URI uriRoot = null;
-        PipeRoot pr = service.findPipelineRoot(container);
-        if (pr != null)
-        {
-            uriRoot = pr.getUri();
-            if (uriRoot != null)
-            {
-                File f = new File(uriRoot);
-                if (NetworkDrive.exists(f) && f.isDirectory())
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
+        PipeRoot pr = findPipelineRoot(container);
+        return pr != null && pr.isValid();
     }
 
 
@@ -229,13 +202,18 @@ public class PipelineServiceImpl extends PipelineService
 
     public PipeRoot getPipelineRootSetting(Container container)
     {
+        return getPipelineRootSetting(container, PipelineRoot.PRIMARY_ROOT);
+    }
+
+    public PipeRoot getPipelineRootSetting(Container container, final String type)
+    {
         try
         {
-            PipelineRoot r = PipelineManager.getPipelineRootObject(container, PipelineRoot.PRIMARY_ROOT);
+            PipelineRoot r = PipelineManager.getPipelineRootObject(container, type);
             if (null == r)
             {
                 if (container != null)
-                    return getDefaultPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
+                    return getDefaultPipelineRoot(container, type);
                 return null;
             }
             return new PipeRootImpl(r);
@@ -246,56 +224,6 @@ public class PipelineServiceImpl extends PipelineService
         }
 
         return null;
-    }
-
-
-
-    public URI getPipelineRootSetting(Container container, final String type)
-    {
-        String root = PipelineManager.getPipelineRoot(container, type);
-        if (root == null)
-        {
-            if (container != null)
-            {
-                PipeRoot pipeRoot = getDefaultPipelineRoot(container, type);
-                if (pipeRoot != null)
-                    return pipeRoot.getUri();
-            }
-            return null;
-        }
-
-        try
-        {
-            return new URI(root);
-        }
-        catch (URISyntaxException use)
-        {
-            _log.error("Invalid pipeline root '" + root + "'.", use);
-            return null;
-        }
-    }
-
-    @NotNull
-    public PipeRoot[] getOverlappingRoots(Container c) throws SQLException
-    {
-        PipelineRoot[] roots = PipelineManager.getOverlappingRoots(c, PipelineRoot.PRIMARY_ROOT);
-        List<PipeRoot> rootsList = new ArrayList<PipeRoot>();
-        for (PipelineRoot root : roots)
-        {
-            Container container = ContainerManager.getForId(root.getContainerId());
-            if (container == null)
-                continue;
-
-            try
-            {
-                rootsList.add(new PipeRootImpl(root));
-            }
-            catch (URISyntaxException e)
-            {
-                _log.error("Invalid pipeline root '" + root + "'.", e);
-            }
-        }
-        return rootsList.toArray(new PipeRoot[rootsList.size()]);
     }
 
     public void setPipelineRoot(User user, Container container, URI root, String type,
@@ -312,12 +240,6 @@ public class PipelineServiceImpl extends PipelineService
     {
         //per Britt--user must be site admin
         return container != null && !container.isRoot() && user.isAdministrator();
-    }
-
-    @NotNull
-    public File ensureSystemDirectory(URI root)
-    {
-        return PipeRootImpl.ensureSystemDirectory(root);
     }
 
     @NotNull

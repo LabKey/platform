@@ -45,7 +45,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.net.URI;
 
 /*
 * User: adam
@@ -214,18 +213,6 @@ public class StudyReload
 
         if (null != root)
             return root.getRootPath();
-        else
-            return null;
-    }
-
-
-    @Nullable
-    public static URI getPipelineRootURI(Container c)
-    {
-        PipeRoot root = PipelineService.get().findPipelineRoot(c);
-
-        if (null != root)
-            return root.getUri();
         else
             return null;
     }

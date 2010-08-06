@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -40,7 +41,7 @@ public class XarExportPipelineJob extends PipelineJob
     private XarExportSelection _selection;
     private final String _xarXmlFileName;
 
-    public XarExportPipelineJob(ViewBackgroundInfo info, File pipelineDir, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName) throws SQLException
+    public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName) throws SQLException
     {
         super(ExperimentPipelineProvider.NAME, info);
         _fileName = fileName;
@@ -48,7 +49,7 @@ public class XarExportPipelineJob extends PipelineJob
         _xarXmlFileName = xarXmlFileName;
         _selection = selection;
 
-        File exportedXarsDir = new File(pipelineDir, "exportedXars");
+        File exportedXarsDir = root.resolvePath("exportedXars");
         exportedXarsDir.mkdir();
 
         _exportFile = new File(exportedXarsDir, _fileName);

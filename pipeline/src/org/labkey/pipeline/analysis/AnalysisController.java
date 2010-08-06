@@ -34,7 +34,6 @@ import org.json.JSONArray;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +85,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private FileAnalysisProtocol getProtocol(URI uriRoot, File dirData, FileAnalysisProtocolFactory factory, String protocolName)
+    private FileAnalysisProtocol getProtocol(PipeRoot root, File dirData, FileAnalysisProtocolFactory factory, String protocolName)
     {
         try
         {
@@ -101,7 +100,7 @@ public class AnalysisController extends SpringActionController
             }
             else
             {
-                result = factory.load(uriRoot, protocolName);
+                result = factory.load(root, protocolName);
             }
             return result;
         }
@@ -142,7 +141,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class StartAnalysisAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, URI uriRoot, File dirData, FileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException
         {
             FileAnalysisTaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
             if (form.getProtocolName() == null)
@@ -150,7 +149,7 @@ public class AnalysisController extends SpringActionController
                 throw new IllegalArgumentException("Must specify a protocol name");
             }
 
-            FileAnalysisProtocol protocol = getProtocol(uriRoot, dirData, factory, form.getProtocolName());
+            FileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
             if (protocol == null)
             {
                 String xml;
@@ -184,10 +183,10 @@ public class AnalysisController extends SpringActionController
                         xml);
 
                 protocol.setEmail(getUser().getEmail());
-                protocol.validateToSave(uriRoot);
+                protocol.validateToSave(root);
                 if (form.isSaveProtocol())
                 {
-                    protocol.saveDefinition(uriRoot);
+                    protocol.saveDefinition(root);
                     PipelineService.get().rememberLastProtocolSetting(protocol.getFactory(),
                             getContainer(), getUser(), protocol.getName());
                 }
@@ -202,7 +201,7 @@ public class AnalysisController extends SpringActionController
                         getContainer(), getUser(), protocol.getName());
             }
 
-            protocol.getFactory().ensureDefaultParameters(new File(uriRoot));
+            protocol.getFactory().ensureDefaultParameters(root);
 
             File fileParameters = protocol.getParametersFile(dirData);
             // Make sure configure.xml file exists for the job when it runs.
@@ -234,7 +233,7 @@ public class AnalysisController extends SpringActionController
             }
 
             AbstractFileAnalysisJob job =
-                    protocol.createPipelineJob(getViewBackgroundInfo(), filesInput, fileParameters);
+                    protocol.createPipelineJob(getViewBackgroundInfo(), root, filesInput, fileParameters);
 
             PipelineService.get().queueJob(job);
 
@@ -245,13 +244,13 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class GetFileStatusAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, URI uriRoot, File dirData, FileAnalysisProtocolFactory factory)
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory)
         {
             if (form.getProtocolName() == null || "".equals(form.getProtocolName()))
             {
                 throw new NotFoundException("No protocol specified");
             }
-            FileAnalysisProtocol protocol = getProtocol(uriRoot, dirData, factory, form.getProtocolName());
+            FileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
             File dirAnalysis = factory.getAnalysisDir(dirData, form.getProtocolName());
             form.initStatus(protocol, dirData, dirAnalysis);
 
@@ -278,43 +277,39 @@ public class AnalysisController extends SpringActionController
 
     public abstract class AbstractAnalysisApiAction extends ApiAction<AnalyzeForm>
     {
-        protected abstract ApiResponse execute(AnalyzeForm form, URI uriRoot, File dirData, FileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException;
+        protected abstract ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException;
 
         public ApiResponse execute(AnalyzeForm form, BindException errors) throws Exception
         {
             PipeRoot pr = PipelineService.get().findPipelineRoot(getContainer());
-            if (pr == null || !URIUtil.exists(pr.getUri()))
+            if (pr == null || !pr.isValid())
                 throw new NotFoundException();
 
-            URI uriRoot = pr.getUri();
             File dirData = null;
             if (form.getPath() != null)
             {
-                URI uriData = URIUtil.resolve(uriRoot, form.getPath());
-                if (uriData == null)
-                    throw new NotFoundException();
-                dirData = new File(uriData);
-                if (!NetworkDrive.exists(dirData))
+                dirData = pr.resolvePath(form.getPath());
+                if (dirData == null || !NetworkDrive.exists(dirData))
                     throw new NotFoundException();
             }
 
             FileAnalysisTaskPipeline taskPipeline = getTaskPipeline(form.getTaskId());
             FileAnalysisProtocolFactory factory = getProtocolFactory(taskPipeline);
-            return execute(form, uriRoot, dirData, factory);
+            return execute(form, pr, dirData, factory);
         }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class GetSavedProtocolsAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, URI uriRoot, File dirData, FileAnalysisProtocolFactory factory)
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, FileAnalysisProtocolFactory factory)
         {
             JSONArray protocols = new JSONArray();
-            for (String protocolName : factory.getProtocolNames(uriRoot, dirData))
+            for (String protocolName : factory.getProtocolNames(root, dirData))
             {
                 JSONObject protocol = new JSONObject();
                 protocol.put("name", protocolName);
-                FileAnalysisProtocol pipelineProtocol = getProtocol(uriRoot, dirData, factory, protocolName);
+                FileAnalysisProtocol pipelineProtocol = getProtocol(root, dirData, factory, protocolName);
                 protocol.put("description", pipelineProtocol.getDescription());
                 protocol.put("xmlParameters", pipelineProtocol.getXml());
                 ParamParser parser = PipelineJobService.get().createParamParser();

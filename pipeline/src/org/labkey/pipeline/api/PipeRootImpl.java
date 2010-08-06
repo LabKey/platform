@@ -16,11 +16,9 @@
 
 package org.labkey.pipeline.api;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.Module;
@@ -33,11 +31,9 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.HttpView;
 
-import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -50,9 +46,9 @@ public class PipeRootImpl implements PipeRoot
     private static final String SYSTEM_DIRECTORY_LEGACY = "system";
 
     @NotNull
-    public static File ensureSystemDirectory(URI uriRoot)
+    public File ensureSystemDirectory()
     {
-        File root = ensureRoot(uriRoot);
+        File root = getRootPath();
         File systemDir = new File(root, SYSTEM_DIRECTORY_NAME);
         if (!NetworkDrive.exists(systemDir))
         {
@@ -79,14 +75,14 @@ public class PipeRootImpl implements PipeRoot
         return file;
     }
 
-    static private final Logger _log = Logger.getLogger(PipeRoot.class);
     private Container _container;
-    private URI _uri;
-    private File _file;
-    private String _entityId;
-    private GlobusKeyPairImpl _keyPair;
-    private boolean _searchable;
-    private boolean _isDefaultRoot;     // true if this root is based on the
+    @NotNull private final URI _uri;
+    private File _rootPath;
+    private final String _entityId;
+    private final GlobusKeyPairImpl _keyPair;
+    private final boolean _searchable;
+    /** true if this root is based on the site or project default file root */
+    private boolean _isDefaultRoot;
 
     public PipeRootImpl(PipelineRoot root, boolean isDefaultRoot) throws URISyntaxException
     {
@@ -104,6 +100,10 @@ public class PipeRootImpl implements PipeRoot
         {
             _keyPair = new GlobusKeyPairImpl(root.getKeyBytes(), root.getKeyPassword(), root.getCertBytes());
         }
+        else
+        {
+            _keyPair = null;
+        }
     }
 
     public Container getContainer()
@@ -111,23 +111,23 @@ public class PipeRootImpl implements PipeRoot
         return _container;
     }
 
+    @NotNull
     public URI getUri()
     {
         return _uri;
     }
 
+    @NotNull
     synchronized public File getRootPath()
     {
-        if (_file == null)
-            _file = ensureRoot(_uri);
-        return _file;
+        if (_rootPath == null)
+            _rootPath = ensureRoot(_uri);
+        return _rootPath;
     }
 
     public File resolvePath(String path)
     {
         File root = getRootPath();
-        if (root == null)
-            return null;
         File file = new File(root, path);
         if (!isUnderRoot(file))
         {
@@ -151,46 +151,6 @@ public class PipeRootImpl implements PipeRoot
             return ret.substring(1);
         }
         return ret;
-    }
-
-    public String getStartingPath(Container container, User user)
-    {
-        try
-        {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES);
-            String path = props.get(PipelineServiceImpl.PREF_LASTPATH);
-
-            if (path == null && container.getParent() == _container)
-            {
-                path = PageFlowUtil.encode(container.getName());
-            }
-
-            if (path != null)
-            {
-                URI uriCheck = URIUtil.resolve(_uri, _uri, path);
-                if (uriCheck == null)
-                    return "";
-                File file = new File(uriCheck);
-                if (file.exists() && file.isDirectory())
-                {
-                    return path;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            _log.error("Error", e);
-        }
-        return "";
-    }
-
-    public void rememberStartingPath(Container container, User user, String path)
-    {
-        if (user.isGuest())
-            return;
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(), PipelineServiceImpl.KEY_PREFERENCES, true);
-        map.put(PipelineServiceImpl.PREF_LASTPATH, path);
-        PropertyManager.saveProperties(map);
     }
 
     public boolean isUnderRoot(File file)
@@ -226,7 +186,7 @@ public class PipeRootImpl implements PipeRoot
     }
 
     // UNDONE: need wrappers for file download/upload permissions
-    public void requiresPermission(Container container, User user, Class<? extends Permission> perm) throws ServletException
+    public void requiresPermission(Container container, User user, Class<? extends Permission> perm)
     {
         if (!hasPermission(container, user, perm))
         {
@@ -234,19 +194,9 @@ public class PipeRootImpl implements PipeRoot
         }
     }
 
-    public File ensureSystemDirectory()
-    {
-        return ensureSystemDirectory(getUri());
-    }
-
     public String getEntityId()
     {
         return _entityId;
-    }
-
-    public void setEntityId(String entityId)
-    {
-        _entityId = entityId;
     }
 
     public GlobusKeyPair getGlobusKeyPair()
@@ -326,5 +276,11 @@ public class PipeRootImpl implements PipeRoot
     {
         String davName = _isDefaultRoot ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK;
         return FilesWebPart.getRootPath(getContainer(), davName);
+    }
+
+    @Override
+    public boolean isValid()
+    {
+        return NetworkDrive.exists(getRootPath()) && getRootPath().isDirectory();
     }
 }

@@ -52,12 +52,12 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
         _factory = factory;
     }
 
-    public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, File[] filesInput,
+    public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, File[] filesInput,
                                                      File fileParameters)
             throws IOException
     {
         TaskId id = _factory.getPipeline().getId();
-        return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info,
+        return new FileAnalysisJob(this, FileAnalysisPipelineProvider.name, info, root,
                 id, getName(), fileParameters, filesInput);
     }
 }

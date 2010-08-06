@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
@@ -34,6 +35,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     public FileAnalysisJob(FileAnalysisProtocol protocol,
                            String providerName,
                            ViewBackgroundInfo info,
+                           PipeRoot root,
                            TaskId taskPipelineId,
                            String protocolName,
                            File fileParameters,
@@ -41,7 +43,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     )
             throws IOException
     {
-        super(protocol, providerName, info, protocolName, fileParameters, filesInput);
+        super(protocol, providerName, info, root, protocolName, fileParameters, filesInput);
 
         _taskPipelineId = taskPipelineId;
     }
