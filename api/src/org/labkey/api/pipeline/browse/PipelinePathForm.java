@@ -24,7 +24,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 
 import java.io.File;
-import java.net.URI;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -80,14 +79,8 @@ public class PipelinePathForm extends ViewForm
         if (pr == null)
             throw new NotFoundException("Could not find a pipeline root for " + c.getPath());
 
-        URI rootURI = pr.getUri();
-        if (rootURI == null)
-        {
-            throw new NotFoundException("Could not find a pipeline root for " + c.getPath());
-        }
-
-        URI dirURI = URIUtil.resolve(rootURI, getPath());
-        if (dirURI == null)
+        File dir = pr.resolvePath(getPath());
+        if (dir == null || !dir.exists())
             throw new NotFoundException("Could not find path " + getPath());
 
         if (getFile() == null || getFile().length == 0)
@@ -96,7 +89,6 @@ public class PipelinePathForm extends ViewForm
         }
 
         List<File> result = new ArrayList<File>();
-        File dir = new File(dirURI);
         for (String fileName : _file)
         {
             File f = new File(dir, fileName);

@@ -17,14 +17,11 @@ package org.labkey.api.pipeline.file;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.impl.common.IOUtil;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.*;
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -102,28 +99,29 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     /**
      * Get the default parameters file, given the pipeline root directory.
      *
-     * @param dirRoot pipeline root directory
+     * @param root pipeline root directory
      * @return default parameters file
      */
-    public File getDefaultParametersFile(File dirRoot)
+    public File getDefaultParametersFile(PipeRoot root)
     {
-        return new File(getProtocolDir(dirRoot.toURI()), getDefaultParametersFileName());
+        return new File(getProtocolDir(root), getDefaultParametersFileName());
     }
 
     /**
      * Make sure default parameters for this protocol type exist.
      *
-     * @param dirRoot pipeline root directory
+     * @param root pipeline root
      */
-    public void ensureDefaultParameters(File dirRoot) throws IOException
+    public void ensureDefaultParameters(PipeRoot root) throws IOException
     {
-        if (!NetworkDrive.exists(getDefaultParametersFile(dirRoot)))
-            setDefaultParametersXML(dirRoot, getDefaultParametersXML(dirRoot));
+        if (!NetworkDrive.exists(getDefaultParametersFile(root)))
+            setDefaultParametersXML(root, getDefaultParametersXML(root));
     }
 
-    public String[] getProtocolNames(URI uriRoot, File dirData)
+    @Override
+    public String[] getProtocolNames(PipeRoot root, File dirData)
     {
-        String[] protocolNames = super.getProtocolNames(uriRoot, dirData);
+        String[] protocolNames = super.getProtocolNames(root, dirData);
 
         // The default parameters file is not really a protocol so remove it from the list.
         return (String[]) ArrayUtils.removeElement(protocolNames, DEFAULT_PARAMETERS_NAME);
@@ -170,9 +168,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return instance;
     }
 
-    public T load(URI uriRoot, String name) throws IOException
+    public T load(PipeRoot root, String name) throws IOException
     {
-        T instance = loadInstance(getProtocolFile(uriRoot, name));
+        T instance = loadInstance(getProtocolFile(root, name));
 
         // Don't allow the XML to override the name passed in.  This
         // can be extremely confusing.
@@ -229,9 +227,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return createProtocolInstance(parser);
     }
 
-    public String getDefaultParametersXML(File dirRoot) throws FileNotFoundException, IOException
+    public String getDefaultParametersXML(PipeRoot root) throws FileNotFoundException, IOException
     {
-        File fileDefault = getDefaultParametersFile(dirRoot);
+        File fileDefault = getDefaultParametersFile(root);
         if (!fileDefault.exists())
             return null;
 
@@ -291,7 +289,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         }
     }
 
-    public void setDefaultParametersXML(File dirRoot, String xml) throws IOException
+    public void setDefaultParametersXML(PipeRoot root, String xml) throws IOException
     {
         if (xml == null || xml.length() == 0)
             throw new IllegalArgumentException("You must supply default parameters for " + getName() + ".");
@@ -307,7 +305,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
                 throw new IllegalArgumentException("Line " + err.getLine() + ": " + err.getMessage());
         }
 
-        File fileDefault = getDefaultParametersFile(dirRoot);
+        File fileDefault = getDefaultParametersFile(root);
 
         BufferedWriter writer = null;
         try

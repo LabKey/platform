@@ -19,14 +19,12 @@ package org.labkey.api.pipeline;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.module.Module;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.*;
-import java.net.URI;
 import java.util.*;
 
 /**
@@ -42,21 +40,21 @@ abstract public class PipelineProvider
     // UNDONE: should probably extend NavTree
     public static class PipelineDirectory
     {
-        URI _uri;
+        File _dir;
         ActionURL _href;
         Map<String, File> _files;  // Full list of files, if this is a directory.
         List<PipelineAction> _actions;
 
-        public PipelineDirectory(URI uri, ActionURL href)
+        public PipelineDirectory(File dir, ActionURL href)
         {
-            _uri = uri;
+            _dir = dir;
             _href = href;
             _actions = new ArrayList<PipelineAction>();
         }
 
-        public URI getURI()
+        public File getDir()
         {
-            return _uri;
+            return _dir;
         }
 
         public ActionURL cloneHref()
@@ -81,11 +79,11 @@ abstract public class PipelineProvider
             {
                 _files = new LinkedHashMap<String, File>();
 
-                assert URIUtil.isDirectory(_uri) : "Expected to be called with a directory";
+                assert _dir.isDirectory() : "Expected to be called with a directory";
 
                 // Get the full set of files in the directory.
                 // Use a file object that caches its directory state.
-                File dir = new FileCached(new File(_uri));
+                File dir = new FileCached(_dir);
                 File[] files = dir.listFiles();
 
                 if (files != null)

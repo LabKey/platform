@@ -179,7 +179,6 @@ abstract public class PipelineJob extends Job implements Serializable
         _jobGUID = GUID.makeGUID();
         _activeTaskStatus = TaskStatus.waiting;
 
-        // TODO: Fix TestJob for mini-pipeline using job with no PipeRoot.
         if (info.getURL() != null)
         {
             Container c = info.getContainer();

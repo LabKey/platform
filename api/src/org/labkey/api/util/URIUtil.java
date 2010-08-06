@@ -32,7 +32,7 @@ public class URIUtil
 
     static public URI resolve(URI root, URI base, String path)
     {
-        URI ret = null;
+        URI ret;
 
         if (null == path)
             path = "";

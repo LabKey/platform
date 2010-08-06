@@ -20,7 +20,6 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.labkey.api.util.NetworkDrive;
 
-import java.net.URI;
 import java.io.IOException;
 import java.io.File;
 import java.beans.PropertyDescriptor;
@@ -63,15 +62,15 @@ public abstract class PipelineProtocol
 
     public abstract PipelineProtocolFactory getFactory();
 
-    public void validateToSave(URI uriRoot) throws PipelineValidationException
+    public void validateToSave(PipeRoot root) throws PipelineValidationException
     {
-        validate(uriRoot);
+        validate(root);
 
-        if (getFactory().exists(uriRoot, name))
+        if (getFactory().exists(root, name))
             throw new PipelineValidationException("A protocol named '" + name + "' already exists.");
     }
     
-    public void validate(URI uriRoot) throws PipelineValidationException
+    public void validate(PipeRoot root) throws PipelineValidationException
     {
         if (name == null || name.trim().length() == 0)
             throw new PipelineValidationException("Missing protocol name.");
@@ -87,14 +86,14 @@ public abstract class PipelineProtocol
         }
     }
 
-    public File getDefinitionFile(URI uriRoot)
+    public File getDefinitionFile(PipeRoot root)
     {
-        return getFactory().getProtocolFile(uriRoot, name);
+        return getFactory().getProtocolFile(root, name);
     }
 
-    public void saveDefinition(URI uriRoot) throws IOException
+    public void saveDefinition(PipeRoot root) throws IOException
     {
-        save(getDefinitionFile(uriRoot));
+        save(getDefinitionFile(root));
     }
 
     public void setProperty(String propertyName, String value) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException

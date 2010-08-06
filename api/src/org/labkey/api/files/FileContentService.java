@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.User;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
@@ -51,10 +50,6 @@ public interface FileContentService
     void setIsUseDefaultRoot(Container container, boolean useDefaultRoot);
 
 
-    /**
-     * Returns
-     * @return
-     */
     File getSiteDefaultRoot();
     void setSiteDefaultRoot(File root);
 

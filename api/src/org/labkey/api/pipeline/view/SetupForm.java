@@ -174,8 +174,7 @@ public class SetupForm
         if (root != null)
         {
             File rootFile = root.getRootPath();
-            if (rootFile != null)
-                form.setStrValue(rootFile.getPath());
+            form.setStrValue(rootFile.getPath());
 
             form.setGlobusKeyPair(root.getGlobusKeyPair());
             form.setSearchable(root.isSearchable());

@@ -17,16 +17,11 @@ package org.labkey.api.pipeline;
 
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.User;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.net.URI;
 import java.util.*;
 
 /**
@@ -41,9 +36,9 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     protected static String _pipelineProtocolDir = "protocols";
     protected static String _pipelineTemplateDir = "templates";
 
-    public static File getProtocolRootDir(URI uriRoot)
+    public static File getProtocolRootDir(PipeRoot root)
     {
-        File systemDir = PipelineService.get().ensureSystemDirectory(uriRoot);
+        File systemDir = root.ensureSystemDirectory();
         return new File(systemDir, _pipelineProtocolDir);        
     }
 
@@ -58,9 +53,9 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public abstract String getName();
 
-    public T load(URI uriRoot, String name) throws IOException
+    public T load(PipeRoot root, String name) throws IOException
     {
-        return load(getProtocolFile(uriRoot, name));
+        return load(getProtocolFile(root, name));
     }
 
     public T loadInstance(File file) throws IOException
@@ -72,7 +67,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     {
         try
         {
-            Map mapNS = new HashMap();
+            Map<String, String> mapNS = new HashMap<String, String>();
             mapNS.put("", PipelineProtocol._xmlNamespace);
             XmlOptions opts = new XmlOptions().setLoadSubstituteNamespaces(mapNS);
 
@@ -125,81 +120,33 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         return true;
     }
 
-    public boolean exists(URI uriRoot, String name)
+    public boolean exists(PipeRoot root, String name)
     {
-        return getProtocolFile(uriRoot, name).exists();
+        return getProtocolFile(root, name).exists();
     }
 
-    public File getProtocolDir(URI uriRoot)
+    public File getProtocolDir(PipeRoot root)
     {
-        return new File(getProtocolRootDir(uriRoot), getName());
+        return new File(getProtocolRootDir(root), getName());
     }
 
-    public File getTemplateDir(URI uriRoot)
+    public File getTemplateDir(PipeRoot root)
     {
-        return new File(getProtocolDir(uriRoot), _pipelineTemplateDir);
+        return new File(getProtocolDir(root), _pipelineTemplateDir);
     }
 
-    public File getProtocolFile(URI uriRoot, String name)
+    public File getProtocolFile(PipeRoot root, String name)
     {
-        return new File(getProtocolDir(uriRoot), name + ".xml");
-    }
-
-    public File getTemplateFile(URI uriRoot, String name)
-    {
-        File templateDir = getTemplateDir(uriRoot);
-        File file = new File(templateDir, name + ".xml");
-        if (!file.exists())
-        {
-            File xarFile =  new File (templateDir, name + ".xar.xml");
-            if (xarFile.exists())
-                file = xarFile;
-        }
-
-        return file;
-    }
-
-    /**
-     * @param uriRoot
-     * @return Names of all the templates stored in the template directory
-     */
-    public List<String> getTemplateNames(URI uriRoot)
-    {
-        File[] files = getTemplateDir(uriRoot).listFiles(new FileFilter()
-        {
-            public boolean accept(File f)
-            {
-                return f.getName().endsWith(".xml") && !f.isDirectory();
-            }
-        });
-        ArrayList<String> listNames = new ArrayList<String>();
-        if (files != null)
-        {
-            for (File file : files)
-            {
-                final String name = file.getName();
-                if (name.endsWith(".xar.xml"))
-                    listNames.add(name.substring(0, name.length() - ".xar.xml".length()));
-                else
-                    listNames.add(name.substring(0, name.lastIndexOf('.')));
-            }
-        }
-
-        return listNames;
-    }
-
-    public String[] getProtocolNames(URI uriRoot)
-    {
-        return getProtocolNames(uriRoot, null); 
+        return new File(getProtocolDir(root), name + ".xml");
     }
 
     /** @return sorted list of protocol names */
-    public String[] getProtocolNames(URI uriRoot, File dirData)
+    public String[] getProtocolNames(PipeRoot root, File dirData)
     {
         HashSet<String> setNames = new HashSet<String>();
 
         // Add <protocol-name>.xml files
-        File[] files = getProtocolDir(uriRoot).listFiles(new FileFilter()
+        File[] files = getProtocolDir(root).listFiles(new FileFilter()
         {
             public boolean accept(File f)
             {

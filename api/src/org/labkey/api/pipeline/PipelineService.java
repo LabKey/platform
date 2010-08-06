@@ -68,18 +68,12 @@ abstract public class PipelineService
     abstract public PipeRoot getPipelineRootSetting(Container container);
 
     @Nullable
-    abstract public URI getPipelineRootSetting(Container container, String type);
-
-    @NotNull
-    abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;
+    abstract public PipeRoot getPipelineRootSetting(Container container, String type);
 
     abstract public void setPipelineRoot(User user, Container container, URI root, String type,
                                          GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
-
-    @NotNull    
-    abstract public File ensureSystemDirectory(URI root);
 
     @NotNull
     abstract public List<PipelineProvider> getPipelineProviders();

@@ -49,15 +49,6 @@ public class Entity implements java.io.Serializable, Ownable
     }
 
 
-    public void beforeSave(User user, String containerId)
-    {
-        if (created == 0)
-            beforeInsert(user, containerId);
-        else
-            beforeUpdate(user);
-    }
-
-
     public void beforeUpdate(User user)
     {
         if (user != null)

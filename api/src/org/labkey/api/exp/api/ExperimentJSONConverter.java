@@ -153,7 +153,7 @@ public class ExperimentJSONConverter
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(data.getContainer());
             if (pipeRoot != null)
             {
-                jsonObject.put(PIPELINE_PATH, URIUtil.relativize(pipeRoot.getUri(), f.toURI()));
+                jsonObject.put(PIPELINE_PATH, pipeRoot.relativePath(f));
             }
         }
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());

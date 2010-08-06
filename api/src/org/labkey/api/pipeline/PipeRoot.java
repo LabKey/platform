@@ -16,12 +16,13 @@
 
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 
-import javax.servlet.ServletException;
 import java.io.File;
 import java.net.URI;
 
@@ -34,17 +35,15 @@ public interface PipeRoot extends SecurableResource
 {
     Container getContainer();
 
+    @NotNull
     URI getUri();
 
+    @NotNull
     File getRootPath();
 
     File resolvePath(String path);
 
     String relativePath(File file);
-
-    String getStartingPath(Container container, User user);
-
-    void rememberStartingPath(Container container, User user, String path);
 
     boolean isUnderRoot(File file);
 
@@ -52,8 +51,9 @@ public interface PipeRoot extends SecurableResource
 
     boolean hasPermission(Container container, User user, Class<? extends Permission> perm);
 
-    void requiresPermission(Container container, User user, Class<? extends Permission> perm) throws ServletException;
+    void requiresPermission(Container container, User user, Class<? extends Permission> perm);
 
+    @NotNull
     File ensureSystemDirectory();
 
     String getEntityId();
@@ -61,10 +61,14 @@ public interface PipeRoot extends SecurableResource
     /**
      * @return null if no key pair has been configured for this pipeline root
      */
+    @Nullable
     GlobusKeyPair getGlobusKeyPair();
 
     // returns whether this root should be indexed by the crawler
     boolean isSearchable();
 
     String getWebdavURL();
+
+    /** @return true if this root exists on disk and is a directory */
+    boolean isValid();
 }

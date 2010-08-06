@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
@@ -39,12 +40,9 @@ public class AssayFileWriter
 
     public static File ensureUploadDirectory(Container container) throws ExperimentException
     {
-        File rootFile = getPipelineRoot(container).getRootPath();
+        PipeRoot root = getPipelineRoot(container);
 
-        if (!rootFile.exists())
-            throw new ExperimentException("Pipeline directory: " + rootFile + " does not exist. Please see your administrator.");
-
-        File dir = new File(rootFile, DIR_NAME);
+        File dir = root.resolvePath(DIR_NAME);
         if (!dir.exists()) {
             boolean success = dir.mkdir();
             if (!success) throw new ExperimentException("Could not create directory: " + dir);
@@ -100,10 +98,11 @@ public class AssayFileWriter
         }
     }
 
+    @NotNull
     protected static PipeRoot getPipelineRoot(Container container)
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
-        if (null == pipelineRoot)
+        if (null == pipelineRoot || !pipelineRoot.isValid())
             throw new IllegalStateException("Please have your administrator set up a pipeline root for this folder.");
         return pipelineRoot;
     }

@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -26,7 +27,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -106,15 +106,15 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return getFactory().getParametersFile(dirData, getName());
     }
 
-    public void saveDefinition(URI uriRoot) throws IOException
+    @Override
+    public void saveDefinition(PipeRoot root) throws IOException
     {
-        save(getFactory().getProtocolFile(uriRoot, getName()), null, null);
+        save(getFactory().getProtocolFile(root, getName()), null, null);
     }
 
     public void saveInstance(File file, Container c) throws IOException
     {
         Map<String, String> addParams = new HashMap<String, String>();
-        addParams.put("pipeline, load folder", c.getPath());
         addParams.put("pipeline, email address", email);
         save(file, null, addParams);
     }
@@ -203,7 +203,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
-                                          File[] filesInput,
+                                          PipeRoot root, File[] filesInput,
                                           File fileParameters
     ) throws IOException;
 }

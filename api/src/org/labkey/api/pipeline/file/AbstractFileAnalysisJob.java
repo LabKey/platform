@@ -21,7 +21,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -60,6 +59,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
                                    String providerName,
                                    ViewBackgroundInfo info,
+                                   PipeRoot root,
                                    String protocolName,
                                    File fileParameters,
                                    File filesInput[]) throws IOException
@@ -84,7 +84,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         if (paramDefaults != null)
             fileDefaults = new File(getRootDir().toURI().resolve(paramDefaults));
         else
-            fileDefaults = protocol.getFactory().getDefaultParametersFile(getRootDir());
+            fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
 
         _parametersDefaults = getInputParameters(fileDefaults).getInputParameters();
 
