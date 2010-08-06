@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.log4j.Logger;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.OntologyManager;
@@ -27,9 +27,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.IOException;
@@ -250,7 +249,7 @@ public class DataColumn extends DisplayColumn
         _caption.render(strCaption, ctx);
         out.write(PageFlowUtil.jsString(strCaption.toString()));
         out.write(", '");
-        out.write(_filterColumn.getSqlDataTypeName());
+        out.write(_filterColumn.getSqlTypeName());
         out.write("', ");
         out.write(Boolean.toString(_filterColumn.isMvEnabled()));
         out.write(")");

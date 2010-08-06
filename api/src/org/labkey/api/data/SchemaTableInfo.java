@@ -438,7 +438,7 @@ public class SchemaTableInfo implements TableInfo
 
             if (null == colInfo)
             {
-                // TODO: Temp hack for PostgreSQL 9.0 Beta 1 bug with renamed columns
+                // TODO: Temp hack for PostgreSQL 9.0 bug with renamed columns
                 if ("dbuserschemaid".equals(colName))
                     colName = "externalschemaid";
 

@@ -66,9 +66,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
     };
 
+    private static final Logger _log = Logger.getLogger(ColumnInfo.class);
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
+    private static final Set<String> nonEditableColNames = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
+
     private FieldKey fieldKey;
     private String alias;
     private String sqlTypeName;
+    private int sqlTypeInt = Types.NULL;
     private String textAlign = null;
     private String cssClass;
     private String cssStyle;
@@ -84,21 +89,18 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private boolean isUserEditable = true;
     private boolean isUnselectable = false;
     private TableInfo parentTable = null;
-    static Set<String> nonEditableColNames = null;
-    private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
-    private int sqlTypeInt = Types.NULL;
     private String metaDataName = null;
     private String selectName = null;
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;
+
+    private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private DefaultValueType _defaultValueType = null;
     private boolean _lockName = false;
 
     // Only set if we have an associated mv column for this column
-    private String mvColumnName = null;
-
-    private static Logger _log = Logger.getLogger(ColumnInfo.class);
+    private String _mvColumnName = null;
 
 
     public ColumnInfo(FieldKey key)
@@ -454,7 +456,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (getParentTable() == null)
             return this;
-        if (getParentTable().getSqlDialect().isSortableDataType(getSqlDataTypeName()))
+        if (getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName()))
             return this;
         return null;
     }
@@ -580,7 +582,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 if (isStringType() && scale > 300) // lsidtype is 255 characters
                     inputType = "textarea";
-                else if ("image".equalsIgnoreCase(getSqlDataTypeName()))
+                else if ("image".equalsIgnoreCase(getSqlTypeName()))
                     inputType = "file";
                 else if (getSqlTypeInt() == Types.BIT || getSqlTypeInt() == Types.BOOLEAN)
                     inputType = "checkbox";
@@ -617,26 +619,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return 15;
 
         return inputRows;
-    }
-
-
-    public String getSqlDataTypeName()
-    {
-        return sqlTypeName;
-    }
-
-    public int getSqlTypeInt()
-    {
-        if (sqlTypeInt == Types.NULL)
-        {
-            SqlDialect d;
-            if (getParentTable() == null)
-                d = CoreSchema.getInstance().getSqlDialect();
-            else
-                d = getParentTable().getSqlDialect();
-            sqlTypeInt = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
-        }
-        return sqlTypeInt;
     }
 
 
@@ -966,9 +948,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         sb.append("  ");
         sb.append(StringUtils.rightPad(getName(), 25));
         sb.append(" ");
-        sb.append(sqlTypeName);
+
+        String typeName = getSqlTypeName();
+        sb.append(typeName);
+
         //UNDONE: Not supporting fixed decimal
-        if ("VARCHAR".equalsIgnoreCase(sqlTypeName) || "CHAR".equalsIgnoreCase(sqlTypeName))
+        if ("VARCHAR".equalsIgnoreCase(typeName) || "CHAR".equalsIgnoreCase(typeName))
         {
             sb.append("(");
             sb.append(scale);
@@ -1016,15 +1001,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             if (_joinWithContainer)
             {
-                return new LookupColumn(foreignKey, lookupTable.getColumn(this._lookupKey), lookupColumn, _joinWithContainer);
+                return new LookupColumn(foreignKey, lookupTable.getColumn(_lookupKey), lookupColumn, _joinWithContainer);
             }
-            return LookupColumn.create(foreignKey, lookupTable.getColumn(this._lookupKey), lookupColumn, true);
+            return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupColumn, true);
         }
 
         public TableInfo getLookupTableInfo()
         {
-            DbSchema schema = DbSchema.get(this._dbSchemaName);
-            return schema.getTable(this._tableName);
+            DbSchema schema = DbSchema.get(_dbSchemaName);
+            return schema.getTable(_tableName);
         }
 
         public StringExpression getURL(ColumnInfo parent)
@@ -1094,19 +1079,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    static
-    {
-        nonEditableColNames = new CaseInsensitiveHashSet();
-        nonEditableColNames.add("created");
-        nonEditableColNames.add("createdBy");
-        nonEditableColNames.add("modified");
-        nonEditableColNames.add("modifiedBy");
-        nonEditableColNames.add("_ts");
-        nonEditableColNames.add("entityId");
-        nonEditableColNames.add("container");
-    }
-
-    private static final Set<String> tables = new HashSet<String>();
     public static Collection<ColumnInfo> createFromDatabaseMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo parentTable)
             throws SQLException
     {
@@ -1396,6 +1368,20 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.sqlTypeInt = Types.NULL;
     }
 
+    public int getSqlTypeInt()
+    {
+        if (sqlTypeInt == Types.NULL)
+        {
+            SqlDialect d;
+            if (getParentTable() == null)
+                d = CoreSchema.getInstance().getSqlDialect();
+            else
+                d = getParentTable().getSqlDialect();
+            sqlTypeInt = d.sqlTypeIntFromSqlTypeName(getSqlTypeName());
+        }
+        return sqlTypeInt;
+    }
+
     public String getFriendlyTypeName()
     {
         return getFriendlyTypeName(getJavaClass());
@@ -1502,17 +1488,17 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public boolean isMvEnabled()
     {
-        return mvColumnName != null;
+        return _mvColumnName != null;
     }
 
     public String getMvColumnName()
     {
-        return mvColumnName;
+        return _mvColumnName;
     }
 
     public void setMvColumnName(String mvColumnName)
     {
-        this.mvColumnName = mvColumnName;
+        this._mvColumnName = mvColumnName;
     }
 
     /**

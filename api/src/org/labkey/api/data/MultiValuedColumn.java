@@ -16,7 +16,10 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.query.FieldKey;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -31,39 +34,30 @@ import java.util.Map;
 
    - A single row in the parent table can map to multiple child rows.  Therefore, selecting this column requires
      a GROUP BY and an aggregate function of some kind to return a single value.
-   - Rows in the child table are owned exclusively by rows in the parent table.  When inserting to the parent table,
-     child table rows are inserted to as well; when deleting rows from the parent table, child table rows are deleted.
-
+   - Rows in the child table are owned exclusively by rows in the parent table.  When inserting to the parent table, child
+     table rows must be inserted as well; when deleting rows from the parent table, child table rows must be deleted.
  */
 public class MultiValuedColumn extends LookupColumn
 {
-    public MultiValuedColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo childValue)
+    public MultiValuedColumn(String name, ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo childValue)
     {
         super(parentPkColumn, childKey, childValue);
-    }
-
-    @Override
-    public String getName()
-    {
-        return super.getName();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public String getSelectName()
-    {
-        return super.getSelectName();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public String getAlias()
-    {
-        return super.getAlias();    //To change body of overridden methods use File | Settings | File Templates.
+        setFieldKey(new FieldKey(null, name));
+        setAlias(name);
+        setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new MultiValuedDisplayColumn(colInfo);
+                }
+            });
     }
 
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return super.getValueSql(tableAliasName);    //To change body of overridden methods use File | Settings | File Templates.
+        // TODO: Hack?
+        return new SQLFragment(getTableAlias(tableAliasName) + "." + _lookupColumn.getAlias());
     }
 
     @Override
@@ -75,11 +69,12 @@ public class MultiValuedColumn extends LookupColumn
 
         // First, get any lookup column joins so we have the correct alias
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-        _lookupColumn.declareJoins("kt", joins);
-        String valueColumnAlias = joins.isEmpty() ? valueColumnName : joins.keySet().iterator().next();
+        _lookupColumn.declareJoins("child", joins);
+         // TODO: Hack?
+        String valueColumnAlias = joins.isEmpty() ? valueColumnName : joins.keySet().iterator().next() + "." + _lookupColumn.getFieldKey().getName();
 
         strJoin.append("\n\t(\n\t\t");
-        strJoin.append("SELECT kt.");
+        strJoin.append("SELECT child.");
         strJoin.append(keyColumnName);
         strJoin.append(", ");
         strJoin.append(getAggregateFunction(valueColumnAlias));
@@ -87,7 +82,7 @@ public class MultiValuedColumn extends LookupColumn
         strJoin.append(valueColumnName);
         strJoin.append(" FROM ");
         strJoin.append(keyTableName);
-        strJoin.append(" kt");
+        strJoin.append(" child");
 
         for (SQLFragment fragment : joins.values())
         {
@@ -96,20 +91,20 @@ public class MultiValuedColumn extends LookupColumn
 
         // TODO: Add ORDER BY?
 
-        strJoin.append("\n\t\tGROUP BY kt.");
-        strJoin.append(_foreignKey.getSelectName());
+        strJoin.append("\n\t\tGROUP BY child.");
+        strJoin.append(keyColumnName);
         strJoin.append("\n\t)");
     }
 
     // By default, use GROUP_CONCAT aggregate function, which returns a common-separated list of values.  Override this
-    // and (for non-varchar aggregate function) getSqlDataTypeName() to apply a different aggregate.
+    // and (for non-varchar aggregate function) getSqlTypeName() to apply a different aggregate.
     protected String getAggregateFunction(String selectName)
     {
         return getSqlDialect().getGroupConcatAggregateFunction(selectName);
     }
 
     @Override  // Must match the type of the aggregate function specified above.
-    public String getSqlDataTypeName()
+    public String getSqlTypeName()
     {
         return "varchar";
     }
@@ -120,5 +115,46 @@ public class MultiValuedColumn extends LookupColumn
     protected boolean includeLookupJoins()
     {
         return false;
+    }
+
+
+    private class MultiValuedDisplayColumn extends DataColumn
+    {
+        private String _value = null;
+
+        public MultiValuedDisplayColumn(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        @Override         // TODO: Similar for renderDetailsCellContents()
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            String valueString = (String)super.getValue(ctx);
+            String[] values = valueString.split(",");
+            String sep = "";
+
+            for (String value : values)
+            {
+                _value = value;
+                out.append(sep);
+                super.renderGridCellContents(ctx, out);
+                sep = ", ";
+            }
+
+            // TODO: Call super in empty values case?
+        }
+
+        @Override
+        public String getFormattedValue(RenderContext ctx)
+        {
+            return _value;
+        }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            return _value;
+        }
     }
 }
