@@ -48,11 +48,13 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private boolean _selected = false;
     private boolean _collapsed = false;
     private boolean _canCollapse = true;
-    private boolean _highlighted = false;
+    private boolean _strong = false;
+    private boolean _emphasis = false;
     private String _script;
     private String _id = "";
     private boolean _disabled;
     private String _display;
+    private String _description;
 
     private ArrayList<NavTree> children = null;
 
@@ -107,7 +109,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _selected = source._selected;
         _collapsed = source._collapsed;
         _canCollapse = source._canCollapse;
-        _highlighted = source._highlighted;
+        _strong = source._strong;
+        _emphasis = source._emphasis;
         _script = source._script;
         _id = source._id;
         _disabled = source._disabled;
@@ -369,14 +372,24 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return _selected;
     }
 
-    public boolean isHighlighted()
+    public boolean isStrong()
     {
-        return _highlighted;
+        return _strong;
     }
 
-    public void setHighlighted(boolean highlighted)
+    public void setStrong(boolean strong)
     {
-        _highlighted = highlighted;
+        _strong = strong;
+    }
+
+    public boolean isEmphasis()
+    {
+        return _emphasis;
+    }
+
+    public void setEmphasis(boolean emphasis)
+    {
+        _emphasis = emphasis;
     }
 
     public String getScript()
@@ -414,6 +427,17 @@ public class NavTree extends Pair<String, String> implements Collapsible
         first = key;
     }
 
+    /** Get the description text for this item.  Menu items will render this as a tooltip. */
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    /** Set the description text for this item.  Menu items will render this as a tooltip. */
+    public void setDescription(String description)
+    {
+        _description = description;
+    }
 
     public String childrenToJS()
     {
@@ -440,6 +464,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
         o.put("text",getKey());
         if (StringUtils.isNotEmpty(getId()))
             o.put("id", getId());
+        if (StringUtils.isNotEmpty(getDescription()))
+            o.put("description", getDescription());
         if (isSelected())
             o.put("checked",true);
         if (null != getImageSrc())
@@ -473,6 +499,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
         sb.append("{").append("text:").append(PageFlowUtil.jsString(title));
         if (StringUtils.isNotEmpty(getId()))
             sb.append(",id:").append(PageFlowUtil.jsString(getId()));
+        if (StringUtils.isNotEmpty(getDescription()))
+            sb.append(",description").append(PageFlowUtil.jsString(getDescription()));
         if (isSelected())
             sb.append(",checked:true");
         if (null != getImageSrc())

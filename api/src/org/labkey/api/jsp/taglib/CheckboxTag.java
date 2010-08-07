@@ -25,6 +25,7 @@ import java.util.Set;
 
 public class CheckboxTag extends SimpleTagBase
 {
+    protected String _id;
     protected String _name;
     protected Object _value;
     protected Set _checkedSet;
@@ -32,7 +33,9 @@ public class CheckboxTag extends SimpleTagBase
     public void doTag() throws JspException, IOException
     {
         JspWriter out = getOut();
-        out.write("<input type=\"checkbox\" name=\"");
+        out.write("<input type=\"checkbox\" id=\"");
+        out.write(h(_id));
+        out.write("\" name=\"");
         out.write(h(_name));
         out.write("\" value=\"");
         out.write(h(_value));
@@ -51,6 +54,11 @@ public class CheckboxTag extends SimpleTagBase
         out.write("\">");
     }
 
+    public void setId(String id)
+    {
+        _id = id;
+    }
+    
     public void setName(String name)
     {
         _name = name;

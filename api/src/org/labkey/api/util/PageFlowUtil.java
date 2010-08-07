@@ -1684,6 +1684,7 @@ public class PageFlowUtil
         }
         else
             scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
+        scripts.add(extJsRoot + "/ext-patches.js");
         included.add(extDebug);
         included.add(extMin);
 

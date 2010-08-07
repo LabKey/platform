@@ -37,6 +37,7 @@ public enum QueryAction
     insertQueryRow,
     updateQueryRow,
     chooseColumns,
+    saveColumns,
     deleteView,
     createChart,
     createRReport,

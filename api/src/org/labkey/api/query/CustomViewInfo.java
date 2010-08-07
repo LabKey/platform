@@ -56,6 +56,8 @@ public interface CustomViewInfo
 
     String getName();
     User getOwner();
+    /** Convenience for <code>getOwner() == null</code> */
+    boolean isShared();
     User getCreatedBy();
     Date getModified();
 
@@ -66,6 +68,8 @@ public interface CustomViewInfo
     boolean canInherit();
     boolean isHidden();
     boolean isEditable();
+    /** @returns true if the custom view is in session state. */
+    boolean isSession();
     String getCustomIconUrl();
 
     List<FieldKey> getColumns();

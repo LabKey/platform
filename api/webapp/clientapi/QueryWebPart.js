@@ -198,7 +198,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         userFilters: false,
         qsParamsToIgnore: false,
         buttonBar: false,
-        scope: false
+        scope: false,
+        _customizeViewWin: false
     },
 
     constructor : function(config)
@@ -226,27 +227,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             this.render();
     },
 
-    /**
-     * Requests the query web part content and renders it within the element identified by the renderTo parameter.
-     * Note that you do not need to call this method explicitly if you specify a renderTo property on the config object
-     * handed to the class constructor. If you do not specify renderTo in the config, then you must call this method
-     * passing the id of the element in which you want the part rendered
-     * @name render
-     * @function
-     * @memberOf LABKEY.QueryWebPart#
-     * @param renderTo The id of the element in which you want the part rendered.
-     */
-    render : function(renderTo) {
-
-        var idx = 0; //array index counter
-
-        //allow renderTo param to override config property
-        if(renderTo)
-            this.renderTo = renderTo;
-
-        if(!this.renderTo)
-            Ext.Msg.alert("Configuration Error", "You must supply a renderTo property either in the configuration object, or as a parameter to the render() method!");
-
+    createParams : function () {
         //setup the params
         var params = {};
         params["webpart.name"] = "Query";
@@ -259,7 +240,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         if (this.viewName)
             params[this.dataRegionName + ".viewName"] = this.viewName;
 
-        //add user filters (already in encoded form
+        //add user filters (already in encoded form)
         if (this.userFilters)
         {
             for (var name in this.userFilters)
@@ -293,6 +274,32 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //strip it if it's there so it's not included twice (Ext always appends one)
         delete params["_dc"];
 
+        return params;
+    },
+
+    /**
+     * Requests the query web part content and renders it within the element identified by the renderTo parameter.
+     * Note that you do not need to call this method explicitly if you specify a renderTo property on the config object
+     * handed to the class constructor. If you do not specify renderTo in the config, then you must call this method
+     * passing the id of the element in which you want the part rendered
+     * @name render
+     * @function
+     * @memberOf LABKEY.QueryWebPart#
+     * @param renderTo The id of the element in which you want the part rendered.
+     */
+    render : function(renderTo) {
+
+        var idx = 0; //array index counter
+
+        //allow renderTo param to override config property
+        if(renderTo)
+            this.renderTo = renderTo;
+
+        if(!this.renderTo)
+            Ext.Msg.alert("Configuration Error", "You must supply a renderTo property either in the configuration object, or as a parameter to the render() method!");
+
+        var params = this.createParams();
+
         //add the button bar config if any
         var json = {};
         if (this.buttonBar && this.buttonBar.items && this.buttonBar.items.length > 0)
@@ -320,6 +327,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         var dr = LABKEY.DataRegions[this.dataRegionName];
                         if (!dr)
                             throw "Couldn't get dataregion '" + this.dataRegionName + "' object.";
+
+//                        // hijack the CustomizeView menu item
+//                        var customizeViewMenuItem = Ext.getCmp(this.dataRegionName + ":Views:Customize View");
+//                        if (customizeViewMenuItem)
+//                        {
+//                            customizeViewMenuItem.on('click', this.customizeViewClick, this);
+//                        }
+
                         dr.on("beforeoffsetchange", this.beforeOffsetChange, this);
                         dr.on("beforemaxrowschange", this.beforeMaxRowsChange, this);
                         dr.on("beforesortchange", this.beforeSortChange, this);
@@ -369,6 +384,62 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             if (item.items)
                 this.processButtonBarItems(item.items);
         }
+    },
+
+    customizeViewClick : function (menuItem, e) {
+        e.preventDefault();
+
+        var params = this.createParams();
+        if (this.userFilters)
+            LABKEY.Filter.appendFilterParams(params, this.userFilters, this.dataRegionName);
+
+        if (this.sort)
+            params.sort = this.sort;
+
+        var encodedParams = Ext.urlEncode(params);
+        var o = {
+            _template: 'None',
+            saveInSession: true,
+            queryName: this.queryName,
+            schemaName: this.schemaName,
+            dataRegionName: this.dataRegionName,
+            srcURL: "fake/action.view?" + encodedParams
+        };
+
+        if (this._designerWin && this._designerWin.encodedParams != encodedParams)
+        {
+            this.cleanupDesignerWin();
+        }
+
+        if (!this._designerWin)
+        {
+            console.log("creating new designer window");
+            this._designerWin = new Ext.Window({
+                title: "Customize View",
+                shadow: false,
+                closeAction: 'hide',
+                autoLoad: {
+                    url: LABKEY.ActionURL.buildURL('query', 'chooseColumns', null, o),
+                    scripts: true
+                }
+            });
+            this._designerWin.encodedParams = encodedParams;
+
+            var qwp = this;
+            window.designerInitCallback = function ()
+            {
+                console.log("designerInitCallback");
+                qwp._designerWin.center();
+                window.designerSaveSuccessful = function (json) {
+                    console.log("designerSaveSuccessful");
+                    qwp._designerWin.close();
+                    var dr = LABKEY.DataRegions[qwp.dataRegionName];
+                    dr.changeView(json.name);
+                };
+            };
+
+        }
+        this._designerWin.show();
     },
 
     onButtonClick : function(buttonId, dataRegion) {
@@ -460,6 +531,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
     },
 
     beforeChangeView : function(dataRegion, viewName) {
+        this.cleanupDesignerWin();
         delete this.offset;
         delete this.userFilters;
         delete this.sort;
@@ -467,6 +539,18 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         this.qsParamsToIgnore[this.getQualifiedParamName("viewName")] = true;
         this.render();
         return false;
+    },
+
+    cleanupDesignerWin : function () {
+        console.log("cleanupDesignerWin");
+        if (this._designerWin) {
+            this._designerWin.close();
+            delete this._designerWin;
+        }
+        if (window.designer) {
+            window.designer.uninit();
+            delete window.designer;
+        }
     },
 
     getQualifiedParamName : function(paramName) {

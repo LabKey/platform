@@ -198,30 +198,47 @@ abstract public class UserSchema extends AbstractSchema
         return new QueryView(this, settings, errors);
     }
 
+    /**
+     * Returns a sorted list of names for both built-in tables and custom queries.
+     * @param visibleOnly Only return the visible tables and queries.
+     * @return The names of the tables and queries.
+     */
     public List<String> getTableAndQueryNames(boolean visibleOnly)
     {
-        Set<String> set = new HashSet<String>();
-        set.addAll(visibleOnly ? getVisibleTableNames() : getTableNames());
+        return new ArrayList<String>(_getQueries(visibleOnly).keySet());        
+    }
 
-        for (Map.Entry<String, QueryDefinition> entry : QueryService.get().getQueryDefs(getContainer(), getSchemaName()).entrySet())
+    /**
+     * Returns a sorted list of QueryDefinitions for both built-in tables and custom queries.
+     * @param visibleOnly Only return the visible tables and queries.
+     * @return The QueryDefinitions.
+     */
+    public List<QueryDefinition> getTablesAndQueries(boolean visibleOnly)
+    {
+        return new ArrayList<QueryDefinition>(_getQueries(visibleOnly).values());
+    }
+
+    protected Map<String, QueryDefinition> _getQueries(boolean visibleOnly)
+    {
+        TreeMap<String, QueryDefinition> set = new TreeMap<String, QueryDefinition>(new Comparator<String>()
         {
-            if (!visibleOnly || !entry.getValue().isHidden())
-            {
-                set.add(entry.getKey());
-            }
-        }
-
-        List<String> ret = new ArrayList<String>(set);
-
-        Collections.sort(ret, new Comparator<String>()
-        {
+            @Override
             public int compare(String o1, String o2)
             {
                 return o1.compareToIgnoreCase(o2);
             }
         });
 
-        return ret;
+        for (String tableName : visibleOnly ? getVisibleTableNames() : getTableNames())
+            set.put(tableName, QueryService.get().createQueryDefForTable(this, tableName));
+
+        for (QueryDefinition query : QueryService.get().getQueryDefs(getContainer(), getSchemaName()).values())
+        {
+            if (!visibleOnly || !query.isHidden())
+                set.put(query.getName(), query);
+        }
+
+        return set;
     }
 
     /** override this method to return schema specific QuerySettings object */
@@ -273,6 +290,7 @@ abstract public class UserSchema extends AbstractSchema
     {
         QuerySettings settings = createQuerySettings(dataRegionName);
         settings.init(pvs);
+        //settings.setSchemaName(getSchemaName()); //?
 
         return settings;
     }

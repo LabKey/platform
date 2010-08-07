@@ -166,10 +166,19 @@ public class PopupMenu extends DisplayElement
             }
 
             sb.append("{").append("text:").append(PageFlowUtil.jsString(tree.getKey()));
-            if (tree.isHighlighted())
-                sb.append(", cls:'labkey-strong'");
+            if (tree.isStrong() || tree.isEmphasis())
+            {
+                sb.append(", cls:'");
+                if (tree.isStrong())
+                    sb.append("labkey-strong");
+                if (tree.isEmphasis())
+                    sb.append(" labkey-emphasis");
+                sb.append("'");
+            }
             if (StringUtils.isNotEmpty(tree.getId()))
                 sb.append(", id:").append(PageFlowUtil.jsString(tree.getId()));
+            if (StringUtils.isNotEmpty(tree.getDescription()))
+                sb.append(", tooltip: ").append(PageFlowUtil.jsString(tree.getDescription()));
             if (tree.isSelected())
                 sb.append(", checked:true");
             if (null != tree.getImageSrc())

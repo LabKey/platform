@@ -187,10 +187,10 @@ LABKEY.requiresExtJs = function(immediate)
 
     // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css', true);
-    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css', true);
+//    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css', true);
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-//    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
 
 

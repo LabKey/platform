@@ -1085,6 +1085,7 @@ api/webapp/ext-3.2.2/ext-all-debug-w-comments.js -text
 api/webapp/ext-3.2.2/ext-all-debug.js -text
 api/webapp/ext-3.2.2/ext-all.js -text
 api/webapp/ext-3.2.2/ext-all.js.gz -text
+api/webapp/ext-3.2.2/ext-patches.js -text
 api/webapp/ext-3.2.2/ext.jsb2 -text
 api/webapp/ext-3.2.2/gpl-3.0.txt -text
 api/webapp/ext-3.2.2/index.html -text
@@ -2790,9 +2791,6 @@ internal/webapp/_yui/build/yahoo/yahoo.js -text
 internal/webapp/applet.js -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
-internal/webapp/designer/demo.html -text
-internal/webapp/designer/demo.js -text
-internal/webapp/designer/demo.xml -text
 internal/webapp/designer/designer.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/ext-exploded.js -text

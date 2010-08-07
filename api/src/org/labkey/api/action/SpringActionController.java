@@ -222,6 +222,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (null != StringUtils.trimToNull(request.getParameter("_frame")) ||
             null != StringUtils.trimToNull(request.getParameter("_frame.x")))
             page.setTemplate(PageConfig.Template.Framed);
+        if (null != StringUtils.trimToNull(request.getParameter("_template")))
+        {
+            try
+            {
+                PageConfig.Template template =
+                        PageConfig.Template.valueOf(StringUtils.trimToNull(request.getParameter("_template")));
+                page.setTemplate(template);
+            }
+            catch (IllegalArgumentException ex)
+            {
+                _log.debug("Illegal page template type", ex);
+            }
+        }
         return page;
     }
 

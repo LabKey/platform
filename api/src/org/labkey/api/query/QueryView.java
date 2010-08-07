@@ -271,12 +271,15 @@ public class QueryView extends WebPartView<Object>
         }
         button.addSeparator();
 
-        for (String query : getSchema().getTableAndQueryNames(true))
+        for (QueryDefinition query : getSchema().getTablesAndQueries(true))
         {
-            NavTree item = new NavTree(query, target.clone().replaceParameter(param(QueryParam.queryName), query).getLocalURIString());
-            item.setId(getDataRegionName() + ":" + label + ":" + query);
-            if (query.equals(current))
-                item.setHighlighted(true);
+            String name = query.getName();
+            NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
+            item.setId(getDataRegionName() + ":" + label + ":" + name);
+            if (query.getDescription() != null)
+                item.setDescription(query.getDescription());
+            if (name.equals(current))
+                item.setStrong(true);
             item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
             button.addMenuItem(item);
         }
@@ -962,7 +965,8 @@ public class QueryView extends WebPartView<Object>
 
         item.setId(getDataRegionName() + ":Views:default");
         if ("".equals(currentView))
-            item.setHighlighted(true);
+            item.setStrong(true);
+        // XXX: default view may be unsaved in session
         item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
         menu.addMenuItem(item);
 
@@ -971,8 +975,8 @@ public class QueryView extends WebPartView<Object>
         Collections.sort(views, new Comparator<CustomView>() {
             public int compare(CustomView o1, CustomView o2)
             {
-                if (o1.getOwner() != null && o2.getOwner() == null) return -1;
-                if (o1.getOwner() == null && o2.getOwner() != null) return 1;
+                if (!o1.isShared() && o2.isShared()) return -1;
+                if (o1.isShared() && !o2.isShared()) return 1;
                 if (o1.getName() == null) return -1;
                 if (o2.getName() == null) return 1;
 
@@ -993,12 +997,25 @@ public class QueryView extends WebPartView<Object>
                 item.setScript(changeViewScript.replace("<viewname>", label));
             item.setId(getDataRegionName() + ":Views:" + label);
             if (label.equals(currentView))
-                item.setHighlighted(true);
+                item.setStrong(true);
+
+            StringBuilder description = new StringBuilder();
+            if (view.isSession())
+            {
+                item.setEmphasis(true);
+                description.append("Unsaved ");
+            }
+            if (view.isShared())
+                description.append("Shared ");
+            if (description.length() > 0)
+                item.setDescription(description.toString());
+
             if (null != view.getCustomIconUrl())
                 item.setImageSrc(getViewContext().getContextPath() + "/" + view.getCustomIconUrl());
             else
                 item.setImageSrc(getViewContext().getContextPath() +
-                        (null != view.getOwner() ? "/reports/grid.gif" : "/reports/grid_shared.gif"));
+                        (view.isShared() ? "/reports/grid_shared.gif" : "/reports/grid.gif"));
+
             menu.addMenuItem(item);
         }
     }
@@ -1034,7 +1051,7 @@ public class QueryView extends WebPartView<Object>
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
                 item.setId(getDataRegionName() + ":Views:" + report.getDescriptor().getReportName());
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
-                    item.setHighlighted(true);
+                    item.setStrong(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
                 menu.addMenuItem(item);
             }
