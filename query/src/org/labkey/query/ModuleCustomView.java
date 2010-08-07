@@ -69,6 +69,11 @@ public class ModuleCustomView implements CustomView
         return null;
     }
 
+    public boolean isShared()
+    {
+        return true;
+    }
+
     public User getCreatedBy()
     {
         return null;
@@ -110,6 +115,12 @@ public class ModuleCustomView implements CustomView
     public boolean isEditable()
     {
         //module custom views are not updatable
+        return false;
+    }
+
+    public boolean isSession()
+    {
+        // module custom views are never in session state
         return false;
     }
 

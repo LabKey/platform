@@ -35,7 +35,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
-import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.*;
@@ -330,7 +329,7 @@ public class DataSetQueryView extends QueryView
                 NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
                 item.setId("Views:" + report.getDescriptor().getReportName());
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
-                    item.setHighlighted(true);
+                    item.setStrong(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
                 menu.addMenuItem(item);
             }

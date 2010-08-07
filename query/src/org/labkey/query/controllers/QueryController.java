@@ -22,6 +22,7 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -1404,6 +1405,57 @@ public class QueryController extends SpringActionController
         
         public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
         {
+            throw new UnsupportedOperationException("POST not supported");
+        }
+
+        public URLHelper getSuccessURL(ChooseColumnsForm chooseColumnsForm)
+        {
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Customize Grid View");
+            return root;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveColumnsAction extends ApiAction<ChooseColumnsForm>
+    {
+        ViewDocument doc;
+
+        @Override
+        public void validateForm(ChooseColumnsForm form, Errors errors)
+        {
+            if (form.canEdit(errors))
+            {
+                String xml = StringUtils.trimToEmpty(form.ff_designXML);
+                if (xml.length() > 0)
+                {
+                    try
+                    {
+                        doc = ViewDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
+                    }
+                    catch (XmlException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                }
+            }
+
+            if (form.isSaveInSession())
+            {
+                if (form.ff_saveForAllUsers)
+                    errors.reject(ERROR_MSG, "Session views can't be saved for all users");
+                if (form.ff_inheritable)
+                    errors.reject(ERROR_MSG, "Session views can't be inherited");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(ChooseColumnsForm form, BindException errors) throws Exception
+        {
             User owner = getUser();
             String regionName = form.getDataRegionName();
             if (form.ff_saveForAllUsers && form.canSaveForAllUsers())
@@ -1414,16 +1466,44 @@ public class QueryController extends SpringActionController
 
             boolean canEdit = form.canEdit(errors);
             boolean isHidden = false;
-            if (canEdit)
+            CustomView view = null;
+            if (canEdit && doc != null)
             {
-                CustomView view = form.getQueryDef().getCustomView(owner, getViewContext().getRequest(), name);
-                if (view == null || (owner != null && view.getOwner() == null))
+                view = form.getQueryDef().getCustomView(owner, getViewContext().getRequest(), name);
+
+                // Create a new view if none exists or the current view is a shared view
+                // and the user wants to override the shared view with a personal view.
+                if (view == null || (owner != null && view.isShared()))
                 {
                     view = form.getQueryDef().createCustomView(owner, name);
+                    if (owner != null && form.isSaveInSession())
+                        ((CustomViewImpl) view).isSession(true);
                 }
-                ViewDocument doc = ViewDocument.Factory.parse(StringUtils.trimToEmpty(form.ff_designXML));
+                else if (form.isSaveInSession() != view.isSession())
+                {
+                    if (form.isSaveInSession())
+                    {
+                        if (owner == null)
+                        {
+                            errors.reject(ERROR_MSG, "Session views can't be saved for all users");
+                            return null;
+                        }
+
+                        // The form is saving to session but the view is in the database.
+                        // Make a copy in case it's a read-only version from an XML file
+                        view = form.getQueryDef().createCustomView(owner, name);
+                        ((CustomViewImpl) view).isSession(true);
+                    }
+                    else
+                    {
+                        // If the form is saving to the database but the view is session,
+                        // just flip the view's session bit if it is a custom view.
+                        ((CustomViewImpl)view).isSession(false);
+                    }
+                }
+
                 ((CustomViewImpl) view).update(doc, form.ff_saveFilter);
-                if (form.canSaveForAllUsers())
+                if (form.canSaveForAllUsers() && !form.isSaveInSession())
                 {
                     view.setCanInherit(form.ff_inheritable);
                 }
@@ -1431,51 +1511,47 @@ public class QueryController extends SpringActionController
                 view.save(getUser(), getViewContext().getRequest());
                 if (owner == null)
                 {
+                    // New view is shared so delete any previous custom view owned by the user with the same name.
                     CustomView personalView = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), name);
-                    if (personalView != null && personalView.getOwner() != null)
+                    if (personalView != null && !personalView.isShared())
                     {
                         personalView.delete(getUser(), getViewContext().getRequest());
                     }
                 }
             }
 
-            _returnURL = form.getSourceURL();
-            if (null != _returnURL)
+            ActionURL returnURL = form.getSourceURL();
+            if (null == returnURL)
             {
-                _returnURL = _returnURL.clone();
+                returnURL = getViewContext().cloneActionURL().setAction(QueryAction.executeQuery.name());
+            }
+            else
+            {
+                returnURL = returnURL.clone();
                 if (name == null || !canEdit)
                 {
-                    _returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
+                    returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
                 }
                 else if (!isHidden)
                 {
-                    _returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
+                    returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
                 }
-                _returnURL.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
+                returnURL.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
                 if (form.ff_saveFilter)
                 {
-                    for (String key : _returnURL.getKeysByPrefix(regionName + "."))
+                    for (String key : returnURL.getKeysByPrefix(regionName + "."))
                     {
                         if (form.isFilterOrSort(regionName, key))
-                            _returnURL.deleteFilterParameters(key);
+                            returnURL.deleteFilterParameters(key);
                     }
                 }
             }
-            return true;
+
+            Map<String, Object> ret = view != null ? getViewInfo(view) : new HashMap<String, Object>();
+            ret.put("redirect", returnURL);
+            return new ApiSimpleResponse(ret);
         }
 
-        public ActionURL getSuccessURL(ChooseColumnsForm chooseColumnsForm)
-        {
-            if (null != _returnURL)
-                return _returnURL;
-            return getViewContext().cloneActionURL().setAction(QueryAction.executeQuery.name());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Customize Grid View");
-            return root;
-        }
     }
 
 
@@ -3129,7 +3205,7 @@ public class QueryController extends SpringActionController
                 HttpView.throwNotFound();
                 return null;
             }
-            if (view.getOwner() == null)
+            if (view.isShared())
             {
                 if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                     HttpView.throwUnauthorized();
@@ -3634,7 +3710,8 @@ public class QueryController extends SpringActionController
             for(String qname : uschema.getTableNames())
             {
                 ActionURL viewDataUrl = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, uschema.getSchemaName(), qname);
-                qinfos.add(getQueryProps(qname, null, viewDataUrl, false, uschema, form.isIncludeColumns()));
+                TableInfo tinfo = uschema.getTable(qname);
+                qinfos.add(getQueryProps(qname, tinfo.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
             }
 
             response.put("queries", qinfos);
@@ -3759,30 +3836,36 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getViewInfo(CustomView view)
+    }
+
+    protected Map<String, Object> getViewInfo(CustomView view)
+    {
+        Map<String,Object> viewInfo = new HashMap<String,Object>();
+        viewInfo.put("name", view.getName());
+        if (null != view.getOwner())
+            viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
+        viewInfo.put("shared", view.isShared());
+        viewInfo.put("session", view.isSession());
+        viewInfo.put("editable", view.isEditable());
+        viewInfo.put("hidden", view.isHidden());
+
+        List<Map<String, Object>> colInfos = new ArrayList<Map<String, Object>>();
+        for(FieldKey key : view.getColumns())
         {
-            Map<String,Object> viewInfo = new HashMap<String,Object>();
-            viewInfo.put("name", view.getName());
-            if (null != view.getOwner())
-                viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
-            List<Map<String, Object>> colInfos = new ArrayList<Map<String, Object>>();
-            for(FieldKey key : view.getColumns())
-            {
-                Map<String, Object> colInfo = new HashMap<String, Object>();
-                colInfo.put("name", key.getName());
-                colInfo.put("key", key.toString());
-                colInfos.add(colInfo);
-            }
-            viewInfo.put("columns", colInfos);
-            ActionURL viewDataUrl = view.getQueryDefinition().urlFor(QueryAction.executeQuery);
-            if (viewDataUrl != null)
-            {
-                if (view.getName() != null)
-                    viewDataUrl.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
-                viewInfo.put("viewDataUrl", viewDataUrl);
-            }
-            return viewInfo;
+            Map<String, Object> colInfo = new HashMap<String, Object>();
+            colInfo.put("name", key.getName());
+            colInfo.put("key", key.toString());
+            colInfos.add(colInfo);
         }
+        viewInfo.put("columns", colInfos);
+        ActionURL viewDataUrl = view.getQueryDefinition().urlFor(QueryAction.executeQuery);
+        if (viewDataUrl != null)
+        {
+            if (view.getName() != null)
+                viewDataUrl.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
+            viewInfo.put("viewDataUrl", viewDataUrl);
+        }
+        return viewInfo;
     }
 
     @RequiresNoPermission

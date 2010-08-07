@@ -446,6 +446,11 @@ regions on mouseover */
     font-weight: bold;
 }
 
+.labkey-emphasis
+{
+    font-style: italic;
+}
+
 /* This is used in simple cases to give an area the same background as the
  side panel */
 .labkey-frame

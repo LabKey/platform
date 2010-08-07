@@ -313,12 +313,15 @@ public class QueryServiceImpl extends QueryService
 
     private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView cstmView, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
     {
+        if (views.containsKey(cstmView.getName()))
+            return;
+
         QueryDefinition qd = queryDefs.get(new Pair<String, String>(cstmView.getSchema(), cstmView.getQueryName()));
 
         if (qd == null)
             qd = QueryService.get().getUserSchema(user, container, cstmView.getSchema()).getQueryDefForTable(cstmView.getQueryName());
 
-        if (qd instanceof QueryDefinitionImpl && !views.containsKey(cstmView.getName()))
+        if (qd instanceof QueryDefinitionImpl)
             views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
     }
 

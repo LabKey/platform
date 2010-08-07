@@ -139,13 +139,17 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         try
         {
             Container container = getContainer();
-            if (user != null && user.isGuest())
+
+            if (user != null)
             {
                 for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
                 {
-                    ret.put(view.getName(), new CustomViewImpl(this, view));
+                    CustomViewImpl v = new CustomViewImpl(this, view);
+                    v.isSession(true);
+                    ret.put(view.getName(), v);
                 }
             }
+
             addCustomViews(ret, mgr.getAllCstmViews(container, _queryDef.getSchema(), _queryDef.getName(), user, inheritable));
 
             //finally, look in all the active modules for any views defined in the file system
@@ -171,7 +175,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                             }
                         }
                         
-                        if (null != viewDef)
+                        if (null != viewDef && !ret.containsKey(viewDef.getName()))
                             ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
                     }
                 }

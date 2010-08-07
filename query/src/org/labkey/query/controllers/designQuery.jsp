@@ -50,7 +50,7 @@
         { %>
             designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
         <% } %>
-        initDesigner();
+        designer.init();
     }
 
     Ext.onReady(init);
@@ -201,15 +201,15 @@
         </table>
     </td>
 </table>
-<form method="POST" action="<%=form.getQueryDef().urlFor(QueryAction.designQuery)%>" onsubmit="window.onbeforeunload = null">
+<form method="POST" action="<%=form.getQueryDef().urlFor(QueryAction.designQuery)%>" onsubmit="designer.uninit();">
     <input type="hidden" name="ff_designXML" id="ff_designXML" value="<%=h(form.ff_designXML)%>">
     <input type="hidden" name="ff_dirty" id="ff_dirty" value="<%=form.ff_dirty%>">
     <input type="hidden" name="ff_redirect" id="ff_redirect" value="<%=form.ff_redirect%>">
-    <labkey:button text="Save" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'designQuery';" />
+    <labkey:button text="Save" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'designQuery';" />
 
-    <labkey:button text="Edit Source" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'sourceQuery'" />
+    <labkey:button text="Edit Source" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'sourceQuery'" />
     <% if(form.getQueryDef().isMetadataEditable()) { %>
-        <labkey:button text="Edit Metadata" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'metadataQuery'" />
+        <labkey:button text="Edit Metadata" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'metadataQuery'" />
     <% } %>
-    <labkey:button text="View Data" onclick="needToPrompt = false; document.getElementById('ff_redirect').value = 'executeQuery'" />
+    <labkey:button text="View Data" onclick="designer.needToPrompt = false; document.getElementById('ff_redirect').value = 'executeQuery'" />
 </form>

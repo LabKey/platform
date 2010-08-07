@@ -1046,6 +1046,27 @@ function QueryOrViewDesigner(tableInfoService)
         designer.activeTab.doubleClickField(field);
     }
     this.tableInfoService = tableInfoService;
+
+    this.needToPrompt = false;
+
+    function beforeUnload()
+    {
+        if (this.needToPrompt && document.getElementById("ff_dirty").value == "true")
+            return "Your changes have not been saved.";
+    }
+
+    this.init = function ()
+    {
+        Ext.EventManager.on(window, 'beforeunload', beforeUnload);
+        this.setDesignDocument(XMLUtil.loadXML(document.getElementById("ff_designXML").value));
+        if (window.designerInitCallback)
+            window.designerInitCallback();
+    };
+
+    this.uninit = function ()
+    {
+        Ext.EventManager.on(window, 'beforeunload', beforeUnload);
+    };
 }
 
 QueryOrViewDesigner.prototype =
@@ -1189,7 +1210,7 @@ QueryOrViewDesigner.prototype =
         }
         return true;
     }
-}
+};
 
 function expandColumnScript(columnPicker, key)
 {
@@ -1542,16 +1563,4 @@ Bind_FieldKey.prototype =
 
     }
 };
-
-var needToPrompt = true;
-
-function initDesigner(event)
-{
-    window.onbeforeunload = function()
-    {
-        if (needToPrompt && document.getElementById("ff_dirty").value == "true")
-            return "Your changes have not been saved.";
-    };
-    designer.setDesignDocument(XMLUtil.loadXML(document.getElementById("ff_designXML").value));
-}
 

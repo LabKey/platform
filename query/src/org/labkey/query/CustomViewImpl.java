@@ -39,8 +39,9 @@ import java.io.IOException;
 public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 {
     private static final Logger _log = Logger.getLogger(CustomViewImpl.class);
-    boolean _dirty;
-    final QueryDefinition _queryDef;
+
+    private final QueryDefinition _queryDef;
+    private boolean _dirty;
 
     public CustomViewImpl(QueryDefinition queryDef, CstmView view)
     {
@@ -171,7 +172,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
     public boolean saveInSession()
     {
-        return getOwner() != null && getOwner().isGuest();
+        return getOwner() != null && (getOwner().isGuest() || isSession());
     }
 
     public void save(User user, HttpServletRequest request)
@@ -227,6 +228,10 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
     public void serialize(VirtualFile dir) throws IOException
     {
+        // UNDONE: should we serialize session customviews?
+        // if (isSession())
+        //     return;
+
         CustomViewDocument customViewDoc = CustomViewDocument.Factory.newInstance();
         CustomViewType customViewXml = customViewDoc.addNewCustomView();
 

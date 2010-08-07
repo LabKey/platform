@@ -54,14 +54,14 @@
             designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
         <% } %>
         designer.setShowHiddenFields(<%= form.getQuerySettings().isShowHiddenFieldsWhenCustomizing() %>);
-        initDesigner();
+        designer.init();
     }
 
     Ext.onReady(function () {
         LABKEY.Utils.onTrue({
             testCallback: function () { return window.ViewDesigner != undefined; },
             successCallback: init,
-            errorCallback: console.error
+            errorCallback: function (e, args) { console.error("Error loading designer: " + e); }
         });
     });
 
@@ -81,14 +81,37 @@
         }
     }
 
-    function onSubmit()
+    function designerSaveSuccessful(json)
+    {
+        if (json.redirect)
+        {
+            designer.uninit();
+            window.location = json.redirect;
+        }
+    }
+
+    function onSave()
     {
         if (designer.validate())
         {
-            window.onbeforeunload = null;
-            return true;
+            var msgbox = null;
+            var timeout = function () { msgbox = Ext.MessageBox.progress("Saving...", "Saving custom view..."); }.defer(200);
+            Ext.Ajax.request({
+                url: '<%=form.urlFor(QueryAction.saveColumns)%>',
+                method: "POST",
+                form: "saveColumns",
+                success: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                    if (msgbox) msgbox.hide();
+                    window.clearTimeout(timeout);
+                    designerSaveSuccessful(json);
+                }),
+                failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
+                    if (msgbox) msgbox.hide();
+                    window.clearTimeout(timeout);
+                    Ext.Msg.alert("Error saving", json.exception);
+                }, null, true)
+            });
         }
-        return false;
     }
 </script>
 
@@ -106,8 +129,11 @@
 </table>
 
 <p>
-<% if (getViewContext().getUser().isGuest()) { %>
-    <p><b>You are not currently logged in.  Changes you make here will only persist for the duration of your session.</b></p>
+<% if (form.isSaveInSession()) { %>
+    <p><b>
+    <% if (getViewContext().getUser().isGuest()) out.print("You are not currently logged in."); %>
+    Changes you make here will only persist for the duration of your session.
+    </b></p>
 <% } %>
 <table class="labkey-customize-view">
     <tr>
@@ -230,34 +256,40 @@
                                                                  alt="Delete" title="Delete"></a></p>
     </td>
 </table>
-<form method="POST" action="<%=form.urlFor(QueryAction.chooseColumns)%>" onsubmit="return onSubmit();">
+<form id="saveColumns" <%--method="POST" action="<%=form.urlFor(QueryAction.chooseColumns)%>" onsubmit="return onSubmit();"> --%>
     <span title="Some fields may be hidden by default from the list of available fields by default.">
-        <input type="checkbox"<% if (form.getQuerySettings().isShowHiddenFieldsWhenCustomizing()) { %> checked <% } %> onclick="designer.setShowHiddenFields(this.checked)" onchange="designer.setShowHiddenFields(this.checked)"> Show hidden fields
+        <input id="showHiddenFields" type="checkbox"<% if (form.getQuerySettings().isShowHiddenFieldsWhenCustomizing()) { %> checked <% } %> onclick="designer.setShowHiddenFields(this.checked)" onchange="designer.setShowHiddenFields(this.checked)">
+        <label for="showHiddenFields">Show hidden fields</label>
     </span><br>
     <input type="hidden" name="ff_designXML" id="ff_designXML" value="<%=h(form.ff_designXML)%>">
     <input type="hidden" name="ff_dirty" id="ff_dirty" value="<%=form.ff_dirty%>">
+    <input type="hidden" name="saveInSession" id="saveInSession" value="<%=form.isSaveInSession()%>">
+    <input type="hidden" name="lastModified" id="lastModified" value="<%=view != null ? view.getModified() : false%>">
     <p>
     <% boolean isHidden = view != null && view.isHidden(); %>
     <% if (isHidden) { %>
         <input type="hidden" name="ff_columnListName" value="<%=h(view.getName())%>">
-        <% if (view.getOwner() == null) { %>
+        <% if (view.isShared()) { %>
             <input type="hidden" name="ff_saveForAllUsers" value="true">
         <% } %>
     <% } else { %>
         <b>View Name:</b> <input type="text" name="ff_columnListName" maxlength="50" value="<%= canEdit ? h(form.ff_columnListName) : (form.ff_columnListName == null ? "CustomizedView" : form.ff_columnListName + "Copy") %>">
-        <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
-        <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
+        <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || !view.isShared() || form.isSaveInSession() ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
+        <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || !view.isShared() || form.isSaveInSession() ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
         <% if (!canEdit) { %><br/>You must save this view with an alternate name.<% } %>
         <br>
-        <% if (form.canSaveForAllUsers()) { %>
-            <input type="checkbox" name="ff_saveForAllUsers" value="true"<%=view != null && view.getOwner() == null ? " checked" : ""%> onclick="updateViewNameDescription(this)"> Make
-            this grid view available to all users<br>
-            <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders<br>
+        <% if (form.canSaveForAllUsers() && !form.isSaveInSession()) { %>
+            <input type="checkbox" id="ff_saveForAllUsers" name="ff_saveForAllUsers" value="true"<%=view != null && view.isShared() ? " checked" : ""%> onclick="updateViewNameDescription(this)">
+            <label for="ff_saveForAllUsers">Make this grid view available to all users</label><br>
+            <labkey:checkbox id="ff_inheritable" name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/>
+            <label for="ff_inheritable">Make this grid view available in child folders</label><br>
         <% } %>
     <% } %>
 
     <% if (form.hasFilterOrSort()) { %>
-        <input id="ff_saveFilterCbx" type="checkbox" name="ff_saveFilter" value="true"> Remember grid filters and sorts:<ul>
+        <input id="ff_saveFilterCbx" type="checkbox" name="ff_saveFilter" value="true">
+        <label for="ff_saveFilterCbx">Remember grid filters and sorts:</label>
+        <ul>
     <%
         List<String> filterColumns = form.getFilterColumnNamesFromURL();
         if (filterColumns.size() > 0)
@@ -305,8 +337,8 @@
         <input type="hidden" name="ff_saveFilter" value="true">
     <% } %>
     </p>
-    <labkey:button text="Save" onclick="needToPrompt = false" />
-    <% if (canEdit)
+    <labkey:button text="Save" href="javascript:void(0);" onclick="designer.needToPrompt = false; return onSave();" />
+    <% if (canEdit && !form.isSaveInSession())
     {
         if (view != null && ! view.isHidden())
         {
@@ -321,25 +353,17 @@
             String strButtonText;
             if (view.getName() == null)
             {
-                if (view.getOwner() == null)
-                {
-                    strButtonText = "Reset default view";
-                }
+                if (view.isShared())
+                    strButtonText = "Reset shared default view";
                 else
-                {
                     strButtonText = "Reset my default view";
-                }
             }
             else
             {
-                if (view.getOwner() == null)
-                {
-                    strButtonText = "Delete view '" + view.getName() + "'";
-                }
+                if (view.isShared())
+                    strButtonText = "Delete shared view '" + view.getName() + "'";
                 else
-                {
                     strButtonText = "Delete my view '" + view.getName() + "'";
-                }
             }
         %><labkey:button href="<%=urlDeleteView%>" text="<%=strButtonText%>"/><%
         }

@@ -41,8 +41,10 @@ public class CustomViewInfoImpl implements CustomViewInfo
 {
     protected static final String FILTER_PARAM_PREFIX = "filter";
     protected static final String CONTAINER_FILTER_NAME = "containerFilterName";
+
     protected final QueryManager _mgr = QueryManager.get();
     protected CstmView _cstmView;
+    protected boolean _inSession;
 
     public CustomViewInfoImpl(CstmView view)
     {
@@ -60,6 +62,11 @@ public class CustomViewInfoImpl implements CustomViewInfo
         if (userId == null)
             return null;
         return UserManager.getUser(userId.intValue());
+    }
+
+    public boolean isShared()
+    {
+        return null == _cstmView.getCustomViewOwner();
     }
 
     public User getCreatedBy()
@@ -144,6 +151,16 @@ public class CustomViewInfoImpl implements CustomViewInfo
     public boolean isEditable()
     {
         return true;
+    }
+
+    public boolean isSession()
+    {
+        return _inSession;
+    }
+
+    public void isSession(boolean b)
+    {
+        _inSession = b;
     }
 
     public String getSchemaName()

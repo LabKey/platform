@@ -1307,9 +1307,9 @@ public class ReportsController extends SpringActionController
                 CustomView customView = qf.getCustomView();
                 if (customView != null)
                 {
-                    if (customView.getOwner() == null)
+                    if (customView.isShared())
                     {
-                        if (!getViewContext().getContainer().hasPermission(getUser(), AdminPermission.class))
+                        if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
                             HttpView.throwUnauthorized();
                     }
                     customView.delete(getUser(), getViewContext().getRequest());

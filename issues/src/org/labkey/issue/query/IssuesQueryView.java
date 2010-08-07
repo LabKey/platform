@@ -100,7 +100,7 @@ public class IssuesQueryView extends QueryView
         URLHelper url = target.clone().deleteParameters();
         NavTree item = new NavTree("all", url);
         if (currentView == "")
-            item.setHighlighted(target.toString().equals(url.toString()));
+            item.setStrong(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
         url = target.clone().deleteParameters();
@@ -111,7 +111,7 @@ public class IssuesQueryView extends QueryView
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());        
         item = new NavTree("open", url);
         if (currentView == "")
-            item.setHighlighted(target.toString().equals(url.toString()));
+            item.setStrong(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
         url = target.clone().deleteParameters();
@@ -122,7 +122,7 @@ public class IssuesQueryView extends QueryView
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
         if (currentView == "")
-            item.setHighlighted(target.toString().equals(url.toString()));
+            item.setStrong(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
         if (!getUser().isGuest())
@@ -135,7 +135,7 @@ public class IssuesQueryView extends QueryView
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
             if (currentView == "")
-                item.setHighlighted(target.toString().equals(url.toString()));
+                item.setStrong(target.toString().equals(url.toString()));
             menu.addMenuItem(item);
         }
 
@@ -144,8 +144,8 @@ public class IssuesQueryView extends QueryView
         Collections.sort(views, new Comparator<CustomView>() {
             public int compare(CustomView o1, CustomView o2)
             {
-                if (o1.getOwner() != null && o2.getOwner() == null) return -1;
-                if (o1.getOwner() == null && o2.getOwner() != null) return 1;
+                if (!o1.isShared() && o2.isShared()) return -1;
+                if (o1.isShared() && !o2.isShared()) return 1;
                 if (o1.getName() == null) return -1;
                 if (o2.getName() == null) return 1;
 
@@ -176,9 +176,20 @@ public class IssuesQueryView extends QueryView
             item = new NavTree(label, target.clone().replaceParameter(param(QueryParam.viewName), label).getLocalURIString());
             item.setId("Views:" + label);
             if (label.equals(currentView))
-                item.setHighlighted(true);
+                item.setStrong(true);
 
-            if (view.getOwner() == null)
+            StringBuilder description = new StringBuilder();
+            if (view.isSession())
+            {
+                item.setEmphasis(true);
+                description.append("Unsaved ");
+            }
+            if (view.isShared())
+                description.append("Shared ");
+            if (description.length() > 0)
+                item.setDescription(description.toString());
+
+            if (view.isShared())
                 item.setImageSrc(getViewContext().getContextPath() + "/reports/grid_shared.gif");
             else
                 item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");

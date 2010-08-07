@@ -41,10 +41,15 @@ public class ChooseColumnsForm extends DesignForm
 
     private ActionURL _sourceURL = null;
     private boolean _allowSaveWithSameName = true;
+    private boolean _saveInSession;
 
     public BindException bindParameters(PropertyValues params)
     {
         BindException errors =  super.bindParameters(params);
+
+        // Logged in users may save to session, but Guest always saves to session.
+        if (getUser().isGuest())
+            _saveInSession = true;
 
         //NOTE we want querySettings to be based on srcURL parameters
         // get queryName, viewName and replace _initParameters
@@ -307,6 +312,16 @@ public class ChooseColumnsForm extends DesignForm
     public void setFf_saveFilter(boolean b)
     {
         ff_saveFilter = b;
+    }
+
+    public void setSaveInSession(boolean b)
+    {
+        _saveInSession = b;
+    }
+
+    public boolean isSaveInSession()
+    {
+        return _saveInSession;
     }
 
     public boolean canSaveForAllUsers()
