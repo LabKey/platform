@@ -135,7 +135,7 @@ public class SchemaTableInfo implements TableInfo
 
     public void setPkColumnNames(List<String> pkColumnNames)
     {
-        _pkColumnNames = pkColumnNames;
+        _pkColumnNames = Collections.unmodifiableList(pkColumnNames);
         _pkColumns = null;
     }
 
@@ -454,7 +454,7 @@ public class SchemaTableInfo implements TableInfo
             ResultSetUtil.close(rs);
         }
 
-        _pkColumnNames = new ArrayList<String>(pkMap.values());
+        setPkColumnNames(new ArrayList<String>(pkMap.values()));
     }
 
 
@@ -509,13 +509,7 @@ public class SchemaTableInfo implements TableInfo
             String pkColumnName = xmlTable.getPkColumnName();
             if (null != pkColumnName && pkColumnName.length() > 0)
             {
-                _pkColumnNames = Arrays.asList(pkColumnName.split(","));
-                //Make sure they are lower-cased.
-                //REMOVED:  Assume names in xml are correctly formed
-/*                for (int i = 0; i < _pkColumnNames.length; i++)
-                    if (Character.isUpperCase(_pkColumnNames[i].charAt(0)))
-                        _pkColumnNames[i] = Introspector.decapitalize(_pkColumnNames[i]);
-*/
+                setPkColumnNames(Arrays.asList(pkColumnName.split(",")));
             }
         }
         if (!merge)

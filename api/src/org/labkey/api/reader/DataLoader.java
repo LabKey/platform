@@ -33,7 +33,15 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Abstract class for loading columnar data from different sources: TSVs, Excel files, etc.
@@ -42,7 +50,7 @@ import java.util.*;
  * Date: Oct 22, 2008
  * Time: 11:26:37 AM
  */
-public abstract class DataLoader<T> implements Iterable<T>
+public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
 {
     private static final Logger _log = Logger.getLogger(DataLoader.class);
 
@@ -647,7 +655,7 @@ public abstract class DataLoader<T> implements Iterable<T>
                 }
                 else if (skipEmpty)
                 {
-                    return Collections.EMPTY_MAP;
+                    return Collections.emptyMap();
                 }
             }
             catch (Exception e)
@@ -673,5 +681,4 @@ public abstract class DataLoader<T> implements Iterable<T>
             throw new UnsupportedOperationException("'remove()' is not defined for TabLoaderIterator");
         }
     }
-
 }

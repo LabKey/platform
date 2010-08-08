@@ -16,54 +16,51 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.Loader;
 
-import java.util.*;
 import java.io.IOException;
-import java.io.File;
-import java.sql.Types;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
- * User: Matthew
- * Date: Jun 12, 2006
- * Time: 3:42:15 PM
+ * User: adam
+ * Date: Aug 6, 2010
  *
- *
- * NOTE: I would have put loadTempTable() on TabLoader, but it is
- * in the tools project.  That wouldn't work, so here's a subclass instead.
+ * Creates a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
+ * Excel files, and custom-built loaders.
  */
-public class TempTableLoader extends TabLoader
+public class NewTempTableLoader
 {
-    public TempTableLoader(File src) throws IOException
+    private final Loader<Map<String, Object>> _loader;
+
+    public NewTempTableLoader(Loader<Map<String, Object>> loader) throws IOException
     {
-        super(src);
+        _loader = loader;
     }
 
-    public TempTableLoader(File src, boolean hasColumnHeaders) throws IOException
-    {
-        super(src, hasColumnHeaders);
-    }
-
+    // TODO: Should use mapIterator() instead of load() to support larger files.  Need to infer varchar column widths
+    // via first n rows approach (and potentially check and ALTER if find a larger width later)
     public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
     {
         //
         // Load the file
         //
-
-        List<Map<String, Object>> maps = load();
-
+        List<Map<String, Object>> maps = _loader.load();
 
         //
         // create TableInfo
         //
-
         SqlDialect dialect = schema.getSqlDialect();
-        ArrayList<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+        List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
 
-        for (ColumnDescriptor col : getColumns())
+        for (ColumnDescriptor col : _loader.getColumns())
         {
             String sqlType = getSqlType(dialect, col.clazz);
             ColumnInfo colTT = new ColumnInfo(col.name);
@@ -151,7 +148,7 @@ public class TempTableLoader extends TabLoader
     /**
      * UNDONE: this should be more complete and move to a shared location
      * TODO: use a map
-     * @see ColumnInfo
+     * @see org.labkey.api.data.ColumnInfo
      */
     private String getSqlType(SqlDialect dialect, Class clazz)
     {

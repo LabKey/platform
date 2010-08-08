@@ -178,6 +178,7 @@ api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
 api/src/org/labkey/api/data/MultiValuedColumn.java -text
 api/src/org/labkey/api/data/MvUtil.java -text
+api/src/org/labkey/api/data/NewTempTableLoader.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
 api/src/org/labkey/api/data/Ownable.java -text
@@ -565,6 +566,7 @@ api/src/org/labkey/api/reader/BeanTabLoader.java -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
+api/src/org/labkey/api/reader/Loader.java -text
 api/src/org/labkey/api/reader/MapTabLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
 api/src/org/labkey/api/reader/TabLoader.java -text
@@ -2434,7 +2436,6 @@ internal/src/org/labkey/api/data/MultiResultSetMetaData.java -text
 internal/src/org/labkey/api/data/ResourceInputStream.java -text
 internal/src/org/labkey/api/data/ResultSetCollapser.java -text
 internal/src/org/labkey/api/data/SimpleInputColumn.java -text
-internal/src/org/labkey/api/data/TempTableLoader.java -text
 internal/src/org/labkey/api/data/TextAreaInputColumn.java -text
 internal/src/org/labkey/api/data/XMLWriter.java -text
 internal/src/org/labkey/api/data/XMLWriterTest.java -text

@@ -1525,7 +1525,7 @@ public class Table
                 col.setParentTable(this);
             columns.addAll(cols);
             if (pk != null)
-                _pkColumnNames = pk;
+                setPkColumnNames(pk);
             setTableType(TABLE_TYPE_TABLE);
         }
 
