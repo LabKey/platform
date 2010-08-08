@@ -21,26 +21,52 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NewTempTableLoader;
+import org.labkey.api.data.Table;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.Loader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.Formats;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.RateLimiter;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.ServletContextEvent;
-import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -1101,40 +1127,37 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected void indexPtids(final Set<Pair<String,String>> ptids) throws IOException, SQLException
     {
-        TempTableLoader ld = new TempTableLoader(null, false)
-        {
+        Loader<Map<String, Object>> loader = new Loader<Map<String, Object>>() {
             @Override
-            protected void initialize() throws IOException
+            public ColumnDescriptor[] getColumns() throws IOException
             {
-            }
-
-            @Override
-            protected void setSource(File inputFile) throws IOException
-            {
+                return new ColumnDescriptor[] {
+                    new ColumnDescriptor("Container", String.class),
+                    new ColumnDescriptor("ParticipantID", String.class)
+                };
             }
 
             @Override
             public List<Map<String, Object>> load() throws IOException
             {
-                RowMapFactory f = new RowMapFactory("Container", "ParticipantID");
+                RowMapFactory<Object> f = new RowMapFactory<Object>("Container", "ParticipantID");
                 ArrayList<Map<String, Object>> list = new ArrayList<Map<String, Object>>(ptids.size());
                 for (Pair<String,String> p : ptids)
                 {
-                    Map m = f.getRowMap(new Object[] {p.first, p.second});
+                    Map<String, Object> m = f.getRowMap(new Object[] {p.first, p.second});
                     list.add(m);
                 }
                 return list;
             }
         };
-        ld.setColumns(new ColumnDescriptor[] {
-            new ColumnDescriptor("Container", String.class),
-            new ColumnDescriptor("ParticipantID", String.class)
-        });
+
+        NewTempTableLoader ttl = new NewTempTableLoader(loader);
         DbSchema search = getSchema();
         Table.TempTableInfo tinfo = null;
+
         try
         {
-            tinfo = ld.loadTempTable(search);
+            tinfo = ttl.loadTempTable(search);
             Date now = new Date(System.currentTimeMillis());
             Table.execute(search,
                     "UPDATE search.ParticipantIndex SET LastIndexed=? " +

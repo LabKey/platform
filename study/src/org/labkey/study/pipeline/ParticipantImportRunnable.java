@@ -16,21 +16,22 @@
 
 package org.labkey.study.pipeline;
 
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.StudySchema;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TempTableLoader;
-import org.labkey.api.data.Table;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.NewTempTableLoader;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
-import java.sql.SQLException;
 
 public class ParticipantImportRunnable extends DatasetImportRunnable
 {
@@ -82,7 +83,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
     public void _run() throws IOException, SQLException
     {
-        TempTableLoader loader = new TempTableLoader(_tsv, true);
+        TabLoader loader = new TabLoader(_tsv, true);
         CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
         for (ColumnDescriptor c : loader.getColumns())
             columnMap.put(c.name, c);
@@ -96,7 +97,8 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
         StudySchema schema = StudySchema.getInstance();
 
-        Table.TempTableInfo tinfoTemp = loader.loadTempTable(schema.getSchema());
+        NewTempTableLoader ttl = new NewTempTableLoader(loader);
+        Table.TempTableInfo tinfoTemp = ttl.loadTempTable(schema.getSchema());
         TableInfo site = StudySchema.getInstance().getTableInfoSite();
         ColumnInfo siteLookup = site.getColumn(_siteLookup);
 

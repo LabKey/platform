@@ -887,7 +887,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // HACK reset colMap
             colMap = null;
 
-            _pkColumnNames = Arrays.asList("LSID");
+            setPkColumnNames(Arrays.asList("LSID"));
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
             _fromSql = new SQLFragment(

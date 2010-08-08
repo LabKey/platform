@@ -4316,8 +4316,8 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(LogForm logForm, BindException errors) throws Exception
         {
-            // Can use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
-            // \n to newlines to allow them at the beginning or end of the message.
+            // Could use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
+            // \n to newlines to allow them at the beginning or end of the message as well.
             String message = StringUtils.replace(logForm.getMessage(), "\\n", "\n");
 
             LOG.info(message);
