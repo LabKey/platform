@@ -36,17 +36,17 @@ import java.util.Map;
  * Creates a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
  * Excel files, and custom-built loaders.
  */
-public class NewTempTableLoader
+public class TempTableLoader
 {
     private final Loader<Map<String, Object>> _loader;
 
-    public NewTempTableLoader(Loader<Map<String, Object>> loader) throws IOException
+    public TempTableLoader(Loader<Map<String, Object>> loader) throws IOException
     {
         _loader = loader;
     }
 
-    // TODO: Should use mapIterator() instead of load() to support larger files.  Need to infer varchar column widths
-    // via first n rows approach (and potentially check and ALTER if find a larger width later)
+    // TODO: Should use iterator() or mapIterator() instead of load() to support larger files.  Would need to infer
+    // varchar column widths via first n rows approach (and potentially check and ALTER if find a larger width later)
     public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
     {
         //
@@ -81,7 +81,7 @@ public class NewTempTableLoader
         sql.append("CREATE TABLE ").append(tempTableName).append(" (");
         String comma = "";
 
-        for (int i=0 ; i<cols.size() ; i++)
+        for (int i = 0; i < cols.size(); i++)
         {
             ColumnInfo col = cols.get(i);
             sql.append(comma);
@@ -90,15 +90,18 @@ public class NewTempTableLoader
             if (col.getSqlTypeName().endsWith("VARCHAR")) // varchar or nvarchar
             {
                 int length = -1;
+
                 for (Map m : maps)
                 {
-                    RowMap map = (RowMap)m;
+                    RowMap map = (RowMap)m;    // TODO: Don't assume this is a row map
                     Object v = map.get(i);
                     if (v instanceof String)
                         length = Math.max(((String)v).length(), length);
                 }
+
                 if (length == -1)
                     length = 100;
+
                 sql.append(col.getSelectName()).append(" ").append(col.getSqlTypeName()).append("(").append(length).append(")");
             }
             else
@@ -106,6 +109,7 @@ public class NewTempTableLoader
                 sql.append(col.getSelectName()).append(" ").append(col.getSqlTypeName());
             }
         }
+
         sql.append(")");
 
 

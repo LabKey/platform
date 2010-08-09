@@ -178,7 +178,6 @@ api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
 api/src/org/labkey/api/data/MultiValuedColumn.java -text
 api/src/org/labkey/api/data/MvUtil.java -text
-api/src/org/labkey/api/data/NewTempTableLoader.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
 api/src/org/labkey/api/data/Ownable.java -text
@@ -206,6 +205,7 @@ api/src/org/labkey/api/data/TableInfo.java -text
 api/src/org/labkey/api/data/TableInfoGetter.java -text
 api/src/org/labkey/api/data/TableInfoWriter.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
+api/src/org/labkey/api/data/TempTableLoader.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TransactedBlock.java -text
