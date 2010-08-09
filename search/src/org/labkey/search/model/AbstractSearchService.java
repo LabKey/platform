@@ -25,7 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.NewTempTableLoader;
+import org.labkey.api.data.TempTableLoader;
 import org.labkey.api.data.Table;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.Loader;
@@ -1151,7 +1151,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         };
 
-        NewTempTableLoader ttl = new NewTempTableLoader(loader);
+        TempTableLoader ttl = new TempTableLoader(loader);
         DbSchema search = getSchema();
         Table.TempTableInfo tinfo = null;
 
