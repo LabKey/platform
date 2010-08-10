@@ -224,8 +224,15 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                 derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + wellgroup.getName() + "-" + ms);
                 int index = 0;
 
+                if (!Lsid.isLsid(derivedLsid.toString()))
+                {
+                    // See bug 10643.  If we somehow end up with an invalid LSID (because we didn't properly encode a character, etc.),
+                    // the call to setObjectId in the loop below will no-op, causing an infinite loop.
+                    throw new ExperimentException("Unable to generate valid LSID for derived sample: " + derivedLsid.toString());
+                }
+                String baseObjectId = derivedLsid.getObjectId();
                 while(ExperimentService.get().getExpMaterial(derivedLsid.toString()) != null)
-                    derivedLsid.setObjectId(derivedLsid.getObjectId() + "-" + ++index);
+                    derivedLsid.setObjectId(baseObjectId + "-" + ++index);
                 ExpMaterial derivedMaterial = ExperimentService.get().createExpMaterial(context.getContainer(), derivedLsid.toString(), wellgroup.getName());
                 derivedMaterial.setCpasType(sampleSet.getLSID());
                 Map<ExpMaterial, String> originalMaterialSet = Collections.singletonMap(originalMaterial, null);

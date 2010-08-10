@@ -80,11 +80,14 @@ public class PlateService
         /**
          * Creates a new plate template.
          * @param container The template's container.
+         * @param templateType The type of plate template, if associated with a particular assay.
+         * @param rowCount The number of columns in the plate.
+         * @param columnCount The number of rows in the plate.
          * @return A newly created plate template instance.
          * @throws SQLException Thrown in the event of a database failure.
          * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
          */
-        PlateTemplate createPlateTemplate(Container container, String templateType) throws SQLException;
+        PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount) throws SQLException;
 
         /**
          * Creates a new plate template.

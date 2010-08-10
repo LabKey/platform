@@ -634,6 +634,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (uploadedFiles != null)
                 result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
             result.add(new FileUploadDataCollector());
+            //result.add(new MultiFileUploadDataCollector());
         }
         return result;
     }

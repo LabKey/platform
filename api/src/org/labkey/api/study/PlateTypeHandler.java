@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.sql.SQLException;
@@ -36,7 +37,9 @@ public interface PlateTypeHandler
      * createPlate will be given a null value for templateTypeName when it is creating a new template which is a 
      * default for that assay type.
      */
-    public PlateTemplate createPlate(String templateTypeName, Container container) throws SQLException;
+    public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
+
+    public List<Pair<Integer, Integer>> getSupportedPlateSizes();
 
     public WellGroup.Type[] getWellGroupTypes();
 }

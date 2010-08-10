@@ -138,8 +138,25 @@ public class AssayFileWriter
         while (file.exists());
         return file;
     }
+
+    public static interface PostedFileSaveFilter
+    {
+        boolean saveFile(String parameterName);
+    }
+
+    public Map<String, File> savePostedFiles(AssayRunUploadContext context, final Set<String> parameterNames) throws ExperimentException, IOException
+    {
+        return savePostedFiles(context, new PostedFileSaveFilter()
+        {
+            @Override
+            public boolean saveFile(String parameterName)
+            {
+                return parameterNames.contains(parameterName);
+            }
+        });
+    }
     
-    public Map<String, File> savePostedFiles(AssayRunUploadContext context, Set<String> parameterNames) throws ExperimentException, IOException
+    public Map<String, File> savePostedFiles(AssayRunUploadContext context, PostedFileSaveFilter filter) throws ExperimentException, IOException
     {
         Map<String, File> files = new HashMap<String, File>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
@@ -150,7 +167,7 @@ public class AssayFileWriter
             while (iter.hasNext())
             {
                 Map.Entry<String, MultipartFile> entry = iter.next();
-                if (parameterNames == null || parameterNames.contains(entry.getKey()))
+                if (filter == null || filter.saveFile(entry.getKey()))
                 {
                     MultipartFile multipartFile = entry.getValue();
                     String fileName = multipartFile.getOriginalFilename();

@@ -162,6 +162,7 @@ public class PopupMenu extends DisplayElement
             if (tree == NavTree.MENU_SEPARATOR)
             {
                 sb.append("'-'");
+                sep = ",";
                 continue;
             }
 
