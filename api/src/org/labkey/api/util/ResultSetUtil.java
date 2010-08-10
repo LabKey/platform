@@ -23,6 +23,7 @@ import static org.apache.commons.collections15.IteratorUtils.toList;
 import org.apache.commons.collections15.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 
@@ -46,7 +47,7 @@ public class ResultSetUtil
     }
 
     
-    public static ResultSet close(ResultSet rs)
+    public static ResultSet close(@Nullable ResultSet rs)
     {
         if (null == rs)
             return null;

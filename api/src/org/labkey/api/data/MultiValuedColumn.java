@@ -70,8 +70,10 @@ public class MultiValuedColumn extends LookupColumn
         // First, get any lookup column joins so we have the correct alias
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         _lookupColumn.declareJoins("child", joins);
+
          // TODO: Hack?
         String valueColumnAlias = joins.isEmpty() ? valueColumnName : joins.keySet().iterator().next() + "." + _lookupColumn.getFieldKey().getName();
+        String keyColumnAlias = joins.isEmpty() ? keyColumnName : joins.keySet().iterator().next() + "." + _lookupKey.getFieldKey().getName();
 
         strJoin.append("\n\t(\n\t\t");
         strJoin.append("SELECT child.");

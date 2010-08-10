@@ -38,7 +38,8 @@ import java.util.*;
 
 public class RenderContext extends BoundMap // extends ViewContext
 {
-    static private final Logger _log = Logger.getLogger(RenderContext.class);
+    private static final Logger _log = Logger.getLogger(RenderContext.class);
+
     private boolean _useContainerFilter = true;
     private ViewContext _viewContext;
     private Errors _errors;
@@ -55,7 +56,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
     private String _viewName;
-    private Map<FieldKey,ColumnInfo> _fieldMap;
+    private Map<FieldKey, ColumnInfo> _fieldMap;
 
     public RenderContext(ViewContext context)
     {
@@ -158,25 +159,27 @@ public class RenderContext extends BoundMap // extends ViewContext
         setResultSet(rs, null);
     }
 
-    public void setResultSet(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap)
+    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = rs;
+
         if (fieldMap == null)
         {
             if (AppProps.getInstance().isDevMode())
                 _log.warn("Call to RenderContext.setResultSet() without a field map"); // , new Throwable());
-            _fieldMap = new LinkedHashMap<FieldKey,ColumnInfo>();
+            _fieldMap = new LinkedHashMap<FieldKey, ColumnInfo>();
+
             try
             {
                 if (null != rs)
                 {
                     ResultSetMetaData rsmd = rs.getMetaData();
-                    for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
+                    for (int i = 1; i <= rsmd.getColumnCount(); i++)
                     {
                         String name = rsmd.getColumnName(i);
                         ColumnInfo col = new ColumnInfo(name);
                         col.setAlias(name);
-                        _fieldMap.put(col.getFieldKey(),col);
+                        _fieldMap.put(col.getFieldKey(), col);
                     }
                 }
             }
@@ -244,18 +247,18 @@ public class RenderContext extends BoundMap // extends ViewContext
     }
 
     /** valid after call to getResultSet() */
-    public Map<FieldKey,ColumnInfo> getFieldMap()
+    public Map<FieldKey, ColumnInfo> getFieldMap()
     {
         return _fieldMap;
     }
 
-    public ResultSet getResultSet(Map<FieldKey,ColumnInfo> map, TableInfo tinfo, int maxRows, long offset, String name) throws SQLException, IOException
+    public ResultSet getResultSet(Map<FieldKey, ColumnInfo> map, TableInfo tinfo, int maxRows, long offset, String name) throws SQLException, IOException
     {
         return getResultSet(map, tinfo, maxRows, offset, name, false);
     }
 
 
-    public ResultSet getResultSet(Map<FieldKey,ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public ResultSet getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url = getViewContext().cloneActionURL();
 
@@ -274,7 +277,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     
     public ResultSet getResultSet(Collection<ColumnInfo> cols, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
-        LinkedHashMap<FieldKey,ColumnInfo> map = new LinkedHashMap<FieldKey, ColumnInfo>();
+        LinkedHashMap<FieldKey, ColumnInfo> map = new LinkedHashMap<FieldKey, ColumnInfo>();
         for (ColumnInfo c : cols)
             map.put(c.getFieldKey(), c);
         return getResultSet(map, tinfo, maxRows, offset, name, async);
@@ -305,13 +308,16 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         List<Aggregate> aggregates = new ArrayList<Aggregate>();
         Set<String> availableColNames = new HashSet<String>();
+
         for (ColumnInfo col : cols)
             availableColNames.add(col.getAlias());
+
         for (Aggregate aggregate : aggregatesIn)
         {
             if (aggregate.isCountStar() || availableColNames.contains(aggregate.getColumnName()))
                 aggregates.add(aggregate);
         }
+
         if (!aggregates.isEmpty())
         {
             if (async)
@@ -321,6 +327,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
             return Table.selectAggregatesForDisplay(tinfo, aggregates, cols, filter, getCache());
         }
+
         return Collections.emptyMap();
     }
 
@@ -341,6 +348,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         //this...
         ColumnInfo containerCol = tinfo.getColumn("container");
         Container c = getContainer();
+
         if (null != c && null != containerCol && isUseContainerFilter() && tinfo.needsContainerClauseAdded())
         {
             // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
@@ -358,6 +366,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     protected void buildSelectedFilter(SimpleFilter filter, TableInfo tinfo, boolean inverted)
     {
         List<String> selectorColumns = getRecordSelectorValueColumns();
+
         if (selectorColumns == null)
         {
             selectorColumns = tinfo.getPkColumnNames();
@@ -365,6 +374,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
         Set<String> selected = getAllSelected();
         SimpleFilter.FilterClause clause;
+
         if (selectorColumns.size() == 1 || selected.isEmpty())
         {
             clause = new SimpleFilter.InClause(selectorColumns.get(0), selected, true);
@@ -372,6 +382,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         else
         {
             SimpleFilter.OrClause or = new SimpleFilter.OrClause();
+
             for (String row : selected)
             {
                 SimpleFilter.AndClause and = new SimpleFilter.AndClause();
@@ -383,6 +394,7 @@ public class RenderContext extends BoundMap // extends ViewContext
                 }
                 or.addClause(and);
             }
+
             clause = or;
         }
 
@@ -390,6 +402,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         {
             clause = new SimpleFilter.NotClause(clause);
         }
+
         filter.addClause(clause);
     }
 
@@ -483,6 +496,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     public Set entrySet()
     {
         Set entrySet = super.entrySet();
+
         if (null != _row)
         {
             entrySet = new HashSet(entrySet);
@@ -499,6 +513,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     public Set keySet()
     {
         Set<String> keySet = super.keySet();
+
         if (null != _row)
         {
             keySet = new HashSet<String>(keySet);
@@ -600,11 +615,14 @@ public class RenderContext extends BoundMap // extends ViewContext
     {
         if (_ignoredColumnFilters.isEmpty())
             return Collections.emptySet();
+
         Set<FieldKey> ret = new LinkedHashSet<FieldKey>();
+
         for (String column : _ignoredColumnFilters)
         {
             ret.add(FieldKey.fromString(column));
         }
+
         return ret;
     }
 
@@ -657,6 +675,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         {
             return Collections.emptySet();
         }
+
         return _selected;
     }
 
