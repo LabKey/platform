@@ -16,26 +16,32 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.util.*;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.JspView;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.UrlProvider;
-import org.labkey.api.action.ReturnUrlForm;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.UrlProvider;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.HStringBuilder;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.validation.ObjectError;
-import org.springframework.validation.Errors;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.jsp.HttpJspPage;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.IdentityHashMap;
+import java.util.List;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -46,19 +52,11 @@ import java.util.*;
  * <p/>
  * Do not add a method called "filter" to this class.
  */
-abstract public class JspBase extends HttpServlet implements HttpJspPage, HasViewContext
+abstract public class JspBase extends JspContext implements HasViewContext
 {
     protected JspBase()
     {
-        assert MemTracker.put(this);
-    }
-
-    public void jspInit()
-    {
-    }
-
-    public void jspDestroy()
-    {
+        super();
     }
 
     ViewContext _viewContext;
@@ -71,11 +69,6 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
-    }
-
-    public Object getModelBean()
-    {
-        return HttpView.currentModel();
     }
 
     /**

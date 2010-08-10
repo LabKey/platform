@@ -21,6 +21,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
+@Deprecated  // TODO: redundant with JspBase.... ViewContext methods are redundant and others should be moved to JspBase
 abstract public class ContextPage extends JspBase
 {
     private ViewContext _context;

@@ -26,6 +26,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -59,14 +61,18 @@ public class TempTableLoader
         //
         SqlDialect dialect = schema.getSqlDialect();
         List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+        ColumnDescriptor[] colDescriptors = _loader.getColumns();
 
-        for (ColumnDescriptor col : _loader.getColumns())
+        for (ColumnDescriptor col : colDescriptors)
         {
-            String sqlType = getSqlType(dialect, col.clazz);
-            ColumnInfo colTT = new ColumnInfo(col.name);
-            colTT.setSqlTypeName(sqlType);
-            colTT.setNullable(true);
-            cols.add(colTT);
+            if (col.load)
+            {
+                String sqlType = getSqlType(dialect, col.clazz);
+                ColumnInfo colTT = new ColumnInfo(col.name);
+                colTT.setSqlTypeName(sqlType);
+                colTT.setNullable(true);
+                cols.add(colTT);
+            }
         }
 
         // note: this call sets col.parentTable()
@@ -141,7 +147,21 @@ public class TempTableLoader
 
         List<Collection<?>> paramList = new ArrayList<Collection<?>>(maps.size());
         for (Map<String, Object> m : maps)
-            paramList.add(m.values());
+        {
+            // Yuck!  If columns are marked for no-load, DataLoader still returns maps that include unloaded column values.
+            // TODO: Fix this in the loader and remove code below
+            Iterator iter = m.values().iterator();
+            Collection values = new LinkedList();
+
+            for (ColumnDescriptor col : colDescriptors)
+            {
+                Object value = iter.next();
+                if (col.load)
+                    values.add(value);
+            }
+
+            paramList.add(values);
+        }
 
         Table.batchExecute(schema, sqlInsert.toString(), paramList);
 

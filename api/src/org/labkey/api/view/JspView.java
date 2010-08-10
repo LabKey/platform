@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.jsp.JspLoader;
@@ -65,7 +66,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         this(page, null);
     }
 
-    public JspView(String page, ModelClass model)
+    public JspView(String page, @Nullable ModelClass model)
     {
         super(model);
         assert MemTracker.put(this);
