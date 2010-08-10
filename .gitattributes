@@ -1988,6 +1988,7 @@ study/gwtsrc/gwt/client/org/labkey/plate/designer/client/PlateDataServiceAsync.j
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/PlatePropertyPanel.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/PropertyCreationDialog.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/PropertyPanel.java -text
+study/gwtsrc/gwt/client/org/labkey/plate/designer/client/ShiftPanel.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/StatusBar.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/TemplateDesigner.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/TemplateGrid.java -text

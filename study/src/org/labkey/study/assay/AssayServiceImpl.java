@@ -49,6 +49,7 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -301,7 +302,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     assay.setProtocolId(protocol.getRowId());
 
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
-                    context.addSubstitution("AssayName", assay.getName());
+                    context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
                     Set<String> domainURIs = new HashSet<String>();
                     for (GWTDomain domain : assay.getDomains())
                     {

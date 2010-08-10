@@ -28,13 +28,27 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  */
 public class TemplateDesigner implements EntryPoint
 {
+    private int getIntProperty(String name, int defaultValue)
+    {
+        try
+        {
+            return Integer.parseInt(PropertyUtil.getServerProperty(name));
+        }
+        catch (NumberFormatException e)
+        {
+            return defaultValue;
+        }
+    }
+
     public void onModuleLoad()
     {
         RootPanel panel = StudyApplication.getRootPanel();
         String templateName = PropertyUtil.getServerProperty("templateName");
         String assayTypeName = PropertyUtil.getServerProperty("assayTypeName");
         String templateTypeName = PropertyUtil.getServerProperty("templateTypeName");
-        TemplateView view = new TemplateView(panel, templateName, assayTypeName, templateTypeName);
+        int rowCount = getIntProperty("templateRowCount", 8);
+        int colCount = getIntProperty("templateColumnCount", 12);
+        TemplateView view = new TemplateView(panel, templateName, assayTypeName, templateTypeName, rowCount, colCount);
         view.showAsync();
     }
 }

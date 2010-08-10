@@ -213,9 +213,9 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class DesignerAction extends SimpleViewAction<NameForm>
+    public class DesignerAction extends SimpleViewAction<DesignerForm>
     {
-        public ModelAndView getView(NameForm form, BindException errors) throws Exception
+        public ModelAndView getView(DesignerForm form, BindException errors) throws Exception
         {
             Map<String, String> properties = new HashMap<String, String>();
             if (form.getTemplateName() != null)
@@ -236,6 +236,9 @@ public class PlateController extends SpringActionController
             {
                 properties.put("templateTypeName", form.getTemplateType());
             }
+
+            properties.put("templateRowCount", "" + form.getRowCount());
+            properties.put("templateColumnCount", "" + form.getColCount());
 
             PlateTemplate[] templates = PlateService.get().getPlateTemplates(getContainer());
             for (int i = 0; i < templates.length; i++)
@@ -456,9 +459,6 @@ public class PlateController extends SpringActionController
     public static class NameForm
     {
         private String _templateName;
-        private String _assayType;
-        private String _templateType;
-        private boolean _copy;
 
         public String getTemplateName()
         {
@@ -469,6 +469,15 @@ public class PlateController extends SpringActionController
         {
             _templateName = templateName;
         }
+    }
+
+    public static class DesignerForm extends NameForm
+    {
+        private boolean _copy;
+        private String _assayType;
+        private String _templateType;
+        private int _rowCount;
+        private int _colCount;
 
         public String getAssayType()
         {
@@ -489,7 +498,6 @@ public class PlateController extends SpringActionController
         {
             _templateType = templateType;
         }
-
         public boolean isCopy()
         {
             return _copy;
@@ -498,6 +506,26 @@ public class PlateController extends SpringActionController
         public void setCopy(boolean copy)
         {
             _copy = copy;
+        }
+
+        public int getRowCount()
+        {
+            return _rowCount;
+        }
+
+        public void setRowCount(int rowCount)
+        {
+            _rowCount = rowCount;
+        }
+
+        public int getColCount()
+        {
+            return _colCount;
+        }
+
+        public void setColCount(int colCount)
+        {
+            _colCount = colCount;
         }
     }
 

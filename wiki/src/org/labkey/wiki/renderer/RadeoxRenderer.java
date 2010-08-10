@@ -194,6 +194,57 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
     }
 
+    private static class StylableMacro extends BaseMacro
+    {
+        private String _tagName;
+
+        public StylableMacro(String tagName)
+        {
+
+            _tagName = tagName;
+        }
+
+        @Override
+        public String getName()
+        {
+            return _tagName;
+        }
+
+        private final String[] PARAMS = new String[]
+                {
+                        "class: the CSS class that should be applied to this tag.",
+                        "style: the CSS style that should be applied to this tag."
+                };
+
+        public String[] getParamDescription()
+        {
+            return PARAMS;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Wraps content in a " + getName() + " tag with an optional CSS class and/or style specified.";
+        }
+
+        @Override
+        public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
+        {
+            String cssClass = macroParameter.get("class");
+            String cssStyle = macroParameter.get("style");
+            StringBuilder buf = new StringBuilder();
+            buf.append("<").append(_tagName);
+            if (cssClass != null)
+                buf.append(" class=\"").append(PageFlowUtil.filter(cssClass)).append("\"");
+            if (cssStyle != null)
+                buf.append(" style=\"").append(PageFlowUtil.filter(cssStyle)).append("\"");
+            buf.append(">");
+            buf.append(macroParameter.getContent());
+            buf.append("</").append(_tagName).append(">");
+            writer.write(buf.toString());
+        }
+    }
+
     private static class ImageMacro extends BaseMacro
     {
         public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
@@ -262,6 +313,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     {
         MacroRepository repository = MacroRepository.getInstance();
         repository.put("image", new ImageMacro());
+        repository.put("div", new StylableMacro("div"));
+        repository.put("span", new StylableMacro("span"));
         repository.put("labkey", new LabKeyMacro());
     }
 

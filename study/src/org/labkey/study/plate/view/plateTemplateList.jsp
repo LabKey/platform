@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
@@ -72,16 +74,30 @@
 %>
     <tr><td><br></td></tr>
     <% for (PlateTypeHandler handler : PlateManager.get().getPlateTypeHandlers())
-    { %>
-        <tr>
-            <td colspan="4"><%= textLink("new " + handler.getAssayType() + " template", "designer.view?assayType=" + handler.getAssayType())%></td>
-        </tr>
-        <%  for (String template : handler.getTemplateTypes())
-            {  %>
-        <tr>
-            <td colspan="4"><%= textLink("new " + handler.getAssayType() + " " + template + " template", "designer.view?assayType=" + handler.getAssayType() + "&templateType=" + template)%></td>
-        </tr>
-    <%      }
+    {
+        for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
+        {
+            int rows = size.getKey();
+            int cols = size.getValue();
+            int wellCount = rows * cols;
+            String sizeDesc = wellCount + " well (" + rows + "x" + cols + ") ";
+            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, context.getContainer());
+            designerURL.addParameter("rowCount", rows);
+            designerURL.addParameter("colCount", cols);
+            designerURL.addParameter("assayType", handler.getAssayType());
+        %>
+            <tr>
+                <td colspan="4"><%= textLink("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%></td>
+            </tr>
+            <%  for (String template : handler.getTemplateTypes())
+                {
+                    designerURL.replaceParameter("templateType", template);
+            %>
+            <tr>
+                <td colspan="4"><%= textLink("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%></td>
+            </tr>
+        <%      }
+        }
     }%>
 <%
     }

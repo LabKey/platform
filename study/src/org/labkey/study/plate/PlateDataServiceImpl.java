@@ -38,7 +38,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         super(context);
     }
 
-    public GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName) throws Exception
+    public GWTPlate getTemplateDefinition(String templateName, String assayTypeName, String templateTypeName, int rowCount, int columnCount) throws Exception
     {
         try
         {
@@ -50,7 +50,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 {
                     throw new Exception("Plate template type " + assayTypeName + " does not exist.");
                 }
-                template = handler.createPlate(templateTypeName, getContainer());
+                template = handler.createPlate(templateTypeName, getContainer(), rowCount, columnCount);
             }
             else  // If its already created, get PlateTemplate from database
             {
@@ -120,7 +120,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                     throw new Exception("A plate with name '" + gwtPlate.getName() + "' already exists.");
             }
 
-            template = PlateService.get().createPlateTemplate(getContainer(), gwtPlate.getType());
+            template = PlateService.get().createPlateTemplate(getContainer(), gwtPlate.getType(), gwtPlate.getRows(), gwtPlate.getCols());
             template.setName(gwtPlate.getName());
             for (Map.Entry<String, Object> entry : gwtPlate.getPlateProperties().entrySet())
                 template.setProperty(entry.getKey(), entry.getValue());

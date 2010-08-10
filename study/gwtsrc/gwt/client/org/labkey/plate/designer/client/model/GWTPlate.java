@@ -73,7 +73,7 @@ public class GWTPlate implements IsSerializable
         return _positionToGroups;
     }
 
-    public Map getTypeToGroupsMap()
+    public Map<String, List<GWTWellGroup>> getTypeToGroupsMap()
     {
         if (_typeToGroups == null)
         {
@@ -121,7 +121,7 @@ public class GWTPlate implements IsSerializable
         return _rows;
     }
 
-    public List getGroupTypes()
+    public List<String> getGroupTypes()
     {
         return _groupTypes;
     }

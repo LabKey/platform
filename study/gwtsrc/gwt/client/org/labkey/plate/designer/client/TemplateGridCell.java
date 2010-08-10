@@ -16,6 +16,7 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
+import com.google.gwt.event.dom.client.*;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
 
@@ -31,39 +32,43 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
  */
 public class TemplateGridCell extends FocusPanel
 {
-    private Set _groups;
+    private Set<GWTWellGroup> _groups;
     private String _activeType;
     private TemplateView _view;
     private GWTPosition _position;
 
-    public TemplateGridCell(TemplateView view, GWTPosition position, Set groups, String activeType)
+    public TemplateGridCell(TemplateView view, GWTPosition position, Set<GWTWellGroup> groups, String activeType)
     {
         _view = view;
         _position = position;
         _groups = groups;
         _activeType = activeType;
-        addMouseListener(new MouseListenerAdapter()
+        addMouseOverHandler(new MouseOverHandler()
         {
-            public void onMouseEnter(Widget sender)
+            public void onMouseOver(MouseOverEvent event)
             {
                 GWTWellGroup activeGroup = getActiveGroup();
                 if (activeGroup != null)
                     _view.setStatus("Well " + TemplateGrid.ALPHABET[_position.getRow()] + (_position.getCol() + 1) + ": " + activeGroup.getName());
                 setHighlight(true);
+                _view.onMouseOverCell((TemplateGridCell) event.getSource());
             }
+        });
 
-            public void onMouseLeave(Widget sender)
+        addMouseOutHandler(new MouseOutHandler()
+        {
+            public void onMouseOut(MouseOutEvent event)
             {
                 _view.setStatus("");
                 setHighlight(false);
             }
         });
 
-        addClickListener(new ClickListener()
+        addMouseDownHandler(new MouseDownHandler()
         {
-            public void onClick(Widget sender)
+            public void onMouseDown(MouseDownEvent event)
             {
-                _view.onClickCell((TemplateGridCell) sender);
+                _view.onMouseDownCell((TemplateGridCell) event.getSource());
             }
         });
 
@@ -97,10 +102,10 @@ public class TemplateGridCell extends FocusPanel
         DOM.setStyleAttribute(getElement(), "border", on ? "1px solid black" : "1px solid gray");
     }
 
-    private Set getGroups()
+    private Set<GWTWellGroup> getGroups()
     {
         if (_groups == null)
-            _groups = new HashSet();
+            _groups = new HashSet<GWTWellGroup>();
         return _groups;
     }
 
@@ -135,14 +140,13 @@ public class TemplateGridCell extends FocusPanel
         redraw();
     }
 
-    public List getWarnings()
+    public List<String> getWarnings()
     {
         boolean replicate = false;
         boolean specimen = false;
         boolean control = false;
-        for (Iterator it = getGroups().iterator(); it.hasNext();)
+        for (GWTWellGroup group : getGroups())
         {
-            GWTWellGroup group = (GWTWellGroup) it.next();
             if (group.getType().equals("SPECIMEN"))
                 specimen = true;
             else if (group.getType().equals("CONTROL"))
@@ -150,7 +154,7 @@ public class TemplateGridCell extends FocusPanel
             else if (group.getType().equals("REPLICATE"))
                 replicate = true;
         }
-        List warnings = null;
+        List<String> warnings = null;
         if (replicate && !(specimen || control))
             warnings = addWarning(warnings, "Well is a replicate, but is not part of a specimen or control group.");
         if (control && specimen)
@@ -158,19 +162,18 @@ public class TemplateGridCell extends FocusPanel
         return warnings;
     }
 
-    private List addWarning(List warnings, String warning)
+    private List<String> addWarning(List<String> warnings, String warning)
     {
         if (warnings == null)
-            warnings = new ArrayList();
+            warnings = new ArrayList<String>();
         warnings.add(warning);
         return warnings;
     }
 
     public GWTWellGroup getActiveGroup()
     {
-        for (Iterator it = getGroups().iterator(); it.hasNext();)
+        for (GWTWellGroup group : getGroups())
         {
-            GWTWellGroup group = (GWTWellGroup) it.next();
             if (group.getType().equals(_activeType))
                 return group;
         }

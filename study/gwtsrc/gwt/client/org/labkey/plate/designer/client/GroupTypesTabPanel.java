@@ -16,13 +16,21 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
+import com.google.gwt.event.dom.client.MouseDownEvent;
+import com.google.gwt.event.dom.client.MouseDownHandler;
+import com.google.gwt.event.dom.client.MouseMoveEvent;
+import com.google.gwt.event.dom.client.MouseMoveHandler;
+import com.google.gwt.event.dom.client.MouseUpEvent;
+import com.google.gwt.event.dom.client.MouseUpHandler;
+import com.google.gwt.user.client.ui.FocusPanel;
+import com.google.gwt.user.client.ui.HasHorizontalAlignment;
+import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.TabPanel;
 import com.google.gwt.user.client.ui.TabListener;
 import com.google.gwt.user.client.ui.SourcesTabEvents;
 import com.google.gwt.user.client.ui.Grid;
 
 import java.util.List;
-import java.util.Iterator;
 
 /**
  * User: brittp
@@ -32,7 +40,7 @@ import java.util.Iterator;
 public class GroupTypesTabPanel extends TabPanel
 {
     private TemplateView _view;
-    private List _types;
+    private List<String> _types;
     private int _gridTab = -1;
 
     public GroupTypesTabPanel(TemplateView view)
@@ -40,11 +48,16 @@ public class GroupTypesTabPanel extends TabPanel
         setHeight("100%");
         _view = view;
         _types = view.getPlate().getGroupTypes();
-        for (Iterator it = _types.iterator(); it.hasNext(); )
+        for (String type : _types)
         {
-            String type = (String) it.next();
             Grid tabPanelGrid = new Grid(2, 1);
-            tabPanelGrid.setWidget(1, 0, new GroupTypePanel(view, type));
+            HorizontalPanel lowerPane = new HorizontalPanel();
+            lowerPane.setWidth("100%");
+            lowerPane.add(new GroupTypePanel(view, type));
+            ShiftPanel shifter = new ShiftPanel(view);
+            lowerPane.add(shifter);
+            lowerPane.setCellHorizontalAlignment(shifter, HasHorizontalAlignment.ALIGN_RIGHT);
+            tabPanelGrid.setWidget(1, 0, lowerPane);
             add(tabPanelGrid, type);
         }
         selectTab(0);
@@ -77,7 +90,34 @@ public class GroupTypesTabPanel extends TabPanel
             prevPanel.remove(_view.getGrid());
         }
         Grid currentPanel = (Grid) getDeckPanel().getWidget(selectedTab);
-        currentPanel.setWidget(0, 0, _view.getGrid());
+
+        TemplateGrid wellGrid = _view.getGrid();
+        // Use a focus panel to prevent mouse events within the grid from being propagated to the browser.
+        // This is necessary to enable click and drag functionality that doesn't perform browser-provided text selection.
+        FocusPanel focusPanel = new FocusPanel(wellGrid);
+        focusPanel.addMouseDownHandler(new MouseDownHandler()
+        {
+            public void onMouseDown(MouseDownEvent event)
+            {
+                event.preventDefault();
+            }
+        });
+        focusPanel.addMouseUpHandler(new MouseUpHandler()
+        {
+            public void onMouseUp(MouseUpEvent event)
+            {
+                event.preventDefault();
+            }
+        });
+        focusPanel.addMouseMoveHandler(new MouseMoveHandler()
+        {
+            public void onMouseMove(MouseMoveEvent event)
+            {
+                event.preventDefault();
+            }
+        });
+        
+        currentPanel.setWidget(0, 0, focusPanel);
         _gridTab = selectedTab;
     }
 

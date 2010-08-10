@@ -34,7 +34,7 @@ public abstract class PropertyPanel extends DockPanel
 {
     private TemplateView _view;
     private FlexTable _propertyTable;
-    private Map _propertyTextBoxes;
+    private Map<String, Object> _propertyTextBoxes;
 
     private ChangeListener _changeListener = new ChangeListener()
     {
@@ -94,21 +94,17 @@ public abstract class PropertyPanel extends DockPanel
     public void redraw(String message)
     {
         _propertyTable.clear();
-        _propertyTextBoxes = new HashMap();
+        _propertyTextBoxes = new HashMap<String, Object>();
         _propertyTable.setWidget(0, 0, new Label(message));
         addNewPropertyButton(1);
         _addPropertyButton.setEnabled(false);
     }
 
-    public Map getProperties()
+    public Map<String, Object> getProperties()
     {
-        Map result = new HashMap();
-        Iterator i = _propertyTextBoxes.keySet().iterator();
-        while (i.hasNext())
-        {
-            String name = (String)i.next();
-            result.put(name, ((TextBox)_propertyTextBoxes.get(name)).getText());
-        }
+        Map<String, Object> result = new HashMap<String, Object>();
+        for (String name : _propertyTextBoxes.keySet())
+            result.put(name, ((TextBox) _propertyTextBoxes.get(name)).getText());
         return result;
     }
 
@@ -119,7 +115,7 @@ public abstract class PropertyPanel extends DockPanel
         {
             _propertyTable.removeRow(0);
         }
-        _propertyTextBoxes = new HashMap();
+        _propertyTextBoxes = new HashMap<String, Object>();
         int row = 0;
         if (properties != null)
         {

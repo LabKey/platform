@@ -31,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.*;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
@@ -60,9 +61,9 @@ public class PlateManager implements PlateService.Service
     {
         registerPlateTypeHandler(new PlateTypeHandler()
         {
-            public PlateTemplate createPlate(String templateTypeName, Container container) throws SQLException
+            public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException
             {
-                return PlateService.get().createPlateTemplate(container, getAssayType());
+                return PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
             }
 
             public String getAssayType()
@@ -73,6 +74,12 @@ public class PlateManager implements PlateService.Service
             public List<String> getTemplateTypes()
             {
                 return new ArrayList<String>();
+            }
+
+            @Override
+            public List<Pair<Integer, Integer>> getSupportedPlateSizes()
+            {
+                return Collections.singletonList(new Pair<Integer, Integer>(8, 12));
             }
 
             public WellGroup.Type[] getWellGroupTypes()
@@ -130,13 +137,13 @@ public class PlateManager implements PlateService.Service
         return templates;
     }
 
-    public PlateTemplate createPlateTemplate(Container container, String templateType) throws SQLException
+    public PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int colCount) throws SQLException
     {
         synchronized (TEMPLATE_NAME_SYNC_OBJ)
         {
             _distinctTemplateNames = null;
         }
-        return new PlateTemplateImpl(container, null, templateType);
+        return new PlateTemplateImpl(container, null, templateType, rowCount, colCount);
     }
 
     public PlateImpl getPlate(Container container, int rowid) throws SQLException
@@ -689,7 +696,7 @@ public class PlateManager implements PlateService.Service
         PlateTemplate destination = PlateService.get().getPlateTemplate(destContainer, source.getName());
         if (destination != null)
             throw new PlateService.NameConflictException(source.getName());
-        destination = PlateService.get().createPlateTemplate(destContainer, source.getType());
+        destination = PlateService.get().createPlateTemplate(destContainer, source.getType(), source.getRows(), source.getColumns());
         destination.setName(source.getName());
         for (String property : source.getPropertyNames())
             destination.setProperty(property, source.getProperty(property));

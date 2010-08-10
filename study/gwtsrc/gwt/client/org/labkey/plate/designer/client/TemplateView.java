@@ -16,8 +16,13 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
+import com.google.gwt.event.dom.client.MouseDownEvent;
+import com.google.gwt.event.dom.client.MouseDownHandler;
+import com.google.gwt.event.dom.client.MouseUpEvent;
+import com.google.gwt.event.dom.client.MouseUpHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowResizeListener;
 import com.google.gwt.user.client.WindowCloseListener;
@@ -42,33 +47,56 @@ public class TemplateView extends HorizontalPanel
     private RootPanel _rootPanel;
     private String _templateName;
     private TemplateGrid _grid;
-    private List _groupListeners = new ArrayList();
+    private List<GroupChangeListener> _groupListeners = new ArrayList<GroupChangeListener>();
     private GWTWellGroup _activeGroup;
     private StatusBar _statusBar;
     private GWTPlate _plate;
     private GroupTypesTabPanel _typePanel;
     private ColorGenerator _colorGenerator = new ColorGenerator();
-    private Map _groupToColorMap = new HashMap();
+    private Map<GWTWellGroup, String> _groupToColorMap = new HashMap<GWTWellGroup, String>();
     private PlateDataServiceAsync _testService;
     private boolean _dirty = false;
-    private Set _existingTemplateNames;
+    private Set<String> _existingTemplateNames;
     private String _originalTemplateName;
     private TextBox _nameBox;
     private boolean _copyMode;
-    private Map _cellWarnings = new HashMap();
+    private Map<String, List<String>> _cellWarnings = new HashMap<String, List<String>>();
     private TabPanel _propertyTabPanel;
     private WarningPanel _warningPanel;
     private WellGroupPropertyPanel _wellGroupPropertyPanel;
     private PlatePropertyPanel _platePropertyPanel;
     private String _assayTypeName;
     private String _templateTypeName;
+    private int _rowCount;
+    private int _columnCount;
+    private boolean _mouseDown = false;
+    private TemplateGridCell _selectionStartCell;
+    private TemplateGridCell _prevSelectionEndCell;
+    private boolean _setSelected;
+    private GWTWellGroup[][] _assignmentShapshot;
+    private final List<TemplateGridCell> _updatedCellList = new ArrayList<TemplateGridCell>();
+    private Timer _warningUpdateTimer = new Timer()
+    {
+        @Override
+        public void run()
+        {
+            synchronized (_updatedCellList)
+            {
+                if (!_updatedCellList.isEmpty())
+                    refreshWarnings(_updatedCellList);
+                _updatedCellList.clear();
+            }
+        }
+    };
 
-    public TemplateView(RootPanel rootPanel, String plateName, String plateTypeName, String templateName)
+    public TemplateView(RootPanel rootPanel, String plateName, String plateTypeName, String templateName, int rowCount, int columnCount)
     {
         _rootPanel = rootPanel;
         _templateName = plateName;
         _assayTypeName = plateTypeName;
         _templateTypeName = templateName;
+        _rowCount = rowCount;
+        _columnCount = columnCount;
         _copyMode = Boolean.valueOf(PropertyUtil.getServerProperty("copyTemplate")).booleanValue();
     }
 
@@ -76,7 +104,7 @@ public class TemplateView extends HorizontalPanel
     {
         _rootPanel.clear();
         _rootPanel.add(new Label("Loading..."));
-        getService().getTemplateDefinition(_templateName, _assayTypeName, _templateTypeName, new AsyncCallback<GWTPlate>()
+        getService().getTemplateDefinition(_templateName, _assayTypeName, _templateTypeName, _rowCount, _columnCount, new AsyncCallback<GWTPlate>()
         {
             public void onFailure(Throwable throwable)
             {
@@ -172,7 +200,25 @@ public class TemplateView extends HorizontalPanel
         _grid = new TemplateGrid(this, (String) groupTypes.get(0));
         _typePanel = new GroupTypesTabPanel(this);
         HorizontalPanel hpanel = new HorizontalPanel();
-        hpanel.add(_typePanel);
+
+        // Wrap the tabPanel in a focuspanel so we can track mouse events:
+        FocusPanel focusPanel = new FocusPanel(_typePanel);
+        focusPanel.addMouseDownHandler(new MouseDownHandler()
+        {
+            public void onMouseDown(MouseDownEvent event)
+            {
+                _mouseDown = true;
+            }
+        });
+        focusPanel.addMouseUpHandler(new MouseUpHandler()
+        {
+            public void onMouseUp(MouseUpEvent event)
+            {
+                _mouseDown = false;
+            }
+        });
+
+        hpanel.add(focusPanel);
         mainPanel.add(hpanel);
         mainPanel.setCellHeight(hpanel, "100%");
 
@@ -234,7 +280,7 @@ public class TemplateView extends HorizontalPanel
         if (_existingTemplateNames == null)
         {
             String current;
-            _existingTemplateNames = new HashSet();
+            _existingTemplateNames = new HashSet<String>();
             int idx = 0;
             do
             {
@@ -280,7 +326,7 @@ public class TemplateView extends HorizontalPanel
             _activeGroup.setProperties(_wellGroupPropertyPanel.getProperties());
         }
         setStatus("Saving...");
-        getService().saveChanges(_plate,  !_copyMode, new AsyncCallback()
+        getService().saveChanges(_plate, !_copyMode, new AsyncCallback()
         {
             public void onFailure(Throwable throwable)
             {
@@ -304,16 +350,41 @@ public class TemplateView extends HorizontalPanel
         _statusBar.setStatus(status);
     }
 
-    public void onMouseEnterCell(TemplateGridCell cell)
+    public void onMouseOverCell(TemplateGridCell cell)
     {
+        if (_mouseDown)
+        {
+            setStatus("Selection: " + _selectionStartCell + " to " + cell);
+            // we appear to be doing a drag operation to select multiple cells- snapshot the well group assignments
+            // now, so we can revert wells as the user drags around:
+            if (_assignmentShapshot == null)
+                _assignmentShapshot = snapshotWellAssignments();
+            updateSelection(_selectionStartCell, cell, _prevSelectionEndCell, _setSelected);
+            _prevSelectionEndCell = cell;
+        }
+        else
+        {
+            _selectionStartCell = null;
+            _prevSelectionEndCell = null;
+            _assignmentShapshot = null;
+        }
     }
 
-    public void onMouseLeaveCell(TemplateGridCell cell)
+    private GWTWellGroup[][] snapshotWellAssignments()
     {
+        GWTWellGroup[][] assignments = new GWTWellGroup[_grid.getTemplateGridRowCount()][_grid.getTemplateGridColumnCount()];
+        for (int row = 0; row < assignments.length; row++)
+        {
+            for (int col = 0; col < assignments[row].length; col++)
+                assignments[row][col] = _grid.getTemplateGridCell(new GWTPosition(row, col)).getActiveGroup();
+        }
+        return assignments;
     }
 
-    public void onClickCell(TemplateGridCell cell)
+    public void onMouseDownCell(TemplateGridCell cell)
     {
+        _selectionStartCell = cell;
+        _setSelected = (cell.getActiveGroup() != _activeGroup);
         if (_activeGroup != null)
         {
             if (cell.getActiveGroup() == _activeGroup)
@@ -321,19 +392,76 @@ public class TemplateView extends HorizontalPanel
             else
                 cell.replaceActiveGroup(_activeGroup);
             setDirty(true);
-            List cellList = new ArrayList();
+            List<TemplateGridCell> cellList = new ArrayList<TemplateGridCell>();
             cellList.add(cell);
             refreshWarnings(cellList);
         }
     }
 
-    private void refreshWarnings(List modifiedCells)
+    public void refreshWarningsAsync()
+    {
+        refreshWarningsAsync(_grid.getAllCells());    
+    }
+
+    public void refreshWarningsAsync(List<TemplateGridCell> updatedCellList)
+    {
+        synchronized (_updatedCellList)
+        {
+            _updatedCellList.clear();
+            _updatedCellList.addAll(updatedCellList);
+            _warningUpdateTimer.cancel();
+            _warningUpdateTimer.schedule(1000);
+        }
+    }
+
+    private void updateSelection(TemplateGridCell startCell, TemplateGridCell endCell, TemplateGridCell prevEndCell, boolean setSelected)
+    {
+        // First, set the selection state of all cells in the current selection range:
+        int startCol = Math.min(startCell.getPosition().getCol(), endCell.getPosition().getCol());
+        int endCol = Math.max(startCell.getPosition().getCol(), endCell.getPosition().getCol());
+        List<TemplateGridCell> cellList = new ArrayList<TemplateGridCell>();
+        for (int col = startCol; col <= endCol; col++)
+        {
+            int startRow = Math.min(startCell.getPosition().getRow(), endCell.getPosition().getRow());
+            int endRow = Math.max(startCell.getPosition().getRow(), endCell.getPosition().getRow());
+            for (int row = startRow; row <= endRow; row++)
+            {
+                TemplateGridCell cell = this.getGrid().getTemplateGridCell(new GWTPosition(row, col));
+                if (setSelected)
+                    cell.replaceActiveGroup(_activeGroup);
+                else
+                    cell.replaceActiveGroup(null);
+                cellList.add(cell);
+            }
+        }
+        refreshWarningsAsync(cellList);
+
+        // Second, de-select any cells that were previously selected in this same drag but which are no longer
+        // selected.  (This can happen if the user drags a few columns/rows in one direction, overshoots, and backs
+        // off one column/row.)  We know that the user has backed off if (and only if) the previous selection end is
+        // no longer inside the rectangle defined by the current selection.
+        if (prevEndCell != null && !prevEndCell.getPosition().inside(startCell.getPosition(), endCell.getPosition()))
+        {
+            for (int row = 0; row < _grid.getTemplateGridRowCount(); row++)
+            {
+                for (int col = 0; col < _grid.getTemplateGridColumnCount(); col++)
+                {
+                    GWTPosition pos = new GWTPosition(row, col);
+                    // Any cells that were previously included in the selection range but which are now excluded need to be
+                    // reset to their original state:
+                    if (pos.inside(startCell.getPosition(), prevEndCell.getPosition()) && !pos.inside(startCell.getPosition(), endCell.getPosition()))
+                        _grid.getTemplateGridCell(pos).replaceActiveGroup(_assignmentShapshot[row][col]);
+                }
+            }
+        }
+    }
+
+    private void refreshWarnings(List<TemplateGridCell> modifiedCells)
     {
         boolean warningsChanged = false;
-        for (Iterator cellIt = modifiedCells.iterator(); cellIt.hasNext(); )
+        for (TemplateGridCell cell : modifiedCells)
         {
-            TemplateGridCell cell = (TemplateGridCell) cellIt.next();
-            List warnings = cell.getWarnings();
+            List<String> warnings = cell.getWarnings();
             String key = cell.toString();
             if (warnings == null)
             {
@@ -370,37 +498,37 @@ public class TemplateView extends HorizontalPanel
     {
         setDirty(true);
         _plate.removeGroup(group);
-        List listenersCopy = new ArrayList(_groupListeners);
-        for (Iterator it = listenersCopy.iterator(); it.hasNext();)
-            ((GroupChangeListener) it.next()).groupRemoved(group);
+        List<GroupChangeListener> listenersCopy = new ArrayList<GroupChangeListener>(_groupListeners);
+        for (GroupChangeListener listener : listenersCopy)
+            listener.groupRemoved(group);
         _groupToColorMap.remove(group);
         setActiveGroup(null);
-        List cells = new ArrayList();
-        for (Iterator positionIt = group.getPositions().iterator(); positionIt.hasNext(); )
-            cells.add(_grid.getTemplateGridCell((GWTPosition) positionIt.next()));
+        List<TemplateGridCell> cells = new ArrayList<TemplateGridCell>();
+        for (GWTPosition position : group.getPositions())
+            cells.add(_grid.getTemplateGridCell(position));
         refreshWarnings(cells);
     }
 
     public void createWellGroup(String groupName, String type)
     {
         setDirty(true);
-        Map properties = getPropertiesForType(type);
+        Map<String, Object> properties = getPropertiesForType(type);
         properties.put("Type", type);
         properties.put("Name", groupName);
-        GWTWellGroup group = new GWTWellGroup(type, groupName, new ArrayList(), properties);
+        GWTWellGroup group = new GWTWellGroup(type, groupName, new ArrayList<GWTPosition>(), properties);
         _plate.addGroup(group);
-        List listenersCopy = new ArrayList(_groupListeners);
-        for (Iterator it = listenersCopy.iterator(); it.hasNext();)
-            ((GroupChangeListener) it.next()).groupAdded(group);
+        List<GroupChangeListener> listenersCopy = new ArrayList<GroupChangeListener>(_groupListeners);
+        for (GroupChangeListener listener : listenersCopy)
+            listener.groupAdded(group);
         setActiveGroup(group);
     }
 
     public void setActiveType(String activeType)
     {
         setActiveGroup(null);
-        List listenersCopy = new ArrayList(_groupListeners);
-        for (Iterator it = listenersCopy.iterator(); it.hasNext();)
-            ((GroupChangeListener) it.next()).activeGroupTypeChanged(activeType);
+        List<GroupChangeListener> listenersCopy = new ArrayList<GroupChangeListener>(_groupListeners);
+        for (GroupChangeListener listener : listenersCopy)
+            listener.activeGroupTypeChanged(activeType);
     }
 
     public void addGroupListener(GroupChangeListener listener)
@@ -417,9 +545,9 @@ public class TemplateView extends HorizontalPanel
     {
         GWTWellGroup previous = _activeGroup;
         _activeGroup = group;
-        List listenersCopy = new ArrayList(_groupListeners);
-        for (Iterator it = listenersCopy.iterator(); it.hasNext();)
-            ((GroupChangeListener) it.next()).activeGroupChanged(previous, group);
+        List<GroupChangeListener> listenersCopy = new ArrayList<GroupChangeListener>(_groupListeners);
+        for (GroupChangeListener listener : listenersCopy)
+            listener.activeGroupChanged(previous, group);
     }
 
     public GWTPlate getPlate()
@@ -429,7 +557,7 @@ public class TemplateView extends HorizontalPanel
 
     public String getColor(GWTWellGroup group)
     {
-        String color = (String) _groupToColorMap.get(group);
+        String color = _groupToColorMap.get(group);
         if (color == null)
         {
             color = _colorGenerator.next();
@@ -438,13 +566,13 @@ public class TemplateView extends HorizontalPanel
         return color;
     }
 
-    private Map getPropertiesForType(String type)
+    private Map<String, Object> getPropertiesForType(String type)
     {
-        List groups = (List) _plate.getTypeToGroupsMap().get(type);
+        List<GWTWellGroup> groups = _plate.getTypeToGroupsMap().get(type);
         if (groups != null && groups.size() > 0)
-            return ((GWTWellGroup) groups.get(0)).getProperties();
+            return groups.get(0).getProperties();
         else
-            return new HashMap();
+            return new HashMap<String, Object>();
     }
     
     public TemplateGrid getGrid()

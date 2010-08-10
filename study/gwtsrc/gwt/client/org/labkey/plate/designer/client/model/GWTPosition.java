@@ -65,4 +65,23 @@ public class GWTPosition implements IsSerializable
         result = 31 * result + _col;
         return result;
     }
+
+    /**
+     * Returns a boolean indicating whether this position is inside the grid defined by the two parameter positions.
+     * Containment is inclusive of the rows/columns occupied by the positions themselves.
+     * @param first The upper-left or lower-right position of the containment grid.
+     * @param second The upper-left or lower-right position of the containment grid.
+     * @return Boolean indicating whether this point is inside the grid defined by the two parameter positions.
+     */
+    public boolean inside(GWTPosition first, GWTPosition second)
+    {
+        GWTPosition upperLeft = new GWTPosition(Math.min(first.getRow(), second.getRow()),
+                                                Math.min(first.getCol(), second.getCol()));
+        GWTPosition lowerRight = new GWTPosition(Math.max(first.getRow(), second.getRow()),
+                                                Math.max(first.getCol(), second.getCol()));
+        return upperLeft.getRow() <= getRow() &&
+                lowerRight.getRow() >= getRow() &&
+                upperLeft.getCol() <= getCol() &&
+                lowerRight.getCol() >= getCol();
+    }
 }
