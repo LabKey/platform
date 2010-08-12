@@ -244,12 +244,13 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                 while (true)
                 {
                     end = buf.indexOf(_strQuote, end + 1);
+
                     if (end == -1)
                     {
                         // XXX: limit number of lines we read
                         String nextLine = readLine(r, false);
                         if (nextLine == null)
-                            throw new IllegalArgumentException("CSV can't parse line: " + buf);
+                            throw new IllegalArgumentException("Can't parse line: " + buf);
                         end = buf.length();
                         buf.append('\n');
                         buf.append(nextLine);
@@ -291,6 +292,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                 if (end == -1)
                     end = buf.length();
 
+                // Grab and parse the field only if we're going to load it
                 if (loadThisColumn)
                 {
                     field = buf.substring(start, end);
@@ -298,7 +300,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                 }
             }
 
-            // Add the field value only if we're inferring columns or column.load == true.
+            // Add the field value only if we're inferring columns or column.load == true
             if (loadThisColumn)
                 listParse.add(field);
 
