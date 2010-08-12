@@ -220,7 +220,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         while (start < buf.length())
         {
-            boolean loadThisColumn = (null == columnIter || columnIter.next().load);
+            boolean loadThisColumn = (null == columnIter || (columnIter.hasNext() && columnIter.next().load));
             int end;
             char ch = buf.charAt(start);
 

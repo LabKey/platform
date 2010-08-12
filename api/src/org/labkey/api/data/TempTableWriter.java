@@ -30,10 +30,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * User: adam
- * Date: Aug 6, 2010
+ * User: Matthew
+ * Date: Jun 12, 2006
+ * Time: 3:42:15 PM
  *
- * Writes a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
+ * Creates a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
  * Excel files, and custom-built loaders.
  */
 public class TempTableWriter
@@ -45,8 +46,8 @@ public class TempTableWriter
         _loader = loader;
     }
 
-    // TODO: Should use iterator() or mapIterator() instead of load() to support larger files.  Would need to infer
-    // varchar column widths via first n rows approach (and potentially check and ALTER if find a larger width later)
+    // TODO: Use iterator() instead of load() to support larger files.  Would need to infer varchar column widths via
+    // first n rows approach (and potentially check and ALTER if we find a larger width later)
     public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
     {
         //
@@ -58,10 +59,10 @@ public class TempTableWriter
         // create TableInfo
         //
         SqlDialect dialect = schema.getSqlDialect();
-        List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
-        ColumnDescriptor[] colDescriptors = _loader.getColumns();
+        ColumnDescriptor[] allColumns = _loader.getColumns();
+        List<ColumnInfo> activeColumns = new ArrayList<ColumnInfo>();
 
-        for (ColumnDescriptor col : colDescriptors)
+        for (ColumnDescriptor col : allColumns)
         {
             if (col.load)
             {
@@ -69,25 +70,24 @@ public class TempTableWriter
                 ColumnInfo colTT = new ColumnInfo(col.name);
                 colTT.setSqlTypeName(sqlType);
                 colTT.setNullable(true);
-                cols.add(colTT);
+                activeColumns.add(colTT);
             }
         }
 
         // note: this call sets col.parentTable()
-        Table.TempTableInfo tinfoTempTable = new Table.TempTableInfo(schema, "tsv", cols, null);
+        Table.TempTableInfo tinfoTempTable = new Table.TempTableInfo(schema, "ttw", activeColumns, null);
         String tempTableName = tinfoTempTable.getTempTableName();
 
         //
         // create table
         //
-
         StringBuilder sql = new StringBuilder();
         sql.append("CREATE TABLE ").append(tempTableName).append(" (");
         String comma = "";
 
-        for (int i = 0; i < cols.size(); i++)
+        for (int i = 0; i < activeColumns.size(); i++)
         {
-            ColumnInfo col = cols.get(i);
+            ColumnInfo col = activeColumns.get(i);
             sql.append(comma);
             comma = ", ";
 
@@ -116,29 +116,28 @@ public class TempTableWriter
 
         sql.append(")");
 
-
         //
         // Track the table, it will be deleted when tinfoTempTable is GC'd
         //
-
         tinfoTempTable.track();
         Table.execute(schema, sql.toString(), null);
 
         //
         // Populate
         //
-
         StringBuilder sqlInsert = new StringBuilder();
         StringBuilder sqlValues = new StringBuilder();
         sqlInsert.append("INSERT INTO ").append(tempTableName).append(" (");
         sqlValues.append(" VALUES (");
         comma = "";
-        for (ColumnInfo col : cols)
+
+        for (ColumnInfo col : activeColumns)
         {
             sqlInsert.append(comma).append(col.getSelectName());
             sqlValues.append(comma).append("?");
             comma = ",";
         }
+
         sqlInsert.append(") ");
         sqlInsert.append(sqlValues);
         sqlInsert.append(")");
