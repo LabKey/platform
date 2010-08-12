@@ -205,8 +205,8 @@ api/src/org/labkey/api/data/TableInfo.java -text
 api/src/org/labkey/api/data/TableInfoGetter.java -text
 api/src/org/labkey/api/data/TableInfoWriter.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
-api/src/org/labkey/api/data/TempTableLoader.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
+api/src/org/labkey/api/data/TempTableWriter.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TransactedBlock.java -text
 api/src/org/labkey/api/data/TransactionCache.java -text

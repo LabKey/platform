@@ -26,8 +26,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,14 +33,14 @@ import java.util.Map;
  * User: adam
  * Date: Aug 6, 2010
  *
- * Creates a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
+ * Writes a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
  * Excel files, and custom-built loaders.
  */
-public class TempTableLoader
+public class TempTableWriter
 {
     private final Loader<Map<String, Object>> _loader;
 
-    public TempTableLoader(Loader<Map<String, Object>> loader) throws IOException
+    public TempTableWriter(Loader<Map<String, Object>> loader) throws IOException
     {
         _loader = loader;
     }
@@ -146,22 +144,9 @@ public class TempTableLoader
         sqlInsert.append(")");
 
         List<Collection<?>> paramList = new ArrayList<Collection<?>>(maps.size());
+
         for (Map<String, Object> m : maps)
-        {
-            // Yuck!  If columns are marked for no-load, DataLoader still returns maps that include unloaded column values.
-            // TODO: Fix this in the loader and remove code below
-            Iterator iter = m.values().iterator();
-            Collection values = new LinkedList();
-
-            for (ColumnDescriptor col : colDescriptors)
-            {
-                Object value = iter.next();
-                if (col.load)
-                    values.add(value);
-            }
-
-            paramList.add(values);
-        }
+            paramList.add(m.values());
 
         Table.batchExecute(schema, sqlInsert.toString(), paramList);
 

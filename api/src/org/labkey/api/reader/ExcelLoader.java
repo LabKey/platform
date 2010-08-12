@@ -169,10 +169,10 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
             if (lineNum() >= numRows)
                 return null;
 
-            Object[] fields = new Object[_columns.length];
-            for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
+            Object[] fields = new Object[activeColumns.length];
+            for (int columnIndex = 0; columnIndex < activeColumns.length; columnIndex++)
             {
-                ColumnDescriptor column = _columns[columnIndex];
+                ColumnDescriptor column = activeColumns[columnIndex];
                 Object contents;
 
                 if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist

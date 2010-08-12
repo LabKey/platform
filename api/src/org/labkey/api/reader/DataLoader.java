@@ -336,7 +336,8 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
         {
             nonMvIndicatorName = mvIndicatorColumn.name.substring(0, mvIndicatorColumn.name.length() - MvColumn.MV_INDICATOR_SUFFIX.length());
         }
-        for(int i = 0; i<_columns.length; i++)
+
+        for (int i = 0; i < _columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
             if (col.isMvEnabled() && (col.name.equals(mvIndicatorColumn.name) || col.name.equals(nonMvIndicatorName)))
@@ -351,12 +352,13 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
         // share a name. If not, they have different names
         String namePlusIndicator = mvColumn.name + MvColumn.MV_INDICATOR_SUFFIX;
 
-        for(int i = 0; i<_columns.length; i++)
+        for (int i = 0; i < _columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
             if (col.isMvIndicator() && (col.name.equals(mvColumn.name) || col.name.equals(namePlusIndicator)))
                 return i;
         }
+
         return -1;
     }
 
@@ -418,31 +420,40 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
 
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
+        protected final ColumnDescriptor[] activeColumns;
         private final RowMapFactory<Object> factory;
+        private final boolean skipEmpty;
 
         private Object[] fields = null;
         private Map<String, Object> values = null;
         private int lineNum = 0;
-        private boolean skipEmpty = false;
 
         protected DataLoaderIterator(int lineNum, boolean skipEmpty) throws IOException
         {
             this.lineNum = lineNum;
             this.skipEmpty = skipEmpty;
 
-            Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
-            ColumnDescriptor[] columns = getColumns();
+            // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
+            ColumnDescriptor[] allColumns = getColumns();
+            ArrayList<ColumnDescriptor> active = new ArrayList<ColumnDescriptor>(allColumns.length);
 
-            for (int i = 0; i < columns.length; i++)
+            for (ColumnDescriptor column : allColumns)
+                if (column.load)
+                    active.add(column);
+
+            activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
+            Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
+
+            for (int i = 0; i < activeColumns.length; i++)
             {
-                if (columns[i].load && !columns[i].isMvIndicator())
-                    colMap.put(columns[i].name, i);
+                if (!activeColumns[i].isMvIndicator())
+                    colMap.put(activeColumns[i].name, i);
             }
 
             factory = new RowMapFactory<Object>(colMap);
 
             // find a converter for each column type
-            for (ColumnDescriptor column : _columns)
+            for (ColumnDescriptor column : activeColumns)
                 if (column.converter == null)
                     column.converter = ConvertUtils.lookup(column.clazz);
         }
@@ -452,7 +463,7 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
             return lineNum;
         }
 
-        protected abstract Object[] readFields();
+        protected abstract Object[] readFields() throws IOException;
 
         public Map<String, Object> next()
         {
@@ -503,14 +514,12 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
             {
                 Object[] fields = this.fields;
                 this.fields = null;
-                Object[] values = new Object[_columns.length];
+                Object[] values = new Object[activeColumns.length];
 
                 boolean foundData = false;
-                for (int i = 0; i < _columns.length; i++)
+                for (int i = 0; i < activeColumns.length; i++)
                 {
-                    ColumnDescriptor column = _columns[i];
-                    if (!column.load)
-                        continue;
+                    ColumnDescriptor column = activeColumns[i];
                     Object fld;
                     if (i >= fields.length)
                     {
@@ -649,7 +658,7 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
 
                 if (foundData)
                 {
-                    ArrayList<Object> list = new ArrayList<Object>((int)(_columns.length * 1.2));
+                    ArrayList<Object> list = new ArrayList<Object>((int)(activeColumns.length * 1.2));
                     list.addAll(Arrays.asList(values));
                     return factory.getRowMap(list);
                 }

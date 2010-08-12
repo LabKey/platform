@@ -17,10 +17,12 @@ package org.labkey.api.reader;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
@@ -171,7 +173,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     {
         try
         {
-            String line = null;
+            String line;
             do
             {
                 line = r.readLine();
@@ -190,7 +192,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
     Pattern _replaceDoubleQuotes = null;
 
-    private String[] readFields(BufferedReader r)
+    private String[] readFields(BufferedReader r, @Nullable ColumnDescriptor[] columns) throws IOException
     {
         if (!_parseQuotes)
         {
@@ -208,17 +210,20 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         String line = readLine(r, true);
         if (line == null)
             return null;
-        StringBuffer buf = new StringBuffer(line.length());
+        StringBuilder buf = new StringBuilder(line.length());
         buf.append(line);
 
-        String field;
+        String field = null;
         int start = 0;
         listParse.clear();
+        Iterator<ColumnDescriptor> columnIter = null != columns ? new ArrayIterator<ColumnDescriptor>(getColumns()) : null;
 
         while (start < buf.length())
         {
+            boolean loadThisColumn = (null == columnIter || columnIter.next().load);
             int end;
             char ch = buf.charAt(start);
+
             if (ch == _chDelimiter)
             {
                 end = start;
@@ -235,6 +240,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
                 end = start;
                 boolean hasQuotes = false;
+
                 while (true)
                 {
                     end = buf.indexOf(_strQuote, end + 1);
@@ -249,11 +255,13 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                         buf.append(nextLine);
                         continue;
                     }
+
                     if (end == buf.length() - 1 || buf.charAt(end + 1) != _chQuote)
                         break;
                     hasQuotes = true;
                     end++; // skip double ""
                 }
+
                 field = buf.substring(start + 1, end);
                 if (hasQuotes && -1 != field.indexOf(_strQuoteQuote))
                     field = _replaceDoubleQuotes.matcher(field).replaceAll("\"");
@@ -282,18 +290,27 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                 end = buf.indexOf(_strDelimiter, start);
                 if (end == -1)
                     end = buf.length();
-                field = buf.substring(start, end);
-                field = parseValue(field);
+
+                if (loadThisColumn)
+                {
+                    field = buf.substring(start, end);
+                    field = parseValue(field);
+                }
             }
 
-            listParse.add(field);
+            // Add the field value only if we're inferring columns or column.load == true.
+            if (loadThisColumn)
+                listParse.add(field);
 
-            // there should be a comma or an EOL here
+            // there should be a delimiter or an EOL here
             if (end < buf.length() && buf.charAt(end) != _chDelimiter)
-                throw new IllegalArgumentException("CSV can't parse line: " + buf);
+                throw new IllegalArgumentException("Can't parse line: " + buf);
+
             end++;
+
             while (end < buf.length() && buf.charAt(end) != _chDelimiter && Character.isWhitespace(buf.charAt(end)))
                 end++;
+
             start = end;
         }
 
@@ -411,7 +428,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
             for (i = 0; i < n; i++)
             {
-                String[] fields = readFields(reader);
+                String[] fields = readFields(reader, null);
                 if (null == fields)
                     break;
                 lineFields.add(fields);
@@ -457,11 +474,10 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         }
 
         @Override
-        protected String[] readFields()
+        protected String[] readFields() throws IOException
         {
-            return AbstractTabLoader.this.readFields(reader);
+            return AbstractTabLoader.this.readFields(reader, getColumns());
         }
-
     }
 
     public static class TabLoaderTestCase extends junit.framework.TestCase
