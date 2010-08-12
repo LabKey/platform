@@ -185,6 +185,14 @@ public class DataSetTable extends FilteredTable
         lsidColumn.setKeyField(true);
         getColumn("SourceLSID").setHidden(true);
         setDefaultVisibleColumns(defaultVisibleCols);
+
+        // Don't show sequence num for date-based studies
+        if (!dsd.getStudy().getTimepointType().isVisitBased())
+        {
+            getColumn("SequenceNum").setShownInInsertView(false);
+            getColumn("SequenceNum").setShownInDetailsView(false);
+            getColumn("SequenceNum").setShownInUpdateView(false);
+        }
     }
 
 

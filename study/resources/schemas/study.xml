@@ -430,16 +430,23 @@
       <ns:column columnName="sourcelsid">
         <ns:columnTitle>Source Lsid</ns:columnTitle>
         <ns:propertyURI>http://cpas.labkey.com/Study#SourceLSID</ns:propertyURI>
+        <ns:shownInInsertView>false</ns:shownInInsertView>
+        <ns:shownInUpdateView>false</ns:shownInUpdateView>
+        <ns:shownInDetailsView>false</ns:shownInDetailsView>
       </ns:column>
       <ns:column columnName="created">
         <ns:columnTitle>Created</ns:columnTitle>
         <ns:description>Date record/form was created</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#Created</ns:propertyURI>
+        <ns:shownInInsertView>false</ns:shownInInsertView>
+        <ns:shownInUpdateView>false</ns:shownInUpdateView>
       </ns:column>
       <ns:column columnName="modified">
         <ns:columnTitle>Modified</ns:columnTitle>
         <ns:description>Last time record/form was modified</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#Modified</ns:propertyURI>
+          <ns:shownInInsertView>false</ns:shownInInsertView>
+          <ns:shownInUpdateView>false</ns:shownInUpdateView>
       </ns:column>
       <ns:column columnName="SequenceNum">
         <ns:propertyURI>http://cpas.labkey.com/Study#SequenceNum</ns:propertyURI>
