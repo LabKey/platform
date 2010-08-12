@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -48,16 +49,16 @@ public class RReportJob extends PipelineJob implements Serializable
     private ReportIdentifier _reportId;
     private RReportBean _form;
 
-    public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId) throws SQLException
+    public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId, PipeRoot root) throws SQLException
     {
-        super(provider, info);
+        super(provider, info, root);
         _reportId = reportId;
         init();
     }
 
-    public RReportJob(String provider, ViewBackgroundInfo info, RReportBean form) throws Exception
+    public RReportJob(String provider, ViewBackgroundInfo info, RReportBean form, PipeRoot root) throws Exception
     {
-        super(provider, info);
+        super(provider, info, root);
         _form = form;
         init();
     }

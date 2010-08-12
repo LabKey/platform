@@ -125,12 +125,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return !(getPolicy().getResourceId().equals(getId()));
     }
 
-    /** If someone holds onto a container too long (e.g. in a cache, or across requests), it may become invalidated */
-    public boolean isValid(Container c)
-    {
-        return c == ContainerManager.getForId(getId());
-    }
-
     /**
      * @return the parent container, or the root container (with path "/") if called on the root
      */

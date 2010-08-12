@@ -75,9 +75,7 @@ public class PipelinePathForm extends ViewForm
      */
     public List<File> getValidatedFiles(Container c)
     {
-        PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-        if (pr == null)
-            throw new NotFoundException("Could not find a pipeline root for " + c.getPath());
+        PipeRoot pr = getPipeRoot(c);
 
         File dir = pr.resolvePath(getPath());
         if (dir == null || !dir.exists())
@@ -99,6 +97,14 @@ public class PipelinePathForm extends ViewForm
             result.add(f);
         }
         return result;
+    }
+
+    public PipeRoot getPipeRoot(Container c)
+    {
+        PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+        if (pr == null)
+            throw new NotFoundException("Could not find a pipeline root for " + c.getPath());
+        return pr;
     }
 
     /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */

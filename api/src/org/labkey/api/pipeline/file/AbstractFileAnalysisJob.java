@@ -64,7 +64,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    File fileParameters,
                                    File filesInput[]) throws IOException
     {
-        super(providerName, info);
+        super(providerName, info, root);
 
         _filesInput = filesInput;
         _inputTypes = FileType.findTypes(protocol.getInputTypes(), _filesInput);

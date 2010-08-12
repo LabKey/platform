@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.Map;
 
 /**
  * <code>FileAnalysisTaskPipeline</code>
@@ -60,37 +61,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      */
     FileFilter getInitialFileTypeFilter();
 
-    /**
-     * Returns a specific instance of an input file, pipeline root directory,
-     * the analysis directory and the file name.  For finding input files before
-     * the pipeline job has been created.
-     *
-     * @param dirRoot pipeline root directory
-     * @param dirAnalysis analysis directory
-     * @param name file name to find
-     * @return an instance of an input file, or null if failed to locate
-     */
-    File findInputFile(File dirRoot, File dirAnalysis, String name);
-    
-    /**
-     * Returns a specific instance of an input file, given the pipeline job
-     * context in which this pipeline is being run and the file name.
-     * 
-     * @param support the job support context in which the pipeline is running
-     * @param name the name of the file for which the path is required
-     * @return an instance of an input file that may be used in a task, or null
-     */
-    File findInputFile(FileAnalysisJobSupport support, String name);
-
-    /**
-     * Returns a specific instance of an output file, given the pipeline job
-     * context in which this pipeline is being run and the file name.
-     *
-     * @param support the job support context in which the pipeline is running
-     * @param name the name of the file for which the path is required
-     * @return an instance of an output file that may be used in a task
-     */
-    File findOutputFile(FileAnalysisJobSupport support, String name);
-
     URLHelper getAnalyzeURL(Container c, String path);
+
+    public Map<FileType, FileType[]> getTypeHierarchy();
 }

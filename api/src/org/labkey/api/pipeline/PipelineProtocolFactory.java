@@ -34,7 +34,6 @@ import java.util.*;
 public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 {
     protected static String _pipelineProtocolDir = "protocols";
-    protected static String _pipelineTemplateDir = "templates";
 
     public static File getProtocolRootDir(PipeRoot root)
     {
@@ -128,11 +127,6 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
     public File getProtocolDir(PipeRoot root)
     {
         return new File(getProtocolRootDir(root), getName());
-    }
-
-    public File getTemplateDir(PipeRoot root)
-    {
-        return new File(getProtocolDir(root), _pipelineTemplateDir);
     }
 
     public File getProtocolFile(PipeRoot root, String name)

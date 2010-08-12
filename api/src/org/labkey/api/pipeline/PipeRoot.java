@@ -19,6 +19,7 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -47,12 +48,12 @@ public interface PipeRoot extends SecurableResource
 
     boolean isUnderRoot(File file);
 
-    boolean isUnderRoot(URI uri);
-
     boolean hasPermission(Container container, User user, Class<? extends Permission> perm);
 
     void requiresPermission(Container container, User user, Class<? extends Permission> perm);
 
+    /** Creates a .labkey directory if it's not present and returns it. Used for things like protocol definition files,
+     * log files for some upgrade tasks, etc. Its contents are generally not exposed directly to the user */
     @NotNull
     File ensureSystemDirectory();
 
@@ -71,4 +72,6 @@ public interface PipeRoot extends SecurableResource
 
     /** @return true if this root exists on disk and is a directory */
     boolean isValid();
+
+    void configureForm(SetupForm form);
 }

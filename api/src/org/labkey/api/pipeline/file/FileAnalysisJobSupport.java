@@ -29,11 +29,6 @@ import java.util.Map;
 public interface FileAnalysisJobSupport
 {
     /**
-     * @return the directory of the pipeline-root running this job.
-     */
-    File getRootDir();
-
-    /**
      * @return the base name for the full set of files.
      */
     String getJoinedBaseName();

@@ -20,10 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
-
-import java.io.File;
 
 /**
  * Created by IntelliJ IDEA.
@@ -33,11 +30,10 @@ import java.io.File;
 public class SetupForm
 {
     private String _path;
+    private String _supplementalPath;
     private String _keyPassword;
     private boolean _uploadNewGlobusKeys;
     private String _confirmMessage;
-    private String _strValue;
-    private ActionURL _doneURL;
     private GlobusKeyPair _globusKeyPair;
     private BindException _errors;
     private boolean _pipelineRootForm;
@@ -53,26 +49,6 @@ public class SetupForm
     public void setConfirmMessage(String confirmMessage)
     {
         _confirmMessage = confirmMessage;
-    }
-
-    public String getStrValue()
-    {
-        return _strValue;
-    }
-
-    public void setStrValue(String strValue)
-    {
-        _strValue = strValue;
-    }
-
-    public ActionURL getDoneURL()
-    {
-        return _doneURL;
-    }
-
-    public void setDoneURL(ActionURL doneURL)
-    {
-        _doneURL = doneURL;
     }
 
     public GlobusKeyPair getGlobusKeyPair()
@@ -93,6 +69,16 @@ public class SetupForm
     public void setPath(String path)
     {
         _path = path;
+    }
+
+    public String getSupplementalPath()
+    {
+        return _supplementalPath;
+    }
+
+    public void setSupplementalPath(String supplementalPath)
+    {
+        _supplementalPath = supplementalPath;
     }
 
     public BindException getErrors()
@@ -173,11 +159,7 @@ public class SetupForm
         PipeRoot root = getPipelineRoot(c);
         if (root != null)
         {
-            File rootFile = root.getRootPath();
-            form.setStrValue(rootFile.getPath());
-
-            form.setGlobusKeyPair(root.getGlobusKeyPair());
-            form.setSearchable(root.isSearchable());
+            root.configureForm(form);
         }
         return form;
     }

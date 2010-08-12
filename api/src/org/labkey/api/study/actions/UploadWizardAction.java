@@ -36,7 +36,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
@@ -106,11 +105,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             //FIX: 4014. ensure that the pipeline root path actually exists before starting the first
             //step of the wizard (if it doesn't, the upload will eventually fail)
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            File root = pipeRoot == null ? null : pipeRoot.getRootPath();
-            if(root != null && !NetworkDrive.exists(root)) //NetworkDrive.exists() will ensure that a \\server\share path gets mounted
+            if (pipeRoot != null && !pipeRoot.isValid())
             {
                 StringBuilder msg = new StringBuilder("<p class='labkey-error'>The pipeline directory (");
-                msg.append(root.getAbsolutePath());
+                msg.append(pipeRoot);
                 msg.append(") previously set for this folder does not exist or cannot be reached at this time.");
 
                 //if current user is an admin, include a link to the pipeline setup page

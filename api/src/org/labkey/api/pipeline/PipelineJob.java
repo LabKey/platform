@@ -172,21 +172,14 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /** Although having a null provider is legal, it is recommended that one be used
      * so that it can respond to events as needed */ 
-    public PipelineJob(@Nullable String provider, ViewBackgroundInfo info)
+    public PipelineJob(@Nullable String provider, ViewBackgroundInfo info, PipeRoot root)
     {
         _info = info;
         _provider = provider;
         _jobGUID = GUID.makeGUID();
         _activeTaskStatus = TaskStatus.waiting;
 
-        if (info.getURL() != null)
-        {
-            Container c = info.getContainer();
-            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-            if (pr == null)
-                throw new IllegalStateException("Failed to find pipeline root for " + c.getPath());
-            _rootURI = pr.getUri();
-        }
+        _rootURI = root.getUri();
 
         _actionSet = new RecordedActionSet();
     }

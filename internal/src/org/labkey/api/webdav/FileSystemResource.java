@@ -32,10 +32,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentEmailPref;
@@ -72,7 +68,7 @@ public class FileSystemResource extends AbstractWebdavResource
 {
     private static final Logger _log = Logger.getLogger(FileSystemResource.class);
 
-    protected File _file;
+    protected List<FileInfo> _files;
     String _name = null;
     WebdavResource _folder;   // containing controller used for canList()
     protected Boolean _shouldIndex = null; // null means ask parent
@@ -102,18 +98,13 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.append(name));
     }
 
-    public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
-    {
-        this(folder, name, file, policy, false);
-    }
-
     public FileSystemResource(WebdavResource folder, String name, File file, SecurityPolicy policy, boolean mergeFromParent)
     {
         this(folder.getPath(), name);
         _folder = folder;
         _name = name;
         setPolicy(policy);
-        _file = FileUtil.canonicalFile(file);
+        _files = Collections.singletonList(new FileInfo(FileUtil.canonicalFile(file)));
         _mergeFromParent = mergeFromParent;
     }
 
@@ -122,13 +113,18 @@ public class FileSystemResource extends AbstractWebdavResource
         this(folder.getPath(), relativePath);
         _folder = folder;
         setPolicy(folder.getPolicy());
-        _file = new File(folder._file, relativePath);
+
+        _files = new ArrayList<FileInfo>(folder._files.size());
+        for (FileInfo file : folder._files)
+        {
+            _files.add(new FileInfo(new File(file.getFile(), relativePath)));
+        }
     }
 
     public FileSystemResource(Path path, File file, SecurityPolicy policy)
     {
         this(path);
-        _file = file;
+        _files = Collections.singletonList(new FileInfo(file));
         setPolicy(policy);
     }
 
@@ -153,57 +149,32 @@ public class FileSystemResource extends AbstractWebdavResource
         setSearchProperty(SearchService.PROPERTY.securableResourceId, policy.getResourceId());
     }
 
-
     public boolean exists()
     {
-        return _file == null || getType() != FileType.notpresent;
+        if (_files == null)
+        {
+            // Special case
+            return true;
+        }
+
+        return getType() != FileType.notpresent;
     }
 
-    /**
-     * Try to determine if this entry exists on disk, and its type (file or directory) with the minimum number of
-     * java.io.File method calls. Assume that entries are likely to exist, and that files are likely to have extensions.
-     * In most cases this reduces the number of java.io.File method calls to one to answer exists(), isDirectory(), and
-     * isFile().
-     */
     private FileType getType()
     {
-        if (_file == null)
+        if (_files == null)
         {
-            return null;
+            return FileType.notpresent;
         }
-        if (_type == null)
-        {
-            if (!_file.getName().contains("."))
-            {
-                // With no extension, first guess that it's a directory
-                if (_file.isDirectory())
-                {
-                    _type = FileType.directory;
-                }
-                else if (_file.isFile())
-                {
-                    _type = FileType.file;
-                }
-            }
-            else
-            {
-                // If it has an extension, guess that it's a file
-                if (_file.isFile())
-                {
-                    _type = FileType.file;
-                }
-                else if (_file.isDirectory())
-                {
-                    _type = FileType.directory;
-                }
-            }
 
-            if (_type == null)
+        for (FileInfo file : _files)
+        {
+            if (file.getType() != FileType.notpresent)
             {
-                _type = FileType.notpresent;
+                return file.getType();
             }
         }
-        return _type;
+        return FileType.notpresent;
     }
 
     public boolean isCollection()
@@ -216,21 +187,32 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public boolean isFile()
     {
-        return _file != null && getType() == FileType.file;
+        return _files != null && getType() == FileType.file;
     }
 
     public File getFile()
     {
-        return _file;
+        if (_files == null)
+        {
+            return null;
+        }
+        for (FileInfo file : _files)
+        {
+            if (file.getType() != FileType.notpresent)
+            {
+                return file.getFile();
+            }
+        }
+        return _files.get(0).getFile();
     }
 
     public FileStream getFileStream(User user) throws IOException
     {
         if (!canRead(user))
             return null;
-        if (null == _file || !_file.exists())
+        if (null == _files || !exists())
             return null;
-        return new FileStream.FileFileStream(_file);
+        return new FileStream.FileFileStream(getFile());
     }
 
 
@@ -238,26 +220,28 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         if (!canRead(user))
             return null;
-        if (null == _file || !_file.exists())
+        if (null == _files || !exists())
             return null;
-        return new FileInputStream(_file);
+        return new FileInputStream(getFile());
     }
 
 
     public long copyFrom(User user, FileStream is) throws IOException
     {
-        if (!_file.exists())
+        File file = getFile();
+        if (!file.exists())
         {
-            _file.createNewFile();
-            resetMetadata(FileType.file);
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+            resetMetadata();
         }
 
-        FileOutputStream fos = new FileOutputStream(_file);
+        FileOutputStream fos = new FileOutputStream(file);
         try
         {
             long len = FileUtil.copyData(is.openInputStream(), fos);
             fos.getFD().sync();
-            resetMetadata(FileType.file);
+            resetMetadata();
             return len;
         }
         finally
@@ -266,11 +250,17 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
-    private void resetMetadata(FileType type)
+    private void resetMetadata()
     {
+        if (_files != null)
+        {
+            for (FileInfo file : _files)
+            {
+                file._type = null;
+            }
+        }
         _length = UNKNOWN;
         _lastModified = UNKNOWN;
-        _type = type;
     }
 
     /**
@@ -282,7 +272,7 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         if (_mergeFromParent && isCollection())
         {
-            mergeFiles(_file);
+            mergeFiles(getFile());
         }
     }
 
@@ -336,13 +326,19 @@ public class FileSystemResource extends AbstractWebdavResource
             return Collections.emptyList();
         mergeFilesIfNeeded();
         ArrayList<String> list = new ArrayList<String>();
-        if (_file != null && _file.isDirectory())
+        if (_files != null)
         {
-            File[] files = _file.listFiles();
-            if (null != files)
+            for (FileInfo file : _files)
             {
-                for (File file: files)
-                    list.add(file.getName());
+                if (file.getType() == FileType.directory)
+                {
+                    File[] children = file.getFile().listFiles();
+                    if (null != children)
+                    {
+                        for (File child: children)
+                            list.add(child.getName());
+                    }
+                }
             }
         }
         Collections.sort(list);
@@ -379,12 +375,12 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public long getLastModified()
     {
-        if (null != _file)
+        File file = getFile();
+        if (null != file)
         {
             if (_lastModified == UNKNOWN)
             {
-                _lastModified = _file.lastModified();
-//                _lastModified = 0;
+                _lastModified = file.lastModified();
             }
             return _lastModified;
         }
@@ -394,12 +390,11 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public long getContentLength()
     {
-        if (!isFile() || _file == null)
+        if (!isFile() || getFile() == null)
             return 0;
         if (_length == UNKNOWN)
         {
-            _length = _file.length();
-//            _length = 0;
+            _length = getFile().length();
         }
         return _length;
     }
@@ -440,23 +435,25 @@ public class FileSystemResource extends AbstractWebdavResource
 
     private boolean hasFileSystem()
     {
-        return _file != null;
+        return _files != null;
     }
 
 
     public boolean delete(User user)
     {
-        if (_file == null || (null != user && !canDelete(user)))
+        File file = getFile();
+        if (file == null || (null != user && !canDelete(user)))
             return false;
-        return _file.delete();
+        return file.delete();
     }
 
     @NotNull
     public Collection<WebdavResolver.History> getHistory()
     {
+        File file = getFile();
         SimpleFilter filter = new SimpleFilter("EventType",  "FileSystem"); // FileSystemAuditViewFactory.EVENT_TYPE);
-        filter.addCondition("Key1", _file.getParent());
-        filter.addCondition("Key2", _file.getName());
+        filter.addCondition("Key1", file.getParent());
+        filter.addCondition("Key2", file.getName());
         List<AuditLogEvent> logs = AuditLogService.get().getEvents(filter);
         if (null == logs)
             return Collections.emptyList();
@@ -526,7 +523,7 @@ public class FileSystemResource extends AbstractWebdavResource
         {
             try
             {
-                _data = ExperimentService.get().getExpDataByURL(_file.toURI().toURL().toString(), null);
+                _data = ExperimentService.get().getExpDataByURL(getFile().toURI().toURL().toString(), null);
             }
             catch (MalformedURLException e) {}
             _dataQueried = true;
@@ -727,6 +724,71 @@ public class FileSystemResource extends AbstractWebdavResource
         public WebdavResource getResource()
         {
             return _resource;
+        }
+    }
+
+    protected static class FileInfo
+    {
+        private File _file;
+        private FileType _type;
+        private long _length = UNKNOWN;
+        private long _lastModified = UNKNOWN;
+
+        public FileInfo(File file)
+        {
+            _file = file;
+        }
+
+        public File getFile()
+        {
+            return _file;
+        }
+
+        /**
+         * Try to determine if this entry exists on disk, and its type (file or directory) with the minimum number of
+         * java.io.File method calls. Assume that entries are likely to exist, and that files are likely to have extensions.
+         * In most cases this reduces the number of java.io.File method calls to one to answer exists(), isDirectory(), and
+         * isFile().
+         */
+        private FileType getType()
+        {
+            if (_file == null)
+            {
+                return null;
+            }
+            if (_type == null)
+            {
+                if (!_file.getName().contains("."))
+                {
+                    // With no extension, first guess that it's a directory
+                    if (_file.isDirectory())
+                    {
+                        _type = FileType.directory;
+                    }
+                    else if (_file.isFile())
+                    {
+                        _type = FileType.file;
+                    }
+                }
+                else
+                {
+                    // If it has an extension, guess that it's a file
+                    if (_file.isFile())
+                    {
+                        _type = FileType.file;
+                    }
+                    else if (_file.isDirectory())
+                    {
+                        _type = FileType.directory;
+                    }
+                }
+
+                if (_type == null)
+                {
+                    _type = FileType.notpresent;
+                }
+            }
+            return _type;
         }
     }
 }

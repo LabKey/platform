@@ -39,8 +39,6 @@ abstract public class PipelineService
 {
     public static final String MODULE_NAME = "Pipeline";
 
-    static public final String PARAM_Path = "path";
-    
     static PipelineService instance;
 
     public static PipelineService get()
@@ -70,8 +68,7 @@ abstract public class PipelineService
     @Nullable
     abstract public PipeRoot getPipelineRootSetting(Container container, String type);
 
-    abstract public void setPipelineRoot(User user, Container container, URI root, String type,
-                                         GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException;
+    abstract public void setPipelineRoot(User user, Container container, String type, GlobusKeyPair globusKeyPair, boolean searchable, URI... roots) throws SQLException;
 
     abstract public boolean canModifyPipelineRoot(User user, Container container);
 
@@ -80,8 +77,6 @@ abstract public class PipelineService
 
     @Nullable
     abstract public PipelineProvider getPipelineProvider(String name);
-
-    abstract public String getButtonHtml(String text, ActionURL href);
 
     abstract public boolean isEnterprisePipeline();
 

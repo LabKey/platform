@@ -22,6 +22,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -260,7 +261,7 @@ public class ExperimentService
          * Kicks off a pipeline job to asynchronously load the XAR from disk
          * @return the job responsible for doing the work
          */
-        PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description) throws IOException;
+        PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException;
 
         /**
          * Loads the xar synchronously, in the context of the pipelineJob
