@@ -29,8 +29,6 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
@@ -54,7 +52,6 @@ import java.util.*;
 
 public class PipelineServiceImpl extends PipelineService
 {
-    public static String PREF_LASTPATH = "lastpath";
     public static String PREF_LASTPROTOCOL = "lastprotocol";
     public static String PREF_LASTSEQUENCEDB = "lastsequencedb";
     public static String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
@@ -100,7 +97,7 @@ public class PipelineServiceImpl extends PipelineService
      * Try to locate a default pipeline root from the site file root. Default pipeline roots only
      * extend to the project level and are inherited by sub folders.
      */
-    private PipeRoot getDefaultPipelineRoot(Container container, String type)
+    private PipeRootImpl getDefaultPipelineRoot(Container container, String type)
     {
         try {
             if (PipelineRoot.PRIMARY_ROOT.equals(type))
@@ -142,7 +139,7 @@ public class PipelineServiceImpl extends PipelineService
         return null;
     }
 
-    private PipeRoot createDefaultRoot(Container container, File dir, boolean sameAsFilesRoot) throws URISyntaxException
+    private PipeRootImpl createDefaultRoot(Container container, File dir, boolean sameAsFilesRoot) throws URISyntaxException
     {
         PipelineRoot p = new PipelineRoot();
 
@@ -200,12 +197,12 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
-    public PipeRoot getPipelineRootSetting(Container container)
+    public PipeRootImpl getPipelineRootSetting(Container container)
     {
         return getPipelineRootSetting(container, PipelineRoot.PRIMARY_ROOT);
     }
 
-    public PipeRoot getPipelineRootSetting(Container container, final String type)
+    public PipeRootImpl getPipelineRootSetting(Container container, final String type)
     {
         try
         {
@@ -226,14 +223,13 @@ public class PipelineServiceImpl extends PipelineService
         return null;
     }
 
-    public void setPipelineRoot(User user, Container container, URI root, String type,
-                                GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException
+    public void setPipelineRoot(User user, Container container, String type, GlobusKeyPair globusKeyPair, boolean searchable, URI... roots
+    ) throws SQLException
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
         
-        PipelineManager.setPipelineRoot(user, container, root == null ? "" : root.toString(), type,
-                globusKeyPair, searchable);
+        PipelineManager.setPipelineRoot(user, container, roots, type, globusKeyPair, searchable);
     }
 
     public boolean canModifyPipelineRoot(User user, Container container)
@@ -255,11 +251,6 @@ public class PipelineServiceImpl extends PipelineService
         if (name == null)
             return null;
         return _mapPipelineProviders.get(name);
-    }
-
-    public String getButtonHtml(String text, ActionURL href)
-    {
-        return PageFlowUtil.generateButton(text, href);
     }
 
     public boolean isEnterprisePipeline()

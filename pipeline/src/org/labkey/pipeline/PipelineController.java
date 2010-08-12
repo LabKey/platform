@@ -41,7 +41,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
@@ -55,10 +54,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
@@ -169,49 +166,56 @@ public class PipelineController extends SpringActionController
 
     enum SetupField { path, email }
 
+    private static URI validatePath(String path, BindException errors)
+    {
+        if (path.startsWith("\\\\"))
+        {
+            errors.reject(ERROR_MSG, "UNC paths are not supported for pipeline roots. Consider creating a Network Drive configuration in the Admin Console under Site Settings.");
+            return null;
+        }
+        File fileRoot = new File(path);
+        try
+        {
+            // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
+            // links on Unix so don't replace the path if it's pointing at a different location.
+            if (fileRoot.getCanonicalPath().equalsIgnoreCase(fileRoot.getAbsolutePath()))
+            {
+                fileRoot = fileRoot.getCanonicalFile();
+            }
+        }
+        catch (IOException e)
+        {
+            // OK, just use the path the user entered
+        }
+        if (!NetworkDrive.exists(fileRoot))
+        {
+            errors.reject(ERROR_MSG, "The directory '" + fileRoot + "' does not exist.");
+            return null;
+        }
+        else if (!fileRoot.isDirectory())
+        {
+            errors.reject(ERROR_MSG, "The file '" + fileRoot + "' is not a directory.");
+            return null;
+        }
+
+        URI result = fileRoot.toURI();
+        if (URIUtil.resolve(result, result, "test") == null)
+        {
+            errors.reject(ERROR_MSG, "The pipeline root '" + fileRoot + "' is not valid.");
+            return null;
+        }
+        return result;
+    }
+
     public static boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception
     {
-        URI root = null;
-
         String path = form.hasSiteDefaultPipelineRoot() ? null : form.getPath();
-        if (path != null && path.length() > 0)
+        URI root = validatePath(path, errors);
+        String supplementalPath = form.hasSiteDefaultPipelineRoot() || form.getSupplementalPath() == null ? null : form.getSupplementalPath();
+        URI supplementalRoot = supplementalPath == null ? null : validatePath(supplementalPath, errors);
+        if (errors.hasErrors())
         {
-            if (path.startsWith("\\\\"))
-            {
-                errors.reject(ERROR_MSG, "UNC paths are not supported for pipeline roots. Consider creating a Network Drive configuration in the Admin Console under Site Settings.");
-                return false;
-            }
-            File fileRoot = new File(path);
-            try
-            {
-                // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
-                // links on Unix so don't replace the path if it's pointing at a different location.
-                if (fileRoot.getCanonicalPath().equalsIgnoreCase(fileRoot.getAbsolutePath()))
-                {
-                    fileRoot = fileRoot.getCanonicalFile();
-                }
-            }
-            catch (IOException e)
-            {
-                // OK, just use the path the user entered
-            }
-            if (!NetworkDrive.exists(fileRoot))
-            {
-                errors.reject(ERROR_MSG, "The directory '" + fileRoot + "' does not exist.");
-                return false;
-            }
-            else if (!fileRoot.isDirectory())
-            {
-                errors.reject(ERROR_MSG, "The file '" + fileRoot + "' is not a directory.");
-                return false;
-            }
-
-            root = fileRoot.toURI();
-            if (URIUtil.resolve(root, root, "test") == null)
-            {
-                errors.reject(ERROR_MSG, "The pipeline root '" + fileRoot + "' is not valid.");
-                return false;
-            }
+            return false;
         }
 
         Map<String, MultipartFile> files = Collections.emptyMap();
@@ -253,8 +257,14 @@ public class PipelineController extends SpringActionController
             }
         }
 
-        PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), root, PipelineRoot.PRIMARY_ROOT,
-                keyPair, form.isSearchable());
+        if (supplementalRoot == null)
+        {
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, keyPair, form.isSearchable(), root);
+        }
+        else
+        {
+            PipelineService.get().setPipelineRoot(context.getUser(), context.getContainer(), PipelineRoot.PRIMARY_ROOT, keyPair, form.isSearchable(), root, supplementalRoot);
+        }
         return true;
     }
 
@@ -302,7 +312,6 @@ public class PipelineController extends SpringActionController
                 saveReferer();
                 SetupForm bean = SetupForm.init(c);
                 bean.setErrors(errors);
-                bean.setDoneURL(new ActionURL(ReturnToRefererAction.class, getContainer()));
 
                 PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
                 URI root = null;
@@ -465,10 +474,9 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
 
             PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-            if (pr == null || !pr.getRootPath().exists())
+            if (pr == null || !pr.isValid())
             {
-                HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
-                return null;
+                throw new NotFoundException("Pipeline root not set or does not exist on disk");
             }
 
             String path = form.getPath();
@@ -1150,7 +1158,7 @@ public class PipelineController extends SpringActionController
             if (!org.labkey.api.security.SecurityManager.getPolicy(pipeRoot).hasPermission(getUser(), ReadPermission.class))
                 return HttpView.throwUnauthorized();
 
-            File file = new File(pipeRoot.getRootPath(),form.getPath());
+            File file = pipeRoot.resolvePath(form.getPath());
             if (!file.exists() || !file.isFile())
                 return HttpView.throwNotFound();
 

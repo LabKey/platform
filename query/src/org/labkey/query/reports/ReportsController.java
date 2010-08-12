@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.*;
@@ -911,6 +912,7 @@ public class ReportsController extends SpringActionController
 
             Report report;
             PipelineJob job;
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             if (null == form.getReportId())
             {
                 // report not saved yet, get state from the cache
@@ -918,12 +920,12 @@ public class ReportsController extends SpringActionController
                 if (key != null && RunRReportView.isCacheValid(key, context))
                     RunRReportView.initFormFromCache(form, key, context);
                 report = form.getReport();
-                job = new RReportJob(ReportsPipelineProvider.NAME, info, form);
+                job = new RReportJob(ReportsPipelineProvider.NAME, info, form, root);
             }
             else
             {
                 report = form.getReportId().getReport();
-                job = new RReportJob(ReportsPipelineProvider.NAME, info, form.getReportId());
+                job = new RReportJob(ReportsPipelineProvider.NAME, info, form.getReportId(), root);
             }
 
             if (report instanceof RReport)

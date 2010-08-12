@@ -45,7 +45,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private StringExpression _analyzeURL;
     private boolean _initialFileTypesFromTask;
     private FileType[] _initialFileTypes;
-    private Map<FileType, FileType[]> _typeHeirarchy;
+    private Map<FileType, FileType[]> _typeHierarchy;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -92,12 +92,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // Convert any input extension hierarchy into file types.
         Map<FileType, List<FileType>> extHierarchy = settings.getFileExtHierarchy();
-        if (extHierarchy != null || _typeHeirarchy == null)
-            _typeHeirarchy = new HashMap<FileType, FileType[]>();
+        if (extHierarchy != null || _typeHierarchy == null)
+            _typeHierarchy = new HashMap<FileType, FileType[]>();
 
         // Add the initial types to the hierarchy
         for (FileType ft : _initialFileTypes)
-            _typeHeirarchy.put(ft, new FileType[0]);
+            _typeHierarchy.put(ft, new FileType[0]);
 
         if (extHierarchy != null)
         {
@@ -105,7 +105,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             {
                 List<FileType> inputExtList = entry.getValue();
                 FileType[] hierarchy = inputExtList.toArray(new FileType[inputExtList.size()]);
-                _typeHeirarchy.put(entry.getKey(), hierarchy);
+                _typeHierarchy.put(entry.getKey(), hierarchy);
             }
         }
 
@@ -132,21 +132,6 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
     }
 
-    public File findInputFile(FileAnalysisJobSupport support, String name)
-    {
-        return findFile(support.getRootDir(), support.getAnalysisDirectory(), name);
-    }
-
-    public File findInputFile(File dirRoot, File dirAnalysis, String name)
-    {
-        return findFile(dirRoot, dirAnalysis, name);
-    }
-
-    public File findOutputFile(FileAnalysisJobSupport support, String name)
-    {
-        return findFile(support.getRootDir(), support.getAnalysisDirectory(), name);
-    }
-
     public URLHelper getAnalyzeURL(Container c, String path)
     {
         if (_analyzeURL != null)
@@ -168,104 +153,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return AnalysisController.urlAnalyze(c, getId(), path);
     }
 
-    /**
-     * Finds a file by name for a task in a <code>FileAnalysisTaskPipeline</code>.
-     * Finding input and output files used to be very different, with one looking
-     * at a list of shared files, and another a full type heirarchy.  In the end,
-     * it seems simplest to have everything refer to the type heirarchy.
-     * <p>
-     * It may be possible one day to remove the rest of the input v. output
-     * complexity.
-     * 
-     * @param dirRoot The pipeline root directory, outside which access is not allowed
-     * @param dirAnalysis The analysis directory where most generated files end up
-     * @param name The name of the file to locate
-     * @return A file that specifically locates a processing input or output
-     */
-    private File findFile(File dirRoot, File dirAnalysis, String name)
+    public Map<FileType, FileType[]> getTypeHierarchy()
     {
-        File file = findAncestorFile(dirRoot, dirAnalysis, name);
-        if (file != null)
-            return file;
-
-        // Path of last resort is always to look in the current directory.
-        return new File(dirAnalysis, name);
-    }
-
-    /**
-     * Look at the specified type hierarchy to see if the requested file is an
-     * ancestor to this processing job, residing outside the analysis directory.
-     *
-     * @param dirRoot The pipeline root directory, outside which no files can be processed.
-     * @param dirAnalysis Default input/output directory for the current job.
-     * @param name The name of the file to be located
-     * @return The file location outside the analysis directory, or null, if no such match is found.
-     */
-    private File findAncestorFile(File dirRoot, File dirAnalysis, String name)
-    {
-        for (Map.Entry<FileType, FileType[]> entry : _typeHeirarchy.entrySet())
-        {
-            if (entry.getKey().isType(name))
-            {
-                // TODO: Eventually we will need to actually consult the parameters files
-                //       in order to find files.
-                StringBuffer analysisRelativePath = new StringBuffer("../..");
-                FileType[] derivedTypes = entry.getValue();
-                for (int i = derivedTypes.length - 1; i >= 0; i--)
-                    analysisRelativePath.append("/../..");
-                URI uriData = URIUtil.resolve(dirRoot.toURI(),
-                        dirAnalysis.toURI(),
-                        analysisRelativePath.toString());
-
-                if (uriData != null)
-                {
-                    File expectedFile = new File(new File(uriData), name);
-                    if (!NetworkDrive.exists(expectedFile))
-                    {
-                        // If the file isn't where we would expect it, check other directories in the same hierarchy
-                        File alternateFile = findFileInAlternateDirectory(expectedFile.getParentFile(), dirAnalysis, name);
-                        if (alternateFile != null)
-                        {
-                            // If we found a file that matches, use it
-                            return alternateFile;
-                        }
-                    }
-                    return expectedFile;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Starting from the expectedDir, look up the chain until getting to the final directory. Return the first
-     * file that matches by name.
-     * @param expectedDir where we would have expected the file to be, but it wasn't there
-     * @param dir must be a descendent of expectedDir, this is the deepest directory that will be inspected
-     * @param name name of the file to look for
-     * @return matching file, or null if nothing was found
-     */
-    private File findFileInAlternateDirectory(File expectedDir, File dir, String name)
-    {
-        // Bail out if we've gotten all the way down to the originally expected file location
-        if (dir.equals(expectedDir))
-        {
-            return null;
-        }
-        // Recurse through the parent directories to find it in the place closest to the expected directory
-        File result = findFileInAlternateDirectory(expectedDir, dir.getParentFile(), name);
-        if (result != null)
-        {
-            // If we found a match, use it
-            return result;
-        }
-        
-        result = new File(dir, name);
-        if (NetworkDrive.exists(result))
-        {
-            return result;
-        }
-        return null;
+        return _typeHierarchy;
     }
 }

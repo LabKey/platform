@@ -3407,14 +3407,14 @@ public class SpecimenController extends BaseStudyController
             String path = form.getPath();
             File f = null;
 
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
             if (path != null)
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 if (root != null)
                     f = root.resolvePath(path);
             }
 
-            return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f);
+            return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root);
         }
 
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
@@ -3424,7 +3424,7 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    public static boolean submitSpecimenBatch(Container c, User user, ActionURL url, File f) throws IOException, SQLException
+    public static boolean submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root) throws IOException, SQLException
     {
         if (null == f || !f.exists() || !f.isFile())
         {
@@ -3435,7 +3435,7 @@ public class SpecimenController extends BaseStudyController
         if (logFile.exists() && logFile.isFile())
             return false;
 
-        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f);
+        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f, root);
         batch.submit();
 
         return true;

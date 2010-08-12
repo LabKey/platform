@@ -231,7 +231,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                     job.warn("No pipeline root was set, skipping load of file " + file.getPath());
                     return;
                 }
-                job.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root, " + pr.getRootPath() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+                job.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root: " + pr + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
                 return;
             }
 

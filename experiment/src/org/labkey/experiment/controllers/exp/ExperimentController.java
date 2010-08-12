@@ -2411,27 +2411,32 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class EditSampleSetTypeAction extends SimpleViewAction<MaterialSourceForm>
+    public class EditSampleSetTypeAction extends RedirectAction<MaterialSourceForm>
     {
-        public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
+        @Override
+        public URLHelper getSuccessURL(MaterialSourceForm form)
         {
             ExpSampleSet ss = ExperimentService.get().getSampleSet(form.getBean().getRowId());
+            if (ss == null)
+            {
+                ss = ExperimentService.get().getSampleSet(form.getBean().getLSID());
+            }
             if (ExperimentService.get().ensureDefaultSampleSet().equals(ss))
             {
                 HttpView.throwUnauthorized("Cannot edit default sample set");
             }
             if (ss == null)
             {
-                return HttpView.throwNotFound("Could not find sample set with rowId " + form.getBean().getRowId());
+                throw new NotFoundException("Could not find sample set with rowId " + form.getBean().getRowId());
             }
-            HttpView.throwRedirect(ss.getType().urlEditDefinition(false, false, false));
-            return null;
+            return ss.getType().urlEditDefinition(false, false, false);
         }
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
-        }
+        @Override
+        public boolean doAction(MaterialSourceForm materialSourceForm, BindException errors) { return true; }
+
+        @Override
+        public void validateCommand(MaterialSourceForm target, Errors errors) {}
     }
 
     public static class MaterialSourceForm extends BeanViewForm<MaterialSource>
@@ -2621,7 +2626,8 @@ public class ExperimentController extends SpringActionController
                 return false;
             }
 
-            File systemDir = PipelineService.get().findPipelineRoot(getContainer()).ensureSystemDirectory();
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+            File systemDir = pipeRoot.ensureSystemDirectory();
             File uploadDir = new File(systemDir, "UploadedXARs");
             uploadDir.mkdirs();
             if (!uploadDir.isDirectory())
@@ -2663,7 +2669,7 @@ public class ExperimentController extends SpringActionController
             }
 
             ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), xarFile,
-                    "Uploaded file", true);
+                    "Uploaded file", true, pipeRoot);
             PipelineService.get().queueJob(job);
 
             return true;
@@ -4062,7 +4068,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (f.isFile())
                 {
-                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false);
+                    ExperimentPipelineJob job = new ExperimentPipelineJob(getViewBackgroundInfo(), f, "Experiment Import", false, form.getPipeRoot(getContainer()));
                     PipelineService.get().queueJob(job);
                 }
                 else

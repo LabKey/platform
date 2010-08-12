@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -34,9 +35,9 @@ import java.sql.SQLException;
 // Pipeline job used for importing individual specimen archives (not as part of a study).
 public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJobSupport
 {
-    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile) throws SQLException
+    public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root) throws SQLException
     {
-        super(info, definitionFile);
+        super(info, definitionFile, root);
     }
 
     public String getDescription()

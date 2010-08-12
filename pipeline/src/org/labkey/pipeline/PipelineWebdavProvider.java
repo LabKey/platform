@@ -28,8 +28,12 @@ import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.pipeline.api.PipeRootImpl;
+import org.labkey.pipeline.api.PipelineServiceImpl;
 
+import java.io.File;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Set;
 
 /**
@@ -72,7 +76,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         Container c = folder.getContainer();
         if (null == c)
             return null;
-        PipeRoot root = PipelineService.get().getPipelineRootSetting(c);
+        PipeRootImpl root = PipelineServiceImpl.get().getPipelineRootSetting(c);
         if (null == root)
             return null;
         return new PipelineFolderResource(folder, c, root);
@@ -83,7 +87,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     {
         Container c;
 
-        PipelineFolderResource(WebdavResource parent, Container c, PipeRoot root)
+        PipelineFolderResource(WebdavResource parent, Container c, PipeRootImpl root)
         {
             super(parent.getPath(), PIPELINE_LINK);
 
@@ -92,7 +96,11 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             _shouldIndex = root.isSearchable();
             setPolicy(org.labkey.api.security.SecurityManager.getPolicy(root));
 
-            _file = FileUtil.canonicalFile(root.getUri());
+            _files = new ArrayList<FileInfo>();
+            for (File file : root.getRootPaths())
+            {
+                _files.add(new FileInfo(file));
+            }
 
             this.setSearchProperty(SearchService.PROPERTY.securableResourceId, root.getResourceId());
         }
@@ -123,7 +131,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         public FileSystemResource find(String name)
         {
-            if (_file != null)
+            if (_files != null)
                 return new FileSystemResource(this, name);
             return null;
         }

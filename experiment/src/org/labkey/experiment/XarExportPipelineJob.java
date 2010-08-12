@@ -43,7 +43,7 @@ public class XarExportPipelineJob extends PipelineJob
 
     public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName) throws SQLException
     {
-        super(ExperimentPipelineProvider.NAME, info);
+        super(ExperimentPipelineProvider.NAME, info, root);
         _fileName = fileName;
         _lsidRelativizer = lsidRelativizer;
         _xarXmlFileName = xarXmlFileName;

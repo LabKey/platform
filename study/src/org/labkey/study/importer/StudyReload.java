@@ -32,6 +32,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
@@ -207,14 +208,14 @@ public class StudyReload
 
 
     @Nullable
-    public static File getPipelineRoot(Container c)
+    public static PipeRoot getPipelineRoot(Container c)
     {
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
-
-        if (null != root)
-            return root.getRootPath();
-        else
-            return null;
+        if (root == null || !root.isValid())
+        {
+            throw new NotFoundException("No valid pipeline root found");
+        }
+        return root;
     }
 
 
@@ -269,15 +270,15 @@ public class StudyReload
                 {
                     assert study.isAllowReload() : "Can't reload a study set for no reload";
 
-                    File root = getPipelineRoot(c);
+                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
 
                     if (null == root)
                         throw new StudyImportException("Pipeline root is not set in folder " + c.getPath());
 
-                    if (!root.exists())
+                    if (!root.isValid())
                         throw new StudyImportException("Pipeline root does not exist in folder " + c.getPath());
 
-                    File studyload = new File(root, STUDY_LOAD_FILENAME);
+                    File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
 
                     if (studyload.exists() && studyload.isFile())
                     {
@@ -382,7 +383,7 @@ public class StudyReload
                 try
                 {
                     c = QUEUE.take();
-                    File root = StudyReload.getPipelineRoot(c);
+                    PipeRoot root = StudyReload.getPipelineRoot(c);
                     study = manager.getStudy(c);
                     //noinspection ThrowableInstanceNeverThrown
                     BindException errors = new NullSafeBindException(c, "reload");
@@ -399,9 +400,9 @@ public class StudyReload
 
                     LOG.info("Handling " + c.getPath());
 
-                    File studyXml = new File(root, "study.xml");
+                    File studyXml = root.resolvePath("study.xml");
 
-                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors));
+                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root));
                 }
                 catch (InterruptedException e)
                 {

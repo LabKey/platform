@@ -3742,16 +3742,16 @@ public class StudyController extends BaseStudyController
             String path = form.getPath();
             File f = null;
 
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
             if (path != null)
             {
-                PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 if (root != null)
                     f = root.resolvePath(path);
             }
 
             try
             {
-                DatasetImportUtils.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
+                DatasetImportUtils.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL(), root);
             }
             catch (DatasetImportUtils.DatasetLockExistsException e)
             {
@@ -3797,9 +3797,7 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
 
-            File pipelineRoot = StudyReload.getPipelineRoot(c);
-
-            if (null == pipelineRoot)
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
             {
                 return false;   // getView() will show an appropriate message in this case
             }
@@ -3894,14 +3892,14 @@ public class StudyController extends BaseStudyController
     public boolean importStudy(BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
     {
         Container c = getContainer();
-        File pipelineRoot = StudyReload.getPipelineRoot(c);
+        PipeRoot pipelineRoot = StudyReload.getPipelineRoot(c);
 
         File studyXml;
 
         if (studyFile.getName().endsWith(".zip"))
         {
             String dirName = "unzip";
-            File importDir = new File(pipelineRoot, dirName);
+            File importDir = pipelineRoot.resolvePath(dirName);
 
             if (importDir.exists() && !FileUtil.deleteDir(importDir))
             {
@@ -3933,7 +3931,7 @@ public class StudyController extends BaseStudyController
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
 
-        PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors));
+        PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
 
         return !errors.hasErrors();
     }
@@ -4142,11 +4140,10 @@ public class StudyController extends BaseStudyController
                     new Object[] {getContainer()}, Integer.class);
             int count = null == visitDates ? 0 : visitDates.intValue();
 
-            HttpView view = new HtmlView(
+            return new HtmlView(
                     "<div>" + count + " rows were updated.<p/>" +
                     PageFlowUtil.generateButton("Done", "manageVisits.view") +
                     "</div>");
-            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)

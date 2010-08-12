@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.ActionURL;
@@ -36,9 +37,9 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
 {
     protected File _definitionFile;
 
-    public StudyBatch(ViewBackgroundInfo info, File definitionFile) throws SQLException
+    public StudyBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root) throws SQLException
     {
-        super("Study", info);
+        super("Study", info, root);
         _definitionFile = definitionFile;
     }
 

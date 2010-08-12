@@ -42,7 +42,7 @@ if (null == getStudy())
         ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
         out.println(generateButton("Create Study", createURL));
 
-        if (null != StudyReload.getPipelineRoot(c))
+        if (PipelineService.get().hasValidPipelineRoot(c))
         {
             ActionURL importStudyURL = new ActionURL(StudyController.ImportStudyAction.class, c);
             out.println(generateButton("Import Study", importStudyURL));

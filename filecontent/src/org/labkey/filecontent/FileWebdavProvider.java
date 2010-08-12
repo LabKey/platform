@@ -146,13 +146,6 @@ public class FileWebdavProvider implements WebdavService.Provider
             Path full = contextPath.append(fileServlet).append(rel);
             return full.encode() + "?renderAs=DEFAULT";
         }
-
-        public WebdavResource find(String name)
-        {
-            // TODO: move mergeFilesIfNeeded out of FileSystemResource to _FilesResource
-            mergeFilesIfNeeded();
-            return new _FilesResource(this, name);
-        }
     }
 
 

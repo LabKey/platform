@@ -36,16 +36,11 @@ public class MoveRunsPipelineJob extends PipelineJob
     private final int[] _runIds;
     private Container _sourceContainer;
 
-    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds) throws IOException
+    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds, PipeRoot root) throws IOException
     {
-        super(ExperimentPipelineProvider.NAME, info);
+        super(ExperimentPipelineProvider.NAME, info, root);
         _runIds = runIds;
         _sourceContainer = sourceContainer;
-        PipeRoot root = PipelineService.get().findPipelineRoot(info.getContainer());
-        if (root == null || !root.isValid())
-        {
-            throw new FileNotFoundException("Could not find pipeline root on disk for folder " + info.getContainer());
-        }
         File moveRunLogsDir = ExperimentPipelineProvider.getMoveDirectory(root);
         moveRunLogsDir.mkdirs();
         File logFile = File.createTempFile("moveRun", ".log", moveRunLogsDir);

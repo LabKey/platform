@@ -29,6 +29,7 @@
       <ns:column columnName="EntityId"/>
       <ns:column columnName="PipelineRootId"/>
       <ns:column columnName="Path"/>
+      <ns:column columnName="SupplementalPath"/>
       <ns:column columnName="Providers"/>
       <ns:column columnName="Type"/>
       <ns:column columnName="KeyBytes"/>

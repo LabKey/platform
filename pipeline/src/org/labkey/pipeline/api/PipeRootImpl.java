@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
@@ -68,18 +69,11 @@ public class PipeRootImpl implements PipeRoot
         return systemDir;        
     }
 
-    public static File ensureRoot(URI uriRoot)
-    {
-        File file = new File(uriRoot);
-        NetworkDrive.ensureDrive(file.getPath());
-        return file;
-    }
-
-    private Container _container;
-    @NotNull private final URI _uri;
-    private File _rootPath;
+    private String _container;
+    private final URI[] _uris;
+    private transient File[] _rootPaths;
     private final String _entityId;
-    private final GlobusKeyPairImpl _keyPair;
+    private transient final GlobusKeyPairImpl _keyPair;
     private final boolean _searchable;
     /** true if this root is based on the site or project default file root */
     private boolean _isDefaultRoot;
@@ -92,8 +86,13 @@ public class PipeRootImpl implements PipeRoot
 
     public PipeRootImpl(PipelineRoot root) throws URISyntaxException
     {
-        _container = ContainerManager.getForId(root.getContainerId());
-        _uri = new URI(root.getPath());
+        _container = root.getContainerId();
+        _uris = new URI[root.getSupplementalPath() == null ? 1 : 2];
+        _uris[0] = new URI(root.getPath());
+        if (root.getSupplementalPath() != null)
+        {
+            _uris[1] = new URI(root.getSupplementalPath());
+        }
         _entityId = root.getEntityId();
         _searchable = root.isSearchable();
         if (root.getKeyBytes() != null && root.getCertBytes() != null)
@@ -108,27 +107,82 @@ public class PipeRootImpl implements PipeRoot
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_container);
     }
 
     @NotNull
     public URI getUri()
     {
-        return _uri;
+        return _uris[0];
     }
 
     @NotNull
-    synchronized public File getRootPath()
+    public File getRootPath()
     {
-        if (_rootPath == null)
-            _rootPath = ensureRoot(_uri);
-        return _rootPath;
+        return getRootPaths()[0];
+    }
+
+    public synchronized File[] getRootPaths()
+    {
+        if (_rootPaths == null)
+        {
+            _rootPaths = new File[_uris.length];
+            for (int i = 0; i < _uris.length; i++)
+            {
+                _rootPaths[i] = new File(_uris[i]);
+                NetworkDrive.ensureDrive(_rootPaths[i].getPath());
+            }
+        }
+        return _rootPaths;
+    }
+
+    private File findRootPath(File file)
+    {
+        for (File root : getRootPaths())
+        {
+            // First, see if the file is under the root as it is:
+            if (URIUtil.isDescendant(root.toURI(), file.toURI()))
+            {
+                return root;
+            }
+        }
+
+        for (File root : getRootPaths())
+        {
+            // Next, see if canonicalizing both the root and the file causes them to be under each other.
+            // Canonicalizing the path both standardizes the filename case, but also resolves symbolic links.
+
+            try
+            {
+                File canFile = file.getCanonicalFile();
+                File canRoot = root.getCanonicalFile();
+                if (URIUtil.isDescendant(canRoot.toURI(), canFile.toURI()))
+                {
+                    return root;
+                }
+            }
+            catch (IOException e) {}
+        }
+        return null;
     }
 
     public File resolvePath(String path)
     {
+        // Check if the file already exists on disk
+        for (File root : getRootPaths())
+        {
+            File file = new File(root, path);
+            // Check that it's under the root to protect against ../../ type paths
+            if (file.exists() && isUnderRoot(file))
+            {
+                return file;
+            }
+        }
+
+        // Return the path to the default location
         File root = getRootPath();
         File file = new File(root, path);
+        // Check that it's under the root to protect against ../../ type paths
         if (!isUnderRoot(file))
         {
             return null;
@@ -138,9 +192,12 @@ public class PipeRootImpl implements PipeRoot
 
     public String relativePath(File file)
     {
-        String strRoot = getRootPath().toString();
-        if (!isUnderRoot(file))
+        File root = findRootPath(file);
+        if (root == null)
+        {
             return null;
+        }
+        String strRoot = root.toString();
 
         String strFile = file.toString();
         if (!strFile.toLowerCase().startsWith(strRoot.toLowerCase()))
@@ -155,34 +212,13 @@ public class PipeRootImpl implements PipeRoot
 
     public boolean isUnderRoot(File file)
     {
-        // First, see if the file is under the root as it is:
-        if (isUnderRoot(file.toURI()))
-        {
-            return true;
-        }
-        // Next, see if canonicalizing both the root and the file causes them to be under each other.
-        // Canonicalizing the path both standardizes the filename case, but also resolves symbolic links.
-
-        try
-        {
-            File canFile = file.getCanonicalFile();
-            File canRoot = new File(_uri).getCanonicalFile();
-            return URIUtil.isDescendant(canRoot.toURI(), canFile.toURI());
-        }
-        catch (IOException e) {
-            return false;
-        }
-    }
-
-    public boolean isUnderRoot(URI uri)
-    {
-        return URIUtil.isDescendant(_uri, uri);
+        return findRootPath(file) != null;
     }
 
     // UNDONE: need wrappers for file download/upload permissions
     public boolean hasPermission(Container container, User user, Class<? extends Permission> perm)
     {
-        return _container.hasPermission(user, perm) && container.hasPermission(user, perm);
+        return getContainer().hasPermission(user, perm) && container.hasPermission(user, perm);
     }
 
     // UNDONE: need wrappers for file download/upload permissions
@@ -209,7 +245,7 @@ public class PipeRootImpl implements PipeRoot
     {
         // if the root is a file-based default, it won't have an entityId, so default to containerId
         if (_entityId == null)
-            return _container != null ? _container.getResourceId() : null;
+            return _container;
 
         return _entityId;
     }
@@ -282,5 +318,26 @@ public class PipeRootImpl implements PipeRoot
     public boolean isValid()
     {
         return NetworkDrive.exists(getRootPath()) && getRootPath().isDirectory();
+    }
+
+    @Override
+    public void configureForm(SetupForm form)
+    {
+        File[] roots = getRootPaths();
+        form.setPath(roots[0].getPath());
+        if (roots.length > 1)
+        {
+            form.setSupplementalPath(roots[1].getPath());
+        }
+
+        form.setGlobusKeyPair(getGlobusKeyPair());
+        form.setSearchable(isSearchable());
+
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Pipeline root pointed at " + getRootPath();
     }
 }

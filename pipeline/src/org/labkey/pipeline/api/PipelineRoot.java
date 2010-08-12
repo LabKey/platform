@@ -25,6 +25,7 @@ public class PipelineRoot extends Entity
 
     int _pipelineRootId;
     String _path;
+    String _supplementalPath;
     String _type;
     
     byte[] _keyBytes;
@@ -44,6 +45,7 @@ public class PipelineRoot extends Entity
         // PipelineRoot
         this._pipelineRootId = root._pipelineRootId;
         this._path = root._path;
+        this._supplementalPath = root._supplementalPath;
         this._type = root._type;
         this._keyBytes = root._keyBytes;
         this._certBytes = root._certBytes;
@@ -63,15 +65,32 @@ public class PipelineRoot extends Entity
 
     public void setPath(String path)
     {
-        // Pipeline roots must be a directory URI, so they must end with '/'
-        _path = path;
-        if (!_path.endsWith("/"))
-            _path += "/";
+        _path = normalizePath(path);
+    }
+
+    /** Pipeline roots must be a directory URI, so they must end with '/' */
+    private String normalizePath(String path)
+    {
+        if (path != null && !path.endsWith("/"))
+        {
+            return path + "/";
+        }
+        return path;
     }
 
     public String getPath()
     {
         return _path;
+    }
+
+    public void setSupplementalPath(String supplementalPath)
+    {
+        _supplementalPath = normalizePath(supplementalPath);
+    }
+
+    public String getSupplementalPath()
+    {
+        return _supplementalPath;
     }
 
     public String getType()

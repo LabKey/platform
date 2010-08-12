@@ -16,6 +16,7 @@
 
 package org.labkey.study.importer;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.study.Study;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -37,7 +38,7 @@ import java.sql.SQLException;
 */
 public class DatasetImportUtils
 {
-    public static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url) throws IOException, DatasetLockExistsException, SQLException
+    public static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url, PipeRoot root) throws IOException, DatasetLockExistsException, SQLException
     {
         if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
         {
@@ -51,7 +52,7 @@ public class DatasetImportUtils
             throw new DatasetLockExistsException();
         }
 
-        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile);
+        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile, root);
         batch.submit();
     }
 

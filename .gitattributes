@@ -1284,6 +1284,7 @@ pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.20-9.21.sql 
 pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.21-9.22.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-0.00-8.10.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-10.20-10.21.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.20-8.30.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-9.20-9.30.sql -text
@@ -1323,6 +1324,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.20-9.21.sql -
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.21-9.22.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-8.10.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-10.20-10.21.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.20-8.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-8.30-9.10.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.20-9.30.sql -text

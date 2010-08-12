@@ -38,6 +38,7 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -108,27 +109,13 @@ public class PipelineManager
         return Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
     }
 
-
-    static public String getPipelineRoot(Container container) throws SQLException
-    {
-        return getPipelineRoot(container, PipelineRoot.PRIMARY_ROOT);
-    }
-
-    static public String getPipelineRoot(Container container, String type)
-    {
-        PipelineRoot root = getPipelineRootObject(container, type);
-        if (root == null)
-            return null;
-        return root.getPath();
-    }
-
-    static public void setPipelineRoot(User user, Container container, String path, String type,
+    static public void setPipelineRoot(User user, Container container, URI[] roots, String type,
                                        GlobusKeyPair globusKeyPair, boolean searchable) throws SQLException
     {
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
 
-        if (path == null || path.length() == 0)
+        if (roots == null || roots.length == 0)
         {
             if (oldValue != null)
             {
@@ -145,7 +132,8 @@ public class PipelineManager
             {
                 newValue = new PipelineRoot(oldValue);
             }
-            newValue.setPath(path);
+            newValue.setPath(roots[0].toString());
+            newValue.setSupplementalPath(roots.length > 1 ? roots[1].toString() : null);
             newValue.setContainerId(container.getId());
             newValue.setType(type);
             newValue.setKeyBytes(globusKeyPair == null ? null : globusKeyPair.getKeyBytes());

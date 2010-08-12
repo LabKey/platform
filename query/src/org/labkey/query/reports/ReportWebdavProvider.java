@@ -151,6 +151,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             _folder = folder;
         }
 
+        @NotNull
         public Collection<WebdavResolver.History> getHistory()
         {
             return Collections.emptyList();
@@ -166,19 +167,9 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return false;
         }
 
-        public boolean isVirtual()
-        {
-            return true;
-        }
-
         public boolean isFile()
         {
             return exists();
-        }
-
-        public boolean canRename()
-        {
-            return false; // NYI
         }
 
         public InputStream getInputStream(User user) throws IOException

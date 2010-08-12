@@ -188,7 +188,7 @@
         </td>
     </tr>
     <tr>
-        <td class="labkey-form-label">Parent Column<%= helpPopup("Parent Column", "The column that name of a parent sample that is visible from this folder. Parent samples are automatically linked to child samples. You may comma separate the names if a sample has more than one parent.")%></td>
+        <td class="labkey-form-label">Parent Column<%= helpPopup("Parent Column", "The column that provides the name of a parent sample that is visible from this folder. Parent samples are automatically linked to child samples. You may comma separate the names if a sample has more than one parent.")%></td>
         <td>
             <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.getParentCol() != null)
             { %>

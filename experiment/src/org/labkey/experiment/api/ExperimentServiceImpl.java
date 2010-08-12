@@ -1910,7 +1910,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             rowIds[i] = runs.get(i).getRowId();
         }
 
-        MoveRunsPipelineJob job = new MoveRunsPipelineJob(info, sourceContainer, rowIds);
+        MoveRunsPipelineJob job = new MoveRunsPipelineJob(info, sourceContainer, rowIds, PipelineService.get().findPipelineRoot(info.getContainer()));
         PipelineService.get().queueJob(job);
     }
 
@@ -3140,9 +3140,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description) throws IOException
+    public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
     {
-        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false);
+        ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false, root);
         PipelineService.get().queueJob(job);
         return job;
     }

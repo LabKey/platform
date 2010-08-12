@@ -312,7 +312,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
         TestJob(Container c, AtomicInteger counter) throws SQLException
         {
-            super(null, new ViewBackgroundInfo(c, null, null));
+            super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));
             _counter = counter;
         }
 

@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -32,14 +33,9 @@ import java.sql.SQLException;
  */
 public class DatasetBatch extends StudyBatch implements Serializable, DatasetJobSupport
 {
-    public DatasetBatch(ViewBackgroundInfo info, File definitionFile) throws SQLException
+    public DatasetBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root) throws SQLException
     {
-        super(info, definitionFile);
-    }
-
-    public DatasetBatch(ViewBackgroundInfo info) throws SQLException
-    {
-        this(info, null);
+        super(info, definitionFile, root);
     }
 
     @Override

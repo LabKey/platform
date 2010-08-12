@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.pipeline;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -49,9 +50,9 @@ public class ExperimentPipelineJob extends PipelineJob
 
     private transient XarSource _xarSource;
 
-    public ExperimentPipelineJob(ViewBackgroundInfo info, File file, String description, boolean deleteExistingRuns) throws IOException
+    public ExperimentPipelineJob(ViewBackgroundInfo info, File file, String description, boolean deleteExistingRuns, PipeRoot root) throws IOException
     {
-        super(ExperimentPipelineProvider.NAME, info);
+        super(ExperimentPipelineProvider.NAME, info, root);
         _xarFile = file;
         _description = description + " - " + file.getName();
         _deleteExistingRuns = deleteExistingRuns;

@@ -140,12 +140,21 @@
                             <%="projectSpecified".equals(bean.getPipelineRootOption()) ? " checked" : ""%>
                                    onclick="updatePipelineSelection();">
                             <label for="pipeOptionProjectSpecified"><%=h(folderRadioBtnLabel)%></label></td>
-                        <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getStrValue())%>"></td>
+                        <td><input type="text" id="pipeProjectRootPath" name="path" size="50" value="<%=h(bean.getPath())%>"></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td id="pipeIndexTd"><input type="checkbox" name="searchable" id="pipeOptionIndexable" <%=bean.isSearchable() ? " checked" : ""%>>
-                            <label for="pipeOptionIndexable">Allow these files to be searched.</label>
+                            <label for="pipeOptionIndexable">Allow these files to be searched</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath" <%=bean.getSupplementalPath() == null ? "" : " checked"%> onclick="Ext.get('supplementalPathDiv').dom.style.display = (Ext.get('pipeOptionSupplementalPath').dom.checked ? null : 'none'); Ext.get('pipeProjectSupplementalPath').dom.disabled = (Ext.get('pipeOptionSupplementalPath').dom.checked ? false : true);">
+                            <label for="pipeOptionSupplementalPath">Include a supplemental file location</label>
+                            <div id="supplementalPathDiv" <% if (bean.getSupplementalPath() == null) { %>style="display:none"<% } %>>
+                                <input type="text" id="pipeProjectSupplementalPath" <% if (bean.getSupplementalPath() == null) { %>disabled<% } %> name="supplementalPath" size="50" value="<%=h(bean.getSupplementalPath())%>">
+                            </div>
                         </td>
                     </tr>
                 </table>
