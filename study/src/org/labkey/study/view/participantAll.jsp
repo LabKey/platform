@@ -219,7 +219,7 @@
                 }
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount%>"><img src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>"></td>
+                    <td colspan="<%=totalSeqKeyCount%>"><img src="<%=ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString()%>"></td>
                 </tr>
                 <%
             }
