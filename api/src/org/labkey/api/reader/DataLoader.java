@@ -658,7 +658,9 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
 
                 if (foundData)
                 {
-                    ArrayList<Object> list = new ArrayList<Object>((int)(activeColumns.length * 1.2));
+                    // This extra copy was added to AbstractTabLoader in r12810 to let DataSetDefinition.importDatasetData()
+                    // modify the underlying maps. TODO: Refactor dataset import and return immutable maps. 
+                    ArrayList<Object> list = new ArrayList<Object>(activeColumns.length);
                     list.addAll(Arrays.asList(values));
                     return factory.getRowMap(list);
                 }

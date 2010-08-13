@@ -158,6 +158,7 @@ api/src/org/labkey/api/data/DbScope.java -text
 api/src/org/labkey/api/data/DelegatingContainerFilter.java -text
 api/src/org/labkey/api/data/DetailsColumn.java -text
 api/src/org/labkey/api/data/DimensionColumnInfo.java -text
+api/src/org/labkey/api/data/DisplayColumnDecorator.java -text
 api/src/org/labkey/api/data/DisplayColumnFactory.java -text
 api/src/org/labkey/api/data/DisplayColumnGroup.java -text
 api/src/org/labkey/api/data/Entity.java -text
@@ -567,6 +568,7 @@ api/src/org/labkey/api/reader/BeanTabLoader.java -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
+api/src/org/labkey/api/reader/FastaLoader.java -text
 api/src/org/labkey/api/reader/Loader.java -text
 api/src/org/labkey/api/reader/MapTabLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text

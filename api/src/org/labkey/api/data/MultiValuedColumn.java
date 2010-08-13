@@ -44,13 +44,12 @@ public class MultiValuedColumn extends LookupColumn
         super(parentPkColumn, childKey, childValue);
         setFieldKey(new FieldKey(null, name));
         setAlias(name);
-        setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new MultiValuedDisplayColumn(colInfo);
-                }
-            });
+    }
+
+    @Override
+    public DisplayColumn getRenderer()
+    {
+        return new MultiValuedDisplayColumn(super.getRenderer());
     }
 
     @Override
@@ -120,13 +119,14 @@ public class MultiValuedColumn extends LookupColumn
     }
 
 
-    private class MultiValuedDisplayColumn extends DataColumn
+    // Wraps any DisplayColumn and causes it to render each value separately
+    private static class MultiValuedDisplayColumn extends DisplayColumnDecorator
     {
         private String _value = null;
 
-        public MultiValuedDisplayColumn(ColumnInfo col)
+        public MultiValuedDisplayColumn(DisplayColumn dc)
         {
-            super(col);
+            super(dc);
         }
 
         @Override         // TODO: Similar for renderDetailsCellContents()

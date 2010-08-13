@@ -19,8 +19,8 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * Simple case-insensitive verion of HashSet --
- * simpy forces all Strings to lowercase before adding, removing,
+ * Simple case-insensitive version of HashSet --
+ * simply forces all Strings to lowercase before adding, removing,
  * or searching.  Could easily extend this to preserve the case...
  * just add a lowercase version to uppercase version map.
  *
