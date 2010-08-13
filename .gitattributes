@@ -266,7 +266,6 @@ cbcassay/src/org/labkey/cbcassay/EditResultsQueryView.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCData.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataDisplayColumn.java -text
 cbcassay/src/org/labkey/cbcassay/data/CBCDataProperty.java -text
-cbcassay/src/org/labkey/cbcassay/data/DisplayColumnDecorator.java -text
 cbcassay/src/org/labkey/cbcassay/view/showDetails.jsp -text
 core/module.properties -text
 core/resources/schemas/core.xml -text

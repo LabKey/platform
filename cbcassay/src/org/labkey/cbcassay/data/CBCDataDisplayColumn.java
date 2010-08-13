@@ -17,7 +17,7 @@
 package org.labkey.cbcassay.data;
 
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.DisplayColumnDecorator;
 import org.labkey.api.data.RenderContext;
 
 import java.io.Writer;

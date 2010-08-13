@@ -33,7 +33,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.cbcassay.data.CBCDataDisplayColumn;
 import org.labkey.cbcassay.data.CBCDataProperty;
-import org.labkey.cbcassay.data.DisplayColumnDecorator;
+import org.labkey.api.data.DisplayColumnDecorator;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -159,5 +159,4 @@ public final class CBCResultsQueryView extends ResultsQueryView
             out.write("<input type=\"text\" name=\"sampleId\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
         }
     }
-
 }
