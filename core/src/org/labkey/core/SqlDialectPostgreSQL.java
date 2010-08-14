@@ -102,14 +102,14 @@ class SqlDialectPostgreSQL extends SqlDialect
         if (!getProductName().equals(dataBaseProductName))
             return false;
 
-        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, etc.
+        int version = databaseMajorVersion * 10 + databaseMinorVersion;   // 8.2 => 82, 8.3 => 83, 8.4 => 84, 9.0 => 90, etc.
 
         // Version 8.2 or greater is allowed...
         if (version >= 82)
         {
-            // ...but warn for anything greater than 8.4
-            if (logWarnings && version > 84)
-                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  PostgreSQL 8.4 is the recommended version.");
+            // ...but warn for anything greater than 9.0
+            if (logWarnings && version > 90)
+                _log.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseMajorVersion + "." + databaseMinorVersion + ".  PostgreSQL 9.0 is the recommended version.");
 
             return true;
         }
