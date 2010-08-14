@@ -28,6 +28,9 @@ import java.util.Iterator;
  * Time: 2:40:58 PM
  *
  */
+
+// Users of FastaLoader implementations can simply iterate the loader itself (if all they want is a stream of Ts) or
+// they can grab the iterator to monitor progress, current line, etc.
 public abstract class FastaLoader<T> implements Iterable<T>
 {
     private final File _fastaFile;
@@ -39,6 +42,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
         _factory = factory;
     }
 
+    // Force subclasses to implement to provide callers a more appropriate name.
     public abstract FastaIterator iterator();
 
     public interface FastaIteratorElementFactory<U>
@@ -235,7 +239,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
         }
 
 
-        public long getLastHeaderLine()
+        public long getLastHeaderLineNum()
         {
             return _lastHeaderLineNum;
         }

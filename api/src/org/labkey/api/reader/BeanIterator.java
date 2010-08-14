@@ -25,7 +25,6 @@ import java.io.IOException;
 * User: adam
 * Date: May 5, 2009
 * Time: 7:35:51 PM
-* To change this template use File | Settings | File Templates.
 */
 
 // Iterator that transforms Map<String, Object> to bean using ObjectFactory

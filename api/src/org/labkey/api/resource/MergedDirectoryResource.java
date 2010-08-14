@@ -32,7 +32,7 @@ import java.util.*;
  */
 public class MergedDirectoryResource extends AbstractResourceCollection
 {
-    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCache(50, CacheManager.DAY, "MergedDirectoryResourceCache");
+    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getCache(500, CacheManager.DAY, "MergedDirectoryResourceCache");
     private static final long VERSION_STAMP_CACHE_TIME = AppProps.getInstance().isDevMode() ? (15*CacheManager.SECOND) : CacheManager.DEFAULT_TIMEOUT;
 
     private final List<File> _dirs;
