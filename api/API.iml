@@ -444,7 +444,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.2.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/ehcache-core-2.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
