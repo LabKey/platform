@@ -1879,13 +1879,15 @@ public class OntologyManager
     }
 
 
-    static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms,semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden,mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview";
+    static final String parameters = "propertyuri,ontologyuri,name,description,rangeuri,concepturi,label,searchterms," +
+            "semantictype,format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
+            "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2124,6 +2126,9 @@ public class OntologyManager
                 boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue();
                 boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
 
+                boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
+                boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
+
                 PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
                 if (null == pt)
                 {
@@ -2182,6 +2187,8 @@ public class OntologyManager
                 pd.setShownInInsertView(shownInInsertView);
                 pd.setShownInUpdateView(shownInUpdateView);
                 pd.setShownInDetailsView(shownInDetailsView);
+                pd.setDimension(dimension);
+                pd.setMeasure(measure);
                 pd.setFormat(format);
                 pd.setMvEnabled(mvEnabled);
                 pd.setLookupContainer(lookupContainerId);

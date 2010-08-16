@@ -45,6 +45,8 @@ public interface DomainProperty
     boolean isShownInUpdateView();
     boolean isShownInDetailsView();
     boolean isMvEnabled();
+    boolean isMeasure();
+    boolean isDimension();
 
     void delete();
 
@@ -62,6 +64,8 @@ public interface DomainProperty
     void setShownInUpdateView(boolean shown);
     void setShownInDetailsView(boolean shown);
     void setMvEnabled(boolean mv);
+    void setMeasure(boolean isMeasure);
+    void setDimension(boolean isDimension);
 
     void setImportAliasSet(Set<String> aliases);
     Set<String> getImportAliasSet();

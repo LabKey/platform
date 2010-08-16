@@ -82,7 +82,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String autoFillValue = null;
     private int scale = 0;
     private int precision = 0;
-    private boolean nullable = false;
     private boolean isAutoIncrement = false;
     private boolean isKeyField = false;
     private boolean isReadOnly = false;
@@ -96,7 +95,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String conceptURI = null;
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
-    private DefaultValueType _defaultValueType = null;
     private boolean _lockName = false;
 
     // Only set if we have an associated mv column for this column
@@ -223,7 +221,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         // and the remaining
         setUserEditable(col.isUserEditable());
-        setNullable(col.getNullable());
+        setNullable(col.isNullable());
         setAutoFillValue(col.getAutoFillValue());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
@@ -257,8 +255,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setInputType(col.inputType);
 
         setInputRows(col.getInputRows());
-        if (!isKeyField() && !col.getNullable())
-            setNullable(col.getNullable());
+        if (!isKeyField() && !col.isNullable())
+            setNullable(col.isNullable());
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
         setWidth(col.getWidth());
@@ -272,6 +270,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
+        // hide the fact that these values can be null internally.  It's important to preserve the notion
+        // of unset values on the new columninfo.
+        measure = col.measure;
+        dimension = col.dimension;
 
         setMvColumnName(col.getMvColumnName());
     }
@@ -484,11 +487,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         displayField = field;
     }
 
-    public boolean getNullable()
-    {
-        return nullable;
-    }
-
     public int getScale()
     {
         return scale;
@@ -619,18 +617,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return 15;
 
         return inputRows;
-    }
-
-
-    /* Don't return TYPEs just real java objects */
-    public Class getJavaObjectClass()
-    {
-        return javaClassFromSqlType(getSqlTypeInt(), true);
-    }
-
-    public Class getJavaClass()
-    {
-        return javaClassFromSqlType(getSqlTypeInt(), isNullable());
     }
 
     public boolean isAutoIncrement()
@@ -792,6 +778,10 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             shownInUpdateView = xmlCol.getShownInUpdateView();
         if (xmlCol.isSetShownInDetailsView())
             shownInDetailsView = xmlCol.getShownInDetailsView();
+        if (xmlCol.isSetDimension())
+            dimension = xmlCol.getDimension();
+        if (xmlCol.isSetMeasure())
+            measure = xmlCol.getMeasure();
         if (xmlCol.isSetIsUnselectable())
             isUnselectable = xmlCol.getIsUnselectable();
         if (xmlCol.isSetIsKeyField())
@@ -1245,118 +1235,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         ArrayList<String> fkColumnNames = new ArrayList<String>(2);
     }
 
-    public boolean isDateTimeType()
-    {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.DATE) ||
-                (sqlType == Types.TIME) ||
-                (sqlType == Types.TIMESTAMP);
-    }
-
-    public boolean isStringType()
-    {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.CLOB) ||
-                (sqlType == Types.CHAR) ||
-                (sqlType == Types.VARCHAR) ||
-                (sqlType == Types.LONGVARCHAR);
-    }
-
-    public boolean isLongTextType()
-    {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.CLOB) ||
-                (sqlType == Types.LONGVARCHAR);
-    }
-
-    public boolean isBooleanType()
-    {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.BOOLEAN) ||
-                (sqlType == Types.BIT);
-    }
-
-    public static String javaTypeFromSqlType(int sqlType, boolean isObj)
-    {
-        switch (sqlType)
-        {
-            case Types.DOUBLE:
-                if (isObj)
-                    return "Double";
-                else
-                    return "double";
-            case Types.BIT:
-            case Types.BOOLEAN:
-                if (isObj)
-                    return "Boolean";
-                else
-                    return "boolean";
-            case Types.INTEGER:
-                if (isObj)
-                    return "Integer";
-                else
-                    return "int";
-            case Types.TIMESTAMP:
-            case Types.TIME:
-            case Types.DATE:
-                return "java.util.Date";
-            case Types.VARCHAR:
-            case Types.CHAR:
-            case Types.LONGVARCHAR:
-                return "String";
-            default:
-                return "String";
-        }
-    }
-
-    public static Class javaClassFromSqlType(int sqlType, boolean isObj)
-    {
-        switch (sqlType)
-        {
-            case Types.DOUBLE:
-            case Types.NUMERIC:
-            case Types.DECIMAL:
-                if (isObj)
-                    return Double.class;
-                else
-                    return Double.TYPE;
-            case Types.FLOAT:
-            case Types.REAL:
-                if (isObj)
-                    return Float.class;
-                else
-                    return Float.TYPE;
-            case Types.BIT:
-            case Types.BOOLEAN:
-                if (isObj)
-                    return Boolean.class;
-                else
-                    return Boolean.TYPE;
-            case Types.INTEGER:
-            case Types.SMALLINT:
-            case Types.TINYINT:
-                if (isObj)
-                    return Integer.class;
-                else
-                    return Integer.TYPE;
-            case Types.BIGINT:
-                if (isObj)
-                    return Long.class;
-                else
-                    return Long.TYPE;
-            case Types.TIMESTAMP:
-            case Types.TIME:
-            case Types.DATE:
-                return java.util.Date.class;
-            case Types.VARCHAR:
-            case Types.CHAR:
-            case Types.LONGVARCHAR:
-                return String.class;
-            default:
-                return String.class;
-        }
-    }
-
     public String getSqlTypeName()
     {
         return sqlTypeName;
@@ -1381,34 +1259,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
         return sqlTypeInt;
     }
-
-    public String getFriendlyTypeName()
-    {
-        return getFriendlyTypeName(getJavaClass());
-    }
-
-    public static String getFriendlyTypeName(Class javaClass)
-    {
-        if (javaClass.equals(String.class))
-            return "Text (String)";
-        else if (javaClass.equals(Integer.class) || javaClass.equals(Integer.TYPE))
-            return "Integer";
-        else if (javaClass.equals(Double.class) || javaClass.equals(Double.TYPE))
-            return "Number (Double)";
-        else if (javaClass.equals(Float.class) || javaClass.equals(Float.TYPE))
-            return "Number (Float)";
-        else if (javaClass.equals(Boolean.class) || javaClass.equals(Boolean.TYPE))
-            return "True/False (Boolean)";
-        else if (javaClass.equals(Long.class) || javaClass.equals(Long.TYPE))
-            return "Long Integer";
-        else if (javaClass.equals(File.class))
-            return "File";
-        else if (Date.class.isAssignableFrom(javaClass))
-            return "Date and Time";
-        else
-            return "Other";
-    }
-
 
     public void setCssClass(String cssClass)
     {
@@ -1462,18 +1312,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         this.precision = precision;
     }
-
-    public boolean isNullable()
-    {
-        return nullable;
-    }
-
-
-    public void setNullable(boolean nullable)
-    {
-        this.nullable = nullable;
-    }
-
 
     public boolean isKeyField()
     {
@@ -1574,5 +1412,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public void setDefaultValueType(DefaultValueType defaultValueType)
     {
         _defaultValueType = defaultValueType;
+    }
+
+    @Override
+    public boolean isLookup()
+    {
+        return getFk() != null;
     }
 }

@@ -66,11 +66,6 @@ public class AggregateColumnInfo extends ColumnInfo
         return _member;
     }
 
-    public CrosstabMeasure getMeasure()
-    {
-        return _measure;
-    }
-
     public SQLFragment getValueSql(String tableAliasName)
     {
         return new SQLFragment(tableAliasName + "." + getName());

@@ -15,8 +15,12 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.util.StringExpression;
 
+import java.io.File;
+import java.sql.Types;
+import java.util.Date;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.regex.Matcher;
@@ -30,7 +34,7 @@ import java.util.regex.Pattern;
  * These are fields used by ColumnInfo and PropertyDescriptor that primarily affect
  * how the field in rendered in the HTML grids, forms, and pickers
  */
-public class ColumnRenderProperties
+public abstract class ColumnRenderProperties
 {
     protected Sort.SortDirection sortDirection = Sort.SortDirection.ASC;
     protected String inputType;
@@ -41,15 +45,21 @@ public class ColumnRenderProperties
     protected String excelFormatString;
     protected String tsvFormatString;
 
+    // property descriptors default to nullable, while columninfos do not; PropertyDescriptor overrides this initializer
+    // in its constructor:
+    protected boolean nullable = false;
     protected String label;
     protected String name;
     protected String description;
     protected boolean hidden;
+    protected Boolean measure;
+    protected Boolean dimension;
     protected boolean shownInInsertView = true;
     protected boolean shownInUpdateView = true;
     protected boolean shownInDetailsView = true;
     protected StringExpression url;
     protected Set<String> importAliases = new LinkedHashSet<String>();
+    protected DefaultValueType _defaultValueType = null;
 
     public void copyTo(ColumnRenderProperties to)
     {
@@ -66,6 +76,8 @@ public class ColumnRenderProperties
         to.shownInInsertView = shownInInsertView;
         to.shownInUpdateView = shownInUpdateView;
         to.shownInDetailsView = shownInDetailsView;
+        to.measure = measure;
+        to.dimension = dimension;
         to.name = name;
         to.url = url;
         to.importAliases = new LinkedHashSet<String>(importAliases);
@@ -231,6 +243,44 @@ public class ColumnRenderProperties
         this.url = url;
     }
 
+    public void setMeasure(boolean measure)
+    {
+        this.measure = measure;
+    }
+
+    public void setDimension(boolean dimension)
+    {
+        this.dimension = dimension;
+    }
+
+    public boolean isDimension()
+    {
+        // If dimension is unspecified/null, make a best guess based on the type of the field:
+        if (dimension == null)
+            return isLookup() && !isHidden();
+        else
+            return dimension.booleanValue();
+    }
+
+    public boolean isMeasure()
+    {
+        // If measure is unspecified/null, make a best guess based on the type of the field:
+        if (measure == null)
+            return isNumericType() && !isAutoIncrement() && !isLookup() && !isHidden();
+        else
+            return measure.booleanValue();
+    }
+
+    public boolean isNullable()
+    {
+        return nullable;
+    }
+
+    public void setNullable(boolean nullable)
+    {
+        this.nullable = nullable;
+    }
+
     public Set<String> getImportAliasesSet()
     {
         return importAliases;
@@ -270,6 +320,12 @@ public class ColumnRenderProperties
         return sb.toString();
     }
 
+    public abstract int getSqlTypeInt();
+
+    public abstract boolean isLookup();
+
+    protected abstract boolean isAutoIncrement();
+
     private static Pattern STRING_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
 
     public static Set<String> convertToSet(String s)
@@ -290,5 +346,169 @@ public class ColumnRenderProperties
             }
         }
         return result;
+    }
+
+
+    public boolean isDateTimeType()
+    {
+        int sqlType = getSqlTypeInt();
+        return (sqlType == Types.DATE) ||
+                (sqlType == Types.TIME) ||
+                (sqlType == Types.TIMESTAMP);
+    }
+
+    public boolean isStringType()
+    {
+        int sqlType = getSqlTypeInt();
+        return (sqlType == Types.CLOB) ||
+                (sqlType == Types.CHAR) ||
+                (sqlType == Types.VARCHAR) ||
+                (sqlType == Types.LONGVARCHAR);
+    }
+
+    public boolean isLongTextType()
+    {
+        int sqlType = getSqlTypeInt();
+        return (sqlType == Types.CLOB) ||
+                (sqlType == Types.LONGVARCHAR);
+    }
+
+    public boolean isBooleanType()
+    {
+        int sqlType = getSqlTypeInt();
+        return (sqlType == Types.BOOLEAN) ||
+                (sqlType == Types.BIT);
+    }
+
+    public boolean isNumericType()
+    {
+        int sqlType = getSqlTypeInt();
+        return (sqlType == Types.INTEGER) ||
+                (sqlType == Types.DECIMAL) ||
+                (sqlType == Types.DOUBLE) ||
+                (sqlType == Types.SMALLINT) ||
+                (sqlType == Types.BIGINT) ||
+                (sqlType == Types.FLOAT) ||
+                (sqlType == Types.NUMERIC) ||
+                (sqlType == Types.TINYINT);
+    }
+
+    public static String javaTypeFromSqlType(int sqlType, boolean isObj)
+    {
+        switch (sqlType)
+        {
+            case Types.DOUBLE:
+                if (isObj)
+                    return "Double";
+                else
+                    return "double";
+            case Types.BIT:
+            case Types.BOOLEAN:
+                if (isObj)
+                    return "Boolean";
+                else
+                    return "boolean";
+            case Types.INTEGER:
+                if (isObj)
+                    return "Integer";
+                else
+                    return "int";
+            case Types.TIMESTAMP:
+            case Types.TIME:
+            case Types.DATE:
+                return "java.util.Date";
+            case Types.VARCHAR:
+            case Types.CHAR:
+            case Types.LONGVARCHAR:
+                return "String";
+            default:
+                return "String";
+        }
+    }
+
+    public static Class javaClassFromSqlType(int sqlType, boolean isObj)
+    {
+        switch (sqlType)
+        {
+            case Types.DOUBLE:
+            case Types.NUMERIC:
+            case Types.DECIMAL:
+                if (isObj)
+                    return Double.class;
+                else
+                    return Double.TYPE;
+            case Types.FLOAT:
+            case Types.REAL:
+                if (isObj)
+                    return Float.class;
+                else
+                    return Float.TYPE;
+            case Types.BIT:
+            case Types.BOOLEAN:
+                if (isObj)
+                    return Boolean.class;
+                else
+                    return Boolean.TYPE;
+            case Types.INTEGER:
+            case Types.SMALLINT:
+            case Types.TINYINT:
+                if (isObj)
+                    return Integer.class;
+                else
+                    return Integer.TYPE;
+            case Types.BIGINT:
+                if (isObj)
+                    return Long.class;
+                else
+                    return Long.TYPE;
+            case Types.TIMESTAMP:
+            case Types.TIME:
+            case Types.DATE:
+                return java.util.Date.class;
+            case Types.VARCHAR:
+            case Types.CHAR:
+            case Types.LONGVARCHAR:
+                return String.class;
+            default:
+                return String.class;
+        }
+    }
+
+    public String getFriendlyTypeName()
+    {
+        return getFriendlyTypeName(getJavaClass());
+    }
+
+    public static String getFriendlyTypeName(Class javaClass)
+    {
+        if (javaClass.equals(String.class))
+            return "Text (String)";
+        else if (javaClass.equals(Integer.class) || javaClass.equals(Integer.TYPE))
+            return "Integer";
+        else if (javaClass.equals(Double.class) || javaClass.equals(Double.TYPE))
+            return "Number (Double)";
+        else if (javaClass.equals(Float.class) || javaClass.equals(Float.TYPE))
+            return "Number (Float)";
+        else if (javaClass.equals(Boolean.class) || javaClass.equals(Boolean.TYPE))
+            return "True/False (Boolean)";
+        else if (javaClass.equals(Long.class) || javaClass.equals(Long.TYPE))
+            return "Long Integer";
+        else if (javaClass.equals(File.class))
+            return "File";
+        else if (Date.class.isAssignableFrom(javaClass))
+            return "Date and Time";
+        else
+            return "Other";
+    }
+
+    /* Don't return TYPEs just real java objects */
+    public Class getJavaObjectClass()
+    {
+        return javaClassFromSqlType(getSqlTypeInt(), true);
+    }
+
+    public Class getJavaClass()
+    {
+        return javaClassFromSqlType(getSqlTypeInt(), isNullable());
     }
 }

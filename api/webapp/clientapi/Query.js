@@ -1588,6 +1588,8 @@ LABKEY.Query = new function()
             <li><b>shownInInsertView</b> -- whether this field is intended to be shown in insert views</li>
             <li><b>shownInUpdateView</b> -- whether this field is intended to be shown in update views</li>
             <li><b>shownInDetailsView</b> -- whether this field is intended to be shown in details views</li>
+            <li><b>measure</b> -- whether this field is a measure.  Measures are fields that contain data subject to charting and other analysis.</li>
+            <li><b>dimension</b> -- whether this field is a dimension.  Data dimensions define logical groupings of measures.</li>
             <li><b>hidden</b> -- whether this field is hidden and not normally shown in grid views</li>
             <li><b>lookup</b> -- If the field is a lookup, there will
                 be four sub-properties listed under this property:

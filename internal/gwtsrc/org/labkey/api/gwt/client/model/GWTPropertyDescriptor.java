@@ -61,6 +61,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty shownInInsertView = new BooleanProperty(true);
     private BooleanProperty shownInUpdateView = new BooleanProperty(true);
     private BooleanProperty shownInDetailsView = new BooleanProperty(true);
+    private BooleanProperty measure = new BooleanProperty();
+    private BooleanProperty dimension = new BooleanProperty();
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -100,6 +102,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         setShownInInsertView(s.isShownInInsertView());
         setShownInUpdateView(s.isShownInUpdateView());
         setMvEnabled(s.getMvEnabled());
+        setMeasure(s.isMeasure());
+        setDimension(s.isDimension());
         setLookupContainer(s.getLookupContainer());
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
@@ -219,6 +223,17 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         this.rangeURI.set(dataTypeURI);
     }
+    
+    public void guessMeasureAndDimension()
+    {
+        boolean plottableType = "http://www.w3.org/2001/XMLSchema#int".equals(getRangeURI()) ||
+                "http://www.w3.org/2001/XMLSchema#double".equals(getRangeURI());
+        boolean isMeasure = plottableType && getLookupQuery() == null && !isHidden();
+        setMeasure(isMeasure);
+
+        setDimension(getLookupQuery() != null && !isHidden());
+    }
+
 
     public String getConceptURI()
     {
@@ -320,6 +335,26 @@ public class GWTPropertyDescriptor implements IsSerializable
         shownInDetailsView.setBool(shown);
     }
 
+    public boolean isMeasure()
+    {
+        return measure.booleanValue();
+    }
+
+    public void setMeasure(boolean isMeasure)
+    {
+        measure.setBool(isMeasure);
+    }
+
+    public boolean isDimension()
+    {
+        return dimension.booleanValue();
+    }
+
+    public void setDimension(boolean isDimension)
+    {
+        dimension.setBool(isDimension);
+    }
+
     public boolean getMvEnabled()
     {
         return mvEnabled.getBool();
@@ -402,6 +437,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isShownInDetailsView() != that.isShownInDetailsView()) return false;
         if (isShownInInsertView() != that.isShownInInsertView()) return false;
         if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
+        if (isMeasure() != that.isMeasure()) return false;
+        if (isDimension() != that.isDimension()) return false;
 
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
@@ -443,6 +480,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (shownInDetailsView.getBoolean() != null ? shownInDetailsView.getBoolean().hashCode() : 0);
         result = 31 * result + (shownInInsertView.getBoolean() != null ? shownInInsertView.getBoolean().hashCode() : 0);
         result = 31 * result + (shownInUpdateView.getBoolean() != null ? shownInUpdateView.getBoolean().hashCode() : 0);
+        result = 31 * result + (dimension.getBoolean() != null ? dimension.getBoolean().hashCode() : 0);
+        result = 31 * result + (measure.getBoolean() != null ? measure.getBoolean().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -472,6 +511,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("lookupQuery".equals(prop)) return lookupQuery;
         if ("mvEnabled".equals(prop)) return mvEnabled;
         if ("url".equals(prop)) return url;
+        if ("dimension".equals(prop)) return dimension;
+        if ("measure".equals(prop)) return measure;
         if ("importAliases".equals(prop)) return importAliases;
         if ("shownInInsertView".equals(prop)) return shownInInsertView;
         if ("shownInUpdateView".equals(prop)) return shownInUpdateView;

@@ -152,6 +152,11 @@ public abstract class TSVWriter
             prepare(response);
             write();
         }
+        catch (Exception e)
+        {
+            _log.error("write", e);
+            throw new ServletException(e);
+        }
         finally
         {
             close();

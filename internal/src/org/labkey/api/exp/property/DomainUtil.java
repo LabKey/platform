@@ -178,6 +178,8 @@ public class DomainUtil
         gwtProp.setShownInInsertView(prop.isShownInInsertView());
         gwtProp.setShownInUpdateView(prop.isShownInUpdateView());
         gwtProp.setShownInDetailsView(prop.isShownInDetailsView());
+        gwtProp.setDimension(prop.isDimension());
+        gwtProp.setMeasure(prop.isMeasure());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());

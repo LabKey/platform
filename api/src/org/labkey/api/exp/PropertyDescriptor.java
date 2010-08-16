@@ -44,12 +44,10 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private String semanticType;
     private Container container;
     private Container project;
-    private boolean required;
     private String lookupContainer;
     private String lookupSchema;
     private String lookupQuery;
     private boolean mvEnabled;
-    private DefaultValueType _defaultValueType;
 
     /** Entity id for the lookup's target container */
     public String getLookupContainer()
@@ -97,6 +95,8 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setDimension(col.isDimension());
+        setMeasure(col.isMeasure());
         setLabel(col.getLabel());
         setFormat(col.getFormat());
     }
@@ -109,6 +109,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container)
     {
         this();
+        // property descriptors default to nullable, while columninfos do not; assign explicitly, rather than in an
+        // initializer, since the 'nullable' property is shared by both classes via ColumnRenderProperties
+        this.nullable = true;
         this.propertyURI = propertyURI;
         this.rangeURI = rangeURI;
         this.name = name;
@@ -273,12 +276,18 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
 
     public boolean isRequired()
     {
-        return required;
+        return !nullable;
     }
 
     public void setRequired(boolean required)
     {
-        this.required = required;
+        this.nullable = !required;
+    }
+
+    @Override
+    public int getSqlTypeInt()
+    {
+        return getPropertyType().getSqlType();
     }
 
     public boolean isMvEnabled()
@@ -360,6 +369,18 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
                 }
             }
     );
+    }
+
+    @Override
+    public boolean isLookup()
+    {
+        return getLookupQuery() != null;
+    }
+
+    @Override
+    protected boolean isAutoIncrement()
+    {
+        return false;
     }
 }
 

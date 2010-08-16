@@ -527,6 +527,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         prop.setName(name);
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(description);
+        if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()))
+            prop.setDimension(true);
+        if (AbstractAssayProvider.VISITID_PROPERTY_NAME.equals(prop.getName()))
+            prop.setMeasure(false);
 
         if (allowDefaultValues(domain))
         {

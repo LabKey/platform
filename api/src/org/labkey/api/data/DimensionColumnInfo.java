@@ -38,11 +38,6 @@ public class DimensionColumnInfo extends ColumnInfo
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
     }
 
-    public CrosstabDimension getDimension()
-    {
-        return _dimension;
-    }
-
     public SQLFragment getValueSql(String tableAliasName)
     {
         return new SQLFragment(tableAliasName + "." + _dimension.getSourceColumn().getAlias());

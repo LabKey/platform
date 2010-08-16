@@ -330,6 +330,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, advancedPane);
         advancedPane.addItem(_defaultValueSelector);
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new MeasureItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new DimensionItem<DomainType, FieldType>(advancedPane));
 
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
         result.add(displayPane);
@@ -853,6 +855,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + index, pd);
                 picker.addListener(Events.Focus, listener);
                 picker.addListener(Events.KeyPress, listener);
+                picker.addListener(Events.Change, new Listener<FieldEvent>()
+                {
+                    public void handleEvent(FieldEvent be)
+                    {
+                        // UNDONE: this is a terrible place to put this call.  ConceptPicker.Bound updates the type of
+                        // the underlying property descriptor in a change listener like this one, so updating measure
+                        // and dimension here introduces a dependency on listener order.
+                        pd.guessMeasureAndDimension();
+                        fireChangeEvent();
+                    }
+                });
                 picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
                 picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
                 // distinguish between RangeEditable and any ConceptEditable
@@ -1244,6 +1257,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             _p.setRangeURI(getRangeURI());
             _p.setFormat(null);
+            _p.guessMeasureAndDimension();
             refreshRow(_p);
         }
     }

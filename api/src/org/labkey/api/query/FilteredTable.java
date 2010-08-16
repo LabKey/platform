@@ -145,6 +145,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         ret.setShownInInsertView(underlyingColumn.isShownInInsertView());
         ret.setShownInUpdateView(underlyingColumn.isShownInUpdateView());
         ret.setShownInDetailsView(underlyingColumn.isShownInDetailsView());
+        ret.setMeasure(underlyingColumn.isMeasure());
+        ret.setDimension(underlyingColumn.isDimension());
         ret.copyURLFrom(underlyingColumn, null, null);
         ret.setLabel(ColumnInfo.labelFromName(alias));
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)

@@ -110,6 +110,9 @@ public class TableInfoWriter
         if (!column.isShownInDetailsView())
             columnXml.setShownInDetailsView(false);
 
+        columnXml.setDimension(column.isDimension());
+        columnXml.setMeasure(column.isMeasure());
+
         if (null != column.getURL())
             columnXml.setUrl(column.getURL().getSource());
 
