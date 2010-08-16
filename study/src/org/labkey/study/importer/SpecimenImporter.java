@@ -1869,7 +1869,7 @@ public class SpecimenImporter
         return new Parameter(value, col.getSQLType());
     }
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

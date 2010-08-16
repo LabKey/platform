@@ -98,7 +98,7 @@ public class SchemaXmlReader implements SchemaReader
             RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
                     "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                    "ShownInDetailsView");
+                    "ShownInDetailsView", "Measure", "Dimension");
 
             for (ColumnType columnXml : tableXml.getColumns().getColumnArray())
             {
@@ -129,6 +129,9 @@ public class SchemaXmlReader implements SchemaReader
                 boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
                 boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
 
+                boolean measure = columnXml.isSetMeasure() && columnXml.getMeasure();
+                boolean dimension = columnXml.isSetDimension() && columnXml.getDimension();
+
                 Set<String> importAliases = new LinkedHashSet<String>();
                 if (columnXml.isSetImportAliases())
                 {
@@ -157,7 +160,9 @@ public class SchemaXmlReader implements SchemaReader
                     ColumnRenderProperties.convertToString(importAliases),
                     shownInInsertView,
                     shownInUpdateView,
-                    shownInDetailsView
+                    shownInDetailsView,
+                    measure,
+                    dimension
                 });
 
                 _importMaps.add(map);

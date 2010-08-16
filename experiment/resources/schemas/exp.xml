@@ -387,6 +387,8 @@
       <ns:column columnName="ShownInInsertView"/>
       <ns:column columnName="ShownInUpdateView"/>
       <ns:column columnName="ShownInDetailsView"/>
+      <ns:column columnName="Dimension"/>
+      <ns:column columnName="Measure"/>
   </ns:columns>
   </ns:table>
   <ns:table tableName="DomainDescriptor" tableDbType="TABLE">

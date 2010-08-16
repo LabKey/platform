@@ -97,6 +97,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setShownInDetailsView(columnInfo.isShownInDetailsView());
             gwtColumnInfo.setShownInInsertView(columnInfo.isShownInInsertView());
             gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
+            gwtColumnInfo.setDimension(columnInfo.isDimension());
+            gwtColumnInfo.setMeasure(columnInfo.isMeasure());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
             if (columnInfo.getFk() != null)
@@ -174,6 +176,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         if (column.isSetShownInDetailsView())
                         {
                             gwtColumnInfo.setShownInDetailsView(column.getShownInDetailsView());
+                        }
+                        if (column.isSetDimension())
+                        {
+                            gwtColumnInfo.setDimension(column.getDimension());
+                        }
+                        if (column.isSetMeasure())
+                        {
+                            gwtColumnInfo.setMeasure(column.getMeasure());
                         }
                         if (column.isSetIsHidden())
                         {
@@ -389,6 +399,14 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             else if (xmlColumn.isSetShownInDetailsView())
             {
                 xmlColumn.unsetShownInDetailsView();
+            }
+            if (gwtColumnInfo.isMeasure() != rawColumnInfo.isMeasure())
+            {
+                xmlColumn.setMeasure(gwtColumnInfo.isMeasure());
+            }
+            if (gwtColumnInfo.isDimension() != rawColumnInfo.isDimension())
+            {
+                xmlColumn.setDimension(gwtColumnInfo.isDimension());
             }
 
             // Set the label

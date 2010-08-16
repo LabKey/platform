@@ -145,7 +145,7 @@ public class ListImporter
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                "ShownInDetailsView");
+                "ShownInDetailsView", "Measure", "Dimension");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -179,6 +179,9 @@ public class ListImporter
             boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
             boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
 
+            boolean measure = columnXml.isSetMeasure() && columnXml.getMeasure();
+            boolean dimension = columnXml.isSetDimension() && columnXml.getDimension();
+
             Set<String> importAliases = new LinkedHashSet<String>();
             if (columnXml.isSetImportAliases())
             {
@@ -207,7 +210,9 @@ public class ListImporter
                 ColumnRenderProperties.convertToString(importAliases),
                 shownInInsertView,
                 shownInUpdateView,
-                shownInDetailsView
+                shownInDetailsView,
+                measure,
+                dimension
             });
 
             importMaps.add(map);

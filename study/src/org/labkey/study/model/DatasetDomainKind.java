@@ -77,7 +77,7 @@ public class DatasetDomainKind extends AbstractDomainKind
     {
         DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         if (null == def)
-            return null;
+            return new SQLFragment("NULL");
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT ObjectId FROM study.StudyData SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=? AND SD.container=? AND SD.datasetid=?");
         sql.add(def.getContainer());

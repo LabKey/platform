@@ -123,6 +123,18 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isShownInUpdateView();
     }
 
+    @Override
+    public boolean isMeasure()
+    {
+        return _pd.isMeasure();
+    }
+
+    @Override
+    public boolean isDimension()
+    {
+        return _pd.isDimension();
+    }
+
     public boolean isMvEnabled()
     {
         return _pd.isMvEnabled();
@@ -213,7 +225,21 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setShownInUpdateView(shown);
     }
 
+    @Override
+    public void setMeasure(boolean isMeasure)
+    {
+        if (isMeasure == isMeasure())
+            return;
+        edit().setMeasure(isMeasure);
+    }
 
+    @Override
+    public void setDimension(boolean isDimension)
+    {
+        if (isDimension == isDimension())
+            return;
+        edit().setDimension(isDimension);
+    }
 
     public void setMvEnabled(boolean mv)
     {

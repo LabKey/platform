@@ -87,6 +87,7 @@ public class StudyDataTable extends FilteredTable
 
         ColumnInfo sequenceNumColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("SequenceNum"));
         sequenceNumColumn.setHidden(true);
+        sequenceNumColumn.setMeasure(false);
         addColumn(sequenceNumColumn);
 
         PropertyDescriptor[] pds = EMPTY_PROPERTY_ARRAY;

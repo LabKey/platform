@@ -799,11 +799,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     wrapped.setName(StudyService.get().getSubjectColumnName(_container));
                     wrapped.setLabel(StudyService.get().getSubjectColumnName(_container));
                     wrapped.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.ParticipantId));
+                    wrapped.setDimension(true);
                 }
                 columns.add(wrapped);
             }
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
             sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
+            sequenceNumCol.setMeasure(false);
 
             if (study.getTimepointType() != TimepointType.VISIT)
             {
@@ -820,6 +822,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
                     dayColumn.setUserEditable(false);
+                    dayColumn.setDimension(false);
+                    dayColumn.setMeasure(false);
                     columns.add(dayColumn);
                 }
 
@@ -853,6 +857,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
             visitRowId.setHidden(true);
             visitRowId.setUserEditable(false);
+            visitRowId.setMeasure(false);
             columns.add(visitRowId);
 
             // If we have an extra key, and it's server-managed, make it non-editable
@@ -882,6 +887,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             datasetColumn.setFk(datasetFk);
             datasetColumn.setUserEditable(false);
             datasetColumn.setHidden(true);
+            datasetColumn.setDimension(false);
             columns.add(datasetColumn);
 
             // HACK reset colMap
