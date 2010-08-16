@@ -861,9 +861,9 @@ public class AdminController extends SpringActionController
             }
 
             // Make sure we can parse the system maintenance time
-            Date systemMaintenanceTime = SystemMaintenance.parseSystemMaintenanceTime(form.getSystemMaintenanceTime());
+            Date newSystemMaintenanceTime = SystemMaintenance.parseSystemMaintenanceTime(form.getSystemMaintenanceTime());
 
-            if (null == systemMaintenanceTime)
+            if (null == newSystemMaintenanceTime)
             {
                 errors.reject(ERROR_MSG, "Invalid format for System Maintenance Time - please enter time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM)");
                 return false;
@@ -917,10 +917,11 @@ public class AdminController extends SpringActionController
             // Save the old system maintenance property values, compare with the new ones, and set a flag if they've changed
             String oldInterval = props.getSystemMaintenanceInterval();
             Date oldTime = props.getSystemMaintenanceTime();
-            props.setSystemMaintenanceInterval(form.getSystemMaintenanceInterval());
-            props.setSystemMaintenanceTime(systemMaintenanceTime);
+            String newInterval = form.getSystemMaintenanceInterval();
+            props.setSystemMaintenanceInterval(newInterval);
+            props.setSystemMaintenanceTime(newSystemMaintenanceTime);
 
-            boolean setSystemMaintenanceTimer = (!oldInterval.equals(props.getSystemMaintenanceInterval()) || !oldTime.equals(props.getSystemMaintenanceTime()));
+            boolean setSystemMaintenanceTimer = (!oldInterval.equals(newInterval) || !oldTime.equals(newSystemMaintenanceTime));
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
