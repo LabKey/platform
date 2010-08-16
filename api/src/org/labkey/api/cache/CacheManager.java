@@ -99,7 +99,7 @@ public class CacheManager
         }
     }
 
-    // Return a copy of the KNOWN_CACHES for reporting statistics
+    // Return a copy of KNOWN_CACHES for reporting statistics
     public static List<Cache> getKnownCaches()
     {
         List<Cache> copy = new ArrayList<Cache>();
