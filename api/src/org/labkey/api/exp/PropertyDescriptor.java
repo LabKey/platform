@@ -83,7 +83,9 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
 
     public PropertyDescriptor()
     {
-//        assert MemTracker.put(this);
+        // property descriptors default to nullable, while columninfos do not; assign explicitly, rather than in an
+        // initializer, since the 'nullable' property is shared by both classes via ColumnRenderProperties
+        this.nullable = true;
     }
 
     public PropertyDescriptor(ColumnInfo col, Container c)
@@ -109,9 +111,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     public PropertyDescriptor(String propertyURI, String rangeURI, String name, String caption, Container container)
     {
         this();
-        // property descriptors default to nullable, while columninfos do not; assign explicitly, rather than in an
-        // initializer, since the 'nullable' property is shared by both classes via ColumnRenderProperties
-        this.nullable = true;
         this.propertyURI = propertyURI;
         this.rangeURI = rangeURI;
         this.name = name;
