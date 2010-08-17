@@ -22,13 +22,13 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -48,16 +48,34 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
 * User: matthewb
 * Date: Oct 21, 2008
 * Time: 10:00:49 AM
@@ -486,34 +504,40 @@ public class FileSystemResource extends AbstractWebdavResource
     @NotNull @Override
     public Collection<NavTree> getActions(User user)
     {
-            if (isFile())
+        if (isFile())
+        {
+            ExpData data = getExpData();
+
+            if (data != null && data.getContainer().hasPermission(user, ReadPermission.class))
             {
-                ExpData data = getExpData();
-                if (data != null && data.getContainer().hasPermission(user, ReadPermission.class))
+                ActionURL dataURL = data.findDataHandler().getContentURL(data.getContainer(), data);
+                List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
+                List<NavTree> result = new ArrayList<NavTree>();
+
+                for (ExpRun run : runs)
                 {
-                    ActionURL dataURL = data.findDataHandler().getContentURL(data.getContainer(), data);
-                    List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
-                    List<NavTree> result = new ArrayList<NavTree>();
-                    for (ExpRun run : runs)
+                    if (run.getContainer().hasPermission(user, ReadPermission.class))
                     {
-                        if (run.getContainer().hasPermission(user, ReadPermission.class))
+                        String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
+                        String actionName;
+
+                        if (!run.getName().equals(data.getName()))
                         {
-                            String runURL = dataURL == null ? LsidManager.get().getDisplayURL(run.getLSID()) : dataURL.toString();
-                            String actionName;
-                            if (!run.getName().equals(data.getName()))
-                            {
-                                actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
-                            }
-                            else
-                            {
-                                actionName = run.getProtocol().getName();
-                            }
-                            result.add(new NavTree(actionName, runURL));
+                            actionName = run.getName() + " (" + run.getProtocol().getName() + ")";
                         }
+                        else
+                        {
+                            actionName = run.getProtocol().getName();
+                        }
+
+                        result.add(new NavTree(actionName, runURL));
                     }
-                    return result;
                 }
+
+                return result;
             }
+        }
+
         return Collections.emptyList();
     }
 
@@ -554,40 +578,55 @@ public class FileSystemResource extends AbstractWebdavResource
     {
         if (_customProperties == null)
         {
+            _customProperties = new HashMap<String, String>();
             FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            String uri = svc.getDomainURI(getContainer());
-            DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
             ExpData data = svc.getDataObject(this, getContainer());
 
-            TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(user, getContainer()));
-            QueryUpdateService qus = ti.getUpdateService();
+            if (null != data)
+            {
+                Set<String> customPropertyNames = new CaseInsensitiveHashSet();
+                for (ObjectProperty prop : data.getObjectProperties().values())
+                    customPropertyNames.add(prop.getName());
 
-            try {
-                _customProperties = new HashMap<String, String>();
-                File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(this.getFile());
-                String url = canonicalFile.toURI().toURL().toString();
-                Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), (Object)url);
-                List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
-                assert(rows.size() <= 1);
+                TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(user, getContainer()));
+                QueryUpdateService qus = ti.getUpdateService();
 
-                if (rows.size() == 1)
+                try
                 {
-                    for (Map.Entry<String, Object> entry : rows.get(0).entrySet())
+                    File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(this.getFile());
+                    String url = canonicalFile.toURI().toURL().toString();
+                    Map<String, Object> keys = Collections.singletonMap(ExpDataTable.Column.DataFileUrl.name(), (Object)url);
+                    List<Map<String, Object>> rows = qus.getRows(user, getContainer(), Collections.singletonList(keys));
+
+                    assert(rows.size() <= 1);
+
+                    if (rows.size() == 1)
                     {
-                        if (entry.getValue() != null)
-                            _customProperties.put(entry.getKey(), String.valueOf(entry.getValue()));
+                        for (Map.Entry<String, Object> entry : rows.get(0).entrySet())
+                        {
+                            Object value = entry.getValue();
+
+                            if (value != null)
+                            {
+                                String key = entry.getKey();
+
+                                if (customPropertyNames.contains(key))
+                                   _customProperties.put(key, String.valueOf(value));
+                            }
+                        }
                     }
                 }
-            }
-            catch (MalformedURLException e)
-            {
-                throw new UnexpectedException(e);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
+                catch (MalformedURLException e)
+                {
+                    throw new UnexpectedException(e);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
+
         return _customProperties;
     }
 
