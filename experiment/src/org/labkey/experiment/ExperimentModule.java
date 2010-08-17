@@ -299,7 +299,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
-    public void enumerateDocuments(@NotNull SearchService.IndexTask task, Container c, Date modifiedSince)
+    public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         if (c == ContainerManager.getSharedContainer())
             OntologyManager.indexConcepts(task);
@@ -308,5 +308,4 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public void indexDeleted() throws SQLException
     {
     }
-
 }

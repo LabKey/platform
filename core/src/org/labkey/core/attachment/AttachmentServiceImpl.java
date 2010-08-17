@@ -1071,11 +1071,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _parent = parent;
             _name = name;
             _docid = makeDocId(parent,name);
-            initSearch(name, displayTitle, cat);
+            initSearchProperties(name, displayTitle, cat);
         }
 
 
-        private void initSearch(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
+        private void initSearchProperties(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
         {
             setSearchProperty(SearchService.PROPERTY.searchTitle, FileUtil.getSearchTitle(name));
             setSearchProperty(SearchService.PROPERTY.displayTitle, null != displayTitle ? displayTitle : name);
@@ -1108,7 +1108,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _parent = parent;
             _docid = makeDocId(parent,name);
 
-            initSearch(name, null, null);
+            initSearchProperties(name, null, null);
         }
 
 
