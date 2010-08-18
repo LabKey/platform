@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.NullPreventingSet;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.AppProps;
@@ -55,7 +56,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
-    private String _viewName;
+    private CustomView _view;
     private Map<FieldKey, ColumnInfo> _fieldMap;
 
     public RenderContext(ViewContext context)
@@ -679,13 +680,13 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _selected;
     }
 
-    public void setViewName(String viewName)
+    public void setView(CustomView view)
     {
-        _viewName = viewName;
+        _view = view;
     }
 
-    public String getViewName()
+    public CustomView getView()
     {
-        return _viewName;
+        return _view;
     }
 }

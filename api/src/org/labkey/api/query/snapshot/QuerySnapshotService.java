@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.HString;
+import org.springframework.validation.BindException;
 
 import java.util.List;
 import java.util.Map;
@@ -69,15 +70,15 @@ public class QuerySnapshotService
 
         public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context);
 
-        public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception;
+        public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
 
         /**
          * Regenerates the snapshot data, may be invoked either as the result of a manual or
          * automatic update. The implementation is responsible for logging its own audit event.
          */
-        public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception;
+        public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception;
 
-        public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, List<String> errors) throws Exception;
+        public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception;
 
         /**
          * Returns the audit history view for a snapshot.
@@ -89,7 +90,7 @@ public class QuerySnapshotService
          * is used during the creation and editing of a snapshot, and in any UI where the list of columns
          * pertaining to a snapshot can be modified.  
          */
-        public List<DisplayColumn> getDisplayColumns(QueryForm queryForm) throws Exception;
+        public List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception;
     }
 
     public interface AutoUpdateable {

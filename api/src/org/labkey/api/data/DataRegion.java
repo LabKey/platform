@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
@@ -24,6 +25,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -50,19 +52,17 @@ public class DataRegion extends DisplayElement
     private static final Logger _log = Logger.getLogger(DataRegion.class);
     private List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
     private List<DisplayColumnGroup> _groups = new ArrayList<DisplayColumnGroup>();
-    private List<Aggregate> _aggregates = null;
+    private QuerySettings _settings = null;
     private Map<String, Aggregate.Result> _aggregateResults = null;
     private boolean _aggregateRowFirst = false;
     private boolean _aggregateRowLast = true;
     private TableInfo _table = null;
     protected boolean _showRecordSelectors = false;
-    protected boolean _showStatusBar = true;
-    private boolean _showUpdateButton = false;
+    protected boolean _showSelectMessage = true;
     private boolean _showFilters = true;
     private boolean _sortable = true;
     private boolean _showFilterDescription = true;
     private String _name = null;
-    private String _selectionKey = null;
     private ButtonBar _gridButtonBar = ButtonBar.BUTTON_BAR_GRID;
     private ButtonBar _insertButtonBar = ButtonBar.BUTTON_BAR_INSERT;
     private ButtonBar _updateButtonBar = ButtonBar.BUTTON_BAR_UPDATE;
@@ -70,9 +70,8 @@ public class DataRegion extends DisplayElement
     private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
     private boolean _fixedWidthColumns;
-    private int _maxRows = 0;   // Display all rows by default
+    private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
     private long _offset = 0;
-    private ShowRows _showRows = ShowRows.PAGINATED;
     private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<Pair<String, Object>>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private int _defaultMode = MODE_GRID;
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.BOTTOM;
@@ -331,14 +330,14 @@ public class DataRegion extends DisplayElement
         return _showRecordSelectors;
     }
 
-    public boolean getShowStatusBar()
+    public boolean getShowSelectMessage()
     {
-        return _showStatusBar;
+        return _showSelectMessage;
     }
 
-    public void setShowStatusBar(boolean showStatusBar)
+    public void setShowSelectMessage(boolean showSelectMessage)
     {
-        _showStatusBar = showStatusBar;
+        _showSelectMessage = showSelectMessage;
     }
 
     public boolean getShowFilters()
@@ -370,11 +369,6 @@ public class DataRegion extends DisplayElement
     public void setShowFilterDescription(boolean showFilterDescription)
     {
         _showFilterDescription = showFilterDescription;
-    }
-
-    public boolean getShowUpdateButton()
-    {
-        return _showUpdateButton;
     }
 
     public ButtonBar getButtonBar(int mode)
@@ -435,43 +429,67 @@ public class DataRegion extends DisplayElement
         _fixedWidthColumns = fixed;
     }
 
-    public int getMaxRows()
+    public void setSettings(QuerySettings settings)
     {
-        return _maxRows;
+        _settings = settings;
     }
 
+    public QuerySettings getSettings()
+    {
+        return _settings;
+    }
+
+    public int getMaxRows()
+    {
+        return _settings != null ? _settings.getMaxRows() : _maxRows;
+    }
+
+    /** Use {@link QuerySettings#setMaxRows(int)}. */
+    @Deprecated
     public void setMaxRows(int maxRows)
     {
-        _maxRows = maxRows;
+        if (_settings != null)
+            _settings.setMaxRows(maxRows);
+        else
+            _maxRows = maxRows;
     }
 
     public long getOffset()
     {
-        return _offset;
+        return _settings != null ? _settings.getOffset() : _offset;
     }
 
+    /** Use {@link QuerySettings#setOffset(long)}. */
+    @Deprecated
     public void setOffset(long offset)
     {
-        _offset = offset;
+        if (_settings != null)
+            _settings.setOffset(offset);
+        else
+            _offset = offset;
     }
 
     public ShowRows getShowRows()
     {
-        return _showRows;
-    }
-
-    public void setShowRows(ShowRows showRows)
-    {
-        _showRows = showRows;
+        return _settings != null ? _settings.getShowRows() : ShowRows.PAGINATED;
     }
 
     public String getName()
     {
         if (null == _name)
-            _name = getTable().getName();
+        {
+            if (null != _settings && null != _settings.getDataRegionName())
+                _name = _settings.getDataRegionName();
+            else
+                _name = getTable().getName();
+        }
         return _name;
     }
 
+    /**
+     * Use {@link DataRegion#setSettings(QuerySettings)} to set the name instead.
+     */
+    @Deprecated
     public void setName(String name)
     {
         _name = name;
@@ -479,12 +497,16 @@ public class DataRegion extends DisplayElement
 
     public String getSelectionKey()
     {
-        return _selectionKey;
+        if (_settings != null && _settings.getSelectionKey() != null)
+            return _settings.getSelectionKey();
+        if (getTable() != null && getTable().getSchema() != null)
+            DataRegionSelection.getSelectionKey(getTable().getSchema().getName(), getTable().getName(), null, getName());
+        return null;
     }
 
-    public void setSelectionKey(String selectionKey)
+    public List<Aggregate> getAggregates()
     {
-        _selectionKey = selectionKey;
+        return _settings != null ? _settings.getAggregates() : null;
     }
 
     // TODO: Should get rid of getTable() & setTable() and just rely on the query columns associated with each display column.
@@ -614,7 +636,7 @@ public class DataRegion extends DisplayElement
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
         LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
-        return ctx.getResultSet(selectKeyMap, getTable(), _maxRows, _offset, getName(), async);
+        return ctx.getResultSet(selectKeyMap, getTable(), getMaxRows(), getOffset(), getName(), async);
     }
 
 
@@ -633,12 +655,12 @@ public class DataRegion extends DisplayElement
             _complete = tableRS.isComplete();
         }
 
-        boolean countAggregate = _maxRows > 0 && !_complete && _showPagination && _showPaginationCount;
+        boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
         if (countAggregate)
         {
             List<Aggregate> newAggregates = new LinkedList<Aggregate>();
-            if (_aggregates != null)
-                newAggregates.addAll(_aggregates);
+            if (getAggregates() != null)
+                newAggregates.addAll(getAggregates());
             newAggregates.add(Aggregate.createCountStar());
 
             _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, isAllowAsync());
@@ -649,7 +671,7 @@ public class DataRegion extends DisplayElement
         }
         else
         {
-            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), _aggregates, isAllowAsync());
+            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), getAggregates(), isAllowAsync());
         }
 
         // TODO: Move this into RenderContext?
@@ -758,7 +780,7 @@ public class DataRegion extends DisplayElement
             {
                 _rowCount = ((CachedRowSetImpl)rs).getSize();
                 if (_complete && _totalRows == null)
-                    _totalRows = _offset + _rowCount.intValue();
+                    _totalRows = getOffset() + _rowCount.intValue();
             }
 
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
@@ -789,7 +811,7 @@ public class DataRegion extends DisplayElement
                 if (!tableRS.isComplete())
                 {
                     out.write("<span class=\"labkey-message\">");
-                    out.write(tableRS.getTruncationMessage(_maxRows));
+                    out.write(tableRS.getTruncationMessage(getMaxRows()));
                     out.write("</span>");
                 }
             }
@@ -913,35 +935,42 @@ public class DataRegion extends DisplayElement
     protected void renderHeaderScript(RenderContext ctx, Writer out, String headerMessage) throws IOException
     {
         out.write("<script type=\"text/javascript\">\n");
-        out.write("LABKEY.requiresClientAPI();\n");
-        out.write("</script>\n");
-        out.write("<script type=\"text/javascript\">\n");
         out.write("Ext.onReady(\n");
         out.write("function () {\n");
         out.write("new LABKEY.DataRegion({\n");
         out.write("'name' : " + PageFlowUtil.jsString(getName()) + ",\n");
-//        out.write("'schemaName' : '" + "xxx" + "',\n");
-//        out.write("'queryName' : '" + "xxx" + "',\n");
-//        out.write("'viewName' : '" + "xxx" + "',\n");
-//        out.write("'filter' : '" + new SimpleFilter(ctx.getBaseFilter()).toQueryString(getName()) + "',\n");
-//        out.write("'sort' : '" + ctx.getBaseSort() + "',\n");
+
+        if (getSettings() != null)
+        {
+            out.write("'schemaName' : " + PageFlowUtil.jsString(getSettings().getSchemaName()) + ",\n");
+            out.write("'queryName' : " + PageFlowUtil.jsString(getSettings().getQueryName()) + ",\n");
+            out.write("'viewName' : " + PageFlowUtil.jsString(getSettings().getViewName()) + ",\n");
+//            out.write("'filter' : '" + new SimpleFilter(ctx.getBaseFilter()).toQueryString(getName()) + "',\n");
+//            out.write("'sort' : '" + ctx.getBaseSort() + "',\n");
+        }
+        if (ctx.getView() != null)
+        {
+            out.write("'viewUnsaved' : " + ctx.getView().isSession() + ",\n");
+        }
         out.write("'complete' : " + _complete + ",\n");
-        out.write("'offset' : " + _offset + ",\n");
-        out.write("'maxRows' : " + _maxRows + ",\n");
+        out.write("'offset' : " + getOffset() + ",\n");
+        out.write("'maxRows' : " + getMaxRows() + ",\n");
         out.write("'totalRows' : " + _totalRows + ",\n");
         out.write("'rowCount' : " + _rowCount + ",\n");
-        out.write("'showRows' : '" + _showRows.toString().toLowerCase() + "',\n");
+        out.write("'showRows' : '" + getShowRows().toString().toLowerCase() + "',\n");
         out.write("'showRecordSelectors' : " + _showRecordSelectors + ",\n");
-        out.write("'showStatusBar' : " + _showStatusBar + ",\n");
-        out.write("'selectionKey' : " + PageFlowUtil.jsString(_selectionKey) + ",\n");
+        out.write("'showSelectMessage' : " + _showSelectMessage + ",\n");
+        out.write("'selectionKey' : " + PageFlowUtil.jsString(getSelectionKey()) + ",\n");
         out.write("'requestURL' : " + PageFlowUtil.jsString(ctx.getViewContext().getActionURL().toString()) + ",\n");
-        out.write("'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n");
+        out.write("'selectorCols' : " + PageFlowUtil.jsString(_recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString()) + "\n,");
+        
         out.write("});\n");
         if (headerMessage != null && headerMessage.length() > 0)
         {
             out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessage(" +
                     PageFlowUtil.jsString(headerMessage) + ");\n");
         }
+
         out.write("});\n");
         out.write("</script>\n");
     }
@@ -953,7 +982,7 @@ public class DataRegion extends DisplayElement
         out.write(String.valueOf(colCount));
         out.write("\" class=\"labkey-dataregion-msgbox\">");
         out.write("<img style=\"float:right;\" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].hideMessage();\" title=\"Close this message\" alt=\"close\" src=\"" + ctx.getViewContext().getContextPath() + "/_images/partdelete.gif\">");
-        out.write("<span></span>");
+        out.write("<div></div>");
         out.write("</td></tr>");
     }
 
@@ -996,7 +1025,7 @@ public class DataRegion extends DisplayElement
     {
         if (_totalRows != null && _totalRows < 10)
             return true;
-        if (_complete && _offset == 0 && _rowCount != null && _rowCount.intValue() < 10)
+        if (_complete && getOffset() == 0 && _rowCount != null && _rowCount.intValue() < 10)
             return true;
         return false;
     }
@@ -1011,44 +1040,44 @@ public class DataRegion extends DisplayElement
 
         out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
 
-        if (_maxRows > 0 && _offset >= 2*_maxRows)
+        if (getMaxRows() > 0 && getOffset() >= 2*getMaxRows())
             paginateLink(out, "First Page", "<b>&laquo;</b> First", 0);
 
-        if (_maxRows > 0 && _offset >= _maxRows)
-            paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", _offset - _maxRows);
+        if (getMaxRows() > 0 && getOffset() >= getMaxRows())
+            paginateLink(out, "Previous Page", "<b>&lsaquo;</b> Prev", getOffset() - getMaxRows());
 
         if (_rowCount != null)
-            out.write("<em>" + fmt.format(_offset + 1) + "</em> - <em>" + fmt.format(_offset + _rowCount.intValue()) + "</em> ");
+            out.write("<em>" + fmt.format(getOffset() + 1) + "</em> - <em>" + fmt.format(getOffset() + _rowCount.intValue()) + "</em> ");
 
         if (_totalRows != null)
         {
             if (_rowCount != null)
                 out.write("of <em>" + fmt.format( _totalRows) + "</em> ");
 
-            if (_maxRows > 0)
+            if (getMaxRows() > 0)
             {
-                long remaining = _totalRows.longValue() - _offset;
-                long lastPageSize = _totalRows.longValue() % _maxRows;
+                long remaining = _totalRows.longValue() - getOffset();
+                long lastPageSize = _totalRows.longValue() % getMaxRows();
                 if (lastPageSize == 0)
-                    lastPageSize = _maxRows;
+                    lastPageSize = getMaxRows();
                 long lastPageOffset = _totalRows.longValue() - lastPageSize;
 
-                if (remaining > _maxRows)
+                if (remaining > getMaxRows())
                 {
-                    long nextOffset = _offset + _maxRows;
+                    long nextOffset = getOffset() + getMaxRows();
                     if (nextOffset > _totalRows.longValue())
                         nextOffset = lastPageOffset;
                     paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", nextOffset);
                 }
 
-                if (remaining > 2*_maxRows)
+                if (remaining > 2*getMaxRows())
                     paginateLink(out, "Last Page", "Last <b>&raquo;</b>", lastPageOffset);
             }
         }
         else
         {
             if (!_complete)
-                paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", _offset + _maxRows);
+                paginateLink(out, "Next Page", "Next <b>&rsaquo;</b>", getOffset() + getMaxRows());
         }
 
         out.write("</div>");
@@ -1083,8 +1112,8 @@ public class DataRegion extends DisplayElement
         if (urlFilter != null && !urlFilter.getWhereParamNames().isEmpty())
         {
             StringBuilder filterDesc = new StringBuilder();
-            if (ctx.getViewName() != null)
-                filterDesc.append("View \"").append(ctx.getViewName()).append("\"");
+            if (ctx.getView() != null && StringUtils.isNotEmpty(ctx.getView().getName()))
+                filterDesc.append("View \"").append(ctx.getView().getName()).append("\"");
             else
                 filterDesc.append("This view");
             filterDesc.append(" is filtered: ").append(urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
@@ -1537,7 +1566,7 @@ public class DataRegion extends DisplayElement
         else
         {
             LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
-            rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort(), _maxRows, _offset);
+            rs = Table.selectForDisplay(tinfoMain, selectKeyMap.values(), ctx.getBaseFilter(), ctx.getBaseSort(), getMaxRows(), getOffset());
             ctx.setResultSet(rs, selectKeyMap);
         }
     }
@@ -2314,16 +2343,6 @@ public class DataRegion extends DisplayElement
     public boolean isShadeAlternatingRows()
     {
         return _shadeAlternatingRows;
-    }
-
-    public void setAggregates(Aggregate... aggregates)
-    {
-        setAggregates(Arrays.asList(aggregates));
-    }
-
-    public void setAggregates(List<Aggregate> aggregates)
-    {
-        _aggregates = aggregates;
     }
 
     public void setAggregateRowPosition(boolean aggregateRowFirst, boolean aggregateRowLast)

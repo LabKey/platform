@@ -63,9 +63,9 @@ public class ReportQueryView extends QueryView
 
     public ResultSet getResultSet(int maxRows) throws Exception
     {
+        getSettings().setMaxRows(maxRows);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.setMaxRows(maxRows);
         return rgn.getResultSet(view.getRenderContext());
     }
 

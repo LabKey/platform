@@ -145,9 +145,9 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         QueryView view = createQueryView(context, descriptor);
         if (view != null)
         {
+            view.getSettings().setMaxRows(Table.ALL_ROWS);
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
-            rgn.setMaxRows(0);
             RenderContext ctx = dataView.getRenderContext();
 
             // temporary code until we add a more generic way to specify a filter or grouping on the chart

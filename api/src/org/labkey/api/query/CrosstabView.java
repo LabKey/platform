@@ -55,20 +55,10 @@ public class CrosstabView extends QueryView
             List<DisplayColumn> displayCols = getDisplayColumns();
 
             CrosstabDataRegion rgn = new CrosstabDataRegion(table, _numRowAxisCols, _numMeasures);
+            configureDataRegion(rgn);
             rgn.setShadeAlternatingRows(true);
             rgn.setShowBorders(true);
 
-            //copied from QueryView.createDataRegion()
-            //CONSIDER: why does QueryView mix creation and initialization into one method?
-            //shouldn't the base class have separate createDataRegion() and initDataRegion() methods?
-            rgn.setMaxRows(getMaxRows());
-            rgn.setOffset(getOffset());
-            rgn.setShowRecordSelectors(showRecordSelectors());
-            rgn.setShowRows(getShowRows());
-            rgn.setName(getDataRegionName());
-            rgn.setSelectionKey(getSelectionKey());
-            rgn.setDisplayColumns(displayCols);
-            rgn.setTable(getTable());
             return rgn;
         }
         else
@@ -178,10 +168,11 @@ public class CrosstabView extends QueryView
 
     public ExcelWriter getExcelWriter() throws Exception
     {
+        getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
+        
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
-        rgn.setMaxRows(ExcelWriter.MAX_ROWS);
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
 
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();

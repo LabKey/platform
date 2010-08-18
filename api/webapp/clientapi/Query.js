@@ -177,6 +177,7 @@ LABKEY.Query = new function()
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         * @returns {Number} transactionId The id of the request. This may be used to cancel the request.
          * @example Example, from the Reagent Request Confirmation <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
          // This snippet extracts a table of UserID, TotalRequests and
          // TotalQuantity from the "Reagent Requests" list.
@@ -219,7 +220,7 @@ LABKEY.Query = new function()
             if (config.sort)
                 qsParams = {"query.sort": config.sort};
             
-            Ext.Ajax.request({
+            return Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
                 method : 'POST',
                 success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns, config.scope),
@@ -734,6 +735,8 @@ LABKEY.Query = new function()
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName the name of the query.
+         * @param {String} [config.viewName] An optional view name (empty string for the default view), otherwise return all views for the query.
+         * @param {Boolean} [config.metadata] Optionally include view column field metadata.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -749,9 +752,15 @@ LABKEY.Query = new function()
          *              <li><b>columns:</b> this will contain an array of objects with the following properties
          *                  <ul>
          *                      <li><b>name:</b> the name of the column</li>
-         *                      <li><b>key:</b> the field key for the column (may include join column names, e.g. 'State/Population')</li>
+         *                      <li><b>fieldKey:</b> the field key for the column (may include join column names, e.g. 'State/Population')</li>
          *                  </ul>
-          *             </li>
+         *              </li>
+         *              <li><b>filter:</b> TBD
+         *                  Available in LabKey Server version 10.3 and later.</li>
+         *              <li><b>sort:</b> TBD
+         *                  Available in LabKey Server version 10.3 and later.</li>
+         *              <li><b>fields:</b> TBD if metadata
+         *                  Available in LabKey Server version 10.3 and later.</li>
          *          </ul>
          *      </li>
          *  </ul>
@@ -773,6 +782,10 @@ LABKEY.Query = new function()
                 params.schemaName = config.schemaName;
             if(config.queryName)
                 params.queryName = config.queryName;
+            if(config.viewName)
+                params.viewName = config.viewName;
+            if(config.metadata)
+                params.metadata = config.metadata;
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
                 method : 'GET',
@@ -786,7 +799,8 @@ LABKEY.Query = new function()
          * Returns details about a given query including detailed information about result columns
          * @param {Object} config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
-         * @param {String} config.queryName the name of the query.
+         * @param {String} config.queryName The name of the query.
+         * @param {String} [config.viewName] An optional view name to include custom view details.  The default view details will always be included in the response.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -802,6 +816,7 @@ LABKEY.Query = new function()
          *      <li><b>columns:</b> Information about all columns in this query. This is an array of LABKEY.Query.FieldMetaData objects.</li>
          *      <li><b>defaultView:</b> An array of column information for the columns in the current user's default view of this query.
          *      The shape of each column info is the same as in the columns array.</li>
+         *      <li><b>views:</b> An array of view info (XXX: same as views.getQueryViews()
          *  </ul>
          * </li>
          * </ul>
@@ -822,12 +837,55 @@ LABKEY.Query = new function()
                 params.schemaName = config.schemaName;
             if(config.queryName)
                 params.queryName = config.queryName;
+            if (config.viewName)
+                params.viewName = config.viewName;
             if(config.fk)
                 params.fk = config.fk;
+
+            // For backwards compatibility with 10.2, create a "defaultView" object
+            // with "columns" array containing the field metadata.
+            function addDefaultView(json, response, options)
+            {
+                if (json && json.views)
+                {
+                    for (var i = 0; i < json.views.length; i++)
+                    {
+                        var view = null;
+                        if (json.views[i].name == "")
+                        {
+                            view = json.views[i];
+                            break;
+                        }
+                    }
+
+                    json.defaultView = { columns: [] };
+                    if (view)
+                    {
+                        var fieldMap = [];
+                        for (var i = 0; i < view.fields.length; i++)
+                        {
+                            var field = view.fields[i];
+                            fieldMap[field.fieldKey] = field;
+                        }
+                        for (var i = 0; i < view.columns.length; i++)
+                        {
+                            var col = view.columns[i];
+                            var field = fieldMap[col.fieldKey];
+                            if (field)
+                                json.defaultView.columns.push(field);
+                        }
+                        // copy remaining view properties (skipping 'columns')
+                        Ext.applyIf(json.defaultView, view);
+                    }
+                }
+                if (config.successCallback)
+                    config.successCallback.call(config.scope || window, json, response, options);
+            }
+
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                success: LABKEY.Utils.getCallbackWrapper(addDefaultView),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params: params
             });

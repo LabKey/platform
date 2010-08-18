@@ -34,6 +34,7 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -51,6 +52,7 @@ public class QuerySettings
     private boolean _ignoreUserFilter;
     private int _maxRows = 100;
     private long _offset = 0;
+    private String _selectionKey = null;
 
     private ShowRows _showRows = ShowRows.PAGINATED;
     private boolean _showHiddenFieldsWhenCustomizing = false;
@@ -166,6 +168,11 @@ public class QuerySettings
         }
     }
 
+    public void addAggregates(Aggregate... aggregates)
+    {
+        _aggregates.addAll(Arrays.asList(aggregates));
+    }
+
 
     protected String _getParameter(String param)
     {
@@ -223,6 +230,7 @@ public class QuerySettings
             setReportId(ReportService.get().getReportIdentifier(_getParameter(param(QueryParam.reportId))));
         }
 
+        // Ignore maxRows, offset, and containerFilterName parameters when not PAGINATED.
         if (_showRows == ShowRows.PAGINATED)
         {
             String offsetParam = _getParameter(param(QueryParam.offset));
@@ -339,8 +347,15 @@ public class QuerySettings
         return _dataRegionName;
     }
 
+    public void setSelectionKey(String selectionKey)
+    {
+        _selectionKey = selectionKey;
+    }
+
     public String getSelectionKey()
     {
+        if (_selectionKey != null)
+            return _selectionKey;
         return DataRegionSelection.getSelectionKey(getSchemaName(), getQueryName(), getViewName(), getDataRegionName());
     }
 
@@ -443,8 +458,11 @@ public class QuerySettings
         _ignoreUserFilter = b;
     }
 
+    /** @return The maxRows parameter when {@link ShowRows#PAGINATED}, otherwise 0. */
     public int getMaxRows()
     {
+        if (_showRows != ShowRows.PAGINATED)
+            return 0;
         return _maxRows;
     }
 
@@ -454,8 +472,11 @@ public class QuerySettings
         _maxRows = maxRows;
     }
 
+    /** @return The offset parameter when {@link ShowRows#PAGINATED}, otherwise 0. */
     public long getOffset()
     {
+        if (_showRows != ShowRows.PAGINATED)
+            return 0;
         return _offset;
     }
 

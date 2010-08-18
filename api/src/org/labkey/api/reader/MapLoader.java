@@ -28,12 +28,12 @@ import java.util.*;
 /**
  * kevink
  */
-public class MapTabLoader extends DataLoader<Map<String, Object>>
+public class MapLoader extends DataLoader<Map<String, Object>>
 {
     String[] headers;
     Object[][] data;
 
-    public MapTabLoader(List<Map<String, Object>> rows) throws IOException
+    public MapLoader(List<Map<String, Object>> rows) throws IOException
     {
         convertToArrays(rows);
         _skipLines = rows.size() > 0 ? 1 : 0;
@@ -162,7 +162,7 @@ public class MapTabLoader extends DataLoader<Map<String, Object>>
             row3.put("Number", 1.2); // NOTE: not a String!
 
             List<Map<String, Object>> rows = Arrays.asList(row1, row2, row3);
-            MapTabLoader loader = new MapTabLoader(rows);
+            MapLoader loader = new MapLoader(rows);
 
             ColumnDescriptor[] cd = loader.getColumns();
             assertEquals("name",   cd[0].name); assertEquals(String.class, cd[0].clazz);

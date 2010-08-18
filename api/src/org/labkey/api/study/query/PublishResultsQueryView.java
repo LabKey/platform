@@ -122,6 +122,9 @@ public class PublishResultsQueryView extends ResultsQueryView
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
+
+        getSettings().setMaxRows(Table.ALL_ROWS);
+        getSettings().setShowRows(ShowRows.ALL);
     }
 
     public DataView createDataView()
@@ -160,8 +163,6 @@ public class PublishResultsQueryView extends ResultsQueryView
         dr.setShowFilters(false);
         dr.setSortable(false);
         dr.setShowPagination(true);
-        dr.setShowRows(ShowRows.ALL);
-        dr.setMaxRows(0);
         Map<FieldKey,ColumnInfo> cols = dr.getSelectColumns();
         List<DisplayColumn> extraColumns = getExtraColumns(cols.values());
         int idx = 0;
@@ -195,7 +196,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             }
         }
         dr.setShowRecordSelectors(true);
-        dr.setShowStatusBar(false);
+        dr.setShowSelectMessage(false);
         return dr;
     }
 

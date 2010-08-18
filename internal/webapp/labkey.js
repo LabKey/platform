@@ -22,6 +22,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.buttonBarMenu = false;
     LABKEY.fieldMarker = '@';
 
+    LABKEY._requestedCssFiles = {};
     LABKEY._requestedScriptFiles = [];
     LABKEY._loadedScriptFiles = {};
     LABKEY._emptyFunction = function(){};
@@ -73,7 +74,7 @@ LABKEY.init = function(config)
 };
 
 
-LABKEY.requiresScript = function(file, immediate)
+LABKEY.requiresScript = function(file, immediate, callback, scope)
 {
     if (arguments.length < 2)
         immediate = true;
@@ -86,10 +87,20 @@ LABKEY.requiresScript = function(file, immediate)
     }
 
     if (this._loadedScriptFiles[file])
+    {
+        if (typeof callback == "function")
+            callback.call(scope);
         return;
+    }
+
+    function onScriptLoad()
+    {
+        if (typeof callback == "function")
+            callback.call(scope);
+    }
 
     if (!immediate)
-        this._requestedScriptFiles.push(file);
+        this._requestedScriptFiles.push({file: file, callback: callback, scope: scope});
     else
     {
         this._loadedScriptFiles[file] = true;
@@ -99,13 +110,28 @@ LABKEY.requiresScript = function(file, immediate)
         //during parse time, IE does not. So if the document is
         //closed, use the DOM to create a script element and append it
         //to the head element. Otherwise (still parsing), use document.write()
-        if(LABKEY.isDocumentClosed)
+        if (LABKEY.isDocumentClosed || callback)
         {
             //create a new script element and append it to the head element
-            LABKEY.addElemToHead("script", {
+            var script = LABKEY.addElemToHead("script", {
                 src: LABKEY.contextPath + "/" + file + "?" + LABKEY.hash,
                 type: "text/javascript"
             });
+
+            // IE has a differeny way of handling <script> loads
+            if (script.readyState)
+            {
+                script.onreadystatechange = function () {
+                    if (script.readyState == "loaded" || script.readyState == "complete") {
+                        script.onreadystatechange = null;
+                        onScriptLoad();
+                    }
+                }
+            }
+            else
+            {
+                script.onload = onScriptLoad;
+            }
         }
         else
             document.write('\n<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>\n');
@@ -127,7 +153,7 @@ LABKEY.addElemToHead = function(elemName, attributes)
     var elem = document.createElement(elemName);
     for(var attr in attributes)
         elem[attr] = attributes[attr];
-    document.getElementsByTagName("head")[0].appendChild(elem);
+    return document.getElementsByTagName("head")[0].appendChild(elem);
 };
 
 
@@ -148,8 +174,8 @@ LABKEY.loadScripts = function()
 {
     for (var i=0 ; i<this._requestedScriptFiles.length ; i++)
     {
-        var file = this._requestedScriptFiles[i];
-        LABKEY.requiresScript(file, true);
+        var o = this._requestedScriptFiles[i];
+        LABKEY.requiresScript(o.file, true, o.callback, o.scope);
     }
     LABKEY.isDocumentClosed = true;
 };
@@ -158,7 +184,7 @@ LABKEY.loadScripts = function()
 LABKEY.requiresCss = function(file)
 {
     var fullPath = LABKEY.contextPath + "/" + file;
-    if (this._requestedScriptFiles[fullPath])
+    if (this._requestedCssFiles[fullPath])
         return;
     //console.debug("<link href=" + fullPath);
     LABKEY.addElemToHead("link", {
@@ -166,7 +192,7 @@ LABKEY.requiresCss = function(file)
         rel: "stylesheet",
         href: fullPath
     });
-    this._requestedScriptFiles[fullPath] = 1;
+    this._requestedCssFiles[fullPath] = 1;
 };
 
 

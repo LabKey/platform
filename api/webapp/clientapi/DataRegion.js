@@ -38,7 +38,8 @@ LABKEY.DataRegion = function (config)
     this.name = config.name;
     this.schemaName = config.schemaName;
     this.queryName = config.queryName;
-    this.viewName = config.viewName;
+    this.viewName = config.viewName || "";
+    this.viewUnsaved = config.viewUnsaved;
     this.sortFilter = config.sortFilter;
 
     this.complete = config.complete;
@@ -51,7 +52,7 @@ LABKEY.DataRegion = function (config)
     this.selectionModified = false;
 
     this.showRecordSelectors = config.showRecordSelectors;
-    this.showStatusBar = config.showStatusBar;
+    this.showInitialSelectMessage = config.showSelectMessage;
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
     this.requestURL = config.requestURL;
@@ -388,8 +389,10 @@ LABKEY.DataRegion = function (config)
      */
     this.showMessage = function (html)
     {
-        var span = this.msgbox.dom.getElementsByTagName("span")[0];
-        span.innerHTML = html;
+        var div = this.msgbox.child("div");
+        if (div.first())
+            div.createChild({tag: 'hr'});
+        div.createChild({tag: 'div', cls: 'labkey-dataregion-msg', html: html});
         this.msgbox.setVisible(true);
     };
 
@@ -403,8 +406,8 @@ LABKEY.DataRegion = function (config)
     this.hideMessage = function ()
     {
         this.msgbox.setVisible(false, false);
-        var span = this.msgbox.dom.getElementsByTagName("span")[0];
-        span.innerHTML = "";
+        var div = this.msgbox.child("div");
+        div.dom.innerHTML = "";
     };
 
     this.alterSortString = function(currentSortString, columnName, direction)
@@ -448,17 +451,28 @@ LABKEY.DataRegion = function (config)
     this._showPagination(this.header);
     this._showPagination(this.footer);
 
-    switch (this.showRows)
+    if (this.viewUnsaved)
     {
-        case "all":
-            this._showSelectMessage("Showing all " + this.totalRows + " rows.");
-            break;
-        case "selected":
-            this._showSelectMessage("Showing only <em>selected</em> rows.");
-            break;
-        case "unselected":
-            this._showSelectMessage("Showing only <em>unselected</em> rows.");
-            break;
+        if (this.viewName)
+            this.showMessage("The custom view '" + escape(this.viewName) + "' is temporary.  <a href='#'>Save</a>.");
+        else
+            this.showMessage("This custom view is temporary.  <a href='#'>Save</a>.");
+    }
+
+    if (this.showInitialSelectMessage)
+    {
+        switch (this.showRows)
+        {
+            case "all":
+                this._showSelectMessage("Showing all " + this.totalRows + " rows.");
+                break;
+            case "selected":
+                this._showSelectMessage("Showing only <em>selected</em> rows.");
+                break;
+            case "unselected":
+                this._showSelectMessage("Showing only <em>unselected</em> rows.");
+                break;
+        }
     }
 };
 
@@ -608,8 +622,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     // private
     _showSelectMessage : function (msg)
     {
-        if (!this.showStatusBar)
-            return;
         if (this.showRecordSelectors)
         {
             msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].selectNone();' title='Clear selection from all rows'>None</span>";
@@ -756,7 +768,66 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                 callback.call(this);
             }
         }
+    },
+
+    showCustomizeView : function (chooseColumnsUrl)
+    {
+        window.location = chooseColumnsUrl;
+        return;
+
+        // If no schema/query, use old query view designer
+        if (!this.schemaName && !this.queryName)
+            window.location = chooseColumnsUrl;
+
+        if (!this.customizeView)
+        {
+            LABKEY.requiresScript("query/queryDesigner.js", true);
+            LABKEY.requiresScript("designer/designer2.js", true, function () {
+
+                LABKEY.Query.getQueryDetails({
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    viewName: this.viewName,
+                    successCallback: function (json, response, options) {
+                        var el = Ext.get(this.form || this.table);
+                        var renderTo = el.parent().insertFirst({tag: "div"});
+
+                        this.customizeView = new LABKEY.DataRegion.ViewDesigner({
+                            renderTo: renderTo,
+                            style: {
+                                float: "left",
+                                "margin-right": "8px"
+                            },
+                            dataRegion: this,
+                            schemaName: this.schemaName,
+                            queryName: this.queryName,
+                            viewName: this.viewName,
+                            query: json
+                        });
+
+                        this.customizeView.on("viewsave", this.onViewSave, this);
+
+                        this.customizeView.setVisible(true);
+                        // XXX: animating the panel is too slow to render
+                        //this.customizeView.getEl().slideIn('l', {duration:0.35});
+                    },
+                    scope: this
+                });
+
+            }, this);
+        }
+        else
+        {
+            this.customizeView.setVisible(true);
+            // XXX: animating the panel is too slow to render
+            //this.customizeView.getEl().slideIn('l', {duration:0.35});
+        }
+    },
+
+    onViewSave : function (designer, newview) {
+        this.changeView(newview.name);
     }
+
 });
 
 
@@ -864,11 +935,6 @@ LABKEY.DataRegion.getSelected = function (config)
 
 // FILTER UI
 
-/*
- * Copyright (c) 2004-2009 Fred Hutchinson Cancer Research Center
- *
- * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
- */
 var _tableName = "";
 var _fieldName = "";
 var _fieldCaption = "";

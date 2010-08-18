@@ -212,7 +212,6 @@ public class ExperimentRunListView extends QueryView
         DataRegion result = super.createDataRegion();
         result.setShadeAlternatingRows(true);
         result.setShowBorders(true);
-        result.setName(_selectedType.getTableName());
         for (DisplayColumn column : result.getDisplayColumns())
         {
             if (column.getCaption().startsWith("Experiment Run "))

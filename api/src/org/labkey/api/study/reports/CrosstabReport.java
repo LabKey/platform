@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Table;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
@@ -135,9 +136,9 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         ReportQueryView view = createQueryView(context, getDescriptor());
         if (view != null)
         {
+            view.getSettings().setMaxRows(Table.ALL_ROWS);
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
-            rgn.setMaxRows(0);
             RenderContext ctx = dataView.getRenderContext();
 
             if (null == rgn.getResultSet(ctx))

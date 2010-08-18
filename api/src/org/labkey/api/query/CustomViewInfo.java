@@ -16,10 +16,16 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.FilterInfo;
+import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
+import org.labkey.api.util.URLHelper;
 import org.labkey.data.xml.queryCustomView.PropertyName;
 
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +57,62 @@ public interface CustomViewInfo
         {
             // There's only one possible value right now... once we add more, turn this into a loop or map lookup
             return columnTitle.getXmlPropertyEnum() == xmlEnum ? columnTitle : null;
+        }
+    }
+
+    public static class FilterAndSort
+    {
+        protected static final String FILTER_PARAM_PREFIX = "filter";
+        protected static final String CONTAINER_FILTER_NAME = "containerFilterName";
+
+        private List<FilterInfo> filter = new ArrayList<FilterInfo>();
+        private List<Sort.SortField> sort = new ArrayList<Sort.SortField>();
+        private String[] containerFilterNames = new String[]{};
+
+        public List<FilterInfo> getFilter()
+        {
+            return filter;
+        }
+
+        public List<Sort.SortField> getSort()
+        {
+            return sort;
+        }
+
+        public String[] getContainerFilterNames()
+        {
+            return containerFilterNames;
+        }
+
+        public static FilterAndSort fromString(String strFilter) throws URISyntaxException
+        {
+            FilterAndSort fas = new FilterAndSort();
+
+            if (strFilter != null)
+            {
+                URLHelper filterSort = new URLHelper(strFilter);
+
+                for (String key : filterSort.getKeysByPrefix(FILTER_PARAM_PREFIX + "."))
+                {
+                    String param = key.substring(FILTER_PARAM_PREFIX.length() + 1);
+                    String[] parts = StringUtils.splitPreserveAllTokens(param, '~');
+
+                    if (parts.length != 2)
+                        continue;
+
+                    for (String value : filterSort.getParameters(key))
+                    {
+                        FilterInfo filter = new FilterInfo(parts[0], parts[1], value);
+                        fas.filter.add(filter);
+                    }
+                }
+
+                Sort sort = new Sort(filterSort, FILTER_PARAM_PREFIX);
+                fas.sort = sort.getSortList();
+                fas.containerFilterNames = filterSort.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+            }
+
+            return fas;
         }
     }
 

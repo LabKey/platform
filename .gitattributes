@@ -570,7 +570,7 @@ api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
 api/src/org/labkey/api/reader/FastaLoader.java -text
 api/src/org/labkey/api/reader/Loader.java -text
-api/src/org/labkey/api/reader/MapTabLoader.java -text
+api/src/org/labkey/api/reader/MapLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
 api/src/org/labkey/api/reader/TabLoader.java -text
 api/src/org/labkey/api/reader/TestRow.java -text
@@ -2799,6 +2799,7 @@ internal/webapp/applet.js -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
 internal/webapp/designer/designer.js -text
+internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
 internal/webapp/ext-exploded.js -text
 internal/webapp/index.html -text

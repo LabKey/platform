@@ -28,6 +28,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -57,25 +58,25 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         return null;
     }
 
-    public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
+    public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         throw new UnsupportedOperationException();
     }
 
-    public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
+    public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         throw new UnsupportedOperationException();
     }
 
-    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, List<String> errors) throws Exception
+    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
     {
         def.save(context.getUser(), context.getContainer());
         return null;
     }
 
-    public List<DisplayColumn> getDisplayColumns(QueryForm queryForm) throws Exception
+    public List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception
     {
-        QueryView view = QueryView.create(queryForm);
+        QueryView view = QueryView.create(queryForm, errors);
         return view.getDisplayColumns();
     }
 

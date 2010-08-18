@@ -36,6 +36,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 import javax.servlet.ServletException;
@@ -70,12 +71,12 @@ public class QueryView extends WebPartView<Object>
         return _exportScriptFactories.get(type);
     }
 
-    static public QueryView create(ViewContext context, UserSchema schema, QuerySettings settings) throws ServletException
+    static public QueryView create(ViewContext context, UserSchema schema, QuerySettings settings, BindException errors) throws ServletException
     {
-        return schema.createView(context, settings);
+        return schema.createView(context, settings, errors);
     }
 
-    static public QueryView create(QueryForm form) throws ServletException
+    static public QueryView create(QueryForm form, BindException errors) throws ServletException
     {
         UserSchema s = form.getSchema();
         if (s == null)
@@ -83,7 +84,7 @@ public class QueryView extends WebPartView<Object>
             HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
             return null;
         }
-        return create(form.getViewContext(), s, form.getQuerySettings());
+        return create(form.getViewContext(), s, form.getQuerySettings(), errors);
     }
 
     private QueryDefinition _queryDef;
@@ -1087,8 +1088,21 @@ public class QueryView extends WebPartView<Object>
     {
         if (_report == null)
         {
-            NavTree item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
-            item.setId(getDataRegionName() + ":Views:Customize View");
+            ActionURL urlTableInfo = getSchema().urlFor(QueryAction.tableInfo);
+            urlTableInfo.addParameter(QueryParam.queryName.toString(), getQueryDef().getName());
+
+            NavTree item;
+            if (false)
+            {
+                item = new NavTree("Customize View");
+                item.setId(getDataRegionName() + ":Views:Customize View");
+                item.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
+                        ".showCustomizeView(" + PageFlowUtil.jsString(urlFor(QueryAction.chooseColumns).toString()) + ");");
+            }
+            else
+            {
+                item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
+            }
 
             button.addMenuItem(item);
         }
@@ -1170,12 +1184,8 @@ public class QueryView extends WebPartView<Object>
     protected void configureDataRegion(DataRegion rgn)
     {
         rgn.setDisplayColumns(getDisplayColumns());
-        rgn.setMaxRows(getMaxRows());
-        rgn.setOffset(getOffset());
-        rgn.setShowRows(getShowRows());
+        rgn.setSettings(getSettings());
         rgn.setShowRecordSelectors(showRecordSelectors());
-        rgn.setName(getDataRegionName());
-        rgn.setSelectionKey(getSelectionKey());
 
         rgn.setShadeAlternatingRows(isShadeAlternatingRows());
         rgn.setShowFilterDescription(isShowFilterDescription());
@@ -1183,8 +1193,6 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowSurroundingBorder(isShowSurroundingBorder());
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
-        if(null != getAggregates())
-            rgn.setAggregates(getAggregates());
 
         rgn.setTable(getTable());
 
@@ -1322,8 +1330,9 @@ public class QueryView extends WebPartView<Object>
             ret.getRenderContext().setBaseSort(sort);
         }
 
+        // XXX: Move to QuerySettings?
         if (_customView != null)
-            ret.getRenderContext().setViewName(_customView.getName());
+            ret.getRenderContext().setView(_customView);
     }
 
     protected void renderDataRegion(PrintWriter out) throws Exception
@@ -1366,9 +1375,9 @@ public class QueryView extends WebPartView<Object>
 
     public TSVGridWriter getTsvWriter() throws SQLException, IOException
     {
+        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.setMaxRows(0);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
@@ -1382,9 +1391,9 @@ public class QueryView extends WebPartView<Object>
 
     public Report.Results getResults() throws SQLException, IOException
     {
+        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.setMaxRows(0);
         rgn.setAllowAsync(false);
         view.getRenderContext().setCache(false);
         RenderContext ctx = view.getRenderContext();
@@ -1414,11 +1423,11 @@ public class QueryView extends WebPartView<Object>
 
     public ExcelWriter getExcelWriter() throws Exception
     {
+        getSettings().setMaxRows(Table.ALL_ROWS);
+        getSettings().setOffset(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
-        rgn.setOffset(Table.ALL_ROWS);
-        rgn.setMaxRows(ExcelWriter.MAX_ROWS);
         RenderContext rc = view.getRenderContext();
         ResultSet rs = rgn.getResultSet(rc);
         Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
@@ -1533,9 +1542,9 @@ public class QueryView extends WebPartView<Object>
         if (null == table)
             return;
 
+        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.setMaxRows(0);
         view.getRenderContext().setCache(false);
 
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
@@ -1549,7 +1558,7 @@ public class QueryView extends WebPartView<Object>
         new HtmlWriter().write(rs, getExportColumns(rgn.getDisplayColumns()), response, view.getRenderContext(), true);
     }
 
-    protected CustomView getCustomView()
+    public CustomView getCustomView()
     {
         return _customView;
     }

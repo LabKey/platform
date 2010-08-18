@@ -92,10 +92,21 @@ public class JsonWriter
         return mdata;
     }
 
-    public static JSONObject getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup)
+    public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, FieldKey fieldKeyPrefix)
+    {
+        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
+        for (ColumnInfo cinfo : tinfo.getColumns())
+        {
+            colProps.add(JsonWriter.getMetaData(cinfo.getDisplayColumnFactory().createRenderer(cinfo), fieldKeyPrefix, true, true));
+        }
+
+        return colProps;
+    }
+
+    public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup)
     {
         ColumnInfo cinfo = dc.getColumnInfo();
-        JSONObject props = new JSONObject();
+        Map<String, Object> props = new LinkedHashMap<String, Object>();
         JSONObject ext = new JSONObject();
         props.put("ext",ext);
 

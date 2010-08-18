@@ -73,11 +73,6 @@ public abstract class DataView extends WebPartView<RenderContext>
         getRenderContext().setResultSet(rs);
     }
 
-    public void setDataRegion(DataRegion dataRegion)
-    {
-        _dataRegion = dataRegion;
-    }
-
     public RenderContext getRenderContext()
     {
         return getModelBean();

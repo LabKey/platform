@@ -30,7 +30,6 @@ public class GridView extends DataView
     public GridView(DataRegion dataRegion, Errors errors)
     {
         super(dataRegion, errors);
-        setupSelectionKey(dataRegion);
     }
 
     protected boolean isColumnIncluded(ColumnInfo col)
@@ -38,21 +37,9 @@ public class GridView extends DataView
         return !col.isHidden();
     }
 
-    private void setupSelectionKey(DataRegion dataRegion)
-    {
-        if (dataRegion != null &&
-            dataRegion.getSelectionKey() == null &&
-            dataRegion.getTable() != null &&
-            dataRegion.getTable().getSchema() != null)
-        {
-            dataRegion.setSelectionKey(DataRegionSelection.getSelectionKey(dataRegion.getTable().getSchema().getName(), dataRegion.getTable().getName(), null, dataRegion.getName()));
-        }
-    }
-
     public GridView(DataRegion dataRegion, RenderContext ctx)
     {
         super(dataRegion, ctx);
-        setupSelectionKey(dataRegion);
     }
 
     // TODO: This should take a Filter, not a SimpleFilter
