@@ -1375,9 +1375,9 @@ public class QueryView extends WebPartView<Object>
 
     public TSVGridWriter getTsvWriter() throws SQLException, IOException
     {
-        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        getSettings().setShowRows(ShowRows.ALL);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
@@ -1391,9 +1391,9 @@ public class QueryView extends WebPartView<Object>
 
     public Report.Results getResults() throws SQLException, IOException
     {
-        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        getSettings().setShowRows(ShowRows.ALL);
         rgn.setAllowAsync(false);
         view.getRenderContext().setCache(false);
         RenderContext ctx = view.getRenderContext();
@@ -1423,10 +1423,10 @@ public class QueryView extends WebPartView<Object>
 
     public ExcelWriter getExcelWriter() throws Exception
     {
-        getSettings().setMaxRows(Table.ALL_ROWS);
-        getSettings().setOffset(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
+        getSettings().setOffset(Table.ALL_ROWS);
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
         ResultSet rs = rgn.getResultSet(rc);
@@ -1542,9 +1542,10 @@ public class QueryView extends WebPartView<Object>
         if (null == table)
             return;
 
-        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        getSettings().setMaxRows(ExcelWriter.MAX_ROWS);
+        getSettings().setOffset(Table.ALL_ROWS);
         view.getRenderContext().setCache(false);
 
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
