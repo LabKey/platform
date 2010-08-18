@@ -16,6 +16,7 @@
 package org.labkey.study.dataset;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
@@ -41,6 +42,7 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
@@ -564,7 +566,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 form.setViewContext(context);
                 form.init(_def, _def.getCreatedBy());
 
-                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, null);
+                BindException errors = new NullSafeBindException(new Object(), "command");
+                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, errors);
             }
             catch(Exception e)
             {
