@@ -88,7 +88,7 @@
         <tr><td></td><td><table class="normal">
             <tr><td></td><th>Name</th><th>Label</th><th>Type</th><th>Description</th></tr>
     <%
-        for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean))
+        for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean, null))
         {
             ColumnInfo info = col.getColumnInfo();
     %>

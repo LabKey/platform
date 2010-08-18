@@ -217,6 +217,19 @@ table.labkey-no-spacing
     padding: 2px !important;
 }
 
+.labkey-dataregion-msg
+{
+    padding: 1px;
+}
+
+.labkey-dataregion-msgbox hr
+{
+    border: none 0;
+    border-top: 1px solid #EEEEEE;
+    height: 1px;
+    margin: 1px 2px;
+}
+
 /* Used for the status box that pops up on some forms, such as the wiki editor, which tells the user
  whether its through saving or not */
 .labkey-status-info

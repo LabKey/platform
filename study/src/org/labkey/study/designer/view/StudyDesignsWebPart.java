@@ -18,6 +18,7 @@ package org.labkey.study.designer.view;
 
 import org.labkey.api.data.*;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -44,10 +45,13 @@ public class StudyDesignsWebPart extends GridView
     public StudyDesignsWebPart(ViewContext ctx, boolean inPortal)
     {
         super(new DataRegion(), (BindException)null);
-        
+
         TableInfo table = StudyDesignManager.get().getStudyDesignTable();
+        QuerySettings settings = new QuerySettings(ctx, table.getName());
+        settings.setSelectionKey(DataRegionSelection.getSelectionKey(table.getSchema().getName(), table.getName(), null, table.getName()));
+
         DataRegion dr = getDataRegion();
-        dr.setSelectionKey(DataRegionSelection.getSelectionKey(table.getSchema().getName(), table.getName(), null, "StudyDesigns"));
+        dr.setSettings(settings);
         dr.addColumns(table.getColumns("StudyId", "Label", "Modified", "PublicRevision","Container", "Active"));
         dr.getDisplayColumn("StudyId").setCaption("Id");
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -48,8 +49,9 @@ public class ProtocolWebPart extends WebPartView
     {
         Container c = getViewContext().getContainer();
 
+        QuerySettings settings = new QuerySettings(getViewContext(), "protocols");
         DataRegion dr = new DataRegion();
-        dr.setName("protocols");
+        dr.setSettings(settings);
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocol();
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,Created");
         dr.setColumns(cols);

@@ -63,7 +63,7 @@ public class EditResultsQueryView extends AssayBaseQueryView
             view.getDataRegion().addHiddenFormField("runId", String.valueOf(_runId));
         }
 
-        view.getDataRegion().setShowStatusBar(false);
+        view.getDataRegion().setShowSelectMessage(false);
         if (_returnURL != null)
             view.getDataRegion().addHiddenFormField("returnURL", new ActionURL(_returnURL).getLocalURIString());
 

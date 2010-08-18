@@ -1754,6 +1754,7 @@ query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
 query/src/org/labkey/query/CustomViewImporter.java -text
 query/src/org/labkey/query/CustomViewInfoImpl.java -text
+query/src/org/labkey/query/CustomViewUtil.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
 query/src/org/labkey/query/ExternalSchema.java -text

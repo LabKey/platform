@@ -179,7 +179,7 @@ public class ChooseColumnsForm extends DesignForm
         //return ret;
     }
 
-    protected boolean isFilterOrSort(String dataRegionName, String param)
+    public static boolean isFilterOrSort(String dataRegionName, String param)
     {
         assert param.startsWith(dataRegionName + ".");
         String check = param.substring(dataRegionName.length() + 1);

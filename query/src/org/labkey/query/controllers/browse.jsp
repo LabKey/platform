@@ -17,7 +17,7 @@
 %>
 
 <div id="browserContainer" class="extContainer" style="width:100%">
-    <div id="browser"/>
+    <div id="browser"></div>
 </div>
 
 <script type="text/javascript">

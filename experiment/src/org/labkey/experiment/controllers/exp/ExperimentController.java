@@ -42,7 +42,7 @@ import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.*;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.reader.MapTabLoader;
+import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -447,7 +447,7 @@ public class ExperimentController extends SpringActionController
             uploadForm.setParentColumn(-1);
             uploadForm.setInsertUpdateChoice(UploadMaterialSetForm.InsertUpdateChoice.insertOrUpdate.name());
             uploadForm.setCreateNewSampleSet(false);
-            uploadForm.setLoader(new MapTabLoader(form.getMaterials()));
+            uploadForm.setLoader(new MapLoader(form.getMaterials()));
 
             UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
             helper.uploadMaterials();
@@ -2311,9 +2311,12 @@ public class ExperimentController extends SpringActionController
     private DataRegion getMaterialSourceRegion(ViewContext model, boolean detailsView) throws Exception
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
+
+        QuerySettings settings = new QuerySettings(model, "MaterialsSource");
+        settings.setSelectionKey(DataRegionSelection.getSelectionKey(tableInfo.getSchema().getName(), tableInfo.getName(), "SampleSets", settings.getDataRegionName()));
+
         DataRegion dr = new DataRegion();
-        dr.setName("MaterialsSource");
-        dr.setSelectionKey(DataRegionSelection.getSelectionKey(tableInfo.getSchema().getName(), tableInfo.getName(), "SampleSets", dr.getName()));
+        dr.setSettings(settings);
         dr.addColumns(tableInfo.getUserEditableColumns());
         dr.getDisplayColumn(0).setVisible(false);
 

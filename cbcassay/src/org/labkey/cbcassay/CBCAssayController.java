@@ -146,7 +146,7 @@ public class CBCAssayController extends SpringActionController
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
-            settings.setMaxRows(0);
+            settings.setMaxRows(Table.ALL_ROWS);
             settings.setShowRows(ShowRows.ALL);
 
             EditResultsQueryView queryView = new EditResultsQueryView(_protocol, schema, settings, runId, form.getReturnURL());

@@ -24,6 +24,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.query.CustomViewUtil;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -111,54 +112,27 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             resp.put("description", tinfo.getDescription());
 
         //now the native columns
-        resp.put("columns", getNativeColProps(tinfo, fk));
+        resp.put("columns", JsonWriter.getNativeColProps(tinfo, fk));
 
         //now the columns in the user's default view for this query
         if (schema instanceof UserSchema && null == form.getFk())
         {
-            resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
+            List<Map<String, Object>> viewInfos = new ArrayList<Map<String, Object>>();
+            // always include the defaultView for backwards compatibility
+            viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), null, true, true));
+            if (form.getViewName() != null)
+                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), form.getViewName(), true, false));
+            resp.put("views", viewInfos);
         }
 
         return resp;
-    }
-
-    protected List<Map<String,Object>> getNativeColProps(TableInfo tinfo, FieldKey fieldKeyPrefix)
-    {
-        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
-        for (ColumnInfo cinfo : tinfo.getColumns())
-        {
-            colProps.add(JsonWriter.getMetaData(cinfo.getDisplayColumnFactory().createRenderer(cinfo), fieldKeyPrefix, true, true));
-        }
-
-        return colProps;
-    }
-
-    protected Map<String,Object> getDefaultViewProps(UserSchema schema, String queryName)
-    {
-        //build a query view
-        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
-        QueryView view = new QueryView(schema, settings, null);
-
-        Map<String,Object> defViewProps = new HashMap<String,Object>();
-        defViewProps.put("columns", getDefViewColProps(view));
-        return defViewProps;
-    }
-
-    protected List<Map<String,Object>> getDefViewColProps(QueryView view)
-    {
-        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
-        for (DisplayColumn dc : view.getDisplayColumns())
-        {
-            if (dc.isQueryColumn() && null != dc.getColumnInfo())
-                colProps.add(JsonWriter.getMetaData(dc, null, true, true));
-        }
-        return colProps;
     }
 
     public static class Form
     {
         private String _queryName;
         private String _schemaName;
+        private String _viewName;
         private String _fk;
 
         public String getSchemaName()
@@ -179,6 +153,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
+        }
+
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
         }
 
         public String getFk()

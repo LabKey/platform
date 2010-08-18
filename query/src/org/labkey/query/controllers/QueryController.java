@@ -45,10 +45,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.CustomViewImpl;
-import org.labkey.query.ExternalSchemaDocumentProvider;
-import org.labkey.query.QueryDefinitionImpl;
-import org.labkey.query.TableXML;
+import org.labkey.query.*;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.design.QueryDocument;
@@ -663,7 +660,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            QueryView queryView = QueryView.create(form);
+            QueryView queryView = QueryView.create(form, errors);
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -704,7 +701,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            QueryView queryView = QueryView.create(form);
+            QueryView queryView = QueryView.create(form, errors);
             TableInfo ti = queryView.getTable();
 
             DbSchema schema = ti.getSchema();
@@ -900,7 +897,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             assertQueryExists(form);
-            QueryView view = QueryView.create(form);
+            QueryView view = QueryView.create(form, errors);
             getPageConfig().setTemplate(PageConfig.Template.None);
             _export(form, view);
             return null;
@@ -938,7 +935,7 @@ public class QueryController extends SpringActionController
         {
             assertQueryExists(form);
 
-            return ExportScriptModel.getExportScriptView(QueryView.create(form), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
+            return ExportScriptModel.getExportScriptView(QueryView.create(form, errors), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1000,7 +997,7 @@ public class QueryController extends SpringActionController
             response.setHeader("Cache-Control", "private");
 
             assertQueryExists(form);
-            QueryView view = QueryView.create(form);
+            QueryView view = QueryView.create(form, errors);
             getPageConfig().setTemplate(PageConfig.Template.None);
             view.exportToExcelWebQuery(getViewContext().getResponse());
             return null;
@@ -1065,7 +1062,7 @@ public class QueryController extends SpringActionController
         {
             if (!reshow)
             {
-                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form);
+                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form, errors);
                 String[] columnNames = new String[columns.size()];
                 int i=0;
 
@@ -1078,14 +1075,9 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            List<String> errorList = new ArrayList<String>();
-            _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).createSnapshot(form, errorList);
-            if (!errorList.isEmpty())
-            {
-                for (String error : errorList)
-                    errors.reject("snapshotQuery.error", error);
+            _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).createSnapshot(form, errors);
+            if (errors.hasErrors())
                 return false;
-            }
             return true;
         }
 
@@ -1140,17 +1132,11 @@ public class QueryController extends SpringActionController
             QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
             if (def != null)
             {
-                List<String> errorList = new ArrayList<String>();
-
                 def.setColumns(form.getFieldKeyColumns());
 
-                _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshotDefinition(getViewContext(), def, errorList);
-                if (!errorList.isEmpty())
-                {
-                    for (String error : errorList)
-                        errors.reject(SpringActionController.ERROR_MSG, error);
+                _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshotDefinition(getViewContext(), def, errors);
+                if (errors.hasErrors())
                     return false;
-                }
             }
             else
                 errors.reject("snapshotQuery.error", "Unable to create QuerySnapshotDefinition");
@@ -1174,8 +1160,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            List<String> errorList = new ArrayList<String>();
-            ActionURL url = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshot(form, errorList);
+            ActionURL url = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshot(form, errors);
             if (url != null)
                 return HttpView.redirect(url);
             return null;
@@ -1340,16 +1325,24 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ChooseColumnsAction extends FormViewAction<ChooseColumnsForm>
+    public abstract class BaseChooseColumnsAction extends FormViewAction<ChooseColumnsForm>
     {
-        ActionURL _returnURL = null;
-
         public void validateCommand(ChooseColumnsForm form, Errors errors)
         {
             form.canEdit(errors);
         }
 
-        public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
+        public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
+        {
+            throw new UnsupportedOperationException("POST not supported");
+        }
+
+        public URLHelper getSuccessURL(ChooseColumnsForm chooseColumnsForm)
+        {
+            return null;
+        }
+
+        protected ViewDocument init(ChooseColumnsForm form, boolean reshow, BindException errors)
         {
             if (form.getQuerySettings() == null)
             {
@@ -1360,6 +1353,7 @@ public class QueryController extends SpringActionController
             if (!reshow)
                 form.initForView();
 
+            ViewDocument designDoc = null;
             if (form.ff_designXML == null)
             {
                 if (queryExists(form))
@@ -1384,7 +1378,7 @@ public class QueryController extends SpringActionController
                     ActionURL url = new ActionURL();
                     form.applyFilterAndSortToURL(url, "query");
                     view.setFilterAndSortFromURL(url, "query");
-                    ViewDocument designDoc = ((CustomViewImpl) view).getDesignDocument(form.getSchema());
+                    designDoc = ((CustomViewImpl) view).getDesignDocument(form.getSchema());
                     if (designDoc == null)
                     {
                         errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' has errors.");
@@ -1400,25 +1394,84 @@ public class QueryController extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + form.getQueryName() + "' doesn't exist.");
                 }
             }
+            else
+            {
+                String xml = StringUtils.trimToEmpty(form.ff_designXML);
+                if (xml.length() > 0)
+                {
+                    try
+                    {
+                        designDoc = ViewDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
+                    }
+                    catch (XmlException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                }
+            }
+
+            return designDoc;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ChooseColumnsAction extends BaseChooseColumnsAction
+    {
+        ActionURL _returnURL = null;
+
+        public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            init(form, reshow, errors);
             return new JspView<ChooseColumnsForm>(QueryController.class, "chooseColumns.jsp", form, errors);
         }
         
-        public boolean handlePost(ChooseColumnsForm form, BindException errors) throws Exception
-        {
-            throw new UnsupportedOperationException("POST not supported");
-        }
-
-        public URLHelper getSuccessURL(ChooseColumnsForm chooseColumnsForm)
-        {
-            return null;
-        }
-
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Customize Grid View");
             return root;
         }
     }
+
+    /*
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CustomViewDesignAction extends BaseChooseColumnsAction
+    {
+        @Override
+        public ModelAndView getView(ChooseColumnsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            XmlObject doc = init(form, false, errors);
+            if (doc == null || errors.hasErrors())
+            {
+                if (!errors.hasErrors())
+                    errors.reject(ERROR_MSG, "Error getting custom view design");
+
+                doc = XmlObject.Factory.newInstance();
+                XmlCursor cur = null;
+                try
+                {
+                    cur = doc.newCursor();
+                    cur.toNextToken();
+                    cur.beginElement("errors");
+                    for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+                        cur.insertElementWithText("error", error.getDefaultMessage());
+                }
+                finally
+                {
+                    if (cur != null) cur.dispose();
+                }
+            }
+
+            getViewContext().getResponse().setContentType("text/xml");
+            getViewContext().getResponse().getWriter().write(doc.toString());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+    */
 
     @RequiresPermissionClass(ReadPermission.class)
     public class SaveColumnsAction extends ApiAction<ChooseColumnsForm>
@@ -1436,6 +1489,8 @@ public class QueryController extends SpringActionController
                     try
                     {
                         doc = ViewDocument.Factory.parse(xml, XmlBeansUtil.getDefaultParseOptions());
+                        if (doc == null)
+                            errors.reject(ERROR_MSG, "Failed to parse design XML");
                     }
                     catch (XmlException e)
                     {
@@ -1456,104 +1511,174 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ChooseColumnsForm form, BindException errors) throws Exception
         {
-            User owner = getUser();
-            String regionName = form.getDataRegionName();
-            if (form.ff_saveForAllUsers && form.canSaveForAllUsers())
-            {
-                owner = null;
-            }
-            String name = StringUtils.trimToNull(form.ff_columnListName);
-
-            boolean canEdit = form.canEdit(errors);
-            boolean isHidden = false;
-            CustomView view = null;
-            if (canEdit && doc != null)
-            {
-                view = form.getQueryDef().getCustomView(owner, getViewContext().getRequest(), name);
-
-                // Create a new view if none exists or the current view is a shared view
-                // and the user wants to override the shared view with a personal view.
-                if (view == null || (owner != null && view.isShared()))
-                {
-                    view = form.getQueryDef().createCustomView(owner, name);
-                    if (owner != null && form.isSaveInSession())
-                        ((CustomViewImpl) view).isSession(true);
-                }
-                else if (form.isSaveInSession() != view.isSession())
-                {
-                    if (form.isSaveInSession())
-                    {
-                        if (owner == null)
+            Map<String, Object> response = saveCustomView(
+                    form.getSchema(), form.getQueryDef(),
+                    form.getDataRegionName(), form.ff_columnListName,
+                    form.ff_saveForAllUsers, form.ff_inheritable, form.isSaveInSession(),
+                    form.ff_saveFilter,
+                    new UpdateViewCallback() {
+                        public void update(CustomView view, boolean saveFilter)
                         {
-                            errors.reject(ERROR_MSG, "Session views can't be saved for all users");
-                            return null;
+                            ((CustomViewImpl)view).update(doc, saveFilter);
                         }
+                    },
+                    form.getSourceURL(),
+                    errors);
 
-                        // The form is saving to session but the view is in the database.
-                        // Make a copy in case it's a read-only version from an XML file
-                        view = form.getQueryDef().createCustomView(owner, name);
-                        ((CustomViewImpl) view).isSession(true);
-                    }
-                    else
-                    {
-                        // If the form is saving to the database but the view is session,
-                        // just flip the view's session bit if it is a custom view.
-                        ((CustomViewImpl)view).isSession(false);
-                    }
-                }
-
-                ((CustomViewImpl) view).update(doc, form.ff_saveFilter);
-                if (form.canSaveForAllUsers() && !form.isSaveInSession())
-                {
-                    view.setCanInherit(form.ff_inheritable);
-                }
-                isHidden = view.isHidden();
-                view.save(getUser(), getViewContext().getRequest());
-                if (owner == null)
-                {
-                    // New view is shared so delete any previous custom view owned by the user with the same name.
-                    CustomView personalView = form.getQueryDef().getCustomView(getUser(), getViewContext().getRequest(), name);
-                    if (personalView != null && !personalView.isShared())
-                    {
-                        personalView.delete(getUser(), getViewContext().getRequest());
-                    }
-                }
-            }
-
-            ActionURL returnURL = form.getSourceURL();
-            if (null == returnURL)
-            {
-                returnURL = getViewContext().cloneActionURL().setAction(QueryAction.executeQuery.name());
-            }
-            else
-            {
-                returnURL = returnURL.clone();
-                if (name == null || !canEdit)
-                {
-                    returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
-                }
-                else if (!isHidden)
-                {
-                    returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
-                }
-                returnURL.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
-                if (form.ff_saveFilter)
-                {
-                    for (String key : returnURL.getKeysByPrefix(regionName + "."))
-                    {
-                        if (form.isFilterOrSort(regionName, key))
-                            returnURL.deleteFilterParameters(key);
-                    }
-                }
-            }
-
-            Map<String, Object> ret = view != null ? getViewInfo(view) : new HashMap<String, Object>();
-            ret.put("redirect", returnURL);
-            return new ApiSimpleResponse(ret);
+            return new ApiSimpleResponse(response);
         }
-
     }
 
+    public interface UpdateViewCallback
+    {
+        void update(CustomView view, boolean saveFilter);
+    }
+
+    // Uck. Supports the old and new view designer.
+    protected Map<String, Object> saveCustomView(UserSchema schema, QueryDefinition queryDef,
+                                                 String regionName, String viewName,
+                                                 boolean share, boolean inherit,
+                                                 boolean session, boolean saveFilter,
+                                                 UpdateViewCallback updateCallback,
+                                                 ActionURL srcURL,
+                                                 Errors errors)
+    {
+        User owner = getUser();
+        boolean canSaveForAllUsers = getContainer().hasPermission(getUser(), EditSharedViewPermission.class);
+        if (share && canSaveForAllUsers)
+        {
+            owner = null;
+        }
+        String name = StringUtils.trimToNull(viewName);
+
+        boolean isHidden = false;
+        CustomView view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
+        boolean canEdit = ChooseColumnsForm.canEdit(view, getContainer(), errors);
+        if (canEdit)
+        {
+            // Create a new view if none exists or the current view is a shared view
+            // and the user wants to override the shared view with a personal view.
+            if (view == null || (owner != null && view.isShared()))
+            {
+                view = queryDef.createCustomView(owner, name);
+                if (owner != null && session)
+                    ((CustomViewImpl) view).isSession(true);
+            }
+            else if (session != view.isSession())
+            {
+                if (session)
+                {
+                    if (owner == null)
+                    {
+                        errors.reject(ERROR_MSG, "Session views can't be saved for all users");
+                        return null;
+                    }
+
+                    // The form is saving to session but the view is in the database.
+                    // Make a copy in case it's a read-only version from an XML file
+                    view = queryDef.createCustomView(owner, name);
+                    ((CustomViewImpl) view).isSession(true);
+                }
+                else
+                {
+                    // If the form is saving to the database but the view is session,
+                    // just flip the view's session bit if it is a custom view.
+                    ((CustomViewImpl)view).isSession(false);
+                }
+            }
+
+            updateCallback.update(view, saveFilter);
+            if (canSaveForAllUsers && !session)
+            {
+                view.setCanInherit(inherit);
+            }
+            isHidden = view.isHidden();
+            view.save(getUser(), getViewContext().getRequest());
+            if (owner == null)
+            {
+                // New view is shared so delete any previous custom view owned by the user with the same name.
+                CustomView personalView = queryDef.getCustomView(getUser(), getViewContext().getRequest(), name);
+                if (personalView != null && !personalView.isShared())
+                {
+                    personalView.delete(getUser(), getViewContext().getRequest());
+                }
+            }
+        }
+
+        ActionURL returnURL = srcURL;
+        if (null == returnURL)
+        {
+            returnURL = getViewContext().cloneActionURL().setAction(QueryAction.executeQuery.name());
+        }
+        else
+        {
+            returnURL = returnURL.clone();
+            if (name == null || !canEdit)
+            {
+                returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
+            }
+            else if (!isHidden)
+            {
+                returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
+            }
+            returnURL.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
+            if (saveFilter)
+            {
+                for (String key : returnURL.getKeysByPrefix(regionName + "."))
+                {
+                    if (ChooseColumnsForm.isFilterOrSort(regionName, key))
+                        returnURL.deleteFilterParameters(key);
+                }
+            }
+        }
+
+        Map<String, Object> ret = new HashMap<String, Object>();
+        ret.put("redirect", returnURL);
+        if (view != null)
+            ret.put("view", CustomViewUtil.toMap(schema, view, true));
+        return new ApiSimpleResponse(ret);
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveCustomViewCommand extends ApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            JSONObject json = form.getJsonObject();
+            String schemaName = json.getString(QueryParam.schemaName.toString());
+            String queryName = json.getString(QueryParam.queryName.toString());
+            if (schemaName == null || queryName == null)
+                throw new IllegalArgumentException("schemaName and queryName are required");
+
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
+            if (schema == null)
+                throw new NotFoundException("schema not found");
+
+            QueryDefinition queryDef = QueryService.get().getQueryDef(getContainer(), schemaName, queryName);
+            if (queryDef == null)
+                queryDef = schema.getQueryDefForTable(queryName);
+            if (queryDef == null)
+                throw new NotFoundException("query not found");
+
+            final JSONObject jsonView = json.getJSONObject("view");
+            String viewName = jsonView.getString("name");
+
+            boolean shared = jsonView.optBoolean("shared", false);
+            boolean inherit = jsonView.optBoolean("inherit", false);
+            boolean session = jsonView.optBoolean("session", false);
+
+            Map<String, Object> response = saveCustomView(
+                    schema, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
+                    shared, inherit, session, true, new UpdateViewCallback() {
+                        public void update(CustomView view, boolean saveFilter)
+                        {
+                            ((CustomViewImpl)view).update(jsonView, saveFilter);
+                        }
+                    }, null, errors);
+            return new ApiSimpleResponse(response);
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
@@ -2082,7 +2207,7 @@ public class QueryController extends SpringActionController
             }
 
 
-            QueryView view = QueryView.create(form);
+            QueryView view = QueryView.create(form, errors);
             if(metaDataOnly)
                 view.getSettings().setMaxRows(1); //query assumes that 0 means all rows!
 
@@ -2223,8 +2348,8 @@ public class QueryController extends SpringActionController
             if(null != form.getMaxRows() && form.getMaxRows().intValue() >= 0)
             {
                 settings.setShowRows(ShowRows.PAGINATED);
-                settings.setMaxRows(0 == form.getMaxRows().intValue() ? 1 : form.getMaxRows().intValue());
-                metaDataOnly = (0 == form.getMaxRows().intValue());
+                settings.setMaxRows(Table.ALL_ROWS == form.getMaxRows().intValue() ? 1 : form.getMaxRows().intValue());
+                metaDataOnly = (Table.ALL_ROWS == form.getMaxRows().intValue());
             }
 
             if(null != form.getOffset())
@@ -3170,7 +3295,7 @@ public class QueryController extends SpringActionController
             FieldKey[] fields = form.getFieldKeys();
             if (fields.length != 0)
             {
-                TableInfo tinfo = QueryView.create(form).getTable();
+                TableInfo tinfo = QueryView.create(form, errors).getTable();
                 Map<FieldKey, ColumnInfo> columnMap = CustomViewImpl.getColumnInfos(tinfo, Arrays.asList(fields));
                 TableXML.initTable(tables.addNewTable(), tinfo, null, columnMap.values());
             }
@@ -3773,6 +3898,8 @@ public class QueryController extends SpringActionController
     {
         private String _schemaName;
         private String _queryName;
+        private String _viewName;
+        private boolean _metadata;
 
         public String getSchemaName()
         {
@@ -3793,6 +3920,26 @@ public class QueryController extends SpringActionController
         {
             _queryName = queryName;
         }
+
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
+        }
+
+        public boolean isMetadata()
+        {
+            return _metadata;
+        }
+
+        public void setMetadata(boolean metadata)
+        {
+            _metadata = metadata;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -3812,60 +3959,40 @@ public class QueryController extends SpringActionController
 
             if (!(qschema instanceof UserSchema))
                 throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
-            
+
             QueryDefinition querydef = QueryService.get().createQueryDefForTable((UserSchema)qschema, form.getQueryName());
             if (null == querydef)
                 throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
                         + form.getSchemaName() + "' schema in the container '"
                         + getViewContext().getContainer().getPath() + "'!");
 
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("schemaName", form.getSchemaName());
-            response.put("queryName", form.getQueryName());
-            
             Map<String, CustomView> views = querydef.getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
             if (null == views)
                 views = Collections.emptyMap();
 
-            List<Map<String, Object>> viewInfos = new ArrayList<Map<String ,Object>>(views.size());
-            for(CustomView view : views.values())
-                viewInfos.add(getViewInfo(view));
+            List<Map<String, Object>> viewInfos = Collections.emptyList();
+            if (getViewContext().getBindPropertyValues().contains("viewName"))
+            {
+                // Get info for a named view or the default view (null)
+                CustomView view = views.get(form.getViewName());
+                if (view != null)
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(qschema, view, form.isMetadata()));
+            }
+            else
+            {
+                viewInfos = new ArrayList<Map<String, Object>>(views.size());
+                for (CustomView view : views.values())
+                    viewInfos.add(CustomViewUtil.toMap(qschema, view, form.isMetadata()));
+            }
 
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("schemaName", form.getSchemaName());
+            response.put("queryName", form.getQueryName());
             response.put("views", viewInfos);
 
             return response;
         }
 
-    }
-
-    protected Map<String, Object> getViewInfo(CustomView view)
-    {
-        Map<String,Object> viewInfo = new HashMap<String,Object>();
-        viewInfo.put("name", view.getName());
-        if (null != view.getOwner())
-            viewInfo.put("owner", view.getOwner().getDisplayName(getViewContext()));
-        viewInfo.put("shared", view.isShared());
-        viewInfo.put("session", view.isSession());
-        viewInfo.put("editable", view.isEditable());
-        viewInfo.put("hidden", view.isHidden());
-
-        List<Map<String, Object>> colInfos = new ArrayList<Map<String, Object>>();
-        for(FieldKey key : view.getColumns())
-        {
-            Map<String, Object> colInfo = new HashMap<String, Object>();
-            colInfo.put("name", key.getName());
-            colInfo.put("key", key.toString());
-            colInfos.add(colInfo);
-        }
-        viewInfo.put("columns", colInfos);
-        ActionURL viewDataUrl = view.getQueryDefinition().urlFor(QueryAction.executeQuery);
-        if (viewDataUrl != null)
-        {
-            if (view.getName() != null)
-                viewDataUrl.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
-            viewInfo.put("viewDataUrl", viewDataUrl);
-        }
-        return viewInfo;
     }
 
     @RequiresNoPermission

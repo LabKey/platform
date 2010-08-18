@@ -277,13 +277,13 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
         try
         {
-            FilterAndSort fas = getFilterAndSort(_cstmView.getFilter());
+            FilterAndSort fas = FilterAndSort.fromString(_cstmView.getFilter());
 
-            if (!fas.filter.isEmpty())
+            if (!fas.getFilter().isEmpty())
             {
                 FiltersType filtersXml = customViewXml.addNewFilters();
 
-                for (FilterInfo filter : fas.filter)
+                for (FilterInfo filter : fas.getFilter())
                 {
                     FilterType filterXml = filtersXml.addNewFilter();
 
@@ -302,11 +302,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                 }
             }
 
-            if (!fas.sort.isEmpty())
+            if (!fas.getSort().isEmpty())
             {
                 SortsType sortsXml = customViewXml.addNewSorts();
 
-                for (Sort.SortField sort : fas.sort)
+                for (Sort.SortField sort : fas.getSort())
                 {
                     SortType sortXml = sortsXml.addNewSort();
 
@@ -338,6 +338,16 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
     public void setIsHidden(boolean b)
     {
         edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));
+    }
+
+    public Map<String, Object> toMap(QuerySchema schema)
+    {
+        return CustomViewUtil.toMap(schema, this, true);
+    }
+
+    public void update(Map<String, Object> jsonView, boolean saveFilterAndSort)
+    {
+        CustomViewUtil.update(this, jsonView, saveFilterAndSort);
     }
 
     public ViewDocument getDesignDocument(QuerySchema schema)
@@ -425,55 +435,6 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         tableOutput.setAlias("output");
         TableXML.initTable(tableOutput.addNewMetadata(), tinfo, null, getColumnInfos(tinfo, allKeys).values());
         return ret;
-    }
-
-    private static class FilterAndSort
-    {
-        private List<FilterInfo> filter = new ArrayList<FilterInfo>();
-        private List<Sort.SortField> sort = new ArrayList<Sort.SortField>();
-        private String[] containerFilterNames = new String[]{};
-
-        public List<Sort.SortField> getSort()
-        {
-            return sort;
-        }
-
-        public String[] getContainerFilterNames()
-        {
-            return containerFilterNames;
-        }
-    }
-
-    // TODO: Shift other methods in CustomViewImpl to use this helper
-    private FilterAndSort getFilterAndSort(String strFilter) throws URISyntaxException
-    {
-        FilterAndSort fas = new FilterAndSort();
-
-        if (strFilter != null)
-        {
-            URLHelper filterSort = new URLHelper(strFilter);
-
-            for (String key : filterSort.getKeysByPrefix(FILTER_PARAM_PREFIX + "."))
-            {
-                String param = key.substring(FILTER_PARAM_PREFIX.length() + 1);
-                String[] parts = StringUtils.splitPreserveAllTokens(param, '~');
-
-                if (parts.length != 2)
-                    continue;
-
-                for (String value : filterSort.getParameters(key))
-                {
-                    FilterInfo filter = new FilterInfo(parts[0], parts[1], value);
-                    fas.filter.add(filter);
-                }
-            }
-
-            Sort sort = new Sort(filterSort, FILTER_PARAM_PREFIX);
-            fas.sort = sort.getSortList();
-            fas.containerFilterNames = filterSort.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
-        }
-
-        return fas;
     }
 
     static public Map<FieldKey, ColumnInfo> getColumnInfos(TableInfo table, Collection<FieldKey> fields)

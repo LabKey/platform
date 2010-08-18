@@ -30,6 +30,7 @@ import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
 import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -199,6 +200,8 @@ public class AnnouncementsController extends SpringActionController
         {
             Container c = getContainer();
 
+            QuerySettings settings = new QuerySettings(getViewContext(), "EmailPreferences");
+
             // Render users only if they have read permissions in this folder.  This helps with admin usability,
             // especially in folders that are part of very large projects.  See #5499. 
             DataRegion rgn = new DataRegion() {
@@ -211,7 +214,7 @@ public class AnnouncementsController extends SpringActionController
                         super.renderTableRow(ctx, out, renderers, realRowIndex++);  // rowIndex doesn't know anything about filtering  TODO: Change DataRegion to handle this better in 8.2
                 }
             };
-            rgn.setName("EmailPreferences");
+            rgn.setSettings(settings);
             rgn.setTable(_comm.getTableInfoEmailPrefs());
             rgn.setShowFilters(false);
             rgn.setSortable(false);
@@ -2481,8 +2484,9 @@ public class AnnouncementsController extends SpringActionController
 
         protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)
         {
+            QuerySettings qs = new QuerySettings(getViewContext(), "Announcements");
             DataRegion rgn = new DataRegion();
-            rgn.setName("Announcements");
+            rgn.setSettings(qs);
             rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
             rgn.setShadeAlternatingRows(true);
             return rgn;

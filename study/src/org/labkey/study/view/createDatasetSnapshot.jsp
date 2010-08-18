@@ -93,7 +93,7 @@
             out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Done" : "Cancel", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
         %>
     </table>
-    <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>
+    <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean, null)) { %>
             <input type="hidden" name="snapshotColumns" value="<%=getColumnName(col)%>">
     <%  }
         if (context.getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>

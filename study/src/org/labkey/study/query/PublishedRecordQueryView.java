@@ -80,13 +80,7 @@ public class PublishedRecordQueryView extends DataSetQueryView
     protected DataRegion createDataRegion()
     {
         DataRegion rgn = new PublishedRecordDataRegion(_recordCount, _protocolId, _sourceLsid);
-
-        rgn.setMaxRows(getMaxRows());
-        rgn.setOffset(getOffset());
-        rgn.setShowRows(getShowRows());
-        rgn.setSelectionKey(getSelectionKey());
-        rgn.setName(getDataRegionName());
-        rgn.setDisplayColumns(getDisplayColumns());
+        configureDataRegion(rgn);
         return rgn;
     }
 

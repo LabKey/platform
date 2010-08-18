@@ -30,7 +30,7 @@ import org.labkey.api.module.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.MapTabLoader;
+import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
@@ -436,7 +436,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             org.labkey.api.util.DateUtil.TestCase.class,
             org.labkey.api.data.ContainerManager.TestCase.class,
             TabLoader.TabLoaderTestCase.class,
-            MapTabLoader.MapLoaderTestCase.class,
+            MapLoader.MapLoaderTestCase.class,
             org.labkey.api.data.TSVWriter.TestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
             ModuleDependencySorter.TestCase.class,

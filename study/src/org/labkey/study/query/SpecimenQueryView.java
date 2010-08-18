@@ -650,18 +650,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 rgn = new VialRestrictedDataRegion();
             else
                 rgn = new SpecimenDataRegion();
-            rgn.setName(getDataRegionName());
-            rgn.setDisplayColumns(getDisplayColumns());
-            rgn.setShowRecordSelectors(_showRecordSelectors);
             rgn.setRecordSelectorValueColumns("RowId");
-            if (_showHistoryLinks)
-            {
-                String eventsBase = getHistoryLinkBase(getViewContext());
-                rgn.addDisplayColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "${rowid}&selected=" +
-                        Boolean.toString(_participantVisitFiltered) + "\">[history]</a>"));
-            }
-            rgn.setAggregates(new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));
         }
         else
         {
@@ -669,9 +658,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 rgn = new SpecimenRestrictedDataRegion();
             else
                 rgn = new SpecimenDataRegion();
-            rgn.setName(getDataRegionName());
-            rgn.setDisplayColumns(getDisplayColumns());
-            rgn.setShowRecordSelectors(_showRecordSelectors);
 
             rgn.setRecordSelectorValueColumns("SpecimenHash");
             if (_showRecordSelectors)
@@ -680,13 +666,68 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     _hiddenFormFields = new HashMap<String, String>();
                 _hiddenFormFields.put("fromGroupedView", Boolean.TRUE.toString());
             }
-            rgn.setAggregates(new Aggregate(getTable().getColumn("TotalVolume"), Aggregate.Type.SUM),
+        }
+        configureDataRegion(rgn);
+        return rgn;
+    }
+
+    @Override
+    protected void configureDataRegion(DataRegion rgn)
+    {
+        super.configureDataRegion(rgn);
+
+        DisplayColumn rowIdCol = rgn.getDisplayColumn("RowId");
+        if (rowIdCol != null)
+            rowIdCol.setVisible(false);
+        DisplayColumn containerIdCol = rgn.getDisplayColumn("Container");
+        if (containerIdCol != null)
+            containerIdCol.setVisible(false);
+
+        rgn.setShowRecordSelectors(_showRecordSelectors);
+        rgn.setShadeAlternatingRows(true);
+        rgn.setShowBorders(true);
+        StudyManager.getInstance().applyDefaultFormats(getContainer(), rgn.getDisplayColumns());
+
+        if (_hiddenFormFields != null)
+        {
+            for (Map.Entry<String,String> param : _hiddenFormFields.entrySet())
+                rgn.addHiddenFormField(param.getKey(), param.getValue());
+        }
+        
+        rgn.addHiddenFormField("referrer", getViewContext().getActionURL().getLocalURIString());
+
+        if (_viewType.isVialView())
+        {
+            getSettings().addAggregates(
+                    new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
+                    new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));
+        }
+        else
+        {
+            getSettings().addAggregates(new Aggregate(getTable().getColumn("TotalVolume"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("LockedInRequestCount"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("AtRepositoryCount"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("VialCount"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("AvailableVolume"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("AvailableCount"), Aggregate.Type.SUM));
         }
+    }
+
+    @Override
+    public List<DisplayColumn> getDisplayColumns()
+    {
+        List<DisplayColumn> cols = super.getDisplayColumns();
+
+        if (_viewType.isVialView())
+        {
+            if (_showHistoryLinks)
+            {
+                String eventsBase = getHistoryLinkBase(getViewContext());
+                cols.add(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "${rowid}&selected=" +
+                        Boolean.toString(_participantVisitFiltered) + "\">[history]</a>"));
+            }
+        }
+
         try
         {
             boolean oneVialIndicator = false;
@@ -705,7 +746,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (!settings.isSimple() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
                 // Only add this column if we're using advanced specimen management
-                rgn.addDisplayColumn(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
+                cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
                     SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
             }
         }
@@ -714,30 +755,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             throw new RuntimeSQLException(e);
         }
 
-        DisplayColumn rowIdCol = rgn.getDisplayColumn("RowId");
-        if (rowIdCol != null)
-            rowIdCol.setVisible(false);
-        DisplayColumn containerIdCol = rgn.getDisplayColumn("Container");
-        if (containerIdCol != null)
-            containerIdCol.setVisible(false);
-
-        rgn.setShadeAlternatingRows(true);
-        rgn.setShowBorders(true);
-        rgn.setMaxRows(getMaxRows());
-        rgn.setOffset(getOffset());
-        rgn.setShowRows(getShowRows());
-        rgn.setSelectionKey(getSelectionKey());
-        StudyManager.getInstance().applyDefaultFormats(getContainer(), rgn.getDisplayColumns());
-
-        if (_hiddenFormFields != null)
-        {
-            for (Map.Entry<String,String> param : _hiddenFormFields.entrySet())
-                rgn.addHiddenFormField(param.getKey(), param.getValue());
-        }
-        
-        rgn.addHiddenFormField("referrer", getViewContext().getActionURL().getLocalURIString());
-
-        return rgn;
+        return cols;
     }
 
     public boolean isShowingVials()
@@ -795,9 +813,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     public String getSimpleHtmlTable() throws SQLException, IOException
     {
+        getSettings().setMaxRows(Table.ALL_ROWS);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.setMaxRows(0);
         RenderContext renderContext = view.getRenderContext();
         ResultSet rs = null;
         try

@@ -32,6 +32,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -218,7 +219,11 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
             _detailsView = detailsView;
             SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
                     SpecimenQueryView.ViewType.SUMMARY);
-            _displayColumns = view.getDisplayColumns();
+
+            _displayColumns = new ArrayList<DisplayColumn>();
+            for (DisplayColumn dc : view.getDisplayColumns())
+                if (dc.getColumnInfo() != null)
+                    _displayColumns.add(dc);
             _dataRegionName = view.getDataRegionName();
             _baseViewURL = view.getBaseViewURL();
 

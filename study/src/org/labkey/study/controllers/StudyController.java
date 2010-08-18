@@ -3358,6 +3358,7 @@ public class StudyController extends BaseStudyController
             QuerySettings qs = new QuerySettings(getViewContext(), DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
+            qs.setMaxRows(Table.ALL_ROWS);
             final Set<String> finalLsids = lsids;
             DataSetQueryView queryView = new DataSetQueryView(def, querySchema, qs, null, null, null)
             {
@@ -3367,7 +3368,6 @@ public class StudyController extends BaseStudyController
                     view.getDataRegion().setSortable(false);
                     view.getDataRegion().setShowFilters(false);
                     view.getDataRegion().setShowRecordSelectors(false);
-                    view.getDataRegion().setMaxRows(0);
                     view.getDataRegion().setShowPagination(false);
                     SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
                     if (null == filter)
@@ -5100,7 +5100,7 @@ public class StudyController extends BaseStudyController
                     OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
                     Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
 
-                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form))
+                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
                     {
                         ColumnInfo col = dc.getColumnInfo();
                         if (col != null && !DataSetDefinition.isDefaultFieldName(col.getName(), study))
@@ -5113,8 +5113,6 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
-            List<String> errorList = new ArrayList<String>();
-
             DbSchema schema = StudyManager.getSchema();
             boolean startedTransaction = false;
 
@@ -5133,7 +5131,7 @@ public class StudyController extends BaseStudyController
                 {
                     createDataset(form, errors);
                     if (!errors.hasErrors())
-                        _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errorList);
+                        _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errors);
                 }
                 else if (StudySnapshotForm.CANCEL.equals(form.getAction()))
                 {
@@ -5152,12 +5150,8 @@ public class StudyController extends BaseStudyController
                     schema.getScope().rollbackTransaction();
             }
 
-            if (!errorList.isEmpty())
-            {
-                for (String error : errorList)
-                    errors.reject("snapshotQuery.error", error);
+            if (errors.hasErrors())
                 return false;
-            }
             return true;
         }
 
@@ -5244,8 +5238,6 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
-            List<String> errorList = new ArrayList<String>();
-
             if (StudySnapshotForm.CANCEL.equals(form.getAction()))
             {
                 String redirect = getViewContext().getActionURL().getParameter("redirectURL");
@@ -5254,14 +5246,10 @@ public class StudyController extends BaseStudyController
             }
             else if (form.isUpdateSnapshot())
             {
-                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errorList);
+                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errors);
 
-                if (!errorList.isEmpty())
-                {
-                    for (String error : errorList)
-                        errors.reject(SpringActionController.ERROR_MSG, error);
+                if (errors.hasErrors())
                     return false;
-                }
             }
             else
             {
@@ -5269,13 +5257,9 @@ public class StudyController extends BaseStudyController
                 if (def != null)
                 {
                     def.setUpdateDelay(form.getUpdateDelay());
-                    _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errorList);
-                    if (!errorList.isEmpty())
-                    {
-                        for (String error : errorList)
-                            errors.reject(SpringActionController.ERROR_MSG, error);
+                    _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errors);
+                    if (errors.hasErrors())
                         return false;
-                    }
                 }
                 else
                 {

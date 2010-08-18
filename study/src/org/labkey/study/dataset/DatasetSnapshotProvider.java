@@ -16,6 +16,7 @@
 package org.labkey.study.dataset;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
@@ -39,6 +40,7 @@ import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
@@ -78,9 +80,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return "Study Dataset Snapshot";
     }
 
-    public List<DisplayColumn> getDisplayColumns(QueryForm form) throws Exception
+    public List<DisplayColumn> getDisplayColumns(QueryForm form, BindException errors) throws Exception
     {
-        QueryView view = QueryView.create(form);
+        QueryView view = QueryView.create(form, errors);
         List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
 
         for (DisplayColumn c : view.getDisplayColumns())
@@ -110,14 +112,14 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
-    public ActionURL createSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
+    public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         DbSchema schema = StudyManager.getSchema();
         boolean startedTransaction = false;
 
         try
         {
-            QueryView view = QueryView.create(form);
+            QueryView view = QueryView.create(form, errors);
             // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
             StringBuilder sb = new StringBuilder();
             TSVGridWriter tsvWriter = view.getTsvWriter();
@@ -148,10 +150,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 Map<String, String> columnMap = getColumnMap(d, view, snapshot.getColumns(), tsvWriter.getFieldMap());
 
                 // import the data
+                List<String> err = new ArrayList<String>();
                 StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), def, new TabLoader(sb, true),
-                        System.currentTimeMillis(), columnMap, errors, true, true, null, null);
+                        System.currentTimeMillis(), columnMap, err, true, true, null, null);
+                for (String e : err)
+                    errors.reject(SpringActionController.ERROR_MSG, e);
 
-                if (errors.isEmpty())
+                if (!errors.hasErrors())
                 {
                     if (startedTransaction)
                         schema.getScope().commitTransaction();
@@ -209,7 +214,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return form;
     }
 
-    public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
+    public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
         if (def != null)
@@ -226,7 +231,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 try
                 {
-                    QueryView view = QueryView.create(sourceForm);
+                    QueryView view = QueryView.create(sourceForm, errors);
+                    if (errors.hasErrors())
+                        return null;
 
                     view.setCustomView(sourceForm.getCustomView());
                     view.getSettings().setAllowChooseQuery(false);
@@ -255,6 +262,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     // the purge, which locks tables, and another thread gets the dataset's monitor when trying
                     // to materialize it, which blocks due to our table lock. We then block waiting for it to release
                     // the materialization lock during the call to importDatasetData(), deadlocking.
+                    List<String> importErrors = new ArrayList<String>();
                     synchronized (dsDef.getMaterializationLockObject())
                     {
                         numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
@@ -262,10 +270,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
                         // import the new data
-                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, errors, true, true, null, null);
+                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, importErrors, true, true, null, null);
                     }
 
-                    if (!errors.isEmpty())
+                    for (String error : importErrors)
+                        errors.reject(SpringActionController.ERROR_MSG, error);
+
+                    if (errors.hasErrors())
                         return null;
 
                     if (startedTransaction)
@@ -299,7 +310,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return null;
     }
 
-    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, List<String> errors) throws Exception
+    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
     {
         ActionURL ret = super.updateSnapshotDefinition(context, def, errors);
 
@@ -407,7 +418,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 context.setContainer(def.getContainer());
 
                 QueryForm sourceForm = getQueryForm(def, context);
-                QueryView view = QueryView.create(sourceForm);
+                QueryView view = QueryView.create(sourceForm, null);
                 view.setCustomView(sourceForm.getCustomView());
                 view.setShowUpdateColumn(false);
 
@@ -553,7 +564,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 form.setViewContext(context);
                 form.init(_def, _def.getCreatedBy());
 
-                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, new ArrayList<String>());
+                QuerySnapshotService.get(StudyManager.getSchemaName()).updateSnapshot(form, null);
             }
             catch(Exception e)
             {

@@ -25,7 +25,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.*;
-import org.labkey.api.reader.MapTabLoader;
+import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -92,7 +92,7 @@ class SampleSetUpdateService implements QueryUpdateService
 
         try
         {
-            form.setLoader(new MapTabLoader(rows));
+            form.setLoader(new MapLoader(rows));
 
             UploadSamplesHelper helper = new UploadSamplesHelper(form);
             Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();

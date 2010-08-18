@@ -282,7 +282,7 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
-            QueryView view = QueryView.create(form);
+            QueryView view = QueryView.create(form, errors);
             final TSVGridWriter writer = view.getTsvWriter();
             return new HttpView()
             {

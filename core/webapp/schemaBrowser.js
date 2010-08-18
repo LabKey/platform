@@ -96,30 +96,26 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable, {
     },
 
     loadQueryDetails : function(schemaName, queryName, fk, callback, errorCallback, scope) {
-        if (this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)])
+        var cacheKey = this.getCacheKey(schemaName, queryName, fk);
+        if (this.queryDetailsMap[cacheKey])
         {
             if (callback)
-                callback.call(scope || this, this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)]);
+                callback.call(scope || this, this.queryDetailsMap[cacheKey]);
             return;
         }
 
-        Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL('query', 'getQueryDetails.api'),
-            method : 'GET',
-            success: function(response){
-                var qdetails = Ext.util.JSON.decode(response.responseText);
-                this.queryDetailsMap[this.getCacheKey(schemaName, queryName, fk)] = qdetails;
-                this.fireEvent("newdetails", qdetails);
+        LABKEY.Query.getQueryDetails({
+            schemaName: schemaName,
+            queryName: queryName,
+            fk: fk,
+            successCallback: function (json, response, options) {
+                this.queryDetailsMap[cacheKey] = json;
+                this.fireEvent("newdetails", json);
                 if (callback)
-                    callback.call(scope || this, qdetails);
+                    callback.call(scope || this, json);
             },
-            failure: LABKEY.Utils.getCallbackWrapper(errorCallback, (scope || this), true),
-            scope: this,
-            params: {
-                schemaName: schemaName,
-                queryName: queryName,
-                fk: fk
-            }
+            errorCallback: LABKEY.Utils.getCallbackWrapper(errorCallback, (scope || this), true),
+            scope: this
         });
     },
 
