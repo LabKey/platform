@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
@@ -81,7 +82,7 @@ public class AssayPipelineProvider extends PipelineProvider
             {
                 if (AssayService.get().getProvider(protocol) == _assayProvider)
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), protocol, pr.relativePath(directory.getDir()), new File[0]);
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), protocol, directory.getRelativePath(), new File[0]);
                     NavTree child = new NavTree("Use " + protocol.getName(), url);
                     child.setId(id + ":Use " + protocol.getName());
                     navTree.addChild(child);

@@ -45,7 +45,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.*;
-import java.net.URI;
 import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -156,7 +155,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private TaskId _activeTaskId;
     private TaskStatus _activeTaskStatus;
     private int _activeTaskRetries;
-    private URI _rootURI;
+    private PipeRoot _pipeRoot;
     private File _logFile;
     private boolean _interrupted;
     private boolean _submitted;
@@ -179,7 +178,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _jobGUID = GUID.makeGUID();
         _activeTaskStatus = TaskStatus.waiting;
 
-        _rootURI = root.getUri();
+        _pipeRoot = root;
 
         _actionSet = new RecordedActionSet();
     }
@@ -196,7 +195,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _info = job._info;
         _provider = job._provider;
         _parentGUID = job._jobGUID;
-        _rootURI = job._rootURI;
+        _pipeRoot = job._pipeRoot;
         _logFile = job._logFile;
         _interrupted = job._interrupted;
         _submitted = job._submitted;
@@ -307,9 +306,9 @@ abstract public class PipelineJob extends Job implements Serializable
         return PipelineJobService.get().getTaskFactory(getActiveTaskId());
     }
 
-    public File getRootDir()
+    protected PipeRoot getPipeRoot()
     {
-        return new File(_rootURI);
+        return _pipeRoot;
     }
 
     public void setLogFile(File fileLog)

@@ -89,7 +89,7 @@ public class PipelinePathForm extends ViewForm
         List<File> result = new ArrayList<File>();
         for (String fileName : _file)
         {
-            File f = new File(dir, fileName);
+            File f = pr.resolvePath(getPath() + "/" + fileName);
             if (!NetworkDrive.exists(f))
             {
                 throw new NotFoundException("Could not find file '" + fileName + "' in '" + getPath() + "'");

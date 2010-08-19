@@ -15,8 +15,6 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.api.gwt.client.util.StringUtils;
-
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -40,7 +38,7 @@ public class FileType implements Serializable
         NO_GZ,      // we don't support gzip for this filetype
         SUPPORT_GZ, // we support gzip for this filetype, but it's not the norm
         PREFER_GZ   // we support gzip for this filetype, and it's the default for new files
-    };
+    }
 
     /** A list of possible suffixes in priority order. Later suffixes may also match earlier suffixes */
     private List<String> _suffixes;
@@ -427,7 +425,7 @@ public class FileType implements Serializable
         return (_dir == null || !_dir.booleanValue() ? _suffixes.toString() : _suffixes + "/");
     }
 
-    public static FileType[] findTypes(FileType[] types, File[] files)
+    public static FileType[] findTypes(FileType[] types, List<File> files)
     {
         ArrayList<FileType> foundTypes = new ArrayList<FileType>();
         // This O(n*m), but these are usually very short lists.

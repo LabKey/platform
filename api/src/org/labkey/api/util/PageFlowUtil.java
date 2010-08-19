@@ -1249,9 +1249,9 @@ public class PageFlowUtil
         return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, null);
     }
 
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String linkOnClick)
+    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String onClickScript)
     {
-        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, linkOnClick);
+        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, onClickScript);
     }
 
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
@@ -1259,16 +1259,16 @@ public class PageFlowUtil
         return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
     }
 
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, String linkOnClick)
+    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, String onClickScript)
     {
         if (title == null && !htmlHelpText)
         {
             // use simple tooltip
-            if (linkOnClick == null)
-                linkOnClick = "return false";
+            if (onClickScript == null)
+                onClickScript = "return false";
 
             StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"").append(linkOnClick).append("\" title=\"");
+            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"").append(onClickScript).append("\" title=\"");
             link.append(filter(helpText));
             link.append("\">").append(linkHtml).append("</a>");
             return link.toString();
@@ -1283,13 +1283,13 @@ public class PageFlowUtil
             showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
             if (width != 0)
                 showHelpDivArgs.append(", ").append(filter(jsString(filter(String.valueOf(width) + "px"))));
-            if (linkOnClick == null)
+            if (onClickScript == null)
             {
-                linkOnClick = "return showHelpDiv(" + showHelpDivArgs + ");";
+                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
             }
             StringBuilder link = new StringBuilder();
             link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"");
-            link.append(linkOnClick);
+            link.append(onClickScript);
             link.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
             link.append(showHelpDivArgs).append(");\"");
             link.append(">").append(linkHtml).append("</a>");

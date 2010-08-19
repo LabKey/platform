@@ -19,6 +19,7 @@ import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,7 +38,7 @@ public interface FileAnalysisJobSupport
      * @return the base names for all the split input files, or just this
      *  job's single base name in an array, if this is a split job.
      */
-    String[] getSplitBaseNames();
+    List<String> getSplitBaseNames();
 
     /**
      * @return base name of the original input file.
@@ -85,9 +86,9 @@ public interface FileAnalysisJobSupport
     File getParametersFile();
 
     /**
-     * @return an array of all input files analyzed.
+     * @return a list of all input files analyzed.
      */
-    File[] getInputFiles();
+    List<File> getInputFiles();
 
     /**
      * returns support level for .xml.gz handling:

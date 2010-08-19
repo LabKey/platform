@@ -293,9 +293,9 @@ function showHelpDiv(elem, titleText, bodyText, width)
     var viewportHeight = sz.height;
     var pos = bd.getScroll();
     var leftScroll = pos.left;
-    var topScroll = pos.top;;
+    var topScroll = pos.top;
 
-    div.style.top = posTop;
+    div.style.top = posTop + "px";
     div.style.display = "block";
     div.style.zIndex = "25";
 
@@ -306,21 +306,20 @@ function showHelpDiv(elem, titleText, bodyText, width)
     else
         table.style.width =  "250px";
 
-    var maxWidth = document.getElementById("helpDivTable").offsetWidth
+    var maxWidth = document.getElementById("helpDivTable").offsetWidth;
 
-    if (viewportWidth + leftScroll < maxWidth + posLeft)
+    if (viewportWidth + leftScroll < maxWidth + posLeft + 10)
     {
-        posLeft = viewportWidth + leftScroll - maxWidth - 10;
-        div.style.left = posLeft;
+        posLeft = viewportWidth + leftScroll - maxWidth - 25;
     }
 
     var maxHeight = table.clientHeight;
-    if (maxHeight && (viewportHeight + topScroll < maxHeight + posTop))
+    if (maxHeight && (viewportHeight + topScroll < maxHeight + posTop + 10))
     {
-        posTop = viewportHeight + topScroll - maxHeight - 10;
-        div.style.top = posTop;
+        posTop = viewportHeight + topScroll - maxHeight - 25;
+        div.style.top = posTop + "px";
     }
-    div.style.left = posLeft;
+    div.style.left = posLeft + "px";
 
     return false;
 }

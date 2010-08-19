@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -203,7 +204,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
-                                          PipeRoot root, File[] filesInput,
+                                          PipeRoot root, List<File> filesInput,
                                           File fileParameters
     ) throws IOException;
 }

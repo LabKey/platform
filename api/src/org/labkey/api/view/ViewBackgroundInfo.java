@@ -35,8 +35,7 @@ public class ViewBackgroundInfo implements Serializable
 {
     // Helper variables stored for use outside LabKey Server context
     private String _containerId;
-    private String _pageFlow;
-    private String _action;
+    private String _urlString;
     private String _userEmail;
     private int _userId;
 
@@ -55,16 +54,6 @@ public class ViewBackgroundInfo implements Serializable
     public String getContainerId()
     {
         return _containerId;
-    }
-
-    public String getPageFlow()
-    {
-        return _pageFlow;
-    }
-
-    public String getAction()
-    {
-        return _action;
     }
 
     public String getUserEmail()
@@ -97,7 +86,7 @@ public class ViewBackgroundInfo implements Serializable
         return _user;
     }
 
-    public void setUser(User user)
+    private void setUser(User user)
     {
         if (user == null)
             user = UserManager.getGuestUser();
@@ -108,15 +97,14 @@ public class ViewBackgroundInfo implements Serializable
 
     public ActionURL getURL()
     {
-        if (_url == null && _pageFlow != null)
-            _url = new ActionURL(_pageFlow, _action, getContainer());
+        if (_url == null && _urlString != null)
+            _url = new ActionURL(_urlString);
         return _url;
     }
 
     public void setURL(ActionURL url)
     {
-        _pageFlow = (url == null ? null : url.getPageFlow());
-        _action = (url == null ? null : url.getAction());
+        _urlString = (url == null ? null : url.toString());
         _url = url;
     }
 }

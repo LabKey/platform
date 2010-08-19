@@ -30,7 +30,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -47,7 +49,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private File _dirData;
     private File _dirAnalysis;
     private File _fileParameters;
-    private File[] _filesInput;
+    private List<File> _filesInput;
     private FileType[] _inputTypes;
 
     private Map<String, String> _parametersDefaults;
@@ -62,13 +64,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    PipeRoot root,
                                    String protocolName,
                                    File fileParameters,
-                                   File filesInput[]) throws IOException
+                                   List<File> filesInput) throws IOException
     {
         super(providerName, info, root);
 
         _filesInput = filesInput;
         _inputTypes = FileType.findTypes(protocol.getInputTypes(), _filesInput);
-        _dirData = filesInput[0].getParentFile();
+        _dirData = filesInput.get(0).getParentFile();
         _protocolName = protocolName;
 
         _fileParameters = fileParameters;
@@ -82,7 +84,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         String paramDefaults = _parametersOverrides.get("list path, default parameters");
         File fileDefaults;
         if (paramDefaults != null)
-            fileDefaults = new File(getRootDir().toURI().resolve(paramDefaults));
+            fileDefaults = getPipeRoot().resolvePath(paramDefaults);
         else
             fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
 
@@ -94,13 +96,13 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             logParameters("Overrides", fileParameters, _parametersOverrides);
         }
 
-        if (_filesInput.length > 1)
+        if (_filesInput.size() > 1)
         {
             _baseName = AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
         }
         else
         {
-            _baseName = protocol.getBaseName(_filesInput[0]);
+            _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
@@ -121,7 +123,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _parametersOverrides = job._parametersOverrides;
 
         // Change parameters which are specific to the fraction job.
-        _filesInput = new File[] { fileInput };
+        _filesInput = Collections.singletonList(fileInput);
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.length == 0 ? fileInput.getName() : _inputTypes[0].getDefaultFileType().getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
@@ -137,12 +139,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public boolean isSplittable()
     {
-        return getInputFiles().length > 1;
+        return getInputFiles().size() > 1;
     }
 
     public PipelineJob[] createSplitJobs()
     {
-        if (getInputFiles().length == 1)
+        if (getInputFiles().size() == 1)
             return new AbstractFileAnalysisJob[] { this };
 
         ArrayList<AbstractFileAnalysisJob> jobs = new ArrayList<AbstractFileAnalysisJob>();
@@ -175,7 +177,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return AbstractFileAnalysisProtocol.getDataSetBaseName(_dirData);
     }
 
-    public String[] getSplitBaseNames()
+    public List<String> getSplitBaseNames()
     {
         ArrayList<String> baseNames = new ArrayList<String>();
         for (File fileInput : _filesInput)
@@ -189,7 +191,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                 }
             }
         }
-        return baseNames.toArray(new String[baseNames.size()]);
+        return baseNames;
     }
 
     public File getDataDirectory()
@@ -202,24 +204,14 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return _dirAnalysis;
     }
 
-    public File[] getInputFiles()
+    public List<File> getInputFiles()
     {
         return _filesInput;
-    }
-
-    public Integer getExperimentRunRowId()
-    {
-        return _experimentRunRowId;
     }
 
     public File getParametersFile()
     {
         return _fileParameters;
-    }
-
-    public Map<String, String> getParametersOverrides()
-    {
-        return _parametersOverrides;
     }
 
     public Map<String, String> getParameters()

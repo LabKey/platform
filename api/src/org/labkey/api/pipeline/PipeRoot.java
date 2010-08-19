@@ -44,6 +44,7 @@ public interface PipeRoot extends SecurableResource
 
     File resolvePath(String path);
 
+    /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);
 
     boolean isUnderRoot(File file);
