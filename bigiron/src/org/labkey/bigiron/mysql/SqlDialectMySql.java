@@ -1,5 +1,6 @@
 package org.labkey.bigiron.mysql;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleSqlDialect;
@@ -159,6 +160,12 @@ public class SqlDialectMySql extends SimpleSqlDialect
     @Override
     public String getConcatenationOperator()
     {
-        return "||";  // TODO: This is actually wrong... need to change this to concatenate(String... args) to implement CONCAT() properly
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String concatenate(String... args)
+    {
+        return "CONCAT(" + StringUtils.join(args, ", ") + ")";
     }
 }

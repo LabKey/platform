@@ -300,9 +300,8 @@ public abstract class BaseStudyTable extends FilteredTable
             setValueSQL(sql);
         }
 
-        private void appendCommentCaseSQL(StringBuilder sb, String ... fields)
+        private void appendCommentCaseSQL(StringBuilder sb, String... fields)
         {
-            String concatOperator = getSqlDialect().getConcatenationOperator();
             String concat = "";
 
             sb.append(" WHEN ");
@@ -312,13 +311,14 @@ public abstract class BaseStudyTable extends FilteredTable
                 concat = "AND ";
             }
 
-            concat = "";
             sb.append("THEN ");
-            for (String field : fields)
-            {
-                sb.append(concat).append(" CAST((").append(field).append(") AS VARCHAR)");
-                concat = concatOperator;
-            }
+
+            String[] castFields = new String[fields.length];
+
+            for (int i = 0; i < fields.length; i++)
+                castFields[i] = "CAST((" + fields[i] + ") AS VARCHAR)";
+
+            sb.append(getSqlDialect().concatenate(castFields));
         }
 
         @Override

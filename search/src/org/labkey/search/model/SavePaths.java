@@ -400,7 +400,7 @@ public class SavePaths implements DavCrawler.SavePaths
         try
         {
             if (null == datetime)
-                datetime = getSearchSchema().getSqlDialect().getDefaultDateTimeDatatype();
+                datetime = getSearchSchema().getSqlDialect().getDefaultDateTimeDataType();
             if (modified.getTime() == Long.MIN_VALUE)
                 modified = null;
             int id = _getParentId(path);

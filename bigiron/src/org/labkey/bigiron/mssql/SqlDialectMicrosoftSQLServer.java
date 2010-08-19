@@ -18,6 +18,7 @@ package org.labkey.bigiron.mssql;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
@@ -121,7 +122,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "sqlserver";
     }
 
-    public String getDefaultDateTimeDatatype()
+    public String getDefaultDateTimeDataType()
     {
         return "DATETIME";
     }
@@ -227,6 +228,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "+";
     }
 
+
+    @Override
+    public String concatenate(String... args)
+    {
+        return StringUtils.join(args, " + ");
+    }
 
     public String getCharClassLikeOperator()
     {
@@ -388,7 +395,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "SELECT @@spid";
     }
 
-    public String getBooleanDatatype()
+    public String getBooleanDataType()
     {
         return "BIT";
     }

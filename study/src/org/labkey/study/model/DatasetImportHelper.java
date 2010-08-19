@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
@@ -65,11 +66,11 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
         _lastModified = lastModified;
         if (null != conn)
         {
-            String concatOperator = StudyManager.getSchema().getSqlDialect().getConcatenationOperator();
+            SqlDialect dialect = StudyManager.getSchema().getSqlDialect();
             String strType = StudyManager.getSchema().getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
             _stmt = conn.prepareStatement(
                     "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState, ParticipantSequenceKey) " +
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,? " + concatOperator + " '|' " + concatOperator + " CAST(CAST(? AS NUMERIC(15,4)) AS " + strType + "))");
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + dialect.concatenate("?", "'|'", "CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType + ")") + ")");
             _stmt.setString(1, _containerId);
             _stmt.setInt(2, _datasetId);
         }

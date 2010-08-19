@@ -71,13 +71,13 @@ public abstract class VisitManager
 
     public static String getParticipantSequenceKeyExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
+        SqlDialect dialect = schema.getSqlDialect();
+        String strType = dialect.sqlTypeNameFromSqlTypeInt(Types.VARCHAR);
+
         StringBuilder participantSequenceKey = new StringBuilder("(");
-        participantSequenceKey.append(ptidColumnName);
-        participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
-        participantSequenceKey.append("'|'");
-        participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
-        participantSequenceKey.append("CAST(").append(sequenceNumColumnName).append(" AS ");
-        participantSequenceKey.append(schema.getSqlDialect().sqlTypeNameFromSqlTypeInt(Types.VARCHAR)).append("))");
+        participantSequenceKey.append(dialect.concatenate(ptidColumnName, "'|'", "CAST(" + sequenceNumColumnName + " AS " + strType + ")"));
+        participantSequenceKey.append(")");
+
         return participantSequenceKey.toString();
     }
 

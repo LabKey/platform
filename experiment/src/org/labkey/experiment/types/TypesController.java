@@ -253,7 +253,6 @@ public class TypesController extends SpringActionController
         public ModelAndView getView(SearchForm form, BindException errors) throws Exception
         {
             DbSchema expSchema = ExperimentService.get().getSchema();
-            String concat = expSchema.getSqlDialect().getConcatenationOperator();
             String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
 
             //noinspection unchecked
@@ -278,11 +277,11 @@ public class TypesController extends SpringActionController
                         params.add(term);
                         if (form.prefixMatch)
                         {
-                            where = where + and + "P.SearchTerms " + like + " '%|' " + concat + " ? " + concat + " '%'";
+                            where = where + and + "P.SearchTerms " + like + " " + expSchema.getSqlDialect().concatenate("'%|'", "?", "'%'");
                         }
                         else
                         {
-                            where = where + and + "P.SearchTerms " + like + " '%|' " + concat + " ? " + concat + " '|%'";
+                            where = where + and + "P.SearchTerms " + like + " " + expSchema.getSqlDialect().concatenate("'%|'", "?", "'|%'");
                         }
                         and = " AND ";
                     }
@@ -293,7 +292,7 @@ public class TypesController extends SpringActionController
                     if (-1 != form.concept.indexOf('#'))
                         where += and + "( P.PropertyURI = ? OR P.ConceptURI = ?)";
                     else
-                        where += and + "( P.Name = ?  OR P.PropertyURI " + like + " '%#' " + concat + " ?)";
+                        where += and + "( P.Name = ?  OR P.PropertyURI " + like + " " + expSchema.getSqlDialect().concatenate("'%#'", "?") + ")";
                     params.add(form.concept);
                     params.add(form.concept);
                     and = " AND ";
@@ -301,7 +300,7 @@ public class TypesController extends SpringActionController
 
                 if (notEmpty(form.semanticType))
                 {
-                    where += and + "P.SemanticType " + like + " '%|' " + concat + " ? " + concat + " '|%'";
+                    where += and + "P.SemanticType " + like + " " + expSchema.getSqlDialect().concatenate("'%|'", "?", "'|%'");
                     params.add(form.semanticType);
                     //noinspection UnusedAssignment
                     and = " AND ";
@@ -321,9 +320,9 @@ public class TypesController extends SpringActionController
                 System.err.println(params.toString());
             }
 
-            HashMap<String,String> parentMap = new HashMap<String,String>(rows.length * 2);
+            HashMap<String, String> parentMap = new HashMap<String, String>(rows.length * 2);
             String pr, c1, c2, c3;
-            for (Map<String,Object> row : rows)
+            for (Map<String, Object> row : rows)
             {
                 pr = (String)row.get("PropertyURI");
                 c1 = (String)row.get("ConceptURI");
@@ -449,16 +448,14 @@ public class TypesController extends SpringActionController
             throws SQLException
     {
         DbSchema expSchema = ExperimentService.get().getSchema();
-        String concat = expSchema.getSqlDialect().getConcatenationOperator();
         String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
-
 
         try
         {
             expSchema.getScope().beginTransaction();
 
             Map propertyMap = Table.executeValueMap(ExperimentService.get().getSchema(),
-                    "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " ? " + concat + " '#%'",
+                    "SELECT PropertyURI, PropertyId FROM exp.PropertyDescriptor WHERE PropertyURI " + like + " " + expSchema.getSqlDialect().concatenate("?", "'#%'"),
                     new Object[]{prefix}, null);
 
             List<PropertyDescriptor> inserts = new ArrayList<PropertyDescriptor>();

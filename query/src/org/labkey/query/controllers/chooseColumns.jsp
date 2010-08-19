@@ -337,10 +337,10 @@
         <input type="hidden" name="ff_saveFilter" value="true">
     <% } %>
     </p>
-    <labkey:button text="<%=form.isSaveInSession() ? "Save Temporary View" : "Save"%>" href="javascript:void(0);" onclick="designer.needToPrompt = false; return onSave();" />
+    <labkey:button text="<%=form.isSaveInSession() ? \"Save Temporary View\" : \"Save\"%>" href="javascript:void(0);" onclick="designer.needToPrompt = false; return onSave();" />
     <% if (canEdit && !form.isSaveInSession())
     {
-        // UNDONE: support deleteing view from session without navigating
+        // UNDONE: support deleting view from session without navigating
         if (view != null && ! view.isHidden())
         {
             ActionURL urlDeleteView = form.urlFor(QueryAction.deleteView);

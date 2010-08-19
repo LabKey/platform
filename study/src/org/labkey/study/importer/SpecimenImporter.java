@@ -85,12 +85,12 @@ public class SpecimenImporter
             _unique = unique;
             if (DURATION_TYPE.equals(databaseType))
             {
-                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDatatype();
+                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
                 _javaType = TimeOnlyDate.class;
             }
             else if (DATETIME_TYPE.equals(databaseType))
             {
-                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDatatype();
+                _dbType = StudySchema.getInstance().getSqlDialect().getDefaultDateTimeDataType();
                 _javaType = java.util.Date.class;
             }
             else
@@ -406,7 +406,7 @@ public class SpecimenImporter
     private static final String DATETIME_TYPE = "SpecimenImporter/DateTime";
     private static final String DURATION_TYPE = "SpecimenImporter/TimeOnlyDate";
     private static final String NUMERIC_TYPE = "NUMERIC(15,4)";
-    private static final String BOOLEAN_TYPE = StudySchema.getInstance().getSqlDialect().getBooleanDatatype();
+    private static final String BOOLEAN_TYPE = StudySchema.getInstance().getSqlDialect().getBooleanDataType();
     private static final String GLOBAL_UNIQUE_ID_TSV_COL = "global_unique_specimen_id";
     private static final String LAB_ID_TSV_COL = "lab_id";
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
@@ -1248,7 +1248,7 @@ public class SpecimenImporter
             {
                 // gross nested calls to cast the boolean to an int, get its min, then cast back to a boolean.
                 // this is needed because most aggregates don't work on boolean values.
-                singletonAggregate = "CAST(MIN(CAST(" + selectCol + " AS INTEGER)) AS " + dialect.getBooleanDatatype()  + ")";
+                singletonAggregate = "CAST(MIN(CAST(" + selectCol + " AS INTEGER)) AS " + dialect.getBooleanDataType()  + ")";
             }
             else
             {
@@ -1310,24 +1310,6 @@ public class SpecimenImporter
         return vialListSql;
     }
 
-    private static String getSpecimenHashSqlExpression(SpecimenLoadInfo info, String tableName)
-    {
-        StringBuilder sql = new StringBuilder();
-        sql.append("\n    'Fld-").append(info.getContainer().getRowId()).append("'");
-        String concatOp = info.getSchema().getSqlDialect().getConcatenationOperator();
-        for (SpecimenColumn col : info.getAvailableColumns())
-        {
-            if (col.getTargetTable().isSpecimens())
-            {
-                String columnName = (tableName != null ? tableName  + "." : "" ) + col.getDbColumnName();
-                sql.append("\n    ").append(concatOp).append("'~'").append(concatOp).append(" ");
-                sql.append("CASE WHEN ").append(columnName).append(" IS NOT NULL THEN CAST(");
-                sql.append(columnName).append(" AS VARCHAR").append(") ELSE '' END");
-            }
-        }
-        return sql.toString();
-    }
-    
     private void populateVials(SpecimenLoadInfo info) throws SQLException
     {
         String prefix = ",\n    ";
@@ -1817,7 +1799,7 @@ public class SpecimenImporter
                     {
                         // gross nested calls to cast the boolean to an int, get its min, then cast back to a boolean.
                         // this is needed because most aggregates don't work on boolean values.
-                        singletonAggregate = "CAST(MIN(CAST(" + selectCol + " AS INTEGER)) AS " + schema.getSqlDialect().getBooleanDatatype()  + ")";
+                        singletonAggregate = "CAST(MIN(CAST(" + selectCol + " AS INTEGER)) AS " + schema.getSqlDialect().getBooleanDataType()  + ")";
                     }
                     else
                     {
@@ -1834,22 +1816,25 @@ public class SpecimenImporter
         conflictResolvingSubselect.append("\nFROM ").append(tempTable).append("\nGROUP BY GlobalUniqueId");
 
         SQLFragment updateHashSql = new SQLFragment();
-        updateHashSql.append("UPDATE ").append(tempTable).append(" SET SpecimenHash = ?");
+        updateHashSql.append("UPDATE ").append(tempTable).append(" SET SpecimenHash = ");
+        ArrayList<String> hash = new ArrayList<String>(loadedColumns.size());
+        hash.add("?");
         updateHashSql.add("Fld-" + container.getRowId());
-        String concatOp = schema.getSqlDialect().getConcatenationOperator();
+        String strType = schema.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
+
         for (SpecimenColumn col : loadedColumns)
         {
             if (col.getTargetTable().isSpecimens())
             {
                 String columnName = "InnerTable." + col.getDbColumnName();
-                updateHashSql.append("\n    ").append(concatOp).append("'~'").append(concatOp).append(" ");
-                updateHashSql.append("CASE WHEN ").append(columnName).append(" IS NOT NULL THEN CAST(");
-                updateHashSql.append(columnName).append(" AS ").append(schema.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append(") ELSE '' END");
+                hash.add("'~'");
+                hash.add(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END");
             }
         }
+
+        updateHashSql.append(schema.getSqlDialect().concatenate(hash.toArray(new String[hash.size()])));
         updateHashSql.append("\nFROM (").append(conflictResolvingSubselect).append(") InnerTable WHERE ");
         updateHashSql.append(tempTable).append(".GlobalUniqueId = InnerTable.GlobalUniqueId");
-
 
         info("Updating specimen hash values in temp table...");
         if (DEBUG)

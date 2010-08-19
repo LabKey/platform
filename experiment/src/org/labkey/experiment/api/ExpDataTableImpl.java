@@ -298,9 +298,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         getFilter().deleteConditions("LSID");
         if (_type != null)
         {
-            addCondition(new SQLFragment("LSID LIKE 'urn:lsid:%:'" +
-                    getSqlDialect().getConcatenationOperator() + "?" +
-                    getSqlDialect().getConcatenationOperator() + "'%'", _type.getNamespacePrefix()), "LSID");
+            addCondition(new SQLFragment("LSID LIKE " + getSqlDialect().concatenate("'urn:lsid:%:'", "?", "'%'"), _type.getNamespacePrefix()), "LSID");
         }
     }
 

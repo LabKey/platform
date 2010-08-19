@@ -49,15 +49,9 @@ public class ParticipantVisitColumn extends ColumnInfo
     public SQLFragment getValueSql(SQLFragment participant, SQLFragment visit)
     {
         SqlDialect dialect = getSqlDialect();
-        SQLFragment ret = new SQLFragment("((");
-        ret.append(participant);
+        SQLFragment ret = new SQLFragment("(");
+        ret.append(dialect.concatenate("(" + participant + ")", "'|'", "CAST(" + visit + " AS VARCHAR)"));
         ret.append(")");
-        ret.append(dialect.getConcatenationOperator());
-        ret.append("'|'");
-        ret.append(dialect.getConcatenationOperator());
-        ret.append("CAST(");
-        ret.append(visit);
-        ret.append(" AS VARCHAR))");
         return ret;
     }
 }

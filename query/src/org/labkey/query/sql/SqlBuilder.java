@@ -65,13 +65,7 @@ public class SqlBuilder extends Builder
         append("'" + value + "'");
     }
 
-    public void appendConcatOperator()
-    {
-        append(" ");
-        append(getDialect().getConcatenationOperator());
-        append(" ");
-    }
-
+    @Deprecated // migrate to concatenate(String...)
     public String getConcatOperator()
     {
         return getDialect().getConcatenationOperator();

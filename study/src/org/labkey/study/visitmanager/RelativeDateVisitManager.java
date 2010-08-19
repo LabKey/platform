@@ -183,11 +183,9 @@ public class RelativeDateVisitManager extends VisitManager
                 }
             }
 
-            StringBuilder participantSequenceKey = new StringBuilder("(ParticipantId");
-            participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
-            participantSequenceKey.append("'|'");
-            participantSequenceKey.append(schema.getSqlDialect().getConcatenationOperator());
-            participantSequenceKey.append("CAST(SequenceNum AS VARCHAR))");
+            StringBuilder participantSequenceKey = new StringBuilder("(");
+            participantSequenceKey.append(schema.getSqlDialect().concatenate("ParticipantId", "'|'", "CAST(SequenceNum AS VARCHAR)"));
+            participantSequenceKey.append(")");
 
             String sqlUpdateParticipantSeqKey = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceKey = " +
                     participantSequenceKey + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";

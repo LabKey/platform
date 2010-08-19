@@ -177,7 +177,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         String updateProperties =
                 "UPDATE exp.PropertyDescriptor\n" +
-                "  SET Label = Name, Name = 'Property_' " + exp.getSqlDialect().getConcatenationOperator() + " Name\n" +
+                "  SET Label = Name, Name = " + exp.getSqlDialect().concatenate("'Property_'", "Name") + "\n" +
                 "WHERE PropertyId IN (\n" +
                 "  SELECT pd.PropertyId\n" +
                 "    FROM exp.PropertyDescriptor pd, exp.PropertyDomain dp, exp.MaterialSource ms, exp.DomainDescriptor dd\n" +

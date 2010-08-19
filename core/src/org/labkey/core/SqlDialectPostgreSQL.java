@@ -137,7 +137,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "postgresql";
     }
 
-    public String getDefaultDateTimeDatatype()
+    public String getDefaultDateTimeDataType()
     {
         return "TIMESTAMP";
     }
@@ -237,6 +237,12 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
 
+    @Override
+    public String concatenate(String... args)
+    {
+        return StringUtils.join(args, " || ");
+    }
+
     public String getCharClassLikeOperator()
     {
         return "SIMILAR TO";
@@ -308,7 +314,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "SELECT pg_backend_pid();";
     }
 
-    public String getBooleanDatatype()
+    public String getBooleanDataType()
     {
         return "BOOLEAN";
     }
@@ -720,7 +726,8 @@ class SqlDialectPostgreSQL extends SqlDialect
         return true;
     }
 
-    static final private Pattern s_patStringLiteral = Pattern.compile("\\'([^\\\\\\']|(\\'\\')|(\\\\.))*\\'");
+    private static final Pattern s_patStringLiteral = Pattern.compile("\\'([^\\\\\\']|(\\'\\')|(\\\\.))*\\'");
+
     protected Pattern patStringLiteral()
     {
         return s_patStringLiteral;

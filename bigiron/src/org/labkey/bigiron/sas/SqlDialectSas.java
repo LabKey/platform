@@ -16,6 +16,7 @@
 package org.labkey.bigiron.sas;
 
 import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.SQLFragment;
@@ -111,6 +112,12 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
     public String getConcatenationOperator()
     {
         return "||";
+    }
+
+    @Override
+    public String concatenate(String... args)
+    {
+        return StringUtils.join(args, " || ");
     }
 
     public boolean supportsComments()

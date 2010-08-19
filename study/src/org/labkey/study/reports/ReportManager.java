@@ -93,7 +93,9 @@ public class ReportManager implements StudyManager.DataSetListener
         sql.append("AND (ReportKey = ? ");
         sql.append("OR ReportKey ");
         sql.append(dialect.getCaseInsensitiveLikeOperator());
-        sql.append(" ? ").append(dialect.getConcatenationOperator()).append(" '%')");
+        sql.append(" ");
+        sql.append(dialect.concatenate("?", "'%'"));
+        sql.append(")");
 
         _datasetLabelQuery = sql.toString();
     }
