@@ -22,12 +22,11 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,9 +43,7 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
                            TaskId taskPipelineId,
                            String protocolName,
                            File fileParameters,
-                           File filesInput[]
-    )
-            throws IOException
+                           List<File> filesInput) throws IOException
     {
         super(protocol, providerName, info, root, protocolName, fileParameters, filesInput);
 
@@ -89,61 +86,64 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         return findFile(name);
     }
 
-    public File findFile(String name)
-    {
-        File dirAnalysis = getAnalysisDirectory();
-        File file = findAncestorFile(getRootDir(), dirAnalysis, name);
-        if (file != null)
-            return file;
-
-        // Path of last resort is always to look in the current directory.
-        return new File(dirAnalysis, name);
-    }
-
     /**
      * Look at the specified type hierarchy to see if the requested file is an
      * ancestor to this processing job, residing outside the analysis directory.
      *
-     * @param dirRoot The pipeline root directory, outside which no files can be processed.
-     * @param dirAnalysis Default input/output directory for the current job.
      * @param name The name of the file to be located
      * @return The file location outside the analysis directory, or null, if no such match is found.
      */
-    private File findAncestorFile(File dirRoot, File dirAnalysis, String name)
+    public File findFile(String name)
     {
+        File dirAnalysis = getAnalysisDirectory();
+
         for (Map.Entry<FileType, FileType[]> entry : getTaskPipeline().getTypeHierarchy().entrySet())
         {
             if (entry.getKey().isType(name))
             {
                 // TODO: Eventually we will need to actually consult the parameters files
                 //       in order to find files.
-                StringBuffer analysisRelativePath = new StringBuffer("../..");
+
+                // First try to go two directories up
+                File dir = dirAnalysis.getParentFile();
+                if (dir != null)
+                {
+                    dir = dir.getParentFile();
+                }
+
                 FileType[] derivedTypes = entry.getValue();
                 for (int i = derivedTypes.length - 1; i >= 0; i--)
-                    analysisRelativePath.append("/../..");
-                URI uriData = URIUtil.resolve(dirRoot.toURI(),
-                        dirAnalysis.toURI(),
-                        analysisRelativePath.toString());
-
-                if (uriData != null)
                 {
-                    File expectedFile = new File(new File(uriData), name);
-                    if (!NetworkDrive.exists(expectedFile))
+                    // Go two directories up for each level of derivation
+                    if (dir != null)
                     {
-                        // If the file isn't where we would expect it, check other directories in the same hierarchy
-                        File alternateFile = findFileInAlternateDirectory(expectedFile.getParentFile(), dirAnalysis, name);
-                        if (alternateFile != null)
-                        {
-                            // If we found a file that matches, use it
-                            return alternateFile;
-                        }
+                        dir = dir.getParentFile();
                     }
-                    return expectedFile;
+                    if (dir != null)
+                    {
+                        dir = dir.getParentFile();
+                    }
                 }
+
+                String relativePath = getPipeRoot().relativePath(dir);
+                File expectedFile = getPipeRoot().resolvePath(relativePath + "/" + name);
+
+                if (!NetworkDrive.exists(expectedFile))
+                {
+                    // If the file isn't where we would expect it, check other directories in the same hierarchy
+                    File alternateFile = findFileInAlternateDirectory(expectedFile.getParentFile(), dirAnalysis, name);
+                    if (alternateFile != null)
+                    {
+                        // If we found a file that matches, use it
+                        return alternateFile;
+                    }
+                }
+                return expectedFile;
             }
         }
 
-        return null;
+        // Path of last resort is always to look in the current directory.
+        return new File(dirAnalysis, name);
     }
 
     /**

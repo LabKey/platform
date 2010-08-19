@@ -69,7 +69,7 @@ public class PipeRootImpl implements PipeRoot
         return systemDir;        
     }
 
-    private String _container;
+    private String _containerId;
     private final URI[] _uris;
     private transient File[] _rootPaths;
     private final String _entityId;
@@ -86,7 +86,7 @@ public class PipeRootImpl implements PipeRoot
 
     public PipeRootImpl(PipelineRoot root) throws URISyntaxException
     {
-        _container = root.getContainerId();
+        _containerId = root.getContainerId();
         _uris = new URI[root.getSupplementalPath() == null ? 1 : 2];
         _uris[0] = new URI(root.getPath());
         if (root.getSupplementalPath() != null)
@@ -107,7 +107,7 @@ public class PipeRootImpl implements PipeRoot
 
     public Container getContainer()
     {
-        return ContainerManager.getForId(_container);
+        return ContainerManager.getForId(_containerId);
     }
 
     @NotNull
@@ -245,7 +245,7 @@ public class PipeRootImpl implements PipeRoot
     {
         // if the root is a file-based default, it won't have an entityId, so default to containerId
         if (_entityId == null)
-            return _container;
+            return _containerId;
 
         return _entityId;
     }

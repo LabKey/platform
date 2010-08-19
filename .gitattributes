@@ -1334,6 +1334,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.30-10.10.sql -text
 pipeline/src/META-INF/pipeline/jars.txt -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
+pipeline/src/org/labkey/pipeline/PipelineDirectoryImpl.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
 pipeline/src/org/labkey/pipeline/PipelineUpgradeCode.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text

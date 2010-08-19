@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;

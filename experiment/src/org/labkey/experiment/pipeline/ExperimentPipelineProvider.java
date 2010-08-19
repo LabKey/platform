@@ -17,6 +17,7 @@
 package org.labkey.experiment.pipeline;
 
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.module.Module;
@@ -36,11 +37,6 @@ public class ExperimentPipelineProvider extends PipelineProvider
     private static final String DIR_NAME_EXPERIMENT = "experiment";
     private static final String DIR_NAME_UPLOAD = "UploadedXARs";
     private static final String DIR_NAME_MOVE = "moveRunLogs";
-
-    public static File getUploadDirectory(PipeRoot pr)
-    {
-        return getExperimentDirectory(pr, DIR_NAME_UPLOAD);
-    }
 
     public static File getMoveDirectory(PipeRoot pr)
     {

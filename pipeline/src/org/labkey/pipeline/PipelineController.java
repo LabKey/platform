@@ -45,8 +45,10 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.GlobusKeyPairImpl;
+import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
+import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -473,19 +475,19 @@ public class PipelineController extends SpringActionController
         {
             Container c = getContainer();
 
-            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+            PipeRootImpl pr = PipelineServiceImpl.get().findPipelineRoot(c);
             if (pr == null || !pr.isValid())
             {
                 throw new NotFoundException("Pipeline root not set or does not exist on disk");
             }
 
-            String path = form.getPath();
-            if (null == path || "./".equals(path))
-                path = "";
-            if (path.startsWith("/"))
-                path = path.substring(1);
+            String relativePath = form.getPath();
+            if (null == relativePath || "./".equals(relativePath))
+                relativePath = "";
+            if (relativePath.startsWith("/"))
+                relativePath = relativePath.substring(1);
 
-            File fileCurrent = pr.resolvePath(path);
+            File fileCurrent = pr.resolvePath(relativePath);
             if (!fileCurrent.exists())
                 HttpView.throwNotFound("File not found: " + form.getPath());
 
@@ -497,7 +499,7 @@ public class PipelineController extends SpringActionController
             }
             browseURL.replaceParameter("path", browseParam);
 
-            PipelineProvider.PipelineDirectory entry = new PipelineProvider.PipelineDirectory(fileCurrent, browseURL);
+            PipelineDirectoryImpl entry = new PipelineDirectoryImpl(pr, relativePath, browseURL);
             List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
             Set<Module> activeModules = c.getActiveModules();
             for (PipelineProvider provider : providers)

@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.security.permissions.AdminPermission;

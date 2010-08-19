@@ -94,17 +94,17 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
 
     private File getInputFile(PipelineJob job)
     {
-        File[] files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
-        assert files != null && files.length == 1 : "Conversion job must have one file.";
-        return files[0];
+        List<File> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
+        assert files != null && files.size() == 1 : "Conversion job must have one file.";
+        return files.get(0);
     }
 
     private TaskFactory findCommandFactory(PipelineJob job)
     {
         // If this job is not actually running a conversion, then no
         // converter command can be determined.
-        File[] files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
-        if (files == null || files.length != 1)
+        List<File> files = job.getJobSupport(FileAnalysisJobSupport.class).getInputFiles();
+        if (files == null || files.size() != 1)
             return null;
 
         // Otherwise, find the appropriate converter.

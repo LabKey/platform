@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipeRoot;

@@ -35,8 +35,8 @@ import org.json.JSONArray;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -211,21 +211,7 @@ public class AnalysisController extends SpringActionController
                 protocol.saveInstance(fileParameters, getContainer());
             }
 
-            ArrayList<File> filesInputList = new ArrayList<File>();
-            for (String fileInputName : form.getFile())
-            {
-                if (fileInputName == null || fileInputName.length() == 0)
-                {
-                    throw new NotFoundException("Empty name found in file list.");
-                }
-                File f = new File(dirData, fileInputName);
-                if (!NetworkDrive.exists(f))
-                {
-                    throw new NotFoundException("Could not find file " + fileInputName);
-                }
-                filesInputList.add(f);
-            }
-            File[] filesInput = filesInputList.toArray(new File[filesInputList.size()]);
+            List<File> filesInputList = form.getValidatedFiles(getContainer());
 
             if (form.isActiveJobs())
             {
@@ -233,7 +219,7 @@ public class AnalysisController extends SpringActionController
             }
 
             AbstractFileAnalysisJob job =
-                    protocol.createPipelineJob(getViewBackgroundInfo(), root, filesInput, fileParameters);
+                    protocol.createPipelineJob(getViewBackgroundInfo(), root, filesInputList, fileParameters);
 
             PipelineService.get().queueJob(job);
 

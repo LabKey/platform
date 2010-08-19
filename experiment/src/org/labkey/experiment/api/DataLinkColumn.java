@@ -99,7 +99,7 @@ abstract class DataLinkColumn extends DataColumn
 
             out.write("&nbsp;");
             String icon = "<img src=\"" + AppProps.getInstance().getContextPath() + "/_icons/image.png\" />";
-            out.write(PageFlowUtil.helpPopup(data.getFile().getName(), html.toString(), true, icon, 310));
+            out.write(PageFlowUtil.helpPopup(data.getFile().getName(), html.toString(), true, icon, 310, url == null ? null : "window.location = '" + url.toString() + "'"));
         }
     }
 

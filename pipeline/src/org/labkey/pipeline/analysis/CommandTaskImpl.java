@@ -279,21 +279,21 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return paths.toArray(new String[paths.size()]);
     }
 
-    private File[] getWorkFiles(WorkDirectory.Function f, TaskPath tp)
+    private List<File> getWorkFiles(WorkDirectory.Function f, TaskPath tp)
     {
         if (tp == null)
-            return new File[0];
+            return Collections.emptyList();
         
-        String baseNames[];
+        List<String> baseNames;
         if (tp.isSplitFiles())
             baseNames = getJobSupport().getSplitBaseNames();
         else
-            baseNames = new String[] { getJobSupport().getBaseName() };
+            baseNames = Collections.singletonList(getJobSupport().getBaseName());
         
         ArrayList<File> files = new ArrayList<File>();
         for (String baseName : baseNames)
             files.add(newWorkFile(f, tp, baseName));
-        return files.toArray(new File[files.size()]);
+        return files;
     }
 
     private File newWorkFile(WorkDirectory.Function f, TaskPath tp, String baseName)
@@ -310,7 +310,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
     private void inputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
-        File[] filesInput = getWorkFiles(WorkDirectory.Function.input, tp);
+        List<File> filesInput = getWorkFiles(WorkDirectory.Function.input, tp);
         for (File fileInput : filesInput)
         {
             // Nothing to do, if this file is optional and does not exist.
@@ -324,7 +324,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     
     private void outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
-        File[] filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
+        List<File> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
         for (File fileWork : filesWork)
         {
             File fileOutput = getJobSupport().findOutputFile(fileWork.getName());

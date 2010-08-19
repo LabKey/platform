@@ -74,7 +74,7 @@ public class PipelineServiceImpl extends PipelineService
             _mapPipelineProviders.put(alias, provider);
     }
 
-    public PipeRoot findPipelineRoot(Container container)
+    public PipeRootImpl findPipelineRoot(Container container)
     {
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
         if (null != pipelineRoot)
