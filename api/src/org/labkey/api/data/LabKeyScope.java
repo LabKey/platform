@@ -27,6 +27,7 @@ public class LabKeyScope extends DbScope
     }
 
     @Override
+    // LabKey data source case.  Load schema.xml, reload schema if it's stale.
     protected DbSchema loadSchema(DbSchema schema, String schemaName) throws Exception
     {
         InputStream xmlStream = null;
@@ -51,7 +52,8 @@ public class LabKeyScope extends DbScope
                 }
             }
 
-            schema = super.loadSchema(schema, schemaName);
+            // Force a reload from meta data
+            schema = super.loadSchema(null, schemaName);
 
             if (null != schema)
             {
@@ -60,6 +62,7 @@ public class LabKeyScope extends DbScope
 
                 schema.setResource(resource);
                 xmlStream = resource.getInputStream();
+
                 if (null != xmlStream)
                 {
                     TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);

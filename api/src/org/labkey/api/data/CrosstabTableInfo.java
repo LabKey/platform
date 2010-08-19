@@ -528,7 +528,7 @@ public class CrosstabTableInfo extends VirtualTable
                 return "'" + memberValue.toString().replace("'", "''") + "'";
             case Types.BOOLEAN:
             case Types.BIT:
-                return "CAST('" + Boolean.valueOf(memberValue.toString()).toString() +"' AS " + getSqlDialect().getBooleanDatatype() + ")";
+                return "CAST('" + Boolean.valueOf(memberValue.toString()).toString() +"' AS " + getSqlDialect().getBooleanDataType() + ")";
 
             default:
                 //if you get this, add support for the type you want.

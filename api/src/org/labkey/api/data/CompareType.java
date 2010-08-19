@@ -541,7 +541,7 @@ public enum CompareType
         protected String sqlEscape()
         {
             assert escapeChar != '\'';
-            return " ESCAPE '" + escapeChar + "' ";
+            return " ESCAPE '" + escapeChar + "'";
         }
 
         @Override
@@ -563,7 +563,7 @@ public enum CompareType
 
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " ? " + dialect.getConcatenationOperator() + " '%' " + sqlEscape();
+            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
         }
 
         @Override
@@ -583,7 +583,7 @@ public enum CompareType
 
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " ? " + dialect.getConcatenationOperator() + " '%' " + sqlEscape();
+            return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
         }
 
         @Override
@@ -647,7 +647,7 @@ public enum CompareType
 
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " '%' " + dialect.getConcatenationOperator() + " ? " + dialect.getConcatenationOperator() + " '%' " + sqlEscape(); 
+            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
         }
 
         @Override
@@ -666,7 +666,7 @@ public enum CompareType
         }
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " '%' " + dialect.getConcatenationOperator() + " ? " + dialect.getConcatenationOperator() + " '%' " + sqlEscape(); 
+            return dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
         }
 
         @Override

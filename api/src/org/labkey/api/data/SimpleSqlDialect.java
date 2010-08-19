@@ -148,13 +148,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
-    public String getDefaultDateTimeDatatype()
+    public String getDefaultDateTimeDataType()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
@@ -184,25 +178,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean isNoDatabaseException(SQLException e)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public String getDropIndexCommand(String tableName, String indexName)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
-    public String getCreateDatabaseSql(String dbName)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
-    public String getCreateSchemaSql(String schemaName)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
@@ -244,12 +220,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public String sanitizeException(SQLException ex)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
@@ -262,7 +232,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getBooleanDatatype()
+    public String getBooleanDataType()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
@@ -286,12 +256,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
-
-    @Override
     public boolean isCaseSensitive()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
@@ -303,7 +267,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
-    // The following methods should never be called on a simple dialect.
+    // The following methods should not be called on a simple dialect.
 
     @Override
     protected boolean claimsDriverClassName(String driverClassName)
@@ -319,6 +283,42 @@ public abstract class SimpleSqlDialect extends SqlDialect
 
     @Override
     public String getMasterDataBaseName()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public boolean isNoDatabaseException(SQLException e)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public String getCreateDatabaseSql(String dbName)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public String getCreateSchemaSql(String schemaName)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

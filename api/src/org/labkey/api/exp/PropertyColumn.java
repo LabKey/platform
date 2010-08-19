@@ -188,7 +188,7 @@ public class PropertyColumn extends LookupColumn
         else if (PropertyType.INTEGER == pt)
             return "INT";
         else if (PropertyType.BOOLEAN == pt)
-            return getParentTable().getSqlDialect().getBooleanDatatype();
+            return getParentTable().getSqlDialect().getBooleanDataType();
         else
             return "VARCHAR(" + ObjectProperty.STRING_LENGTH + ")";
     }

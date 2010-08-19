@@ -422,10 +422,13 @@ public abstract class SqlDialect
 
     public abstract String execute(DbSchema schema, String procedureName, String parameters);
 
+    @Deprecated  // not compatible with MySql... use concatenate() instead  TODO: eliminate
     public abstract String getConcatenationOperator();
 
+    public abstract String concatenate(String... args);
+
     /**
-     * Return the operator which supports, in addition to the usual LIKE things '%', and '_', also supports
+     * Return the operator which, in addition to the usual LIKE things ('%' and '_'), also supports
      * character classes. (i.e. [abc] matching a,b or c)
      * If you do not need the functionality of character classes, then "LIKE" will work just fine with all SQL dialects.
      */
@@ -449,7 +452,7 @@ public abstract class SqlDialect
 
     public abstract String getMasterDataBaseName();
 
-    public abstract String getDefaultDateTimeDatatype();
+    public abstract String getDefaultDateTimeDataType();
 
     public abstract String getUniqueIdentType();
 
@@ -637,16 +640,16 @@ public abstract class SqlDialect
     }
 
 
-    public abstract String getBooleanDatatype();
+    public abstract String getBooleanDataType();
     
     public String getBooleanTRUE()
     {
-        return "CAST(1 AS " + getBooleanDatatype() + ")";
+        return "CAST(1 AS " + getBooleanDataType() + ")";
     }
 
     public String getBooleanFALSE()
     {
-        return "CAST(0 AS " + getBooleanDatatype() + ")";
+        return "CAST(0 AS " + getBooleanDataType() + ")";
     }
 
 
@@ -948,8 +951,8 @@ public abstract class SqlDialect
     // Handles standard reading of pk meta data
     public static class PkMetaDataReader
     {
-        private ResultSet _rsCols;
-        private String _nameKey, _seqKey;
+        private final ResultSet _rsCols;
+        private final String _nameKey, _seqKey;
 
         public PkMetaDataReader(ResultSet rsCols, String nameKey, String seqKey)
         {
@@ -986,6 +989,7 @@ public abstract class SqlDialect
     protected String getDatePartName(int part)
     {
         String partName;
+
         switch (part)
         {
             case Calendar.YEAR:
@@ -1023,6 +1027,7 @@ public abstract class SqlDialect
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
             }
         }
+
         return partName;
     }
 

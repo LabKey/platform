@@ -21,7 +21,6 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletException;
@@ -444,26 +443,31 @@ public class DbScope
         {
             DbSchema schema = _loadedSchemas.get(schemaName);
 
-            if (null != schema && !AppProps.getInstance().isDevMode())
-                return schema;
-
             try
             {
+                // This approach allows checking for stale schema, not just null schema.
                 schema = loadSchema(schema, schemaName);
-                _loadedSchemas.put(schema.getName(), schema);
-                return schema;
+
+                if (null != schema)
+                    _loadedSchemas.put(schema.getName(), schema);
             }
             catch (Exception e)
             {
                 throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
             }
+
+            return schema;
         }
     }
 
 
+    // External data source case: no schema.xml file to check, no isStale() check (for now)
     protected DbSchema loadSchema(DbSchema schema, String schemaName) throws Exception
     {
-        return DbSchema.createFromMetaData(schemaName, this);
+        if (null == schema)
+            schema = DbSchema.createFromMetaData(schemaName, this);
+
+        return schema;
     }
 
 
