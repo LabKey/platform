@@ -171,6 +171,7 @@ bigiron/module.properties -text
 bigiron/src/org/labkey/bigiron/BigIronModule.java -text
 bigiron/src/org/labkey/bigiron/mssql/SqlDialectMicrosoftSQLServer.java -text
 bigiron/src/org/labkey/bigiron/mssql/SqlDialectMicrosoftSQLServer9.java -text
+bigiron/src/org/labkey/bigiron/mysql/SqlDialectMySql.java -text
 bigiron/src/org/labkey/bigiron/sas/ExportSasScriptModel.java -text
 bigiron/src/org/labkey/bigiron/sas/SasExportScriptFactory.java -text
 bigiron/src/org/labkey/bigiron/sas/SqlDialectSas.java -text

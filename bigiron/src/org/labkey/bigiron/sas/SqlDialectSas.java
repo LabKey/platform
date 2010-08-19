@@ -17,22 +17,30 @@ package org.labkey.bigiron.sas;
 
 import junit.framework.TestSuite;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
-import org.labkey.api.module.ModuleContext;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleSqlDialect;
+import org.labkey.api.data.StatementWrapper;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
 import java.sql.Date;
-import java.util.*;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
  * Date: Jan 21, 2009
  * Time: 3:15:40 PM
  */
-public abstract class SqlDialectSas extends SqlDialect
+public abstract class SqlDialectSas extends SimpleSqlDialect
 {
     public SqlDialectSas()
     {
@@ -42,9 +50,19 @@ public abstract class SqlDialectSas extends SqlDialect
         ));
     }
 
+    protected String getProductName()
+    {
+        return "SAS";
+    }
+
+    @Override
+    public boolean treatCatalogsAsSchemas()
+    {
+        return false;
+    }
+
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
@@ -57,31 +75,6 @@ public abstract class SqlDialectSas extends SqlDialect
     protected boolean claimsDriverClassName(String driverClassName)
     {
         return driverClassName.equals("com.sas.net.sharenet.ShareNetDriver");
-    }
-
-    public void prepareNewDbSchema(DbSchema schema)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    protected String getProductName()
-    {
-        return "SAS";
-    }
-
-    public String getSQLScriptPath()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void appendStatement(StringBuilder sql, String statement)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void appendSelectAutoIncrement(StringBuilder sql, TableInfo table, String columnName)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean requiresStatementMaxRows()
@@ -115,54 +108,14 @@ public abstract class SqlDialectSas extends SqlDialect
         return false;
     }
 
-    public boolean supportsComments()
-    {
-        return false;
-    }
-
-    public String execute(DbSchema schema, String procedureName, String parameters)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     public String getConcatenationOperator()
     {
         return "||";
     }
 
-    public String getCharClassLikeOperator()
+    public boolean supportsComments()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getCaseInsensitiveLikeOperator()
-    {
-        return "LIKE";
-    }
-
-    public String getVarcharLengthFunction()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getStdDevFunction()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getClobLengthFunction()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getStringIndexOfFunction(String stringToFind, String stringToSearch)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getSubstringFunction(String s, String start, String length)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     @Override
@@ -171,116 +124,10 @@ public abstract class SqlDialectSas extends SqlDialect
         return "MIN(" + selectName + ")";
     }
 
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getMasterDataBaseName()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getDefaultDateTimeDatatype()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getUniqueIdentType()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getTempTableKeyword()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getTempTablePrefix()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getGlobalTempTablePrefix()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isNoDatabaseException(SQLException e)
-    {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isSortableDataType(String sqlDataTypeName)
-    {
-        return true;
-    }
-
-    public String getDropIndexCommand(String tableName, String indexName)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getCreateDatabaseSql(String dbName)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getCreateSchemaSql(String schemaName)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getDateDiff(int part, String value1, String value2)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public String getDatePart(int part, String value)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getDateTimeToDateCast(String expression)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getRoundFunction(String valueToRound)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean supportsRoundDouble()
-    {
-        return false;  // TODO
-    }
-
-    public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String sanitizeException(SQLException ex)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getAnalyzeCommandForTable(String tableName)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     @Override
     public Integer getSPID(Connection result) throws SQLException
     {
-        return 0;
+        return 0;  // TODO: Implement?
     }
 
     protected String getSIDQuery()
@@ -288,24 +135,12 @@ public abstract class SqlDialectSas extends SqlDialect
         throw new UnsupportedOperationException();
     }
 
-    public String getBooleanDatatype()
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-
     private static final Set<String> SYSTEM_SCHEMAS = PageFlowUtil.set("MAPS", "SASADMIN", "SASCATCA", "SASHELP", "SASUSER", "WORK");
 
     @Override
     public boolean isSystemSchema(String schemaName)
     {
         return SYSTEM_SCHEMAS.contains(schemaName);
-    }
-
-    @Override
-    public String getBooleanLiteral(boolean b)
-    {
-        throw new UnsupportedOperationException();
     }
 
     // SAS has no database name, so override both getDatabaseName() methods and return null.
@@ -324,54 +159,9 @@ public abstract class SqlDialectSas extends SqlDialect
 
     // SAS has no database name, so no need to parse the URL.  Overrides above ensure this is never called.
 
-    public JdbcHelper getJdbcHelper(String url) throws ServletException
+    public JdbcHelper getJdbcHelper()
     {
-        return null;
-    }
-
-    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean allowSortOnSubqueryWithoutLimit()
-    {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void initializeConnection(Connection conn) throws SQLException
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isCaseSensitive()
-    {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public boolean isEditable()
-    {
-        return false;
-    }
-
-    public boolean isSqlServer()
-    {
-        return false;
-    }
-
-    public boolean isPostgreSQL()
-    {
-        return false;
+        throw new IllegalStateException();
     }
 
     public TestSuite getTestSuite()

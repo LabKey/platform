@@ -2966,7 +2966,10 @@ public class QueryController extends SpringActionController
                     con = scope.getConnection();
                     DatabaseMetaData dbmd = con.getMetaData();
 
-                    rs = dbmd.getSchemas();
+                    if (scope.getSqlDialect().treatCatalogsAsSchemas())
+                        rs = dbmd.getCatalogs();
+                    else
+                        rs = dbmd.getSchemas();
 
                     Collection<String> schemaNames = new LinkedList<String>();
                     Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
@@ -2991,7 +2994,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (SQLException e)
                 {
-                    LOG.error("Exception retrieving schemas from DbScope '" + scope.getDataSourceName() + "'");
+                    LOG.error("Exception retrieving schemas from DbScope '" + scope.getDataSourceName() + "'", e);
                 }
                 finally
                 {

@@ -40,8 +40,6 @@ import java.util.regex.Pattern;
 // Dialect specifics for Microsoft SQL Server
 public class SqlDialectMicrosoftSQLServer extends SqlDialect
 {
-    protected String _tempTablePrefix = "##";
-
     public SqlDialectMicrosoftSQLServer()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
@@ -235,6 +233,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "LIKE";
     }
 
+    @Override
     public String getCaseInsensitiveLikeOperator()
     {
         return "LIKE";
@@ -378,6 +377,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "UPDATE STATISTICS " + tableName + ";";
     }
 
+    @Override
+    public boolean treatCatalogsAsSchemas()
+    {
+        return false;
+    }
+
     protected String getSIDQuery()
     {
         return "SELECT @@spid";
@@ -425,9 +430,9 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
 
-    public JdbcHelper getJdbcHelper(String url) throws ServletException
+    public JdbcHelper getJdbcHelper()
     {
-        return new JtdsJdbcHelper(url);
+        return new JtdsJdbcHelper();
     }
 
 
@@ -437,9 +442,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
 
     */
-    public static class JtdsJdbcHelper extends JdbcHelper
+    public static class JtdsJdbcHelper implements JdbcHelper
     {
-        protected JtdsJdbcHelper(String url) throws ServletException
+        @Override
+        public String getDatabase(String url) throws ServletException
         {
             if (!url.startsWith("jdbc:jtds:sqlserver"))
                 throw new ServletException("Unsupported connection url: " + url);
@@ -450,7 +456,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             int dbDelimiter = url.lastIndexOf('/', dbEnd);
             if (-1 == dbDelimiter)
                 throw new ServletException("Invalid jTDS connection url: " + url);
-            _database = url.substring(dbDelimiter + 1, dbEnd);
+            return url.substring(dbDelimiter + 1, dbEnd);
         }
     }
 
@@ -475,7 +481,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
                                     "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
 
                 for (String url : goodUrls.split("\n"))
-                    assertEquals(new JtdsJdbcHelper(url).getDatabase(), "database");
+                    assertEquals(new JtdsJdbcHelper().getDatabase(url), "database");
             }
             catch(Exception e)
             {
@@ -492,7 +498,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             {
                 try
                 {
-                    if (new JtdsJdbcHelper(url).getDatabase().equals("database"))
+                    if (new JtdsJdbcHelper().getDatabase(url).equals("database"))
                         fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
                 }
                 catch (ServletException e)

@@ -216,6 +216,8 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     }
                 }
                 if (resource != null)
+                {
+                    // TODO: reindex this resource here
                     resource.notify(new ContainerUser(){
                         public User getUser(){
                             return user;
@@ -224,6 +226,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                             return container;
                         }
                     }, sb.toString());
+                }
             }
             return row;
         }

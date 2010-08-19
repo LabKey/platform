@@ -634,7 +634,7 @@ public class QueryServiceImpl extends QueryService
             }
             catch (Exception e)
             {
-                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource());
+                Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -656,7 +656,7 @@ public class QueryServiceImpl extends QueryService
                 }
                 catch (Exception e)
                 {
-                    Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource());
+                    Logger.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getDbSchemaName() + " from " + def.getDataSource(), e);
                     break;
                 }
             }

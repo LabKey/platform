@@ -148,6 +148,12 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
+    public boolean treatCatalogsAsSchemas()
+    {
+        return false;
+    }
+
+    @Override
     public void appendStatement(StringBuilder sql, String statement)
     {
         sql.append(";\n");
@@ -600,13 +606,14 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
 
-    public JdbcHelper getJdbcHelper(String url) throws ServletException
+    public JdbcHelper getJdbcHelper()
     {
-        return new PostgreSQLJdbcHelper(url);
+        return new PostgreSQLJdbcHelper();
     }
 
 
-    /*  PostgreSQL example connection URLs we need to parse:
+    /*
+        PostgreSQL example connection URLs we need to parse:
 
         jdbc:postgresql:database
         jdbc:postgresql://host/database
@@ -614,22 +621,12 @@ class SqlDialectPostgreSQL extends SqlDialect
         jdbc:postgresql:database?user=fred&password=secret&ssl=true
         jdbc:postgresql://host/database?user=fred&password=secret&ssl=true
         jdbc:postgresql://host:port/database?user=fred&password=secret&ssl=true
-
     */
-    public static class PostgreSQLJdbcHelper extends JdbcHelper
+    public static class PostgreSQLJdbcHelper extends StandardJdbcHelper
     {
-        protected PostgreSQLJdbcHelper(String url) throws ServletException
+        protected PostgreSQLJdbcHelper()
         {
-            if (!url.startsWith("jdbc:postgresql"))
-                throw new ServletException("Unsupported connection url: " + url);
-
-            int dbEnd = url.indexOf('?');
-            if (-1 == dbEnd)
-                dbEnd = url.length();
-            int dbDelimiter = url.lastIndexOf('/', dbEnd);
-            if (-1 == dbDelimiter)
-                dbDelimiter = url.lastIndexOf(':', dbEnd);
-            _database = url.substring(dbDelimiter + 1, dbEnd);
+            super("jdbc:postgresql:");
         }
     }
 
@@ -656,7 +653,7 @@ class SqlDialectPostgreSQL extends SqlDialect
                                     "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
 
                 for (String url : goodUrls.split("\n"))
-                    assertEquals(new PostgreSQLJdbcHelper(url).getDatabase(), "database");
+                    assertEquals(new PostgreSQLJdbcHelper().getDatabase(url), "database");
             }
             catch(Exception e)
             {
@@ -671,7 +668,7 @@ class SqlDialectPostgreSQL extends SqlDialect
             {
                 try
                 {
-                    if (new PostgreSQLJdbcHelper(url).getDatabase().equals("database"))
+                    if (new PostgreSQLJdbcHelper().getDatabase(url).equals("database"))
                         fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
                 }
                 catch (ServletException e)

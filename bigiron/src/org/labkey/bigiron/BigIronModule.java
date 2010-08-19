@@ -17,6 +17,7 @@
 package org.labkey.bigiron;
 
 import org.labkey.api.data.SqlDialect;
+import org.labkey.bigiron.mysql.SqlDialectMySql;
 import org.labkey.bigiron.sas.*;
 import org.labkey.bigiron.mssql.SqlDialectMicrosoftSQLServer;
 import org.labkey.bigiron.mssql.SqlDialectMicrosoftSQLServer9;
@@ -30,8 +31,6 @@ import java.util.Collections;
 
 public class BigIronModule extends DefaultModule
 {
-    public static final String NAME = "BigIron";
-
     public String getName()
     {
         return "BigIron";
@@ -58,6 +57,7 @@ public class BigIronModule extends DefaultModule
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
         SqlDialect.register(new SqlDialectSas91());
         SqlDialect.register(new SqlDialectSas92());
+        SqlDialect.register(new SqlDialectMySql());
         QueryView.register(new SasExportScriptFactory());
     }
 
