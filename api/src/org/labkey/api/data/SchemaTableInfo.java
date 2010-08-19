@@ -423,7 +423,13 @@ public class SchemaTableInfo implements TableInfo
     public void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName) throws SQLException
     {
         loadColumnsFromMetaData(dbmd, catalogName, schemaName);
-        ResultSet rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName);
+
+        ResultSet rs;
+
+        if (getSqlDialect().treatCatalogsAsSchemas())
+            rs = dbmd.getPrimaryKeys(schemaName, null, metaDataName);
+        else
+            rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName);
 
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<Integer, String>();

@@ -21,30 +21,38 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.resource.AbstractResource;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.Path;
-import org.labkey.data.xml.TablesDocument;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
-import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Class that wraps a datasource and is shared amongst instances of the
- * DbSchema that need to share the datasource.
  * User: migra
  * Date: Nov 16, 2005
  * Time: 10:20:54 AM
  */
+
+// Class that wraps a data source and is shared amongst that data source's DbSchemas
 public class DbScope
 {
     private static final Logger _log = Logger.getLogger(DbScope.class);
@@ -75,7 +83,7 @@ public class DbScope
 
     // Attempt a (non-pooled) connection to a datasource.  We don't use DbSchema or normal pooled connections here
     // because failed connections seem to get added into the pool.
-    private DbScope(String dsName, DataSource dataSource) throws ServletException, SQLException
+    protected DbScope(String dsName, DataSource dataSource) throws ServletException, SQLException
     {
         Connection conn = null;
 
@@ -439,64 +447,23 @@ public class DbScope
             if (null != schema && !AppProps.getInstance().isDevMode())
                 return schema;
 
-            InputStream xmlStream = null;
-
             try
             {
-                Resource resource;
-
-                if (null == schema)
-                {
-                    resource = DbSchema.getSchemaResource(schemaName);
-                }
-                else
-                {
-                    if (AppProps.getInstance().isDevMode() && schema.isStale())
-                    {
-                        resource = schema.getResource();
-                    }
-                    else
-                    {
-                        return schema;
-                    }
-                }
-
-                schema = DbSchema.createFromMetaData(schemaName, this);
-
-                if (null != schema)
-                {
-                    if (resource == null)
-                        resource = new DbSchemaResource(schema);
-
-                    schema.setResource(resource);
-                    xmlStream = resource.getInputStream();
-                    if (null != xmlStream)
-                    {
-                        TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
-                        schema.loadXml(tablesDoc, true);
-                    }
-
-                    _loadedSchemas.put(schema.getName(), schema);
-                }
+                schema = loadSchema(schema, schemaName);
+                _loadedSchemas.put(schema.getName(), schema);
+                return schema;
             }
             catch (Exception e)
             {
                 throw new RuntimeException(e);  // Changed from "return null" to "throw runtimeexception" so admin is made aware of the cause of the problem
             }
-            finally
-            {
-                try
-                {
-                    if (null != xmlStream) xmlStream.close();
-                }
-                catch (Exception x)
-                {
-                    _log.error("DbSchema.get()", x);
-                }
-            }
-
-            return schema;
         }
+    }
+
+
+    protected DbSchema loadSchema(DbSchema schema, String schemaName) throws Exception
+    {
+        return DbSchema.createFromMetaData(schemaName, this);
     }
 
 
@@ -585,21 +552,24 @@ public class DbScope
             {
                 try
                 {
-                    DbScope scope = new DbScope(dsName, dataSources.get(dsName));
+                    DbScope scope = dsName.equals(labkeyDsName) ? new LabKeyScope(dsName, dataSources.get(dsName)) : new DbScope(dsName, dataSources.get(dsName));
                     scope.getSqlDialect().prepareNewDbScope(scope);
                     _scopes.put(dsName, scope);
                 }
-                catch (ConfigurationException ce)
-                {
-                    // Rethrow a ConfigurationException -- it includes important details about the failure  
-                    throw ce;
-                }
                 catch (Exception e)
                 {
+                    // Server can't start up if it can't connect to the labkey datasource
                     if (dsName.equals(labkeyDsName))
+                    {
+                        // Rethrow a ConfigurationException -- it includes important details about the failure
+                        if (e instanceof ConfigurationException)
+                            throw (ConfigurationException)e;
+
                         throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml.  Server cannot start.", e);
-                    else
-                        _log.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
+                    }
+
+                    // Failure to connect with any other datasource results in an error message, but doesn't halt startup  
+                    _log.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
                 }
             }
 
@@ -796,9 +766,8 @@ public class DbScope
 
     static ConnectionMap newConnectionMap()
     {
-//        final HashMap<Connection,Integer> m = new HashMap<Connection,Integer>();
-//        final HashMap<Connection,Integer> m = new WeakHashMap<Connection,Integer>();
-        final _WeakestLinkMap<Connection,Integer> m = new _WeakestLinkMap<Connection,Integer>();
+        final _WeakestLinkMap<Connection, Integer> m = new _WeakestLinkMap<Connection,Integer>();
+
         return new ConnectionMap() {
             public synchronized Integer get(Connection c)
             {
@@ -945,40 +914,6 @@ public class DbScope
         {
             for (StringKeyCache<?> cache : _caches.values())
                 cache.close();
-        }
-    }
-
-    private class DbSchemaResource extends AbstractResource
-    {
-        private DbSchema schema;
-
-        protected DbSchemaResource(DbSchema schema)
-        {
-            // CONSIDER: create a ResourceResolver based on DbScope
-            super(new Path(schema.getName()), null);
-            this.schema = schema;
-        }
-
-        @Override
-        public Resource parent()
-        {
-            return null;
-        }
-
-        @Override
-        public boolean exists()
-        {
-            // UNDONE: The DbSchemaResource could check if the schema exists
-            // in the source database.  For now the DbSchemaResource always exists.
-            return true;
-        }
-
-        @Override
-        public long getVersionStamp()
-        {
-            // UNDONE: The DbSchemaResource could check if the schema is modified
-            // in the source database.  For now the DbSchemaResource is always up to date.
-            return 0L;
         }
     }
 }

@@ -412,6 +412,9 @@ public abstract class SqlDialect
      */
     public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset);
 
+    // Some databases lack true schema support; if true, we'll map the database's catalogs to schemas
+    public abstract boolean treatCatalogsAsSchemas();
+
     /** Does the dialect support limitRows() with an offset? */
     public abstract boolean supportsOffset();
 
@@ -600,13 +603,13 @@ public abstract class SqlDialect
 
     protected abstract String getSIDQuery();
 
-    public Integer getSPID(Connection result) throws SQLException
+    public Integer getSPID(Connection conn) throws SQLException
     {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         try
         {
-            stmt = result.prepareStatement(getSIDQuery());
+            stmt = conn.prepareStatement(getSIDQuery());
             rs = stmt.executeQuery();
             if (!rs.next())
             {
@@ -672,19 +675,39 @@ public abstract class SqlDialect
 
     public String getDatabaseName(String url) throws ServletException
     {
-        return getJdbcHelper(url).getDatabase();
+        return getJdbcHelper().getDatabase(url);
     }
 
 
-    public abstract JdbcHelper getJdbcHelper(String url) throws ServletException;
+    public abstract JdbcHelper getJdbcHelper();
 
-    public static abstract class JdbcHelper
+    public static interface JdbcHelper
     {
-        protected String _database;
+        public String getDatabase(String url) throws ServletException;
+    }
 
-        public String getDatabase()
+    public static class StandardJdbcHelper implements JdbcHelper
+    {
+        private final String _prefix;
+
+        public StandardJdbcHelper(String prefix)
         {
-            return _database;
+            _prefix = prefix;
+        }
+
+        @Override
+        public String getDatabase(String url) throws ServletException
+        {
+            if (!url.startsWith(_prefix))
+                throw new ServletException("Unsupported connection url: " + url);
+
+            int dbEnd = url.indexOf('?');
+            if (-1 == dbEnd)
+                dbEnd = url.length();
+            int dbDelimiter = url.lastIndexOf('/', dbEnd);
+            if (-1 == dbDelimiter)
+                dbDelimiter = url.lastIndexOf(':', dbEnd);
+            return url.substring(dbDelimiter + 1, dbEnd);
         }
     }
 
@@ -853,7 +876,7 @@ public abstract class SqlDialect
     // Handles standard reading of column meta data
     public static abstract class ColumnMetaDataReader
     {
-        protected ResultSet _rsCols;
+        protected final ResultSet _rsCols;
         protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey;
 
         public ColumnMetaDataReader(ResultSet rsCols)

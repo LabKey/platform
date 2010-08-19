@@ -87,13 +87,21 @@ public class DbSchema
         // Remember if we're using a connection that somebody lower on the call stack checked out,
         // and therefore shouldn't close it out from under them
         boolean inTransaction = scope.isTransactionActive();
+
         try
         {
             conn = scope.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
             String[] types = {"TABLE", "VIEW",};
-            ResultSet rs = dbmd.getTables(dbName, schemaName, "%", types);
+
+            ResultSet rs;
+
+            if (schema.getSqlDialect().treatCatalogsAsSchemas())
+                rs = dbmd.getTables(schemaName, null, "%", types);
+            else
+                rs = dbmd.getTables(dbName, schemaName, "%", types);
+
             ArrayList<SchemaTableInfo> list = new ArrayList<SchemaTableInfo>();
 
             try

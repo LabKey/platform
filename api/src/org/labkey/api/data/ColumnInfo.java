@@ -22,18 +22,29 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
-import java.io.File;
 import java.net.URLEncoder;
-import java.sql.*;
-import java.util.*;
-import java.util.Date;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1074,7 +1085,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
          //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colList = new LinkedHashMap<String, ColumnInfo>();
-        ResultSet rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);      // PostgreSQL change: query meta data with metaDataName
+        ResultSet rsCols;
+
+        if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
+            rsCols = dbmd.getColumns(schemaName, null, parentTable.getMetaDataName(), null);
+        else
+            rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
+
         SqlDialect.ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols, parentTable.getSchema().getScope());
 
         while (rsCols.next())
@@ -1129,7 +1146,13 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         // 1) combine multi column keys
         // 2) update columns
 
-        ResultSet rsKeys = dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());
+        ResultSet rsKeys;
+
+        if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
+            rsKeys = dbmd.getImportedKeys(schemaName, null, parentTable.getMetaDataName());
+        else
+            rsKeys = dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());
+
         int iPkTableSchema = findColumn(rsKeys, "PKTABLE_SCHEM");
         int iPkTableName = findColumn(rsKeys, "PKTABLE_NAME");
         int iPkColumnName = findColumn(rsKeys, "PKCOLUMN_NAME");
