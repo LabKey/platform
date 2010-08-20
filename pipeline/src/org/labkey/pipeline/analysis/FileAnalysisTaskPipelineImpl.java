@@ -16,7 +16,6 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.pipeline.*;
-import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
 import org.labkey.api.util.*;
@@ -24,9 +23,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
 import org.labkey.pipeline.api.TaskPipelineImpl;
 
-import java.io.File;
 import java.io.FileFilter;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +41,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _protocolFactoryName;
     private StringExpression _analyzeURL;
     private boolean _initialFileTypesFromTask;
-    private FileType[] _initialFileTypes;
+    private List<FileType> _initialFileTypes;
     private Map<FileType, FileType[]> _typeHierarchy;
 
     public FileAnalysisTaskPipelineImpl()
@@ -76,7 +73,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (inputFilterExts != null)
         {
             _initialFileTypesFromTask = false;
-            _initialFileTypes = inputFilterExts.toArray(new FileType[inputFilterExts.size()]);
+            _initialFileTypes = inputFilterExts;
         }
         else if (_initialFileTypesFromTask || getInitialFileTypes() == null)
         {
@@ -87,7 +84,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         }
 
         // Misconfiguration: the user will never be able to start this pipeline
-        if (_initialFileTypes == null || _initialFileTypes.length == 0)
+        if (_initialFileTypes == null || _initialFileTypes.isEmpty())
                 throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
 
         // Convert any input extension hierarchy into file types.
@@ -122,7 +119,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return _protocolFactoryName;
     }
 
-    public FileType[] getInitialFileTypes()
+    public List<FileType> getInitialFileTypes()
     {
         return _initialFileTypes;
     }

@@ -38,7 +38,7 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
         super(name, description, xml);
     }
 
-    public FileType[] getInputTypes()
+    public List<FileType> getInputTypes()
     {
         return _factory.getPipeline().getInitialFileTypes();
     }
