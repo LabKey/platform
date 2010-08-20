@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,9 +51,9 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      * Returns the full list of acceptable file types that can be used to
      * start this pipeline.
      *
-     * @return array containing acceptable initial file types
+     * @return list containing acceptable initial file types
      */
-    FileType[] getInitialFileTypes();
+    List<FileType> getInitialFileTypes();
 
     /**
      * Returns a <code>FileFilter</code> for use in creating an input file set.
