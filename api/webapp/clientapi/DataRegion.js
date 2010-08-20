@@ -795,7 +795,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         this.customizeView = new LABKEY.DataRegion.ViewDesigner({
                             renderTo: renderTo,
                             style: {
-                                float: "left",
+                                "float": "left",
                                 "margin-right": "8px"
                             },
                             dataRegion: this,
