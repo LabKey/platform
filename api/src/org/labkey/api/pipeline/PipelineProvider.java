@@ -60,7 +60,14 @@ abstract public class PipelineProvider
 
         public FileTypesEntryFilter(List<FileType> initialFileTypes)
         {
-            _initialFileTypes = initialFileTypes.toArray(new FileType[initialFileTypes.size()]);
+            if (initialFileTypes == null)
+            {
+                _initialFileTypes = new FileType[0];
+            }
+            else
+            {
+                _initialFileTypes = initialFileTypes.toArray(new FileType[initialFileTypes.size()]);
+            }
         }
         
         public FileTypesEntryFilter(FileType initialFileType, FileType... otherFileTypes)
@@ -328,7 +335,6 @@ abstract public class PipelineProvider
     /**
      * Returns true if a provider wants to show file actions even if the provider module is not active
      * in a container.
-     * @return
      */
     public boolean isShowActionsIfModuleInactive()
     {
