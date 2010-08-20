@@ -58,6 +58,11 @@ abstract public class PipelineProvider
     {
         private FileType[] _initialFileTypes;
 
+        public FileTypesEntryFilter(List<FileType> initialFileTypes)
+        {
+            _initialFileTypes = initialFileTypes.toArray(new FileType[initialFileTypes.size()]);
+        }
+        
         public FileTypesEntryFilter(FileType initialFileType, FileType... otherFileTypes)
         {
             this(appendToArray(otherFileTypes, initialFileType));

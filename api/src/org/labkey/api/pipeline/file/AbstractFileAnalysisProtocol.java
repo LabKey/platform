@@ -190,8 +190,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public FileType findInputType(File file)
     {
-        FileType[] types = getInputTypes();
-        for (FileType type : types)
+        for (FileType type : getInputTypes())
         {
             if (type.isType(file))
                 return type;
@@ -199,7 +198,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         return null;
     }
 
-    public abstract FileType[] getInputTypes();
+    public abstract List<FileType> getInputTypes();
     
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 

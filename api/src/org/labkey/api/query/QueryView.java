@@ -139,7 +139,7 @@ public class QueryView extends WebPartView<Object>
         setSchema(schema);
     }
 
-    @Deprecated
+    @Deprecated /** Use the constructor that takes an Errors object instead */
     protected QueryView(UserSchema schema, QuerySettings settings)
     {
         this(schema, settings, null);

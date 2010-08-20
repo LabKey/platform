@@ -369,7 +369,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
                 }
                 // If not, make up a new type and role for it
-                if (roleName == null || dataType == null)
+                if (roleName == null)
                 {
                     roleName = relatedFile.getName().substring(baseName.length());
                     while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
@@ -1310,7 +1310,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return DefaultValueType.LAST_ENTERED;
     }
 
-    public static ExpData createData(Container c, File file, String name, DataType dataType) throws ExperimentException
+    public static ExpData createData(Container c, File file, String name, DataType dataType)
     {
         ExpData data = null;
         if (file != null)

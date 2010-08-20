@@ -425,7 +425,7 @@ public class FileType implements Serializable
         return (_dir == null || !_dir.booleanValue() ? _suffixes.toString() : _suffixes + "/");
     }
 
-    public static FileType[] findTypes(FileType[] types, List<File> files)
+    public static List<FileType> findTypes(List<FileType> types, List<File> files)
     {
         ArrayList<FileType> foundTypes = new ArrayList<FileType>();
         // This O(n*m), but these are usually very short lists.
@@ -440,7 +440,7 @@ public class FileType implements Serializable
                 }
             }
         }
-        return foundTypes.toArray(new FileType[foundTypes.size()]);
+        return foundTypes;
     }
 
     /**

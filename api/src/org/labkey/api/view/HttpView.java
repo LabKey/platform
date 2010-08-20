@@ -682,7 +682,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     public static ModelAndView throwUnauthorized() throws UnauthorizedException
     {
-        throw new UnauthorizedException(null);
+        throw new UnauthorizedException();
     }
 
     public static void throwUnauthorized(String message) throws UnauthorizedException
@@ -694,9 +694,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * Pulls out the context's URL for redirecting. This fetches
      * the original URL before any redirects, in case internally
      * we've done that.
-     * @return
      */
-
     public static String getContextURL()
     {
         ViewContext context = getRootContext();

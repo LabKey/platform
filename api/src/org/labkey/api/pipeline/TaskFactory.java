@@ -40,7 +40,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     TaskFactory cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException;
 
-    FileType[] getInputTypes();
+    List<FileType> getInputTypes();
 
     /**
      * All of the ProtocolAction names that this task may include when it runs. It need not execute all of them for
