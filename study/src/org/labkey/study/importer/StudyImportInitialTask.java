@@ -161,9 +161,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             return new StudyImportInitialTask(this, job);
         }
 
-        public FileType[] getInputTypes()
+        public List<FileType> getInputTypes()
         {
-            return new FileType[0];
+            return Collections.emptyList();
         }
 
         public List<String> getProtocolActionNames()

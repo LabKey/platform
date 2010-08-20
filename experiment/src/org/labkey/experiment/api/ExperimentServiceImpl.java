@@ -1018,19 +1018,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema().getTable("ExperimentRunMaterialInputs");
     }
 
-    public TableInfo getTinfoExperimentRunMaterialOutputs()
-    {
-        return getExpSchema().getTable("ExperimentRunMaterialOutputs");
-    }
-
     public TableInfo getTinfoExperimentRunDataInputs()
     {
         return getExpSchema().getTable("ExperimentRunDataInputs");
-    }
-
-    public TableInfo getTinfoExperimentRunDataOutputs()
-    {
-        return getExpSchema().getTable("ExperimentRunDataOutputs");
     }
 
     public TableInfo getTinfoProtocol()

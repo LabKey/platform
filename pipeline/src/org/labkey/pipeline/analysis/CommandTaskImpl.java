@@ -195,7 +195,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             }
         }
 
-        public FileType[] getInputTypes()
+        public List<FileType> getInputTypes()
         {
             if (_actionableInput == null)
             {
@@ -206,10 +206,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 {
                     result.add(taskPath.getType());
                 }
-                return result.toArray(new FileType[result.size()]);
+                return result;
             }
             TaskPath tp = _inputPaths.get(_actionableInput);
-            return (tp == null ? null : new FileType[] { tp.getType() });
+            return (tp == null ? null : Collections.singletonList(tp.getType()));
         }
 
         public Map<String, TaskPath> getInputPaths()

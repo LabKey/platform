@@ -31,9 +31,9 @@ public abstract class AbstractSpecimenTaskFactory<FactoryType extends AbstractSp
         super(namespaceClass);
     }
 
-    public FileType[] getInputTypes()
+    public List<FileType> getInputTypes()
     {
-        return new FileType[0];
+        return Collections.emptyList();
     }
 
     public List<String> getProtocolActionNames()

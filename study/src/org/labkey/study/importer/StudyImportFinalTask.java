@@ -110,9 +110,9 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             return new StudyImportFinalTask(this, job);
         }
 
-        public FileType[] getInputTypes()
+        public List<FileType> getInputTypes()
         {
-            return new FileType[0];
+            return Collections.emptyList();
         }
 
         public List<String> getProtocolActionNames()

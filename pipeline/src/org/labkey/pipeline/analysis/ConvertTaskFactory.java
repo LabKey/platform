@@ -26,7 +26,6 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * <code>ConvertTaskFactory</code> a task for converting from multiple possible
@@ -41,7 +40,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
 {
     private String _statusName = "CONVERSION";
     private TaskId[] _commands;
-    private FileType[] _initialTypes;
+    private List<FileType> _initialTypes;
     private FileType _outputType;
 
     public ConvertTaskFactory()
@@ -78,9 +77,9 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         for (TaskId tid : _commands)
         {
             TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
-            types.addAll(Arrays.asList(factory.getInputTypes()));
+            types.addAll(factory.getInputTypes());
         }
-        _initialTypes = types.toArray(new FileType[types.size()]);
+        _initialTypes = types;
     }
 
     public TaskId getActiveId(PipelineJob job)
@@ -111,7 +110,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         File fileInput = getInputFile(job);
         for (TaskId tid : _commands)
         {
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
+            TaskFactory<? extends TaskFactorySettings> factory = PipelineJobService.get().getTaskFactory(tid);
             for (FileType ft : factory.getInputTypes())
             {
                 if (ft.isType(fileInput))
@@ -138,7 +137,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         throw new UnsupportedOperationException("No task associated with " + getClass() + ".");
     }
 
-    public FileType[] getInputTypes()
+    public List<FileType> getInputTypes()
     {
         return _initialTypes;
     }
