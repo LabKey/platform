@@ -15,9 +15,12 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.reader.BeanTabLoader;
+import org.labkey.api.iterator.BeanIterator;
+import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.Filter;
+import org.labkey.api.iterator.IteratorUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,7 +39,8 @@ public class DataFaxVisitMapReader implements VisitMapReader
 
         try
         {
-            BeanTabLoader<VisitMapRecord> loader = new BeanTabLoader<VisitMapRecord>(VisitMapRecord.class, tsv, false);
+            TabLoader loader = new TabLoader(tsv, false);
+
             loader.setColumns(new ColumnDescriptor[]
             {
                 new ColumnDescriptor("sequenceRange", String.class),
@@ -51,7 +55,9 @@ public class DataFaxVisitMapReader implements VisitMapReader
                 new ColumnDescriptor("missedNotificationPlate", Integer.class),
                 new ColumnDescriptor("terminationWindow", String.class)
             });
-            loader.setMapFilter(new Filter<Map<String, Object>>()
+
+            // Apply a filter to the iterator
+            CloseableFilteredIterator<Map<String, Object>> filtered = new CloseableFilteredIterator<Map<String, Object>>(loader.iterator(), new Filter<Map<String, Object>>()
             {
                 public boolean accept(Map<String, Object> map)
                 {
@@ -59,7 +65,10 @@ public class DataFaxVisitMapReader implements VisitMapReader
                 }
             });
 
-            return loader.load();
+            // Convert to an iterator of VisitMapRecord beans
+            BeanIterator<VisitMapRecord> iterator = new BeanIterator<VisitMapRecord>(filtered, VisitMapRecord.class);
+
+            return IteratorUtil.toList(iterator);
         }
         catch (IOException x)
         {

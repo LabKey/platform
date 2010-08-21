@@ -22,20 +22,31 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.reader.BeanTabLoader;
+import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.validation.BindException;
@@ -43,11 +54,16 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 /**
@@ -124,11 +140,11 @@ public class TypesController extends SpringActionController
                 if (null != bytes && bytes.length > 0)
                 {
                     String tsv = new String(bytes, "UTF-8");
-                    List<Concept> concepts = TypesController.readVocabularyTSV(tsv);
-                    TypesController.importConcepts(name, concepts);
+                    CloseableIterator<Concept> concepts = TypesController.readVocabularyTSV(tsv);
+                    int count = TypesController.importConcepts(name, concepts);
 
                     successView = new HtmlView("Import Complete",
-                        "Successfully imported " + concepts.size() + " concepts.<br>" +
+                        "Successfully imported " + count + " concepts.<br>" +
                                 PageFlowUtil.generateButton("Search", "./findConcepts.view"));
                     return true;
                 }
@@ -435,17 +451,15 @@ public class TypesController extends SpringActionController
     }
 
 
-    public static List<Concept> readVocabularyTSV(String tsv)
+    public static CloseableIterator<Concept> readVocabularyTSV(String tsv)
             throws Exception
     {
-        BufferedReader r = new BufferedReader(new StringReader(tsv));
-        BeanTabLoader<Concept> loader = new BeanTabLoader<Concept>(Concept.class, r, true);
-        return loader.load();
+        TabLoader loader = new TabLoader(tsv);
+        return new BeanIterator<Concept>(loader.iterator(), Concept.class);
     }
 
 
-    public static void importConcepts(String prefix, List<Concept> concepts)
-            throws SQLException
+    public static int importConcepts(String prefix, CloseableIterator<Concept> concepts) throws SQLException, IOException
     {
         DbSchema expSchema = ExperimentService.get().getSchema();
         String like = expSchema.getSqlDialect().getCaseInsensitiveLikeOperator();
@@ -460,9 +474,12 @@ public class TypesController extends SpringActionController
 
             List<PropertyDescriptor> inserts = new ArrayList<PropertyDescriptor>();
             List<PropertyDescriptor> updates = new ArrayList<PropertyDescriptor>();
+            int conceptCount = 0;
 
-            for (Concept concept : concepts)
+            while (concepts.hasNext())
             {
+                conceptCount++;
+                Concept concept =  concepts.next();
                 PropertyDescriptor pd = concept.toPropertyDescriptor(prefix);
                 Integer propertyId = (Integer) propertyMap.get(pd.getPropertyURI());
                 if (null == propertyId)
@@ -478,13 +495,15 @@ public class TypesController extends SpringActionController
 
             OntologyManager.insertPropertyDescriptors(inserts);
             OntologyManager.updatePropertyDescriptors(updates);
-            
             expSchema.getScope().commitTransaction();
+
+            return conceptCount;
         }
         finally
         {
             expSchema.getScope().closeConnection();
             SEMANTIC_TYPES_CACHE.remove("Experiment-TypesController.getSemanticTypes");
+            concepts.close();
 
             OntologyManager.indexConcepts(null);
         }

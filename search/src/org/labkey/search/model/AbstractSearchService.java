@@ -1151,13 +1151,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         };
 
-        TempTableWriter ttl = new TempTableWriter(loader);
+        TempTableWriter ttw = new TempTableWriter(loader);
         DbSchema search = getSchema();
         Table.TempTableInfo tinfo = null;
 
         try
         {
-            tinfo = ttl.loadTempTable(search);
+            tinfo = ttw.loadTempTable(search);
             Date now = new Date(System.currentTimeMillis());
             Table.execute(search,
                     "UPDATE search.ParticipantIndex SET LastIndexed=? " +

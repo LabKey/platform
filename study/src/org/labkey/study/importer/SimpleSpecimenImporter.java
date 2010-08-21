@@ -19,9 +19,9 @@ package org.labkey.study.importer;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.study.Study;
@@ -207,7 +207,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     }
 
 
-    @Deprecated // Should convert SimpleSpecimenImporter to iterators only, not half map / half iterator
+    @Deprecated // Should convert SimpleSpecimenImporter to iterators only, not half list / half iterator
     private static class CloseableListIterator<K> implements CloseableIterator<K>
     {
         private final Iterator<K> _iter;
