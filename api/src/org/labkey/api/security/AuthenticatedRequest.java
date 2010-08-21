@@ -23,14 +23,13 @@ import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
 /**
- * Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Feb 5, 2009
-* Time: 8:51:07 AM
-*/
+ * User: matthewb
+ * Date: Feb 5, 2009
+ * Time: 8:51:07 AM
+ */
 public class AuthenticatedRequest extends HttpServletRequestWrapper
 {
-    User _user;
+    private final User _user;
 
     public AuthenticatedRequest(HttpServletRequest request, User user)
     {

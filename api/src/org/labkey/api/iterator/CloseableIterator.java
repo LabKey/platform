@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.util;
+package org.labkey.api.iterator;
 
 import java.util.Iterator;
 import java.io.Closeable;

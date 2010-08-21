@@ -116,5 +116,4 @@ public class LabKeyScope extends DbScope
             return 0L;
         }
     }
-
 }

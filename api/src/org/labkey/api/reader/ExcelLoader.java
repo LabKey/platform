@@ -25,8 +25,8 @@ import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CloseableIterator;
 
 import java.io.File;
 import java.io.IOException;

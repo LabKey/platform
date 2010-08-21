@@ -27,7 +27,7 @@ import java.util.List;
 // A loader of columnar data.   
 public interface Loader<T>
 {
-    //public CloseableIterator<Map<String, Object>> mapIterator();
+    //public CloseableIterator<Map<String, Object>> iterator();
     public ColumnDescriptor[] getColumns() throws IOException;
     public List<T> load() throws IOException;
 }

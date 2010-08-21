@@ -20,7 +20,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.util.CloseableIterator;
+import org.labkey.api.iterator.CloseableIterator;
 
 import java.io.IOException;
 import java.util.*;

@@ -25,9 +25,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
-import org.labkey.api.util.CloseableIterator;
-import org.labkey.api.util.Filter;
-import org.labkey.api.util.FilterIterator;
+import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.iterator.IteratorUtil;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -38,13 +37,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Abstract class for loading columnar data from different sources: TSVs, Excel files, etc.
+ * Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
  *
  * User: jgarms
  * Date: Oct 22, 2008
@@ -375,44 +373,15 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
      */
     public abstract CloseableIterator<T> iterator();
 
-    public static class CloseableFilterIterator<T> extends FilterIterator<T> implements CloseableIterator<T>
-    {
-        protected CloseableIterator<T> _iter;
-
-        public CloseableFilterIterator(CloseableIterator<T> iter, Filter<T> filter)
-        {
-            super(iter, filter);
-            _iter = iter;
-        }
-
-        public void close() throws IOException
-        {
-            _iter.close();
-        }
-    }
-
 
     /**
      * Returns a list of T records, one for each non-header row of the file.
      */
+    // Caution: Using this instead of iterating directly has lead to many scalability problems in the past.
+    // TODO: Migrate usages to iterator()
     public List<T> load() throws IOException
     {
-        getColumns();
-
-        List<T> rowList = new LinkedList<T>();
-        CloseableIterator<T> it = iterator();
-
-        try
-        {
-            while (it.hasNext())
-                rowList.add(it.next());
-        }
-        finally
-        {
-            it.close();
-        }
-
-        return rowList;
+        return IteratorUtil.toList(iterator());
     }
 
     public abstract void close();

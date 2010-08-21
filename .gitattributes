@@ -336,6 +336,11 @@ api/src/org/labkey/api/files/view/CustomizeFilesWebPartView.java -text
 api/src/org/labkey/api/files/view/FilesWebPart.java -text
 api/src/org/labkey/api/files/view/customizeWebPart.jsp -text
 api/src/org/labkey/api/files/view/fileContent.jsp -text
+api/src/org/labkey/api/iterator/BeanIterator.java -text
+api/src/org/labkey/api/iterator/CloseableFilteredIterator.java -text
+api/src/org/labkey/api/iterator/CloseableIterator.java -text
+api/src/org/labkey/api/iterator/FilteredIterator.java -text
+api/src/org/labkey/api/iterator/IteratorUtil.java -text
 api/src/org/labkey/api/jsp/ContextPage.java -text
 api/src/org/labkey/api/jsp/FormPage.java -text
 api/src/org/labkey/api/jsp/JspBase.java -text
@@ -566,8 +571,6 @@ api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
-api/src/org/labkey/api/reader/BeanIterator.java -text
-api/src/org/labkey/api/reader/BeanTabLoader.java -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
@@ -873,7 +876,6 @@ api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
 api/src/org/labkey/api/util/CSRFException.java -text
 api/src/org/labkey/api/util/CSRFUtil.java -text
-api/src/org/labkey/api/util/CloseableIterator.java -text
 api/src/org/labkey/api/util/ConfigurationException.java -text
 api/src/org/labkey/api/util/ContainerContext.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text
@@ -889,7 +891,6 @@ api/src/org/labkey/api/util/FileStream.java -text
 api/src/org/labkey/api/util/FileType.java -text
 api/src/org/labkey/api/util/FileUtil.java -text
 api/src/org/labkey/api/util/Filter.java -text
-api/src/org/labkey/api/util/FilterIterator.java -text
 api/src/org/labkey/api/util/FolderDisplayMode.java -text
 api/src/org/labkey/api/util/Formats.java -text
 api/src/org/labkey/api/util/GUID.java -text

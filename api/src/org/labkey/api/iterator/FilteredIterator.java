@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.util;
+package org.labkey.api.iterator;
+
+import org.labkey.api.util.Filter;
 
 import java.util.NoSuchElementException;
 import java.util.Iterator;
@@ -23,13 +25,13 @@ import java.util.Iterator;
  * Date: Apr 10, 2009
  * Time: 9:54:36 AM
  */
-public class FilterIterator<T> implements Iterator<T>
+public class FilteredIterator<T> implements Iterator<T>
 {
     private Iterator<T> _iterator;
     private Filter<T> _filter;
     private T _next;
 
-    public FilterIterator(Iterator<T> iterator, Filter<T> filter)
+    public FilteredIterator(Iterator<T> iterator, Filter<T> filter)
     {
         _iterator = iterator;
         _filter = filter;

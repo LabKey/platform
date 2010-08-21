@@ -16,7 +16,7 @@
 package org.labkey.api.reader;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.util.CloseableIterator;
+import org.labkey.api.iterator.CloseableIterator;
 
 import java.util.Map;
 import java.io.File;

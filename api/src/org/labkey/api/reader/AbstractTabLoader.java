@@ -24,7 +24,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.CloseableIterator;
+import org.labkey.api.iterator.BeanIterator;
+import org.labkey.api.iterator.CloseableFilteredIterator;
+import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.Filter;
 
 import java.io.*;
@@ -33,17 +35,12 @@ import java.util.regex.Pattern;
 
 
 /**
- * TabLoader will load tab-delimited text into an array of objects.
- * Client can specify a bean class to load the objects into. If the class is java.util.Map
- * an Array
+ * Parses rows of tab-delimited text, returning a CloseableIterator of Map<String, Object>.  The iterator must be closed
+ * (typically in a finally block) to close the underlying input source.  The iterator can be wrapped with a BeanIterator
+ * (to provide beans) and/or a CloseableFilteredIterator (to filter the iterator).
  * <p/>
- * NOTE: If a loader is been used to load an array of maps you should NOT change the column descriptors.
- * A single set of column descriptors is used to key all the maps. (ISSUE: Should probably use
- * ArrayListMap or clone the column desciptors instead).
- * <p/>
- * UNDONE: Would like to overflow bean properties into a map if the bean also implements map.
- * <p/>
- * UNDONE: Should probably integrate in some way with ObjectFactory
+ * NOTE: Column descriptors should not be changed in the midst of iterating; a single set of column descriptors is used
+ * to key all the maps.
  * <p/>
  * User: migra
  * Date: Jun 28, 2004
@@ -142,11 +139,10 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         return new BufferedReader(new FileReader(_file));
     }
 
-    public Map getComments() throws IOException
+    public Map<String, String> getComments() throws IOException
     {
         ensureInitialized();
 
-        //noinspection unchecked
         return Collections.unmodifiableMap(_comments);
     }
 
@@ -319,6 +315,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         return listParse.toArray(new String[listParse.size()]);
     }
 
+    @Deprecated // Just use a CloseableFilteredIterator.  TODO: Remove
     public void setMapFilter(Filter<Map<String, Object>> mapFilter)
     {
         _mapFilter = mapFilter;
@@ -340,7 +337,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         if (null == _mapFilter)
             return iter;
         else
-            return new CloseableFilterIterator<Map<String, Object>>(iter, _mapFilter);
+            return new CloseableFilteredIterator<Map<String, Object>>(iter, _mapFilter);
     }
 
 
@@ -639,17 +636,26 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         public void testObject() throws Exception
         {
-            File tsv = _createTempFile(tsvData, ".tsv");
-            BeanTabLoader<TestRow> loader = new BeanTabLoader<TestRow>(TestRow.class, tsv);
+            TabLoader tl = new TabLoader(tsvData);
+            CloseableIterator<TestRow> iter = new BeanIterator<TestRow>(tl.iterator(), TestRow.class);
 
-            List<TestRow> rows = loader.load();
+            assertTrue(iter.hasNext());
+            TestRow firstRow = iter.next();
 
-            assertTrue(rows.size() == 7);
-
-            TestRow firstRow = rows.get(0);
             assertEquals(firstRow.getScan(), 96);
             assertFalse(firstRow.isAccurateMZ());
             assertEquals(firstRow.getDescription(), "description");
+
+            int count = 1;
+
+            while (iter.hasNext())
+            {
+                iter.next();
+                count++;
+            }
+
+            iter.close();
+            assertTrue(count == 7);
         }
 
         public void testUnescape() throws Exception

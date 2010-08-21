@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.reader;
+package org.labkey.api.iterator;
 
-import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.data.ObjectFactory;
 
-import java.util.Map;
 import java.io.IOException;
+import java.util.Map;
 
 /**
 * User: adam
