@@ -45,7 +45,7 @@ public class SampleRequestRequirement extends DefaultRequirement<SampleRequestRe
 
     public SampleRequestRequirement()
     {
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
     protected void verifyMutability()

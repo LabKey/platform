@@ -317,6 +317,7 @@ public class StudyManager
         Study oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, new Object[] { study.getContainer() });
+
         if (oldStudy.getTimepointType() == TimepointType.DATE && !study.getStartDate().equals(oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
@@ -2066,7 +2067,7 @@ public class StudyManager
 
     private List<Map<String, Object>> parseData(User user,
                                    DataSetDefinition def,
-                                   DataLoader<Map<String, Object>> loader,
+                                   DataLoader loader,
                                    Map<String, String> columnMap,
                                    List<String> errors)
             throws ServletException, IOException
@@ -2176,7 +2177,7 @@ public class StudyManager
         return loader.load();
     }
 
-    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader<Map<String, Object>> loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
+    public List<String> importDatasetData(Study study, User user, DataSetDefinition def, DataLoader loader, long lastModified, Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger)
             throws IOException, ServletException, SQLException
     {
         List<Map<String, Object>> dataMaps = parseData(user, def, loader, columnMap, errors);

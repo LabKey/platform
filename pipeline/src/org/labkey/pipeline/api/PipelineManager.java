@@ -51,9 +51,10 @@ public class PipelineManager
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
     private static PipelineRoot NULL_ROOT;
 
-    static {
+    static
+    {
         NULL_ROOT = new PipelineRoot();
-        MemTracker.remove(NULL_ROOT);
+        assert MemTracker.remove(NULL_ROOT);
     }
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)

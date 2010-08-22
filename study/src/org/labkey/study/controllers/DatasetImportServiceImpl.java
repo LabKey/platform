@@ -74,8 +74,8 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         }
 
         List<String> errors = new ArrayList<String>();
+        DataLoader loader = getDataLoader();
 
-        DataLoader<Map<String, Object>> loader = getDataLoader();
         try
         {
             StudyManager.getInstance().importDatasetData(

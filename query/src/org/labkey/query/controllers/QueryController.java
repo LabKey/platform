@@ -715,10 +715,24 @@ public class QueryController extends SpringActionController
 
             Connection con = scope.getConnection();
             DatabaseMetaData dbmd = con.getMetaData();
-            ResultSet md = dbmd.getColumns(null, _schemaName, _tableName, null);
-            ModelAndView metaDataView = new ResultSetView(md, "Table Meta Data");
-            ResultSet pk = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
-            ModelAndView pkView = new ResultSetView(pk, "Primary Key Meta Data");
+
+            ResultSet columnsRs;
+
+            if (scope.getSqlDialect().treatCatalogsAsSchemas())
+                columnsRs = dbmd.getColumns(_schemaName, null, _tableName, null);
+            else
+                columnsRs = dbmd.getColumns(null, _schemaName, _tableName, null);
+
+            ModelAndView metaDataView = new ResultSetView(new CachedRowSetImpl(columnsRs, 0), "Table Meta Data");
+
+            ResultSet pksRs;
+
+            if (scope.getSqlDialect().treatCatalogsAsSchemas())
+                pksRs = dbmd.getPrimaryKeys(_schemaName, null, _tableName);
+            else
+                pksRs = dbmd.getPrimaryKeys(null, _schemaName, _tableName);
+
+            ModelAndView pkView = new ResultSetView(new CachedRowSetImpl(pksRs, 0), "Primary Key Meta Data");
             scope.releaseConnection(con);
 
             return new VBox(scopeInfo, metaDataView, pkView);
@@ -748,11 +762,17 @@ public class QueryController extends SpringActionController
 
             Connection con = scope.getConnection();
             DatabaseMetaData dma = con.getMetaData();
-            ResultSet rs = dma.getTables(null, _schemaName, null, null);
+            ResultSet rs;
+
+            if (scope.getSqlDialect().treatCatalogsAsSchemas())
+                rs = dma.getTables(_schemaName, null, null, null);
+            else
+                rs = dma.getTables(null, _schemaName, null, null);
+
             ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
             url.addParameter("schemaName", _schemaName);
             String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-            ModelAndView tableInfo = new ResultSetView(rs, "Tables", 3, tableLink);
+            ModelAndView tableInfo = new ResultSetView(new CachedRowSetImpl(rs, 0), "Tables", 3, tableLink);
             scope.releaseConnection(con);
 
             return new VBox(scopeInfo, tableInfo);

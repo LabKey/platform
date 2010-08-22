@@ -98,7 +98,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                 mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
             }
         }
-        DataLoader<Map<String, Object>> loader = null;
+        DataLoader loader = null;
         try
         {
 

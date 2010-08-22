@@ -135,7 +135,7 @@ public class SqlParser
                 return null;
 
             Node parseRoot = (Node) parser.getAST();
-            MemTracker.put(parseRoot);
+            assert MemTracker.put(parseRoot);
             if (null == parseRoot)
                 return null;
 

@@ -454,7 +454,8 @@ public class Query
 			}
 		}
 
-        Object t = null;
+        Object t;
+
         try
         {
             if (schema instanceof UserSchema)
@@ -515,19 +516,15 @@ public class Query
 	//
 	// TESTING
 	//
-
-
-
-    private static class TestDataLoader extends DataLoader<Map<String,Object>>
+    private static class TestDataLoader extends DataLoader
     {
-        static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid", "createdby", "created"};
-        static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string", "int", "date"};
-        static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-        static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+        private static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid", "createdby", "created"};
+        private static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string", "int", "date"};
+        private static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
-        String[][] data;
-        ArrayListMap<String,Object> templateRow = new ArrayListMap<String,Object>();
-
+        private String[][] data;
+        private ArrayListMap<String, Object> templateRow = new ArrayListMap<String, Object>();
 
 		// UNDONE: need some NULLS in here
         @SuppressWarnings({"UnusedAssignment"})
@@ -834,6 +831,9 @@ public class Query
 
     public static class TestCase extends junit.framework.TestCase
     {
+        private String hash = GUID.makeHash();
+        private QuerySchema lists;
+
         public TestCase()
         {
             super();
@@ -843,11 +843,6 @@ public class Query
         {
             super(name);
         }
-
-
-        String hash = GUID.makeHash();
-        QuerySchema lists;
-
 
 		Container getSubfolder()
 		{

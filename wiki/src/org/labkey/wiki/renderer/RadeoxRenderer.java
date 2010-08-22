@@ -78,7 +78,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     public RadeoxRenderer()
     {
         super(new MyInitialRenderContext());
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
     // UNDONE: switch to format from prefix

@@ -1127,7 +1127,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     protected void indexPtids(final Set<Pair<String,String>> ptids) throws IOException, SQLException
     {
-        Loader<Map<String, Object>> loader = new Loader<Map<String, Object>>() {
+        Loader loader = new Loader() {
             @Override
             public ColumnDescriptor[] getColumns() throws IOException
             {

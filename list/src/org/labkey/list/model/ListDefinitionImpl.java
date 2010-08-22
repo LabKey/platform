@@ -334,7 +334,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader, @Nullable File attachmentDir, @Nullable ListImportProgress progress) throws IOException
+    public List<String> insertListItems(User user, DataLoader loader, @Nullable File attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
         List<String> errors = new LinkedList<String>();
         Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();

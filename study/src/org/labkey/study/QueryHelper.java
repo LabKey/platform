@@ -47,7 +47,7 @@ public class QueryHelper<K extends StudyCachable>
         try
         {
             _missMarker = objectClass.newInstance();
-            MemTracker.remove(_missMarker);
+            assert MemTracker.remove(_missMarker);
         }
         catch (Exception e)
         {

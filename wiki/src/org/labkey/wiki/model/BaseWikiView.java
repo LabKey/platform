@@ -37,10 +37,10 @@ import java.sql.SQLException;
 
 abstract class BaseWikiView extends JspView<Object>
 {
-    String _pageId = null;
-    int _index = 0;
-    Wiki _wiki = null;
-    WikiVersion _wikiVersion = null;
+    protected String _pageId = null;
+    protected int _index = 0;
+    protected Wiki _wiki = null;
+    protected WikiVersion _wikiVersion = null;
 
     protected BaseWikiView()
     {

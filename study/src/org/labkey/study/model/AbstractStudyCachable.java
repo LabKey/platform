@@ -29,7 +29,7 @@ public abstract class AbstractStudyCachable<T> implements StudyCachable<T>, Clon
 
     public AbstractStudyCachable()
     {
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
     protected void verifyMutability()

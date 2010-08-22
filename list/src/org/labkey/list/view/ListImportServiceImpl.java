@@ -74,7 +74,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             public Thread newThread(Runnable r)
             {
                 Thread t = new Thread(r, "List Import Background Thread");
-                MemTracker.put(t);
+                assert MemTracker.put(t);
                 return t;
             }
         });
@@ -85,10 +85,10 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         setContext(context.getJobId(), context);
 
         // Make sure these go away
-        MemTracker.put(executor);
-        MemTracker.put(future);
-        MemTracker.put(context);
-        MemTracker.put(progress);
+        assert MemTracker.put(executor);
+        assert MemTracker.put(future);
+        assert MemTracker.put(context);
+        assert MemTracker.put(progress);
 
         return context.getImportStatus();
     }
@@ -137,10 +137,10 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
     private class BackgroundListImporter implements Callable<List<String>>
     {
         private final ListDefinition _def;
-        private final DataLoader<Map<String, Object>> _loader;
+        private final DataLoader _loader;
         private final ListImportProgress _progress;
 
-        private BackgroundListImporter(ListDefinition def, DataLoader<Map<String, Object>> loader, ListImportProgress progress)
+        private BackgroundListImporter(ListDefinition def, DataLoader loader, ListImportProgress progress)
         {
             _def = def;
             _loader = loader;

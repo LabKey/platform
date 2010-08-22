@@ -243,7 +243,7 @@ public class UploadSamplesHelper
                             {
                                 uri = uri.substring(uri.indexOf("#") + 1);
                             }
-                            throw new ExperimentException("All rows must contain values for all Id columns:  Missing " + uri +
+                            throw new ExperimentException("All rows must contain values for all Id columns: Missing " + uri +
                                 " in row:  " + (i + 1));
                         }
                     }
