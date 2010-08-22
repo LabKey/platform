@@ -18,9 +18,13 @@ package org.labkey.api.security;
 
 import org.labkey.api.util.HString;
 
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.Map;
 
 /**
  * User: matthewb
@@ -58,5 +62,35 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
         for (int i=0 ; i<values.length ; i++)
             t[i] = new HString(values[i], true);
         return t;
+    }
+
+    // Methods below use reflection to pull Tomcat-specific implementation bits out of the request.  This can be helpful
+    // for low-level, temporary debugging, but it's not portable across servlet containers or versions.
+
+    public HttpServletRequest getInnermostRequest() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException
+    {
+        Object innerRequest = invokeMethod(this, HttpServletRequestWrapper.class, "_getHttpServletRequest");
+        return (HttpServletRequest)getFieldValue(innerRequest, "request");
+    }
+
+    public Map getAttributeMap() throws NoSuchFieldException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
+    {
+        return (Map)getFieldValue(getInnermostRequest(), "attributes");
+    }
+
+    // Uses reflection to access public or private fields by name.
+    private Object getFieldValue(Object o, String fieldName) throws NoSuchFieldException, IllegalAccessException
+    {
+        Field field = o.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return field.get(o);
+    }
+
+    // Uses reflection to invoke public or private methods by name.
+    private Object invokeMethod(Object o, Class clazz, String methodName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
+        Method method = clazz.getDeclaredMethod(methodName);
+        method.setAccessible(true);
+        return method.invoke(o);
     }
 }

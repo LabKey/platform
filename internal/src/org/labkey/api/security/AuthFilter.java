@@ -16,7 +16,6 @@
 
 package org.labkey.api.security;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
@@ -24,16 +23,22 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ViewServlet;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Enumeration;
 
 
+@SuppressWarnings({"UnusedDeclaration"})
 public class AuthFilter implements Filter
 {
-    private static final Logger _log = Logger.getLogger(AuthFilter.class);
     private static final Object FIRST_REQUEST_LOCK = new Object();
     private static boolean _firstRequestHandled = false;
 
@@ -47,6 +52,7 @@ public class AuthFilter implements Filter
     }
 
 
+    // This is the first (and last) LabKey code invoked on a request.
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
         ViewServlet.setAsRequestThread();
@@ -105,6 +111,23 @@ public class AuthFilter implements Filter
         }
 
         chain.doFilter(req, resp);
+
+        // Clear all the request attributes that have been set.  This helps memtracker.  See #10747.
+        assert clearRequestAttributes(req);
+    }
+
+
+    private boolean clearRequestAttributes(HttpServletRequest request)
+    {
+        Enumeration attributeNames = request.getAttributeNames();
+
+        while (attributeNames.hasMoreElements())
+        {
+            String name = (String)attributeNames.nextElement();
+            request.removeAttribute(name);
+        }
+
+        return true;
     }
 
 
