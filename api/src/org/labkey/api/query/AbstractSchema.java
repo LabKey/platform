@@ -34,7 +34,7 @@ abstract public class AbstractSchema implements QuerySchema
         _dbSchema = dbSchema;
         _user = user;
         _container = container;
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
     public DbSchema getDbSchema()

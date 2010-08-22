@@ -62,7 +62,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
 
     public List<InferencedColumn> inferenceColumns() throws ImportException
     {
-        DataLoader<Map<String, Object>> loader = getDataLoader();
+        DataLoader loader = getDataLoader();
 
         try
         {
@@ -102,7 +102,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     }
 
     @NotNull
-    protected DataLoader<Map<String, Object>> getDataLoader() throws ImportException
+    protected DataLoader getDataLoader() throws ImportException
     {
         try
         {
@@ -118,7 +118,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
         }
     }
 
-    private List<InferencedColumn> getColumns(DataLoader<Map<String, Object>> loader) throws ImportException
+    private List<InferencedColumn> getColumns(DataLoader loader) throws ImportException
     {
         List<InferencedColumn> result = new ArrayList<InferencedColumn>();
 

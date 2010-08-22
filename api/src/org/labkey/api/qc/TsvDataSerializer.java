@@ -82,7 +82,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 
     public List<Map<String, Object>> importRunData(ExpProtocol protocol, File runData) throws Exception
     {
-        DataLoader<Map<String, Object>> loader = new TabLoader(runData, true);
+        DataLoader loader = new TabLoader(runData, true);
         return loader.load();
     }
 }

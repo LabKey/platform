@@ -578,7 +578,6 @@ api/src/org/labkey/api/reader/FastaLoader.java -text
 api/src/org/labkey/api/reader/Loader.java -text
 api/src/org/labkey/api/reader/MapLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
-api/src/org/labkey/api/reader/TabLoader.java -text
 api/src/org/labkey/api/reader/TestRow.java -text
 api/src/org/labkey/api/reader/XMLStreamReaderWrapper.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngine.java -text

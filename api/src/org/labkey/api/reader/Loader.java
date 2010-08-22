@@ -17,6 +17,7 @@ package org.labkey.api.reader;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -25,9 +26,9 @@ import java.util.List;
  */
 
 // A loader of columnar data.   
-public interface Loader<T>
+public interface Loader
 {
-    //public CloseableIterator<Map<String, Object>> iterator();
     public ColumnDescriptor[] getColumns() throws IOException;
-    public List<T> load() throws IOException;
+    public List<Map<String, Object>> load() throws IOException;
+    //public CloseableIterator<Map<String, Object>> iterator();
 }

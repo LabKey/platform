@@ -87,7 +87,7 @@ public interface FileStream
         public void closeInputStream() throws IOException
         {
             IOUtils.closeQuietly(in);
-            MemTracker.remove(in);
+            assert MemTracker.remove(in);
             in = null;
         }
 
@@ -106,13 +106,13 @@ public interface FileStream
         public FileFileStream(File f) throws IOException
         {
             in = new FileInputStream(f);
-            MemTracker.put(in);
+            assert MemTracker.put(in);
         }
 
         public FileFileStream(FileInputStream fin) throws IOException
         {
             in = fin;
-            MemTracker.put(in);
+            assert MemTracker.put(in);
         }
 
         public long getSize() throws IOException
@@ -128,7 +128,7 @@ public interface FileStream
         public void closeInputStream() throws IOException
         {
             IOUtils.closeQuietly(in);
-            MemTracker.remove(in);
+            assert MemTracker.remove(in);
             in = null;
         }
 

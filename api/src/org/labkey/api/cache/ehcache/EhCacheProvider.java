@@ -94,7 +94,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
 
         // Memtrack temporary caches to ensure they're destroyed
         if (temporary)
-            MemTracker.put(ehCache);
+            assert MemTracker.put(ehCache);
 
         return new EhBasicCache<K, V>(ehCache);
     }

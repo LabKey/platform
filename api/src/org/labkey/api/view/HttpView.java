@@ -249,7 +249,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         _viewContext = context;
         setView(this);
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
 

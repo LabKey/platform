@@ -38,7 +38,7 @@ import java.util.*;
  * User: jgarms
  * Date: Oct 22, 2008
  */
-public class ExcelLoader extends DataLoader<Map<String, Object>>
+public class ExcelLoader extends DataLoader
 {
     private final Workbook workbook;
 
@@ -199,6 +199,7 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
 
         public void close() throws IOException
         {
+            super.close();
         }
     }
 

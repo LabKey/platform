@@ -43,23 +43,28 @@ public class MemTracker
 
     static class AllocationInfo
     {
+        private final StackTraceElement[] _stackTrace;
+        private final long _threadId;
+        private final long _allocTime;
+
         AllocationInfo()
         {
-            _exception = new Exception();
-            _threadId = Thread.currentThread().getId();
-            _allocTime = System.currentTimeMillis();
+            this(Thread.currentThread().getStackTrace(), Thread.currentThread().getId(), System.currentTimeMillis());
         }
-        long _threadId;
-        long _allocTime;
-        Exception _exception;
+
+        AllocationInfo(StackTraceElement[] stackTrace, long threadId, long allocTime)
+        {
+            _stackTrace = stackTrace;
+            _threadId = threadId;
+            _allocTime = allocTime;
+        }
 
         public String getHtmlStack()
         {
-            StackTraceElement[] stack = _exception.getStackTrace();
             StringBuilder builder = new StringBuilder();
-            for (int i = 3; i < stack.length; i++)
+            for (int i = 3; i < _stackTrace.length; i++)
             {
-                String line = stack[i].toString();
+                String line = _stackTrace[i].toString();
                 builder.append(PageFlowUtil.filter(line)).append("<br>\r\n");
                 if (line.contains("org.labkey.api.view.ViewServlet.service"))
                     break;
@@ -85,10 +90,8 @@ public class MemTracker
 
         private HeldReference(Object held, AllocationInfo allocationInfo)
         {
+            super(allocationInfo._stackTrace, allocationInfo._threadId, allocationInfo._allocTime);
             _reference = held;
-            _threadId = allocationInfo._threadId;
-            _allocTime = allocationInfo._allocTime;
-            _exception = allocationInfo._exception;
         }
         
 

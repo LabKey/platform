@@ -97,11 +97,13 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
         if (_bulkProperties == null)
         {
             String tsv = getRawBulkProperties();
+
             try
             {
                 TabLoader loader = new TabLoader(tsv, true);
                 List<Map<String, Object>> maps = loader.load();
                 _bulkProperties = new ArrayList<Map<String, Object>>(maps.size());
+
                 for (Map<String, Object> map : maps)
                 {
                     _bulkProperties.add(new CaseInsensitiveHashMap<Object>(map));
@@ -114,13 +116,16 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
             }
 
             Set<String> identifiers = new CaseInsensitiveHashSet();
+
             for (Map<String, Object> row : _bulkProperties)
             {
                 String identifier = row.get(getIdentifierColumnName()) == null ? null : row.get(getIdentifierColumnName()).toString();
+
                 if (identifier == null || identifier.equals(""))
                 {
                     throw new ExperimentException("All rows must have a " + getIdentifierColumnName() + " value.");
                 }
+
                 if (!identifiers.add(identifier))
                 {
                     throw new ExperimentException("Duplicate " + getIdentifierColumnName() + " value '" + identifier +
@@ -128,6 +133,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
                 }
             }
         }
+
         return _bulkProperties;
     }
 

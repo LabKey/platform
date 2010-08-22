@@ -31,7 +31,7 @@ import java.io.IOException;
 
 public class BoundMap extends AbstractMap<String, Object> implements Serializable
 {
-    private static final HashMap<Class, HashMap<String,BoundProperty>> _savedPropertyMaps = new HashMap<Class, HashMap<String, BoundProperty>>();
+    private static final HashMap<Class, HashMap<String, BoundProperty>> _savedPropertyMaps = new HashMap<Class, HashMap<String, BoundProperty>>();
 
     protected Object _bean;
     transient protected HashMap<String, Object> _map = new HashMap<String, Object>();

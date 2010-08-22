@@ -34,14 +34,14 @@ import java.util.Map;
  * Date: Jun 12, 2006
  * Time: 3:42:15 PM
  *
- * Creates a temp table from columns and data sourced from any Loader<Map<String, Object>>.  Should work with TSV files,
- * Excel files, and custom-built loaders.
+ * Creates a temp table from columns and data sourced from any Loader.  Should work with TSV files, Excel files, and
+ * custom-built loaders.
  */
 public class TempTableWriter
 {
-    private final Loader<Map<String, Object>> _loader;
+    private final Loader _loader;
 
-    public TempTableWriter(Loader<Map<String, Object>> loader) throws IOException
+    public TempTableWriter(Loader loader) throws IOException
     {
         _loader = loader;
     }

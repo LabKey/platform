@@ -42,13 +42,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
- *
  * User: jgarms
  * Date: Oct 22, 2008
  * Time: 11:26:37 AM
  */
-public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
+
+// Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
+public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader
 {
     private static final Logger _log = Logger.getLogger(DataLoader.class);
 
@@ -85,12 +85,12 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
         _mvIndicatorContainer = mvIndicatorContainer;
     }
 
-    public static DataLoader<Map<String, Object>> getDataLoaderForFile(File file) throws ServletException, IOException
+    public static DataLoader getDataLoaderForFile(File file) throws ServletException, IOException
     {
         return getDataLoaderForFile(file, null);
     }
 
-    public static DataLoader<Map<String, Object>> getDataLoaderForFile(File file, Container mvIndicatorContainer) throws ServletException, IOException
+    public static DataLoader getDataLoaderForFile(File file, Container mvIndicatorContainer) throws ServletException, IOException
     {
         String filename = file.getName();
 
@@ -371,7 +371,7 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
     /**
      * Returns an iterator over the data
      */
-    public abstract CloseableIterator<T> iterator();
+    public abstract CloseableIterator<Map<String, Object>> iterator();
 
 
     /**
@@ -379,13 +379,12 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
      */
     // Caution: Using this instead of iterating directly has lead to many scalability problems in the past.
     // TODO: Migrate usages to iterator()
-    public List<T> load() throws IOException
+    public List<Map<String, Object>> load() throws IOException
     {
         return IteratorUtil.toList(iterator());
     }
 
     public abstract void close();
-
 
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
@@ -395,11 +394,12 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
 
         private Object[] fields = null;
         private Map<String, Object> values = null;
-        private int lineNum = 0;
+        private int _lineNum = 0;
+        private boolean _closed = false;
 
         protected DataLoaderIterator(int lineNum, boolean skipEmpty) throws IOException
         {
-            this.lineNum = lineNum;
+            this._lineNum = lineNum;
             this.skipEmpty = skipEmpty;
 
             // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
@@ -429,11 +429,12 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
 
         public int lineNum()
         {
-            return lineNum;
+            return _lineNum;
         }
 
         protected abstract Object[] readFields() throws IOException;
 
+        @Override
         public Map<String, Object> next()
         {
             if (values == null)
@@ -443,6 +444,7 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
             return next;
         }
 
+        @Override
         public boolean hasNext()
         {
             if (fields != null)
@@ -458,7 +460,7 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
                         close();
                         return false;
                     }
-                    lineNum++;
+                    _lineNum++;
 
                     values = convertValues();
                     if (values == Collections.EMPTY_MAP && skipEmpty)
@@ -600,7 +602,7 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
                                 sb.append("'");
                             }
                             sb.append(" from line #");
-                            sb.append(lineNum);
+                            sb.append(_lineNum);
                             sb.append(" in column #");
                             sb.append(i + 1);
                             sb.append(" (");
@@ -649,16 +651,34 @@ public abstract class DataLoader<T> implements Iterable<T>, Loader<T>
                 }
 
                 if (null != _file)
-                    _log.error("failed loading file " + _file.getName() + " at line: " + lineNum + " " + e, e);
+                    _log.error("failed loading file " + _file.getName() + " at line: " + _lineNum + " " + e, e);
             }
             
             return null;
         }
 
 
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException("'remove()' is not defined for TabLoaderIterator");
+        }
+
+
+        @Override
+        public void close() throws IOException
+        {
+            assert !_closed;
+
+            _closed = true;
+        }
+
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            assert _closed;
+            super.finalize();
         }
     }
 }

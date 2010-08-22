@@ -28,7 +28,7 @@ import java.util.*;
 /**
  * kevink
  */
-public class MapLoader extends DataLoader<Map<String, Object>>
+public class MapLoader extends DataLoader
 {
     String[] headers;
     Object[][] data;
@@ -124,6 +124,7 @@ public class MapLoader extends DataLoader<Map<String, Object>>
 
         public void close() throws IOException
         {
+            super.close();
         }
     }
 

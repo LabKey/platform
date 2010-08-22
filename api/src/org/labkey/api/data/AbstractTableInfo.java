@@ -86,7 +86,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         _schema = schema;
         _columnMap = constructColumnMap();
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
 

@@ -69,7 +69,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         setBean(this);
         _viewContext = context;
         setErrors(errors);
-        MemTracker.put(this);
+        assert MemTracker.put(this);
     }
 
     protected RenderContext()

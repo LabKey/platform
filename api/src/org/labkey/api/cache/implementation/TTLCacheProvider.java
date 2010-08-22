@@ -44,7 +44,7 @@ public class TTLCacheProvider implements CacheProvider
 
         // No one should be holding onto temporary caches
         if (temporary)
-            MemTracker.put(cache);
+            assert MemTracker.put(cache);
 
         return cache;
     }
