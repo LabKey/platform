@@ -90,7 +90,7 @@ public class ExcelWriter
     }
 
 
-    public ExcelWriter(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap, List<DisplayColumn> displayColumns)
+    public ExcelWriter(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns)
     {
         setResultSet(rs, fieldMap);
         addDisplayColumns(displayColumns);
@@ -125,7 +125,7 @@ public class ExcelWriter
         _rs = rs;
     }
 
-    public void setResultSet(ResultSet rs, Map<FieldKey,ColumnInfo> fieldMap)
+    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = rs;
         _fieldMap = fieldMap;

@@ -1016,7 +1016,9 @@ api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
 api/src/org/labkey/api/writer/Archive.java -text
 api/src/org/labkey/api/writer/ContainerUser.java -text
+api/src/org/labkey/api/writer/FastaWriter.java -text
 api/src/org/labkey/api/writer/FileSystemFile.java -text
+api/src/org/labkey/api/writer/ResultSetFastaEntryIterator.java -text
 api/src/org/labkey/api/writer/VirtualFile.java -text
 api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text

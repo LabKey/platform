@@ -668,8 +668,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public void close() throws IOException
         {
-//            assert !_closed;
-
             _closed = true;
         }
 
@@ -677,8 +675,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         protected void finalize() throws Throwable
         {
-//            assert _closed;
             super.finalize();
+            // assert _closed;  TODO: Uncomment to force all callers to close iterator.
         }
     }
 }

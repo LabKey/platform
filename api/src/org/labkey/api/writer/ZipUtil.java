@@ -47,7 +47,7 @@ public class ZipUtil
     }
 
 
-    // Unzip an archive to the specified directory; log each file if Loggger is non-null
+    // Unzip an archive to the specified directory; log each file if Logger is non-null
     public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
     {
         InputStream is = new FileInputStream(zipFile);
@@ -55,7 +55,7 @@ public class ZipUtil
     }
 
 
-    // Unzip all entries to the specified directory; log each file if Loggger is non-null
+    // Unzip all entries to the specified directory; log each file if Logger is non-null
     public static List<File> unzipToDirectory(Enumeration<? extends ZipEntry> entries, File unzipDir, InputStream zis, @Nullable Logger log) throws IOException
     {
         List<File> files = new ArrayList<File>();
@@ -98,7 +98,7 @@ public class ZipUtil
     }
 
 
-    // Unzip an input stream the specified directory; log each file if Loggger is non-null
+    // Unzip an input stream to the specified directory; log each file if Logger is non-null
     public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
     {
         List<File> files = null;

@@ -199,7 +199,7 @@ public class ExcelLoader extends DataLoader
 
         public void close() throws IOException
         {
-            super.close();
+            super.close();       // TODO: Shouldn't this close the workbook?
         }
     }
 
