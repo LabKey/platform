@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -24,10 +25,7 @@ import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -1803,6 +1801,217 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    public static class MeasuresForm
+    {
+        private String _schema;
+        private String _query;
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getSchema()
+        {
+            return _schema;
+        }
+
+        public void setSchema(String schema)
+        {
+            _schema = schema;
+        }
+
+        public String getQuery()
+        {
+            return _query;
+        }
+
+        public void setQuery(String query)
+        {
+            _query = query;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetMeasuresAction extends ApiAction<MeasuresForm>
+    {
+        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
+
+            for (String schemaName : getSchemaNames(form))
+            {
+                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    continue;
+
+                if (schema instanceof UserSchema)
+                {
+                    UserSchema uschema = (UserSchema)schema;
+
+                    for (String tableName : getTableNames(form, uschema))
+                    {
+                        TableInfo tinfo = uschema.getTable(tableName);
+
+                        if (tinfo == null)
+                            continue;
+
+                        for (ColumnInfo col : tinfo.getColumns())
+                        {
+                            if (col.isMeasure())
+                            {
+                                // add measure properties
+                                Map<String, Object> props = getColumnProps(col);
+
+                                props.put("schemaName", schemaName);
+                                props.put("queryName", tableName);
+
+                                measures.add(props);
+                            }
+                        }
+                    }
+                }
+                resp.put("success", true);
+                resp.put("measures", measures);
+            }
+
+            return resp;
+        }
+
+        protected Set<String> getSchemaNames(MeasuresForm form)
+        {
+            if (form.getSchema() != null)
+                return Collections.singleton(form.getSchema());
+            else
+            {
+                DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
+                return defSchema.getUserSchemaNames();
+            }
+        }
+
+        protected Set<String> getTableNames(MeasuresForm form, UserSchema schema)
+        {
+            if (form.getQuery() != null)
+                return Collections.singleton(form.getQuery());
+            else
+                return schema.getTableNames();
+        }
+
+        protected Map<String, Object> getColumnProps(ColumnInfo col)
+        {
+            Map<String, Object> props = new HashMap<String, Object>();
+
+            props.put("name", col.getName());
+            props.put("label", col.getLabel());
+            props.put("type", col.getSqlTypeName());
+            props.put("description", col.getDescription());
+
+            return props;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetDimensionsAction extends GetMeasuresAction
+    {
+        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            List<Map<String, Object>> dimensions = new ArrayList<Map<String, Object>>();
+
+            if (form.getSchema() != null && form.getQuery() != null)
+            {
+                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchema());
+
+                if (schema instanceof UserSchema)
+                {
+                    UserSchema uschema = (UserSchema)schema;
+                    TableInfo tinfo = uschema.getTable(form.getQuery());
+
+                    if (tinfo != null)
+                    {
+                        for (ColumnInfo col : tinfo.getColumns())
+                        {
+                            if (col.isDimension())
+                            {
+                                // add measure properties
+                                Map<String, Object> props = getColumnProps(col);
+
+                                props.put("schemaName", form.getSchema());
+                                props.put("queryName", form.getQuery());
+
+                                dimensions.add(props);
+                            }
+                        }
+                    }
+                }
+                resp.put("success", true);
+                resp.put("dimensions", dimensions);
+            }
+            else
+                throw new IllegalArgumentException("schema and query are required parameters");
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetDimensionValues extends GetMeasuresAction
+    {
+        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            if (form.getName() != null && form.getSchema() != null && form.getQuery() != null)
+            {
+                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchema());
+                List<String> values = new ArrayList<String>();
+
+                if (schema instanceof UserSchema)
+                {
+                    UserSchema uschema = (UserSchema)schema;
+                    TableInfo tinfo = uschema.getTable(form.getQuery());
+
+                    if (tinfo != null)
+                    {
+                        ColumnInfo col = tinfo.getColumn(form.getName());
+                        if (col != null)
+                        {
+                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), null, null, Table.ALL_ROWS, 0);
+
+                            Table.TableResultSet rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
+                            Iterator<Map<String, Object>> it = rs.iterator();
+
+                            while (it.hasNext())
+                            {
+                                Map<String, Object> row = it.next();
+
+                                if (row.containsKey(col.getName()))
+                                {
+                                    Object o = row.get(col.getName());
+                                    if (o != null)
+                                        values.add(ConvertUtils.convert(o));
+                                }
+                            }
+                        }
+                    }
+                }
+                resp.put("success", true);
+                resp.put("values", values);
+            }
+            else
+                throw new IllegalArgumentException("name, schema and query are required parameters");
+
+            return resp;
         }
     }
 }
