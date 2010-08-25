@@ -804,27 +804,33 @@ public class StudyController extends BaseStudyController
 
             if (!isSnapshot)
             {
-                if (!isAssayDataset && (user.isAdministrator() || canWrite)) // admins always get the import, manage and delete buttons
+                if (!isAssayDataset) // admins always get the import and manage buttons
                 {
-                    // manage dataset
-                    ActionButton manageButton = new ActionButton(new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _datasetId), "Manage Dataset");
-                    manageButton.setDisplayModes(DataRegion.MODE_GRID);
-                    manageButton.setActionType(ActionButton.Action.LINK);
-                    manageButton.setDisplayPermission(InsertPermission.class);
-                    buttonBar.add(manageButton);
+                    if ((user.isAdministrator() || canWrite))
+                    {
+                        // manage dataset
+                        ActionButton manageButton = new ActionButton(new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _datasetId), "Manage Dataset");
+                        manageButton.setDisplayModes(DataRegion.MODE_GRID);
+                        manageButton.setActionType(ActionButton.Action.LINK);
+                        manageButton.setDisplayPermission(InsertPermission.class);
+                        buttonBar.add(manageButton);
 
-                    // bulk import
-                    ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                    uploadButton.setDisplayPermission(InsertPermission.class);
-                    buttonBar.add(uploadButton);
+                        // bulk import
+                        ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                        uploadButton.setDisplayPermission(InsertPermission.class);
+                        buttonBar.add(uploadButton);
+                    }
 
-                    ActionButton deleteRows = new ActionButton("button", "Delete");
-                    ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
-                    deleteRows.setURL(deleteRowsURL);
-                    deleteRows.setRequiresSelection(true, "Delete selected rows of this dataset?");
-                    deleteRows.setActionType(ActionButton.Action.POST);
-                    deleteRows.setDisplayPermission(DeletePermission.class);
-                    buttonBar.add(deleteRows);
+                    if (canWrite)
+                    {
+                        ActionButton deleteRows = new ActionButton("button", "Delete");
+                        ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
+                        deleteRows.setURL(deleteRowsURL);
+                        deleteRows.setRequiresSelection(true, "Delete selected rows of this dataset?");
+                        deleteRows.setActionType(ActionButton.Action.POST);
+                        deleteRows.setDisplayPermission(DeletePermission.class);
+                        buttonBar.add(deleteRows);
+                    }
                 }
                 else if (isAssayDataset)
                 {

@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -30,6 +31,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryServiceImpl;
@@ -114,6 +116,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                     gwtColumnInfo.setLookupQuery(fk.getLookupTableName());
                 }
             }
+            List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
+            gwtColumnInfo.setConditionalFormats(formats);
         }
 
         QueryDef queryDef = QueryServiceImpl.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
@@ -202,6 +206,16 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                             gwtColumnInfo.setLookupQuery(column.getFk().getFkTable());
                             gwtColumnInfo.setLookupSchema(column.getFk().getFkDbSchema());
                         }
+                        if (column.isSetConditionalFormats())
+                        {
+                            List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXml(column.getConditionalFormats());
+                            List<GWTConditionalFormat> gwtFormats = new ArrayList<GWTConditionalFormat>();
+                            for (ConditionalFormat serverFormat : serverFormats)
+                            {
+                                gwtFormats.add(new GWTConditionalFormat(serverFormat));
+                            }
+                            gwtColumnInfo.setConditionalFormats(gwtFormats);
+                        }
                         if (column.getWrappedColumnName() != null)
                         {
                             injectedColumnNames.add(column.getColumnName());
@@ -230,6 +244,16 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         gwtTableInfo.setMandatoryFieldNames(builtInColumnNames);
         gwtTableInfo.setFields(orderedPDs);
         return gwtTableInfo;
+    }
+
+    private List<GWTConditionalFormat> convertToGWT(List<ConditionalFormat> formats)
+    {
+        List<GWTConditionalFormat> result = new ArrayList<GWTConditionalFormat>();
+        for (ConditionalFormat format : formats)
+        {
+            result.add(new GWTConditionalFormat(format));
+        }
+        return result;
     }
 
     private TableType getTableType(String name, TablesDocument doc)
@@ -475,6 +499,42 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 xmlColumn.unsetFk();
             }
 
+            // Always clear it out the conditional formats if they've been set
+            if (xmlColumn.isSetConditionalFormats())
+            {
+                xmlColumn.unsetConditionalFormats();
+            }
+            // Set the conditional formats
+            if (shouldStoreValue(gwtColumnInfo.getConditionalFormats(), convertToGWT(rawColumnInfo.getConditionalFormats())))
+            {
+                ColumnType.ConditionalFormats xmlFormats = xmlColumn.addNewConditionalFormats();
+                for (GWTConditionalFormat format : gwtColumnInfo.getConditionalFormats())
+                {
+                    ConditionalFormatType xmlFormat = xmlFormats.addNewConditionalFormat();
+                    xmlFormat.setFilter(format.getFilter());
+                    if (format.isBold())
+                    {
+                        xmlFormat.setBold(true);
+                    }
+                    if (format.isItalic())
+                    {
+                        xmlFormat.setItalics(true);
+                    }
+                    if (format.isStrikethrough())
+                    {
+                        xmlFormat.setStrikethrough(true);
+                    }
+                    if (format.getBackgroundColor() != null)
+                    {
+                        xmlFormat.setBackgroundColor(format.getBackgroundColor());
+                    }
+                    if (format.getTextColor() != null)
+                    {
+                        xmlFormat.setColor(format.getTextColor());
+                    }
+                }
+            }
+
             if (xmlColumn.getWrappedColumnName() == null)
             {
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
@@ -566,7 +626,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         }
     }
 
-    private boolean shouldStoreValue(String userValue, String defaultValue)
+    private boolean shouldStoreValue(Object userValue, Object defaultValue)
     {
         return userValue != null && !userValue.equals(defaultValue);
     }

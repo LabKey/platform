@@ -21,6 +21,7 @@ import com.google.gwt.user.client.ui.*;
 import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.ui.property.ConditionalFormatItem;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.ui.property.DimensionItem;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
@@ -159,16 +160,21 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 
     protected List<PropertyPane<GWTTableInfo, GWTColumnInfo>> createPropertyPanes(DockPanel propertyDock)
     {
+        PropertyPane<GWTTableInfo, GWTColumnInfo> formatPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Format");
+        formatPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(formatPane));
+        formatPane.addItem(new ConditionalFormatItem<GWTTableInfo, GWTColumnInfo>(formatPane));
+
         PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new URLItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
-        propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new VisibilityItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new MeasureItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new DimensionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));
+
         List<PropertyPane<GWTTableInfo, GWTColumnInfo>> result = new ArrayList<PropertyPane<GWTTableInfo, GWTColumnInfo>>();
         result.add(propertyPane);
+        result.add(formatPane);
         return result;
     }
 
