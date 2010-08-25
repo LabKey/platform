@@ -102,6 +102,12 @@ public class SimpleFilter implements Filter
 
         abstract public List<String> getColumnNames();
 
+        /** @return whether the value meets the criteria of this filter */
+        public boolean meetsCriteria(Object value)
+        {
+            return false;
+        }
+
         public abstract SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect);
     }
 
@@ -185,6 +191,11 @@ public class SimpleFilter implements Filter
             
             return sqlFragment;
         }
+
+        protected List<FilterClause> getClauses()
+        {
+            return _clauses;
+        }
     }
 
     public static class OrClause extends OperationClause
@@ -193,6 +204,19 @@ public class SimpleFilter implements Filter
         {
             super(" OR ", clauses);
         }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            for (FilterClause clause : getClauses())
+            {
+                if (clause.meetsCriteria(value))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     public static class AndClause extends OperationClause
@@ -200,6 +224,19 @@ public class SimpleFilter implements Filter
         public AndClause(FilterClause... clauses)
         {
             super(" AND ", clauses);
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            for (FilterClause clause : getClauses())
+            {
+                if (!clause.meetsCriteria(value))
+                {
+                    return false;
+                }
+            }
+            return !getClauses().isEmpty();
         }
     }
 
@@ -229,6 +266,12 @@ public class SimpleFilter implements Filter
             sqlFragment.append(_clause.toSQLFragment(columnMap, dialect));
             sqlFragment.append(")");
             return sqlFragment;
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            return !_clause.meetsCriteria(value);
         }
     }
 

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +44,24 @@ public enum CompareType
             FilterClause createFilterClause(String colName, Object value)
             {
                 return new EqualsCompareClause(colName, this, value);
-            }},
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                if (value == null)
+                {
+                    return filterValues[0] == null;
+                }
+                // First try with no type conversion
+                if (value.equals(filterValues[0]))
+                {
+                    return true;
+                }
+                // Then try converting to the same type
+                return value.equals(convert(filterValues[0], value.getClass()));
+            }
+        },
     DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL")
         {
             public CompareClause createFilterClause(String colName, Object value)
@@ -64,6 +82,12 @@ public enum CompareType
             {
                 return new NotEqualOrNullClause(colName, value);
             }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
+            }
         },
     NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL")
         {
@@ -71,12 +95,25 @@ public enum CompareType
             FilterClause createFilterClause(String colName, Object value)
             {
                 return new NotEqualsCompareClause(colName, this, value);
-            }},
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return !CompareType.EQUAL.meetsCriteria(value, filterValues);
+            }
+        },
     ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
                 return super.createFilterClause(colName, null);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null;
             }
         },
     NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING")
@@ -85,23 +122,105 @@ public enum CompareType
             {
                 return super.createFilterClause(colName, null);
             }
-        },
-    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN"),
-    LT("Is Less Than", "lt", true, " < ?", "LESS_THAN"),
-    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL"),
-    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL"),
-    CONTAINS("Contains", "contains", true, null, "CONTAINS")
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
             {
-                public CompareClause createFilterClause(String colName, Object value)
+                return value != null;
+            }
+        },
+    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN")
+        {
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                if (value == null || !(value instanceof Comparable))
                 {
-                    return new ContainsClause(colName, value);
+                    return false;
                 }
-            },
+                Object filterValue = convert(filterValues[0], value.getClass());
+                if (filterValue == null)
+                {
+                    return false;
+                }
+                return ((Comparable)value).compareTo(filterValue) > 0;
+            }
+        },
+    LT("Is Less Than", "lt", true, " < ?", "LESS_THAN")
+        {
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                if (value == null || !(value instanceof Comparable))
+                {
+                    return false;
+                }
+                Object filterValue = convert(filterValues[0], value.getClass());
+                if (filterValue == null)
+                {
+                    return false;
+                }
+                return ((Comparable)value).compareTo(filterValue) < 0;
+            }
+        },
+    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL")
+        {
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                if (value == null || !(value instanceof Comparable))
+                {
+                    return false;
+                }
+                Object filterValue = convert(filterValues[0], value.getClass());
+                if (filterValue == null)
+                {
+                    return false;
+                }
+                return ((Comparable)value).compareTo(filterValue) >= 0;
+            }
+        },
+    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL")
+        {
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                if (value == null || !(value instanceof Comparable))
+                {
+                    return false;
+                }
+                Object filterValue = convert(filterValues[0], value.getClass());
+                if (filterValue == null)
+                {
+                    return false;
+                }
+                return ((Comparable)value).compareTo(filterValue) <= 0;
+            }
+        },
+    CONTAINS("Contains", "contains", true, null, "CONTAINS")
+        {
+            public CompareClause createFilterClause(String colName, Object value)
+            {
+                return new ContainsClause(colName, value);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value != null && value.toString().indexOf((String)filterValues[0]) != -1;
+            }
+        },
     DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN")
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
                     return new DoesNotContainClause(colName, value);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] filterValues)
+                {
+                    return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
                 }
             },
     DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH")
@@ -110,12 +229,24 @@ public enum CompareType
                 {
                     return new DoesNotStartWithClause(colName, value);
                 }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] filterValues)
+                {
+                    return value == null || !value.toString().startsWith((String)filterValues[0]);
+                }
             },
     STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH")
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
                     return new StartsWithClause(colName, value);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] filterValues)
+                {
+                    return value != null && value.toString().startsWith((String)filterValues[0]);
                 }
             },
     IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "EQUALS_ONE_OF")
@@ -159,7 +290,6 @@ public enum CompareType
                     return new QcClause(colName, true);
                 }
             };
-
 
     // TODO: Better exception handling?
     protected CompareClause getDateCompareClause(String colName, Object value)
@@ -259,6 +389,25 @@ public enum CompareType
         return types;
     }
 
+    private static <T> T convert(Object value, Class<T> targetClass)
+    {
+        if (value == null || targetClass.isInstance(value))
+        {
+            return (T)value;
+        }
+
+        Converter converter = ConvertUtils.lookup(targetClass);
+        if (converter != null)
+        {
+            try
+            {
+                return (T)converter.convert(targetClass, value);
+            }
+            catch (ConversionException e) {}
+        }
+        return null;
+    }
+
     public static CompareType getByURLKey(String urlKey)
     {
         for (CompareType type : values())
@@ -299,6 +448,11 @@ public enum CompareType
         return _scriptName;
     }
 
+    public boolean meetsCriteria(Object value, Object[] paramVals)
+    {
+        return false;
+    }
+    
     // Each compare type uses CompareClause by default
     FilterClause createFilterClause(String colName, Object value)
     {
@@ -372,6 +526,12 @@ public enum CompareType
         public CompareType getComparison()
         {
             return _comparison;
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            return getComparison().meetsCriteria(value, getParamVals());
         }
     }
 

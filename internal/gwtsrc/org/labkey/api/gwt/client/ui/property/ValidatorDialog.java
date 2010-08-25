@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
+import com.google.gwt.event.dom.client.KeyPressEvent;
+import com.google.gwt.event.dom.client.KeyPressHandler;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.ui.WidgetUpdatable;
@@ -70,9 +72,9 @@ abstract public class ValidatorDialog extends DialogBox
                     updatable.update(sender);
                 }
             });
-            addKeyboardListener(new KeyboardListenerAdapter()
+            addKeyPressHandler(new KeyPressHandler()
             {
-                public void onKeyPress(Widget sender, char keyCode, int modifiers)
+                public void onKeyPress(KeyPressEvent e)
                 {
                     //setDirty(true);
                 }

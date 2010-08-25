@@ -286,8 +286,6 @@ public class JsonWriter
         colModel.put("sortable", "true");
         if(colInfo.getTextAlign() != null)
             colModel.put("align", colInfo.getTextAlign());
-        if (colInfo.getCssClass() != null)
-            colModel.put("css", colInfo.getCssClass());
         if (colInfo.getLabel() != null)
             colModel.put("header", colInfo.getLabel());
         if (colInfo.getDescription() != null)

@@ -86,13 +86,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String sqlTypeName;
     private int sqlTypeInt = Types.NULL;
     private String textAlign = null;
-    private String cssClass;
-    private String cssStyle;
     private ForeignKey fk = null;
     private String defaultValue = null;
-    private String autoFillValue = null;
     private int scale = 0;
-    private int precision = 0;
     private boolean isAutoIncrement = false;
     private boolean isKeyField = false;
     private boolean isReadOnly = false;
@@ -104,6 +100,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;
+    private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _lockName = false;
@@ -233,7 +230,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         // and the remaining
         setUserEditable(col.isUserEditable());
         setNullable(col.isNullable());
-        setAutoFillValue(col.getAutoFillValue());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
         setSqlTypeName(col.getSqlTypeName());
@@ -254,7 +250,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (col.label != null)
             setLabel(col.getLabel());
-        setCssClass(col.getCssClass());
         setDefaultValue(col.getDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
@@ -436,24 +431,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.textAlign = textAlign;
     }
 
-    public String getCssClass()
-    {
-        return cssClass;
-    }
-
-    public String getCssStyle()
-    {
-        return cssStyle;
-    }
-
     public String getDefaultValue()
     {
         return defaultValue;
-    }
-
-    public String getAutoFillValue()
-    {
-        return autoFillValue;
     }
 
     public ColumnInfo getDisplayField()
@@ -804,6 +784,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         if (xmlCol.isSetImportAliases())
             importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
+
+        if (xmlCol.isSetConditionalFormats())
+        {
+            conditionalFormats = ConditionalFormat.convertFromXml(xmlCol.getConditionalFormats());
+        }
     }
 
     public static String labelFromName(String name)
@@ -1283,18 +1268,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return sqlTypeInt;
     }
 
-    public void setCssClass(String cssClass)
-    {
-        this.cssClass = cssClass;
-    }
-
-
-    public void setCssStyle(String cssStyle)
-    {
-        this.cssStyle = cssStyle;
-    }
-
-
     public ForeignKey getFk()
     {
         return fk;
@@ -1313,28 +1286,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    public void setAutoFillValue(String autoFillValue)
-    {
-        this.autoFillValue = autoFillValue;
-    }
-
-
     public void setScale(int scale)
     {
         this.scale = scale;
     }
 
-
-    public int getPrecision()
-    {
-        return precision;
-    }
-
-
-    public void setPrecision(int precision)
-    {
-        this.precision = precision;
-    }
 
     public boolean isKeyField()
     {
@@ -1441,5 +1397,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public boolean isLookup()
     {
         return getFk() != null;
+    }
+
+    public List<ConditionalFormat> getConditionalFormats()
+    {
+        return conditionalFormats;
+    }
+
+    public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
+    {
+        this.conditionalFormats = conditionalFormats;
     }
 }

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -619,11 +620,6 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException, SQLException
     {
-        renderGridDataCell(ctx, out, null);
-    }
-
-    public void renderGridDataCell(RenderContext ctx, Writer out, String style) throws IOException, SQLException
-    {
         out.write("<td");
         if (_displayClass != null)
         {
@@ -634,20 +630,27 @@ public abstract class DisplayColumn extends RenderColumn
             out.write(" align=");
             out.write(_textAlign);
         }
-        if (style != null)
+        String style = getCssStyle(ctx);
+        if (!style.isEmpty())
         {
             out.write(" style='");
             out.write(style);
             out.write("'");
         }
-        if (_nowrap)
-            out.write(" nowrap>");
-        else
-            out.write(">");
+        out.write(">");
         renderGridCellContents(ctx, out);
         out.write("</td>");
     }
 
+    @NotNull /** Always return a non-null string to make it easy to concatenate values */
+    protected String getCssStyle(RenderContext ctx)
+    {
+        if (_nowrap)
+        {
+            return "white-space:nowrap;";
+        }
+        return "";
+    }
 
     public String getCaption()
     {

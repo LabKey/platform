@@ -15,10 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.resource.Resource;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.OntologyType;
@@ -26,7 +23,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
 import java.io.InputStream;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -54,59 +50,6 @@ public class TableXmlUtils
         return xmlTablesDoc;
     }
 
-    // Unused: TODO: Delete?
-    public static void loadMapsFromTableXml(String dbSchemaName, Map<String, String> tableNameMap, Map<String, String> columnNameMap)
-    {
-        InputStream xmlStream = null;
-
-        try
-        {
-
-            Resource r = DbSchema.getSchemaResource(dbSchemaName);
-            if (null != r)
-                xmlStream = r.getInputStream();
-            if (null == xmlStream)
-            {
-                _log.debug("No xml tables doc found for " + dbSchemaName);
-                return;
-            }
-
-            TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
-            // todo: cache these tableDocs so DbSchema.get doesn't have to reload them
-
-            TableType[] ts = tablesDoc.getTables().getTableArray();
-            ColumnType[] cs;
-
-            Map<String, String> ttempMap = new CaseInsensitiveHashMap<String>(ts.length);
-            Map<String, String> ctempMap;
-            for (TableType t : ts)
-            {
-                ttempMap.put(t.getTableName(), t.getTableName());
-                cs = t.getColumns().getColumnArray();
-                ctempMap = new CaseInsensitiveHashMap<String>(cs.length);
-                for (ColumnType c : cs)
-                    ctempMap.put(c.getColumnName(), c.getColumnName());
-
-                columnNameMap.putAll(ctempMap);
-            }
-            tableNameMap.putAll(ttempMap);
-        }
-        catch (Exception e)
-        {
-            _log.log(Level.ERROR, "Exception loading schema " + dbSchemaName, e);
-        }
-        finally
-        {
-            try
-            {
-                if (null != xmlStream) xmlStream.close();
-            }
-            catch (Exception x)
-            {
-            }
-        }
-    }
-
     public static String compareXmlToMetaData(String dbSchemaName, boolean bFull, boolean bCaseSensitive)
     {
         StringBuilder sbOut = new StringBuilder();
@@ -131,7 +74,7 @@ public class TableXmlUtils
         }
         catch (Exception e)
         {
-            _log.log(Priority.ERROR, "Exception loading schema " + dbSchemaName, e);
+            _log.error("Exception loading schema " + dbSchemaName, e);
             return "+++ ERROR: Exception " + e.getMessage();
         }
         finally

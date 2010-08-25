@@ -138,6 +138,7 @@ api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedRowSetImpl.java -text
 api/src/org/labkey/api/data/ColumnRenderProperties.java -text
 api/src/org/labkey/api/data/CompareType.java -text
+api/src/org/labkey/api/data/ConditionalFormat.java -text
 api/src/org/labkey/api/data/ConnectionWrapper.java -text
 api/src/org/labkey/api/data/ContainerDisplayColumn.java -text
 api/src/org/labkey/api/data/ContainerFilter.java -text
@@ -2345,6 +2346,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/model/GWTChartRenderer.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonGroup.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonMember.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonResult.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/model/GWTConditionalFormat.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTDomain.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTMaterial.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
@@ -2401,6 +2403,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ProgressBar.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ResizableWidget.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/incubator/ResizableWidgetCollection.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/CheckboxItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ConditionalFormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DimensionItem.java -text

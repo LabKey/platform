@@ -247,8 +247,6 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         colModel.put("editable", !"file".equals(colInfo.getInputType()) && isEditable(dc));
         colModel.put("required", !colInfo.isNullable());
         colModel.put("hidden", colInfo.isHidden() || colInfo.isAutoIncrement()); //auto-incr list key columns return false for isHidden(), so check isAutoIncrement as well
-        if (colInfo.getCssClass() != null)
-            colModel.put("css", colInfo.getCssClass());
         if(dc.getTextAlign() != null)
             colModel.put("align", dc.getTextAlign());
         if (dc.getCaption() != null)

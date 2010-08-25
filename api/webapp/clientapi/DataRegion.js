@@ -948,7 +948,6 @@ function setFilterQueryString(s)
     _filterQueryString = s;
 }
 
-
 function getFilterDiv()
 {
     if (!_filterDiv)
@@ -967,10 +966,10 @@ function getFilterDiv()
         '        </select><br>' +
         '        <input disabled style="visibility:hidden" id="value_2" type="text" name="value_2"><br><br>' +
         '        </span>' +
-        '        <a class="labkey-button" href="#" onclick="doFilter();return false;"><span>OK</span> ' +
-        '        <a class="labkey-button" href="#" onclick="hideFilterDiv();return false;"><span>Cancel</span> ' +
-        '        <a class="labkey-button" href="#" onclick="clearFilter();return false;"><span>Clear Filter</span> ' +
-        '        <a class="labkey-button" href="#" onclick="clearAllFilters();return false;"><span>Clear All Filters</span> ' +
+        '        <a class="labkey-button" id="filterPanelOKButton" href="#" onclick="doFilter();return false;"><span>OK</span> ' +
+        '        <a class="labkey-button" id="filterPanelCancelButton" href="#" onclick="hideFilterDiv();return false;"><span>Cancel</span> ' +
+        '        <a class="labkey-button" id="filterPanelClearFilterButton" href="#" onclick="clearFilter();return false;"><span>Clear Filter</span> ' +
+        '        <a class="labkey-button" id="filterPanelClearAllFiltersButton" href="#" onclick="clearAllFilters();return false;"><span>Clear All Filters</span> ' +
         '      </td>' +
         '    </tr>' +
         '  </table>' +
@@ -1005,14 +1004,33 @@ function doChange(obj)
 }
 
 
-function showFilterPanel(elem, tableName, colName, caption, dataType, mvEnabled)
+function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, confirmCallback)
 {
     _fieldName = colName;
     _fieldCaption = caption;
-    _tableName = tableName;
+    _tableName = dataRegionName;
     fillOptions(dataType, mvEnabled);
 
-    var queryString = LABKEY.DataRegions[tableName] ? LABKEY.DataRegions[tableName].requestURL : null;
+    if (!queryString)
+    {
+        queryString = LABKEY.DataRegions[dataRegionName] ? LABKEY.DataRegions[dataRegionName].requestURL : null;
+    }
+
+    if (!confirmCallback)
+    {
+        // Invoked as part of a regular filter dialog on a grid
+        changeFilterCallback = changeFilter;
+        document.getElementById("filterPanelClearAllFiltersButton").style.display=undefined;
+        document.getElementById("filterPanelClearFilterButton").style.display=undefined;
+    }
+    else
+    {
+        // Invoked from GWT, which will handle the commit itself
+        changeFilterCallback = confirmCallback;
+        document.getElementById("filterPanelClearAllFiltersButton").style.display="none";
+        document.getElementById("filterPanelClearFilterButton").style.display="none";
+    }
+
     var paramValPairs = getParamValPairs(queryString, null);
     //Fill in existing filters...
     var filterIndex = 1;
@@ -1402,10 +1420,17 @@ function clearAllFilters()
     setSearchString(_tableName, buildQueryString(newParamValPairs));
 }
 
+function changeFilter(newParamValPairs, newQueryString)
+{
+    var dr = LABKEY.DataRegions[_tableName];
+    if (false === dr.fireEvent("beforefilterchange", dr, newParamValPairs))
+        return;
+
+    setSearchString(_tableName, newQueryString);
+}
+
 function doFilter()
 {
-    hideFilterDiv();
-
     var queryString = LABKEY.DataRegions[_tableName] ? LABKEY.DataRegions[_tableName].requestURL : null;
     var newParamValPairs = getParamValPairs(queryString, [_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
     var iNew = newParamValPairs.length;
@@ -1414,19 +1439,21 @@ function doFilter()
     if (null == comparisons)
         return;
 
+    hideFilterDiv();
+
     for (var i = 0; i < comparisons.length; i++)
     {
         newParamValPairs[iNew] = comparisons[i];
         iNew ++;
     }
 
-    var dr = LABKEY.DataRegions[_tableName];
-    if (false === dr.fireEvent("beforefilterchange", dr, newParamValPairs))
-        return;
+    var newQueryString = buildQueryString(newParamValPairs);
+    var filterParamsString = buildQueryString(comparisons);
 
-    //alert("new: " +buildQueryString(newParamValPairs));
-    setSearchString(_tableName, buildQueryString(newParamValPairs));
+    changeFilterCallback.call(this, newParamValPairs, newQueryString, filterParamsString);
 }
+
+var changeFilterCallback = doFilter;
 
 function getValidComparesFromForm(formIndex, newParamValPairs)
 {

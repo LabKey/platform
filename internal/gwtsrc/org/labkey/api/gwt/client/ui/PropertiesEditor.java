@@ -318,8 +318,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         PropertyPane<DomainType, FieldType> displayPane = new PropertyPane<DomainType, FieldType>(this, "Display");
         displayPane.addItem(new DescriptionItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
-        displayPane.addItem(new FormatItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
+
+        PropertyPane<DomainType, FieldType> formatPane = new PropertyPane<DomainType, FieldType>(this, "Format");
+        formatPane.addItem(new FormatItem<DomainType, FieldType>(formatPane));
+        formatPane.addItem(new ConditionalFormatItem<DomainType, FieldType>(formatPane));
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
@@ -335,6 +338,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
         result.add(displayPane);
+        result.add(formatPane);
         result.add(validatorPane);
         result.add(advancedPane);
         return result;

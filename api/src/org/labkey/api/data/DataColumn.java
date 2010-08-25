@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
@@ -41,7 +42,6 @@ public class DataColumn extends DisplayColumn
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
     private ColumnInfo _sortColumn;
-    private Sort.SortDirection _defaultSort = Sort.SortDirection.ASC;
     private ColumnInfo _filterColumn;
 
     private String _inputType;
@@ -61,7 +61,6 @@ public class DataColumn extends DisplayColumn
         }
         _nowrap = _displayColumn.isNoWrap();
         _sortColumn = _displayColumn.getSortField();
-        _defaultSort = _displayColumn.getSortDirection();
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
@@ -162,16 +161,6 @@ public class DataColumn extends DisplayColumn
         return _sortColumn != null;
     }
 
-    public Sort.SortDirection getDefaultSortDirection()
-    {
-        return _defaultSort;
-    }
-
-    public void setDefaultSortDirection(Sort.SortDirection dir)
-    {
-        _defaultSort =  dir;
-    }
-
     public Object getValue(RenderContext ctx)
     {
         Object result = ctx.get(_boundColumn.getFieldKey());
@@ -224,6 +213,13 @@ public class DataColumn extends DisplayColumn
                     out.write(linkTarget);
                 }
 
+                String css = getCssStyle(ctx);
+                if (!css.isEmpty())
+                {
+                    out.write("\" style=\"");
+                    out.write(css);
+                }
+
                 out.write("\">");
             }
 
@@ -240,7 +236,7 @@ public class DataColumn extends DisplayColumn
     {
         if (_filterColumn == null)
             return;
-        out.write("showFilterPanel(this, ");
+        out.write("showFilterPanel(");
         out.write(PageFlowUtil.jsString(ctx.getCurrentRegion().getName()));
         out.write(", ");
         out.write(PageFlowUtil.jsString(_filterColumn.getName()));
@@ -310,6 +306,13 @@ public class DataColumn extends DisplayColumn
                     out.write(linkTarget);
                 }
 
+                String css = getCssStyle(ctx);
+                if (!css.isEmpty())
+                {
+                    out.write("\" style=\"");
+                    out.write(css);
+                }
+                
                 out.write("\">");
             }
 
@@ -330,10 +333,24 @@ public class DataColumn extends DisplayColumn
             return null;
         return super.renderURL(ctx);
     }
-    
+
+    @Override @NotNull
+    protected String getCssStyle(RenderContext ctx)
+    {
+        for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
+        {
+            Object value = ctx.get(_displayColumn.getFieldKey());
+            if (format.meetsCriteria(value))
+            {
+                return format.getCssStyle();
+            }
+        }
+        return "";
+    }
 
     public String getFormattedValue(RenderContext ctx)
     {
+        StringBuilder sb = new StringBuilder();
         Object value = ctx.get(_displayColumn.getFieldKey());
         if (value == null)
         {
@@ -344,23 +361,28 @@ public class DataColumn extends DisplayColumn
         {
             if (_displayColumn != _boundColumn)
             {
-                return PageFlowUtil.filter("<" + _boundColumn.getValue(ctx) + ">");
+                sb.append(PageFlowUtil.filter("<" + _boundColumn.getValue(ctx) + ">"));
             }
-            return "";
         }
-        String formatted;
-        if (null != _format)
-            formatted = _format.format(value);
-        else if (_htmlFiltered)
-            formatted = PageFlowUtil.filter(ConvertUtils.convert(value));
         else
-            formatted = ConvertUtils.convert(value);
+        {
+            String formatted;
+            if (null != _format)
+                formatted = _format.format(value);
+            else if (_htmlFiltered)
+                formatted = PageFlowUtil.filter(ConvertUtils.convert(value));
+            else
+                formatted = ConvertUtils.convert(value);
 
-        if (formatted.length() == 0)
-            formatted = "&nbsp;";
-        else if (_preserveNewlines)
-            formatted = formatted.replaceAll("\\n", "<br>\n");
-        return formatted;
+            if (formatted.length() == 0)
+                formatted = "&nbsp;";
+            else if (_preserveNewlines)
+                formatted = formatted.replaceAll("\\n", "<br>\n");
+
+            sb.append(formatted);
+        }
+
+        return sb.toString();
     }
 
     protected boolean isDisabledInput()

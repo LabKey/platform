@@ -71,6 +71,7 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
+    private List<GWTConditionalFormat> conditionalFormats = new ArrayList<GWTConditionalFormat>();
 
     public GWTPropertyDescriptor()
     {
@@ -116,6 +117,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
             validators.add(new GWTPropertyValidator(v));
+        }
+
+        for (GWTConditionalFormat f : s.getConditionalFormats())
+        {
+            conditionalFormats.add(new GWTConditionalFormat(f));
         }
     }
 
@@ -440,14 +446,12 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isMeasure() != that.isMeasure()) return false;
         if (isDimension() != that.isDimension()) return false;
 
-        if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
-        GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
-        GWTPropertyValidator[] prev = that.getPropertyValidators().toArray(new GWTPropertyValidator[that.getPropertyValidators().size()]);
-
-        for (int i=0; i < cur.length; i++)
+        if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
+        if (!getConditionalFormats().equals(that.getConditionalFormats()))
         {
-            if (!cur[i].equals(prev[i])) return false;
+            return false;
         }
+
         return true;
     }
 
@@ -531,6 +535,16 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setPropertyValidators(List<GWTPropertyValidator> validators)
     {
         this.validators = validators;
+    }
+
+    public List<GWTConditionalFormat> getConditionalFormats()
+    {
+        return conditionalFormats;
+    }
+
+    public void setConditionalFormats(List<GWTConditionalFormat> conditionalFormats)
+    {
+        this.conditionalFormats = conditionalFormats;
     }
 
     public String getImportAliases()
