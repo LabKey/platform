@@ -15,6 +15,8 @@
  */
 package org.labkey.api.reader;
 
+import org.labkey.api.iterator.CloseableIterator;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -30,5 +32,5 @@ public interface Loader
 {
     public ColumnDescriptor[] getColumns() throws IOException;
     public List<Map<String, Object>> load() throws IOException;
-    //public CloseableIterator<Map<String, Object>> iterator();
+    public CloseableIterator<Map<String, Object>> iterator();
 }

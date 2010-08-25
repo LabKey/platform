@@ -17,19 +17,16 @@
 package org.labkey.api.collections;
 
 import java.io.Serializable;
-import java.util.Map;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.Collection;
+import java.util.Map;
 
-public class CaseInsensitiveMapWrapper<V> implements Map<String, V>, Serializable
+public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implements Serializable
 {
-    Map<String, V> _map;
-    Map<String, String> _correctCaseMap;
+    private final Map<String, String> _correctCaseMap;
 
     public CaseInsensitiveMapWrapper(Map<String, V> map)
     {
-        _map = map;
+        super(map);
         _correctCaseMap = new HashMap<String, String>();
         for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
         {
@@ -82,47 +79,11 @@ public class CaseInsensitiveMapWrapper<V> implements Map<String, V>, Serializabl
         _correctCaseMap.clear();
     }
 
-    public boolean containsValue(Object value)
-    {
-        return _map.containsValue(value);
-    }
-
-    public Set<Entry<String, V>> entrySet()
-    {
-        return _map.entrySet();
-    }
-
-    public boolean isEmpty()
-    {
-        return _map.isEmpty();
-    }
-
-    public Set<String> keySet()
-    {
-        return _map.keySet();
-    }
-
     public void putAll(Map<? extends String, ? extends V> t)
     {
         for (Map.Entry<? extends String, ? extends V> entry : t.entrySet())
         {
             put(entry.getKey(), entry.getValue());
         }
-    }
-
-    public int size()
-    {
-        return _map.size();
-    }
-
-    public Collection<V> values()
-    {
-        return _map.values();
-    }
-
-    @Override
-    public String toString()
-    {
-        return _map.toString();
     }
 }

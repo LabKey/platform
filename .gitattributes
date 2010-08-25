@@ -117,6 +117,7 @@ api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
 api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/Join.java -text
+api/src/org/labkey/api/collections/MapWrapper.java -text
 api/src/org/labkey/api/collections/MultiValueMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
 api/src/org/labkey/api/collections/ResultSetRowMapFactory.java -text
@@ -1018,7 +1019,7 @@ api/src/org/labkey/api/writer/Archive.java -text
 api/src/org/labkey/api/writer/ContainerUser.java -text
 api/src/org/labkey/api/writer/FastaWriter.java -text
 api/src/org/labkey/api/writer/FileSystemFile.java -text
-api/src/org/labkey/api/writer/ResultSetFastaEntryIterator.java -text
+api/src/org/labkey/api/writer/ResultSetFastaGenerator.java -text
 api/src/org/labkey/api/writer/VirtualFile.java -text
 api/src/org/labkey/api/writer/Writer.java -text
 api/src/org/labkey/api/writer/WriterFactory.java -text

@@ -388,19 +388,19 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     protected abstract class DataLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
-        protected final ColumnDescriptor[] activeColumns;
-        private final RowMapFactory<Object> factory;
-        private final boolean skipEmpty;
+        protected final ColumnDescriptor[] _activeColumns;
+        private final RowMapFactory<Object> _factory;
+        private final boolean _skipEmpty;
 
-        private Object[] fields = null;
-        private Map<String, Object> values = null;
+        private Object[] _fields = null;
+        private Map<String, Object> _values = null;
         private int _lineNum = 0;
         private boolean _closed = false;
 
         protected DataLoaderIterator(int lineNum, boolean skipEmpty) throws IOException
         {
-            this._lineNum = lineNum;
-            this.skipEmpty = skipEmpty;
+            _lineNum = lineNum;
+            _skipEmpty = skipEmpty;
 
             // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
             ColumnDescriptor[] allColumns = getColumns();
@@ -410,19 +410,19 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 if (column.load)
                     active.add(column);
 
-            activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
+            _activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
             Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
 
-            for (int i = 0; i < activeColumns.length; i++)
+            for (int i = 0; i < _activeColumns.length; i++)
             {
-                if (!activeColumns[i].isMvIndicator())
-                    colMap.put(activeColumns[i].name, i);
+                if (!_activeColumns[i].isMvIndicator())
+                    colMap.put(_activeColumns[i].name, i);
             }
 
-            factory = new RowMapFactory<Object>(colMap);
+            _factory = new RowMapFactory<Object>(colMap);
 
             // find a converter for each column type
-            for (ColumnDescriptor column : activeColumns)
+            for (ColumnDescriptor column : _activeColumns)
                 if (column.converter == null)
                     column.converter = ConvertUtils.lookup(column.clazz);
         }
@@ -437,36 +437,36 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public Map<String, Object> next()
         {
-            if (values == null)
+            if (_values == null)
                 throw new IllegalStateException("Attempt to call next() on a finished iterator");
-            Map<String, Object> next = values;
-            values = null;
+            Map<String, Object> next = _values;
+            _values = null;
             return next;
         }
 
         @Override
         public boolean hasNext()
         {
-            if (fields != null)
+            if (_fields != null)
                 return true;    // throw illegalstate?
 
             try
             {
                 while (true)
                 {
-                    fields = readFields();
-                    if (fields == null)
+                    _fields = readFields();
+                    if (_fields == null)
                     {
                         close();
                         return false;
                     }
                     _lineNum++;
 
-                    values = convertValues();
-                    if (values == Collections.EMPTY_MAP && skipEmpty)
+                    _values = convertValues();
+                    if (_values == Collections.EMPTY_MAP && _skipEmpty)
                         continue;
 
-                    return values != null;
+                    return _values != null;
                 }
             }
             catch (Exception e)
@@ -478,19 +478,19 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
         protected Map<String, Object> convertValues()
         {
-            if (fields == null)
+            if (_fields == null)
                 return null;    // consider: throw IllegalState
 
             try
             {
-                Object[] fields = this.fields;
-                this.fields = null;
-                Object[] values = new Object[activeColumns.length];
+                Object[] fields = _fields;
+                _fields = null;
+                Object[] values = new Object[_activeColumns.length];
 
                 boolean foundData = false;
-                for (int i = 0; i < activeColumns.length; i++)
+                for (int i = 0; i < _activeColumns.length; i++)
                 {
-                    ColumnDescriptor column = activeColumns[i];
+                    ColumnDescriptor column = _activeColumns[i];
                     Object fld;
                     if (i >= fields.length)
                     {
@@ -631,11 +631,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 {
                     // This extra copy was added to AbstractTabLoader in r12810 to let DataSetDefinition.importDatasetData()
                     // modify the underlying maps. TODO: Refactor dataset import and return immutable maps. 
-                    ArrayList<Object> list = new ArrayList<Object>(activeColumns.length);
+                    ArrayList<Object> list = new ArrayList<Object>(_activeColumns.length);
                     list.addAll(Arrays.asList(values));
-                    return factory.getRowMap(list);
+                    return _factory.getRowMap(list);
                 }
-                else if (skipEmpty)
+                else if (_skipEmpty)
                 {
                     return Collections.emptyMap();
                 }

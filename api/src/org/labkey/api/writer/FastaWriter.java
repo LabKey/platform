@@ -14,11 +14,11 @@ import java.util.Iterator;
  */
 public class FastaWriter
 {
-    private final FastaEntryIterator _iterator;
+    private final FastaGenerator _generator;
 
-    public FastaWriter(FastaEntryIterator iterator)
+    public FastaWriter(FastaGenerator generator)
     {
-        _iterator = iterator;
+        _generator = generator;
     }
 
     public void write(File file) throws IOException
@@ -29,9 +29,9 @@ public class FastaWriter
         {
             pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
 
-            while (_iterator.hasNext())
+            while (_generator.hasNext())
             {
-                FastaEntry entry = _iterator.next();
+                FastaEntry entry = _generator.next();
                 pw.print(">");
                 pw.println(entry.getHeader());
                 pw.println(entry.getSequence());
@@ -44,7 +44,7 @@ public class FastaWriter
         }
     }
 
-    public interface FastaEntryIterator extends Iterator<FastaEntry>
+    public interface FastaGenerator extends Iterator<FastaEntry>
     {
     }
 

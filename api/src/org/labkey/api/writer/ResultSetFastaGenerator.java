@@ -10,11 +10,11 @@ import java.sql.SQLException;
  * Date: Aug 24, 2010
  * Time: 1:40:23 PM
  */
-public abstract class ResultSetFastaEntryIterator implements FastaWriter.FastaEntryIterator
+public abstract class ResultSetFastaGenerator implements FastaWriter.FastaGenerator
 {
     private final ResultSet _rs;
 
-    public ResultSetFastaEntryIterator(ResultSet rs)
+    public ResultSetFastaGenerator(ResultSet rs)
     {
         _rs = rs;
     }
@@ -49,7 +49,7 @@ public abstract class ResultSetFastaEntryIterator implements FastaWriter.FastaEn
             {
                 try
                 {
-                    return ResultSetFastaEntryIterator.this.getHeader(_rs);
+                    return ResultSetFastaGenerator.this.getHeader(_rs);
                 }
                 catch (SQLException e)
                 {
@@ -62,7 +62,7 @@ public abstract class ResultSetFastaEntryIterator implements FastaWriter.FastaEn
             {
                 try
                 {
-                    return ResultSetFastaEntryIterator.this.getSequence(_rs);
+                    return ResultSetFastaGenerator.this.getSequence(_rs);
                 }
                 catch (SQLException e)
                 {
