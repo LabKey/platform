@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.Table;
+import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.Loader;
 import org.labkey.api.search.SearchService;
@@ -1148,6 +1149,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     list.add(m);
                 }
                 return list;
+            }
+
+            @Override
+            public CloseableIterator<Map<String, Object>> iterator()
+            {
+                throw new UnsupportedOperationException(); // TODO: Implement
             }
         };
 
