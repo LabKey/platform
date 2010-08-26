@@ -45,7 +45,7 @@
     <tr>
         <td class="labkey-form-label">Password Expiration</td>
         <td><select name="expiration"><%
-            for (PasswordExpiration expiration : PasswordExpiration.values())
+            for (PasswordExpiration expiration : PasswordExpiration.displayValues())
             { %>
             <option value="<%=expiration.name()%>"<%=expiration.equals(bean.currentExpiration) ? " selected" : ""%>><%=h(expiration.getDescription())%></option>
                 <%

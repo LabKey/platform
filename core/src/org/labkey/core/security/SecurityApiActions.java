@@ -115,10 +115,10 @@ public class SecurityApiActions
             if(null == groups)
                 return null;
 
-            List<Map<String,Object>> groupsPerms = new ArrayList<Map<String,Object>>();
+            List<Map<String, Object>> groupsPerms = new ArrayList<Map<String,Object>>();
             for(Group group : groups)
             {
-                Map<String,Object> groupPerms = new HashMap<String,Object>();
+                Map<String, Object> groupPerms = new HashMap<String,Object>();
                 groupPerms.put("id", group.getUserId());
                 groupPerms.put("name", SecurityManager.getDisambiguatedGroupName(group));
                 groupPerms.put("type", group.getType());

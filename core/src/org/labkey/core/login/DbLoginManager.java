@@ -41,7 +41,18 @@ public class DbLoginManager
     {
         String strength = getProperty(Key.Expiration, PasswordExpiration.Never);
 
-        return PasswordExpiration.valueOf(strength);
+        PasswordExpiration pe;
+
+        try
+        {
+            pe = PasswordExpiration.valueOf(strength);
+        }
+        catch (IllegalArgumentException e)
+        {
+            pe = PasswordExpiration.Never;
+        }
+
+        return pe;
     }
 
 
