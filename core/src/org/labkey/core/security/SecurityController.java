@@ -108,10 +108,10 @@ public class SecurityController extends SpringActionController
             return new ActionURL(BeginAction.class, container);
         }
 
-        public ActionURL getShowRegistrationEmailURL(Container container, String email, String mailPrefix)
+        public ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix)
         {
             ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
-            url.addParameter("email", email);
+            url.addParameter("email", email.getEmailAddress());
             url.addParameter("mailPrefix", mailPrefix);
 
             return url;
@@ -1350,7 +1350,7 @@ public class SecurityController extends SpringActionController
             else
             {
                 String verification = SecurityManager.getVerification(email);
-                ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email.getEmailAddress(), verification, null);
+                ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email, verification, null);
                 SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
             }
             return null;
@@ -1422,7 +1422,7 @@ public class SecurityController extends SpringActionController
                     try
                     {
                         Container c = getContainer();
-                        ActionURL verificationURL = SecurityManager.createVerificationURL(c, email.getEmailAddress(), verification, null);
+                        ActionURL verificationURL = SecurityManager.createVerificationURL(c, email, verification, null);
 
                         SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
                         if (!user.getEmail().equals(email.getEmailAddress()))

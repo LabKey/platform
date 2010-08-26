@@ -138,6 +138,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         // E.g. "LabKey <info@labkey.com>" -> "info@labkey.com"
         try
         {
+            // TODO: Shouldn't the preliminary validation checks be moved to ValidEmail?
             String address = StringUtils.trimToEmpty(form.getSystemEmailAddress());
             // Manually check for a space or a quote, as these will later
             // fail to send via JavaMail.
@@ -146,8 +147,8 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
             // this will throw an InvalidEmailException for some types
             // of invalid email addresses
-            new ValidEmail(form.getSystemEmailAddress());
-            props.setSystemEmailAddresses(address);
+            ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
+            props.setSystemEmailAddress(email);
         }
         catch (ValidEmail.InvalidEmailException e)
         {

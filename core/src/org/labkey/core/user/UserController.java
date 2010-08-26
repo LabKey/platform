@@ -1079,7 +1079,7 @@ public class UserController extends SpringActionController
             {
                 if (!SecurityManager.isLdapEmail(new ValidEmail(user.getEmail())))
                 {
-                    ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user.getEmail(), getViewContext().getActionURL(), null), "Change Password");
+                    ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
                     changePasswordButton.setActionType(ActionButton.Action.LINK);
                     changePasswordButton.addContextualRole(OwnerRole.class);
                     bb.add(changePasswordButton);

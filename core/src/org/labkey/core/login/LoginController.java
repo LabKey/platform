@@ -109,12 +109,12 @@ public class LoginController extends SpringActionController
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
         }
 
-        public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
+        public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, Pair<String, String>[] extraParameters)
         {
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("verification", verification);
-            url.addParameter("email", email);
+            url.addParameter("email", email.getEmailAddress());
 
             if (null != extraParameters)
                 url.addParameters(extraParameters);
@@ -122,10 +122,10 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-        public ActionURL getChangePasswordURL(Container c, String email, URLHelper returnURL, @Nullable String message)
+        public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message)
         {
             ActionURL url = new ActionURL(ChangePasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("email", email);
+            url.addParameter("email", user.getEmail());     // TODO: seems peculiar... why not user id?
 
             if (null != message)
                 url.addParameter("message", message);
@@ -1128,7 +1128,7 @@ public class LoginController extends SpringActionController
                     Container c = getContainer();
                     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
-                    ActionURL verificationURL = SecurityManager.createVerificationURL(c, _email.getEmailAddress(), verification, null);
+                    ActionURL verificationURL = SecurityManager.createVerificationURL(c, _email, verification, null);
 
                     final User system = new User(laf.getSystemEmailAddress(), 0);
                     system.setFirstName(laf.getCompanyName());
@@ -1220,23 +1220,23 @@ public class LoginController extends SpringActionController
             {
                 ValidEmail email = new ValidEmail(form.getEmail());
 
-                SecurityManager.NewUserBean newUserBean = SecurityManager.addUser(email);
+                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
                 UserManager.addToUserHistory(newUserBean.getUser(), "Added to the system via the initial user page.");
 
                 SecurityManager.addMember(Group.groupAdministrators, newUserBean.getUser());
 
                 //set default "from" address for system emails to first registered user
-                String userEmail = newUserBean.getEmail();
                 WriteableLookAndFeelProperties laf = WriteableLookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-                laf.setSystemEmailAddresses(userEmail);
+                laf.setSystemEmailAddress(newUserBean.getEmail());
                 laf.save();
 
                 //set default domain and default LSID authority to user email domain
-                int atSign = userEmail.indexOf("@");
+                String userEmailAddress = newUserBean.getEmail().getEmailAddress();
+                int atSign = userEmailAddress.indexOf("@");
                 //did user most likely enter a valid email address? if so, set default domain
-                if (atSign > 0 && atSign < userEmail.length() - 1)
+                if (atSign > 0 && atSign < userEmailAddress.length() - 1)
                 {
-                    String defaultDomain = userEmail.substring(atSign + 1, userEmail.length());
+                    String defaultDomain = userEmailAddress.substring(atSign + 1, userEmailAddress.length());
                     WriteableAppProps appProps = AppProps.getWriteableInstance();
                     appProps.setDefaultDomain(defaultDomain);
                     appProps.setDefaultLsidAuthority(defaultDomain);

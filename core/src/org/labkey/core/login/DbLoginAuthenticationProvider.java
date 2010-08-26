@@ -126,7 +126,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                     returnURL = AppProps.getInstance().getHomePageActionURL();
 
                 LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
-                ActionURL changePasswordURL = urls.getChangePasswordURL(c, user.getEmail(), returnURL, "Your password " + description + "; please choose a new password.");
+                ActionURL changePasswordURL = urls.getChangePasswordURL(c, user, returnURL, "Your password " + description + "; please choose a new password.");
 
                 throw new RedirectException(changePasswordURL);
             }
