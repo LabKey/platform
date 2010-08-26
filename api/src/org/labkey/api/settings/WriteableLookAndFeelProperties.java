@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
 
 import java.sql.SQLException;
@@ -84,9 +85,9 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
         storeStringValue(COMPANY_NAME_PROP, companyName);
     }
 
-    public void setSystemEmailAddresses(String systemEmailAddress)
+    public void setSystemEmailAddress(ValidEmail systemEmail)
     {
-        storeStringValue(SYSTEM_EMAIL_ADDRESS_PROP, systemEmailAddress);
+        storeStringValue(SYSTEM_EMAIL_ADDRESS_PROP, systemEmail.getEmailAddress());
     }
 
     public void setReportAProblemPath(String reportAProblemPath)

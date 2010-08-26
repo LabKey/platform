@@ -309,7 +309,7 @@ public class SecurityManager
         {
             try
             {
-                NewUserBean bean = addUser(email, false);
+                NewUserStatus bean = addUser(email, false);
                 u = bean.getUser();
                 UserManager.addToUserHistory(u, u.getEmail() + " authenticated successfully and was added to the system automatically.");
             }
@@ -506,7 +506,7 @@ public class SecurityManager
     }
 
 
-    public static ActionURL createVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
+    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, Pair<String, String>[] extraParameters)
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
     }
@@ -556,67 +556,51 @@ public class SecurityManager
     }
 
 
-    public static class NewUserBean
+    public static class NewUserStatus
     {
-        private String email;
-        private String verification;
-        private boolean ldap;
-        private User user;
-        private boolean hasLogin;
+        private final ValidEmail _email;
 
-        public NewUserBean(String email)
+        private String _verification;
+        private User _user;
+
+        public NewUserStatus(ValidEmail email)
         {
-            setEmail(email);
+            _email = email;
         }
 
-        public String getEmail()
+        public ValidEmail getEmail()
         {
-            return email;
+            return _email;
         }
 
-        public void setEmail(String email)
+        public boolean isLdapEmail()
         {
-            this.email = email;
-        }
-
-        public boolean isLdap()
-        {
-            return ldap;
-        }
-
-        public void setLdap(boolean ldap)
-        {
-            this.ldap = ldap;
+            return SecurityManager.isLdapEmail(_email);
         }
 
         public String getVerification()
         {
-            return verification;
+            return _verification;
         }
 
         public void setVerification(String verification)
         {
-            this.verification = verification;
+            _verification = verification;
         }
 
         public User getUser()
         {
-            return user;
+            return _user;
         }
 
         public void setUser(User user)
         {
-            this.user = user;
+            _user = user;
         }
 
         public boolean getHasLogin()
         {
-            return hasLogin;
-        }
-
-        public void setHasLogin(boolean hasLogin)
-        {
-            this.hasLogin = hasLogin;
+            return null != _verification;
         }
     }
 
@@ -629,12 +613,6 @@ public class SecurityManager
         {
             super(message);
             _email = email.getEmailAddress();
-        }
-
-        public UserManagementException(String email, String message)
-        {
-            super(message);
-            _email = email;
         }
 
         public UserManagementException(ValidEmail email, String message, Exception cause)
@@ -663,31 +641,34 @@ public class SecurityManager
 
     public static class UserAlreadyExistsException extends UserManagementException
     {
-        public UserAlreadyExistsException(String email)
+        public UserAlreadyExistsException(ValidEmail email)
         {
             this(email, "User already exists");
         }
 
-        public UserAlreadyExistsException(String email, String message)
+        public UserAlreadyExistsException(ValidEmail email, String message)
         {
             super(email, message);
         }
     }
 
-    public static NewUserBean addUser(ValidEmail email) throws UserManagementException
+    public static NewUserStatus addUser(ValidEmail email) throws UserManagementException
     {
         return addUser(email, true);
     }
 
-    public static NewUserBean addUser(ValidEmail email, boolean createLogin) throws UserManagementException
+    // createLogin == false in the case of a new LDAP or SSO user authenticating for the first time.
+    // createLogin == true in any other case (e.g., manually added LDAP user), so we need an additional check below
+    // to avoid sending verification emails to an LDAP user.
+    public static NewUserStatus addUser(ValidEmail email, boolean createLogin) throws UserManagementException
     {
-        NewUserBean newUserBean = new NewUserBean(email.getEmailAddress());
+        NewUserStatus status = new NewUserStatus(email);
 
         if (UserManager.userExists(email))
-            throw new UserAlreadyExistsException(email.getEmailAddress());
+            throw new UserAlreadyExistsException(email);
 
         if (null != UserManager.getUserByDisplayName(email.getEmailAddress()))
-            throw new UserAlreadyExistsException(email.getEmailAddress(), "Display name is already in use");
+            throw new UserAlreadyExistsException(email, "Display name is already in use");
 
         User newUser;
         DbScope scope = core.getSchema().getScope();
@@ -702,14 +683,11 @@ public class SecurityManager
                 startedTransaction = true;
             }
 
-            if (createLogin)
+            if (createLogin && !status.isLdapEmail())
             {
                 String verification = SecurityManager.createLogin(email);
-                newUserBean.setVerification(verification);
+                status.setVerification(verification);
             }
-
-            newUserBean.setHasLogin(createLogin);
-            newUserBean.setLdap(SecurityManager.isLdapEmail(email));
 
             try
             {
@@ -789,9 +767,9 @@ public class SecurityManager
             if (startedTransaction)
                 scope.commitTransaction();
 
-            newUserBean.setUser(newUser);
+            status.setUser(newUser);
 
-            return newUserBean;
+            return status;
         }
         catch (SQLException e)
         {
@@ -2209,11 +2187,11 @@ public class SecurityManager
             // Test create user, verify, login, and delete
             try
             {
-                NewUserBean bean = addUser(email);
-                user = bean.getUser();
+                NewUserStatus status = addUser(email);
+                user = status.getUser();
                 assertTrue("addUser", user.getUserId() != 0);
 
-                boolean success = SecurityManager.verify(email, bean.getVerification());
+                boolean success = SecurityManager.verify(email, status.getVerification());
                 assertTrue("verify", success);
 
                 SecurityManager.setVerification(email, null);
@@ -2371,17 +2349,17 @@ public class SecurityManager
     }
 
     /**
-     * @return null if the user already existed, or a message indicating success/failure
+     * @return null if the user already exists, or a message indicating success/failure
      */
     public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, Pair<String, String>[] extraParameters) throws Exception
     {
-        if (SecurityManager.loginExists(email))
+        if (UserManager.userExists(email))
         {
             return null;
         }
 
         StringBuilder message = new StringBuilder();
-        NewUserBean newUserBean;
+        NewUserStatus newUserStatus;
 
         ActionURL messageContentsURL = null;
         boolean appendClickToSeeMail = false;
@@ -2389,15 +2367,14 @@ public class SecurityManager
 
         try
         {
-            newUserBean = SecurityManager.addUser(email);
+            newUserStatus = SecurityManager.addUser(email);
 
-            if (newUserBean.getHasLogin() && sendMail)
+            if (newUserStatus.getHasLogin() && sendMail)
             {
                 Container c = context.getContainer();
-                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email.getEmailAddress(), mailPrefix);
+                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email, mailPrefix);
 
-                ActionURL verificationURL = createVerificationURL(context.getContainer(), email.getEmailAddress(),
-                        newUserBean.getVerification(), extraParameters);
+                ActionURL verificationURL = createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters);
 
                 SecurityManager.sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
                 if (!currentUser.getEmail().equals(email.getEmailAddress()))
@@ -2409,9 +2386,9 @@ public class SecurityManager
                 appendClickToSeeMail = true;
             }
 
-            User newUser = newUserBean.getUser();
+            User newUser = newUserStatus.getUser();
 
-            if (newUserBean.isLdap())
+            if (newUserStatus.isLdapEmail())
             {
                 message.append(newUser.getEmail()).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  This user will be authenticated via LDAP.");
@@ -2424,7 +2401,7 @@ public class SecurityManager
             else
             {
                 String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
-                        email.getEmailAddress(), newUserBean.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                        email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
                 message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.  Click ");
                 message.append(href).append(" to change the password from the random one that was assigned.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
