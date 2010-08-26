@@ -2958,3 +2958,8 @@ ul.x-tab-strip-top li {
     opacity: .35;
     filter:alpha(opacity=35)
 }
+
+.drag-target-table-positioner {
+  border-top: 2px solid green;
+  margin-top: 1px;
+}

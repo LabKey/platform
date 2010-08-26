@@ -79,7 +79,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 
     private void initEditor(RootPanel rootPanel, GWTTableInfo tableInfo)
     {
-        _editor = new TablePropertiesEditor(this, getService());
+        _editor = new TablePropertiesEditor(rootPanel, this, getService());
         VerticalPanel panel = new VerticalPanel();
         _saveButton = new ImageButton("Save", new ClickHandler()
         {

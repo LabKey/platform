@@ -16,6 +16,8 @@
 
 package gwt.client.org.labkey.study.designer.client;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.DeferredCommand;
@@ -67,9 +69,9 @@ public class AssayPanel extends Composite
             HorizontalPanel linkPanel = new HorizontalPanel();
             linkPanel.setSpacing(8);
             Hyperlink editLink = new Hyperlink("Edit Assay List", null);
-            editLink.addClickListener(new ClickListener()
+            editLink.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     final AssayDefinitionDialog dlg = new AssayDefinitionDialog(AssayPanel.this, studyDef.getAssays());
                     dlg.setPopupPosition(eg.getAbsoluteLeft(), eg.getAbsoluteTop());
@@ -87,9 +89,9 @@ public class AssayPanel extends Composite
             linkPanel.add(editLink);
 
             Hyperlink editSamplesLink = new Hyperlink("Edit Sample Types", null);
-            editSamplesLink.addClickListener(new ClickListener()
+            editSamplesLink.addClickHandler(new ClickHandler()
             {
-                public void onClick(Widget sender)
+                public void onClick(ClickEvent e)
                 {
                     final SampleTypeDefinitionDialog dlg = new SampleTypeDefinitionDialog(AssayPanel.this, studyDef.getSampleTypes());
                     dlg.setPopupPosition(eg.getAbsoluteLeft(), eg.getAbsoluteTop());

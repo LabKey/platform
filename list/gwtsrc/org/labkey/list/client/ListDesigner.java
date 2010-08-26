@@ -16,7 +16,6 @@
 
 package org.labkey.list.client;
 
-import com.extjs.gxt.ui.client.core.XDOM;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -168,7 +167,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _root = RootPanel.get("org.labkey.list.Designer-Root");
         clearLoading(_root);
 
-        _propTable = new _ListPropertiesEditor(new DomainListSaveable(this), getService());
+        _propTable = new _ListPropertiesEditor(_root, new DomainListSaveable(this), getService());
         setReadOnly(!startInEdit || !_hasDeleteListPermission);
 
         _buttons = new FlexTable();
@@ -999,9 +998,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     private class _ListPropertiesEditor extends PropertiesEditor
     {
-        _ListPropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync lookup)
+        _ListPropertiesEditor(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync lookup)
         {
-            super(owner, lookup, new GWTPropertyDescriptor());
+            super(rootPanel, owner, lookup, new GWTPropertyDescriptor());
         }
 
         private boolean isKeyRow(PropertiesEditor.Row row)

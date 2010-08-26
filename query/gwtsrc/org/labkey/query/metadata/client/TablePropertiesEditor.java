@@ -42,9 +42,9 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     private ImageButton _wrapFieldButton;
     private HTML _otherContainerMessage = new HTML();
 
-    public TablePropertiesEditor(Saveable parent, LookupServiceAsync service)
+    public TablePropertiesEditor(RootPanel rootPanel, Saveable parent, LookupServiceAsync service)
     {
-        super(parent, service, new GWTColumnInfo());
+        super(rootPanel, parent, service, new GWTColumnInfo());
         _contentPanel.insert(_otherContainerMessage, 0);
     }
 
@@ -148,7 +148,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
             _otherContainerMessage.setHTML("");
         }
 
-        getWrapFieldButton().setVisible(tableInfo != null && !tableInfo.isUserDefinedQuery());
+        getWrapFieldButton().setVisible(!tableInfo.isUserDefinedQuery());
     }
 
     @Override
@@ -162,7 +162,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         PropertyPane<GWTTableInfo, GWTColumnInfo> formatPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Format");
         formatPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(formatPane));
-        formatPane.addItem(new ConditionalFormatItem<GWTTableInfo, GWTColumnInfo>(formatPane));
+        formatPane.addItem(new ConditionalFormatItem<GWTTableInfo, GWTColumnInfo>(getRootPanel(), formatPane));
 
         PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(this, "Additional Properties");
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));

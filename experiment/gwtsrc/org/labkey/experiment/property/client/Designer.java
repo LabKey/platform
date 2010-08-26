@@ -20,14 +20,12 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.Saveable;
-import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
@@ -71,7 +69,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor(this, getService());
+        _propTable = new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(_root, this, getService(), null);
 
         _buttons = new HorizontalPanel();
         _buttons.add(_submitButton);

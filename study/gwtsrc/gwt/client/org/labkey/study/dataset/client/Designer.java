@@ -128,7 +128,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor.PD(new DomainDatasetSaveable(this), getService());
+        _propTable = new PropertiesEditor.PD(_root, new DomainDatasetSaveable(this), getService());
 
         _buttons = new FlexTable();
 

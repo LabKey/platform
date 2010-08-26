@@ -20,7 +20,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -100,7 +99,7 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
 
         _loading = new Label("Loading...");
 
-        _properties = new PropertiesEditor(new FilePropertiesSaveable(this), getService());
+        _properties = new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(_root, new FilePropertiesSaveable(this), getService(), null);
 
         _root.add(_loading);
         asyncGetDomain(_typeURI, _domainName);

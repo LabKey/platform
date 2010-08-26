@@ -16,6 +16,10 @@
 
 package gwt.client.org.labkey.study.designer.client;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
 import gwt.client.org.labkey.study.designer.client.model.*;
@@ -31,7 +35,7 @@ import java.util.List;
  */
 public class AssayDefinitionDialog extends DialogBox
 {
-    List/*<GWTAssayDefinition>*/ assays;
+    List<GWTAssayDefinition> assays;
     ListBox listBox;
     EditPanel editPanel;
     int itemSelected;
@@ -39,8 +43,6 @@ public class AssayDefinitionDialog extends DialogBox
 
     /**
      * Assay Definition Dialog in the form of "Create new"
-     * @param parent
-     * @param assayDefinition
      */
     public AssayDefinitionDialog(AssayPanel parent, final GWTAssayDefinition assayDefinition)
     {
@@ -54,15 +56,15 @@ public class AssayDefinitionDialog extends DialogBox
         vpanel.add(editPanel);
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.setSpacing(3);
-        ClickListener hideListener = new ClickListener() {
-            public void onClick(Widget sender)
+        ClickHandler hideListener = new ClickHandler() {
+            public void onClick(ClickEvent e)
             {
                 AssayDefinitionDialog.this.hide();
             }
         };
         buttonPanel.add(new Button("Cancel", hideListener));
-        ClickListener okListener =  new ClickListener() {
-                    public void onClick(Widget sender)
+        ClickHandler okListener =  new ClickHandler() {
+                    public void onClick(ClickEvent e)
                     {
                         AssayDefinitionDialog.this.parent.studyDef.getAssays().add(assayDefinition);
                         AssayDefinitionDialog.this.parent.assaySchedule.addAssay(assayDefinition);
@@ -72,7 +74,7 @@ public class AssayDefinitionDialog extends DialogBox
                      }
             };
         Button okButton = new Button("OK", okListener);
-        okButton.addClickListener(hideListener);
+        okButton.addClickHandler(hideListener);
         buttonPanel.add(okButton);
         
         vpanel.add(buttonPanel);
@@ -80,7 +82,7 @@ public class AssayDefinitionDialog extends DialogBox
         setWidget(vpanel);
     }
 
-    public AssayDefinitionDialog(final AssayPanel parent, List/*<GWTAssayDefinition> */ assayDefinitions)
+    public AssayDefinitionDialog(final AssayPanel parent, List<GWTAssayDefinition> assayDefinitions)
     {
         this.parent = parent;
         
@@ -88,13 +90,12 @@ public class AssayDefinitionDialog extends DialogBox
         listBox = new ListBox();
         listBox.setVisibleItemCount(12);
         this.assays = assayDefinitions;
-        for (int i = 0; i < assayDefinitions.size(); i++)
+        for (GWTAssayDefinition def : assayDefinitions)
         {
-          GWTAssayDefinition def = (GWTAssayDefinition) assayDefinitions.get(i);
-          listBox.addItem(def.getName());
+            listBox.addItem(def.getName());
         }
-        listBox.addChangeListener(new ChangeListener(){
-            public void onChange(Widget src)
+        listBox.addChangeHandler(new ChangeHandler(){
+            public void onChange(ChangeEvent e)
             {
                 selectItem(listBox.getSelectedIndex(), false);
             }
@@ -109,9 +110,9 @@ public class AssayDefinitionDialog extends DialogBox
 
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.setSpacing(3);
-        buttonPanel.add(new Button("Add", new ClickListener()
+        buttonPanel.add(new Button("Add", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 String name = "New Assay";
                 int index = 1;
@@ -126,13 +127,13 @@ public class AssayDefinitionDialog extends DialogBox
                 selectItem(assays.size() - 1, true);
             }
         }));
-        buttonPanel.add(new Button("Delete", new ClickListener() {
+        buttonPanel.add(new Button("Delete", new ClickHandler() {
 
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 if (itemSelected < assays.size())
                 {
-                    GWTAssayDefinition assay = (GWTAssayDefinition) assays.get(itemSelected);
+                    GWTAssayDefinition assay = assays.get(itemSelected);
                     if (assay.isLocked())
                     {
                         Window.alert("This is a standard assay and cannot be removed from the list.");
@@ -148,9 +149,9 @@ public class AssayDefinitionDialog extends DialogBox
                 }
             }
         }));
-        buttonPanel.add(new Button("Done", new ClickListener()
+        buttonPanel.add(new Button("Done", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 AssayDefinitionDialog dlg = AssayDefinitionDialog.this;
 
@@ -177,7 +178,7 @@ public class AssayDefinitionDialog extends DialogBox
         if (updateSelection)
             listBox.setSelectedIndex(item);
 
-        editPanel.setAssay((GWTAssayDefinition) assays.get(item));
+        editPanel.setAssay(assays.get(item));
     }
 
     private class EditPanel extends VerticalPanel
@@ -186,17 +187,15 @@ public class AssayDefinitionDialog extends DialogBox
         TextBox tbAssayName = new TextBox();
         TextArea taDescription = new TextArea();
         TextArea taLabs = new TextArea();
-        ListBox lbDefault = new ListBox();
         SampleMeasurePanel smp;
-        ChangeListenerCollection listeners = new ChangeListenerCollection();
         GWTAssayDefinition assayDefinition;
 
         EditPanel()
         {
             add(lblLocked);
             tbAssayName.setWidth("300");
-            tbAssayName.addChangeListener(new ChangeListener() {
-                public void onChange(Widget sender)
+            tbAssayName.addChangeHandler(new ChangeHandler() {
+                public void onChange(ChangeEvent e)
                 {
                     if (null == StringUtils.trimToNull(tbAssayName.getText()))
                     {
@@ -221,8 +220,8 @@ public class AssayDefinitionDialog extends DialogBox
             add (new Label("Description"));
             taDescription.setVisibleLines(5);
             taDescription.setWidth("300");
-            taDescription.addChangeListener(new ChangeListener() {
-                public void onChange(Widget sender)
+            taDescription.addChangeHandler(new ChangeHandler() {
+                public void onChange(ChangeEvent e)
                 {
                     assayDefinition.setDescription(StringUtils.trimToNull(taDescription.getText()));
                     setDirty();
@@ -234,9 +233,9 @@ public class AssayDefinitionDialog extends DialogBox
             taLabs.setWidth("300");
             taLabs.setVisibleLines(3);
             add(taLabs);
-            taLabs.addChangeListener(new ChangeListener()
+            taLabs.addChangeHandler(new ChangeHandler()
             {
-                public void onChange(Widget sender)
+                public void onChange(ChangeEvent e)
                 {
                     assayDefinition.setLabs(stringToLabs(StringUtils.trimToNull(taLabs.getText())));
                     setDirty();
@@ -315,9 +314,8 @@ public class AssayDefinitionDialog extends DialogBox
 
     private GWTAssayDefinition findByName(String name)
     {
-        for (int i = 0; i < assays.size(); i++)
+        for (GWTAssayDefinition gwtAssayDefinition : assays)
         {
-            GWTAssayDefinition gwtAssayDefinition = (GWTAssayDefinition) assays.get(i);
             if (name.equalsIgnoreCase(gwtAssayDefinition.getName()))
                 return gwtAssayDefinition;
         }
