@@ -16,6 +16,7 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.event.dom.client.*;
 
@@ -23,57 +24,38 @@ import com.google.gwt.event.dom.client.*;
  * User: jeckels
  * Date: Feb 6, 2008
  */
-public class Tooltip extends PopupPanel implements MouseListener, MouseOverHandler, MouseOutHandler
+public class Tooltip extends PopupPanel implements MouseOverHandler, MouseOutHandler
 {
     private Label _label;
     private Widget _sourceWidget;
 
-    public Tooltip(String text)
+    private Tooltip(String text, Widget sourceWidget)
     {
         super(true);
         _label = new Label(text);
         add(_label);
         setStyleName("gwt-ToolTip");
-    }
-
-    private Tooltip(String text, Widget sourceWidget)
-    {
-        this(text);
         _sourceWidget = sourceWidget;
     }
 
     public void onMouseOver(MouseOverEvent event)
     {
-        onMouseEnter(_sourceWidget);
+        show();
+        int height = getOffsetHeight();
+        int width = getOffsetHeight();
+        int top = _sourceWidget.getAbsoluteTop() + height;
+        int left = _sourceWidget.getAbsoluteLeft() + 13;
+        int rightOverhang = left + width - (Window.getScrollLeft() + Window.getClientWidth());
+        if (rightOverhang > 0)
+        {
+            left -= rightOverhang;
+        }
+        setPopupPosition(left, top);
     }
 
     public void onMouseOut(MouseOutEvent event)
     {
         hide();
-    }
-
-    public void onMouseEnter(Widget sender)
-    {
-        show();
-        int height = getOffsetHeight();
-        setPopupPosition(sender.getAbsoluteLeft() + 13, sender.getAbsoluteTop() + height);
-    }
-
-    public void onMouseLeave(Widget sender)
-    {
-        hide();
-    }
-
-    public void onMouseDown(Widget sender, int x, int y)
-    {
-    }
-
-    public void onMouseMove(Widget sender, int x, int y)
-    {
-    }
-
-    public void onMouseUp(Widget sender, int x, int y)
-    {
     }
 
     public void setText(String text)

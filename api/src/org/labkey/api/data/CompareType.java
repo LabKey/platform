@@ -274,7 +274,7 @@ public enum CompareType
                     }
                 }
             },
-    HAS_QC("Has a QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE")           // TODO: Switch to MV_INDICATOR
+    HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE")           // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -282,7 +282,7 @@ public enum CompareType
                     return new QcClause(colName, false);
                 }
             },
-    NO_QC("Does not have a QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE")        // TODO: Switch to MV_INDICATOR
+    NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE")        // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)

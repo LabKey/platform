@@ -138,7 +138,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
             GWTDomain<GWTPropertyDescriptor> domain = _assay.getDomains().get(i);
 
-            PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor = createPropertiesEditor(domain);
+            PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor =
+                    new PropertiesEditor.PD(_rootPanel, new DomainProtocolSaveable(this, domain), getService());
             editor.addChangeHandler(new ChangeHandler()
             {
                 public void onChange(ChangeEvent e)
@@ -245,12 +246,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         {
             return _protocolSavable.isDirty();
         }
-    }
-
-
-    protected PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> createPropertiesEditor(GWTDomain domain)
-    {
-        return new PropertiesEditor.PD(new DomainProtocolSaveable(this, domain), getService());
     }
 
     protected FlexTable createAssayInfoTable(final GWTProtocol assay)

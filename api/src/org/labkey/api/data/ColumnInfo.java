@@ -100,7 +100,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;
-    private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _lockName = false;
@@ -787,7 +786,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         if (xmlCol.isSetConditionalFormats())
         {
-            conditionalFormats = ConditionalFormat.convertFromXml(xmlCol.getConditionalFormats());
+            setConditionalFormats(ConditionalFormat.convertFromXml(xmlCol.getConditionalFormats()));
         }
     }
 
@@ -1397,15 +1396,5 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public boolean isLookup()
     {
         return getFk() != null;
-    }
-
-    public List<ConditionalFormat> getConditionalFormats()
-    {
-        return conditionalFormats;
-    }
-
-    public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
-    {
-        this.conditionalFormats = conditionalFormats;
     }
 }

@@ -17,6 +17,7 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
@@ -229,11 +230,11 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         this.rangeURI.set(dataTypeURI);
     }
-    
+
     public void guessMeasureAndDimension()
     {
-        boolean plottableType = "http://www.w3.org/2001/XMLSchema#int".equals(getRangeURI()) ||
-                "http://www.w3.org/2001/XMLSchema#double".equals(getRangeURI());
+        boolean plottableType = PropertyType.xsdInt.getURI().equals(getRangeURI()) ||
+                PropertyType.xsdDouble.getURI().equals(getRangeURI());
         boolean isMeasure = plottableType && getLookupQuery() == null && !isHidden();
         setMeasure(isMeasure);
 

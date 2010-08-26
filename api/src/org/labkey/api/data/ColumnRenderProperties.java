@@ -20,7 +20,9 @@ import org.labkey.api.util.StringExpression;
 
 import java.io.File;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.regex.Matcher;
@@ -60,6 +62,7 @@ public abstract class ColumnRenderProperties
     protected StringExpression url;
     protected Set<String> importAliases = new LinkedHashSet<String>();
     protected DefaultValueType _defaultValueType = null;
+    private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
 
     public void copyTo(ColumnRenderProperties to)
     {
@@ -510,5 +513,15 @@ public abstract class ColumnRenderProperties
     public Class getJavaClass()
     {
         return javaClassFromSqlType(getSqlTypeInt(), isNullable());
+    }
+
+    public List<ConditionalFormat> getConditionalFormats()
+    {
+        return conditionalFormats;
+    }
+
+    public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
+    {
+        this.conditionalFormats = conditionalFormats;
     }
 }

@@ -37,16 +37,19 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PushButton;
+import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.ui.Tooltip;
 import org.labkey.api.gwt.client.ui.WindowUtil;
+import org.labkey.api.gwt.client.util.FlexTableRowDragController;
+import org.labkey.api.gwt.client.util.FlexTableRowDropController;
 import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,32 +64,25 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
     private FlexTable _formatTable;
     private HTML _noValidatorsLabel = new HTML("<i>This field has no conditional formats</i>");
     private ImageButton _addFormatButton;
-    private boolean _changed;
     private FieldType _field;
     private GWTConditionalFormat _activeFormat;
+    private FlexTableRowDragController _tableRowDragController;
 
-    public ConditionalFormatItem(PropertyPane<DomainType, FieldType> propertyPane)
+    public ConditionalFormatItem(RootPanel rootPanel, PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
+        DOM.setStyleAttribute(rootPanel.getElement(), "position", "relative");
+        DOM.setStyleAttribute(rootPanel.getElement(), "overflow", "hidden");
+        _tableRowDragController = new FlexTableRowDragController(rootPanel);
     }
 
     @Override
     public int addToTable(FlexTable flexTable, int row)
     {
-        _addFormatButton = new ImageButton("Add Conditional Format", new ClickHandler()
-        {
-            public void onClick(ClickEvent event)
-            {
-                showFilterDialog(new GWTConditionalFormat());
-            }
-        });
-        flexTable.setWidget(row++, INPUT_COLUMN, _addFormatButton);
-
-        _formatTable = new FlexTable();
         int col = 1;
-
+        _formatTable = new FlexTable();
         _formatTable.getFlexCellFormatter().setWidth(0, col, "300px");
-        _formatTable.setHTML(0, col++, "Filter");
+        _formatTable.setHTML(0, col++, "Conditional Formats");
         _formatTable.setHTML(0, col++, "<span style='font-weight: bold;'>B</span>");
         flexTable.getFlexCellFormatter().setAlignment(0, col - 1, HasHorizontalAlignment.ALIGN_CENTER, HasVerticalAlignment.ALIGN_MIDDLE);
         _formatTable.setHTML(0, col++, "<span style='font-style: italic;'>I</span>");
@@ -95,22 +91,53 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         flexTable.getFlexCellFormatter().setAlignment(0, col - 1, HasHorizontalAlignment.ALIGN_CENTER, HasVerticalAlignment.ALIGN_MIDDLE);
 
         flexTable.setWidget(row, LABEL_COLUMN, _formatTable);
-        flexTable.getFlexCellFormatter().setColSpan(row, 0, 2);
+        flexTable.getFlexCellFormatter().setColSpan(row, LABEL_COLUMN, 2);
 
         _formatTable.setVisible(false);
 
         flexTable.setWidget(++row, LABEL_COLUMN, _noValidatorsLabel);
-        flexTable.getFlexCellFormatter().setColSpan(row, 0, 2);
+        flexTable.getFlexCellFormatter().setColSpan(row, LABEL_COLUMN, 2);
         flexTable.getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
 
+        FlexTableRowDropController controller = new FlexTableRowDropController(_formatTable)
+        {
+            @Override
+            protected void handleDrop(FlexTable sourceTable, FlexTable targetTable, int sourceRow, int targetRow)
+            {
+                GWTConditionalFormat cf = _formats.remove(sourceRow - 1);
+                _formats.add(targetRow - 1, cf);
+                refreshFormats();
+            }
+        };
+        _tableRowDragController.registerDropController(controller);
+
+        _addFormatButton = new ImageButton("Add Conditional Format", new ClickHandler()
+        {
+            public void onClick(ClickEvent event)
+            {
+                showFilterDialog(new GWTConditionalFormat());
+            }
+        });
+        flexTable.setWidget(++row, INPUT_COLUMN, _addFormatButton);
+        
         return row;
     }
 
     public void showFilterDialog(GWTConditionalFormat format)
     {
         _activeFormat = format;
-        showFilterDialog(GWTConditionalFormat.DATA_REGION_NAME, GWTConditionalFormat.COLUMN_NAME, getCurrentField().getName(), "VARCHAR", getCurrentField().getMvEnabled(), _activeFormat.getFilter(), this);
+        PropertyType type = PropertyType.fromURI(getCurrentField().getRangeURI());
+        if (type == null)
+        {
+            type = PropertyType.xsdString;
+        }
+        showFilterDialog(GWTConditionalFormat.DATA_REGION_NAME, GWTConditionalFormat.COLUMN_NAME, getCurrentField().getName(), type.getSqlName(), getCurrentField().getMvEnabled(), _activeFormat.getFilter(), this);
     }
+
+    public native static String getDescription(String queryString, String dataRegionName, String columnName)
+    /*-{
+        return $wnd.LABKEY.Filter.convertURLToHumanReadable(queryString, dataRegionName, columnName);
+    }-*/;
 
     public native static void showFilterDialog(String dataRegionName, String colName, String caption, String dataType, boolean mvEnabled, String filter, ConditionalFormatItem handler)
     /*-{
@@ -118,9 +145,10 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             handler.@org.labkey.api.gwt.client.ui.property.ConditionalFormatItem::filterDialogCallback(Ljava/lang/Object;)(s3);
         };
-        $wnd.showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, filter, callback);
+        $wnd.showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, filter, "Apply Conditional Format Where " + caption, callback);
     }-*/;
 
+    /** Called from JSNI - do not delete without modifying the callback code immediately above */
     public void filterDialogCallback(Object filter)
     {
         _activeFormat.setFilter(filter.toString());
@@ -166,6 +194,14 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             HorizontalPanel panel = new HorizontalPanel();
 
+            ClickHandler editHandler = new ClickHandler()
+            {
+                public void onClick(ClickEvent event)
+                {
+                    showFilterDialog(cf);
+                }
+            };
+
             if (_addFormatButton.isEnabled())
             {
                 PushButton deleteButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partdelete.gif"));
@@ -174,7 +210,6 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
                     public void onClick(ClickEvent event)
                     {
                         _formats.remove(cf);
-                        _changed = true;
                         _propertyPane.copyValuesToPropertyDescriptor();
                         refreshFormats();
                     }
@@ -184,34 +219,21 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
                 panel.add(deleteButton);
                 panel.add(new HTML("&nbsp;"));
                 PushButton editButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partedit.gif"));
-                Tooltip.addTooltip(editButton, "Edit this conditional format");
-                editButton.addClickHandler(new ClickHandler()
-                {
-                    public void onClick(ClickEvent event)
-                    {
-                        showFilterDialog(cf);
-                    }
-                });
+                Tooltip.addTooltip(editButton, "Edit condition for this format");
+                editButton.addClickHandler(editHandler);
 
                 panel.add(editButton);
             }
 
             _formatTable.setWidget(row, 0, panel);
-            String description = cf.getFilter();
-            int index = description.indexOf("~");
-            if (index != -1)
+            String description = getDescription(cf.getFilter(), GWTConditionalFormat.DATA_REGION_NAME, GWTConditionalFormat.COLUMN_NAME);
+            Label descriptionWidget = new Label(description);
+            if (_addFormatButton.isEnabled())
             {
-                description = description.substring(index + 1);
+                _tableRowDragController.makeDraggable(descriptionWidget);
+                descriptionWidget.addClickHandler(editHandler);
             }
-            else
-            {
-                index = description.indexOf("%7E");
-                if (index != -1)
-                {
-                    description = description.substring(index + 3);
-                }
-            }
-            _formatTable.setWidget(row, 1, new HTML(StringUtils.filter(description, true)));
+            _formatTable.setWidget(row, 1, descriptionWidget);
 
             final CheckBox boldCheckBox = new CheckBox();
             boldCheckBox.setValue(cf.isBold());
@@ -344,8 +366,8 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             foreground = "#" + foreground;
         }
-        return "<span style=\"position: absolute; border: 1px black solid; width: 9px; z-index: 12; height: 9px; background-color: " + foreground + "\"></span>\n" +
-               "<span style=\"position: absolute; border: 1px black solid; width: 9px; margin: 4px; z-index: 10; height: 9px; background-color: " + background + "\"></span>";
+        return "<span style=\"position: absolute; border: 1px black solid; width: 8px; z-index: 12; height: 8px; background-color: " + foreground + "\"></span>\n" +
+               "<span style=\"position: absolute; border: 1px black solid; width: 8px; margin: 4px; z-index: 10; height: 8px; background-color: " + background + "\"></span>";
     }
 
     private void configureColorPicker(final TextBox textBox, final ColorPalette palette)
@@ -402,7 +424,6 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             _formats.add(format);
         }
-        _changed = true;
         refreshFormats();
         _propertyPane.copyValuesToPropertyDescriptor();
     }

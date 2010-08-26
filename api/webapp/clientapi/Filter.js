@@ -47,13 +47,17 @@
  */
 LABKEY.Filter = new function()
 {
-    function getFilterType(displayText, urlSuffix, dataValueRequired)
+    var urlMap = {};
+
+    function createFilterType(displayText, urlSuffix, dataValueRequired)
     {
-        return {
+        var result = {
             getDisplayText : function() { return displayText },
             getURLSuffix : function() { return urlSuffix },
             isDataValueRequired : function() { return dataValueRequired }
         };
+        urlMap[urlSuffix] = result;
+        return result;
     }
 
     function getFilter(columnName, value, filterType)
@@ -71,31 +75,31 @@ LABKEY.Filter = new function()
 
 		Types : {
 
-			EQUAL : getFilterType("Equals", "eq", true),
-            DATE_EQUAL : getFilterType("Equals", "dateeq", true),
-            DATE_NOT_EQUAL : getFilterType("Does Not Equal", "dateneq", true),
-            NEQ_OR_NULL : getFilterType("Does Not Equal", "neqornull", true),
-            NOT_EQUAL_OR_MISSING : getFilterType("Does Not Equal", "neqornull", true),
-            NEQ : getFilterType("Does Not Equal", "neq", true),
-            NOT_EQUAL : getFilterType("Does Not Equal", "neq", true),
-            ISBLANK : getFilterType("Is Blank", "isblank", false),
-            MISSING : getFilterType("Is Blank", "isblank", false),
-            NONBLANK : getFilterType("Is Not Blank", "isnonblank", false),
-            NOT_MISSING : getFilterType("Is Not Blank", "isnonblank", false),
-            GT : getFilterType("Is Greater Than", "gt", true),
-            GREATER_THAN : getFilterType("Is Greater Than", "gt", true),
-            LT : getFilterType("Is Less Than", "lt", true),
-            LESS_THAN : getFilterType("Is Less Than", "lt", true),
-            GTE : getFilterType("Is Greater Than or Equal To", "gte", true),
-            GREATER_THAN_OR_EQUAL : getFilterType("Is Greater Than or Equal To", "gte", true),
-            LTE : getFilterType("Is Less Than or Equal To", "lte", true),
-            LESS_THAN_OR_EQUAL : getFilterType("Is Less Than or Equal To", "lte", true),
-            CONTAINS : getFilterType("Contains", "contains", true),
-            DOES_NOT_CONTAIN : getFilterType("Does Not Contain", "doesnotcontain", true),
-            DOES_NOT_START_WITH : getFilterType("Does Not Start With", "doesnotstartwith", true),
-            STARTS_WITH : getFilterType("Starts With", "startswith", true),
-            IN : getFilterType("Equals One Of", "in", true),
-            EQUALS_ONE_OF : getFilterType("Equals One Of", "in", true)
+			EQUAL : createFilterType("Equals", "eq", true),
+            DATE_EQUAL : createFilterType("Equals", "dateeq", true),
+            DATE_NOT_EQUAL : createFilterType("Does Not Equal", "dateneq", true),
+            NEQ_OR_NULL : createFilterType("Does Not Equal", "neqornull", true),
+            NOT_EQUAL_OR_MISSING : createFilterType("Does Not Equal", "neqornull", true),
+            NEQ : createFilterType("Does Not Equal", "neq", true),
+            NOT_EQUAL : createFilterType("Does Not Equal", "neq", true),
+            ISBLANK : createFilterType("Is Blank", "isblank", false),
+            MISSING : createFilterType("Is Blank", "isblank", false),
+            NONBLANK : createFilterType("Is Not Blank", "isnonblank", false),
+            NOT_MISSING : createFilterType("Is Not Blank", "isnonblank", false),
+            GT : createFilterType("Is Greater Than", "gt", true),
+            GREATER_THAN : createFilterType("Is Greater Than", "gt", true),
+            LT : createFilterType("Is Less Than", "lt", true),
+            LESS_THAN : createFilterType("Is Less Than", "lt", true),
+            GTE : createFilterType("Is Greater Than or Equal To", "gte", true),
+            GREATER_THAN_OR_EQUAL : createFilterType("Is Greater Than or Equal To", "gte", true),
+            LTE : createFilterType("Is Less Than or Equal To", "lte", true),
+            LESS_THAN_OR_EQUAL : createFilterType("Is Less Than or Equal To", "lte", true),
+            CONTAINS : createFilterType("Contains", "contains", true),
+            DOES_NOT_CONTAIN : createFilterType("Does Not Contain", "doesnotcontain", true),
+            DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true),
+            STARTS_WITH : createFilterType("Starts With", "startswith", true),
+            IN : createFilterType("Equals One Of", "in", true),
+            EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true)
         },
 
 
@@ -157,6 +161,46 @@ LABKEY.Filter = new function()
             if (!filterType)
                 filterType = this.Types.EQUAL;
             return getFilter(columnName, value, filterType);
+        },
+
+        convertURLToHumanReadable : function(url, dataRegionName, columnName)
+        {
+            var filterParts = url.split("&");
+            var result = "";
+            var separator = "";
+            for (var i = 0; i < filterParts.length; i++)
+            {
+                result += separator;
+                separator = " AND ";
+                var filterPart = filterParts[i];
+                var index = filterPart.indexOf("~");
+                if (index != -1)
+                {
+                    filterPart = filterPart.substring(index + 1);
+                }
+                else
+                {
+                    index = filterPart.indexOf("%7E");
+                    if (index != -1)
+                    {
+                        filterPart = filterPart.substring(index + 3);
+                    }
+                }
+                var parts = filterPart.split("=");
+                var friendly = urlMap[parts[0]];
+                if (!friendly)
+                {
+                    friendly = parts[0];
+                }
+                result += friendly.getDisplayText();
+                for (var j = 1; j < parts.length; j++)
+                {
+                    result += " ";
+                    // TODO - decode URI values
+                    result += parts[j];
+                }
+            }
+            return result;
         }
     };
 };

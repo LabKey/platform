@@ -27,30 +27,44 @@ import java.util.Map;
 */
 public enum PropertyType
 {
-    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", false, "Multi-Line Text", "String"),
-    xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "String"),
-    xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean"),
-    xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer"),
-    xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "Double"),
-    xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime"),
-    expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File"),
-    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment");
+    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", false, "Multi-Line Text", "VARCHAR", "String"),
+    xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "VARCHAR", "String"),
+    xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean", "BOOLEAN"),
+    xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer", "INT"),
+    xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "DOUBLE", "Double"),
+    xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime", "TIMESTAMP"),
+    expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File", "CLOB"),
+    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment", "VARCHAR");
 
-    private final String _uri, _display, _short;
+    private final String _uri;
+    private final String _display;
+    private final String _sqlName;
+    private final String _short;
     private final boolean _lookup;
 
-    PropertyType(String uri, boolean lookup, String display)
+    PropertyType(String uri, boolean lookup, String display, String sqlName)
     {
-        this(uri,lookup,display,display);
+        this(uri,lookup,display, sqlName, display);
     }
-    PropertyType(String uri, boolean lookup, String display, String shortName)
+
+    PropertyType(String uri, boolean lookup, String display, String sqlName, String shortName)
     {
         this._uri = uri;
         this._lookup = lookup;
         this._display = display;
+        this._sqlName = sqlName;
         this._short = shortName;
     }
 
+    public String getURI()
+    {
+        return _uri;
+    }
+
+    public String getSqlName()
+    {
+        return _sqlName;
+    }
 
     @Override
     public String toString()
@@ -72,7 +86,19 @@ public enum PropertyType
     {
         return _lookup;
     }
-    
+
+    public static PropertyType fromURI(String uri)
+    {
+        for (PropertyType propertyType : values())
+        {
+            if (propertyType.getURI().equals(uri))
+            {
+                return propertyType;
+            }
+        }
+        return null;
+    }
+
     public static PropertyType fromName(String type)
     {
         PropertyType t = synonyms.get(type);

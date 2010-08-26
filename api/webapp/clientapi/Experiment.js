@@ -554,7 +554,7 @@ Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
  * @example
  * var domainDesign = {
  *   name: "BoyHowdy",
- *   description: "A client api createed sample set",
+ *   description: "A client api created sample set",
  *   fields: [{
  *     name: 'TestName',
  *     label: 'The First Field',

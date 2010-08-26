@@ -1004,7 +1004,7 @@ function doChange(obj)
 }
 
 
-function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, confirmCallback)
+function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, queryString, dialogTitle, confirmCallback)
 {
     _fieldName = colName;
     _fieldCaption = caption;
@@ -1092,7 +1092,7 @@ function showFilterPanel(dataRegionName, colName, caption, dataType, mvEnabled, 
     if (filterIndex == 2)
         document.getElementById("compare_2").selectedIndex = 0;
 
-    _filterWin.setTitle("Show Rows Where " + caption);
+    _filterWin.setTitle(dialogTitle ? dialogTitle : "Show Rows Where " + caption);
     _filterWin.show();
 }
 

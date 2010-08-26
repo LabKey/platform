@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
@@ -60,16 +62,16 @@ class ImportSchemaWizard extends DialogBox
 
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.setSpacing(5);
-        buttonPanel.add(new ImageButton("Import", new ClickListener()
+        buttonPanel.add(new ImageButton("Import", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 processTsv();
             }
         }));
-        buttonPanel.add(new ImageButton("Cancel", new ClickListener()
+        buttonPanel.add(new ImageButton("Cancel", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 ImportSchemaWizard.this.hide();
             }

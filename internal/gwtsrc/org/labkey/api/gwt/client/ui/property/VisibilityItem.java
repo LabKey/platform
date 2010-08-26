@@ -59,11 +59,18 @@ public class VisibilityItem<DomainType extends GWTDomain<FieldType>, FieldType e
         DOM.setElementProperty(_updateCheckBox.getElement(), "id", "propertyShownInUpdate");
         DOM.setElementProperty(_detailsCheckBox.getElement(), "id", "propertyShownInDetail");
 
-        VerticalPanel panel = new VerticalPanel();
-        panel.add(_gridCheckBox);
-        panel.add(_insertCheckBox);
-        panel.add(_updateCheckBox);
-        panel.add(_detailsCheckBox);
+        VerticalPanel leftPanel = new VerticalPanel();
+        leftPanel.add(_gridCheckBox);
+        leftPanel.add(_updateCheckBox);
+
+        VerticalPanel rightPanel = new VerticalPanel();
+        rightPanel.add(_insertCheckBox);
+        rightPanel.add(_detailsCheckBox);
+
+        HorizontalPanel panel = new HorizontalPanel();
+        panel.add(leftPanel);
+        panel.add(new HTML("&nbsp;"));
+        panel.add(rightPanel);
 
         flexTable.setWidget(row, INPUT_COLUMN, panel);
 

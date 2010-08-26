@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -49,9 +51,9 @@ public class ExportSchemaWizard extends DialogBox
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.setSpacing(5);
 
-        buttonPanel.add(new ImageButton("Done", new ClickListener()
+        buttonPanel.add(new ImageButton("Done", new ClickHandler()
         {
-            public void onClick(Widget sender)
+            public void onClick(ClickEvent e)
             {
                 ExportSchemaWizard.this.hide();
             }

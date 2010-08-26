@@ -49,9 +49,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     
     public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>,GWTPropertyDescriptor>
     {
-        public PD(Saveable<GWTDomain> owner, LookupServiceAsync service)
+        public PD(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service)
         {
-            super(owner, service, new GWTPropertyDescriptor());
+            super(rootPanel, owner, service, new GWTPropertyDescriptor());
         }
     }
 
@@ -101,6 +101,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
+    private final RootPanel _rootPanel;
     FieldType _newPropertyDescriptor;
 
     String prefixInputId = "";
@@ -118,14 +119,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         public boolean deleted;
     }
 
-    @Deprecated
-    public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service)
+    public PropertiesEditor(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service, FieldType empty)
     {
-        this(owner, service, null);
-    }
-    
-    public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service, FieldType empty)
-    {
+        _rootPanel = rootPanel;
         _newPropertyDescriptor = empty;
         _rows = new ArrayList<Row>();
 
@@ -322,7 +318,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         PropertyPane<DomainType, FieldType> formatPane = new PropertyPane<DomainType, FieldType>(this, "Format");
         formatPane.addItem(new FormatItem<DomainType, FieldType>(formatPane));
-        formatPane.addItem(new ConditionalFormatItem<DomainType, FieldType>(formatPane));
+        formatPane.addItem(new ConditionalFormatItem<DomainType, FieldType>(getRootPanel(), formatPane));
 
         PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
         validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
@@ -1470,6 +1466,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _buttonPanel.add(imageButton);
     }
 
+    protected RootPanel getRootPanel()
+    {
+        return _rootPanel;
+    }
 
     private static boolean nullEquals(Object s1, Object s2)
     {
