@@ -603,9 +603,9 @@ public class SecurityApiActions
                 //add the relevant roles for non-root
                 //for now, just return all assignable roles
                 //but exclude the project admin role if this is not a project
-                for(Role role : RoleManager.getAllRoles())
+                for (Role role : RoleManager.getAllRoles())
                 {
-                    if(role.isAssignable())
+                    if (role.isAssignable())
                         relevantRoles.add(role.getUniqueName());
                 }
 
@@ -613,8 +613,10 @@ public class SecurityApiActions
                 // - don't include project admin if this is not a project
                 // - don't include study-related roles if no study
                 // - don't include restricted reader
+                // - don't include troubleshooter
                 if (!container.isProject())
                     relevantRoles.remove(RoleManager.getRole(ProjectAdminRole.class).getUniqueName());
+
                 if (!branchContainsStudy(container))
                 {
                     for (Role studyRole : StudyService.get().getStudyRoles())
@@ -622,9 +624,11 @@ public class SecurityApiActions
                         relevantRoles.remove(studyRole.getUniqueName());
                     }
                 }
+
                 //CONSIDER: restricted reader is assignable, but maybe we need another method on Role
                 //that says whether this role should be displayed in the permissions UI?
                 relevantRoles.remove(RoleManager.getRole(RestrictedReaderRole.class).getUniqueName());
+                relevantRoles.remove(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
             }
 
             resp.put("relevantRoles", relevantRoles);

@@ -15,10 +15,9 @@
  */
 package org.labkey.study.security.roles;
 
-import org.labkey.api.security.roles.AbstractRole;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.security.roles.AbstractRole;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.study.StudyModule;
 
 /*

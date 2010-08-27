@@ -1404,7 +1404,7 @@ public class SecurityController extends SpringActionController
             else
             {
                 // We allow admins to create passwords (i.e., entries in the logins table) if they don't already exist.
-                // This addresses an SSO scenario.
+                // This addresses an SSO scenario.  See #10374.
                 boolean loginExists = SecurityManager.loginExists(email);
                 String pastVerb = loginExists ? "reset" : "created";
                 String infinitiveVerb = loginExists ? "reset" : "create";
