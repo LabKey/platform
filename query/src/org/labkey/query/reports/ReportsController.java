@@ -1806,6 +1806,7 @@ public class ReportsController extends SpringActionController
 
     public static class MeasuresForm
     {
+        private String[] _filters = new String[0];
         private String _schema;
         private String _query;
         private String _name;
@@ -1839,6 +1840,64 @@ public class ReportsController extends SpringActionController
         {
             _query = query;
         }
+
+        public String[] getFilters()
+        {
+            return _filters;
+        }
+
+        public void setFilters(String[] filters)
+        {
+            _filters = filters;
+        }
+    }
+
+    public static class MeasureFilter
+    {
+        public enum QueryType {
+            builtIn,
+            custom,
+            all,
+        }
+
+        private String _schema;
+        private String _query;
+        private QueryType _queryType = QueryType.all;
+
+        public MeasureFilter(String filter)
+        {
+            parse(filter);
+        }
+
+        protected void parse(String filter)
+        {
+            String[] parts = filter.split("\\|");
+
+            assert(parts.length >= 2) : "Invalid filter value";
+
+            _schema = parts[0];
+
+            if (!parts[1].equals("~"))
+                _query = parts[1];
+
+            if (parts.length >= 3)
+                _queryType = QueryType.valueOf(parts[2]);
+        }
+
+        public String getSchema()
+        {
+            return _schema;
+        }
+
+        public String getQuery()
+        {
+            return _query;
+        }
+
+        public QueryType getQueryType()
+        {
+            return _queryType;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -1849,43 +1908,112 @@ public class ReportsController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
 
-            for (String schemaName : getSchemaNames(form))
+            for (Map.Entry<String, Map<String, TableInfo>> schemaEntry : getTables(form).entrySet())
             {
-                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
-                if (null == schema)
-                    continue;
-
-                if (schema instanceof UserSchema)
+                for (Map.Entry<String, TableInfo> tableEntry : schemaEntry.getValue().entrySet())
                 {
-                    UserSchema uschema = (UserSchema)schema;
+                    QueryDefinition def = QueryService.get().getQueryDef(getContainer(), schemaEntry.getKey(), tableEntry.getKey());
 
-                    for (String tableName : getTableNames(form, uschema))
+                    for (ColumnInfo col : tableEntry.getValue().getColumns())
                     {
-                        TableInfo tinfo = uschema.getTable(tableName);
-
-                        if (tinfo == null)
-                            continue;
-
-                        for (ColumnInfo col : tinfo.getColumns())
+                        if (col.isMeasure())
                         {
-                            if (col.isMeasure())
-                            {
-                                // add measure properties
-                                Map<String, Object> props = getColumnProps(col);
+                            // add measure properties
+                            Map<String, Object> props = getColumnProps(col);
 
-                                props.put("schemaName", schemaName);
-                                props.put("queryName", tableName);
+                            props.put("schemaName", schemaEntry.getKey());
+                            props.put("queryName", tableEntry.getKey());
+                            props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
 
-                                measures.add(props);
-                            }
+                            measures.add(props);
                         }
                     }
                 }
-                resp.put("success", true);
-                resp.put("measures", measures);
             }
+            resp.put("success", true);
+            resp.put("measures", measures);
 
             return resp;
+        }
+
+        protected Map<String, Map<String, TableInfo>> getTables(MeasuresForm form)
+        {
+            Map<String, Map<String, TableInfo>> tables = new HashMap<String, Map<String, TableInfo>>();
+            DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
+
+            if (form.getFilters().length > 0)
+            {
+                for (String filter : form.getFilters())
+                {
+                    MeasureFilter mf = new MeasureFilter(filter);
+                    QuerySchema schema = defSchema.getSchema(mf.getSchema());
+                    if (schema instanceof UserSchema)
+                    {
+                        UserSchema uschema = (UserSchema)schema;
+
+                        if (mf.getQuery() == null)
+                        {
+                            // add all tables from this schema
+                            getTablesFromSchema(uschema, mf.getQueryType(), tables);
+                        }
+                        else
+                            // add a specific table
+                            addTable(uschema, mf.getQuery(), tables);
+                    }
+                }
+            }
+            else
+            {
+                // get all tables in this container
+                for (String schemaName : defSchema.getUserSchemaNames())
+                {
+                    QuerySchema schema = defSchema.getSchema(schemaName);
+                    if (schema instanceof UserSchema)
+                    {
+                        getTablesFromSchema((UserSchema)schema, MeasureFilter.QueryType.all, tables);
+                    }
+                }
+            }
+            return tables;
+        }
+
+        private void getTablesFromSchema(UserSchema schema, MeasureFilter.QueryType type, Map<String, Map<String, TableInfo>> schemas)
+        {
+            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.custom)
+            {
+                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getContainer(), schema.getSchemaName());
+                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
+                {
+                    QueryDefinition qdef = entry.getValue();
+                    if (!qdef.isHidden())
+                    {
+                        addTable(schema, qdef.getName(), schemas);
+                    }
+                }
+            }
+
+            // built in tables
+            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.builtIn)
+            {
+                for (String name : schema.getTableNames())
+                {
+                    addTable(schema, name, schemas);
+                }
+            }
+        }
+
+        private void addTable(UserSchema schema, String tableName, Map<String, Map<String, TableInfo>> schemas)
+        {
+            TableInfo tinfo = schema.getTable(tableName);
+            if (tinfo != null)
+            {
+                if (!schemas.containsKey(schema.getSchemaName()))
+                    schemas.put(schema.getSchemaName(), new HashMap<String, TableInfo>());
+
+                Map<String, TableInfo> tables = schemas.get(schema.getSchemaName());
+                if (!tables.containsKey(tableName))
+                    tables.put(tableName, tinfo);
+            }
         }
 
         protected Set<String> getSchemaNames(MeasuresForm form)
@@ -1939,6 +2067,8 @@ public class ReportsController extends SpringActionController
 
                     if (tinfo != null)
                     {
+                        QueryDefinition def = QueryService.get().getQueryDef(getContainer(), form.getSchema(), form.getQuery());
+
                         for (ColumnInfo col : tinfo.getColumns())
                         {
                             if (col.isDimension())
@@ -1948,6 +2078,7 @@ public class ReportsController extends SpringActionController
 
                                 props.put("schemaName", form.getSchema());
                                 props.put("queryName", form.getQuery());
+                                props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
 
                                 dimensions.add(props);
                             }
