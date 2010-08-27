@@ -17,14 +17,13 @@ package org.labkey.api.exp.property;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
@@ -120,7 +119,7 @@ public class DomainUtil
         if (null == dd)
             return null;
         Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-        GWTDomain d = getDomain(dd);
+        GWTDomain<GWTPropertyDescriptor> d = getDomain(dd);
 
         ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
@@ -147,9 +146,9 @@ public class DomainUtil
         return d;
     }
 
-    private static GWTDomain getDomain(DomainDescriptor dd)
+    private static GWTDomain<GWTPropertyDescriptor> getDomain(DomainDescriptor dd)
     {
-        GWTDomain gwtDomain = new GWTDomain();
+        GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
 
         gwtDomain.setDomainId(dd.getDomainId());
         gwtDomain.setDomainURI(dd.getDomainURI());
@@ -203,6 +202,13 @@ public class DomainUtil
             validators.add(gpv);
         }
         gwtProp.setPropertyValidators(validators);
+
+        List<GWTConditionalFormat> formats = new ArrayList<GWTConditionalFormat>();
+        for (ConditionalFormat format : prop.getConditionalFormats())
+        {
+            formats.add(new GWTConditionalFormat(format));
+        }
+        gwtProp.setConditionalFormats(formats);
 
         if (prop.getLookup() != null)
         {
@@ -457,6 +463,13 @@ public class DomainUtil
         {
             to.setLookup(null);
         }
+
+        List<ConditionalFormat> formats = new ArrayList<ConditionalFormat>();
+        for (GWTConditionalFormat format : from.getConditionalFormats())
+        {
+            formats.add(new ConditionalFormat(format));
+        }
+        to.setConditionalFormats(formats);
     }
 
     @SuppressWarnings("unchecked")

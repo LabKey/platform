@@ -16,8 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.ColumnType;
@@ -159,6 +157,7 @@ public class TableInfoWriter
 
         // TODO: Field validators?
         // TODO: Default values / Default value types
+        ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml);
     }
 
     protected String getConceptURI(ColumnInfo column)
@@ -168,7 +167,6 @@ public class TableInfoWriter
 
     /**
      * Get the propertyURI of the ColumnInfo or null if no uri should be written.
-     * @param column
      * @return The propertyURI to be written or null.
      */
     @Nullable

@@ -694,7 +694,7 @@ public class OntologyManager
                 StringBuilder sqlIN = new StringBuilder();
                 for (Integer id : pdIdsToDelete)
                 {
-                    PropertyService.get().deleteValidatorsForPropertyDescriptor(id);
+                    PropertyService.get().deleteValidatorsAndFormats(id);
 
                     sqlIN.append(sep);
                     sqlIN.append(id);
@@ -764,7 +764,7 @@ public class OntologyManager
 			Table.execute(getExpSchema(), deleteObjSql, new Object[]{containerid});
 
             // delete property validator references on property descriptors
-            PropertyService.get().deleteValidatorsForContainer(c);
+            PropertyService.get().deleteValidatorsAndFormats(c);
 
             String deletePropDomSqlPD = "DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId IN (SELECT PropertyId FROM " + getTinfoPropertyDescriptor() + " WHERE Container = ?)";
             Table.execute(getExpSchema(), deletePropDomSqlPD, new Object[]{containerid});

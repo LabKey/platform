@@ -17,12 +17,14 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.User;
 
+import java.util.List;
 import java.util.Set;
 
 public interface DomainProperty
@@ -86,7 +88,10 @@ public interface DomainProperty
 
     PropertyDescriptor getPropertyDescriptor();
 
-    IPropertyValidator[] getValidators();
+    List<ConditionalFormat> getConditionalFormats();
+    void setConditionalFormats(List<ConditionalFormat> formats);
+
+    List<? extends IPropertyValidator> getValidators();
     void addValidator(IPropertyValidator validator);
     void removeValidator(IPropertyValidator validator);
     void removeValidator(int validatorId);

@@ -33,13 +33,18 @@ LABKEY.ActionURL = new function()
     // private member variables
 
     // private functions
-    function buildParameterMap()
+    function buildParameterMap(paramString)
     {
-        if (LABKEY.postParameters)
+        if (!paramString && LABKEY.postParameters)
         {
+            // The caller hasn't requested us to parse a specific URL, and we have POST parameters that were written
+            // back into the page by the server
             return LABKEY.postParameters;
         }
-        var paramString = window.location.search;
+        if (!paramString)
+        {
+            paramString = window.location.search;
+        }
         if (paramString.charAt(0) == '?')
             paramString = paramString.substring(1, paramString.length);
         var paramArray = paramString.split('&');
@@ -167,11 +172,12 @@ LABKEY.ActionURL = new function()
         * of a single value. Use Ext.isArray() to determine if the value is an array or not, or use
         * getParameter() or getParameterArray() to retrieve a specific parameter name as a single value
         * or array respectively.
+        * @param {String} url the URL to parse (optional). If not specified, the browser's current location will be used. 
         * @return {Object} Map of parameter names to values.
         */
-        getParameters : function()
+        getParameters : function(url)
         {
-            return buildParameterMap();
+            return buildParameterMap(url);
         },
 
         /**

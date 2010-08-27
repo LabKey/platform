@@ -27,6 +27,7 @@ import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.util.DateUtil;
+import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.sql.Types;
 import java.util.*;
@@ -38,7 +39,7 @@ import java.util.*;
  */
 public enum CompareType
 {
-    EQUAL("Equals", "eq", true, " = ?", "EQUAL")
+    EQUAL("Equals", "eq", true, " = ?", "EQUAL", OperatorType.EQ)
         {
             @Override
             FilterClause createFilterClause(String colName, Object value)
@@ -62,21 +63,21 @@ public enum CompareType
                 return value.equals(convert(filterValues[0], value.getClass()));
             }
         },
-    DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL")
+    DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL", OperatorType.DATEEQ)
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
                 return getDateCompareClause(colName, value);
             }
         },
-    DATE_NOT_EQUAL("Does Not Equal", "dateneq", true, " <> ?", "DATE_NOT_EQUAL")
+    DATE_NOT_EQUAL("Does Not Equal", "dateneq", true, " <> ?", "DATE_NOT_EQUAL", OperatorType.DATENEQ)
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
                 return getDateCompareClause(colName, value);
             }
         },
-    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING")
+    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING", OperatorType.NEQORNULL)
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
@@ -89,7 +90,7 @@ public enum CompareType
                 return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
             }
         },
-    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL")
+    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL", OperatorType.NEQ)
         {
             @Override
             FilterClause createFilterClause(String colName, Object value)
@@ -103,7 +104,7 @@ public enum CompareType
                 return !CompareType.EQUAL.meetsCriteria(value, filterValues);
             }
         },
-    ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING")
+    ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING", OperatorType.ISBLANK)
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
@@ -116,7 +117,7 @@ public enum CompareType
                 return value == null;
             }
         },
-    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING")
+    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING", OperatorType.ISNONBLANK)
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
@@ -129,7 +130,7 @@ public enum CompareType
                 return value != null;
             }
         },
-    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN")
+    GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN", OperatorType.GT)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -146,7 +147,7 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) > 0;
             }
         },
-    LT("Is Less Than", "lt", true, " < ?", "LESS_THAN")
+    LT("Is Less Than", "lt", true, " < ?", "LESS_THAN", OperatorType.LT)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -163,7 +164,7 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) < 0;
             }
         },
-    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL")
+    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL", OperatorType.GTE)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -180,7 +181,7 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) >= 0;
             }
         },
-    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL")
+    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL", OperatorType.LTE)
         {
             @Override
             public boolean meetsCriteria(Object value, Object[] filterValues)
@@ -197,7 +198,7 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) <= 0;
             }
         },
-    CONTAINS("Contains", "contains", true, null, "CONTAINS")
+    CONTAINS("Contains", "contains", true, null, "CONTAINS", OperatorType.CONTAINS)
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
@@ -210,7 +211,7 @@ public enum CompareType
                 return value != null && value.toString().indexOf((String)filterValues[0]) != -1;
             }
         },
-    DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN")
+    DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN", OperatorType.DOESNOTCONTAIN)
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
@@ -223,7 +224,7 @@ public enum CompareType
                     return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
                 }
             },
-    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH")
+    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH", OperatorType.DOESNOTSTARTWITH)
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
@@ -236,7 +237,7 @@ public enum CompareType
                     return value == null || !value.toString().startsWith((String)filterValues[0]);
                 }
             },
-    STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH")
+    STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH", OperatorType.STARTSWITH)
             {
                 public CompareClause createFilterClause(String colName, Object value)
                 {
@@ -249,7 +250,7 @@ public enum CompareType
                     return value != null && value.toString().startsWith((String)filterValues[0]);
                 }
             },
-    IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "EQUALS_ONE_OF")
+    IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "EQUALS_ONE_OF", OperatorType.IN)
             {
                 // Each compare type uses CompareClause by default
                 FilterClause createFilterClause(String colName, Object value)
@@ -274,7 +275,8 @@ public enum CompareType
                     }
                 }
             },
-    HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE")           // TODO: Switch to MV_INDICATOR
+    HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE", OperatorType.HASMVVALUE)
+    // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -282,7 +284,8 @@ public enum CompareType
                     return new QcClause(colName, false);
                 }
             },
-    NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE")        // TODO: Switch to MV_INDICATOR
+    NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE", OperatorType.NOMVVALUE)
+    // TODO: Switch to MV_INDICATOR
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -338,21 +341,23 @@ public enum CompareType
     }
 
     private String _preferredURLKey;
+    private final OperatorType.Enum _xmlType;
     private Set<String> _urlKeys = new CaseInsensitiveHashSet();
     private String _displayValue;
     private boolean _dataValueRequired;
     private String _sql;
     private String _scriptName;
 
-    CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName)
+    CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
     {
-        this(displayValue, urlKeys[0], dataValueRequired, sql, scriptName);
+        this(displayValue, urlKeys[0], dataValueRequired, sql, scriptName, xmlType);
         _urlKeys.addAll(Arrays.asList(urlKeys));
     }
 
-    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String scriptName)
+    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
     {
         _preferredURLKey = urlKey;
+        _xmlType = xmlType;
         _urlKeys.add(urlKey);
         _displayValue = displayValue;
         _dataValueRequired = dataValueRequired;
@@ -421,6 +426,11 @@ public enum CompareType
     public String getDisplayValue()
     {
         return _displayValue;
+    }
+
+    public OperatorType.Enum getXmlType()
+    {
+        return _xmlType;
     }
 
     public String getPreferredUrlKey()

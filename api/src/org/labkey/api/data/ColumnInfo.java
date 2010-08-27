@@ -100,6 +100,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;
+    private List<ConditionalFormat> conditionalFormats = new ArrayList<ConditionalFormat>();
 
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _lockName = false;
@@ -275,6 +276,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
+        setConditionalFormats(col.getConditionalFormats());
         // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
         // hide the fact that these values can be null internally.  It's important to preserve the notion
         // of unset values on the new columninfo.
@@ -786,7 +788,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         if (xmlCol.isSetConditionalFormats())
         {
-            setConditionalFormats(ConditionalFormat.convertFromXml(xmlCol.getConditionalFormats()));
+            setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
         }
     }
 
@@ -1396,5 +1398,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public boolean isLookup()
     {
         return getFk() != null;
+    }
+
+    public List<ConditionalFormat> getConditionalFormats()
+    {
+        return conditionalFormats;
+    }
+
+    public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
+    {
+        this.conditionalFormats = conditionalFormats;
     }
 }

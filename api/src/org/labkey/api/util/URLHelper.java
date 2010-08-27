@@ -36,11 +36,10 @@ import java.util.*;
 
 public class URLHelper implements Cloneable, Serializable, Taintable
 {
-    private static final Logger _log = Logger.getLogger(URLHelper.class);
+    private static final Logger LOG = Logger.getLogger(URLHelper.class);
 
     protected boolean _tainted = false;
     protected String _scheme = "http";
-    protected String _userInfo = null;
     protected String _host = null;
     protected int _port = 80;
     protected Path _contextPath = Path.rootPath;
@@ -707,7 +706,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         }
         catch (Exception x)
         {
-            Logger.getLogger(URLHelper.class).error("unexpected error", x);
+            LOG.error("unexpected error", x);
             throw new RuntimeException(x);
         }
     }

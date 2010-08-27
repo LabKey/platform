@@ -163,41 +163,51 @@ LABKEY.Filter = new function()
             return getFilter(columnName, value, filterType);
         },
 
-        convertURLToHumanReadable : function(url, dataRegionName, columnName)
+        /**
+        * Convert from URL syntax filters to a human readable description, like "Is Greater Than 10 AND Is Less Than 100"
+        * @param {String} url URL containing the filter parameters
+        * @param {String} dataRegionName String name of the data region the column is a part of
+        * @param {String} columnName String name of the column to filter
+        * @return {String} human readable version of the filter
+         */
+        getFilterDescription : function(url, dataRegionName, columnName)
         {
-            var filterParts = url.split("&");
+            var params = LABKEY.ActionURL.getParameters(url);
             var result = "";
             var separator = "";
-            for (var i = 0; i < filterParts.length; i++)
+            for (var paramName in params)
             {
-                result += separator;
-                separator = " AND ";
-                var filterPart = filterParts[i];
-                var index = filterPart.indexOf("~");
-                if (index != -1)
+                // Look for parameters that have the right prefix
+                if (paramName.indexOf(dataRegionName + "." + columnName + "~") == 0)
                 {
-                    filterPart = filterPart.substring(index + 1);
-                }
-                else
-                {
-                    index = filterPart.indexOf("%7E");
-                    if (index != -1)
+                    var filterType = paramName.substring(paramName.indexOf("~") + 1);
+                    var values = params[paramName];
+                    if (!Ext.isArray(values))
                     {
-                        filterPart = filterPart.substring(index + 3);
+                        values = [values];
                     }
-                }
-                var parts = filterPart.split("=");
-                var friendly = urlMap[parts[0]];
-                if (!friendly)
-                {
-                    friendly = parts[0];
-                }
-                result += friendly.getDisplayText();
-                for (var j = 1; j < parts.length; j++)
-                {
-                    result += " ";
-                    // TODO - decode URI values
-                    result += parts[j];
+                    // Get the human readable version, like "Is Less Than"
+                    var friendly = urlMap[filterType];
+                    var displayText;
+                    if (!friendly)
+                    {
+                        displayText = filterType;
+                    }
+                    else
+                    {
+                        displayText = friendly.getDisplayText();
+                    }
+
+                    for (var j = 0; j < values.length; j++)
+                    {
+                        // If the same type of filter is applied twice, it will have multiple values
+                        result += separator;
+                        separator = " AND ";
+
+                        result += displayText;
+                        result += " ";
+                        result += values[j];
+                    }
                 }
             }
             return result;

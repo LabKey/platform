@@ -136,7 +136,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     public native static String getDescription(String queryString, String dataRegionName, String columnName)
     /*-{
-        return $wnd.LABKEY.Filter.convertURLToHumanReadable(queryString, dataRegionName, columnName);
+        return $wnd.LABKEY.Filter.getFilterDescription(queryString, dataRegionName, columnName);
     }-*/;
 
     public native static void showFilterDialog(String dataRegionName, String colName, String caption, String dataType, boolean mvEnabled, String filter, ConditionalFormatItem handler)
