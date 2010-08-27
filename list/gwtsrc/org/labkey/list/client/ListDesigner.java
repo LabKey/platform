@@ -1021,7 +1021,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 String name = (null == row.orig ? row.edit.getName() : row.orig.getName());
                 if (name.equalsIgnoreCase(_list.getKeyPropertyName()))
                 {
-                    String src = PropertyUtil.getContextPath() + "/_images/key.gif";
+                    String src = PropertyUtil.getContextPath() + "/_images/key.png";
                     Image i = new Image(src);
                     i.setPixelSize(14, 21);
                     Tooltip.addTooltip(i, "primary key");
