@@ -10,6 +10,9 @@ import java.io.Serializable;
  */
 public class GWTConditionalFormat implements Serializable, IsSerializable
 {
+    public static final String COLOR_REGEX = "[0-9A-Fa-f]{6}+";  
+
+
     public static final String DATA_REGION_NAME = "format";
     public static final String COLUMN_NAME = "column";
 

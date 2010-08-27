@@ -69,6 +69,23 @@ public enum CompareType
             {
                 return getDateCompareClause(colName, value);
             }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                if (value == null)
+                {
+                    return false;
+                }
+                if (paramVals.length == 2)
+                {
+                    Date dateValue = (Date)((value instanceof Date) ? value : ConvertUtils.convert(value.toString(), Date.class));
+                    Date begin = (Date)((paramVals[0] instanceof Date) ? paramVals[0] : ConvertUtils.convert(paramVals[0].toString(), Date.class));
+                    Date end = (Date)((paramVals[1] instanceof Date) ? paramVals[1] : ConvertUtils.convert(paramVals[1].toString(), Date.class));
+                    return dateValue.compareTo(begin) >= 0 && dateValue.compareTo(end) <= 0;
+                }
+                return false;
+            }
         },
     DATE_NOT_EQUAL("Does Not Equal", "dateneq", true, " <> ?", "DATE_NOT_EQUAL", OperatorType.DATENEQ)
         {
@@ -76,7 +93,25 @@ public enum CompareType
             {
                 return getDateCompareClause(colName, value);
             }
-        },
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                if (value == null)
+                {
+                    return true;
+                }
+
+                if (paramVals.length == 2)
+                {
+                    Date dateValue = (Date)((value instanceof Date) ? value : ConvertUtils.convert(value.toString(), Date.class));
+                    Date begin = (Date)((paramVals[0] instanceof Date) ? paramVals[0] : ConvertUtils.convert(paramVals[0].toString(), Date.class));
+                    Date end = (Date)((paramVals[1] instanceof Date) ? paramVals[1] : ConvertUtils.convert(paramVals[1].toString(), Date.class));
+                    return !(dateValue.compareTo(begin) >= 0 && dateValue.compareTo(end) <= 0);
+                }
+
+                return false;
+            }},
     NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING", OperatorType.NEQORNULL)
         {
             public CompareClause createFilterClause(String colName, Object value)
@@ -274,7 +309,12 @@ public enum CompareType
                         return new SimpleFilter.InClause(colName, values, true);
                     }
                 }
-            },
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                }},
     HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "QC_VALUE", OperatorType.HASMVVALUE)
     // TODO: Switch to MV_INDICATOR
             {
@@ -282,6 +322,12 @@ public enum CompareType
                 QcClause createFilterClause(String colName, Object value)
                 {
                     return new QcClause(colName, false);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Conditional formatting not yet supported for QC/MV value indicators");
                 }
             },
     NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NOT_QC_VALUE", OperatorType.NOMVVALUE)
@@ -291,6 +337,12 @@ public enum CompareType
                 QcClause createFilterClause(String colName, Object value)
                 {
                     return new QcClause(colName, true);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Conditional formatting not yet supported for QC/MV value indicators");
                 }
             };
 
@@ -458,10 +510,7 @@ public enum CompareType
         return _scriptName;
     }
 
-    public boolean meetsCriteria(Object value, Object[] paramVals)
-    {
-        return false;
-    }
+    public abstract boolean meetsCriteria(Object value, Object[] paramVals);
     
     // Each compare type uses CompareClause by default
     FilterClause createFilterClause(String colName, Object value)

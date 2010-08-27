@@ -11,7 +11,9 @@ import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatFiltersType;
 import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.ConditionalFormatsType;
+import org.labkey.data.xml.queryCustomView.OperatorType;
 
+import java.awt.*;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -182,6 +184,31 @@ public class ConditionalFormat extends GWTConditionalFormat
         }
     }
 
+    private Color getParsedColor(String colorString)
+    {
+        if (colorString == null || colorString.isEmpty() || !colorString.matches(COLOR_REGEX))
+        {
+            return null;
+        }
+        colorString = colorString.toUpperCase();
+
+        String redString = colorString.substring(0, 2);
+        String greenString = colorString.substring(2, 4);
+        String blueString = colorString.substring(4, 6);
+
+        return new Color(Integer.parseInt(redString, 16), Integer.parseInt(greenString, 16), Integer.parseInt(blueString, 16));
+    }
+
+    public Color getParsedTextColor()
+    {
+        return getParsedColor(getTextColor());
+    }
+
+    public Color getParsedBackgroundColor()
+    {
+        return getParsedColor(getBackgroundColor());
+    }
+
     private static void addToXML(List<? extends GWTConditionalFormat> formats, ConditionalFormatsType xmlFormats)
     {
         for (GWTConditionalFormat baseFormat : formats)
@@ -193,16 +220,33 @@ public class ConditionalFormat extends GWTConditionalFormat
             for (SimpleFilter.FilterClause filterClause : simpleFilter.getClauses())
             {
                 ConditionalFormatFilterType xmlFilter = xmlFormat.getFilters().addNewFilter();
-                if (!(filterClause instanceof CompareType.CompareClause))
+                if (filterClause instanceof CompareType.CompareClause)
                 {
-                    throw new IllegalArgumentException("Unable to serialize a FilterClause that is not a CompareClause");
+                    CompareType.CompareClause compareClause = (CompareType.CompareClause)filterClause;
+                    xmlFilter.setOperator(compareClause.getComparison().getXmlType());
+                    Object[] paramValues = compareClause.getParamVals();
+                    if (paramValues != null && paramValues.length > 0 && paramValues[0] != null)
+                    {
+                        xmlFilter.setValue(paramValues[0].toString());
+                    }
                 }
-                CompareType.CompareClause compareClause = (CompareType.CompareClause)filterClause;
-                xmlFilter.setOperator(compareClause.getComparison().getXmlType());
-                Object[] paramValues = compareClause.getParamVals();
-                if (paramValues != null && paramValues.length > 0 && paramValues[0] != null)
+                else if (filterClause instanceof SimpleFilter.InClause)
                 {
-                    xmlFilter.setValue(paramValues[0].toString());
+                    SimpleFilter.InClause inClause = (SimpleFilter.InClause)filterClause;
+                    xmlFilter.setOperator(OperatorType.IN);
+                    StringBuilder values = new StringBuilder();
+                    String separator = "";
+                    for (Object inValue : inClause.getParamVals())
+                    {
+                        values.append(separator);
+                        separator = ";";
+                        values.append(inValue == null ? "" : inValue.toString());
+                    }
+                    xmlFilter.setValue(values.toString());
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Unsupported filter clause: " + filterClause);
                 }
             }
             if (format.isBold())

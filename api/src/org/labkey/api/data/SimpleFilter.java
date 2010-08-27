@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,8 +32,6 @@ import java.util.*;
  */
 public class SimpleFilter implements Filter
 {
-    private static Logger _log = Logger.getLogger(SimpleFilter.class);
-
     public static abstract class FilterClause
     {
         private boolean _urlClause = false;
@@ -367,6 +364,21 @@ public class SimpleFilter implements Filter
             values.addAll(newValues);
             setParamVals(values.toArray());
         }
+
+        @Override
+        public boolean meetsCriteria(Object value)
+        {
+            for (Object params : getParamVals())
+            {
+                // Loop through all the values and check if any of them are equals
+                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getColumnNames().get(0), params);
+                if (compareClause.meetsCriteria(value))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     private ArrayList<FilterClause> _clauses = new ArrayList<FilterClause>();
@@ -554,12 +566,33 @@ public class SimpleFilter implements Filter
         String prefix = regionName == null ? "" : regionName + ".";
         for (FilterClause fc : _clauses)
         {
+            String urlType = null;
+            String value = null;
             if (fc instanceof CompareClause)
             {
                 CompareClause cc = (CompareClause) fc;
-                String key = prefix + cc._colName + "~" + cc._comparison.getPreferredUrlKey();
-                String value = cc.getParamVals() != null && cc.getParamVals()[0] != null ?
+                urlType = cc._comparison.getPreferredUrlKey();
+                value = cc.getParamVals() != null && cc.getParamVals()[0] != null ?
                         cc.getParamVals()[0].toString() : null;
+            }
+            else if (fc instanceof SimpleFilter.InClause)
+            {
+                SimpleFilter.InClause inClause = (SimpleFilter.InClause)fc;
+                urlType = CompareType.IN.getPreferredUrlKey();
+                StringBuilder values = new StringBuilder();
+                String separator = "";
+                for (Object inValue : inClause.getParamVals())
+                {
+                    values.append(separator);
+                    separator = ";";
+                    values.append(inValue == null ? "" : inValue.toString());
+                }
+                value = values.toString();
+            }
+
+            if (urlType != null)
+            {
+                String key = prefix + fc.getColumnNames().get(0) + "~" + urlType;
                 url.addParameter(key, value);
             }
         }

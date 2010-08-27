@@ -20,7 +20,10 @@ import jxl.Cell;
 import jxl.CellType;
 import jxl.DateCell;
 import jxl.NumberCell;
+import jxl.format.*;
+import jxl.format.Colour;
 import jxl.write.*;
+import jxl.write.Label;
 import jxl.write.Number;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
@@ -28,6 +31,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.Boolean;
@@ -35,6 +39,7 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ExcelColumn extends RenderColumn
@@ -57,6 +62,7 @@ public class ExcelColumn extends RenderColumn
     private int _autoSizeWidth = 0;
     private String _name = null;
     private String _caption = null;
+    private Map<ConditionalFormat, WritableCellFormat> _formats = new HashMap<ConditionalFormat, WritableCellFormat>();
 
     public static class ExcelFormatDescriptor extends Pair<Class, String>
     {
@@ -233,6 +239,8 @@ public class ExcelColumn extends RenderColumn
         if (null == o)
             return;
 
+        ColumnInfo columnInfo = _dc.getColumnInfo();
+
         try
         {
             switch (_simpleType)
@@ -258,7 +266,18 @@ public class ExcelColumn extends RenderColumn
             }
 
             if (cell != null)
+            {
+                if (columnInfo != null)
+                {
+                    CellFormat cellFormat = getExcelFormat(o, columnInfo);
+                    if (cellFormat != null)
+                    {
+                        cell.setCellFormat(cellFormat);
+                    }
+                }
+
                 sheet.addCell(cell);
+            }
         }
         catch(ClassCastException cce)
         {
@@ -267,11 +286,73 @@ public class ExcelColumn extends RenderColumn
             _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
             _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
             _log.error("DisplayColumn.getValueClass(): " + _dc.getValueClass());
-            _log.error("DisplayColumn.getColumnInfo().getSqlTypeInt(): " + _dc.getColumnInfo().getSqlTypeInt());
-            _log.error("DisplayColumn.getColumnInfo().getSqlTypeName(): " + _dc.getColumnInfo().getSqlTypeName());
+            _log.error("DisplayColumn.getColumnInfo().getSqlTypeInt(): " + columnInfo.getSqlTypeInt());
+            _log.error("DisplayColumn.getColumnInfo().getSqlTypeName(): " + columnInfo.getSqlTypeName());
 
             throw cce;
         }
+    }
+
+    private CellFormat getExcelFormat(Object o, ColumnInfo columnInfo) throws WriteException
+    {
+        for (ConditionalFormat format : columnInfo.getConditionalFormats())
+        {
+            if (format.meetsCriteria(o))
+            {
+                WritableCellFormat excelFormat = _formats.get(format);
+                if (excelFormat == null)
+                {
+                    WritableFont font = new WritableFont(ExcelWriter.DEFAULT_FONT);
+                    if (format.isItalic())
+                    {
+                        font.setItalic(true);
+                    }
+                    if (format.isStrikethrough())
+                    {
+                        font.setStruckout(true);
+                    }
+                    if (format.isBold())
+                    {
+                        font.setBoldStyle(WritableFont.BOLD);
+                    }
+                    Color textColor = format.getParsedTextColor();
+                    if (textColor != null)
+                    {
+                        font.setColour(findBestColour(textColor));
+                    }
+                    excelFormat = new WritableCellFormat(font);
+                    Color backgroundColor = format.getParsedBackgroundColor();
+                    if (backgroundColor != null)
+                    {
+                        excelFormat.setBackground(findBestColour(backgroundColor));
+                    }
+                    _formats.put(format, excelFormat);
+                }
+                return excelFormat;
+            }
+        }
+        return null;
+    }
+
+    /** Since our Excel library has an enum of allowable colors, find the one that's closest to the one the user selected */
+    private Colour findBestColour(Color color)
+    {
+        Colour bestMatch = null;
+        int bestScore = Integer.MAX_VALUE;
+        for (Colour colour : Colour.getAllColours())
+        {
+            // Evaluate based on simple per-color difference in intensity
+            int score = Math.abs(colour.getDefaultRGB().getRed() - color.getRed());
+            score += Math.abs(colour.getDefaultRGB().getGreen() - color.getGreen());
+            score += Math.abs(colour.getDefaultRGB().getBlue() - color.getBlue());
+
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestMatch = colour;
+            }
+        }
+        return bestMatch;
     }
 
     protected void renderCaption(WritableSheet sheet, int row, int column, WritableCellFormat cellFormat) throws WriteException

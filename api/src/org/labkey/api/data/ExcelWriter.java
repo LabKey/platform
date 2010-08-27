@@ -64,6 +64,8 @@ public class ExcelWriter
     private WritableCellFormat _wrappingTextFormat = null;
     private WritableCellFormat _nonWrappingTextFormat = null;
 
+    public static final WritableFont.FontName DEFAULT_FONT = WritableFont.ARIAL;
+
     private Map<ExcelColumn.ExcelFormatDescriptor, WritableCellFormat> _formatters = new HashMap<ExcelColumn.ExcelFormatDescriptor, WritableCellFormat>();
 
     private int _currentRow = 0;
@@ -600,7 +602,7 @@ public class ExcelWriter
     {
         if (null == _boldFormat)
         {
-            WritableFont boldFont = new WritableFont(WritableFont.ARIAL, 10, WritableFont.BOLD);
+            WritableFont boldFont = new WritableFont(DEFAULT_FONT, 10, WritableFont.BOLD);
             _boldFormat = new WritableCellFormat(boldFont);
         }
 
