@@ -47,7 +47,7 @@ public class SpecimenReportExcelWriter
         ServletOutputStream ostream = null;
         try
         {
-            WritableFont boldFont = new WritableFont(WritableFont.ARIAL, 10, WritableFont.BOLD);
+            WritableFont boldFont = new WritableFont(ExcelWriter.DEFAULT_FONT, 10, WritableFont.BOLD);
             _headerFormat = new WritableCellFormat(boldFont);
             _headerFormat.setWrap(true);
             _headerFormat.setVerticalAlignment(jxl.format.VerticalAlignment.TOP);
