@@ -19,6 +19,17 @@ function getSuccessCallbackWrapper(createMeasureFn, fn, scope)
 
 LABKEY.Visualization = new function() {
 
+    function formatParams(config)
+    {
+        var params = {};
+
+        if (config.filters && config.filters.length)
+        {
+            params['filters'] = config.filters;
+        }
+        return params;
+    }
+
     /*-- public methods --*/
     /** @scope LABKEY.Visualization */
     return {
@@ -31,7 +42,7 @@ LABKEY.Visualization = new function() {
 
         getTypes : function(config) {
 
-            return [Types.TABULAR, Types.EXCEL, Types.SCATTER, Types.TIMEPLOT];
+            return [LABKEY.Visualization.Types.TABULAR, LABKEY.Visualization.Types.EXCEL, LABKEY.Visualization.Types.SCATTER, LABKEY.Visualization.Types.TIMEPLOT];
         },
 
         getMeasures : function(config) {
@@ -47,12 +58,15 @@ LABKEY.Visualization = new function() {
                 return measures;
             }
 
+            var params = formatParams(config);
+
             Ext.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("reports", "getMeasures", null, config),
+                url : LABKEY.ActionURL.buildURL("reports", "getMeasures"),
                 method : 'GET',
                 success: getSuccessCallbackWrapper(createMeasures, config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                params : params
             });
         }
     };
@@ -72,6 +86,10 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
 
     getSchemaName : function() {
         return this.schemaName;
+    },
+
+    isUserDefined : function() {
+        return this.isUserDefined;
     },
 
     getName : function() {
@@ -130,6 +148,10 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
         return this.schema;
     },
 
+    isUserDefined : function() {
+        return this.isUserDefined;
+    },
+
     getName : function() {
         return this.name;
     },
@@ -165,3 +187,37 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
         });
     }
 });
+
+LABKEY.Visualization.Filter = new function()
+{
+    function getURLParameterValue(config)
+    {
+        var params = [config.schema];
+
+        if (config.query)
+            params.push(config.query);
+        else
+            params.push('~');
+        
+        if (config.queryType)
+            params.push(config.queryType);
+
+        return params.join('|');
+    }
+
+    return {
+        QueryType : {
+            BUILT_IN : 'builtIn',
+            CUSTOM : 'custom',
+            ALL : 'all'
+        },
+
+        create : function(config)
+        {
+            if (!config.schema)
+                Ext.Msg.alert("Coding Error!", "You must supply a value for schema in your configuration object!");
+            else
+                return getURLParameterValue(config);
+        }
+    };
+};
