@@ -444,7 +444,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             hidden: fieldMeta.hidden,
             disabled: !fieldMeta.selectable,
             qtip: fieldMeta.description,
-            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.gif" : ""
+            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
         };
 
         return attrs;
