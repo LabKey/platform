@@ -51,12 +51,6 @@ public class UserManager
 
     private static Long _userCount = null;
 
-    public static SimpleFilter createSimpleFilter(String colName, Object value)
-    {
-        return new SimpleFilter(colName, value);
-    }
-
-
     //
     // UserListener
     //
@@ -500,7 +494,6 @@ public class UserManager
         catch (RuntimeException e){}
 
         AuditLogService.get().addEvent(user, c, UserManager.USER_AUDIT_EVENT, principal.getUserId(), message);
-        //Table.insert(user, _core.getTableInfoUserHistory(), PageFlowUtil.map("Date", new Date(), "UserId", user.getUserId(), "Message", message));
     }
 
 
@@ -612,7 +605,7 @@ public class UserManager
         {
             Table.execute(_core.getSchema(), "UPDATE " + _core.getTableInfoPrincipals() + " SET Name=? WHERE UserId=?", new Object[]{newEmail.getEmailAddress(), userId});
 
-            if (!SecurityManager.isLdapEmail(newEmail))
+            if (SecurityManager.loginExists(oldEmail))
                 Table.execute(_core.getSchema(), "UPDATE " + _core.getTableInfoLogins() + " SET Email=? WHERE Email=?", new Object[]{newEmail.getEmailAddress(), oldEmail.getEmailAddress()});
 
             UserManager.addToUserHistory(UserManager.getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");

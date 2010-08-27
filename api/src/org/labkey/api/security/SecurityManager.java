@@ -822,7 +822,7 @@ public class SecurityManager
     }
 
     // Create record for non-LDAP login, saving email address and hashed password.  Return verification token.
-    private static String createLogin(ValidEmail email) throws UserManagementException
+    public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
         String tempPassword = SecurityManager.createTempPassword();
