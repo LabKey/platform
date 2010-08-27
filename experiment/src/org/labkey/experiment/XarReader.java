@@ -95,7 +95,8 @@ public class XarReader extends AbstractXarImporter
             loadDoc(reloadExistingRuns);
 
             File expDir = new File(_xarSource.getRoot(), "export");
-            if (expDir.exists() && expDir.isDirectory())
+            if (expDir.exists() && expDir.isDirectory() &&
+                _experimentArchive.getExperimentRuns() != null && _experimentArchive.getExperimentRuns().getExperimentRunArray().length > 0)
             {
                 ExperimentRunType a = _experimentArchive.getExperimentRuns().getExperimentRunArray(0);
                 a.setCreateNewIfDuplicate(false);

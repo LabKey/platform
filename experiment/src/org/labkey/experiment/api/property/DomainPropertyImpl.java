@@ -23,12 +23,13 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ public class DomainPropertyImpl implements DomainProperty
     PropertyDescriptor _pd;
     boolean _deleted;
     List<PropertyValidatorImpl> _validators;
+    List<ConditionalFormat> _formats;
 
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
@@ -378,15 +380,10 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd;
     }
 
-    public boolean isDataTypeChanged()
+    @Override
+    public List<ConditionalFormat> getConditionalFormats()
     {
-        if (_deleted)
-            return true;
-        if (_new)
-            return true;
-        if (_pdOld == null)
-            return false;
-        return !_pdOld.getRangeURI().equals(_pd.getRangeURI());
+        return ensureConditionalFormats();
     }
 
     public boolean isNew()
@@ -398,7 +395,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (_pdOld != null) return true;
 
-        for (PropertyValidatorImpl v : _getValidators())
+        for (PropertyValidatorImpl v : ensureValidators())
         {
             if (v.isDirty() || v.isNew())
                 return true;
@@ -410,6 +407,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         for (IPropertyValidator validator : getValidators())
             DomainPropertyManager.get().removePropertyValidator(user, this, validator);
+        DomainPropertyManager.get().deleteConditionalFormats(getPropertyId());
 
         DomainKind kind = getDomain().getDomainKind();
         if (null != kind)
@@ -428,18 +426,20 @@ public class DomainPropertyImpl implements DomainProperty
 
         _pdOld = null;
 
-        for (PropertyValidatorImpl validator : _getValidators())
+        for (PropertyValidatorImpl validator : ensureValidators())
         {
             if (validator.isDeleted())
                 DomainPropertyManager.get().removePropertyValidator(user, this, validator);
             else
                 DomainPropertyManager.get().savePropertyValidator(user, this, validator);
         }
+
+        DomainPropertyManager.get().saveConditionalFormats(user, getPropertyDescriptor(), ensureConditionalFormats());
     }
 
-    public IPropertyValidator[] getValidators()
+    public List<PropertyValidatorImpl> getValidators()
     {
-        return _getValidators().toArray(new PropertyValidatorImpl[0]);
+        return Collections.unmodifiableList(ensureValidators());
     }
 
     public void addValidator(IPropertyValidator validator)
@@ -448,16 +448,16 @@ public class DomainPropertyImpl implements DomainProperty
         {
             PropertyValidator impl = new PropertyValidator();
             impl.copy(validator);
-            _getValidators().add(new PropertyValidatorImpl(impl));
+            ensureValidators().add(new PropertyValidatorImpl(impl));
         }
     }
 
     public void removeValidator(IPropertyValidator validator)
     {
-        int idx = _getValidators().indexOf(validator);
+        int idx = ensureValidators().indexOf(validator);
         if (idx != -1)
         {
-            PropertyValidatorImpl impl = _getValidators().get(idx);
+            PropertyValidatorImpl impl = ensureValidators().get(idx);
             impl.delete();
         }
     }
@@ -466,7 +466,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (validatorId == 0) return;
 
-        for (PropertyValidatorImpl imp : _getValidators())
+        for (PropertyValidatorImpl imp : ensureValidators())
         {
             if (imp.getRowId() == validatorId)
             {
@@ -476,7 +476,13 @@ public class DomainPropertyImpl implements DomainProperty
         }
     }
 
-    private List<PropertyValidatorImpl> _getValidators()
+    @Override
+    public void setConditionalFormats(List<ConditionalFormat> formats)
+    {
+        _formats = formats;
+    }
+
+    private List<PropertyValidatorImpl> ensureValidators()
     {
         if (_validators == null)
         {
@@ -487,6 +493,16 @@ public class DomainPropertyImpl implements DomainProperty
             }
         }
         return _validators;
+    }
+
+    private List<ConditionalFormat> ensureConditionalFormats()
+    {
+        if (_formats == null)
+        {
+            _formats = new ArrayList<ConditionalFormat>();
+            _formats.addAll(Arrays.asList(DomainPropertyManager.get().getConditionalFormats(this)));
+        }
+        return _formats;
     }
 
     @Override

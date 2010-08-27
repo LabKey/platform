@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -233,6 +234,12 @@ public class SchemaTsvReader implements SchemaReader
     public List<Map<String, Object>> getImportMaps()
     {
         return _importMaps;
+    }
+
+    @Override
+    public List<List<ConditionalFormat>> getConditionalFormats()
+    {
+        return null;
     }
 
     public Map<Integer, DataSetImportInfo> getDatasetInfo()

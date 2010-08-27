@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.InvalidFileException;
@@ -45,6 +46,7 @@ public class SchemaXmlReader implements SchemaReader
     private static final String NAME_KEY = "PlateName";
 
     private final List<Map<String, Object>> _importMaps = new LinkedList<Map<String, Object>>();
+    private final List<List<ConditionalFormat>> _formats = new LinkedList<List<ConditionalFormat>>();
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
 
@@ -139,7 +141,7 @@ public class SchemaXmlReader implements SchemaReader
                 }
 
                 ColumnType.Fk fk = columnXml.getFk();
-
+                _formats.add(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
                 Map<String, Object> map = mapFactory.getRowMap(new Object[]{
                     datasetName,
                     columnName,
@@ -196,6 +198,12 @@ public class SchemaXmlReader implements SchemaReader
     public List<Map<String, Object>> getImportMaps()
     {
         return _importMaps;
+    }
+
+    @Override
+    public List<List<ConditionalFormat>> getConditionalFormats()
+    {
+        return _formats;
     }
 
     public Map<Integer, DataSetImportInfo> getDatasetInfo()

@@ -864,6 +864,19 @@
         <ns:column columnName="MaterialSourceLSID"/>
       </ns:columns>
     </ns:table>
+    <ns:table tableName="ConditionalFormat" tableDbType="TABLE">
+      <ns:columns>
+          <ns:column columnName="RowId" />
+          <ns:column columnName="PropertyId" />
+          <ns:column columnName="SortOrder" />
+          <ns:column columnName="Filter" />
+          <ns:column columnName="Bold" />
+          <ns:column columnName="Italic" />
+          <ns:column columnName="Strikethrough" />
+          <ns:column columnName="TextColor" />
+          <ns:column columnName="BackgroundColor" />
+      </ns:columns>
+    </ns:table>
     <ns:table tableName="PropertyValidator" tableDbType="TABLE">
       <ns:columns>
         <ns:column columnName="RowId"/>

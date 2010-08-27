@@ -31,7 +31,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryServiceImpl;
@@ -208,7 +207,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         }
                         if (column.isSetConditionalFormats())
                         {
-                            List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXml(column.getConditionalFormats());
+                            List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXML(column.getConditionalFormats());
                             List<GWTConditionalFormat> gwtFormats = new ArrayList<GWTConditionalFormat>();
                             for (ConditionalFormat serverFormat : serverFormats)
                             {
@@ -507,32 +506,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             // Set the conditional formats
             if (shouldStoreValue(gwtColumnInfo.getConditionalFormats(), convertToGWT(rawColumnInfo.getConditionalFormats())))
             {
-                ColumnType.ConditionalFormats xmlFormats = xmlColumn.addNewConditionalFormats();
-                for (GWTConditionalFormat format : gwtColumnInfo.getConditionalFormats())
-                {
-                    ConditionalFormatType xmlFormat = xmlFormats.addNewConditionalFormat();
-                    xmlFormat.setFilter(format.getFilter());
-                    if (format.isBold())
-                    {
-                        xmlFormat.setBold(true);
-                    }
-                    if (format.isItalic())
-                    {
-                        xmlFormat.setItalics(true);
-                    }
-                    if (format.isStrikethrough())
-                    {
-                        xmlFormat.setStrikethrough(true);
-                    }
-                    if (format.getBackgroundColor() != null)
-                    {
-                        xmlFormat.setBackgroundColor(format.getBackgroundColor());
-                    }
-                    if (format.getTextColor() != null)
-                    {
-                        xmlFormat.setColor(format.getTextColor());
-                    }
-                }
+                ConditionalFormat.convertToXML(gwtColumnInfo.getConditionalFormats(), xmlColumn);
             }
 
             if (xmlColumn.getWrappedColumnName() == null)

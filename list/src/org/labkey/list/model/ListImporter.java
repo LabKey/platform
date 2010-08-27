@@ -19,12 +19,15 @@ package org.labkey.list.model;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.reader.DataLoader;
@@ -147,6 +150,7 @@ public class ListImporter
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
                 "ShownInDetailsView", "Measure", "Dimension");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
+        List<List<ConditionalFormat>> formats = new ArrayList<List<ConditionalFormat>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
         {
@@ -214,6 +218,7 @@ public class ListImporter
                 measure,
                 dimension
             });
+            formats.add(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
 
             importMaps.add(map);
         }
@@ -228,7 +233,17 @@ public class ListImporter
         };
 
         List<String> importErrors = new LinkedList<String>();
-        OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, importErrors, c, true);
+        PropertyDescriptor[] pds = OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, importErrors, c, true);
+
+        assert pds.length == formats.size();
+        for (int i = 0; i < pds.length; i++)
+        {
+            List<ConditionalFormat> pdFormats = formats.get(i);
+            if (!pdFormats.isEmpty())
+            {
+                PropertyService.get().saveConditionalFormats(user, pds[i], pdFormats);
+            }
+        }
 
         for (String error : importErrors)
             log.error(error);

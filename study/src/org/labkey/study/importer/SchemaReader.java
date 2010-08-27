@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.study.DataSet;
 import org.labkey.study.model.DataSetDefinition;
 
@@ -35,6 +36,12 @@ import java.util.Map;
 public interface SchemaReader
 {
     List<Map<String, Object>> getImportMaps();
+
+    /**
+     * @return null if there are no conditional formats to import, a list of lists of conditional formats, one for each
+     * property descriptor described by getImportMaps(), in the same order.
+     */
+    List<List<ConditionalFormat>> getConditionalFormats();
     Map<Integer, DataSetImportInfo> getDatasetInfo();
     String getTypeNameColumn();
 

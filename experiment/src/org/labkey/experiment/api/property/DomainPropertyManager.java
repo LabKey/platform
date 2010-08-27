@@ -17,6 +17,7 @@ package org.labkey.experiment.api.property;
 
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -25,6 +26,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.query.ValidationException;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Karl Lum
@@ -57,14 +61,59 @@ public class DomainPropertyManager
         return getExpSchema().getTable("ValidatorReference");
     }
 
+    public TableInfo getTinfoConditionalFormat()
+    {
+        return getExpSchema().getTable("ConditionalFormat");
+    }
+
     public PropertyValidator[] getValidators(DomainProperty property)
     {
-        return _getValidators(property.getPropertyId());
+        return getValidators(property.getPropertyId());
     }
 
     public PropertyValidator[] getValidators(PropertyDescriptor property)
     {
-        return _getValidators(property.getPropertyId());
+        return getValidators(property.getPropertyId());
+    }
+
+    public ConditionalFormat[] getConditionalFormats(DomainProperty property)
+    {
+        return getConditionalFormats(property.getPropertyId());
+    }
+
+    public ConditionalFormat[] getConditionalFormats(PropertyDescriptor property)
+    {
+        return getConditionalFormats(property.getPropertyId());
+    }
+
+    private ConditionalFormat[] getConditionalFormats(int propertyId)
+    {
+        try
+        {
+            if (propertyId != 0)
+            {
+                String cacheKey = getCacheKey(propertyId);
+                ConditionalFormat[] formats = (ConditionalFormat[])DbCache.get(getTinfoConditionalFormat(), cacheKey);
+
+                if (formats != null)
+                    return formats;
+
+                String sql = "SELECT CF.* " +
+                        "FROM " + getTinfoConditionalFormat() + " CF " +
+                        "WHERE CF.PropertyId = ? " +
+                        "ORDER BY SortOrder";
+
+                formats = Table.executeQuery(getExpSchema(), sql, new Object[]{propertyId}, ConditionalFormat.class);
+
+                DbCache.put(getTinfoConditionalFormat(), cacheKey, formats);
+                return formats;
+            }
+            return new ConditionalFormat[0];
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     private String getCacheKey(int propertyId)
@@ -72,7 +121,7 @@ public class DomainPropertyManager
         return String.valueOf(propertyId);
     }
 
-    private PropertyValidator[] _getValidators(int propertyId)
+    private PropertyValidator[] getValidators(int propertyId)
     {
         try
         {
@@ -214,13 +263,13 @@ public class DomainPropertyManager
 
     public void removeValidatorsForPropertyDescriptor(int descriptorId)
     {
-        for (PropertyValidator pv : _getValidators(descriptorId))
+        for (PropertyValidator pv : getValidators(descriptorId))
         {
             _removePropertyValidator(descriptorId, pv.getRowId());
         }
     }
 
-    public void deleteAllValidators(Container c) throws SQLException
+    public void deleteAllValidatorsAndFormats(Container c) throws SQLException
     {
         String deletePropValidatorRefSql = "DELETE FROM " + getTinfoValidatorReference() +
                 " WHERE ValidatorId IN (SELECT RowId FROM " + getTinfoValidator() + " WHERE Container = ?)";
@@ -229,6 +278,57 @@ public class DomainPropertyManager
         String deletePropValidatorSql = "DELETE FROM " + getTinfoValidator() + " WHERE Container = ?";
         Table.execute(getExpSchema(), deletePropValidatorSql, new Object[]{c.getId()});
 
+        String deleteConditionalFormatsSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId IN " +
+                "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)";
+        Table.execute(getExpSchema(), deleteConditionalFormatsSql, new Object[]{c.getId()});
+
         DbCache.clear(getTinfoValidator());
+        DbCache.clear(getTinfoConditionalFormat());
+    }
+
+    public void deleteConditionalFormats(int propertyId)
+    {
+        try
+        {
+            String deleteFormatSql = "DELETE FROM " + getTinfoConditionalFormat() + " WHERE PropertyId = ?";
+            Table.execute(getExpSchema(), deleteFormatSql, new Object[]{propertyId});
+            DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public void saveConditionalFormats(User user, PropertyDescriptor prop, List<ConditionalFormat> formats)
+    {
+        try
+        {
+            // Delete them all first
+            deleteConditionalFormats(prop.getPropertyId());
+
+            // Save the new ones
+            int index = 0;
+            for (ConditionalFormat format : formats)
+            {
+                // Table has two additional properties that aren't on the bean itself - propertyId and sortOrder
+                Map<String, Object> row = new HashMap<String, Object>();
+                row.put("Bold", format.isBold());
+                row.put("Italic", format.isItalic());
+                row.put("Strikethrough", format.isStrikethrough());
+                row.put("TextColor", format.getTextColor());
+                row.put("BackgroundColor", format.getBackgroundColor());
+                row.put("Filter", format.getFilter());
+                row.put("SortOrder", index++);
+                row.put("PropertyId", prop.getPropertyId());
+
+                Table.insert(user, getTinfoConditionalFormat(), row);
+                DbCache.remove(getTinfoValidator(), getCacheKey(prop.getPropertyId()));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 }

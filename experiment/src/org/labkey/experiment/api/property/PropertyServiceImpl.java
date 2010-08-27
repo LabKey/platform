@@ -16,12 +16,14 @@
 
 package org.labkey.experiment.api.property;
 
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -144,14 +146,27 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return validators.toArray(new IPropertyValidator[validators.size()]);
     }
 
-    public void deleteValidatorsForPropertyDescriptor(int descriptorId) throws SQLException
+    public void deleteValidatorsAndFormats(int descriptorId) throws SQLException
     {
         DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(descriptorId);
+        DomainPropertyManager.get().deleteConditionalFormats(descriptorId);
     }
 
-    public void deleteValidatorsForContainer(Container c) throws SQLException
+    public void deleteValidatorsAndFormats(Container c) throws SQLException
     {
-        DomainPropertyManager.get().deleteAllValidators(c);
+        DomainPropertyManager.get().deleteAllValidatorsAndFormats(c);
+    }
+
+    @Override
+    public List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc)
+    {
+        return Arrays.asList(DomainPropertyManager.get().getConditionalFormats(desc));
+    }
+
+    @Override
+    public void saveConditionalFormats(User user, PropertyDescriptor pd, List<ConditionalFormat> formats)
+    {
+        DomainPropertyManager.get().saveConditionalFormats(user, pd, formats);
     }
 
     public Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, DomainDescriptorType xDomain)
@@ -315,6 +330,9 @@ public class PropertyServiceImpl implements PropertyService.Interface
                 prop.addValidator(validator);
             }
         }
+
+        List<ConditionalFormat> formats = ConditionalFormat.convertFromXML(xProp.getConditionalFormats());
+        prop.setConditionalFormats(formats);
 
         return prop;
     }

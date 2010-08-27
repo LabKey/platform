@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
@@ -524,6 +525,8 @@ public class XarExporter
         {
             addPropertyValidator(xProp, validator);
         }
+
+        ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
     }
 
     private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)

@@ -36,6 +36,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -2226,6 +2227,20 @@ public class StudyManager
             {
                 Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
                 StudyManager manager = StudyManager.getInstance();
+
+                List<List<ConditionalFormat>> formats = reader.getConditionalFormats();
+                if (formats != null)
+                {
+                    assert formats.size() == pds.length;
+                    for (int i = 0; i < pds.length; i++)
+                    {
+                        List<ConditionalFormat> pdFormats = formats.get(i);
+                        if (!pdFormats.isEmpty())
+                        {
+                            PropertyService.get().saveConditionalFormats(user, pds[i], pdFormats);
+                        }
+                    }
+                }
 
                 for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
                 {
