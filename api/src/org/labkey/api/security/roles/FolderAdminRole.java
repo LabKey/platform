@@ -38,7 +38,7 @@ public class FolderAdminRole extends AbstractRole
                 AdminPermission.class,
                 EditSharedViewPermission.class);
 
-        addExcludedPrincipal(org.labkey.api.security.SecurityManager.getGroup(Group.groupGuests));
+        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
     }
 }

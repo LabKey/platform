@@ -16,7 +16,6 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.module.Module;
 
 /*
 * User: Dave
@@ -28,11 +27,6 @@ public abstract class AbstractContextualRole extends AbstractRole implements Con
     protected AbstractContextualRole(String name, String description, Class<? extends Permission>... perms)
     {
         super(name, description, perms);
-    }
-
-    protected AbstractContextualRole(String name, String description, Class<? extends Module> sourceModuleClass, Class<? extends Permission>... perms)
-    {
-        super(name, description, sourceModuleClass, perms);
     }
 
     @Override

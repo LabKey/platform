@@ -15,13 +15,13 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminReadPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.ReadSomePermission;
 
 /*
-* User: Dave
-* Date: Apr 27, 2009
+* User: Adam
+* Date: Jan 22, 2010
 * Time: 1:22:04 PM
 */
 public class TroubleshooterRole extends AbstractRole
@@ -30,5 +30,8 @@ public class TroubleshooterRole extends AbstractRole
     {
         super("Troubleshooter", "Troubleshooter may view administration settings but may not change them.",
                 AdminReadPermission.class);
+
+        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
     }
 }
