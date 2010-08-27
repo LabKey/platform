@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -25,5 +24,5 @@
     String message = ((HttpView<String>) HttpView.currentView()).getModelBean();
     ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 %>
-<%=message%>
-<%=PageFlowUtil.generateButton("Sign In", urlProvider(LoginUrls.class).getLoginURL(homeURL))%>&nbsp;<%=PageFlowUtil.generateButton("Home", homeURL)%>
+<%=message%><br><br>
+<%=PageFlowUtil.generateButton("Home", homeURL)%>

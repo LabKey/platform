@@ -1384,7 +1384,7 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class ResetPasswordAction extends SimpleViewAction<EmailForm>
+    public class AdminResetPasswordAction extends SimpleViewAction<EmailForm>
     {
         public ModelAndView getView(EmailForm form, BindException errors) throws Exception
         {
@@ -1397,23 +1397,36 @@ public class SecurityController extends SpringActionController
 
             ValidEmail email = new ValidEmail(rawEmail);
 
-            // Make sure it exists
-            if (!SecurityManager.loginExists(email))
+            if (SecurityManager.isLdapEmail(email))
             {
-                sbReset.append(" failed: doesn't exist in Logins table.</p>");
+                sbReset.append(" failed: can't reset the password for an LDAP user.");
             }
             else
             {
-                // Create a placeholder password that's impossible to guess and a separate email
-                // verification key that gets emailed.
-                String tempPassword = SecurityManager.createTempPassword();
-                String verification = SecurityManager.createTempPassword();
+                // We allow admins to create passwords (i.e., entries in the logins table) if they don't already exist.
+                // This addresses an SSO scenario.
+                boolean loginExists = SecurityManager.loginExists(email);
+                String pastVerb = loginExists ? "reset" : "created";
+                String infinitiveVerb = loginExists ? "reset" : "create";
 
                 try
                 {
-                    SecurityManager.setPassword(email, tempPassword);
-                    SecurityManager.setVerification(email, verification);
-                    sbReset.append(": password reset.</p>");
+                    String verification;
+
+                    if (loginExists)
+                    {
+                        // Create a placeholder password that's impossible to guess and a separate email
+                        // verification key that gets emailed.
+                        verification = SecurityManager.createTempPassword();
+                        SecurityManager.setPassword(email, SecurityManager.createTempPassword());
+                        SecurityManager.setVerification(email, verification);
+                    }
+                    else
+                    {
+                        verification = SecurityManager.createLogin(email);
+                    }
+
+                    sbReset.append(": password ").append(pastVerb).append(".</p><p>");
 
                     ActionURL actionURL = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", email.toString());
                     String url = actionURL.getLocalURIString();
@@ -1423,32 +1436,34 @@ public class SecurityController extends SpringActionController
                     {
                         Container c = getContainer();
                         ActionURL verificationURL = SecurityManager.createVerificationURL(c, email, verification, null);
-
                         SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
+
                         if (!user.getEmail().equals(email.getEmailAddress()))
                         {
                             SecurityMessage msg = SecurityManager.getResetMessage(true);
                             msg.setTo(email.getEmailAddress());
                             SecurityManager.sendEmail(c, user, msg, user.getEmail(), verificationURL);
                         }
+
                         sbReset.append("Email sent. ");
                         sbReset.append("Click ").append(href).append(" to see the email.");
-                        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " reset the password.");
+                        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
                     }
                     catch (MessagingException e)
                     {
                         sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
                         appendMailHelpText(sbReset, url);
-                        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " reset the password, but sending the email failed.");
+                        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
                     }
                 }
                 catch (SecurityManager.UserManagementException e)
                 {
                     sbReset.append(": failed to reset password due to: ").append(e.getMessage());
-                    UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to reset the password, but the reset failed: " + e.getMessage());
+                    UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
                 }
             }
-            sbReset.append("<br><br>");
+
+            sbReset.append("</p>");
             sbReset.append(PageFlowUtil.generateButton("Done", form.getReturnURLHelper()));
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new HtmlView(sbReset.toString());

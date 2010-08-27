@@ -1028,22 +1028,44 @@ public class UserController extends SpringActionController
             boolean isSiteAdmin = user.isAdministrator();
             boolean hasAdminPerm = c.hasPermission(user, AdminPermission.class);
             boolean isAnyAdmin = isSiteAdmin || hasAdminPerm;
+            ValidEmail detailsEmail = new ValidEmail(detailsUser.getEmail());
+            boolean loginExists = SecurityManager.loginExists(detailsEmail);
 
             DataRegion rgn = getGridRegion(isOwnRecord);
-            String displayEmail = UserManager.getEmailForId(_detailsUserId);
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
             bb.setStyle(ButtonBar.Style.separateButtons);
 
+            if (isOwnRecord && loginExists)
+            {
+                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
+                changePasswordButton.setActionType(ActionButton.Action.LINK);
+                changePasswordButton.addContextualRole(OwnerRole.class);
+                bb.add(changePasswordButton);
+            }
+
             if (isSiteAdmin)
             {
-                if (!SecurityManager.isLdapEmail(new ValidEmail(displayEmail)))
+                // Never display "Reset/Create Password" button for LDAP users... or for admin's own record.
+                if (!isOwnRecord && !SecurityManager.isLdapEmail(detailsEmail))
                 {
-                    ActionButton reset = new ActionButton("reset", "Reset Password");
-                    ActionURL resetURL = new ActionURL(SecurityController.ResetPasswordAction.class, c);
-                    resetURL.addParameter("email", displayEmail);
+                    // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
+                    // in with SSO and later needing to use database authentication.
+                    ActionButton reset = new ActionButton("reset", loginExists ? "Reset Password" : "Create Password");
+                    ActionURL resetURL = new ActionURL(SecurityController.AdminResetPasswordAction.class, c);
+                    resetURL.addParameter("email", detailsEmail.getEmailAddress());
                     resetURL.addReturnURL(getViewContext().getActionURL());
                     reset.setURL(resetURL.getLocalURIString());
                     reset.setActionType(ActionButton.Action.LINK);
+
+                    String message;
+
+                    if (loginExists)
+                        message = "You are about to clear the user's current password, send the user a reset password email, and force the user to pick a new password to access the site.";
+                    else
+                        message = "You are about to send the user a reset password email, letting the user pick a password to access the site.";
+
+                    reset.setScript("return confirm(" + PageFlowUtil.jsString(message) + ");", true);
+
                     bb.add(reset);
                 }
 
@@ -1053,7 +1075,7 @@ public class UserController extends SpringActionController
                 changeEmail.setURL(changeEmailURL.getLocalURIString());
                 bb.add(changeEmail);
 
-                if (user.getUserId() != detailsUser.getUserId())
+                if (!isOwnRecord)
                 {
                     ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                     deactivateUrl.addParameter("userId", _detailsUserId);
@@ -1077,14 +1099,6 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord)
             {
-                if (!SecurityManager.isLdapEmail(new ValidEmail(user.getEmail())))
-                {
-                    ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
-                    changePasswordButton.setActionType(ActionButton.Action.LINK);
-                    changePasswordButton.addContextualRole(OwnerRole.class);
-                    bb.add(changePasswordButton);
-                }
-
                 ActionButton doneButton;
 
                 if (null != form.getReturnUrl())

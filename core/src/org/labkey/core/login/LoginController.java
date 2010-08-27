@@ -810,7 +810,7 @@ public class LoginController extends SpringActionController
                 return false;
 
             // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-            // where a user is already logged in (normal changed password, admins initializing another user's a password, etc.)
+            // where a user is already logged in (normal changed password, admins initializing another user's password, etc.)
             if (getUser().isGuest())
             {
                 User authenticatedUser = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
@@ -1071,18 +1071,17 @@ public class LoginController extends SpringActionController
             {
                 _email = new ValidEmail(rawEmail);
 
-                if (SecurityManager.isLdapEmail(_email))  // TODO: Address SSO
+                if (SecurityManager.isLdapEmail(_email))
                     // ldap authentication users must reset through their ldap administrator
-                    errors.reject("reset", "Reset Password failed: " + _email + " is an LDAP email. Please contact your administrator to reset the password for this account.");
+                    errors.reject("reset", "Reset Password failed: " + _email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
                 else if (!SecurityManager.loginExists(_email))
-                    errors.reject("reset", "Reset Password failed: " + _email + " is not a registered user.");
+                    errors.reject("reset", "Reset Password failed: " + _email + " does not have a password.");
                 else
                 {
                     User user = UserManager.getUser(_email);
                     if(null != user && !user.isActive())
                         errors.reject("reset", "The password for this account may not be reset because this account has been deactivated. Please contact your administrator to re-activate this account.");
                 }
-
             }
             catch (ValidEmail.InvalidEmailException e)
             {
@@ -1109,19 +1108,16 @@ public class LoginController extends SpringActionController
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
-            // Create a placeholder password that's impossible to guess and a separate email
-            // verification key that gets emailed.
-            String verification = SecurityManager.createTempPassword();
-
             StringBuilder sbReset = new StringBuilder();
-            sbReset.append("<p>").append(form.getEmail());
-
             final User user = UserManager.getUser(_email);
 
             try
             {
+                // Create a placeholder password that's impossible to guess and a separate email
+                // verification key that gets emailed.
+                String verification = SecurityManager.createTempPassword();
+
                 SecurityManager.setVerification(_email, verification);
-                sbReset.append(": request password reset.</p>");
 
                 try
                 {
@@ -1140,7 +1136,7 @@ public class LoginController extends SpringActionController
                         message.setTo(_email.getEmailAddress());
                         SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
                     }
-                    sbReset.append("An email has been sent to you with instructions on how to reset your password. ");
+                    sbReset.append("An email has been sent to you with instructions for how to reset your password. ");
                     UserManager.addToUserHistory(UserManager.getUser(_email), _email + " reset the password.");
                 }
                 catch (MessagingException e)
