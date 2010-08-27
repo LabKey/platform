@@ -121,7 +121,7 @@ public enum PasswordExpiration
             testExpiration(PasswordExpiration.OneYear, 60, 7, 7);
             testExpiration(PasswordExpiration.SixMonths, 60, 33, 34);    // # of weeks with an expired password differs depending on if February is in the range
             testExpiration(PasswordExpiration.ThreeMonths, 60, 46, 47);  // # of weeks with an expired password differs depending on if February is in the range
-            testExpiration(PasswordExpiration.FiveSeconds, 60, 60, 60);
+            testExpiration(PasswordExpiration.FiveSeconds, 60, 59, 59);
         }
 
         // Test expiration every week for the specified number of weeks
