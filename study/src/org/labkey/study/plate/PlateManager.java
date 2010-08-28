@@ -68,7 +68,7 @@ public class PlateManager implements PlateService.Service
 
             public String getAssayType()
             {
-                return "default";
+                return "blank";
             }
 
             public List<String> getTemplateTypes()

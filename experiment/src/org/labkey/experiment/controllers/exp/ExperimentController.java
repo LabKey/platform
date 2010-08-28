@@ -3570,15 +3570,15 @@ public class ExperimentController extends SpringActionController
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
-            boolean valid = true;
-            for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
-                valid = UploadWizardAction.validatePostedProperties(entry.getValue(), errors) && valid;
-            if (!valid)
-                return redirectError(form, errors);
-
             Map<String, Map<DomainProperty, String>> allProperties;
             try
             {
+                boolean valid = true;
+                for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
+                    valid = UploadWizardAction.validatePostedProperties(entry.getValue(), errors) && valid;
+                if (!valid)
+                    return redirectError(form, errors);
+
                 allProperties = helper.getSampleProperties(getViewContext().getRequest());
             }
             catch (DuplicateMaterialException e)
@@ -3586,7 +3586,11 @@ public class ExperimentController extends SpringActionController
                 errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, ERROR_MSG + " " + e.getMessage()));
                 return redirectError(form, errors);
             }
-
+            catch (ExperimentException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                return redirectError(form, errors);
+            }
             int i = 0;
             for (Map.Entry<String, Map<DomainProperty, String>> entry : allProperties.entrySet())
             {

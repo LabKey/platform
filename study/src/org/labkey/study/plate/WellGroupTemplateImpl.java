@@ -89,7 +89,17 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     {
         return _positions.contains(position);
     }
-    
+
+    @Override
+    public String getPositionDescription()
+    {
+        if (_positions == null || _positions.size() == 0)
+            return "";
+        if (_positions.size() == 1)
+            return _positions.get(0).getDescription();
+        return _positions.get(0).getDescription() + "-" + _positions.get(_positions.size() - 1).getDescription();
+    }
+
     public void setPositions(List<? extends Position> positions)
     {
         _positions = sortPositions(positions);

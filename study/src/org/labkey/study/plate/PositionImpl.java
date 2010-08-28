@@ -26,6 +26,9 @@ import org.labkey.api.data.Container;
  */
 public class PositionImpl implements Position
 {
+    public static final char[] ALPHABET = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+            'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+
     protected int _row;
     protected int _column;
     private Container _container;
@@ -135,5 +138,13 @@ public class PositionImpl implements Position
     public void setContainer(Container container)
     {
         _container = container;
+    }
+
+    @Override
+    public String getDescription()
+    {
+        if (getRow() > ALPHABET.length)
+            return "Row " + (getRow() + 1) + ", Column " + (getColumn() + 1);
+        return "" + ALPHABET[getRow()] + (getColumn() + 1);
     }
 }

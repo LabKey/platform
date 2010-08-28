@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
@@ -85,18 +86,23 @@
             designerURL.addParameter("rowCount", rows);
             designerURL.addParameter("colCount", cols);
             designerURL.addParameter("assayType", handler.getAssayType());
+            List<String> types = handler.getTemplateTypes();
+            if (types == null || types.isEmpty())
+            {
         %>
             <tr>
                 <td colspan="4"><%= textLink("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%></td>
             </tr>
-            <%  for (String template : handler.getTemplateTypes())
-                {
-                    designerURL.replaceParameter("templateType", template);
+        <%
+            }
+            for (String template : handler.getTemplateTypes())
+            {
+                designerURL.replaceParameter("templateType", template);
             %>
             <tr>
                 <td colspan="4"><%= textLink("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%></td>
             </tr>
-        <%      }
+        <%  }
         }
     }%>
 <%
