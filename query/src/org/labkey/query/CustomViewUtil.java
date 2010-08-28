@@ -16,6 +16,8 @@
 
 package org.labkey.query;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.util.Pair;
@@ -31,11 +33,15 @@ public class CustomViewUtil
 {
     protected static final String FILTER_PARAM_PREFIX = "filter";
 
-    public static void update(CustomView view, Map<String, Object> jsonView, boolean saveFilterAndSort)
+    public static void update(CustomView view, JSONObject jsonView, boolean saveFilterAndSort)
     {
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> fields = new ArrayList<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>>();
 
-        for (Map<String, Object> column : (List<Map<String, Object>>)jsonView.get("columns"))
+        JSONArray jsonColumns = jsonView.optJSONArray("columns");
+        if (jsonColumns == null || jsonColumns.length() == 0)
+            throw new IllegalArgumentException("You must select at least one field to display in the grid.");
+
+        for (Map<String, Object> column : jsonColumns.toMapList())
         {
             FieldKey key = FieldKey.fromString((String)column.get("fieldKey"));
             String title = column.containsKey("title") ? (String)column.get("title") : null;
@@ -52,32 +58,37 @@ public class CustomViewUtil
         if (!saveFilterAndSort)
             return;
 
-        List<Map<String, Object>> filterInfos = (List<Map<String, Object>>)jsonView.get("filters");
-        List<String> sortInfos = (List<String>)jsonView.get("sort");
-
         ActionURL url = new ActionURL();
 
-        for (Map<String, Object> filterInfo : filterInfos)
+        JSONArray jsonFilters = jsonView.optJSONArray("filters");
+        if (jsonFilters != null && jsonFilters.length() > 0)
         {
-            String fieldKey = (String)filterInfo.get("fieldKey");
-            String op = (String)filterInfo.get("op");
-            if (op == null)
-                op = "";
+            for (Map<String, Object> filterInfo : jsonFilters.toMapList())
+            {
+                String fieldKey = (String)filterInfo.get("fieldKey");
+                String op = (String)filterInfo.get("op");
+                if (op == null)
+                    op = "";
 
-            String value = (String)filterInfo.get("value");
-            if (value == null)
-                value = "";
+                String value = (String)filterInfo.get("value");
+                if (value == null)
+                    value = "";
 
-            url.addParameter(FILTER_PARAM_PREFIX + "." + fieldKey + "~" + op, value);
+                url.addParameter(FILTER_PARAM_PREFIX + "." + fieldKey + "~" + op, value);
+            }
         }
 
-
-        if (sortInfos.size() > 0)
+        JSONArray jsonSorts = jsonView.optJSONArray("sort");
+        if (jsonSorts != null && jsonSorts.length() > 0)
         {
             Sort sort = new Sort();
-            for (String s : sortInfos)
+            for (Map<String, Object> sortInfo : jsonSorts.toMapList())
             {
-                sort.insertSort(Sort.fromURLParamValue(s));
+                String fieldKey = (String)sortInfo.get("fieldKey");
+                String dir = (String)sortInfo.get("dir");
+
+                String columnName = ((dir != null && dir.length() == 1) ? dir : "") + fieldKey;
+                sort.insertSortColumn(columnName, true);
             }
             sort.applyToURL(url, FILTER_PARAM_PREFIX);
         }
@@ -161,7 +172,7 @@ public class CustomViewUtil
         ret.put("columns", colInfos);
 
         List<Map<String, Object>> filterInfos = new ArrayList<Map<String, Object>>();
-        List<String> sortInfos = new ArrayList<String>();
+        List<Map<String, Object>> sortInfos = new ArrayList<Map<String, Object>>();
         try
         {
             CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
@@ -171,15 +182,19 @@ public class CustomViewUtil
 
                 Map<String, Object> filterInfo = new HashMap<String, Object>();
                 filterInfo.put("fieldKey", filter.getField().toString());
-                filterInfo.put("op", filter.getOp().toString());
+                filterInfo.put("op", filter.getOp().getPreferredUrlKey());
                 filterInfo.put("value", filter.getValue());
+                allKeys.add(filter.getField());
                 filterInfos.add(filterInfo);
             }
 
             for (Sort.SortField sf : fas.getSort())
             {
+                Map<String, Object> sortInfo = new HashMap<String, Object>();
+                sortInfo.put("fieldKey", sf.getColumnName());
+                sortInfo.put("dir", sf.getSortDirection().getDir());
                 allKeys.add(FieldKey.fromString(sf.getColumnName()));
-                sortInfos.add(sf.toUrlString());
+                sortInfos.add(sortInfo);
             }
 
         }
@@ -200,7 +215,7 @@ public class CustomViewUtil
                 if (col != null)
                 {
                     DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
-                    allColMaps.add(JsonWriter.getMetaData(dc, null, true, true));
+                    allColMaps.add(JsonWriter.getMetaData(dc, null, false, true));
                 }
             }
             // property name "fields" matches LABKEY.Query.ExtendedSelectRowsResults (ie, metaData.fields)

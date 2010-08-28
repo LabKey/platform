@@ -345,7 +345,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         return CustomViewUtil.toMap(schema, this, true);
     }
 
-    public void update(Map<String, Object> jsonView, boolean saveFilterAndSort)
+    public void update(org.json.JSONObject jsonView, boolean saveFilterAndSort)
     {
         CustomViewUtil.update(this, jsonView, saveFilterAndSort);
     }

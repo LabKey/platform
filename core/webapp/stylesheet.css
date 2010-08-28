@@ -929,6 +929,42 @@ img.labkey-grid-filter-icon
     display: inline;
 }
 
+.labkey-customview-item {
+    margin: 6px !important;
+    padding: 4px !important;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    border: 1px solid #cccccc;
+}
+
+.labkey-customview-item.x-view-selected {
+    border: 1px solid #89A1B4;
+    background: #eeeeee;
+}
+
+.labkey-customview-item.x-view-over {
+    border: 1px solid #003399;
+}
+
+.labkey-customview-item .item-close {
+    float: right;
+    opacity: 0;
+    filter:alpha(opacity=0);
+    background-image: url(./_images/partdelete.gif);
+    width: 13px;
+    height: 13px;
+}
+
+.labkey-customview-item:hover .item-close {
+    opacity: 0.35;
+    filter:alpha(opacity=35);
+}
+
+.labkey-customview-item .item-close:hover {
+    opacity: 0.8;
+    filter:alpha(opacity=8);
+}
+
 /* Home Template */
 
 /* The body tag for the page */

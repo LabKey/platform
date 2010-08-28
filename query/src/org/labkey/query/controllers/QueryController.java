@@ -1660,7 +1660,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class SaveCustomViewCommand extends ApiAction<SimpleApiJsonForm>
+    public class SaveQueryViewsAction extends ApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -1681,21 +1681,35 @@ public class QueryController extends SpringActionController
             if (queryDef == null)
                 throw new NotFoundException("query not found");
 
-            final JSONObject jsonView = json.getJSONObject("view");
-            String viewName = jsonView.getString("name");
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put(QueryParam.schemaName.toString(), schemaName);
+            response.put(QueryParam.queryName.toString(), queryName);
+            List<Map<String, Object>> views = new ArrayList<Map<String, Object>>();
+            response.put("views", views);
 
-            boolean shared = jsonView.optBoolean("shared", false);
-            boolean inherit = jsonView.optBoolean("inherit", false);
-            boolean session = jsonView.optBoolean("session", false);
+            JSONArray jsonViews = json.getJSONArray("views");
+            for (int i = 0; i < jsonViews.length(); i++)
+            {
+                final JSONObject jsonView = jsonViews.getJSONObject(i);
+                String viewName = jsonView.getString("name");
 
-            Map<String, Object> response = saveCustomView(
-                    schema, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
-                    shared, inherit, session, true, new UpdateViewCallback() {
-                        public void update(CustomView view, boolean saveFilter)
-                        {
-                            ((CustomViewImpl)view).update(jsonView, saveFilter);
-                        }
-                    }, null, errors);
+                boolean shared = jsonView.optBoolean("shared", false);
+                boolean inherit = jsonView.optBoolean("inherit", false);
+                boolean session = jsonView.optBoolean("session", false);
+
+                Map<String, Object> savedView = saveCustomView(
+                        schema, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
+                        shared, inherit, session, true, new UpdateViewCallback() {
+                            public void update(CustomView view, boolean saveFilter)
+                            {
+                                ((CustomViewImpl)view).update(jsonView, saveFilter);
+                            }
+                        }, null, errors);
+
+                if (i == 0)
+                    response.put("redirect", savedView.get("redirect"));
+                views.add((Map<String, Object>)savedView.get("view"));
+            }
             return new ApiSimpleResponse(response);
         }
     }
