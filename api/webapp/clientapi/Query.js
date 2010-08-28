@@ -796,6 +796,45 @@ LABKEY.Query = new function()
         },
 
         /**
+         * Creates or updates a custom view or views for a given query in a given schema.  The config
+         * object matches the viewInfos parameter of the getQueryViews.successCallback.
+         * @param config An object that contains the following configuration parameters
+         * @param {String} config.schemaName The name of the schema.
+         * @param {String} config.queryName The name of the query.
+         * @param {String} config.views The updated view definition.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with the ssame parameters as getQueryViews.successCallback.
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
+         * the current container will be used.
+         * @param {Object} [config.scope] An optional scope for the callback functions. Defaults to "this"
+         */
+        saveQueryViews : function (config)
+        {
+            var params = {};
+            if (config.schemaName)
+                params.schemaName = config.schemaName;
+            if (config.queryName)
+                params.queryName = config.queryName;
+            if (config.views)
+                params.views = config.views;
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'saveQueryViews', config.containerPath),
+                method: 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData : params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
          * Returns details about a given query including detailed information about result columns
          * @param {Object} config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.

@@ -2512,6 +2512,8 @@ internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
 internal/src/org/labkey/api/webdav/view/fileEmailNotify.jsp -text
 internal/src/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp -text
+internal/webapp/ComponentDataView.js -text
+internal/webapp/ComponentListView.js -text
 internal/webapp/FileUploadField.css -text
 internal/webapp/FileUploadField.js -text
 internal/webapp/StatusBar.js -text

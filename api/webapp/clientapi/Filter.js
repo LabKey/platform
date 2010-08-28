@@ -47,14 +47,54 @@
  */
 LABKEY.Filter = new function()
 {
-    var urlMap = {};
+    var ft = ret.Types;
+    var filterTypes = {
+        "int":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
+        "string":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN],
+        "boolean":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
+        "float":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
+        "date":[ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN]
+    };
 
+    function validateMultiple(type, value, colName)
+    {
+        var values = value.split(";");
+        var result = '';
+        var separator = '';
+        for (var i = 0; i < values.length; i++)
+        {
+            var value = LABKEY.ext.FormHelper.validate(values[i].trim(), type, colName);
+            if (value == undefined)
+                return undefined;
+
+            result = result + separator + value;
+            separator = ";";
+        }
+        return result;
+    }
+
+    var urlMap = {};
     function createFilterType(displayText, urlSuffix, dataValueRequired)
     {
         var result = {
             getDisplayText : function() { return displayText },
             getURLSuffix : function() { return urlSuffix },
-            isDataValueRequired : function() { return dataValueRequired }
+            isDataValueRequired : function() { return dataValueRequired },
+            validate : function (value, type, colName) {
+                if (!dataValueRequired)
+                    return true;
+
+                if (filterTypes[type].indexOf(result) == -1)
+                {
+                    alert("Filter type " + displayText + " can't be applied to '" + type + "'.");
+                    return undefined;
+                }
+
+                if (result == LABKEY.Filter.Types.IN)
+                    return validateMultiple(type, value, colName);
+                else
+                    return LABKEY.ext.FormHelper.validate(type, value, colName);
+            }
         };
         urlMap[urlSuffix] = result;
         return result;
@@ -211,6 +251,20 @@ LABKEY.Filter = new function()
                 }
             }
             return result;
+        },
+
+        /** @private Returns an filter type for the urlSuffix. */
+        getFilterTypeForURLSuffix : function (urlSuffix)
+        {
+            return urlMap[urlSuffix];
+        },
+
+        /** @private Returns an Array of filter types that can be used with the given type ("int", "double", "string", "boolean", "date") */
+        getFlterTypesForType : function (type)
+        {
+            if (filterTypes[type])
+                return filterTypes[type];
+            return null;
         }
     };
 };

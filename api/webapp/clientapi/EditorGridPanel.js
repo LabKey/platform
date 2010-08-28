@@ -816,181 +816,21 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         else
             filterColType = meta.type;
 
-        var ft = LABKEY.Filter.Types;
-        var filterTypes = {
-            "int":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
-            "string":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN],
-            "boolean":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
-            "float":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
-            "date":[ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN]
-        };
-        var defaultFilterTypes = {
-            "int":ft.EQUAL, "string":ft.STARTS_WITH, "boolean":ft.EQUAL, "float":ft.GTE,  "date":ft.DATE_EQUAL
-        };
-
-        //Option lists for drop-downs. Filled in on-demand based on filter type
-        var dropDownOptions = [];
         var colFilters = this.getColumnFilters(colName);
-        function createFilterDropDown(index, dataType, curFilter)
-        {
-            //Do the ext magic for the options. Gets easier in ext 2.2
-            if (dropDownOptions.length == 0)
-                Ext.each(filterTypes[dataType], function (filterType) {
-                    dropDownOptions.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
-                });
-            var options = (index > 0) ? [['', 'no other filter']].concat(dropDownOptions) : dropDownOptions;
-            var store = new Ext.data.SimpleStore({'id': 0, fields: ['value', 'text'], data :options });
-            var combo = new Ext.form.ComboBox({
-                store:store,
-                forceSelection:true,
-                valueField:'value',
-                displayField:'text',
-                mode:'local',
-                allowBlank:false,
-                triggerAction:'all',
-                value:curFilter ? curFilter.getFilterType().getURLSuffix() : ((index > 0) ? '' : defaultFilterTypes[dataType].getURLSuffix())
-            });
-            combo.on("select", function(combo, record, itemNo) {
-                var filter = findFilterType(index);
-                valueEditors[index].setVisible(filter != null && filter.isDataValueRequired());
-            });
-
-            return combo;
-        }
-
-
-        function findFilterType(index)
-        {
-            var abbrev = dropDowns[index].getValue();
-            for (var key in ft)
-                if (ft[key].getURLSuffix && ft[key].getURLSuffix() == abbrev)
-                    return ft[key];
-
-            return null;
-        }
-
-        var dropDowns = [createFilterDropDown(0, filterColType, colFilters.length >= 1 ? colFilters[0] : null), createFilterDropDown(1, filterColType, colFilters.length >= 2 ? colFilters[1] : null)];
+        var dropDowns = [
+            this.createFilterCombo(filterColType, colFilters.length >= 1 ? colFilters[0].getFilterType().getURLSuffix() : null),
+            this.createFilterCombo(filterColType, colFilters.length >= 2 ? colFilters[1].getFilterType().getURLSuffix() : null)];
         var valueEditors = [
             new Ext.form.TextField({value:colFilters.length > 0 ? colFilters[0].getValue() : "",width:250}),
             new Ext.form.TextField({value:colFilters.length > 1 ? colFilters[1].getValue() : "",width:250, hidden:colFilters.length < 2, hideMode:'visibility'})];
 
+        dropDowns[0].valueEditor = valueEditors[0];
+        dropDowns[1].valueEditor = valueEditors[1];
 
         function validateEntry(index)
         {
-            var filterType = findFilterType(index);
-            if (!filterType.isDataValueRequired())
-                return true;
-
-            if (filterType == ft.IN)
-                return validateMultiple(valueEditors[index].getValue());
-            else
-                return validate(valueEditors[index].getValue());
-        }
-
-        function validateMultiple(allValues, mappedType, fieldName)
-        {
-            var values = allValues.split(";");
-            var result = '';
-            var separator = '';
-            for (var i = 0; i < values.length; i++)
-            {
-                var value = validate(values[i].trim(), mappedType, fieldName);
-                if (value == undefined)
-                    return undefined;
-
-                result = result + separator + value;
-                separator = ";";
-            }
-            return result;
-        }
-
-        function validate(value)
-        {
-            if (filterColType == "int")
-            {
-                var intVal = parseInt(value);
-                if (isNaN(intVal))
-                {
-                    alert(value + " is not a valid integer for field '" + colName + "'.");
-                    return undefined;
-                }
-                else
-                    return "" + intVal;
-            }
-            else if (filterColType == "float")
-            {
-                var decVal = parseFloat(value);
-                if (isNaN(decVal))
-                {
-                    alert(value + " is not a valid decimal number for field '" + colName + "'.");
-                    return undefined;
-                }
-                else
-                    return "" + decVal;
-            }
-            else if (filterColType == "date")
-            {
-                var year, month, day, hour, minute;
-                hour = 0;
-                minute = 0;
-
-                //Javascript does not parse ISO dates, but if date matches we're done
-                if (value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
-                    value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
-                {
-                    return value;
-                }
-                else
-                {
-                    var dateVal = new Date(value);
-                    if (isNaN(dateVal))
-                    {
-                        alert(value + " is not a valid date for field '" + colName + "'.");
-                        return undefined;
-                    }
-                    //Try to do something decent with 2 digit years!
-                    //if we have mm/dd/yy (but not mm/dd/yyyy) in the date
-                    //fix the broken date parsing
-                    if (value.match(/\d+\/\d+\/\d{2}(\D|$)/))
-                    {
-                        if (dateVal.getFullYear() < new Date().getFullYear() - 80)
-                            dateVal.setFullYear(dateVal.getFullYear() + 100);
-                    }
-                    year = dateVal.getFullYear();
-                    month = dateVal.getMonth() + 1;
-                    day = dateVal.getDate();
-                    hour = dateVal.getHours();
-                    minute = dateVal.getMinutes();
-                }
-                var str = "" + year + "-" + twoDigit(month) + "-" + twoDigit(day);
-                if (hour != 0 || minute != 0)
-                    str += " " + twoDigit(hour) + ":" + twoDigit(minute);
-
-                return str;
-            }
-            else if (filterColType == "boolean")
-            {
-                var upperVal = value.toUpperCase();
-                if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "ON" || upperVal == "T")
-                    return "1";
-                if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "OFF" || upperVal == "F")
-                    return "0";
-                else
-                {
-                    alert(value + " is not a valid boolean for field '" + colName + "'. Try true,false; yes,no; on,off; or 1,0.");
-                    return undefined;
-                }
-            }
-            else
-                return value;
-        }
-
-        function twoDigit(num)
-        {
-            if (num < 10)
-                return "0" + num;
-            else
-                return "" + num;
+            var filterType = dropDowns[index].getFilterType();
+            return filterType.validate(filterColType, valueEditors[index].getValue(), colName);
         }
 
         var win = new Ext.Window({
@@ -1011,9 +851,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                         if (!value)
                             return;
 
-                        var filterType = findFilterType(0);
+                        var filterType = dropDowns[0].getFilterType();
                         filters.push(LABKEY.Filter.create(filterColName, value, filterType));
-                        filterType = findFilterType(1);
+                        filterType = dropDowns[1].getFilterType();
                         if (filterType)
                         {
                             value = validateEntry(1);
@@ -1069,6 +909,46 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         this.getStore().load({params:{start:0, limit:this.pageSize}});
     }
 });
+
+LABKEY.ext.EditorGridPanel.createFilterCombo = function (type, filterOp, first)
+{
+    var ft = LABKEY.Filter.Types;
+    var defaultFilterTypes = {
+        "int":ft.EQUAL, "string":ft.STARTS_WITH, "boolean":ft.EQUAL, "float":ft.GTE,  "date":ft.DATE_EQUAL
+    };
+
+    //Option lists for drop-downs. Filled in on-demand based on filter type
+    var dropDownOptions = [];
+    Ext.each(LABKEY.Filter.filterTypesForType(type), function (filterType) {
+        dropDownOptions.push([filterType.getURLSuffix(), filterType.getDisplayText()]);
+    });
+
+    //Do the ext magic for the options. Gets easier in ext 2.2
+    var options = (!first) ? [['', 'no other filter']].concat(dropDownOptions) : dropDownOptions;
+    var store = new Ext.data.SimpleStore({'id': 0, fields: ['value', 'text'], data: options });
+    var combo = new Ext.form.ComboBox({
+        store:store,
+        forceSelection:true,
+        valueField:'value',
+        displayField:'text',
+        mode:'local',
+        allowBlank:false,
+        triggerAction:'all',
+        value:filterOp ? filterOp : ((!first) ? '' : defaultFilterTypes[type].getURLSuffix())
+    });
+    combo.on("select", function(combo, record, itemNo) {
+        var filter = this.getFilterType();
+        if (this.valueEditor)
+            this.valueEditor.setVisible(filter != null && filter.isDataValueRequired());
+    });
+
+    combo.getFilterType = function () {
+        return LABKEY.Filter.getFilterTypeForURLSuffix(this.getValue());
+    };
+
+    return combo;
+};
+
 
 // Check column plugin
 Ext.grid.CheckColumn = function(config){
