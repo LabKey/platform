@@ -26,4 +26,6 @@ public interface Position
     public int getColumn();
 
     public int getRow();
+
+    String getDescription();
 }

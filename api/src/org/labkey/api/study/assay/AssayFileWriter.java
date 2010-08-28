@@ -107,7 +107,7 @@ public class AssayFileWriter
         return pipelineRoot;
     }
 
-    public File findUniqueFileName(String originalFilename, File dir)
+    public static File findUniqueFileName(String originalFilename, File dir)
     {
         if (originalFilename == null || "".equals(originalFilename))
         {

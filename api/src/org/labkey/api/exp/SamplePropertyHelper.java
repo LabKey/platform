@@ -49,7 +49,7 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     protected abstract boolean isCopyable(DomainProperty pd);
 
-    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws DuplicateMaterialException
+    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
         Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<ObjectType, Map<DomainProperty, String>>();
         List<String> names = getSampleNames();
@@ -136,7 +136,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         return _groups;
     }
 
-    public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request)
+    public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
         Map<String, Map<DomainProperty, String>> result = new HashMap<String, Map<DomainProperty, String>>();
         for (String sampleName : getSampleNames())

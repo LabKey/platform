@@ -34,4 +34,6 @@ public interface WellGroupTemplate extends PropertySet
     String getName();
 
     boolean contains(Position position);
+
+    String getPositionDescription();
 }

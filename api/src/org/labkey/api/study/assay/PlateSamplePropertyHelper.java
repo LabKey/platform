@@ -33,7 +33,7 @@ import java.util.Map;
 public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTemplate>
 {
     private List<String> _sampleNames;
-    private final PlateTemplate _template;
+    protected final PlateTemplate _template;
 
     public PlateSamplePropertyHelper(DomainProperty[] domainProperties, PlateTemplate template)
     {
@@ -53,28 +53,31 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTem
         }
     }
 
-    protected WellGroupTemplate getObject(int index, Map<DomainProperty, String> sampleProperties)
+    protected List<WellGroupTemplate> getSampleWellGroups()
     {
-        int i = 0;
+        List<WellGroupTemplate> samples = new ArrayList<WellGroupTemplate>();
         for (WellGroupTemplate wellgroup : _template.getWellGroups())
         {
             if (wellgroup.getType() == WellGroup.Type.SPECIMEN)
             {
-                if (i == index)
-                {
-                    return wellgroup;
-                }
-                i++;
+                samples.add(wellgroup);
             }
         }
-        throw new IndexOutOfBoundsException("Requested #" + index + " but there were only " + i + " well group templates");
+        return samples;
+    }
+
+    protected WellGroupTemplate getObject(int index, Map<DomainProperty, String> sampleProperties)
+    {
+        List<WellGroupTemplate> samples = getSampleWellGroups();
+        if (index >= samples.size())
+            throw new IndexOutOfBoundsException("Requested #" + index + " but there were only " + samples.size() + " well group templates");
+        return getSampleWellGroups().get(index);
     }
 
     protected boolean isCopyable(DomainProperty pd)
     {
         return !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && !AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
     }
-
 
     public List<String> getSampleNames()
     {

@@ -19,6 +19,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.PlateTemplate;
 
+import java.io.File;
+
 /**
  * User: jeckels
  * Date: Jan 15, 2009
@@ -27,4 +29,5 @@ public interface PlateBasedAssayProvider extends AssayProvider
 {
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
+    public File getSampleMetadataFile(Container container, int runId);
 }

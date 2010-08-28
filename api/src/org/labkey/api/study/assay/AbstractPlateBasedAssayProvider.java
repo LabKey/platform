@@ -34,11 +34,15 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
+import org.labkey.api.study.actions.PlateUploadForm;
+import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.ViewBackgroundInfo;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -50,6 +54,8 @@ import java.util.*;
 public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvider implements PlateBasedAssayProvider
 {
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
+    public static final AssayDataType SAMPLE_METADATA_FILE_TYPE = new AssayDataType("SampleMetadataFile", new FileType(".xls"));
+    private static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
 
     public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
     {
@@ -108,7 +114,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                                   Map<ExpData, String> outputDatas) throws ExperimentException
     {
         Map<WellGroupTemplate, ExpMaterial> originalMaterials = new HashMap<WellGroupTemplate, ExpMaterial>();
-        PlateSamplePropertyHelper helper = createSamplePropertyHelper(context, context.getProtocol(), null);
+        PlateSamplePropertyHelper helper = getSamplePropertyHelper((PlateUploadForm) context, null);
         Map<WellGroupTemplate, Map<DomainProperty, String>> materialProperties = helper.getSampleProperties(context.getRequest());
         for (Map.Entry<WellGroupTemplate, Map<DomainProperty, String>> entry : materialProperties.entrySet())
         {
@@ -186,6 +192,17 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
         long ms = System.currentTimeMillis();
         try
         {
+            ExpData sampleMetadataFile = null;
+            if (isSampleMetadataFileBased())
+            {
+                PlateSampleFilePropertyHelper helper = (PlateSampleFilePropertyHelper) getSamplePropertyHelper((PlateUploadForm) context, null);
+                File metadataFile = helper.getMetadataFile();
+                sampleMetadataFile = ExperimentService.get().createData(context.getContainer(), SAMPLE_METADATA_FILE_TYPE);
+                sampleMetadataFile.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(metadataFile).toURI());
+                sampleMetadataFile.setName(metadataFile.getName());
+                sampleMetadataFile.save(context.getUser());
+            }
+
             Map<String, ExpMaterial> originalLsidToMaterial = new HashMap<String, ExpMaterial>();
             for (Map.Entry<WellGroupTemplate, ExpMaterial> entry : originalMaterials.entrySet())
             {
@@ -239,7 +256,17 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                 Map<ExpMaterial, String> derivedMaterialSet = Collections.singletonMap(derivedMaterial, "PreparedMaterial");
                 derivedMaterials.put(derivedMaterial, wellgroup.getName());
                 ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
-                ExperimentService.get().deriveSamples(originalMaterialSet, derivedMaterialSet, info, null);
+                ExpRun derivationRun = ExperimentService.get().deriveSamples(originalMaterialSet, derivedMaterialSet, info, null);
+                if (sampleMetadataFile != null)
+                {
+                    ExpProtocolApplication[] applications = derivationRun.getProtocolApplications();
+                    assert applications.length == 3 : "Expected three protocol applications in each sample derivation run.";
+                    ExpProtocolApplication firstApplication = applications[0];
+                    assert firstApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun :
+                            "Expected first protocol application to be of type ExperimentRun.";
+                    firstApplication.addDataInput(context.getUser(), sampleMetadataFile, SAMPLE_METADATA_INPUT_ROLE);
+                    firstApplication.save(context.getUser());
+                }
                 for (Map.Entry<DomainProperty, String> propertyEntry : properties.entrySet())
                     derivedMaterial.setProperty(context.getUser(), propertyEntry.getKey().getPropertyDescriptor(), propertyEntry.getValue());
             }
@@ -251,29 +278,72 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
         return derivedMaterials;
     }
 
+    public File getSampleMetadataFile(Container container, int runId)
+    {
+        if (!isSampleMetadataFileBased())
+            return null;
+        ExpRun run = ExperimentService.get().getExpRun(runId);
+        if (!run.getContainer().equals(container))
+            return null;
+        AssayProvider provider = AssayService.get().getProvider(run.getProtocol());
+        if (!(provider instanceof AbstractPlateBasedAssayProvider))
+            return null;
+
+        Map<ExpMaterial, String> materials = run.getMaterialInputs();
+        if (materials.isEmpty())
+            return null;
+
+        ExpMaterial firstMaterial = materials.entrySet().iterator().next().getKey();
+
+        ExpRun sampleDerivationRun = firstMaterial.getRun();
+
+        Map<ExpData, String> sampleDerivationInputs = sampleDerivationRun.getDataInputs();
+
+        for (Map.Entry<ExpData, String> entry : sampleDerivationInputs.entrySet())
+        {
+            if (SAMPLE_METADATA_INPUT_ROLE.equals(entry.getValue()))
+                return entry.getKey().getDataFile();
+        }
+        return null;
+    }
 
     public Domain getSampleWellGroupDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
     }
 
-    public PlateSamplePropertyHelper createSamplePropertyHelper(AssayRunUploadContext context, ExpProtocol protocol, ParticipantVisitResolverType filterInputsForType)
+    protected boolean isSampleMetadataFileBased()
     {
-        PlateTemplate template = getPlateTemplate(context.getContainer(), protocol);
-        Domain sampleDomain = getSampleWellGroupDomain(protocol);
-        DomainProperty[] allSampleProperties = sampleDomain.getProperties();
-        DomainProperty[] selectedSampleProperties = allSampleProperties;
-        if (filterInputsForType != null)
+        return false;
+    }
+
+    public PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType)
+    {
+        // Re-use the same PlateSamplePropertyHelper so it's able to utilize member variables across calls.
+        PlateSamplePropertyHelper helper = context.getSamplePropertyHelper();
+        if (helper == null)
         {
-            List<DomainProperty> selected = new ArrayList<DomainProperty>();
-            for (DomainProperty possible : allSampleProperties)
+            PlateTemplate template = getPlateTemplate(context.getContainer(), context.getProtocol());
+            Domain sampleDomain = getSampleWellGroupDomain(context.getProtocol());
+            DomainProperty[] allSampleProperties = sampleDomain.getProperties();
+            DomainProperty[] selectedSampleProperties = allSampleProperties;
+            if (filterInputsForType != null)
             {
-                if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))
-                    selected.add(possible);
+                List<DomainProperty> selected = new ArrayList<DomainProperty>();
+                for (DomainProperty possible : allSampleProperties)
+                {
+                    if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))
+                        selected.add(possible);
+                }
+                selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
             }
-            selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
+            if (isSampleMetadataFileBased())
+                helper = new PlateSampleFilePropertyHelper(context.getContainer(), context.getProtocol(), selectedSampleProperties, template);
+            else
+                helper = new PlateSamplePropertyHelper(selectedSampleProperties, template);
+            context.setSamplePropertyHelper(helper);
         }
-        return new PlateSamplePropertyHelper(selectedSampleProperties, template);
+        return helper;
     }
 
     public static class SpecimenIDLookupResolverType extends StudyParticipantVisitResolverType
