@@ -41,6 +41,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             this.fieldMetaStore.loadData({columns: this.customView.fields}, true);
         }
 
+        this.showHiddenFields = config.showHiddenFields || false;
 
         this.columnsTab = new LABKEY.DataRegion.ColumnsTab({
             designer: this,
@@ -69,7 +70,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
 //        });
 
         config = Ext.applyIf(config, {
-            activeTab: 1,
+            activeTab: 0,
             frame: false,
             shadow: true,
             width: 300,
@@ -81,22 +82,51 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
 //                this.propertiesTab
             ],
             buttonAlign: "left",
-            fbar: [{
-                text: "Revert",
-                tooltip: "Revert any changes made to this view",
-                handler: this.onRevertClick,
-                scope: this
-            },"->",{
-                text: "Apply",
-                tooltip: "Apply changes to the view",
-                handler: this.onApplyClick,
-                scope: this
-            },{
-                text: "Save",
-                tooltip: "Save changes",
-                handler: this.onSaveClick,
-                scope: this
-            }]
+            fbar: {
+                xtype: 'container',
+                layout: {
+                    type: 'vbox',
+                    pack: 'start',
+                    align: 'stretch'
+                },
+                defaults: { flex: 1 },
+                height: 27 * 2,
+                items: [
+                    new Ext.Toolbar({
+                        toolbarCls: "x-tab-panel-footer",
+                        defaults: {minWidth: 75},
+                        items: [{
+                            xtype: "checkbox",
+                            boxLabel: "Show Hidden Fields",
+                            checked: this.showHiddenFields,
+                            handler: function (checkbox, checked) {
+                                this.setShowHiddenFields(checked);
+                            },
+                            scope: this
+                        }]
+                    }),
+                    new Ext.Toolbar({
+                        toolbarCls: "x-tab-panel-footer",
+                        defaults: {minWidth: 75},
+                        items: [{
+                            text: "Revert",
+                            tooltip: "Revert any changes made to this view",
+                            handler: this.onRevertClick,
+                            scope: this
+                        },"->",{
+                            text: "Apply",
+                            tooltip: "Apply changes to the view",
+                            handler: this.onApplyClick,
+                            scope: this
+                        },{
+                            text: "Save",
+                            tooltip: "Save changes",
+                            handler: this.onSaveClick,
+                            scope: this
+                        }]
+                    })
+                ]
+            }
         });
 
         this.addEvents({
@@ -131,6 +161,17 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         });
         btn.on('click', this.onCloseClick, this);
         this.closeButton = btn;
+    },
+
+    setShowHiddenFields : function (showHidden)
+    {
+        this.showHiddenFields = showHidden;
+        for (var i = 0; i < this.items.length; i++)
+        {
+            var tab = this.items.get(i);
+            if (tab instanceof LABKEY.DataRegion.Tab)
+                tab.setShowHiddenFields(showHidden);
+        }
     },
 
     onCloseClick : function (btn, e)
@@ -252,6 +293,8 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         this.getList().on('beforetooltipshow', this.onListBeforeToolTipShow, this);
         this.getList().on('beforeclick', this.onListBeforeClick, this);
     },
+
+    setShowHiddenFields : Ext.emptyFn,
 
     isDirty : function () { return false; },
 
@@ -457,8 +500,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 region: "south",
                 split: "true",
                 xtype: "panel",
-                layout: "hbox",
-                layoutConfig: {
+                layout: {
+                    type: "hbox",
                     align: "stretch"
                 },
                 height: 200,
@@ -477,8 +520,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 },{
                     ref: "../buttonBox",
                     unstyled: true,
-                    layout: "vbox",
-                    layoutConfig: {
+                    layout: {
+                        type: "vbox",
                         defaultMargins: "6 0 0 0"
                     },
                     width: 28,
@@ -548,7 +591,19 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     onEditPropsClick : function (btn, e) {
-        alert("not yet implemented");
+        var columnRecords = this.columnsList.getSelectedRecords();
+        if (columnRecords && columnRecords.length == 1)
+        {
+            var columnRecord = columnRecords[0];
+            var fieldKey = columnRecord.data.fieldKey;
+            Ext.Msg.prompt('Set column caption',
+                    "Set caption for column '" + fieldKey + "'",
+                    function (btnId, text) {
+                        text = text ? text.trim() : "";
+                        if (btnId == "ok" && text.length > 0)
+                            columnRecord.set("title", text);
+                    }, this, false, columnRecord.data.title);
+        }
     },
 
     getDefaultRecordData : function (fieldKey) {
@@ -575,13 +630,34 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             text: fieldMeta.caption,
             leaf: !fieldMeta.lookup,
             checked: this.hasField(fieldMeta.name),
-            hidden: fieldMeta.hidden,
+            hidden: fieldMeta.hidden && !this.showHiddenFields,
             disabled: !fieldMeta.selectable, // XXX: check unselectable nodes are still expandable
             qtip: fieldMeta.description,
             icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
         };
 
         return attrs;
+    },
+
+    setShowHiddenFields : function (showHidden) {
+        this.fieldsTree.getRootNode().cascade(function (node) {
+            if (showHidden)
+            {
+                if (node.hidden)
+                    node.ui.show();
+            }
+            else
+            {
+                var fieldKey = node.id;
+                var index = this.fieldMetaStore.findExact("name", fieldKey);
+                if (index > -1)
+                {
+                    var fieldMetaRecord = this.fieldMetaStore.getAt(index);
+                    if (fieldMetaRecord.data.hidden)
+                        node.ui.hide();
+                }
+            }
+        }, this);
     },
 
     hasField : function (fieldKey) {
@@ -686,6 +762,10 @@ LABKEY.DataRegion.FilterItemPanel = Ext.extend(Ext.Container, {
 
         var filterType = this.opCombo.getFilterType();
         this.valueTextField.setVisible(filterType != null && filterType.isDataValueRequired());
+    },
+
+    setShowHiddenFields : function (showHidden) {
+        this.fieldMetaButtonMenu.setShowHiddenFields(showHidden);
     }
 
 });
@@ -717,8 +797,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         config = Ext.applyIf({
             title: "Filter",
-            layout: "hbox",
-            layoutConfig: {
+            layout: {
+                type: "hbox",
                 align: "stretch"
             },
             items: [{
@@ -726,7 +806,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 xtype: "compdataview",
                 flex: 1,
                 store: this.filterStore,
-                exmptyText: "No filters added",
+                emptyText: "No filters added",
+                deferEmptyText: false,
                 multiSelect: true,
                 itemSelector: 'dt.labkey-customview-item',
                 overClass: "x-view-over",
@@ -745,8 +826,8 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             },{
                 ref: "buttonBox",
                 unstyled: true,
-                layout: "vbox",
-                layoutConfig: {
+                layout: {
+                    type: "vbox",
                     defaultMargins: "6 0 0 0"
                 },
                 width: 28,
@@ -810,6 +891,16 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
     onStoreRemove : function (store, record, index) {
         this.updateTitle();
+    },
+
+    setShowHiddenFields : function (showHidden) {
+        // Note: this.components is a private member of ComponentDataView
+        for (var i = 0; i < this.filterList.components.length; i++)
+        {
+            var cs = this.filterList.components[i];
+            var filteritem = cs[0];
+            filteritem.setShowHiddenFields(showHidden);
+        }
     },
 
     getList : function () { return this.filterList; },
@@ -881,8 +972,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         config = Ext.applyIf({
             title: "Sort",
-            layout: "hbox",
-            layoutConfig: {
+            layout: {
+                type: "hbox",
                 align: "stretch"
             },
             items: [{
@@ -890,7 +981,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 xtype: "compdataview",
                 flex: 1,
                 store: this.sortStore,
-                exmptyText: "No sorts added",
+                emptyText: "No sorts added",
+                deferEmptyText: false,
                 multiSelect: true,
                 itemSelector: 'dt.labkey-customview-item',
                 overClass: "x-view-over",
@@ -923,8 +1015,8 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
             },{
                 ref: "buttonBox",
                 unstyled: true,
-                layout: "vbox",
-                layoutConfig: {
+                layout: {
+                    type: "vbox",
                     defaultMargins: "6 0 0 0"
                 },
                 width: 28,
@@ -993,6 +1085,16 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
             fieldKey: fieldKey,
             dir: "+"
         };
+    },
+
+    setShowHiddenFields : function (showHidden) {
+        // Note: this.components is a private member of ComponentDataView
+        for (var i = 0; i < this.sortList.components.length; i++)
+        {
+            var cs = this.sortList.components[i];
+            var filteritem = cs[0];
+            filteritem.setShowHiddenFields(showHidden);
+        }
     },
 
     getList : function () { return this.sortList; },
@@ -1096,7 +1198,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(LABKEY.DataRegion.Tab, {
         {
             if (!this.nameField.isDirty())
             {
-                Ext.MsgBox.alert("You must save this view aith an alternate name.");
+                Ext.MsgBox.alert("You must save this view with an alternate name.");
                 return false;
             }
         }
@@ -1316,6 +1418,8 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
         this.fieldMetaStore = config.fieldMetaStore;
         this.originalValue = config.fieldKey;
         this.menu = this.createLookupMenu("<root>");
+        this.showHiddenFields = config.showHiddenFields || false;
+        this.showHiddenFieldsChanged = false;
         LABKEY.ext.FieldMetaButtonMenu.superclass.constructor.call(this, config);
 
         this.addEvents({
@@ -1330,6 +1434,11 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
         // UNDONE: load subtrees on path of selected fieldKey ?
 
         this.setValue(this.originalValue);
+    },
+
+    setShowHiddenFields : function (showHidden) {
+        this.showHiddenFieldsChanged = showHidden !== this.showHiddenFields;
+        this.showHiddenFields = showHidden;
     },
 
     setRecord : function (filterRecord) {
@@ -1377,6 +1486,28 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
         }
     },
 
+    _onMenuBeforeShow : function (menu) {
+        if (this.showHiddenFieldsChanged)
+        {
+            menu.items.each(function (item, index, len) {
+                if (this.showHiddenFields)
+                    item.show();
+                else
+                {
+                    var fieldKey = item.fieldKey;
+                    var index = this.fieldMetaStore.findExact("name", fieldKey);
+                    if (index > -1)
+                    {
+                        var fieldMetaRecord = this.fieldMetaStore.getAt(index);
+                        if (fieldMetaRecord.data.hidden)
+                            item.hide();
+                    }
+                }
+            }, this);
+            this.showHiddenFieldsChanged = false;
+        }
+    },
+
     _onMenuItemClick : function (item, e) {
         var fieldKey = item.fieldKey;
         var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
@@ -1403,8 +1534,9 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
         var attrs = {
             fieldKey: fieldMeta.name,
             text: fieldMeta.caption || fieldMeta.fieldKey,
+            hidden: fieldMeta.hidden && !this.showHiddenFields,
             disabled: !fieldMeta.selectable,
-            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.gif" : ""
+            icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
         };
         if (fieldMeta.lookup)
         {
@@ -1418,6 +1550,10 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
             cls: "extContainer",
             fieldKey: fieldKey,
             listeners: {
+                beforeshow: {
+                    fn: this._onMenuBeforeShow,
+                    scope: this
+                },
                 show: {
                     fn: this._onMenuShow,
                     scope: this
