@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.*;
@@ -44,7 +45,7 @@ public class CustomViewUtil
         for (Map<String, Object> column : jsonColumns.toMapList())
         {
             FieldKey key = FieldKey.fromString((String)column.get("fieldKey"));
-            String title = column.containsKey("title") ? (String)column.get("title") : null;
+            String title = column.containsKey("title") ? StringUtils.trimToNull((String)column.get("title")) : null;
             Map<CustomViewInfo.ColumnProperty, String> map = Collections.emptyMap();
             if (title != null)
             {
