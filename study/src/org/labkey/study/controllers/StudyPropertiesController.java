@@ -107,7 +107,7 @@ public class StudyPropertiesController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            Map<String, Object> dataMap = updateForm.getDataMap();
+            Map<String, Object> dataMap = updateForm.getTypedColumns();
 
             StudyImpl study = getStudy();
 

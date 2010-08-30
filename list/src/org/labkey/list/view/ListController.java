@@ -344,7 +344,7 @@ public class ListController extends SpringActionController
                 Object oldKey = item.getKey();
 
                 table.fireBatchTrigger(triggerType, true, validationErrors);
-                table.fireRowTrigger(triggerType, true, 0, tableForm.getTypedValues(), oldValues);
+                table.fireRowTrigger(triggerType, true, 0, tableForm.getTypedColumns(), oldValues);
 
                 Domain domain = list.getDomain();
                 for (ColumnInfo column : tableForm.getTable().getColumns())

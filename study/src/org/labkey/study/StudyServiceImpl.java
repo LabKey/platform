@@ -170,7 +170,7 @@ public class StudyServiceImpl implements StudyService.Service
             keyNames.put(col.getName(), col.getName());
         }
 
-        Map<String,Object> result = new HashMap<String,Object>();
+        Map<String,Object> result = new CaseInsensitiveHashMap<Object>();
 
         for (Map.Entry<String,Object> entry : source.entrySet())
         {
@@ -215,7 +215,7 @@ public class StudyServiceImpl implements StudyService.Service
         if (datas.length == 0)
             return null;
 
-        Map<String,Object>[] canonicalDatas = new HashMap[datas.length];
+        Map<String,Object>[] canonicalDatas = new Map[datas.length];
         List<ColumnInfo> columns = tInfo.getColumns();
         for (int i = 0; i < datas.length; i++)
         {

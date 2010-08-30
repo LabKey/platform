@@ -104,7 +104,7 @@ public class ListItemImpl implements ListItem
         return _new;
     }
 
-    public void delete(User user, Container c, boolean isAuditLog) throws SQLException
+    public void delete(User user, Container c, boolean isBulkLoad) throws SQLException
     {
         if (isNew())
             return;
@@ -118,7 +118,7 @@ public class ListItemImpl implements ListItem
             }
             ensureProperties();
             
-            if (isAuditLog)
+            if (!isBulkLoad)
             {
                 addAuditEvent(user, "An existing list record was deleted", _itm.getEntityId(), _formatItemRecord(user, _properties, null, _itm.getKey()), null);
             }
@@ -145,7 +145,7 @@ public class ListItemImpl implements ListItem
     @Override
     public void delete(User user, Container c) throws SQLException
     {
-        delete(user, c, true);
+        delete(user, c, false);
     }
 
     // Used by single item delete as well as entire list delete
@@ -226,10 +226,10 @@ public class ListItemImpl implements ListItem
 
     public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
     {
-        save(user, true);
+        save(user, false);
     }
 
-    public void save(User user, boolean audit) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
+    public void save(User user, boolean bulkLoad) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException
     {
         boolean fTransaction = false;
         try
@@ -264,8 +264,9 @@ public class ListItemImpl implements ListItem
                     throw new ValidationException(errors);
             }
 
-            if (audit)
+            if (!bulkLoad)
                 oldRecord = _formatItemRecord(user, _oldProperties, dps, (_itmOld != null ? _itmOld.getKey() : null));
+            
             if (_oldProperties != null)
             {
                 AttachmentParent parent = new ListItemAttachmentParent(this, _list.getContainer());
@@ -323,7 +324,7 @@ public class ListItemImpl implements ListItem
                 _itmOld = null;
             }
 
-            if (audit)
+            if (!bulkLoad)
             {
                 newRecord = _formatItemRecord(user, _properties, dps, _itm.getKey());
                 addAuditEvent(user, isNew ? "A new list record was inserted" : "An existing list record was modified",

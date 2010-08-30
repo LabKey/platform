@@ -2356,6 +2356,9 @@ public class StudyController extends BaseStudyController
             if (null == dataset)
                 HttpView.throwNotFound();
 
+            if (!dataset.canWrite(getUser()))
+                HttpView.throwUnauthorized("User does not have permission to delete rows from this dataset");
+
             // Operate on each individually for audit logging purposes, but transact the whole thing
             DbScope scope =  StudySchema.getInstance().getSchema().getScope();
             scope.beginTransaction();

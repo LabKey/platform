@@ -334,7 +334,7 @@ public class CohortController extends BaseStudyController
             if (errors.getErrorCount() > 0)
                 return false;
 
-            Map<String,Object> dataMap = updateForm.getDataMap();
+            Map<String,Object> dataMap = updateForm.getTypedColumns();
             Object pkVal = updateForm.getPkVal();
 
             CohortImpl cohort;

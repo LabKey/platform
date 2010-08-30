@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -32,7 +33,6 @@ import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 
 /*
@@ -85,7 +85,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     {
         ListItem item = get(user, container, key);
         if(null != item)
-            item.delete(user, container, isAuditLog());
+            item.delete(user, container, isBulkLoad());
     }
 
     public Object keyFromMap(Map<String, Object> map) throws InvalidKeyException
@@ -117,7 +117,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     public static Map<String, Object> toMap(ListDefinition listdef, ListItem bean)
     {
         //since ListItems are not really 'beans' we need to convert to a map ourselves
-        Map<String,Object> map = new HashMap<String,Object>();
+        Map<String,Object> map = new CaseInsensitiveHashMap<Object>();
 
         //key
         map.put(listdef.getKeyName(), bean.getKey());
@@ -190,7 +190,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     {
         try
         {
-            item.save(user, isAuditLog());
+            item.save(user, isBulkLoad());
         }
         catch(AttachmentService.DuplicateFilenameException e)
         {

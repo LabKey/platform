@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class DummyUpdateService implements QueryUpdateService
 {
-    private boolean _auditLog;
+    private boolean _isBulkLoad = false;
 
     public DummyUpdateService()
     {
@@ -95,14 +95,14 @@ public class DummyUpdateService implements QueryUpdateService
     }
 
     @Override
-    public void setAuditLog(boolean audit)
+    public void setBulkLoad(boolean bulk)
     {
-        _auditLog = audit;
+        _isBulkLoad = bulk;
     }
 
     @Override
-    public boolean isAuditLog()
+    public boolean isBulkLoad()
     {
-        return _auditLog;
+        return _isBulkLoad;
     }
 }

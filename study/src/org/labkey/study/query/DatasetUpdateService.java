@@ -62,7 +62,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.insertRows(user, container, rows);
-        resyncStudy(user, container, true);
+        if (!isBulkLoad())
+        {
+            resyncStudy(user, container, true);
+        }
         return result;
     }
 
@@ -102,7 +105,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             changedLSIDs.remove(updatedRows.get("lsid"));
         }
 
-        resyncStudy(user, container, changedLSIDs.isEmpty());
+        if (!isBulkLoad())
+        {
+            resyncStudy(user, container, changedLSIDs.isEmpty());
+        }
+        
         return result;
     }
 
@@ -146,7 +153,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.deleteRows(user, container, keys);
-        resyncStudy(user, container, true);
+        if (!isBulkLoad())
+        {
+            resyncStudy(user, container, true);
+        }
         return result;
     }
 

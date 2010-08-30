@@ -247,7 +247,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             if (ownTransaction)
                 dbschema.getScope().beginTransaction();
 
-            Map<String,Object> data = updateForm.getDataMap();
+            Map<String,Object> data = updateForm.getTypedColumns();
             String newLsid;
 
             if (isInsert())

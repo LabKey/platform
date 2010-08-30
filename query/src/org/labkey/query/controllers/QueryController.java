@@ -30,6 +30,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
@@ -1945,26 +1946,13 @@ public class QueryController extends SpringActionController
             return root;
         }
 
-        protected Map<String, Object> getFormValues(QueryUpdateForm form, TableInfo table)
-        {
-            Map<String, Object> values = new HashMap<String, Object>();
-            for (ColumnInfo column : form.getTable().getColumns())
-            {
-                if (form.hasTypedValue(column))
-                {
-                    values.put(column.getName(), form.getTypedValue(column));
-                }
-            }
-            return values;
-        }
-
         protected void doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert) throws Exception
         {
             TableInfo table = form.getTable();
             if (!table.hasPermission(form.getUser(), insert ? InsertPermission.class : UpdatePermission.class))
                 HttpView.throwUnauthorized();
 
-            Map<String, Object> values = getFormValues(form, table);
+            Map<String, Object> values = form.getTypedColumns();
 
             QueryUpdateService qus = table.getUpdateService();
             if (qus == null)
@@ -1987,6 +1975,8 @@ public class QueryController extends SpringActionController
                     if (form.getOldValues() instanceof Map)
                     {
                         oldValues = (Map<String, Object>)form.getOldValues();
+                        if (!(oldValues instanceof CaseInsensitiveMapWrapper))
+                            oldValues = new CaseInsensitiveMapWrapper<Object>(oldValues);
                     }
                     qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues));
                 }

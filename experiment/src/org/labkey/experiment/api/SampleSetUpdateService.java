@@ -46,7 +46,7 @@ class SampleSetUpdateService implements QueryUpdateService
 {
     private ExpMaterialTableImpl _table;
     private ExpSampleSet _ss;
-    private boolean _isAuditLog;
+    private boolean _isBulkLoad = false;
 
     public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
     {
@@ -189,14 +189,14 @@ class SampleSetUpdateService implements QueryUpdateService
     }
 
     @Override
-    public void setAuditLog(boolean audit)
+    public void setBulkLoad(boolean bulk)
     {
-        _isAuditLog = audit;
+        _isBulkLoad = bulk;
     }
     
-    public boolean isAuditLog ()
+    public boolean isBulkLoad()
     {
-        return _isAuditLog;
+        return _isBulkLoad;
     }
 
 }
