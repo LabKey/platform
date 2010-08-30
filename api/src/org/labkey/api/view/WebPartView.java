@@ -104,6 +104,18 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         return StringUtils.defaultString((String) getViewContext().get("className"), "");
     }
 
+    /* Only used by FrameType.PORTAL */
+    public void setFrameClass(String className)
+    {
+        addObject("frameClass", className);
+    }
+
+    /* Only used by FrameType.PORTAL */
+    public String getFrameClass()
+    {
+        return StringUtils.defaultString((String) getViewContext().get("frameClass"), "");
+    }
+
     public void setTitle(CharSequence title)
     {
         if (title instanceof HString)
@@ -304,7 +316,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         }
 
         String className = getBodyClass();
-
+        String frameClassName = getFrameClass();
+        
         switch (frameType)
         {
             case NONE:
@@ -343,7 +356,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
             case PORTAL:
             {
                 out.println("<!--webpart-->");
-                out.println("<table name=\"webpart\" id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp\">");
+                out.println("<table name=\"webpart\" id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp " + frameClassName + "\">");
 
                 Boolean collapsed = false;
 
