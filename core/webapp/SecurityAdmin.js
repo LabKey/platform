@@ -1202,12 +1202,12 @@ var GroupPicker = Ext.extend(Ext.Panel,{
             reserveScrollOffset: true,
             columns: [{
                 header: 'Group',
-                width: .65,
+                width: .80,
                 dataIndex: 'name',
                 tpl:'<div class="{extraClass}" style="cursor:pointer;">{name}</div>'
             },{
                 header: 'Members',
-                width: .35,
+                width: .20,
                 dataIndex: 'count',
                 align:'right'
             }

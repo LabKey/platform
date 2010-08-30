@@ -29,6 +29,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -555,7 +556,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
     {
         if (!getViewContext().hasPermission(AdminPermission.class))
         {
-            throw new IllegalStateException("You do not have permissions to modify the metadata");
+            throw new UnauthorizedException("You do not have permissions to modify the metadata");
         }
     }
 

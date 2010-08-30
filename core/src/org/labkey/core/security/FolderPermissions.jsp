@@ -237,7 +237,7 @@ Ext.onReady(function(){
     function makeGroupsPanel(project,canEdit,ct)
     {
         var formId = 'newGroupForm' + (project?'':'Site');
-        var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoHeight:true, projectId:project});
+        var groupsList = new GroupPicker({cache:securityCache, width:350, border:false, autoHeight:true, projectId:project});
         groupsList.on("select", function(list,group){
             showPopup(group, groupsList);
         });
@@ -263,7 +263,7 @@ Ext.onReady(function(){
                 var sz = tabPanel.body.getSize();
                 this.setSize(sz.width-20,sz.height-20);
                 var btm = sz.height + tabPanel.body.getX();
-                groupsList.setSize(200,btm-groupsList.el.getX());
+                groupsList.setSize(350,btm-groupsList.el.getX());
                 this.doLayout();
             }
         };

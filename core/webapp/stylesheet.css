@@ -2173,6 +2173,11 @@ div.yuimenu li.checked em.checkedindicator.disabled {
 
 }
 
+.x-form-item
+{
+    margin-bottom:4px;
+}
+
 .x-form-field-wrap .labkey-trigger-elipsis
 {
     background-image: url(./_images/elipsis.gif) !important;

@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.*;
@@ -430,6 +431,22 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         public Class getDisplayValueClass()
         {
             return String.class;
+        }
+
+        @NotNull
+        @Override
+        protected String getCssStyle(RenderContext ctx)
+        {
+            // Use our custom concatenated string instead of the underlying RowId value
+            String value = buildString(ctx, false);
+            for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
+            {
+                if (format.meetsCriteria(value))
+                {
+                    return format.getCssStyle();
+                }
+            }
+            return "";
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
