@@ -345,6 +345,20 @@ public class DataColumn extends DisplayColumn
                 return format.getCssStyle();
             }
         }
+        
+        if (_displayColumn != getBoundColumn())
+        {
+            // If we're not showing the bound column, as in a lookup, check the display column to see if it has a
+            // format preference
+            for (ConditionalFormat format : _displayColumn.getConditionalFormats())
+            {
+                Object value = ctx.get(_displayColumn.getFieldKey());
+                if (format.meetsCriteria(value))
+                {
+                    return format.getCssStyle();
+                }
+            }
+        }
         return "";
     }
 

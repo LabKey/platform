@@ -314,7 +314,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
             json.filters[this.dataRegionName + ".sort"] = this.sort;
 
         Ext.Ajax.request({
-            timeout: this.timeout || 30000,
+            timeout: (this.timeout == undefined) ? 30000 : this.timeout,
             url: LABKEY.ActionURL.buildURL("project", "getWebPart", this.containerPath),
             success: function(response) {
                 var targetElem = Ext.get(this.renderTo);

@@ -112,8 +112,7 @@ public class QuerySettings
         PropertyValues pvs = context.getBindPropertyValues();
         if (null == pvs)
         {
-            Logger.getInstance(QuerySettings.class).warn("PropertyValues not set");
-            //throw new IllegalStateException("PropertyValues not set");'
+            Logger.getLogger(QuerySettings.class).warn("PropertyValues not set");
             pvs = context.getActionURL().getPropertyValues();
         }
         return pvs;
