@@ -111,7 +111,6 @@ api/src/org/labkey/api/cache/implementation/LimitedCacheMap.java -text
 api/src/org/labkey/api/cache/implementation/TTLCacheMap.java -text
 api/src/org/labkey/api/cache/implementation/TTLCacheProvider.java -text
 api/src/org/labkey/api/collections/BoundMap.java -text
-api/src/org/labkey/api/collections/CaseInsensitiveArrayListMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text

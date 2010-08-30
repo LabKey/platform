@@ -31,14 +31,10 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.15.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.16.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.15-src.zip!/javadoc" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/log4j-1.2.15-src.zip!/java" />
-        </SOURCES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
