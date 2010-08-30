@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<RssBean> me = (HttpView<RssBean>) HttpView.currentView();
@@ -31,7 +32,7 @@
     <link><%=h(ActionURL.getBaseServerURL())%></link>
     <description><%=h(laf.getShortName())%>: <%=h(laf.getDescription())%></description>
 <%
-    for (org.labkey.announcements.model.Announcement ann : bean.announcements)
+    for (AnnouncementModel ann : bean.announcementModels)
     {%>
     <item>
         <title><%=h(ann.getTitle())%></title>

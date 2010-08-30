@@ -27,6 +27,7 @@ import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
+import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
 import org.labkey.api.jsp.JspLoader;
@@ -66,7 +67,7 @@ import java.util.*;
 
 
 /**
- * Shows a set of announcement or bulletin board items with replies.
+ * Shows a set of announcementModels or bulletin board items with replies.
  * Sends email to subscribers.
  * Properties are stored under the following keys:
  *   user=user,container,Object="Announcements"
@@ -493,7 +494,7 @@ public class AnnouncementsController extends SpringActionController
         {
             Permissions perm = getPermissions();
 
-            Announcement ann = null;
+            AnnouncementModel ann = null;
             if (null != form.getEntityId())
                 ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);
             if (null == ann)
@@ -524,7 +525,7 @@ public class AnnouncementsController extends SpringActionController
             Permissions perm = getPermissions();
             Container c = getContainer();
 
-            Announcement ann = null;
+            AnnouncementModel ann = null;
             if (null != form.getEntityId())
                 ann = AnnouncementManager.getAnnouncement(c, form.getEntityId(), true);
             if (null == ann)
@@ -556,7 +557,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class ConfirmDeleteView extends JspView<ConfirmDeleteView.DeleteBean>
     {
-        public ConfirmDeleteView(Announcement ann, String what, Settings settings)
+        public ConfirmDeleteView(AnnouncementModel ann, String what, Settings settings)
         {
             super("/org/labkey/announcements/confirmDelete.jsp", new DeleteBean(ann, what, settings));
         }
@@ -567,7 +568,7 @@ public class AnnouncementsController extends SpringActionController
             public String what;
             public String conversationName;
 
-            private DeleteBean(Announcement ann, String what, Settings settings)
+            private DeleteBean(AnnouncementModel ann, String what, Settings settings)
             {
                 title = ann.getTitle();
                 this.what = what;
@@ -617,7 +618,7 @@ public class AnnouncementsController extends SpringActionController
     {
         public ModelAndView getConfirmView(MemberListRemovalForm form, BindException errors) throws Exception
         {
-            Announcement thread = validateAndGetThread(form, errors);
+            AnnouncementModel thread = validateAndGetThread(form, errors);
 
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
@@ -658,12 +659,12 @@ public class AnnouncementsController extends SpringActionController
             validateAndGetThread(form, errors);
         }
 
-        private Announcement validateAndGetThread(MemberListRemovalForm form, Errors errors)
+        private AnnouncementModel validateAndGetThread(MemberListRemovalForm form, Errors errors)
         {
             User user = getUser();
             Settings settings = getSettings();
 
-            Announcement thread = null;
+            AnnouncementModel thread = null;
 
             try
             {
@@ -699,7 +700,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RemoveUserView extends JspView<RemoveUserView.RemoveUserBean>
     {
-        public RemoveUserView(Announcement ann, String email, DiscussionService.Settings settings)
+        public RemoveUserView(AnnouncementModel ann, String email, DiscussionService.Settings settings)
         {
             super("/org/labkey/announcements/confirmRemoveUser.jsp", new RemoveUserBean(ann, email, settings));
         }
@@ -710,7 +711,7 @@ public class AnnouncementsController extends SpringActionController
             public String email;
             public String conversationName;
 
-            private RemoveUserBean(Announcement ann, String email, Settings settings)
+            private RemoveUserBean(AnnouncementModel ann, String email, Settings settings)
             {
                 title = ann.getTitle();
                 this.email = email;
@@ -720,9 +721,9 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private Announcement getAnnouncement(AttachmentForm form) throws SQLException, ServletException
+    private AnnouncementModel getAnnouncement(AttachmentForm form) throws SQLException, ServletException
     {
-        Announcement ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);  // Force member list to be selected
+        AnnouncementModel ann = AnnouncementManager.getAnnouncement(getContainer(), form.getEntityId(), true);  // Force member list to be selected
 
         if (null == ann)
             throwThreadNotFound(getContainer());
@@ -740,7 +741,7 @@ public class AnnouncementsController extends SpringActionController
 
         public ModelAndView getView(AttachmentForm form, boolean reshow, BindException errors) throws Exception
         {
-            Announcement ann = getAnnouncement(form);
+            AnnouncementModel ann = getAnnouncement(form);
             verifyPermissions(ann);
             getPageConfig().setTemplate(PageConfig.Template.None);
             return getAttachmentView(form, ann);
@@ -769,7 +770,7 @@ public class AnnouncementsController extends SpringActionController
 
         // Further permissions check (ensure non-editors are on the member list in secure board, handle owner-update, etc.)
         // Most actions require update permission
-        protected void verifyPermissions(Announcement ann) throws ServletException
+        protected void verifyPermissions(AnnouncementModel ann) throws ServletException
         {
             if (!getPermissions().allowUpdate(ann))
                 HttpView.throwUnauthorized();
@@ -810,7 +811,7 @@ public class AnnouncementsController extends SpringActionController
 
         // Override since this action only requires read permission
         @Override
-        protected void verifyPermissions(Announcement ann) throws ServletException
+        protected void verifyPermissions(AnnouncementModel ann) throws ServletException
         {
             if (!getPermissions().allowRead(ann))
                 HttpView.throwUnauthorized();
@@ -970,7 +971,7 @@ public class AnnouncementsController extends SpringActionController
 
             List<AttachmentFile> files = getAttachmentFileList();
 
-            Announcement insert = form.getBean();
+            AnnouncementModel insert = form.getBean();
             if (null == insert.getParent() || 0 == insert.getParent().length())
                 insert.setParent(form.getParentId());
 
@@ -1015,7 +1016,7 @@ public class AnnouncementsController extends SpringActionController
             // Null in insert/update message case, since we want to redirect to thread view anchoring to new post
             if (null == returnURL)
             {
-                Announcement thread = insert;
+                AnnouncementModel thread = insert;
                 if (null != insert.getParent())
                     thread = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent(), true);
 
@@ -1111,12 +1112,12 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class RespondAction extends BaseInsertAction
     {
-        private Announcement _parent;
+        private AnnouncementModel _parent;
 
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
             Permissions perm = getPermissions();
-            Announcement parent = null;
+            AnnouncementModel parent = null;
             Container c = getContainer();
 
             if (null != form.getParentId())
@@ -1286,7 +1287,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getMemberListTextArea(User user, Container c, Announcement ann, String emailList)
+    private static String getMemberListTextArea(User user, Container c, AnnouncementModel ann, String emailList)
     {
         String completeUserUrl = getCompleteUserURL(c).getLocalURIString();
 
@@ -1329,7 +1330,7 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract static class BaseInsertView extends JspView<BaseInsertView.InsertBean>
     {
-        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, Announcement latestPost, boolean reshow, boolean fromDiscussion)
+        public BaseInsertView(String page, InsertBean bean, AnnouncementForm form, URLHelper cancelURL, String title, BindException errors, AnnouncementModel latestPost, boolean reshow, boolean fromDiscussion)
         {
             super(page, bean, errors);
             setTitle(title);
@@ -1351,7 +1352,7 @@ public class AnnouncementsController extends SpringActionController
                 else
                     currentRendererType = WikiRendererType.valueOf(rendererTypeName);
 
-                Announcement ann = form.getBean();
+                AnnouncementModel ann = form.getBean();
                 assignedTo = ann.getAssignedTo();
             }
             else if (null == latestPost)
@@ -1402,7 +1403,7 @@ public class AnnouncementsController extends SpringActionController
             public WikiRendererType currentRendererType;
             public AnnouncementForm form;
             public URLHelper cancelURL;
-            public Announcement parentAnnouncement;   // Used by RespondView only... move to subclass?
+            public AnnouncementModel parentAnnouncementModel;   // Used by RespondView only... move to subclass?
             public boolean fromDiscussion;
             public boolean allowMultipleDiscussions = true;
         }
@@ -1424,14 +1425,14 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RespondView extends BaseInsertView
     {
-        public RespondView(Container c, Announcement parent, AnnouncementForm form, URLHelper cancelURL, BindException errors, boolean reshow, boolean fromDiscussion)
+        public RespondView(Container c, AnnouncementModel parent, AnnouncementForm form, URLHelper cancelURL, BindException errors, boolean reshow, boolean fromDiscussion)
         {
             super("/org/labkey/announcements/respond.jsp", new InsertBean(), form, cancelURL, "Response", errors, AnnouncementManager.getLatestPost(c, parent), reshow, fromDiscussion);
 
-            getModelBean().parentAnnouncement = parent;
+            getModelBean().parentAnnouncementModel = parent;
         }
 
-        public RespondView(Container c, Announcement parent, URLHelper cancelURL, boolean fromDiscussion)
+        public RespondView(Container c, AnnouncementModel parent, URLHelper cancelURL, boolean fromDiscussion)
         {
             this(c, parent, new AnnouncementForm(), cancelURL, null, false, fromDiscussion);
         }
@@ -1450,7 +1451,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresNoPermission   // Custom permission checking below to handle owner-update
     public class UpdateAction extends FormViewAction<AnnouncementForm>
     {
-        private Announcement _ann;
+        private AnnouncementModel _ann;
 
         public ActionURL getSuccessURL(AnnouncementForm form)
         {
@@ -1459,7 +1460,7 @@ public class AnnouncementsController extends SpringActionController
 
         public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
-            Announcement ann = form.selectAnnouncement();
+            AnnouncementModel ann = form.selectAnnouncement();
             if (null == ann)
                 HttpView.throwNotFound();
 
@@ -1473,13 +1474,13 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean handlePost(AnnouncementForm form, BindException errors) throws Exception
         {
-            Announcement ann = form.selectAnnouncement();
+            AnnouncementModel ann = form.selectAnnouncement();
 
             if (!getPermissions().allowUpdate(ann))
                 HttpView.throwUnauthorized();
 
             Container c = getContainer();
-            Announcement update = form.getBean();
+            AnnouncementModel update = form.getBean();
 
             // TODO: What is this checking for?
             if (!c.getId().equals(update.getContainerId()))
@@ -1535,7 +1536,7 @@ public class AnnouncementsController extends SpringActionController
             ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());
             threadView.setFrame(WebPartView.FrameType.DIV);
 
-            Announcement ann = threadView.getAnnouncement();
+            AnnouncementModel ann = threadView.getAnnouncement();
             _title = ann != null ? ann.getTitle() : "Error";
 
             String anchor = getActionURL().getParameter("_anchor");
@@ -1571,8 +1572,8 @@ public class AnnouncementsController extends SpringActionController
             // getFilter performs further permission checking on secure board (e.g., non-Editors only see threads where they're on the member list)
             SimpleFilter filter = getFilter(getSettings(), getPermissions(), true);
 
-            // TODO: This only grabs announcements... add responses too?
-            Pair<Announcement[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
+            // TODO: This only grabs announcementModels... add responses too?
+            Pair<AnnouncementModel[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, getSettings().getSort(), 100);
 
             ActionURL url = getThreadURL(c, "", 0).deleteParameters().addParameter("rowId", (String)null);
 
@@ -1598,20 +1599,20 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RssView extends JspView<RssView.RssBean>
     {
-        private RssView(Announcement[] announcements, String url)
+        private RssView(AnnouncementModel[] announcementModels, String url)
         {
-            super("/org/labkey/announcements/rss.jsp", new RssBean(announcements, url));
+            super("/org/labkey/announcements/rss.jsp", new RssBean(announcementModels, url));
             setFrame(WebPartView.FrameType.NONE);
         }
 
         public static class RssBean
         {
-            public Announcement[] announcements;
+            public AnnouncementModel[] announcementModels;
             public String url;
 
-            private RssBean(Announcement[] announcements, String url)
+            private RssBean(AnnouncementModel[] announcementModels, String url)
             {
-                this.announcements = announcements;
+                this.announcementModels = announcementModels;
                 this.url = url;
             }
         }
@@ -1731,13 +1732,13 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private void sendNotificationEmails(Announcement a, WikiRendererType currentRendererType) throws Exception
+    private void sendNotificationEmails(AnnouncementModel a, WikiRendererType currentRendererType) throws Exception
     {
         Container c = getContainer();
         DiscussionService.Settings settings = getSettings();
 
         boolean isResponse = null != a.getParent();
-        Announcement parent = a;
+        AnnouncementModel parent = a;
         if (isResponse)
             parent = AnnouncementManager.getAnnouncement(c, a.getParent());
 
@@ -1824,7 +1825,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private ViewMessage getMessage(Container c, DiscussionService.Settings settings, Permissions perm, Announcement parent, Announcement a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
+    private ViewMessage getMessage(Container c, DiscussionService.Settings settings, Permissions perm, AnnouncementModel parent, AnnouncementModel a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
     {
         ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
@@ -1844,8 +1845,8 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, Settings settings, Permissions perm, Announcement parent,
-            Announcement a, String removeUrl, WikiRendererType currentRendererType, Reason reason)
+    private EmailNotificationPage createEmailNotificationTemplate(String templateName, boolean includeBody, Container c, Settings settings, Permissions perm, AnnouncementModel parent,
+            AnnouncementModel a, String removeUrl, WikiRendererType currentRendererType, Reason reason)
     {
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
@@ -1858,7 +1859,7 @@ public class AnnouncementsController extends SpringActionController
         page.boardURL = boardURL.getURIString();
         page.removeUrl = removeUrl;
         page.siteURL = ActionURL.getBaseServerURL();
-        page.announcement = a;
+        page.announcementModel = a;
         page.reason = reason;
         page.includeGroups = (null != perm && perm.includeGroups());  // perm will be null for broadcast since we send a single message to everyone
 
@@ -1956,14 +1957,14 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static class AnnouncementForm extends BeanViewForm<Announcement>
+    public static class AnnouncementForm extends BeanViewForm<AnnouncementModel>
     {
-        Announcement _selectedAnnouncement = null;
+        AnnouncementModel _selectedAnnouncementModel = null;
         List<User> _memberList = null;
 
         public AnnouncementForm()
         {
-            super(Announcement.class, null, Collections.<String, Class>singletonMap("parentid", GuidString.class));
+            super(AnnouncementModel.class, null, Collections.<String, Class>singletonMap("parentid", GuidString.class));
         }
 
         // XXX: change return value to typed GuidString
@@ -1982,23 +1983,23 @@ public class AnnouncementsController extends SpringActionController
             _memberList = memberList;
         }
 
-        Announcement selectAnnouncement() throws SQLException
+        AnnouncementModel selectAnnouncement() throws SQLException
         {
-            if (null == _selectedAnnouncement)
+            if (null == _selectedAnnouncementModel)
             {
-                Announcement bean = getBean();
+                AnnouncementModel bean = getBean();
                 if (null != bean.getEntityId())
-                    _selectedAnnouncement = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId(), true);  // Need member list
-                if (null == _selectedAnnouncement)
-                    _selectedAnnouncement = AnnouncementManager.getAnnouncement(getContainer(), bean.getRowId(), AnnouncementManager.INCLUDE_MEMBERLIST);
+                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId(), true);  // Need member list
+                if (null == _selectedAnnouncementModel)
+                    _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getRowId(), AnnouncementManager.INCLUDE_MEMBERLIST);
             }
-            return _selectedAnnouncement;
+            return _selectedAnnouncementModel;
         }
 
         public void validate(Errors errors)
         {
             Settings settings = getSettings(getContainer());
-            Announcement bean = getBean();
+            AnnouncementModel bean = getBean();
 
             // Title can never be null.  If title is not editable, it will still be posted in a hidden field.
             if (StringUtils.trimToNull(bean.getTitle()) == null)
@@ -2043,8 +2044,8 @@ public class AnnouncementsController extends SpringActionController
                         memberList.add(user);
                 }
 
-                // New up an announcement to check permissions for the member list
-                Announcement ann = new Announcement();
+                // New up an announcementModel to check permissions for the member list
+                AnnouncementModel ann = new AnnouncementModel();
                 ann.setMemberList(memberList);
 
                 for (User user : memberList)
@@ -2072,8 +2073,8 @@ public class AnnouncementsController extends SpringActionController
                 {
                     Permissions perm = getPermissions(getContainer(), assignedToUser, settings);
 
-                    // New up an announcement to check permissions for the assigned to user
-                    Announcement ann = new Announcement();
+                    // New up an announcementModel to check permissions for the assigned to user
+                    AnnouncementModel ann = new AnnouncementModel();
                     ann.setMemberList(memberList);
 
                     if (!perm.allowRead(ann))
@@ -2324,18 +2325,18 @@ public class AnnouncementsController extends SpringActionController
 
         public static class MessagesBean extends LinkBarBean
         {
-            public Announcement[] announcements;
+            public AnnouncementModel[] announcementModels;
             public ActionURL listURL;
 
             private MessagesBean(Container c, ActionURL url, User user, Settings settings, boolean displayAll)
             {
                 Permissions perm = getPermissions(c, user, settings);
                 SimpleFilter filter = getFilter(settings, perm, displayAll);
-                Pair<Announcement[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, settings.getSort(), 100);
+                Pair<AnnouncementModel[], Boolean> pair = AnnouncementManager.getAnnouncements(c, filter, settings.getSort(), 100);
 
                 init(c, url, user, settings, perm, displayAll, false, pair.second.booleanValue() ? 100 : 0);
                 
-                announcements = pair.first;
+                announcementModels = pair.first;
                 listURL = getListURL(c);
             }
         }
@@ -2561,7 +2562,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class ThreadViewBean
     {
-        public Announcement announcement;
+        public AnnouncementModel announcementModel;
         public String message = "";
         public Permissions perm = null;
         public boolean isResponse = false;
@@ -2588,7 +2589,7 @@ public class AnnouncementsController extends SpringActionController
             init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false);
         }
 
-        public ThreadView(Container c, ActionURL url, Announcement ann, Permissions perm) throws ServletException
+        public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm) throws ServletException
         {
             this();
             init(c, ann, url, perm, true, false);
@@ -2598,21 +2599,21 @@ public class AnnouncementsController extends SpringActionController
                 throws ServletException
         {
             this();
-            Announcement ann = findThread(c, (String)form.get("rowId"), (String)form.get("entityId"));
+            AnnouncementModel ann = findThread(c, (String)form.get("rowId"), (String)form.get("entityId"));
             init(c, ann, url, perm, false, print);
         }
 
-        protected void init(Container c, Announcement ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
+        protected void init(Container c, AnnouncementModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
                 throws ServletException
         {
             if (null == c || !perm.allowRead(ann))
                 HttpView.throwUnauthorized();
 
-            if (ann instanceof AnnouncementManager.BareAnnouncement)
+            if (ann instanceof AnnouncementManager.BareAnnouncementModel)
                 throw new IllegalArgumentException("can't use getBareAnnoucements() with this view");
 
             ThreadViewBean bean = getModelBean();
-            bean.announcement = ann;
+            bean.announcementModel = ann;
             bean.currentURL = currentURL;
             bean.settings = getSettings(c);
             bean.message = null;
@@ -2627,14 +2628,14 @@ public class AnnouncementsController extends SpringActionController
             setTitle("View " + bean.settings.getConversationName());
         }
 
-        public Announcement getAnnouncement()
+        public AnnouncementModel getAnnouncement()
         {
-            return getModelBean().announcement;
+            return getModelBean().announcementModel;
         }
     }
 
 
-    private static Announcement findThread(Container c, String rowIdVal, String entityId)
+    private static AnnouncementModel findThread(Container c, String rowIdVal, String entityId)
     {
         int rowId = 0;
         if (rowIdVal != null)
@@ -2667,7 +2668,7 @@ public class AnnouncementsController extends SpringActionController
     
     public static class AnnouncementUpdateView extends JspView<AnnouncementUpdateView.UpdateBean>
     {
-        public AnnouncementUpdateView(AnnouncementForm form, Announcement ann, BindException errors)
+        public AnnouncementUpdateView(AnnouncementForm form, AnnouncementModel ann, BindException errors)
         {
             super("/org/labkey/announcements/update.jsp", null, errors);
             setModelBean(new UpdateBean(form, ann));
@@ -2684,7 +2685,7 @@ public class AnnouncementsController extends SpringActionController
 
         public class UpdateBean
         {
-            public Announcement ann;
+            public AnnouncementModel annModel;
             public Settings settings;
             public String assignedToSelect;
             public String statusSelect;
@@ -2695,13 +2696,13 @@ public class AnnouncementsController extends SpringActionController
             public ActionURL addAttachmentURL;
             public URLHelper returnURL;
 
-            private UpdateBean(AnnouncementForm form, Announcement ann)
+            private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
             {
                 Container c = form.getContainer();
                 String reshowEmailList = (String)form.get("emailList");
                 DownloadURL attachmentURL = new DownloadURL(ShowConfirmDeleteAction.class, c, ann.getEntityId(), null);
 
-                this.ann = ann;
+                this.annModel = ann;
                 settings = getSettings(c);
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
@@ -2710,7 +2711,7 @@ public class AnnouncementsController extends SpringActionController
                 addAttachmentURL = attachmentURL.clone().setAction(ShowAddAttachmentAction.class);
                 statusSelect = getStatusSelect(settings, ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext());
-                returnURL = form.getReturnUrl();// getThreadUrl(c, ann.getEntityId(), ann.getRowId());  // TODO: Use URL to object instead
+                returnURL = form.getReturnUrl();// getThreadUrl(c, annModel.getEntityId(), annModel.getRowId());  // TODO: Use URL to object instead
             }
         }
     }

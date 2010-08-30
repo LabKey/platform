@@ -45,7 +45,7 @@ public class NormalMessageBoardPermissions implements Permissions
         _settings = settings;
     }
 
-    public boolean allowRead(Announcement ann)
+    public boolean allowRead(AnnouncementModel ann)
     {
         if (_user == User.getSearchUser())
             return true;
@@ -57,24 +57,24 @@ public class NormalMessageBoardPermissions implements Permissions
         return hasPermission(InsertPermission.class);
     }
 
-    public boolean allowResponse(Announcement ann)
+    public boolean allowResponse(AnnouncementModel ann)
     {
         return hasPermission(InsertPermission.class);
     }
 
-    public boolean allowUpdate(Announcement ann)
+    public boolean allowUpdate(AnnouncementModel ann)
     {
         return _c.hasPermission(_user, UpdatePermission.class,
                 (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null));
     }
 
-    public boolean allowDeleteMessage(Announcement ann)
+    public boolean allowDeleteMessage(AnnouncementModel ann)
     {
         //to delete, user must have delete permission for this message and all responses
         if (_c.hasPermission(_user, DeletePermission.class,
                 (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null)))
         {
-            for (Announcement a : ann.getResponses())
+            for (AnnouncementModel a : ann.getResponses())
                 if (!allowDeleteMessage(a))
                     return false;
 

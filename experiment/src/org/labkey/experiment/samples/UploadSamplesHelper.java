@@ -305,7 +305,9 @@ public class UploadSamplesHelper
                 {
                     Map<String, Object> map = li.next();
                     String name = decideName(map, idColPropertyURIs);
-                    String lsid = new Lsid(source.getMaterialLSIDPrefix() + name).toString();
+                    Lsid l = new Lsid(source.getMaterialLSIDPrefix() + "ToBeReplaced");
+                    l.setObjectId(name);
+                    String lsid = l.toString();
                     ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
 
                     if (material == null)
@@ -621,7 +623,7 @@ public class UploadSamplesHelper
         public String beforeImportObject(Map<String, Object> map) throws SQLException
         {
             String name = decideName(map, _idCols);
-            Lsid l = new Lsid(_source.getMaterialLSIDPrefix() + "test");
+            Lsid l = new Lsid(_source.getMaterialLSIDPrefix() + "ToBeReplaced");
             l.setObjectId(name);
             String lsid = l.toString();
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.AnnouncementsController" %><%@ page import="org.labkey.announcements.model.Announcement" %><%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %><%@ page import="org.labkey.announcements.model.AnnouncementModel" %><%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>The following new posts were made yesterday in folder: <%=c.getPath()%>
 
@@ -23,7 +23,7 @@
     String previousThread = null;
     String threadUrl = null;
 
-    for (Announcement ann : announcements)
+    for (AnnouncementModel ann : announcementModels)
     {
         if (null == ann.getParent() || !ann.getParent().equals(previousThread))
         {

@@ -68,6 +68,7 @@ announcements/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql 
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.58-0.59.sql -text
 announcements/src/org/labkey/announcements/AnnouncementListener.java -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
+announcements/src/org/labkey/announcements/AnnouncementSchema.java -text
 announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
@@ -78,6 +79,8 @@ announcements/src/org/labkey/announcements/announcementEmailDefaults.jsp -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/announcementThread.jsp -text
 announcements/src/org/labkey/announcements/announcementWebPart.jsp -text
+announcements/src/org/labkey/announcements/api/AnnouncementImpl.java -text
+announcements/src/org/labkey/announcements/api/AnnouncementServiceImpl.java -text
 announcements/src/org/labkey/announcements/bulkEdit.jsp -text
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
 announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
@@ -90,8 +93,8 @@ announcements/src/org/labkey/announcements/emailNotification.jsp -text
 announcements/src/org/labkey/announcements/emailNotificationPlain.jsp -text
 announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/insert.jsp -text
-announcements/src/org/labkey/announcements/model/Announcement.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
+announcements/src/org/labkey/announcements/model/AnnouncementModel.java -text
 announcements/src/org/labkey/announcements/model/DailyDigest.java -text
 announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text

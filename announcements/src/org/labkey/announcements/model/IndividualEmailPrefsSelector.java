@@ -17,7 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.labkey.announcements.model.AnnouncementManager.EmailPref;
-import org.labkey.announcements.model.Announcement;
+import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -46,7 +46,7 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
     }
 
 
-    public List<User> getNotificationUsers(Announcement ann) throws ServletException, SQLException
+    public List<User> getNotificationUsers(AnnouncementModel ann) throws ServletException, SQLException
     {
         List<User> authorized = new ArrayList<User>(_emailPrefs.size());
 

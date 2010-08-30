@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
-<%@ page import="org.labkey.announcements.model.Announcement" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
@@ -36,11 +36,11 @@
     ViewContext context = me.getViewContext();
     Container c = context.getContainer();
     AnnouncementsController.ThreadViewBean bean = me.getModelBean();
-    Announcement announcement = bean.announcement;
+    AnnouncementModel announcementModel = bean.announcementModel;
     DiscussionService.Settings settings = bean.settings;
     String contextPath = context.getContextPath();
 
-    if (null == announcement)
+    if (null == announcementModel)
     {
 %><span><%=h(settings.getConversationName())%> not found</span><%
     return;
@@ -52,13 +52,13 @@ if (null != bean.message)
 }
 
 // is this an embedded discussion?
-boolean embedded = (null != announcement.getDiscussionSrcURL() && !context.getActionURL().getPageFlow().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
+boolean embedded = (null != announcementModel.getDiscussionSrcURL() && !context.getActionURL().getPageFlow().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
 ActionURL discussionSrc = null;
 
-if (!embedded && null != announcement.getDiscussionSrcURL())
+if (!embedded && null != announcementModel.getDiscussionSrcURL())
 {
-    discussionSrc = DiscussionServiceImpl.fromSaved(announcement.getDiscussionSrcURL());
-    discussionSrc.replaceParameter("discussion.id", "" + announcement.getRowId());
+    discussionSrc = DiscussionServiceImpl.fromSaved(announcementModel.getDiscussionSrcURL());
+    discussionSrc.replaceParameter("discussion.id", "" + announcementModel.getRowId());
 }
 
 if (!bean.print && !embedded)
@@ -86,8 +86,8 @@ if (!bean.print && null != discussionSrc)
 
 <table style="table-layout:fixed;width:100%">
 <tr>
-    <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcement.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=h(announcement.getCreatedByName(bean.includeGroups, context))%></td>
+    <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=h(announcementModel.getCreatedByName(bean.includeGroups, context))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
@@ -95,46 +95,46 @@ if (false && !bean.print && null != discussionSrc)
     %>[<a href="<%=h(discussionSrc.getLocalURIString())%>#discussionArea">view&nbsp;in&nbsp;context</a>]&nbsp;<%
 }
 
-if (bean.perm.allowUpdate(announcement) && !bean.print)
+if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 {
-    ActionURL update = AnnouncementsController.getUpdateURL(c, announcement.getEntityId(), bean.currentURL);
+    ActionURL update = AnnouncementsController.getUpdateURL(c, announcementModel.getEntityId(), bean.currentURL);
     %>[<a href="<%=h(update.getLocalURIString())%>">edit</a>]<%
 }
-%>&nbsp;<%=h(DateUtil.formatDateTime(announcement.getCreated()))%></td>
+%>&nbsp;<%=h(DateUtil.formatDateTime(announcementModel.getCreated()))%></td>
 </tr>
 <tr>
     <td colspan=3 class="labkey-title-area-line"></td>
 </tr><%
 
-if (settings.hasMemberList() && null != announcement.getEmailList())
+if (settings.hasMemberList() && null != announcementModel.getEmailList())
 { %>
 <tr>
-    <td colspan="3">Members: <%=h(announcement.getEmailList())%></td>
+    <td colspan="3">Members: <%=h(announcementModel.getEmailList())%></td>
 </tr><%
 }
 
-if (settings.hasStatus() && null != announcement.getStatus())
+if (settings.hasStatus() && null != announcementModel.getStatus())
 { %>
 <tr>
-    <td colspan="3">Status: <%=h(announcement.getStatus())%></td>
+    <td colspan="3">Status: <%=h(announcementModel.getStatus())%></td>
 </tr><%
 }
 
-if (settings.hasExpires() && null != announcement.getExpires())
+if (settings.hasExpires() && null != announcementModel.getExpires())
 { %>
 <tr>
-    <td align=left colspan="3">Expires: <%=h(DateUtil.formatDate(announcement.getExpires()))%>&nbsp;</td>
+    <td align=left colspan="3">Expires: <%=h(DateUtil.formatDate(announcementModel.getExpires()))%>&nbsp;</td>
 </tr><%
 }
 
-if (settings.hasAssignedTo() && null != announcement.getAssignedTo())
+if (settings.hasAssignedTo() && null != announcementModel.getAssignedTo())
 { %>
 <tr>
-    <td colspan="3">Assigned&nbsp;To: <%=h(announcement.getAssignedToName(context))%></td>
+    <td colspan="3">Assigned&nbsp;To: <%=h(announcementModel.getAssignedToName(context))%></td>
 </tr><%
 }
 
-if (null != announcement.getBody())
+if (null != announcementModel.getBody())
 { %>
 <tr>
     <td colspan="3">&nbsp;</td>
@@ -143,15 +143,15 @@ if (null != announcement.getBody())
 
 %>
 <tr>
-    <td colspan="3" class="labkey-force-word-break"><%=announcement.translateBody(c)%></td>
+    <td colspan="3" class="labkey-force-word-break"><%=announcementModel.translateBody(c)%></td>
 </tr><%
 
-if (0 < announcement.getAttachments().size())
+if (0 < announcementModel.getAttachments().size())
 { %>
 <tr>
     <td colspan="3"><div><%
 
-        for (Attachment d : announcement.getAttachments())
+        for (Attachment d : announcementModel.getAttachments())
         { %>
         <a href="<%=h(d.getDownloadUrl("announcements"))%>"><img alt="" src="<%=request.getContextPath() + d.getFileIcon()%>">&nbsp;<%=h(d.getName())%></a>&nbsp;<%
         } %>
@@ -162,9 +162,9 @@ if (0 < announcement.getAttachments().size())
     <td colspan="3">&nbsp;</td>
 </tr><%
 
-if (0 < announcement.getResponses().size())
+if (0 < announcementModel.getResponses().size())
 {
-    Announcement prev = announcement;
+    AnnouncementModel prev = announcementModel;
     %>
 <tr><td colspan="3">
 
@@ -174,7 +174,7 @@ if (0 < announcement.getResponses().size())
     <td colspan="2" width="100%">
         <table class="labkey-announcement-thread" width=100%><%
 
-        for (Announcement r : announcement.getResponses())
+        for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
                 <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=h(r.getCreatedByName(bean.includeGroups, context)) + " responded:"%></td>
@@ -259,29 +259,29 @@ if (0 < announcement.getResponses().size())
 
 if (!bean.isResponse && !bean.print)
 {
-    if (bean.perm.allowResponse(announcement))
+    if (bean.perm.allowResponse(announcementModel))
     {
         // There are two cases here.... I'm in the wiki controller or I'm not (e.g. I'm a discussion)
         if (embedded)
         {
             // UNDONE: respond in place
             URLHelper url = bean.currentURL.clone();
-            url.replaceParameter("discussion.id",""+announcement.getRowId());
+            url.replaceParameter("discussion.id",""+ announcementModel.getRowId());
             url.replaceParameter("discussion.reply","1");
             %>
         <%=PageFlowUtil.generateButton("Post Response", url)%>&nbsp;<%
         }
         else
         {
-            ActionURL respond = announcementURL(c, AnnouncementsController.RespondAction.class, "parentId", announcement.getEntityId());
+            ActionURL respond = announcementURL(c, AnnouncementsController.RespondAction.class, "parentId", announcementModel.getEntityId());
             respond.addReturnURL(bean.currentURL);
             %>
         <%=PageFlowUtil.generateButton("Post Response", respond)%>&nbsp;<%
         }
     }
-    if (bean.perm.allowDeleteMessage(announcement))
+    if (bean.perm.allowDeleteMessage(announcementModel))
     {
-        ActionURL deleteThread = announcementURL(c, AnnouncementsController.DeleteThreadAction.class, "entityId", announcement.getEntityId());
+        ActionURL deleteThread = announcementURL(c, AnnouncementsController.DeleteThreadAction.class, "entityId", announcementModel.getEntityId());
         deleteThread.addParameter("cancelUrl", bean.currentURL.getLocalURIString());
         if (embedded)
         {

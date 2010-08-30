@@ -83,45 +83,45 @@ public class AnnouncementManager
     {
     }
 
-    protected static void attachAttachments(Announcement[] announcements) throws SQLException
+    protected static void attachAttachments(AnnouncementModel[] announcementModels) throws SQLException
     {
-        AttachmentService.get().setAttachments(Arrays.<AttachmentParent>asList(announcements));
+        AttachmentService.get().setAttachments(Arrays.<AttachmentParent>asList(announcementModels));
     }
 
 
-    protected static void attachResponses(Container c, Announcement[] announcements) throws SQLException
+    protected static void attachResponses(Container c, AnnouncementModel[] announcementModels) throws SQLException
     {
-        for (Announcement announcement : announcements)
+        for (AnnouncementModel announcementModel : announcementModels)
         {
-            Announcement[] res = getAnnouncements(c, announcement.getEntityId());
-            announcement.setResponses(Arrays.asList(res));
+            AnnouncementModel[] res = getAnnouncements(c, announcementModel.getEntityId());
+            announcementModel.setResponses(Arrays.asList(res));
         }
     }
 
 
-    protected static void attachMemberLists(Announcement[] announcements) throws SQLException
+    protected static void attachMemberLists(AnnouncementModel[] announcementModels) throws SQLException
     {
-        for (Announcement announcement : announcements)
-            announcement.setMemberList(getMemberList(announcement));
+        for (AnnouncementModel announcementModel : announcementModels)
+            announcementModel.setMemberList(getMemberList(announcementModel));
     }
 
 
     // Get first rowlimit threads in this container, filtered using filter
-    public static Pair<Announcement[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
+    public static Pair<AnnouncementModel[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
     {
         filter.addCondition("Container", c.getId());
 
         try
         {
-            Announcement[] recent = Table.select(_comm.getTableInfoThreads(), Table.ALL_COLUMNS, filter, sort, Announcement.class, rowLimit + 1, 0);
+            AnnouncementModel[] recent = Table.select(_comm.getTableInfoThreads(), Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class, rowLimit + 1, 0);
 
             Boolean limited = (recent.length > rowLimit);
 
             if (limited)
-                recent = (Announcement[])ArrayUtils.subarray(recent, 0, rowLimit);
+                recent = (AnnouncementModel[])ArrayUtils.subarray(recent, 0, rowLimit);
 
             attachAttachments(recent);
-            return new Pair<Announcement[], Boolean>(recent, limited);
+            return new Pair<AnnouncementModel[], Boolean>(recent, limited);
         }
         catch (SQLException x)
         {
@@ -130,20 +130,20 @@ public class AnnouncementManager
     }
 
 
-    // marker for non fully loaded announcement
-    public static class BareAnnouncement extends Announcement
+    // marker for non fully loaded announcementModel
+    public static class BareAnnouncementModel extends AnnouncementModel
     {
     }
 
 
     // Get all threads in this container, filtered using filter, no attachments, no responses
-    public static Announcement[] getBareAnnouncements(Container c, SimpleFilter filter, Sort sort)
+    public static AnnouncementModel[] getBareAnnouncements(Container c, SimpleFilter filter, Sort sort)
     {
         filter.addCondition("Container", c.getId());
 
         try
         {
-            Announcement[] recent = Table.select(_comm.getTableInfoThreads(), Table.ALL_COLUMNS, filter, sort, BareAnnouncement.class);
+            AnnouncementModel[] recent = Table.select(_comm.getTableInfoThreads(), Table.ALL_COLUMNS, filter, sort, BareAnnouncementModel.class);
             return recent;
         }
         catch (SQLException x)
@@ -152,8 +152,35 @@ public class AnnouncementManager
         }
     }
 
+    /**
+     * Return a list of announcementModels from a set of containers sorted by date created (newest first).
+     * @param containers
+     * @return
+     */
+    public static AnnouncementModel[] getAnnouncements(Container... containers)
+    {
+        List<String> ids = new ArrayList<String>();
 
-    public static Announcement[] getAnnouncements(Container c, String parent)
+        for (Container container : containers)
+            ids.add(container.getId());
+
+        SimpleFilter filter = new SimpleFilter("Container", ids, CompareType.IN);
+        Sort sort = new Sort("-Created");
+
+        try
+        {
+            AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
+
+            attachAttachments(ann);
+            return ann;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+    
+    public static AnnouncementModel[] getAnnouncements(Container c, String parent)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("container", c.getId());
@@ -166,8 +193,8 @@ public class AnnouncementManager
 
         try
         {
-            Announcement[] ann = Table.select(_comm.getTableInfoAnnouncements(),
-                    Table.ALL_COLUMNS, filter, sort, Announcement.class);
+            AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(),
+                    Table.ALL_COLUMNS, filter, sort, AnnouncementModel.class);
 
             attachAttachments(ann);
             return ann;
@@ -179,17 +206,17 @@ public class AnnouncementManager
     }
 
 
-    public static Announcement getAnnouncement(Container c, String entityId) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, String entityId) throws SQLException
     {
         return getAnnouncement(c, entityId, false);
     }
 
 
-    public static Announcement getAnnouncement(Container c, String entityId, boolean eager) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, String entityId, boolean eager) throws SQLException
     {
-        Announcement[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
+        AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
                 new SimpleFilter("container", c.getId()).addCondition("entityId", entityId),
-                null, Announcement.class);
+                null, AnnouncementModel.class);
         if (ann.length < 1)
             return null;
         attachAttachments(ann);
@@ -202,7 +229,7 @@ public class AnnouncementManager
     }
 
 
-    public static Announcement getAnnouncement(Container c, int rowId) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, int rowId) throws SQLException
     {
         return getAnnouncement(c, rowId, INCLUDE_ATTACHMENTS);
     }
@@ -254,11 +281,11 @@ public class AnnouncementManager
     public static final int INCLUDE_RESPONSES = 2;
     public static final int INCLUDE_MEMBERLIST = 4;
 
-    public static Announcement getAnnouncement(Container c, int rowId, int mask) throws SQLException
+    public static AnnouncementModel getAnnouncement(Container c, int rowId, int mask) throws SQLException
     {
-        Announcement[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
+        AnnouncementModel[] ann = Table.select(_comm.getTableInfoAnnouncements(), Table.ALL_COLUMNS,
                 new SimpleFilter("container", c.getId()).addCondition("rowId", new Integer(rowId)),
-                null, Announcement.class);
+                null, AnnouncementModel.class);
         if (ann.length < 1)
             return null;
 
@@ -272,7 +299,7 @@ public class AnnouncementManager
     }
 
 
-    public static Announcement getLatestPost(Container c, Announcement parent)
+    public static AnnouncementModel getLatestPost(Container c, AnnouncementModel parent)
     {
         try
         {
@@ -290,10 +317,10 @@ public class AnnouncementManager
     }
 
 
-    public static void insertAnnouncement(Container c, User user, Announcement insert, List<AttachmentFile> files) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
+    public static void insertAnnouncement(Container c, User user, AnnouncementModel insert, List<AttachmentFile> files) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
     {
         insert.beforeInsert(user, c.getId());
-        Announcement ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
+        AnnouncementModel ann = Table.insert(user, _comm.getTableInfoAnnouncements(), insert);
 
         List<User> users = ann.getMemberList();
 
@@ -322,13 +349,13 @@ public class AnnouncementManager
     }
 
 
-    private static int getParentRowId(Announcement ann) throws SQLException
+    private static int getParentRowId(AnnouncementModel ann) throws SQLException
     {
         return Table.executeSingleton(_comm.getSchema(), "SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId=?", new Object[]{ann.getParent()}, Integer.class);
     }
 
 
-    private static List<User> getMemberList(Announcement ann) throws SQLException
+    private static List<User> getMemberList(AnnouncementModel ann) throws SQLException
     {
         Integer[] userIds;
 
@@ -346,7 +373,7 @@ public class AnnouncementManager
     }
 
 
-    public static void updateAnnouncement(User user, Announcement update) throws SQLException
+    public static void updateAnnouncement(User user, AnnouncementModel update) throws SQLException
     {
         update.beforeUpdate(user);
         Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
@@ -354,7 +381,7 @@ public class AnnouncementManager
     }
 
 
-    private static void deleteAnnouncement(Announcement ann) throws SQLException
+    private static void deleteAnnouncement(AnnouncementModel ann) throws SQLException
     {
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
         AttachmentService.get().deleteAttachments(ann);
@@ -366,7 +393,7 @@ public class AnnouncementManager
         DbSchema schema = _comm.getSchema();
         boolean startedTransaction = false;
 
-        Announcement ann = null;
+        AnnouncementModel ann = null;
 
         try
         {
@@ -383,10 +410,10 @@ public class AnnouncementManager
                 // Delete the member list associated with this thread
                 Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("MessageId", ann.getRowId()));
 
-                Collection<Announcement> responses = ann.getResponses();
+                Collection<AnnouncementModel> responses = ann.getResponses();
                 if (null == responses)
                     return;
-                for (Announcement response : responses)
+                for (AnnouncementModel response : responses)
                 {
                     deleteAnnouncement(response);
                 }
@@ -415,7 +442,7 @@ public class AnnouncementManager
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter("UserId", user.getUserId()).addCondition("MessageId", messageId));
     }
 
-    public static Set<User> getAuthors(Container c, Announcement a) throws SQLException
+    public static Set<User> getAuthors(Container c, AnnouncementModel a) throws SQLException
     {
         Set<User> responderSet = new HashSet<User>();
         boolean isResponse = null != a.getParent();
@@ -425,10 +452,10 @@ public class AnnouncementManager
         {
             a = AnnouncementManager.getAnnouncement(c, a.getParent(), true);
 
-            Collection<Announcement> responses = a.getResponses();
+            Collection<AnnouncementModel> responses = a.getResponses();
 
             //add creator of each response to responder set
-            for (Announcement response : responses)
+            for (AnnouncementModel response : responses)
             {
                 //do we need to handle case where responder is not in a project group?
                 User user = UserManager.getUser(response.getCreatedBy());
@@ -885,7 +912,7 @@ public class AnnouncementManager
                     return;
             }
 
-            // Get the attachments... unfortunately, they're attached to individual announcements, not to the thread,
+            // Get the attachments... unfortunately, they're attached to individual announcementModels, not to the thread,
             // so we need a different query.
             // find all messages that have attachments
             sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
@@ -907,7 +934,7 @@ public class AnnouncementManager
             sql.append("\nGROUP BY a.EntityId");
 
             Collection<String> annIds = new HashSet<String>();
-            Map<String, Announcement> map = new HashMap<String, Announcement>();
+            Map<String, AnnouncementModel> map = new HashMap<String, AnnouncementModel>();
 
             rs2 = Table.executeQuery(_comm.getSchema(), sql.getSQL(), sql.getParamsArray());
 
@@ -918,7 +945,7 @@ public class AnnouncementManager
                 String title = rs2.getString(3);
 
                 annIds.add(entityId);
-                Announcement ann = new Announcement();
+                AnnouncementModel ann = new AnnouncementModel();
                 ann.setEntityId(entityId);
                 ann.setParent(parent);
                 ann.setContainer(containerId);
@@ -938,7 +965,7 @@ public class AnnouncementManager
                 {
                     String entityId = pair.first;
                     String documentName = pair.second;
-                    Announcement ann = map.get(entityId);
+                    AnnouncementModel ann = map.get(entityId);
                     ActionURL attachmentUrl = url.clone()
                             .replaceParameter("entityId", entityId)
                             .replaceParameter("name", documentName);
@@ -1001,7 +1028,7 @@ public class AnnouncementManager
     }
 
 
-    private static void unindexThread(Announcement ann)
+    private static void unindexThread(AnnouncementModel ann)
     {
         String docid = "thread:" + ann.getEntityId();
         SearchService ss = ServiceRegistry.get(SearchService.class);
@@ -1032,7 +1059,7 @@ public class AnnouncementManager
 
 
 
-    static void indexThread(Announcement ann)
+    static void indexThread(AnnouncementModel ann)
     {
         String parent = null == ann.getParent() ? ann.getEntityId() : ann.getParent();
         String container = ann.getContainerId();
@@ -1086,14 +1113,14 @@ public class AnnouncementManager
             int rowA;
             int rowResponse;
             {
-                Announcement a = new Announcement();
-                a.setTitle("new announcement");
+                AnnouncementModel a = new AnnouncementModel();
+                a.setTitle("new announcementModel");
                 a.setBody("look at this");
                 AnnouncementManager.insertAnnouncement(c, user, a, null);
                 rowA = a.getRowId();
                 assertTrue(0 != rowA);
 
-                Announcement response = new Announcement();
+                AnnouncementModel response = new AnnouncementModel();
                 response.setParent(a.getEntityId());
                 response.setTitle("response");
                 response.setBody("bah");
@@ -1103,20 +1130,20 @@ public class AnnouncementManager
             }
 
             {
-                Announcement a = AnnouncementManager.getAnnouncement(c, rowA, INCLUDE_ATTACHMENTS + INCLUDE_RESPONSES);
+                AnnouncementModel a = AnnouncementManager.getAnnouncement(c, rowA, INCLUDE_ATTACHMENTS + INCLUDE_RESPONSES);
                 assertNotNull(a);
-                assertEquals("new announcement", a.getTitle());
-                Announcement[] responses = a.getResponses().toArray(new Announcement[a.getResponses().size()]);
+                assertEquals("new announcementModel", a.getTitle());
+                AnnouncementModel[] responses = a.getResponses().toArray(new AnnouncementModel[a.getResponses().size()]);
                 assertEquals(1, responses.length);
-                Announcement response = responses[0];
+                AnnouncementModel response = responses[0];
                 assertEquals(a.getEntityId(), response.getParent());
                 assertEquals("response", response.getTitle());
                 assertEquals("bah", response.getBody());
             }
 
             {
-                // this test makes more sense if/when getParent() return an Announcement
-                Announcement response = AnnouncementManager.getAnnouncement(c, rowResponse);
+                // this test makes more sense if/when getParent() return an AnnouncementModel
+                AnnouncementModel response = AnnouncementManager.getAnnouncement(c, rowResponse);
                 assertNotNull(response.getParent());
             }
 

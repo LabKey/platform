@@ -44,7 +44,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         if (!allowMultipleDiscussions)
         {
-            Announcement[] discussions = getDiscussions(c, identifier);
+            AnnouncementModel[] discussions = getDiscussions(c, identifier);
 
             if (discussions.length > 0)
                 return getDiscussion(c, cancelURL, discussions[0], user); // TODO: cancelURL is probably not right
@@ -89,18 +89,18 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    public Announcement[] getDiscussions(Container c, String identifier)
+    public AnnouncementModel[] getDiscussions(Container c, String identifier)
     {
         SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", identifier);
         return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
     }
 
 
-    public WebPartView getDiscussion(Container c, URLHelper currentURL, Announcement ann, User user)
+    public WebPartView getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
     {
         try
         {
-            // NOTE: don't pass in Announcement, it came from getBareAnnouncements()
+            // NOTE: don't pass in AnnouncementModel, it came from getBareAnnouncements()
             return new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
         }
         catch (ServletException x)
@@ -123,7 +123,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     {
         // get discussion parameters
         Map<String, String> params = currentURL.getScopeParameters("discussion");
-        Announcement[] announcements = getDiscussions(c, objectId);
+        AnnouncementModel[] announcementModels = getDiscussions(c, objectId);
 
         int discussionId = 0;
         try
@@ -133,9 +133,9 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             {
                 discussionId = Integer.parseInt(id);
             }
-            else if (displayFirstDiscussionByDefault && params.isEmpty() && announcements.length > 0)
+            else if (displayFirstDiscussionByDefault && params.isEmpty() && announcementModels.length > 0)
             {
-                discussionId = announcements[0].getRowId();
+                discussionId = announcementModels[0].getRowId();
             }
         }
         catch (Exception x) {/* */}
@@ -172,14 +172,14 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         }
         else
         {
-            Announcement selected = null;
+            AnnouncementModel selected = null;
 
             WebPartView discussionView = null;
             HttpView respondView = null;
 
             if (discussionId != 0)
             {
-                for (Announcement ann : announcements)
+                for (AnnouncementModel ann : announcementModels)
                 {
                     if (ann.getRowId() == discussionId)
                     {
@@ -205,7 +205,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
                 discussionBox = new ThreadWrapper(adjustedCurrentURL, "Discussion", discussionView, respondView);
         }
 
-        ModelAndView pickerView = new PickerView(c, adjustedCurrentURL, announcements, null != discussionBox, allowMultipleDiscussions);
+        ModelAndView pickerView = new PickerView(c, adjustedCurrentURL, announcementModels, null != discussionBox, allowMultipleDiscussions);
         DiscussionService.DiscussionView view = new DiscussionService.DiscussionView(pickerView);
 
         if (null != discussionBox)
@@ -220,8 +220,8 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public void deleteDiscussions(Container c, String identifier, User user)
     {
-        Announcement[] anns = getDiscussions(c, identifier);
-        for (Announcement ann : anns)
+        AnnouncementModel[] anns = getDiscussions(c, identifier);
+        for (AnnouncementModel ann : anns)
         {
             try
             {
@@ -237,8 +237,8 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public void unlinkDiscussions(Container c, String identifier, User user)
     {
-        Announcement[] anns = getDiscussions(c, identifier);
-        for (Announcement ann : anns)
+        AnnouncementModel[] anns = getDiscussions(c, identifier);
+        for (AnnouncementModel ann : anns)
         {
             try
             {
@@ -337,11 +337,11 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         public ActionURL emailPreferencesURL;
         public ActionURL adminEmailURL;
         public ActionURL customizeURL;
-        public Announcement[] announcements;
+        public AnnouncementModel[] announcementModels;
         public boolean isDiscussionVisible;
         public boolean allowMultipleDiscussions;
 
-        PickerView(Container c, URLHelper pageURL, Announcement[] announcements, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
+        PickerView(Container c, URLHelper pageURL, AnnouncementModel[] announcementModels, boolean isDiscussionVisible, boolean allowMultipleDiscussions)
         {
             super("/org/labkey/announcements/discussionMenu.jsp");
             setFrame(FrameType.NONE);
@@ -349,7 +349,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
             this.emailPreferencesURL = AnnouncementsController.getEmailPreferencesURL(c, pageURL);
             this.adminEmailURL = AnnouncementsController.getAdminEmailURL(c, pageURL);
             this.customizeURL = AnnouncementsController.getCustomizeURL(c, pageURL);
-            this.announcements = announcements;
+            this.announcementModels = announcementModels;
             this.isDiscussionVisible = isDiscussionVisible;
             this.allowMultipleDiscussions = allowMultipleDiscussions;
         }

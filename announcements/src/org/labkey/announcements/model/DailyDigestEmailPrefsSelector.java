@@ -17,7 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.announcements.model.Announcement;
+import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.AnnouncementManager.*;
 import org.labkey.api.security.User;
 
@@ -54,7 +54,7 @@ public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
     }
 
 
-    public boolean shouldSend(Announcement ann, User user) throws SQLException, ServletException
+    public boolean shouldSend(AnnouncementModel ann, User user) throws SQLException, ServletException
     {
         return shouldSend(ann, _epMap.get(user));
     }

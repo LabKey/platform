@@ -40,12 +40,12 @@ import java.util.ArrayList;
 
 
 /**
- * Bean Class for Announcement.
+ * Bean Class for AnnouncementModel.
  */
-public class Announcement extends AttachmentParentEntity implements Serializable
+public class AnnouncementModel extends AttachmentParentEntity implements Serializable
 {
     private int _rowId = 0;
-//    private Announcement _parentAnnouncement = null;
+//    private AnnouncementModel _parentAnnouncement = null;
     private String _parentId = null;
     private boolean _broadcast;
     private WikiRendererType _rendererType;
@@ -66,20 +66,20 @@ public class Announcement extends AttachmentParentEntity implements Serializable
 
 
     Collection<Attachment> _attachments = null;
-    Collection<Announcement> _responses = new ArrayList<Announcement>();
+    Collection<AnnouncementModel> _responses = new ArrayList<AnnouncementModel>();
 
-//    static Announcement[] noResponses = new Announcement[0];
+//    static AnnouncementModel[] noResponses = new AnnouncementModel[0];
 
 
     /**
      * Standard constructor.
      */
-    public Announcement()
+    public AnnouncementModel()
     {
     }
 
 /*
-    public static Announcement[] loadAnnouncements(String container, String parent) throws SQLException
+    public static AnnouncementModel[] loadAnnouncements(String container, String parent) throws SQLException
         {
         SimpleFilter filter = _dialect.createSimpleFilter("container", container);
         if (null != parent)
@@ -87,26 +87,26 @@ public class Announcement extends AttachmentParentEntity implements Serializable
         else
             filter.addCondition("parent", null, CompareType.ISBLANK);
         
-        Announcement[] announcements = (Announcement[]) Table.select(_tinfo,
+        AnnouncementModel[] announcementModels = (AnnouncementModel[]) Table.select(_tinfo,
                         Table.ALL_COLUMNS,
                         filter,
                         new Sort("Created"),
-                        Announcement.class);
+                        AnnouncementModel.class);
         
-        return announcements;
+        return announcementModels;
         }
         
-    public static Announcement loadParentAnnouncement(String parent) throws SQLException
+    public static AnnouncementModel loadParentAnnouncement(String parent) throws SQLException
         {
         SimpleFilter filter = _dialect.createSimpleFilter("entityId", parent);
         
-        Announcement[] announcements = (Announcement[]) Table.select(_tinfo,
+        AnnouncementModel[] announcementModels = (AnnouncementModel[]) Table.select(_tinfo,
                         Table.ALL_COLUMNS,
                         filter,
                         null,
-                        Announcement.class);
+                        AnnouncementModel.class);
         
-        return (announcements.length == 0 ? null : announcements[0]);
+        return (announcementModels.length == 0 ? null : announcementModels[0]);
         }
 */
 
@@ -137,7 +137,7 @@ public class Announcement extends AttachmentParentEntity implements Serializable
      *
      * @return the title
      */
-    public java.lang.String getTitle()
+    public String getTitle()
     {
         return _title;
     }
@@ -159,7 +159,7 @@ public class Announcement extends AttachmentParentEntity implements Serializable
      *
      * @return the expires
      */
-    public java.util.Date getExpires()
+    public Date getExpires()
     {
         return _expires;
     }
@@ -181,7 +181,7 @@ public class Announcement extends AttachmentParentEntity implements Serializable
      *
      * @return the body
      */
-    public java.lang.String getBody()
+    public String getBody()
     {
         return _body;
     }
@@ -192,20 +192,20 @@ public class Announcement extends AttachmentParentEntity implements Serializable
      *
      * @param body the new body value
      */
-    public void setBody(java.lang.String body)
+    public void setBody(String body)
     {
         _body = body;
     }
 
 /*      @ManyToOne
         @JoinColumn(name = "parent")
-    public Announcement getParent()
+    public AnnouncementModel getParent()
         {
         return _parentAnnouncement;
         }
 
 
-    public void setParent(Announcement parent)
+    public void setParent(AnnouncementModel parent)
         {
         _parentAnnouncement = parent;
         }
@@ -280,7 +280,7 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     public Collection<Attachment> getAttachments() throws SQLException
     {
         if (null == _attachments)
-            AnnouncementManager.attachAttachments(new Announcement[] {this});
+            AnnouncementManager.attachAttachments(new AnnouncementModel[] {this});
 
         return _attachments;
     }
@@ -292,13 +292,13 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     }
 
 
-    public Collection<Announcement> getResponses()
+    public Collection<AnnouncementModel> getResponses()
     {
         return _responses;
     }
 
 
-    public void setResponses(Collection<Announcement> responses)
+    public void setResponses(Collection<AnnouncementModel> responses)
     {
         this._responses = responses;
     }

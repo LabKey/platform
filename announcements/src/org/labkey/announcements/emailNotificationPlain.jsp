@@ -18,9 +18,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.announcements.EmailNotificationPage" %>
 
-<%=announcement.getCreatedByName(includeGroups, HttpView.currentContext()) + (announcement.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcement.getCreated())%><%
+<%=announcementModel.getCreatedByName(includeGroups, HttpView.currentContext()) + (announcementModel.getParent() != null ? " responded" : " created a new " + settings.getConversationName().toLowerCase()) %> at <%=formatDateTime(announcementModel.getCreated())%><%
 
-    int attachmentCount = announcement.getAttachments().size();
+    int attachmentCount = announcementModel.getAttachments().size();
 
     if (attachmentCount > 0)
         out.println(" and attached " + attachmentCount + " document" + (attachmentCount > 1 ? "s" : ""));

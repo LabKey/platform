@@ -35,7 +35,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         super(c, user, settings);
     }
 
-    public boolean allowRead(Announcement ann)
+    public boolean allowRead(AnnouncementModel ann)
     {
         if (_user == User.getSearchUser())
             return true;
@@ -48,7 +48,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         return _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberList().contains(_user);
     }
 
-    public boolean allowDeleteMessage(Announcement ann)
+    public boolean allowDeleteMessage(AnnouncementModel ann)
     {
         return false;
     }
@@ -58,7 +58,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         return false;
     }
 
-    public boolean allowResponse(Announcement ann)
+    public boolean allowResponse(AnnouncementModel ann)
     {
         // Editors can respond to any message
         if (hasPermission(SecureMessageBoardRespondPermission.class))
@@ -68,7 +68,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         return _settings.hasMemberList() && hasPermission(InsertPermission.class) && ann.getMemberList().contains(_user);
     }
 
-    public boolean allowUpdate(Announcement ann)
+    public boolean allowUpdate(AnnouncementModel ann)
     {
         return false;
     }

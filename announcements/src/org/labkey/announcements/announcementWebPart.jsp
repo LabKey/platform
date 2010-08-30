@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementWebPart.MessagesBean" %>
-<%@ page import="org.labkey.announcements.model.Announcement" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
@@ -57,11 +57,11 @@
     }
 %></td>
     </tr><%
-    if (0 == bean.announcements.length)
+    if (0 == bean.announcementModels.length)
     {%>
     <tr><td colspan=3 style="padding-top:4px;">No <%=bean.filterText.replace("all ", "")%></td></tr><%
     }
-    for (Announcement a : bean.announcements)
+    for (AnnouncementModel a : bean.announcementModels)
     { %>
     <tr>
         <td class="labkey-announcement-title labkey-force-word-break" width="40%" align="left"><span><a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>"><%=h(a.getTitle())%></a></span><%

@@ -82,7 +82,7 @@ public abstract class EmailPrefsSelector
     }
 
 
-    protected boolean shouldSend(Announcement ann, EmailPref ep) throws ServletException, SQLException
+    protected boolean shouldSend(AnnouncementModel ann, EmailPref ep) throws ServletException, SQLException
     {
         int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 

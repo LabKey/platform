@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
-<%@ page import="org.labkey.announcements.model.Announcement" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -34,7 +34,7 @@
     String previousThread = null;
     String threadUrl = null;
 
-    for (Announcement ann : announcements)
+    for (AnnouncementModel ann : announcementModels)
     {
         if (null == ann.getParent() || !ann.getParent().equals(previousThread))
         {

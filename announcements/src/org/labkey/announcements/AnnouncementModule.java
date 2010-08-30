@@ -17,9 +17,11 @@ package org.labkey.announcements;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
+import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.model.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.module.DefaultModule;
@@ -48,7 +50,7 @@ import java.util.*;
  * NOTE: Wiki handles some of the shared Communications module stuff.
  * e.g. it handles ContainerListener and Attachments
  * <p/>
- * TODO: merge announcement & wiki into one module?
+ * TODO: merge announcementModel & wiki into one module?
  */
 public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
@@ -69,6 +71,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     protected void init()
     {
         addController("announcements", AnnouncementsController.class);
+        AnnouncementService.setInstance(new AnnouncementServiceImpl());
+        AnnouncementSchema.register();
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()

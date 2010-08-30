@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.announcements.model.Announcement" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
@@ -31,9 +31,9 @@
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
     Container c = context.getContainer();
-    Announcement[] announcements = me.announcements;
-    if (null == announcements)
-        announcements = new Announcement[0];
+    AnnouncementModel[] announcementModels = me.announcementModels;
+    if (null == announcementModels)
+        announcementModels = new AnnouncementModel[0];
     URLHelper pageURL = me.pageURL;
 
     boolean longFormat = false;
@@ -41,7 +41,7 @@
 
     if (me.allowMultipleDiscussions)
     {
-        for (Announcement a : announcements)
+        for (AnnouncementModel a : announcementModels)
             longFormat |= !menuItems.add(a.getCreatedByName(me.getViewContext()) + "|" + DateUtil.formatDate(a.getCreated()));
     }
 %>
@@ -65,14 +65,14 @@ var discussionMenu = {};
 
         if (me.allowMultipleDiscussions)
         {
-            for (Announcement a : announcements)
+            for (AnnouncementModel a : announcementModels)
             {
                 String title = a.getTitle();
                 String help = a.getCreatedByName(me.getViewContext()) + ' ' + (longFormat ? DateUtil.formatDateTime(a.getCreated()) : DateUtil.formatDate(a.getCreated()));
                 %>{text:<%=PageFlowUtil.jsString(title)%>,helptext:<%=PageFlowUtil.jsString(help)%>,href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
         }
-        else if (announcements.length > 0)
+        else if (announcementModels.length > 0)
         {
             if (me.isDiscussionVisible)
             {
@@ -80,11 +80,11 @@ var discussionMenu = {};
             }
             else
             {
-                Announcement a = announcements[0];
+                AnnouncementModel a = announcementModels[0];
                 %>{text:'Show discussion',href:discussionMenu.pageUrl+'&discussion.id=<%=a.getRowId()%>#discussionArea'},<%
             }
         }
-        if ((me.allowMultipleDiscussions || announcements.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
+        if ((me.allowMultipleDiscussions || announcementModels.length == 0) && c.hasPermission(context.getUser(), InsertPermission.class))
         {
             %>{text:'Start <%=me.allowMultipleDiscussions ? "new " : ""%>discussion',href:discussionMenu.pageUrl+'&discussion.start=true#discussionArea'},<%
         }
@@ -108,11 +108,11 @@ var discussionMenu = {};
 })();
 </script>
 <span id=discussionMenuToggle>[<a href="#" onclick="return false;"><%
-    if (announcements.length > 0)
+    if (announcementModels.length > 0)
     {
         if (me.allowMultipleDiscussions)
         {
-            %>see discussions (<%=announcements.length%>)<%
+            %>see discussions (<%=announcementModels.length%>)<%
         }
         else
         {

@@ -125,22 +125,22 @@ public class DailyDigest
     private static void sendDailyDigest(Container c, Date min, Date max) throws Exception
     {
         DiscussionService.Settings settings = AnnouncementManager.getMessageBoardSettings(c);
-        Announcement[] announcements = getRecentAnnouncementsInContainer(c, min, max);
+        AnnouncementModel[] announcementModels = getRecentAnnouncementsInContainer(c, min, max);
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
 
         for (User user : sel.getUsers())
         {
-            List<Announcement> announcementList = new ArrayList<Announcement>(announcements.length);
+            List<AnnouncementModel> announcementModelList = new ArrayList<AnnouncementModel>(announcementModels.length);
 
-            for (Announcement ann : announcements)
+            for (AnnouncementModel ann : announcementModels)
                 if (sel.shouldSend(ann, user))
-                    announcementList.add(ann);
+                    announcementModelList.add(ann);
 
-            if (!announcementList.isEmpty())
+            if (!announcementModelList.isEmpty())
             {
                 Permissions perm = AnnouncementsController.getPermissions(c, user, settings);
-                ViewMessage m = getDailyDigestMessage(c, settings, perm, announcementList, user);
+                ViewMessage m = getDailyDigestMessage(c, settings, perm, announcementModelList, user);
 
                 try
                 {
@@ -156,18 +156,18 @@ public class DailyDigest
     }
 
 
-    private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<Announcement> announcements, User user) throws Exception
+    private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User user) throws Exception
     {
         MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), user.getEmail());
         m.setSubject("New posts to " + c.getPath());
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
-        DailyDigestPage page = createPage("dailyDigestPlain.jsp", request, c, settings, perm, announcements);
+        DailyDigestPage page = createPage("dailyDigestPlain.jsp", request, c, settings, perm, announcementModels);
         JspView view = new JspView(page);
         view.setFrame(WebPartView.FrameType.NONE);
         m.setTemplateContent(request, view, "text/plain");
 
-        page = createPage("dailyDigest.jsp", request, c, settings, perm, announcements);
+        page = createPage("dailyDigest.jsp", request, c, settings, perm, announcementModels);
         view = new JspView(page);
         view.setFrame(WebPartView.FrameType.NONE);
         m.setTemplateContent(request, view, "text/html");
@@ -176,14 +176,14 @@ public class DailyDigest
     }
 
 
-    private static DailyDigestPage createPage(String templateName, HttpServletRequest request, Container c, Settings settings, Permissions perm, List<Announcement> announcements) throws ServletException
+    private static DailyDigestPage createPage(String templateName, HttpServletRequest request, Container c, Settings settings, Permissions perm, List<AnnouncementModel> announcementModels) throws ServletException
     {
         DailyDigestPage page = (DailyDigestPage) JspLoader.createPage(request, AnnouncementsController.class, templateName);
 
         page.conversationName = settings.getConversationName().toLowerCase();
         page.settings = settings;
         page.c = c;
-        page.announcements = announcements;
+        page.announcementModels = announcementModels;
         page.boardPath = c.getPath();
         ActionURL boardUrl = AnnouncementsController.getBeginURL(c);
         page.boardUrl = boardUrl.getURIString();
@@ -197,24 +197,24 @@ public class DailyDigest
 
     // Retrieve from this container all messages with a body or attachments posted during the given timespan
     // Messages are grouped by thread and threads are sorted by earliest post within each thread
-    private static final String RECENT_ANN_SQL = "SELECT ann.* FROM\n" +
+    private static final String RECENT_ANN_SQL = "SELECT annModel.* FROM\n" +
             "\t(\n" +
             "\tSELECT Thread, MIN(Created) AS Earliest FROM\n" +
-            "\t\t(SELECT Created, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM " + _comm.getTableInfoAnnouncements() + " ann LEFT OUTER JOIN\n" +
-            "\t\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON ann.EntityId = DocParent\n" +
+            "\t\t(SELECT Created, CASE WHEN Parent IS NULL THEN EntityId ELSE Parent END AS Thread FROM " + _comm.getTableInfoAnnouncements() + " annModel LEFT OUTER JOIN\n" +
+            "\t\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
             "\t\t\tWHERE Container = ? AND Created >= ? AND Created < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)) x\n" +
             "\tGROUP BY Thread\n" +
-            "\t) X LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " ann ON Parent = Thread OR EntityId = Thread LEFT OUTER JOIN\n" +
-            "\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON ann.EntityId = DocParent\n" + 
+            "\t) X LEFT OUTER JOIN " + _comm.getTableInfoAnnouncements() + " annModel ON Parent = Thread OR EntityId = Thread LEFT OUTER JOIN\n" +
+            "\t\t(SELECT DISTINCT(Parent) AS DocParent FROM " + _core.getTableInfoDocuments() + ") doc ON annModel.EntityId = DocParent\n" +
             "WHERE Container = ? AND Created >= ? AND Created < ? AND (Body IS NOT NULL OR DocParent IS NOT NULL)\n" +
             "ORDER BY Earliest, Thread, Created";
 
 
-    private static Announcement[] getRecentAnnouncementsInContainer(Container c, Date min, Date max) throws SQLException
+    private static AnnouncementModel[] getRecentAnnouncementsInContainer(Container c, Date min, Date max) throws SQLException
     {
-        Announcement[] announcements = Table.executeQuery(_comm.getSchema(), RECENT_ANN_SQL, new Object[]{c, min, max, c, min, max}, AnnouncementManager.BareAnnouncement.class);
-        AnnouncementManager.attachMemberLists(announcements);
-        return announcements;
+        AnnouncementModel[] announcementModels = Table.executeQuery(_comm.getSchema(), RECENT_ANN_SQL, new Object[]{c, min, max, c, min, max}, AnnouncementManager.BareAnnouncementModel.class);
+        AnnouncementManager.attachMemberLists(announcementModels);
+        return announcementModels;
     }
 
 

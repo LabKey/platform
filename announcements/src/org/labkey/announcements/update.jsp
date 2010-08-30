@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementUpdateView.UpdateBean"%>
-<%@ page import="org.labkey.announcements.model.Announcement" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
@@ -29,7 +29,7 @@
     AnnouncementUpdateView me = (AnnouncementUpdateView) HttpView.currentView();
     UpdateBean bean = me.getModelBean();
 
-    Announcement ann = bean.ann;
+    AnnouncementModel ann = bean.annModel;
     DiscussionService.Settings settings = bean.settings;
 %>
 <%=formatMissedErrors("form")%>

@@ -16,7 +16,7 @@
 
 package org.labkey.announcements;
 
-import org.labkey.announcements.model.Announcement;
+import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.data.Container;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.announcements.DiscussionService;
@@ -26,7 +26,7 @@ import java.util.List;
 abstract public class DailyDigestPage extends JspBase
 {
     public Container c;
-    public List<Announcement> announcements;
+    public List<AnnouncementModel> announcementModels;
     public String conversationName;
     public DiscussionService.Settings settings;
     public String boardUrl;
