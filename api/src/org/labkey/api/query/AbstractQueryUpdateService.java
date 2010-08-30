@@ -32,7 +32,7 @@ import java.util.*;
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
     private TableInfo _queryTable = null;
-    private boolean _auditLog = true;
+    private boolean _bulkLoad = false;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -194,13 +194,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    public void setAuditLog(boolean auditLog)
+    public void setBulkLoad(boolean bulkLoad)
     {
-        _auditLog = auditLog;
+        _bulkLoad = bulkLoad;
     }
 
-    public boolean isAuditLog()
+    public boolean isBulkLoad()
     {
-        return _auditLog;
+        return _bulkLoad;
     }
 }

@@ -111,10 +111,14 @@ public interface QueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException;
 
     /**
-     * Whether to do audit logging of all updates. The default is true.
-     * @param audit whether to write all updates to the audit log
+     * If true, disables expensive optional activity for this updater.
+     * @param bulkLoad whether to write audit log, and do per insert housekeeping
      */
-    public void setAuditLog(boolean audit);
+    public void setBulkLoad(boolean bulkLoad);
 
-    public boolean isAuditLog();
+    /**
+     * implementations should use this to decide whether to do optional expensive operations upon updates.
+     * @return
+     */
+    public boolean isBulkLoad();
 }

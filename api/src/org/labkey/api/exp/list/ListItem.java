@@ -37,7 +37,7 @@ public interface ListItem
     public void setProperty(DomainProperty property, Object value);
 
     public void save(User user) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException;
-    public void save(User user, boolean isAuditLog) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException;
+    public void save(User user, boolean isBulkLoad) throws SQLException, IOException, AttachmentService.DuplicateFilenameException, ValidationException;
     public void delete(User user, Container c) throws SQLException;
-    public void delete(User user, Container c, boolean isAuditLog) throws SQLException;
+    public void delete(User user, Container c, boolean isBulkLoad) throws SQLException;
 }

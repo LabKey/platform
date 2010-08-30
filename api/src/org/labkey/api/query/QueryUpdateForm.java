@@ -84,18 +84,4 @@ public class QueryUpdateForm extends TableViewForm
         return PREFIX + column.getName();
     }
 
-    public Map<String,Object> getDataMap()
-    {
-        Map<String,Object> data = new HashMap<String,Object>();
-        for (Map.Entry<String,Object> entry : getTypedValues().entrySet())
-        {
-            String key = entry.getKey();
-            if (key.startsWith(PREFIX))
-            {
-                key = key.substring(4);
-                data.put(key, entry.getValue());
-            }
-        }
-        return data;
-    }
 }

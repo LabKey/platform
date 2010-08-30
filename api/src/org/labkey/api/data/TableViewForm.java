@@ -457,6 +457,22 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
     /**
+     * Get case-insensitive map of typed values for each of the columns in the table if available.
+     * @return CaseInsensitiveHashMap of typed values.
+     */
+    public Map<String,Object> getTypedColumns()
+    {
+        Map<String, Object> values = new CaseInsensitiveHashMap<Object>();
+        for (ColumnInfo column : getTable().getColumns())
+        {
+            if (hasTypedValue(column))
+                values.put(column.getName(), getTypedValue(column));
+        }
+        return values;
+    }
+
+
+    /**
      * Set a map of real values. This will reset the matching strings stored in the object.
      */
     public void setTypedValues(Map<String, Object> values, boolean merge)

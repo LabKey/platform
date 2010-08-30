@@ -1379,6 +1379,7 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = view.getDataRegion();
         getSettings().setShowRows(ShowRows.ALL);
         rgn.setAllowAsync(false);
+        rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
         ResultSet rs = rgn.getResultSet(rc);
@@ -1442,6 +1443,7 @@ public class QueryView extends WebPartView<Object>
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
+        rgn.setShowPagination(false);
         List<DisplayColumn> displayColumns = getExportColumns(rgn.getDisplayColumns());
         // Need to remove special MV columns
         for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext();)
