@@ -115,6 +115,7 @@ api/src/org/labkey/api/cache/implementation/TTLCacheProvider.java -text
 api/src/org/labkey/api/collections/BoundMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
+api/src/org/labkey/api/collections/CaseInsensitiveMapTestCase.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
 api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/Join.java -text
