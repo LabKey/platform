@@ -20,7 +20,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
@@ -31,6 +30,9 @@ import org.labkey.study.controllers.StudyController;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +45,22 @@ import java.util.Set;
 public class DatasetDomainKind extends AbstractDomainKind
 {
     private static final String LSID_PREFIX = "StudyDataset";
+
+    /*
+     * the columns common to all datasets
+     */
+    final static Set<PropertyStorageSpec> BASE_PROPERTIES;
+    static
+    {
+        PropertyStorageSpec[] props = {
+            new PropertyStorageSpec("created", Types.TIMESTAMP),
+            new PropertyStorageSpec("modified", Types.TIMESTAMP),
+            new PropertyStorageSpec("createdBy", Types.VARCHAR),
+            new PropertyStorageSpec("modifiedBy", Types.VARCHAR)
+        };
+
+        BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
+    }
 
     public String getKindName()
     {
@@ -167,5 +185,11 @@ public class DatasetDomainKind extends AbstractDomainKind
     {
         DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         return def.getDefaultFieldNames();
+    }
+
+    @Override
+    public Set<PropertyStorageSpec> getBaseProperties()
+    {
+        return BASE_PROPERTIES;
     }
 }

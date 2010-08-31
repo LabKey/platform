@@ -543,6 +543,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return false;
     }
 
+    @Override
+    public String getChangeStatement(Change change)
+    {
+        throw new RuntimeException("TODO: implement SqlDialectMicrosoftSQLServer.getChangeStatement()!");
+    }
+
     public void initializeConnection(Connection conn) throws SQLException
     {
         Statement stmt = conn.createStatement();

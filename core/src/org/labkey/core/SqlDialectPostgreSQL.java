@@ -29,8 +29,10 @@ import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletException;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -737,6 +739,89 @@ class SqlDialectPostgreSQL extends SqlDialect
     {
         return "'" + StringUtils.replace(StringUtils.replace(str, "\\", "\\\\"), "'", "''") + "'";
     }
+
+    @Override
+    public String getChangeStatement(Change change)
+    {
+        String sql = null;
+        switch (change.getType())
+        {
+            case CreateTable:
+                sql =  getCreateTableStatement(change);
+                break;
+            case DropTable:
+                sql = getDropTableStatement(change);
+                break;
+            case AddColumns:
+                sql = getAddColumnsStatement(change);
+                break;
+            case DropColumns:
+                sql = getDropColumnsStatement(change);
+                break;
+        }
+
+        return sql;
+    }
+
+    private String getDropColumnsStatement(Change change)
+    {
+        List<String> sqlParts = new ArrayList<String>();
+        for (PropertyStorageSpec prop : change.getColumns())
+        {
+            sqlParts.add("DROP COLUMN " + prop.getName());
+        }
+
+        return String.format("ALTER TABLE %s %s", change.getTableName(), StringUtils.join(sqlParts, ", "));
+    }
+
+    private String getAddColumnsStatement(Change change)
+    {
+        List<String> sqlParts = new ArrayList<String>();
+        for (PropertyStorageSpec prop : change.getColumns())
+        {
+            sqlParts.add("ADD COLUMN " + getSqlColumnSpec(prop));
+        }
+
+        return String.format("ALTER TABLE %s %s", change.getTableName(), StringUtils.join(sqlParts, ", "));
+    }
+
+    private String getCreateTableStatement(Change change)
+    {
+        List<String> sqlParts = new ArrayList<String>();
+        for (PropertyStorageSpec prop : change.getColumns())
+        {
+            sqlParts.add(getSqlColumnSpec(prop));
+            // if it has a qc note (aka "missing value indicator")
+            // make an additional column for that
+            if (prop.hasQcNote())
+            {
+                sqlParts.add(prop.getQcNoteFieldName() + " VARCHAR");
+            }
+        }
+
+        return String.format("CREATE TABLE %s (%s)", change.getTableName(), StringUtils.join(sqlParts, ", "));
+        // TODO table constraints
+    }
+
+    public String getDropTableStatement(Change change)
+    {
+      return "DROP TABLE " + change.getTableName();  
+    }
+
+
+    private String getSqlColumnSpec(PropertyStorageSpec prop)
+    {
+        List<String> colSpec = new ArrayList<String>();
+        colSpec.add(prop.getName());
+        colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+        if (prop.isUnique()) colSpec.add("UNIQUE");
+        if (!prop.isNullable()) colSpec.add("NOT NULL");
+        // todo auto increment
+        // todo indexes
+
+        return StringUtils.join(colSpec, ' ');
+    }
+
 
     public void initializeConnection(Connection conn) throws SQLException
     {
