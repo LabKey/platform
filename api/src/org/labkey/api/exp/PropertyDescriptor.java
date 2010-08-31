@@ -377,7 +377,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     }
 
     @Override
-    protected boolean isAutoIncrement()
+    public boolean isAutoIncrement()
     {
         return false;
     }

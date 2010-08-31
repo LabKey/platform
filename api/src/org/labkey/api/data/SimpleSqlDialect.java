@@ -337,4 +337,10 @@ public abstract class SimpleSqlDialect extends SqlDialect
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
+
+    @Override
+    public String getChangeStatement(Change change)
+    {
+        throw new RuntimeException("schema changes not currently supported via SimpleSqlDialect");
+    }
 }

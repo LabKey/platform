@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -26,6 +27,7 @@ import org.labkey.api.view.NavTree;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -70,5 +72,11 @@ public abstract class AbstractDomainKind extends DomainKind
         {
             return Collections.singletonList(e.getMessage());
         }
+    }
+
+    @Override
+    public Set<PropertyStorageSpec> getBaseProperties()
+    {
+        return Collections.emptySet();
     }
 }

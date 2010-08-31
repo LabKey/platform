@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -83,4 +84,7 @@ abstract public class DomainKind
      * @return A list of errors collected during the update.
      */
     abstract public List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user);
+
+    abstract public Set<PropertyStorageSpec> getBaseProperties();
+
 }

@@ -1031,6 +1031,7 @@ public abstract class SqlDialect
         return partName;
     }
 
+    public abstract String getChangeStatement(Change change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
     public abstract boolean isCaseSensitive();
