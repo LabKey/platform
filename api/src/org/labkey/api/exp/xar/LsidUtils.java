@@ -213,6 +213,7 @@ public class LsidUtils
             super(name);
         }
 
+        @Override
         protected void setUp() throws Exception
         {
             _context = new XarContext("TestCase", ContainerManager.getRoot(), UserManager.getGuestUser());

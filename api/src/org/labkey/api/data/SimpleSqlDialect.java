@@ -276,13 +276,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    // The following methods should never be called on a simple dialect.
+
     @Override
     public TestSuite getTestSuite()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
-
-    // The following methods should not be called on a simple dialect.
 
     @Override
     protected boolean claimsDriverClassName(String driverClassName)

@@ -115,13 +115,14 @@ api/src/org/labkey/api/cache/implementation/TTLCacheProvider.java -text
 api/src/org/labkey/api/collections/BoundMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
-api/src/org/labkey/api/collections/CaseInsensitiveMapTestCase.java -text
+api/src/org/labkey/api/collections/CaseInsensitiveMapTest.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
 api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/Join.java -text
 api/src/org/labkey/api/collections/MapWrapper.java -text
 api/src/org/labkey/api/collections/MultiValueMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
+api/src/org/labkey/api/collections/OldCaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/ResultSetRowMapFactory.java -text
 api/src/org/labkey/api/collections/RowMap.java -text
 api/src/org/labkey/api/collections/RowMapFactory.java -text

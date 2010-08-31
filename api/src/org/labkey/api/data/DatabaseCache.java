@@ -338,11 +338,6 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         }
 
 
-        protected void tearDown() throws Exception
-        {
-        }
-
-
         public static Test suite()
         {
             return new TestSuite(TestCase.class);

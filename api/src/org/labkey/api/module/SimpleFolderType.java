@@ -26,13 +26,15 @@ import org.labkey.data.xml.folderType.FolderTypeDocument;
 import org.labkey.data.xml.folderType.Property;
 import org.labkey.data.xml.folderType.WebPartDocument;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: brittp
  * Date: Apr 19, 2010
  * Time: 4:20:27 PM
