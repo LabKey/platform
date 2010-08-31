@@ -110,7 +110,11 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
 
     getDimensions : function(config) {
 
-        Ext.applyIf(config, {query: this.queryName, schema: this.schemaName});
+        var params = {query: this.queryName, schema: this.schemaName};
+
+        if (config.includeDemographics)
+            params['includeDemographics'] = config.includeDemographics;
+
         function createDimensions(json)
         {
             var dimensions = [];
@@ -124,8 +128,9 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
 
         Ext.Ajax.request(
         {
-            url : LABKEY.ActionURL.buildURL("reports", "getDimensions", null, config),
+            url : LABKEY.ActionURL.buildURL("reports", "getDimensions"),
             method : 'GET',
+            params : params,
             success: getSuccessCallbackWrapper(createDimensions, config.successCallback, config.scope),
             failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
         });
@@ -170,7 +175,7 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
 
     getValues : function(config) {
 
-        Ext.applyIf(config, {query: this.queryName, schema: this.schemaName, name: this.name});
+        var params = {query: this.queryName, schema: this.schemaName, name: this.name};
         function createValues(json)
         {
             if (json.success && json.values)
@@ -180,8 +185,9 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
 
         Ext.Ajax.request(
         {
-            url : LABKEY.ActionURL.buildURL("reports", "getDimensionValues", null, config),
+            url : LABKEY.ActionURL.buildURL("reports", "getDimensionValues"),
             method : 'GET',
+            params : params,
             success: getSuccessCallbackWrapper(createValues, config.successCallback, config.scope),
             failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
         });
