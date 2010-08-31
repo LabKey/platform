@@ -43,6 +43,9 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
@@ -1804,6 +1807,21 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    public static class DimensionsForm extends MeasuresForm
+    {
+        private boolean _includeDemographics;
+
+        public boolean isIncludeDemographics()
+        {
+            return _includeDemographics;
+        }
+
+        public void setIncludeDemographics(boolean includeDemographics)
+        {
+            _includeDemographics = includeDemographics;
+        }
+    }
+
     public static class MeasuresForm
     {
         private String[] _filters = new String[0];
@@ -1901,9 +1919,9 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetMeasuresAction extends ApiAction<MeasuresForm>
+    public class GetMeasuresAction<Form extends MeasuresForm> extends ApiAction<Form>
     {
-        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
+        public ApiResponse execute(Form form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
@@ -2049,9 +2067,9 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetDimensionsAction extends GetMeasuresAction
+    public class GetDimensionsAction extends GetMeasuresAction<DimensionsForm>
     {
-        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
+        public ApiResponse execute(DimensionsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<Map<String, Object>> dimensions = new ArrayList<Map<String, Object>>();
@@ -2065,22 +2083,20 @@ public class ReportsController extends SpringActionController
                     UserSchema uschema = (UserSchema)schema;
                     TableInfo tinfo = uschema.getTable(form.getQuery());
 
-                    if (tinfo != null)
+                    getDimensions(tinfo, form.getSchema(), form.getQuery(), dimensions);
+                }
+
+                if (form.isIncludeDemographics())
+                {
+                    // include dimensions from demographic data sources, probably only relevant for studies
+                    Study study = StudyService.get().getStudy(getContainer());
+                    if (study != null)
                     {
-                        QueryDefinition def = QueryService.get().getQueryDef(getContainer(), form.getSchema(), form.getQuery());
-
-                        for (ColumnInfo col : tinfo.getColumns())
+                        for (DataSet ds : study.getDataSets())
                         {
-                            if (col.isDimension())
+                            if (ds.isDemographicData())
                             {
-                                // add measure properties
-                                Map<String, Object> props = getColumnProps(col);
-
-                                props.put("schemaName", form.getSchema());
-                                props.put("queryName", form.getQuery());
-                                props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
-
-                                dimensions.add(props);
+                                getDimensions(ds.getTableInfo(getUser()), "study", ds.getName(), dimensions);
                             }
                         }
                     }
@@ -2092,6 +2108,29 @@ public class ReportsController extends SpringActionController
                 throw new IllegalArgumentException("schema and query are required parameters");
 
             return resp;
+        }
+
+        protected void getDimensions(TableInfo tinfo, String schema, String query, List<Map<String, Object>> dimensions)
+        {
+            if (tinfo != null)
+            {
+                QueryDefinition def = QueryService.get().getQueryDef(getContainer(), schema, query);
+
+                for (ColumnInfo col : tinfo.getColumns())
+                {
+                    if (col.isDimension())
+                    {
+                        // add measure properties
+                        Map<String, Object> props = getColumnProps(col);
+
+                        props.put("schemaName", schema);
+                        props.put("queryName", query);
+                        props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
+
+                        dimensions.add(props);
+                    }
+                }
+            }
         }
     }
 
