@@ -22,12 +22,17 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.json.JSONObject;
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
 import org.labkey.api.action.*;
+import org.labkey.api.collections.CaseInsensitiveMapTest;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
@@ -414,5 +419,45 @@ public class JunitController extends SpringActionController
     static String h(String s)
     {
         return PageFlowUtil.filter(s);
+    }
+
+
+    // Test annotation-based approach to junit test.  Not integrated yet...
+    @RequiresSiteAdmin
+    public class RunNewTestsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            Result result = JUnitCore.runClasses(CaseInsensitiveMapTest.class);
+
+            StringBuilder html = new StringBuilder();
+            html.append(result.wasSuccessful() ? "SUCCESS" : "FAILURE");
+            html.append("<br>\nTests: ");
+            html.append(result.getRunCount());
+            html.append("<br>\nFailures: ");
+            html.append(result.getFailureCount());
+
+            if (!result.wasSuccessful())
+            {
+                html.append("<br>\n");
+                List<Failure> failures = result.getFailures();
+
+                for (Failure failure : failures)
+                {
+                    html.append(failure.toString());
+                    html.append("<br>\n");
+                }
+            }
+
+            return new HtmlView(html.toString());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
     }
 }

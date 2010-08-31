@@ -1137,6 +1137,7 @@ public class IssueManager
         }
 
 
+        @Override
         protected void tearDown() throws Exception
         {
             Container c = JunitUtil.getTestContainer();

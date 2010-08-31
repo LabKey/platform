@@ -15,7 +15,6 @@
  */
 package org.labkey.bigiron.sas;
 
-import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ConnectionWrapper;
@@ -169,11 +168,6 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
     public JdbcHelper getJdbcHelper()
     {
         throw new IllegalStateException();
-    }
-
-    public TestSuite getTestSuite()
-    {
-        return new TestSuite();
     }
 
     @Override

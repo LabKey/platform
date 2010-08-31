@@ -19,6 +19,8 @@ package org.labkey.core.junit;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.Test;
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
 
 import java.lang.reflect.Method;
 
