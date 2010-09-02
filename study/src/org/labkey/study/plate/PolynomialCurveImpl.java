@@ -87,8 +87,8 @@ public class PolynomialCurveImpl extends WellGroupCurveImpl
         _fitError = calculateFitError(_parameters);
 
         DoublePoint[] curveData = new DoublePoint[CURVE_SEGMENT_COUNT];
-        double logX = Math.log10(_wellGroup.getMinDilution());
-        double logInterval = (Math.log10(_wellGroup.getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
+        double logX = Math.log10(getMinDilution());
+        double logInterval = (Math.log10(getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
         for (int j = 0; j < CURVE_SEGMENT_COUNT; j++)
         {
             double x = Math.pow(10, logX);

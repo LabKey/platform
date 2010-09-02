@@ -111,13 +111,18 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 
     public ParameterCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws FitFailedException
     {
-        super(wellGroup, assumeDecreasing, percentCalculator);
+        this(Collections.singletonList(wellGroup), assumeDecreasing, percentCalculator, fitType);
+    }
+
+    public ParameterCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws FitFailedException
+    {
+        super(wellGroups, assumeDecreasing, percentCalculator);
         _fitType = fitType;
     }
 
     protected DoublePoint[] renderCurve() throws FitFailedException
     {
-        List<WellData> wellDatas = getWellData();
+        Map<WellData, WellGroup> wellDatas = getWellData();
         List<Double> percentages = new ArrayList<Double>(wellDatas.size());
         for (WellSummary well : _wellSummaries)
         {
@@ -134,8 +139,8 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
         _fitParameters = calculateFitParameters(minPercentage, maxPercentage);
         _fitError = _fitParameters.fitError;
         DoublePoint[] curveData = new DoublePoint[CURVE_SEGMENT_COUNT];
-        double logX = Math.log10(_wellGroup.getMinDilution());
-        double logInterval = (Math.log10(_wellGroup.getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
+        double logX = Math.log10(getMinDilution());
+        double logInterval = (Math.log10(getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
         for (int i = 0; i < CURVE_SEGMENT_COUNT; i++)
         {
             double x = Math.pow(10, logX);
@@ -205,7 +210,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
         }
         if (bestFit == null)
         {
-            throw new FitFailedException("Unable to find any parameters to fit a curve to wellgroup " + _wellGroup.getName() +
+            throw new FitFailedException("Unable to find any parameters to fit a curve to wellgroup " + _wellGroups.get(0).getName() +
                     ".  Your plate template may be invalid.  Please contact an administrator to report this problem.  " +
                     "Debug info: minPercentage = " + minPercentage + ", maxPercentage = " + maxPercentage + ", fitType = " +
                     _fitType.getLabel() + ", num data points = " + _wellSummaries.length);

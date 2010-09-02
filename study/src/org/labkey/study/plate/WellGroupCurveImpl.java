@@ -31,7 +31,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 {
     protected static final int CURVE_SEGMENT_COUNT = 100;
 
-    protected WellGroup _wellGroup;
+    protected List<WellGroup> _wellGroups;
     protected DoublePoint[] _curve = null;
     protected boolean assumeDecreasing;
     protected Double _fitError;
@@ -42,15 +42,21 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
-        _wellGroup = wellGroup;
+        this(Collections.singletonList(wellGroup), assumeDecreasing, percentCalculator);
+    }
+
+    public WellGroupCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
+    {
+        _wellGroups = wellGroups;
         this.assumeDecreasing = assumeDecreasing;
 
-        List<WellData> data = getWellData();
+        Map<WellData, WellGroup> data = getWellData();
         _wellSummaries = new WellSummary[data.size()];
-        for (int i = 0; i < data.size(); i++)
+        int index = 0;
+        for (Map.Entry<WellData, WellGroup> entry : data.entrySet())
         {
-            WellData well = data.get(i);
-            _wellSummaries[i] = new WellSummary(percentCalculator.getPercent(_wellGroup, data.get(i)), well.getDilution());
+            WellData well = entry.getKey();
+            _wellSummaries[index++] = new WellSummary(percentCalculator.getPercent(entry.getValue(), well), well.getDilution());
         }
     }
 
@@ -82,31 +88,41 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public double getMaxDilution()
     {
-        List<WellData> datas = getWellData();
-        double max = datas.get(0).getDilution();
+        Set<WellData> datas = getWellData().keySet();
+        Double max = null;
         for (WellData data : datas)
         {
-            if (data.getDilution() > max)
+            if (max == null || data.getDilution() > max)
                 max = data.getDilution();
         }
+        if (max == null)
+            throw new IllegalStateException("Expected non-null dilution.");
         return max;
     }
 
     public double getMinDilution()
     {
-        List<WellData> datas = getWellData();
-        double min = datas.get(0).getDilution();
+        Set<WellData> datas = getWellData().keySet();
+        Double min = null;
         for (WellData data : datas)
         {
-            if (data.getDilution() < min)
+            if (min == null || data.getDilution() < min)
                 min = data.getDilution();
         }
+        if (min == null)
+            throw new IllegalStateException("Expected non-null dilution.");
         return min;
     }
 
-    protected List<WellData> getWellData()
+    protected Map<WellData, WellGroup> getWellData()
     {
-        return _wellGroup.getWellData(true);
+        Map<WellData, WellGroup> dataMap = new LinkedHashMap<WellData, WellGroup>();
+        for (WellGroup wellgroup : _wellGroups)
+        {
+            for (WellData data : wellgroup.getWellData(true))
+                dataMap.put(data, wellgroup);
+        }
+        return dataMap;
     }
 
     protected class WellSummary
