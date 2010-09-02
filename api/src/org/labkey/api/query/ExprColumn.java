@@ -44,6 +44,9 @@ public class ExprColumn extends ColumnInfo
 //                throw new NullPointerException("Dependent columns may not be null");
             }
         }
+        // Since these are typically calculated columns, it doesn't make sense to show them in update or insert views
+        setShownInUpdateView(false);
+        setShownInInsertView(false);
         _dependentColumns = dependentColumns;
     }
 

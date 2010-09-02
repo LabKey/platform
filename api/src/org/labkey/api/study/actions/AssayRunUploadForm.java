@@ -16,12 +16,15 @@
 
 package org.labkey.api.study.actions;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -32,6 +35,8 @@ import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
 
 import java.util.*;
 import java.io.File;
@@ -54,7 +59,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private boolean _multiRunUpload;
     private String _uploadStep;
     private String _targetStudy;
-    private boolean _ignoreWarnings;
     private boolean _resetDefaultValues;
     private Map<String, File> _uploadedData;
     private boolean _successfulUploadComplete;
@@ -215,6 +219,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return null;
     }
 
+    @NotNull
     public Map<String, File> getUploadedData() throws ExperimentException
     {
         if (_uploadedData == null)
@@ -318,16 +323,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setTargetStudy(String targetStudy)
     {
         _targetStudy = targetStudy;
-    }
-
-    public boolean isIgnoreWarnings()
-    {
-        return _ignoreWarnings;
-    }
-
-    public void setIgnoreWarnings(boolean ignoreWarnings)
-    {
-        _ignoreWarnings = ignoreWarnings;
     }
 
     public String getBatchPropertyValue(PropertyDescriptor key, String value)

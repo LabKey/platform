@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -47,6 +48,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
         return "Upload a data file";
     }
 
+    @NotNull
     public Map<String, File> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
     {
         if (_uploadComplete)

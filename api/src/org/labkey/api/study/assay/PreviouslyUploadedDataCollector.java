@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.InsertView;
@@ -81,6 +82,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         return "Use the data that was already uploaded to the server";
     }
 
+    @NotNull
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException
     {
         if (_uploadComplete)

@@ -210,8 +210,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             FieldKey batchFK = new FieldKey(_tableMetadata.getRunRowIdFieldKeyFromResults().getParent(), AssayService.BATCH_COLUMN_NAME);
-            FieldKey batchPropertiesFK = new FieldKey(batchFK, AssayService.BATCH_PROPERTIES_COLUMN_NAME);
-            FieldKey targetStudyFK = new FieldKey(batchPropertiesFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+            FieldKey targetStudyFK = new FieldKey(batchFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
 
             FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
             FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();

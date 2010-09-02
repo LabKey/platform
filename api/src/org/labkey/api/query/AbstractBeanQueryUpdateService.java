@@ -172,7 +172,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @param container The container in which this data should exist.
      * @param bean The populated bean. This cannot be null.
      * @return The bean after insert. If the bean has a database-assigned key, they key value(s) should
-     * be set on the bean. Callers will refetch the bean if trigger-assigned values are needed.
+     * be set on the bean. Callers will reload the bean if trigger-assigned values are needed.
      * @throws ValidationException Thrown if the bean is invalid.
      * @throws DuplicateKeyException Thrown if the key is already used in the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
@@ -186,7 +186,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
      * @param container The container in which this bean should exist.
      * @param bean The bean. This cannot be null.
      * @param oldKey If the keys are user-assignable, this will be the old key value. If not, this will be null.
-     * @return The bean after update. Callers will refetch the bean if trigger-assigned values are needed.
+     * @return The bean after update. Callers will reload the bean if trigger-assigned values are needed.
      * @throws ValidationException Thrown if the bean is invalid.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there is a problem communicating with the database.

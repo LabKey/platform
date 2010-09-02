@@ -18,12 +18,14 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.security.permissions.Permission;
 
 abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
 {
-    static public final String COLUMN_DATAINPUT_DATAID = "exp.datainput.dataid";
     public Container getContainer();
 
     public ColumnInfo addColumn(C column);
@@ -33,7 +35,6 @@ abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
     public ColumnInfo addColumn(ColumnInfo column);
     // Adds a column so long as there is not already one of that name.
     public boolean safeAddColumn(ColumnInfo column);
-    public void addMethod(String name, MethodInfo method);
     public void setTitleColumn(String titleColumn);
 
     /**
@@ -51,7 +52,16 @@ abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
     /** Add the standard set of columns to the table */
     public void populate();
 
-    public ColumnInfo addPropertyColumns(String domainDescription, PropertyDescriptor[] pds, QuerySchema schema);
-    
+    /** By default, only delete is allowed. Allows specific usages to enable other actions like update */
+    public void addAllowablePermission(Class<? extends Permission> permission);
+
+    /**
+     * Add columns directly to the table itself, and optionally also as a single column that is a FK to the full set of properties
+     * @param domain the domain from which to add all of the properties
+     * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
+     * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null 
+     */
+    ColumnInfo addColumns(Domain domain, String legacyName);
+
     public void setDescription(String description);
 }

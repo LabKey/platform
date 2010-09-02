@@ -21,7 +21,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
-import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.actions.StudyPickerColumn;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -64,7 +64,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
     }
 
-    private class DefaultStudyPickerColumn extends UploadWizardAction.StudyPickerColumn implements DefaultableDisplayColumn
+    private class DefaultStudyPickerColumn extends StudyPickerColumn implements DefaultableDisplayColumn
     {
         public DefaultStudyPickerColumn(ColumnInfo col)
         {

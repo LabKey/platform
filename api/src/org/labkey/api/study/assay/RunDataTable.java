@@ -90,13 +90,13 @@ public class RunDataTable extends FilteredTable
         for (PropertyDescriptor prop : runProperties)
         {
             if (!prop.isHidden())
-                visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
         }
 
         for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
         {
             if (!prop.isHidden())
-                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
         }
 
         Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);

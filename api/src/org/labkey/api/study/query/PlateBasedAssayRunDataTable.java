@@ -152,13 +152,13 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         for (DomainProperty prop : runDomain.getProperties())
         {
             if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", prop.getName()));
         }
         Domain uploadSetDomain = provider.getBatchDomain(protocol);
         for (DomainProperty prop : uploadSetDomain.getProperties())
         {
             if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
         }
         setDefaultVisibleColumns(visibleColumns);
     }

@@ -43,25 +43,19 @@ public class HBox extends VBox
     {
         PrintWriter out = response.getWriter();
 
-        try
+        if (_views != null && !_views.isEmpty())
         {
-            if (_views != null && !_views.isEmpty())
+            out.write("<table width=\"100%\"><tr>");
+            for (ModelAndView view : _views)
             {
-                out.write("<table width=\"100%\"><tr>");
-                for (ModelAndView view : _views)
-                {
-                    if (null == view)
-                        continue;
-                    String width = _widths.get(view);
-                    out.write("<td valign=top" + (width != null ? " width=" + width : "") + ">");
-                    include(view);
-                    out.write("</td>");
-                }
-                out.write("</tr></table>");
+                if (null == view)
+                    continue;
+                String width = _widths.get(view);
+                out.write("<td valign=top" + (width != null ? " width=" + width : "") + ">");
+                include(view);
+                out.write("</td>");
             }
-        }
-        catch (ClassCastException x)
-        {
+            out.write("</tr></table>");
         }
     }
 }

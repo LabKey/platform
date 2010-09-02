@@ -91,13 +91,6 @@ public class ExperimentService
         Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
         /**
-         * Create a new SampleSet with the provided properties.  A 'Name' property must exist in the list -- it will be used
-         * as the 'id' property of the SampleSet.
-         */
-        ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties)
-            throws ExperimentException, SQLException;
-
-        /**
          * Create a new SampleSet with the provided properties.  If a 'Name' property exists in the list, it will be used
          * as the 'id' property of the SampleSet.  Either a 'Name' property must exist or at least one idCol index must be provided.
          */
@@ -206,10 +199,7 @@ public class ExperimentService
          */
         List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
 
-        void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws ExperimentException;
         void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
-        void deleteSampleSet(int rowId, Container c, User user) throws SQLException, ExperimentException;
-        void deleteExperimentRunsByRowIds(Container container, User user, int... rowIds);
 
         Lsid getSampleSetLsid(String name, Container container);
 
@@ -277,7 +267,5 @@ public class ExperimentService
 
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
-
-        ExpRun[] getRunsForPath(File file, @Nullable Container container);
     }
 }

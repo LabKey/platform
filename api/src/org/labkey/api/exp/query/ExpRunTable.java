@@ -18,6 +18,7 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.property.Domain;
 
 import java.util.List;
 
@@ -62,7 +63,6 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
     ExpData getInputData();
 
     void setRuns(List<ExpRun> runs);
-
 
     /**
      * Returns a column which links to a data input of the specified type.

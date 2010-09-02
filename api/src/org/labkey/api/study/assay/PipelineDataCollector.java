@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.PageFlowUtil;
@@ -34,8 +35,6 @@ import java.util.*;
  */
 public class PipelineDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
 {
-    public static final String FILE_COLLECTION_ID_PARAMETER_NAME = ".fileCollectionId";
-
     public PipelineDataCollector()
     {
     }
@@ -133,6 +132,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
         return result;
     }
 
+    @NotNull
     public Map<String, File> createData(ContextType context) throws IOException
     {
         List<Map<String, File>> files = getFileQueue(context);

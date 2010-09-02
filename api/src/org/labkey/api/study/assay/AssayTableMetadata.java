@@ -86,6 +86,6 @@ public class AssayTableMetadata
     /** @return relative to the run object */
     public FieldKey getTargetStudyFieldKey()
     {
-        return FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, AssayService.BATCH_PROPERTIES_COLUMN_NAME, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+        return FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
     }
 }

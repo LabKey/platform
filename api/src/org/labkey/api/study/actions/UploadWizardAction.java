@@ -26,7 +26,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -318,7 +317,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         insertView.getDataRegion().addColumn(0, table.getColumn("Name"));
         insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 
-        addSampleInputColumns(getProtocol(newRunForm), insertView);
+        addSampleInputColumns(newRunForm, insertView);
         insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
 
         if (warnings)
@@ -411,7 +410,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
-    protected void addSampleInputColumns(ExpProtocol protocol, InsertView insertView)
+    protected void addSampleInputColumns(FormType form, InsertView insertView)
     {
         // Don't add any inputs in the base case
     }
@@ -454,79 +453,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             TableViewForm viewForm = ctx.getForm();
             return viewForm.getStrings().get(_inputName);
-        }
-    }
-
-    public static class StudyPickerColumn extends InputDisplayColumn
-    {
-        ColumnInfo _colInfo;
-
-        public StudyPickerColumn(ColumnInfo col)
-        {
-            super("Target Study", "targetStudy");
-            _colInfo = col;
-        }
-
-        public void renderDetailsCaptionCell(RenderContext ctx, Writer out) throws IOException
-        {
-            if (null == _caption)
-                return;
-
-            out.write("<td class='labkey-form-label'>");
-            renderTitle(ctx, out);
-            int mode = ctx.getMode();
-            if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
-            {
-                if (_colInfo != null)
-                {
-                    String helpPopupText = ((_colInfo.getFriendlyTypeName() != null) ? "Type: " + _colInfo.getFriendlyTypeName() + "\n" : "") +
-                                ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
-                    out.write(PageFlowUtil.helpPopup(_colInfo.getName(), helpPopupText));
-                    if (!_colInfo.isNullable())
-                        out.write(" *");
-                }
-            }
-            out.write("</td>");
-        }
-
-        public void renderDetailsData(RenderContext ctx, Writer out, int span) throws IOException
-        {
-            super.renderDetailsData(ctx, out, 1);
-        }
-
-        protected boolean isDisabledInput()
-        {
-            return getColumnInfo().getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
-        }
-
-        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
-        {
-            Map<Container, String> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
-
-            boolean disabled = isDisabledInput();
-            out.write("<select name=\"" + _inputName + "\"" + (disabled ? " DISABLED" : "") + ">\n");
-            out.write("    <option value=\"\">[None]</option>\n");
-            for (Map.Entry<Container, String> entry : studies.entrySet())
-            {
-                Container container = entry.getKey();
-                out.write("    <option value=\"" + PageFlowUtil.filter(container.getId()) + "\"");
-                if (container.getId().equals(value))
-                    out.write(" SELECTED");
-                out.write(">" + PageFlowUtil.filter(container.getPath() + " (" + entry.getValue()) + ")</option>\n");
-            }
-            out.write("</select>");
-            if (disabled)
-                out.write("<input type=\"hidden\" name=\"" +_inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");
-        }
-
-        public ColumnInfo getColumnInfo()
-        {
-            return _colInfo;
-        }
-
-        public boolean isQueryColumn()
-        {
-            return true;
         }
     }
 

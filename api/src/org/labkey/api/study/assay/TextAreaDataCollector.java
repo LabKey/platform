@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 
@@ -51,6 +52,7 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
         return "Paste in a tab-separated set of values";
     }
 
+    @NotNull
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
     {
         if (_uploadComplete)

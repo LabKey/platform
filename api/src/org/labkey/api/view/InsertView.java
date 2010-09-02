@@ -66,12 +66,12 @@ public class InsertView extends DataView
         return col.isShownInInsertView();
     }
 
-    public void setInitialValues(Map initialValues)
+    public void setInitialValues(Map<String, Object> initialValues)
     {
         _initialValues = new HashMap<String, Object>(initialValues);
     }
 
-    public Map getInitialValues()
+    public Map<String, Object> getInitialValues()
     {
         return _initialValues;
     }

@@ -169,7 +169,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         else
         {
             Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domainIdForm.getContainer(), domain);
-            Map<String, String> formDefaults = new HashMap<String, String>();
+            Map<String, Object> formDefaults = new HashMap<String, Object>();
             for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
             {
                 if (entry.getValue() != null)

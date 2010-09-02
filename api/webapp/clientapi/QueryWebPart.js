@@ -102,7 +102,8 @@
  * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
  * 'div', 'portal', 'none', 'dialog', 'title', left-nav'.
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
- * @param {Function} [config.successCallback] A function to call after the part has been rendered.
+ * @param {Function} [config.successCallback] An optional function to call after the part has been rendered.
+ * @param {Function} [config.errorCallback] An optional function to call if the request to retrieve the content fails.
  * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
  * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
  * @param {String} [config.containerPath] The container path in which the schema and query name are defined. If not supplied, the current container path will be used.

@@ -24,6 +24,7 @@ public class UpdateColumn extends UrlColumn
     {
         super(urlExpression, "edit");
         setGridHeaderClass("");
+        setWidth("0");
         addDisplayClass("labkey-update");
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 
 import java.util.Map;
@@ -54,6 +55,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     public String getDescription(ContextType context);
 
     /** Map of original file name to file on disk */
+    @NotNull
     public Map<String, File> createData(ContextType context) throws IOException, ExperimentException;
 
     public boolean isVisible();

@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -1144,11 +1145,22 @@ public abstract class AbstractAssayProvider implements AssayProvider
         boolean runDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
         boolean batchDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
 
-        if (runDomain || batchDomain)
+        if (runDomain)
         {
-            TableInfo runTable = ExperimentService.get().getTinfoExperimentRun();
-            for (ColumnInfo column : runTable.getColumns())
-                reservedNames.add(column.getName());
+            for (ExpRunTable.Column column : ExpRunTable.Column.values())
+            {
+                reservedNames.add(column.toString());
+            }
+        }
+        if (batchDomain)
+        {
+            for (ExpExperimentTable.Column column : ExpExperimentTable.Column.values())
+            {
+                reservedNames.add(column.toString());
+            }
+        }
+        if (batchDomain || runDomain)
+        {
             reservedNames.add("AssayId");
             reservedNames.add("Assay Id");
         }

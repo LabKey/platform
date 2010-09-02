@@ -45,7 +45,7 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
         if(!allowDelete(protocol))
             HttpView.throwUnauthorized("You do not have sufficient permissions to delete this assay design.");
 
-        ExperimentService.get().deleteProtocolByRowIds(getViewContext().getContainer(), getViewContext().getUser(), protocolIdForm.getProtocol().getRowId());
+        protocolIdForm.getProtocol().delete(getViewContext().getUser());
         HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getViewContext().getContainer()));
         return null;
     }
