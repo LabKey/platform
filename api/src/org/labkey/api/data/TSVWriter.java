@@ -16,16 +16,21 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.regex.Pattern;
 
 public abstract class TSVWriter
@@ -325,12 +330,8 @@ public abstract class TSVWriter
     protected abstract void write();
 
     
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase() { super(); }
-        public TestCase(String name) { super(name); }
-        public static Test suite() { return new TestSuite(TestCase.class); }
-
         private static class FakeTSVWriter extends TSVWriter
         {
             protected void write()
@@ -339,6 +340,7 @@ public abstract class TSVWriter
             }
         }
 
+        @Test
         public void testBasic()
         {
             FakeTSVWriter w = new FakeTSVWriter();
@@ -347,6 +349,7 @@ public abstract class TSVWriter
             assertEquals("", w.quoteValue(null));
         }
 
+        @Test
         public void testWhitespace()
         {
             FakeTSVWriter w = new FakeTSVWriter();
@@ -357,6 +360,7 @@ public abstract class TSVWriter
             assertEquals("\"a\n\rb\"", w.quoteValue("a\n\rb"));
         }
 
+        @Test
         public void testDelimiterChar()
         {
             FakeTSVWriter w = new FakeTSVWriter();
@@ -380,6 +384,7 @@ public abstract class TSVWriter
             assertEquals("\"one( two( three\"", w.quoteValue("one( two( three"));
         }
 
+        @Test
         public void testQuoteChar()
         {
             FakeTSVWriter w = new FakeTSVWriter();

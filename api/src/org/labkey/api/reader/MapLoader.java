@@ -15,15 +15,22 @@
  */
 package org.labkey.api.reader;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * kevink
@@ -128,23 +135,9 @@ public class MapLoader extends DataLoader
         }
     }
 
-    public static class MapLoaderTestCase extends TestCase
+    public static class MapLoaderTestCase extends Assert
     {
-        public static Test suite()
-        {
-            return new TestSuite(MapLoaderTestCase.class);
-        }
-
-        public MapLoaderTestCase()
-        {
-            this("MapLoader Test");
-        }
-
-        public MapLoaderTestCase(String name)
-        {
-            super(name);
-        }
-
+        @Test
         public void testLoad() throws Exception
         {
             Map<String, Object> row1 = new LinkedHashMap<String, Object>();

@@ -15,13 +15,17 @@
  */
 package org.labkey.api.view;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.labkey.api.action.SpringActionController;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -536,20 +540,9 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void test() throws Exception
         {
             String s;
@@ -577,13 +570,6 @@ public class ActionURL extends URLHelper implements Cloneable
             ActionURL parse = new ActionURL("/Controller/path/action.view?foo=bar");
             String toString = parse.getLocalURIString();
             assertEquals(parse.getContextPath() + "/controller/path/action.view?foo=bar", toString);
-        }
-
-
-        public static Test suite()
-        {
-            TestSuite suite = new TestSuite(TestCase.class);
-            return suite;
         }
     }
 }

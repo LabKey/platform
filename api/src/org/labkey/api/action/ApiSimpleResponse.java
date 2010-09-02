@@ -38,7 +38,7 @@ public class ApiSimpleResponse extends HashMap<String,Object> implements ApiResp
     {
     }
 
-    public ApiSimpleResponse(Map<String, Object> values)
+    public ApiSimpleResponse(Map<String, ?> values)
     {
         putAll(values);
     }

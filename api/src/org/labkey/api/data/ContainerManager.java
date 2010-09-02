@@ -16,33 +16,64 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import junit.framework.Assert;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.*;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -1727,25 +1758,13 @@ public class ContainerManager
     }
 
 
-    public static class TestCase extends junit.framework.TestCase implements ContainerListener
+    public static class TestCase extends Assert implements ContainerListener
     {
         Map<Path,Container> _containers = new HashMap<Path,Container>();
         Container _testRoot = null;        
 
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
-        @Override
-        protected void setUp() throws Exception
+        @Before
+        public void setUp() throws Exception
         {
             if (null == _testRoot)
             {
@@ -1756,8 +1775,8 @@ public class ContainerManager
         }
 
 
-        @Override
-        protected void tearDown() throws Exception
+        @After
+        public void tearDown() throws Exception
         {
             ContainerManager.removeContainerListener(this);
             if (null != _testRoot)
@@ -1765,6 +1784,7 @@ public class ContainerManager
         }
 
 
+        @Test
         public void testCreateDeleteContainers() throws Exception
         {
             int count = 20;
@@ -1787,6 +1807,7 @@ public class ContainerManager
         }
 
 
+        @Test
         public void testCache() throws Exception
         {
             assertEquals(0, _containers.size());
@@ -1902,12 +1923,6 @@ public class ContainerManager
         public void containerDeleted(Container c, User user)
         {
             _containers.remove(c.getParsedPath());
-        }
-
-        
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 

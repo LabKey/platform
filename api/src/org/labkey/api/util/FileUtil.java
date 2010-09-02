@@ -20,9 +20,17 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.security.Crypt;
 
-import java.io.*;
+import java.io.DataOutput;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -31,9 +39,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 /**
  * User: jeckels
@@ -779,7 +784,7 @@ quickScan:
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
         private static final File ROOT;
 
@@ -793,6 +798,7 @@ quickScan:
             ROOT = f;
         }
 
+        @Test
         public void testStandardResolve()
         {
             assertEquals(new File(ROOT, "test/path/sub"), resolveFile(new File(ROOT, "test/path/sub")));
@@ -800,6 +806,7 @@ quickScan:
             assertEquals(new File(ROOT, "test/path/file.ext"), resolveFile(new File(ROOT, "test/path/file.ext")));
         }
 
+        @Test
         public void testDotResolve()
         {
             assertEquals(new File(ROOT, "test/path/sub"), resolveFile(new File(ROOT, "test/path/./sub")));
@@ -807,6 +814,7 @@ quickScan:
             assertEquals(new File(ROOT, "test/path/file.ext"), resolveFile(new File(ROOT, "test/path/file.ext/.")));
         }
 
+        @Test
         public void testDotDotResolve()
         {
             assertEquals(ROOT, resolveFile(new File(ROOT, "..")));
@@ -825,11 +833,6 @@ quickScan:
             assertEquals(new File(ROOT, "test/path"), resolveFile(new File(ROOT, "test/path/file.ext/..")));
             assertEquals(new File(ROOT, "folder"), resolveFile(new File(ROOT, ".././../folder")));
             assertEquals(new File(ROOT, "b"), resolveFile(new File(ROOT, "folder/a/.././../b")));
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

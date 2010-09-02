@@ -17,8 +17,7 @@
 package org.labkey.api.data;
 
 import junit.framework.Assert;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -35,20 +34,9 @@ import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.Date;
 
-public class TableViewFormTestCase extends junit.framework.TestCase
+public class TableViewFormTestCase extends Assert
 {
-    public TableViewFormTestCase()
-    {
-        super();
-    }
-
-
-    public TableViewFormTestCase(String name)
-    {
-        super(name);
-    }
-
-
+    @Test
     public void testBasic()
     {
         TestForm tf = new TestForm();
@@ -74,6 +62,7 @@ public class TableViewFormTestCase extends junit.framework.TestCase
         Assert.assertEquals(tf.getTypedValue("rowId"), new Integer(20));
     }
 
+    @Test
     public void testErrorHandling()
     {
         TestForm tf = new TestForm();
@@ -104,6 +93,7 @@ public class TableViewFormTestCase extends junit.framework.TestCase
     }
 
 
+    @Test
     public void testDbOperations() throws SQLException, ServletException
     {
         TestForm tf = new TestForm();
@@ -148,12 +138,6 @@ public class TableViewFormTestCase extends junit.framework.TestCase
             wasDeleted = true;
         }
         Assert.assertTrue("deleted", true);
-    }
-
-    public static Test suite()
-    {
-        TestSuite suite = new TestSuite(TableViewFormTestCase.class);
-        return suite;
     }
 
     public static class TestForm extends TableViewForm

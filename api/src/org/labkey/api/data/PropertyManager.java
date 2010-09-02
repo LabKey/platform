@@ -16,17 +16,21 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -468,20 +472,9 @@ public class PropertyManager
 
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void test()
         {
             try
@@ -538,6 +531,7 @@ public class PropertyManager
         }
 
 
+        @Test
         public void testOrphanedPropertySets()
         {
             try
@@ -552,12 +546,6 @@ public class PropertyManager
             {
                 assertTrue(x.getMessage(), false);
             }
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

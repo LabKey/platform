@@ -15,10 +15,10 @@
  */
 package org.labkey.api.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Nov 20, 2009
  * Time: 1:03:45 PM
@@ -495,20 +494,9 @@ public class Path implements Serializable, Iterable<String>
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void test() throws Exception
         {
             Path a = Path.parse("/a");
@@ -550,12 +538,6 @@ public class Path implements Serializable, Iterable<String>
             assertEquals(r, new Path("..","x"));
             r = base.relativize(new Path("y"));
             assertEquals(r, new Path("..","..","..","y"));
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

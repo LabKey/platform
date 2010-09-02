@@ -15,9 +15,9 @@
  */
 package org.labkey.api.webdav;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
@@ -38,11 +38,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 7, 2009
  * Time: 3:27:03 PM
@@ -597,18 +604,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
+        @Test
         public void testLinks()
         {
             // Don't want to modify public webdavService
@@ -637,11 +635,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             s.removeLink(new Path("U"));
             utilsJs = s.lookup(new Path("U","dialogBox.js"));
             assertTrue(utilsJs == null || !utilsJs.exists());
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

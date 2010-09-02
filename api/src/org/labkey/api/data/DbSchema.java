@@ -15,9 +15,9 @@
  */
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import junit.framework.Assert;
 import org.apache.log4j.Logger;
+import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.Module;
@@ -40,7 +40,17 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 public class DbSchema
 {
@@ -316,20 +326,10 @@ public class DbSchema
         return "DbSchema " + getName();
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
         // Ask each module for the schemas to test, then compare XML vs. meta data
+        @Test
         public void testKnownSchemas() throws Exception
         {
             Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
@@ -339,7 +339,7 @@ public class DbSchema
         }
 
 
-        public void testSchemaXml(DbSchema schema) throws Exception
+        private void testSchemaXml(DbSchema schema) throws Exception
         {
             String sOut = TableXmlUtils.compareXmlToMetaData(schema.getName(), false, false);
 
@@ -373,6 +373,7 @@ public class DbSchema
 */
         }
 
+        @Test
         public void testTransactions() throws Exception
         {
             TestSchema test = TestSchema.getInstance();
@@ -422,6 +423,7 @@ public class DbSchema
 
         }
 
+        @Test
         public void testCaching() throws Exception
         {
             TestSchema test = TestSchema.getInstance();
@@ -474,6 +476,7 @@ public class DbSchema
             assertNull(m2);
         }
 
+        @Test
         public void testDDLMethods() throws Exception
         {
             TestSchema test = TestSchema.getInstance();
@@ -540,16 +543,10 @@ public class DbSchema
 
             testSchema.getSqlDialect().dropSchema(testSchema,"testdrop2");
             testSchema.getSqlDialect().dropSchema(testSchema,"testdrop3");
-
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 
-    public static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
+    private static Integer checkContainerColumns(String dbSchemaName, SQLFragment sbSqlCmd, String tempTableName, String moduleName, Integer rowId) throws SQLException
     {
         int row = rowId.intValue();
         DbSchema curSchema = DbSchema.get(dbSchemaName);

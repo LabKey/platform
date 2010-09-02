@@ -16,34 +16,57 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.beanutils.PropertyUtils;
-import static org.apache.commons.lang.StringUtils.stripEnd;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.collections.Join;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.collections.Join;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
-import org.labkey.api.collections.BoundMap;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.sql.*;
-import java.util.*;
+import java.sql.BatchUpdateException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
+
+import static org.apache.commons.lang.StringUtils.stripEnd;
 
 /**
  * Table manipulation methods
@@ -1888,21 +1911,9 @@ public class Table
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
         static private CoreSchema _core = CoreSchema.getInstance();
-
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
 
         static public class Principal
         {
@@ -1961,6 +1972,7 @@ public class Table
         }
 
 
+        @Test
         public void testSelect() throws SQLException
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
@@ -1979,6 +1991,7 @@ public class Table
         }
 
 
+        @Test
         public void testMaxRows() throws SQLException
         {
             TableInfo tinfo = _core.getTableInfoPrincipals();
@@ -1999,6 +2012,7 @@ public class Table
         }
 
 
+        @Test
         public void testMapJoin()
         {
             ArrayList<Map> left = new ArrayList<Map>();
@@ -2028,6 +2042,7 @@ public class Table
         }
 
 
+        @Test
         public void testSqlJoin()
                 throws SQLException
         {
@@ -2055,6 +2070,7 @@ public class Table
             FRED, BARNEY, WILMA, BETTY
         }
 
+        @Test
         public void testParameter()
                 throws Exception
         {
@@ -2109,12 +2125,6 @@ public class Table
             for (Pair p : pairs)
                 m.put((String)p.first, (String)p.second);
             return m;
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 

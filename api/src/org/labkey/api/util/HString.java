@@ -16,15 +16,14 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.view.ViewServlet;
 
 import java.util.Locale;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.labkey.api.view.ViewServlet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -563,19 +562,9 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void test()
         {
             // HString
@@ -608,13 +597,7 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
             GuidString gooey = new GuidString("flaksdjfasdf");
             assertTrue(gooey.isTainted());
         }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
-        }
-    }    
+    }
 }
 
 

@@ -16,13 +16,13 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.text.FieldPosition;
 import java.text.Format;
-import java.text.ParsePosition;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.HashMap;
 
 /**
@@ -243,20 +243,9 @@ public class BooleanFormat extends Format
 
 
     //JUnit Test Case
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testFormat()
         {
             //default
@@ -287,6 +276,7 @@ public class BooleanFormat extends Format
             assertTrue(fmt.format(null).equals(BooleanFormat.DEFAULT_NULL));
         }
 
+        @Test
         public void testParse() throws ParseException
         {
             BooleanFormat fmt = BooleanFormat.getInstance();
@@ -315,11 +305,6 @@ public class BooleanFormat extends Format
                 TestCase.fail("Parsing of 'H' should have generated an exception!");
             }
             catch(ParseException ignore) {}
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 } //class BooleanFormat

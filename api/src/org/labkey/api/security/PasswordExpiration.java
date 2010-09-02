@@ -15,8 +15,8 @@
  */
 package org.labkey.api.security;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 
 import java.util.Calendar;
@@ -103,18 +103,9 @@ public enum PasswordExpiration
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
+        @Test
         public void testExpirations()
         {
             testExpiration(PasswordExpiration.Never, 60, 0, 0);
@@ -141,11 +132,6 @@ public enum PasswordExpiration
 
             if (expired < expectedLow || expired > expectedHigh)
                 fail("Invalid number of expirations for " + expiration + ": expected <" + expectedLow + (expectedLow != expectedHigh ? "," + expectedHigh : "") + "> but was <" + expired + ">");
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

@@ -15,42 +15,70 @@
  */
 package org.labkey.api.exp;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.collections.RowMap;
+import org.labkey.api.collections.RowMapFactory;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.*;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;
-import org.labkey.api.util.*;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.collections.RowMap;
-
-import java.io.File;
-import java.sql.*;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Date;
-
-import static org.labkey.api.search.SearchService.PROPERTY;
-
+import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.gwt.client.ui.domain.CancellationException;
+
+import java.io.File;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
  * User: migra
@@ -2304,21 +2332,9 @@ public class OntologyManager
     }
 
 
-    @SuppressWarnings({"ALL"})
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-		public TestCase(String name)
-		{
-			super(name);
-		}
-
-
+        @Test
 		public void testSchema()
 		{
 			assertNotNull(OntologyManager.getExpSchema());
@@ -2332,7 +2348,7 @@ public class OntologyManager
 		}
 
 
-
+        @Test
         public void testBasicPropertiesObject() throws SQLException
 		{
             try
@@ -2386,13 +2402,15 @@ public class OntologyManager
             }
         }
 
+        @Test
 		public void testContainerDelete() throws SQLException
 		{
-            try {
+            try
+            {
                 Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
                 //Clean up last time's mess
                 OntologyManager.deleteAllObjects(c);
-                assertEquals(0, OntologyManager.getObjectCount(c));
+                assertEquals(0L, OntologyManager.getObjectCount(c));
 
                 String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
                 String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
@@ -2415,7 +2433,7 @@ public class OntologyManager
                 OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
 
                 OntologyManager.deleteAllObjects(c);
-                assertEquals(0, OntologyManager.getObjectCount(c));
+                assertEquals(0L, OntologyManager.getObjectCount(c));
                 assertTrue(ContainerManager.delete(c, null));
             }
             catch (ValidationException ve)
@@ -2426,7 +2444,8 @@ public class OntologyManager
 
         private void defineCrossFolderProperties(Container fldr1a, Container fldr1b) throws SQLException
         {
-            try {
+            try
+            {
                 String fa = fldr1a.getPath();
                 String fb = fldr1b.getPath();
 
@@ -2473,6 +2492,7 @@ public class OntologyManager
             }
         }
 
+        @Test
         public void testContainerMove() throws SQLException
         {
             deleteMoveTestContainers();
@@ -2573,9 +2593,9 @@ public class OntologyManager
                 assertNull(OntologyManager.getDomainDescriptor(domId, proj1));
                 assertNotNull(OntologyManager.getDomainDescriptor(domId, proj2));
             }
-
         }
 
+        @Test
         public void testDeleteFoldersWithSharedProps() throws SQLException
         {
             deleteMoveTestContainers();
@@ -2665,13 +2685,15 @@ public class OntologyManager
 
         }
 
+        @Test
         public void testTransactions() throws SQLException
 		{
-            try {
+            try
+            {
                 Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
                 //Clean up last time's mess
                 OntologyManager.deleteAllObjects(c);
-                assertEquals(0, OntologyManager.getObjectCount(c));
+                assertEquals(0L, OntologyManager.getObjectCount(c));
 
                 String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
                 String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
@@ -2702,7 +2724,7 @@ public class OntologyManager
                     OntologyManager.getExpSchema().getScope().rollbackTransaction();
                 }
 
-                assertEquals(0, OntologyManager.getObjectCount(c));
+                assertEquals(0L, OntologyManager.getObjectCount(c));
                 oParent = OntologyManager.getOntologyObject(c, ownerObjectLsid);
                 assertNull(oParent);
 
@@ -2749,7 +2771,7 @@ public class OntologyManager
                 assertNotNull(m.get(intProp));
 
                 OntologyManager.deleteAllObjects(c);
-                assertEquals(0, OntologyManager.getObjectCount(c));
+                assertEquals(0L, OntologyManager.getObjectCount(c));
                 assertTrue(ContainerManager.delete(c, null));
             }
             catch (ValidationException ve)
@@ -2758,12 +2780,13 @@ public class OntologyManager
             }
         }
 
-        public void testDomains () throws Exception
+        @Test
+        public void testDomains() throws Exception
         {
             Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
             //Clean up last time's mess
             OntologyManager.deleteAllObjects(c);
-            assertEquals(0, OntologyManager.getObjectCount(c));
+            assertEquals(0L, OntologyManager.getObjectCount(c));
             String ownerObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
 
@@ -2805,22 +2828,14 @@ public class OntologyManager
             assertTrue(mPds.containsKey(intPropURI));
 
             ObjectProperty strProp = new ObjectProperty(childObjectLsid, c, strPropURI, "String value");
-            ObjectProperty intProp = new ObjectProperty(childObjectLsid, c, intPropURI, new Integer(42));
+            ObjectProperty intProp = new ObjectProperty(childObjectLsid, c, intPropURI, 42);
             OntologyManager.insertProperties(c, ownerObjectLsid, strProp);
             OntologyManager.insertProperties(c, ownerObjectLsid, intProp);
 
             OntologyManager.deleteType(domURIa, c);
-            assertEquals(0, OntologyManager.getObjectCount(c));
+            assertEquals(0L, OntologyManager.getObjectCount(c));
             assertTrue(ContainerManager.delete(c, null));
         }
-
-
-		public static Test suite()
-		{
-			TestSuite suite;
-			suite = new TestSuite(OntologyManager.TestCase.class);
-			return suite;
-		}
 	}
 
 

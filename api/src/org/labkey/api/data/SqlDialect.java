@@ -16,25 +16,37 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.framework.TestCase;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.module.ModuleContext;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.SystemMaintenance;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1040,16 +1052,13 @@ public abstract class SqlDialect
     public abstract boolean isPostgreSQL();
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
-    public abstract TestSuite getTestSuite();
+    public abstract Collection<? extends Class> getJunitTestClasses();
 
 
-    // JUnit test case
-    public static class SqlDialectTestCase extends junit.framework.TestCase
+    // TODO: Change this to retrieve tests for all active dialects, not just core
+    public static Collection<? extends Class> getTestClasses()
     {
-        public static Test suite()
-        {
-            return CoreSchema.getInstance().getSqlDialect().getTestSuite();
-        }
+        return CoreSchema.getInstance().getSqlDialect().getJunitTestClasses();
     }
 
 
@@ -1070,13 +1079,9 @@ public abstract class SqlDialect
     }
 
 
-    protected static abstract class AbstractDialectRetrievalTestCase extends TestCase
+    protected static abstract class AbstractDialectRetrievalTestCase extends Assert
     {
-        public AbstractDialectRetrievalTestCase()
-        {
-            super("testDialectRetrieval");
-        }
-
+        @Test
         public abstract void testDialectRetrieval();
 
         protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, Class<? extends SqlDialect> expectedDialectClass)

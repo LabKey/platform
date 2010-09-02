@@ -16,27 +16,43 @@
 
 package org.labkey.api.webdav;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Filter;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 /**
@@ -589,23 +605,11 @@ public class WebdavResolverImpl implements WebdavResolver
 //    }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-        Container testContainer = null;
+        private Container testContainer = null;
         
-
+        @Test
         public void testContainers() throws SQLException
         {
             TestContext context = TestContext.get();
@@ -675,6 +679,7 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
 
+        @Test
         public void testNormalize()
         {
             assertNull(FileUtil.normalize(".."));
@@ -687,20 +692,22 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
 
+        @Test
         public void testFileContent()
         {
 
         }
 
 
+        @Test
         public void testPipeline()
         {
 
         }
 
 
-        @Override
-        protected void tearDown() throws Exception
+        @After
+        public void tearDown() throws Exception
         {
             if (null != testContainer)
             {
@@ -717,12 +724,6 @@ public class WebdavResolverImpl implements WebdavResolver
             Container x = ContainerManager.getForPath(path);
             if (null != x)
                 ContainerManager.delete(x, TestContext.get().getUser());
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

@@ -15,14 +15,13 @@
  */
 package org.labkey.api.reader;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableIterator;
@@ -30,7 +29,11 @@ import org.labkey.api.settings.AppProps;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Data loader for Excel files -- can infer columns and return rows of data
@@ -203,18 +206,9 @@ public class ExcelLoader extends DataLoader
         }
     }
 
-    public static class ExcelLoaderTestCase extends TestCase
+    public static class ExcelLoaderTestCase extends Assert
     {
-        public ExcelLoaderTestCase(String name)
-        {
-            super(name);
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(ExcelLoaderTestCase.class);
-        }
-
+        @Test
         public void testColumnTypes() throws Exception
         {
             AppProps props = AppProps.getInstance();

@@ -15,16 +15,15 @@
  */
 package org.labkey.api.util;
 
+import junit.framework.Assert;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 /**
  * A mime type map that implements the java.net.FileNameMap interface.
@@ -33,8 +32,8 @@ import junit.framework.TestSuite;
  */
 public class MimeMap implements FileNameMap
 {
-    static Hashtable<String, MimeType> mimeTypeMap = new Hashtable<String, MimeType>(101);
-    static Map<String,MimeType> extensionMap = new HashMap<String, MimeType>();
+    private static final Hashtable<String, MimeType> mimeTypeMap = new Hashtable<String, MimeType>(101);
+    private static final Map<String, MimeType> extensionMap = new HashMap<String, MimeType>();
     
     private static class MimeType
     {
@@ -203,20 +202,9 @@ public class MimeMap implements FileNameMap
 
 
 
-     public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testMimeMap()
         {
             MimeMap m = new MimeMap();
@@ -226,12 +214,6 @@ public class MimeMap implements FileNameMap
             assertEquals(m.getContentTypeFor("file.html"), "text/html");
             assertTrue(m.isInlineImageFor("photo.jpg"));
             assertFalse(m.isInlineImageFor("file.html"));
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

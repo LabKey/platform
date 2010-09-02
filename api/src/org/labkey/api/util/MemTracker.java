@@ -16,17 +16,20 @@
 
 package org.labkey.api.util;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.collections15.map.ReferenceIdentityMap;
 import org.apache.commons.collections15.map.AbstractReferenceMap;
+import org.apache.commons.collections15.map.ReferenceIdentityMap;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 
-import java.util.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -262,18 +265,9 @@ public class MemTracker
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
+        @Test
         public void testIdentity()
         {
             MemTracker t = new MemTracker();
@@ -299,11 +293,6 @@ public class MemTracker
             {
                 assertTrue(o._reference == a || o._reference == b || o._reference == c);
             }
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

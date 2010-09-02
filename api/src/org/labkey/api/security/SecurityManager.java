@@ -16,24 +16,46 @@
 
 package org.labkey.api.security;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.Project;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.*;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MailHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -55,7 +77,17 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -2155,20 +2187,9 @@ public class SecurityManager
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testCreateUser() throws Exception
         {
             ValidEmail email;
@@ -2210,6 +2231,7 @@ public class SecurityManager
         }
 
 
+        @Test
         public void testACLS() throws NamingException
         {
             ACL acl = new ACL();
@@ -2238,6 +2260,7 @@ public class SecurityManager
         }
 
 
+//        @Test
 //        public void testEmailValidation()
 //        {
 //            testEmail("this@that.com", true);
@@ -2277,12 +2300,6 @@ public class SecurityManager
             }
 
             return email;
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 

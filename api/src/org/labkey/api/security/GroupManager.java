@@ -16,14 +16,18 @@
 
 package org.labkey.api.security;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
@@ -324,7 +328,7 @@ public class GroupManager
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
         private User _user;
 
@@ -334,20 +338,8 @@ public class GroupManager
             return _user;
         }
 
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
-        public void testGroupPermissions()
-                throws Exception
+        @Test
+        public void testGroupPermissions() throws Exception
         {
             TestContext context = TestContext.get();
             User loggedIn = context.getUser();
@@ -387,12 +379,6 @@ public class GroupManager
 
             SecurityManager.deleteGroup(groupA);
             SecurityManager.deleteGroup(groupB);
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

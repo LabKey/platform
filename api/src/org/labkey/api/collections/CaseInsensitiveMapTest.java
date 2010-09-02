@@ -1,6 +1,6 @@
 package org.labkey.api.collections;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.MemTracker;
 
@@ -24,7 +24,7 @@ import java.util.concurrent.ThreadFactory;
  * Date: Aug 30, 2010
  * Time: 3:28:25 PM
  */
-public class CaseInsensitiveMapTest
+public class CaseInsensitiveMapTest extends Assert
 {
     @Test
     public void multiThreadStressTest() throws InterruptedException, ExecutionException
@@ -112,7 +112,7 @@ public class CaseInsensitiveMapTest
 
         for (Future<Integer> future : futures)
         {
-            TestCase.assertEquals(0, (int)future.get());
+            assertEquals(0, (int)future.get());
         }
     }
 }

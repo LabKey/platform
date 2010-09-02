@@ -15,18 +15,27 @@
  */
 package org.labkey.api.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -879,20 +888,9 @@ Parse:
 
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testDateTime()
         {
             long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
@@ -954,6 +952,7 @@ Parse:
         }
 
 
+        @Test
         public void testFormat()
         {
             long l = System.currentTimeMillis();
@@ -980,6 +979,7 @@ Parse:
         }
 
 
+        @Test
         public void testDuration()
         {
             assertEquals(61500L, makeDuration(0,0,1,1.5));
@@ -1015,12 +1015,6 @@ Parse:
             assertEquals("1d2h3m4s", formatDuration(makeDuration(1,2,3,4)));
             assertEquals("1h2m3.010s", formatDuration(makeDuration(0,1,2,3.010)));
             assertEquals("1h0m0.010s", formatDuration(makeDuration(0,1,0,0.010)));
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

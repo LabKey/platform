@@ -16,8 +16,8 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -93,8 +93,9 @@ public class XMLWriterTest
         _writer.endTag();
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
+        @Test
         public void testXMLWriter()
         {
             StringWriter sw = new StringWriter();
@@ -122,11 +123,6 @@ public class XMLWriterTest
                 "</Workspace>" + lineEnding;
 
             assertEquals("Text doesn't match", value, sb.toString());
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

@@ -16,9 +16,12 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -26,26 +29,18 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.util.Pair;
-import org.labkey.api.search.SearchService;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
-import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
 
 /**
  * User: migra
@@ -164,7 +159,7 @@ public interface Module extends Comparable<Module>
      * VM. These tests will be executed as part of the DRT.
      * @return the unit tests that this module provides
      */
-    public Set<Class<? extends TestCase>> getJUnitTests();
+    public Set<Class> getJUnitTests();
 
     /**
      * Returns a set of schemas that the module wants tested.

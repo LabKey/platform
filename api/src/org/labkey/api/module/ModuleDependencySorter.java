@@ -16,14 +16,18 @@
 
 package org.labkey.api.module;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.labkey.api.util.Pair;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.util.Pair;
 
-import java.util.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -95,8 +99,9 @@ public class ModuleDependencySorter
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
+        @Test
         public void testSimpleCyclicalDependency()
         {
             try
@@ -111,6 +116,7 @@ public class ModuleDependencySorter
             catch (IllegalArgumentException e) { /* Expected failure */ }
         }
 
+        @Test
         public void testSelfReferral()
         {
             try
@@ -124,6 +130,7 @@ public class ModuleDependencySorter
             catch (IllegalArgumentException e) { /* Expected failure */ }
         }
 
+        @Test
         public void testUnsatisfiedDependency()
         {
             try
@@ -140,6 +147,7 @@ public class ModuleDependencySorter
             catch (IllegalArgumentException e) { /* Expected failure */ }
         }
 
+        @Test
         public void testGoodDependencies()
         {
             List<Module> testModules = new ArrayList<Module>();
@@ -164,6 +172,7 @@ public class ModuleDependencySorter
             assertEquals(sortedModules.get(7).getName(), "a");
         }
 
+        @Test
         public void testResourceLoaderDependencies()
         {
             List<Module> testModules = new ArrayList<Module>();
@@ -192,11 +201,6 @@ public class ModuleDependencySorter
             assertEquals(sortedModules.get(0).getName(), "c");
             assertEquals(sortedModules.get(1).getName(), "b");
             assertEquals(sortedModules.get(2).getName(), "a");
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

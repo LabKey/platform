@@ -15,15 +15,15 @@
  */
 package org.labkey.api.util;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 /**
  * <code>FileType</code>
@@ -471,9 +471,9 @@ public class FileType implements Serializable
         return _defaultSuffix;
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-
+        @Test
         public void test()
         {
             // simple case
@@ -510,12 +510,5 @@ public class FileType implements Serializable
             assertTrue(ftt.isType("test.bar"));
 
         }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
-        }
     }
-
-
 }

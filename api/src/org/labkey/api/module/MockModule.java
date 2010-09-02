@@ -155,7 +155,7 @@ public class MockModule implements Module
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
         return null;
     }

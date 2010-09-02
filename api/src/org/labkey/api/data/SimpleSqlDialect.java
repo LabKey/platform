@@ -279,7 +279,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     // The following methods should never be called on a simple dialect.
 
     @Override
-    public TestSuite getTestSuite()
+    public Collection<? extends Class> getJunitTestClasses()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

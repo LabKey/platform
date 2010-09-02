@@ -15,16 +15,15 @@
  */
 package org.labkey.api.exp;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.net.URLEncoder;
-import java.net.URLDecoder;
 import java.io.UnsupportedEncodingException;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -279,8 +278,9 @@ public class Lsid
         return columnName + " LIKE '" + namespaceLikeString(namespace) + "'";
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
+        @Test
         public void testSimpleDecode()
         {
             Lsid simpleLsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:ReproSet");
@@ -292,6 +292,7 @@ public class Lsid
             assertEquals(null, simpleLsid.getVersion());
         }
 
+        @Test
         public void testSimpleEncode()
         {
             Lsid simpleLsid = new Lsid("SampleSet.Folder-4", "ReproSet");
@@ -303,6 +304,7 @@ public class Lsid
             assertEquals(null, simpleLsid.getVersion());
         }
 
+        @Test
         public void testDecodeWithColon()
         {
             Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%3ASet");
@@ -314,6 +316,7 @@ public class Lsid
             assertEquals(null, lsid.getVersion());
         }
 
+        @Test
         public void testEncodeWithColon()
         {
             Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro:Set");
@@ -325,6 +328,7 @@ public class Lsid
             assertEquals(null, lsid.getVersion());
         }
 
+        @Test
         public void testDecodeWithPercent()
         {
             Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%25Set");
@@ -336,6 +340,7 @@ public class Lsid
             assertEquals(null, lsid.getVersion());
         }
 
+        @Test
         public void testDecodeWithSpace()
         {
             Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%20Set");
@@ -355,6 +360,7 @@ public class Lsid
             assertEquals(null, lsid.getVersion());
         }
 
+        @Test
         public void testEncodeWithSpace()
         {
             Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro Set");
@@ -366,6 +372,7 @@ public class Lsid
             assertEquals(null, lsid.getVersion());
         }
 
+        @Test
         public void testDecodeWithPlus()
         {
             Lsid lsid = new Lsid("urn:lsid:labkey.com:SampleSet.Folder-4:Repro%2BSet");
@@ -377,6 +384,7 @@ public class Lsid
             assertEquals(null, lsid.getVersion());
         }
 
+        @Test
         public void testEncodeWithPlus()
         {
             Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro+Set");
@@ -386,11 +394,6 @@ public class Lsid
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro+Set", lsid.getObjectId());
             assertEquals(null, lsid.getVersion());
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

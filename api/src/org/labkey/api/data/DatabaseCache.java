@@ -16,9 +16,9 @@
 
 package org.labkey.api.data;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import junit.framework.Assert;
 import org.apache.log4j.Logger;
+import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
@@ -206,21 +206,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         return _sharedCache.getTransactionStats();
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
         @SuppressWarnings({"StringEquality"})
+        @Test
         public void testDbCache() throws Exception
         {
             MyScope scope = new MyScope();
@@ -335,12 +324,6 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             // This should close the (temporary) shared cache
             cache.close();
             scope.closeConnection();
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
 
 

@@ -15,22 +15,34 @@
  */
 package org.labkey.api.reader;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.Filter;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 
@@ -493,7 +505,7 @@ public class TabLoader extends DataLoader
         }
     }
 
-    public static class TabLoaderTestCase extends junit.framework.TestCase
+    public static class TabLoaderTestCase extends Assert
     {
         String csvData =
                 "# algorithm=org.fhcrc.cpas.viewer.feature.FeatureStrategyPeakClusters\n" +
@@ -544,22 +556,12 @@ public class TabLoader extends DataLoader
         }
 
 
-        public TabLoaderTestCase()
-        {
-            this("TabLoader Test");
-        }
-
-
-        public TabLoaderTestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testTSV() throws IOException
         {
         }
 
+        @Test
         public void testTSVFile() throws IOException
         {
             File tsv = _createTempFile(tsvData, ".tsv");
@@ -582,6 +584,7 @@ public class TabLoader extends DataLoader
         }
 
 
+        @Test
         public void testTSVReader() throws IOException
         {
             File csv = _createTempFile(tsvData, ".tsv");
@@ -595,6 +598,7 @@ public class TabLoader extends DataLoader
         }
 
 
+        @Test
         public void testCSVFile() throws IOException
         {
             File csv = _createTempFile(csvData, ".csv");
@@ -618,6 +622,7 @@ public class TabLoader extends DataLoader
             csv.delete();
         }
 
+        @Test
         public void testCSVReader() throws IOException
         {
             File csv = _createTempFile(csvData, ".csv");
@@ -632,6 +637,7 @@ public class TabLoader extends DataLoader
         }
 
 
+        @Test
         public void compareTSVtoCSV() throws IOException
         {
             TabLoader lCSV = new TabLoader(csvData, true);
@@ -648,6 +654,7 @@ public class TabLoader extends DataLoader
         }
 
 
+        @Test
         public void testObject() throws Exception
         {
             TabLoader tl = new TabLoader(tsvData);
@@ -672,6 +679,7 @@ public class TabLoader extends DataLoader
             assertTrue(count == 7);
         }
 
+        @Test
         public void testUnescape() throws Exception
         {
             final String data =
@@ -712,6 +720,7 @@ public class TabLoader extends DataLoader
 
         }
 
+        @Test
         public void testParseQuotes() throws Exception
         {
             final String data =
@@ -771,15 +780,10 @@ public class TabLoader extends DataLoader
             assertEquals(1, row.get("Age"));
         }
 
+        @Test
         public void testTransform()
         {
             // UNDONE
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TabLoaderTestCase.class);
         }
     }
 }

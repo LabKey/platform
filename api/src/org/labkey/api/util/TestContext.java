@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class TestContext
 {
-    static ThreadLocal local = new ThreadLocal();
+    private static ThreadLocal<TestContext> local = new ThreadLocal<TestContext>();
 
     private HttpServletRequest _request;
     private User _user;
@@ -34,7 +34,7 @@ public class TestContext
 
     public static TestContext get()
     {
-        return (TestContext) local.get();
+        return local.get();
     }
 
 
@@ -55,7 +55,7 @@ public class TestContext
 
     void setUser(User user)
     {
-        this._user = user;
+        _user = user;
     }
 
 
@@ -67,6 +67,6 @@ public class TestContext
 
     public void setRequest(HttpServletRequest request)
     {
-        this._request = request;
+        _request = request;
     }
 }

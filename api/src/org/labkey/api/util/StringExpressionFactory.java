@@ -15,10 +15,10 @@
  */
 package org.labkey.api.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.query.DetailsURL;
@@ -32,7 +32,11 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: migra
@@ -605,20 +609,9 @@ public class StringExpressionFactory
 
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super("StringExpression");
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testSimple() throws ServletException
         {
             Map<Object,Object> m = new HashMap<Object,Object>();
@@ -647,12 +640,6 @@ public class StringExpressionFactory
             remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
             FieldKeyStringExpression lookup = fkse.addParent(new FieldKey(null, "A"), remap);
             assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 

@@ -16,17 +16,17 @@
 package org.labkey.api.exp.xar;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.exp.XarFormatException;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.security.UserManager;
 
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import java.util.regex.Pattern;
 
 /**
  * User: phussey
@@ -204,17 +204,12 @@ public class LsidUtils
         return resolveLsidFromTemplate(template, context, "${Fail}");
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
         private XarContext _context;
 
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-        @Override
-        protected void setUp() throws Exception
+        @Before
+        public void setUp() throws Exception
         {
             _context = new XarContext("TestCase", ContainerManager.getRoot(), UserManager.getGuestUser());
             _context.addSubstitution("Value1", "One");
@@ -224,6 +219,7 @@ public class LsidUtils
             _context.addSubstitution("Infinite2", "${Infinite1}");
         }
 
+        @Test
         public void testInfiniteSubstitution()
         {
             try
@@ -236,12 +232,14 @@ public class LsidUtils
             }
         }
 
+        @Test
         public void testDoubleSubstitution() throws XarFormatException
         {
             String result = resolveLsidFromTemplate("urn:lsid:${Reference1}", _context, "Test", "Test");
             assertEquals("urn:lsid:One", result);
         }
 
+        @Test
         public void testInvalidSubstitution() throws XarFormatException
         {
             try
@@ -253,11 +251,6 @@ public class LsidUtils
             {
                 assertTrue(e.getMessage().indexOf("not fully resolved") != -1);
             }
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }
