@@ -15,6 +15,7 @@
  */
 package org.labkey.query.controllers;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -116,18 +117,50 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         //now the native columns
         resp.put("columns", JsonWriter.getNativeColProps(tinfo, fk));
 
-        //now the columns in the user's default view for this query
         if (schema instanceof UserSchema && null == form.getFk())
         {
+            //now the columns in the user's default view for this query
+            resp.put("defaultView", getDefaultViewProps((UserSchema)schema, form.getQueryName()));
+
             List<Map<String, Object>> viewInfos = new ArrayList<Map<String, Object>>();
-            // always include the defaultView for backwards compatibility
-            viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), null, true, true));
+            // form.getViewName() is either null, a String, or a comma separated list of Strings.
+            String[] viewNames;
             if (form.getViewName() != null)
-                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), form.getViewName(), true, false));
+                viewNames = form.getViewName().split(",");
+            else
+                viewNames = new String[] { form.getViewName() };
+            for (String viewName : viewNames)
+            {
+                viewName = StringUtils.trimToNull(viewName);
+                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true, false));
+            }
+
             resp.put("views", viewInfos);
         }
 
         return resp;
+    }
+
+    protected Map<String,Object> getDefaultViewProps(UserSchema schema, String queryName)
+    {
+        //build a query view
+        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
+        QueryView view = new QueryView(schema, settings, null);
+
+        Map<String,Object> defViewProps = new HashMap<String,Object>();
+        defViewProps.put("columns", getDefViewColProps(view));
+        return defViewProps;
+    }
+
+    protected List<Map<String,Object>> getDefViewColProps(QueryView view)
+    {
+        List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
+        for (DisplayColumn dc : view.getDisplayColumns())
+        {
+            if (dc.isQueryColumn() && null != dc.getColumnInfo())
+                colProps.add(JsonWriter.getMetaData(dc, null, true, true));
+        }
+        return colProps;
     }
 
     public static class Form
