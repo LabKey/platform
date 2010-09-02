@@ -1747,7 +1747,7 @@ function doSort(tableName, columnName, sortDirection)
     var dr = LABKEY.DataRegions[tableName];
     if (!dr)
         return;
-    dr.addSort(columnName, sortDirection);
+    dr.changeSort(columnName, sortDirection);
 }
 
 function clearSort(tableName, columnName)

@@ -1107,7 +1107,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
             var filterOp = filterRecord.data.op;
             if (filterOp)
             {
-                var filterType = LABKEY.Filter.filterTypeForURLSuffix(filterOp);
+                var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterOp);
                 if (!filterType) {
                     alert("filter type '" + filterOp + "' isn't recognized");
                     return false;

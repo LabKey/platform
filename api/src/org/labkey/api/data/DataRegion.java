@@ -963,7 +963,8 @@ public class DataRegion extends DisplayElement
             out.write(" 'session' : " + view.isSession() + ",");
             out.write(" 'editable' : " + view.isEditable() + ",");
             out.write(" 'hidden' : " + view.isHidden() + ",");
-            out.write(" 'containerPath' : " + PageFlowUtil.jsString(view.getContainer().getPath()) + ",");
+            // module custom views have no container
+            out.write(" 'containerPath' : " + PageFlowUtil.jsString(view.getContainer() != null ? view.getContainer().getPath() : "") + ",");
             out.write("}\n,");
         }
         out.write("'complete' : " + _complete + ",\n");
