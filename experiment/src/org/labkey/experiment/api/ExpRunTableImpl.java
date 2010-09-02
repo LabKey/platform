@@ -27,7 +27,6 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -647,30 +646,42 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             ExpRunImpl run = getRun(oldRow);
             if (run != null)
             {
+                StringBuilder sb = new StringBuilder("Run edited.");
                 for (Map.Entry<String, Object> entry : row.entrySet())
                 {
+                    // Most fields in the hard table can't be modified, but there are a few
                     if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
                     {
-                        run.setName(entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class));
+                        String newName = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
+                        sb.append(" Name changed from " + run.getName() + " to " + newName + ".");
+                        run.setName(newName);
                     }
                     else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
                     {
-                        run.setComments(entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class));
+                        String newComment = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
+                        sb.append(" Comment changed from " + run.getComments() + " to " + newComment + ".");
+                        run.setComments(newComment);
                     }
                     else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
                     {
-                        run.setComment(user, entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class));
+                        String newFlag = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
+                        sb.append(" Flag changed from " + run.getComment() + " to " + newFlag + ".");
+                        run.setComment(user, newFlag);
                     }
+
+                    // Also check for properties
                     ColumnInfo col = getQueryTable().getColumn(entry.getKey());
                     if (col != null && col instanceof PropertyColumn)
                     {
                         PropertyColumn propColumn = (PropertyColumn)col;
                         PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
+                        Object oldValue = run.getProperty(propertyDescriptor);
+                        sb.append(" " + propertyDescriptor.getNonBlankCaption() + " changed from " + oldValue + " to " + entry.getValue() + ".");
                         run.setProperty(user, propertyDescriptor, entry.getValue());
                     }
                 }
-                // Most fields in the hard table can't be modified, but there are a few
                 run.save(user);
+                ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, sb.toString());
             }
             return getRow(user, container, oldRow);
         }
