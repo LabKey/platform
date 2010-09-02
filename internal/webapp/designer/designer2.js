@@ -64,11 +64,16 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             customView: this.customView
         });
 
-//        this.propertiesTab = new LABKEY.DataRegion.PropertiesTab({
-//            designer: this,
-//            customView: this.customView
-//        });
+        this.propertiesTab = new LABKEY.DataRegion.PropertiesTab({
+            designer: this,
+            customView: this.customView,
+            readOnly: true
+        });
 
+        var deleteToolTip =
+                (this.customView.name ? "Delete " : "Reset ") +
+                (this.customView.shared ? "shared " : "your ") + "view";
+        
         config = Ext.applyIf(config, {
             activeTab: 0,
             frame: false,
@@ -79,9 +84,17 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
                 this.columnsTab,
                 this.filterTab,
                 this.sortTab,
-//                this.propertiesTab
+                this.propertiesTab
             ],
             buttonAlign: "left",
+            bbar: {
+                xtype: 'container',
+                // would like to use 'labkey-status-info' class instead of inline style, but it centers and stuff
+                //cls: "labkey-status-info",
+                style: { 'background-color': "#FFDF8C", padding: "2px" },
+                html: "button bar",
+                hidden: true
+            },
             fbar: {
                 xtype: 'container',
                 layout: {
@@ -91,41 +104,41 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
                 },
                 defaults: { flex: 1 },
                 height: 27 * 2,
-                items: [
-                    new Ext.Toolbar({
-                        toolbarCls: "x-tab-panel-footer",
-                        defaults: {minWidth: 75},
-                        items: [{
-                            xtype: "checkbox",
-                            boxLabel: "Show Hidden Fields",
-                            checked: this.showHiddenFields,
-                            handler: function (checkbox, checked) {
-                                this.setShowHiddenFields(checked);
-                            },
-                            scope: this
-                        }]
-                    }),
-                    new Ext.Toolbar({
-                        toolbarCls: "x-tab-panel-footer",
-                        defaults: {minWidth: 75},
-                        items: [{
-                            text: "Revert",
-                            tooltip: "Revert any changes made to this view",
-                            handler: this.onRevertClick,
-                            scope: this
-                        },"->",{
-                            text: "Apply",
-                            tooltip: "Apply changes to the view",
-                            handler: this.onApplyClick,
-                            scope: this
-                        },{
-                            text: "Save",
-                            tooltip: "Save changes",
-                            handler: this.onSaveClick,
-                            scope: this
-                        }]
-                    })
-                ]
+                items: [{
+                    xtype: "toolbar",
+                    toolbarCls: "x-tab-panel-footer",
+                    defaults: {minWidth: 75},
+                    items: [{
+                        xtype: "checkbox",
+                        boxLabel: "Show Hidden Fields",
+                        checked: this.showHiddenFields,
+                        handler: function (checkbox, checked) {
+                            this.setShowHiddenFields(checked);
+                        },
+                        scope: this
+                    }]
+                },{
+                    xtype: "toolbar",
+                    toolbarCls: "x-tab-panel-footer",
+                    defaults: {minWidth: 75},
+                    items: [{
+                        text: (this.customView.name ? "Delete" : "Reset"),
+                        tooltip: deleteToolTip,
+                        disabled: !this.canEdit(),
+                        handler: this.onDeleteClick,
+                        scope: this
+                    },"->",{
+                        text: "Apply",
+                        tooltip: "Apply changes to the view",
+                        handler: this.onApplyClick,
+                        scope: this
+                    },{
+                        text: "Save",
+                        tooltip: "Save changes",
+                        handler: this.onSaveClick,
+                        scope: this
+                    }]
+                }]
             }
         });
 
@@ -161,6 +174,61 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         });
         btn.on('click', this.onCloseClick, this);
         this.closeButton = btn;
+
+        if (!this.canEdit())
+        {
+            var msg = "This view is not editable, but you may<br>" +
+                      "save a new view with a different name.";
+            // XXX: show this.editableErrors in a '?' help tooltip
+            this.showMessage(msg);
+        }
+        else if (this.customView.session)
+        {
+            this.showMessage("Editing an unsaved view.");
+        }
+    },
+
+    canEdit : function ()
+    {
+        return this.getEditableErrors().length == 0;
+    },
+
+    getEditableErrors : function ()
+    {
+        if (!this.editableErrors)
+        {
+            this.editableErrors = [];
+            if (this.customView)
+            {
+                if (this.customView.inherit)
+                {
+                    if (this.customView.containerPath != LABKEY.ActionURL.getContainer())
+                        this.editableErrors.push("Inherited views can only be edited from the defining folder.");
+                }
+
+                if (!this.customView.editable)
+                    this.editableErrors.push("The view is read-only and cannot be edited.");
+            }
+        }
+        return this.editableErrors;
+    },
+
+    showMessage : function (msg)
+    {
+        // XXX: support multiple messages and [X] close box
+        var tb = this.getBottomToolbar();
+        tb.getEl().update(msg);
+        tb.setVisible(true);
+        tb.getEl().slideIn();
+        tb.getEl().on('click', function () { this.hideMessage(); }, this, {single: true});
+    },
+
+    hideMessage : function ()
+    {
+        var tb = this.getBottomToolbar();
+        tb.getEl().update('');
+        tb.setVisible(false);
+        tb.getEl().slideOut();
     },
 
     setShowHiddenFields : function (showHidden)
@@ -179,20 +247,125 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         this.setVisible(false);
     },
 
-    onRevertClick : function (btn, e) {
-        // XXX: prompt to confirm
-        this.revert();
+    onDeleteClick : function (btn, e) {
+        this.dataRegion.deleteCustomView();
     },
 
     onApplyClick : function (btn, e) {
-        this.save(true, function () {
+        // Save a session view. Session views can't be inherited or shared.
+        var props = {
+            name: this.customView.name,
+            hidden: this.customView.hidden,
+            shared: false,
+            inherit: false,
+            session: true
+        };
+        this.save(props, function () {
             this.setVisible(false);
         }, this);
     },
 
     onSaveClick : function (btn, e) {
-        // XXX: prompt for name
-        this.save();
+        var disableSharedAndInherit = this.customView.hidden || this.customView.session || (this.customView.containerPath != LABKEY.ActionURL.getContainer());
+        var canEdit = this.canEdit();
+        var win = new Ext.Window({
+            title: "Save Custom View" + (this.customView.name ? ": " + escape(this.customView.name) : ""),
+            layout: "form",
+            cls: "extContainer",
+            padding: "8 8 8 4",
+            modal: true,
+            defaults: {
+                tooltipType: "title"
+            },
+            items: [{
+                ref: "nameField",
+                fieldLabel: "Name",
+                xtype: "textfield",
+                tooltip: "Name of the custom view (leave blank to save as the default grid view)",
+                value: canEdit ? this.customView.name : (this.customView.name ? this.customView.name + " Copy" : "Customized View"),
+                disabled: this.customView.hidden
+            },{
+                // XXX: this looks terrible
+                xtype: "box",
+                html: "You must save this view with an alternate name",
+                hidden: canEdit
+            },{
+                ref: "sharedField",
+                fieldLabel: "Shared",
+                xtype: "checkbox",
+                tooltip: "Make this grid view available to all users",
+                checked: this.customView.shared,
+                disabled: disableSharedAndInherit
+            },{
+                ref: "inheritField",
+                fieldLabel: "Inherit",
+                xtype: "checkbox",
+                tooltip: "Make this grid view available in child folders",
+                checked: this.customView.inherit,
+                disabled: disableSharedAndInherit
+            },{
+                ref: "sessionField",
+                fieldLabel: "Temporary",
+                xtype: "checkbox",
+                tooltip: "Save this view temporarily.  Any changes will only persist for the duration of your session.",
+                checked: this.customView.session,
+                disabled: this.customView.hidden,
+                handler: function (checkbox, checked) {
+                    if (checked) {
+                        win.sharedField.setValue(false);
+                        win.sharedField.setDisabled(true);
+                        win.inheritField.setValue(false);
+                        win.inheritField.setDisabled(true);
+                    }
+                    else if (disableSharedAndInherit)
+                    {
+                        win.sharedField.reset();
+                        win.sharedField.setDisabled(false);
+                        win.inheritField.reset();
+                        win.inheritField.setDisabled(false);
+                    }
+                },
+                scope: this
+            }],
+            buttons: [{
+                text: "Cancel",
+                handler: function () { win.close(); }
+            },{
+                text: "Save",
+                handler: function () {
+                    if (!canEdit && this.customView.name == win.nameField.getValue())
+                    {
+                        Ext.Msg.error("You must save this view with an alternate name.");
+                        return;
+                    }
+
+                    var o = {};
+                    if (this.customView.hidden)
+                    {
+                        o = {
+                            name: this.customView.name,
+                            shared: this.customView.shared,
+                            hidden: this.customView.hidden,
+                            session: this.customView.session
+                        };
+                    }
+                    else
+                    {
+                        o.name = win.nameField.getValue();
+                        o.session = win.sessionField.getValue();
+                        if (!o.session && this.query.canEditSharedViews)
+                        {
+                            o.shared = win.sharedField.getValue();
+                            o.inherit = win.inheritField.getValue();
+                        }
+                    }
+                    this.save(o);
+                    win.close();
+                },
+                scope: this
+            }]
+        });
+        win.show();
     },
 
     revert : function () {
@@ -221,7 +394,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         return true;
     },
 
-    save : function (session, callback, scope) {
+    save : function (properties, callback, scope) {
         if (this.fireEvent("beforeviewsave", this) !== false)
         {
             if (!this.validate())
@@ -234,12 +407,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
                 if (tab instanceof LABKEY.DataRegion.Tab)
                     Ext.applyIf(edited, tab.save());
             }
-
-            if (session)
-            {
-                edited.session = true;
-                edited.inherit = edited.shared = false;
-            }
+            Ext.apply(edited, properties);
 
             this.doSave(edited, callback);
         }
@@ -252,10 +420,10 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
             schemaName: this.schemaName,
             queryName: this.queryName,
             views: [ edited ],
-            successCallback: function (savedViews) {
+            successCallback: function (savedViewsInfo) {
                 if (callback)
-                    callback.call(scope || this, savedViews);
-                this.fireEvent("viewsave", this, savedViews);
+                    callback.call(scope || this, savedViewsInfo);
+                this.fireEvent("viewsave", this, savedViewsInfo);
             },
             scope: this
         });
@@ -266,6 +434,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
 LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     constructor : function (config) {
         this.designer = config.designer;
+        this.unstyled = true;
 
         LABKEY.DataRegion.Tab.superclass.constructor.call(this, config);
     },
@@ -438,7 +607,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         if (Ext.isNumber(fieldKeyOrIndex))
             index = fieldKeyOrIndex;
         else
-            index = list.store.findExact("fieldKey", fieldKey);
+            index = list.store.findExact("fieldKey", fieldKeyOrIndex);
         if (index > -1)
             list.store.removeAt(index);
     },
@@ -481,6 +650,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 region: "center",
                 xtype: "treepanel",
                 autoScroll: true,
+                border: false,
+                style: {"border-bottom-width": "1px"},
                 root: new Ext.tree.AsyncTreeNode({
                     id: "<root>",
                     expanded: true,
@@ -500,6 +671,8 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 region: "south",
                 split: "true",
                 xtype: "panel",
+                border: false,
+                style: {"border-top-width": "1px"},
                 layout: {
                     type: "hbox",
                     align: "stretch"
@@ -1113,16 +1286,18 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
 });
 
-LABKEY.DataRegion.PropertiesTab = Ext.extend(LABKEY.DataRegion.Tab, {
+LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
     constructor : function (config) {
         console.log("PropertiesTab");
 
+        this.designer = config.designer;
         this.customView = config.customView;
+        this.readOnly = config.readOnly;
 
-        var disableSharedAndInherit = this.customView.hidden || this.customView.session || !this.customView.canSaveForAllUsers;
+        var disableSharedAndInherit = this.customView.hidden || this.customView.session || !this.designer.query.canEditSharedViews;
 
         config = Ext.applyIf({
-            title: "Properties",
+            title: "?", // "Properties" is too long to fit in the tab strip
             layout: "form",
             defaults: {
                 tooltipType: "title"
@@ -1130,35 +1305,34 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(LABKEY.DataRegion.Tab, {
             items: [{
                 ref: "nameField",
                 fieldLabel: "Name",
-//                name: "name",
                 xtype: "textfield",
                 tooltip: "Name of the custom view (leave blank to save as the default grid view)",
                 value: this.customView.name,
-                disabled: this.customView.hidden
+                disabled: this.readOnly || this.customView.hidden
             },{
                 ref: "sharedField",
                 fieldLabel: "Shared",
-//                name: "shared",
                 xtype: "checkbox",
                 tooltip: "Make this grid view available to all users",
-                value: this.customView.shared,
-                disabled: disableSharedAndInherit
+                checked: this.customView.shared,
+                disabled: this.readOnly || disableSharedAndInherit
             },{
                 ref: "inheritField",
                 fieldLabel: "Inherit",
-//                name: "inherit",
                 xtype: "checkbox",
                 tooltip: "Make this grid view available in child folders",
-                value: this.customView.inherit,
-                disabled: disableSharedAndInherit
+                checked: this.customView.inherit,
+                disabled: this.readOnly || disableSharedAndInherit
             },{
                 ref: "sessionField",
                 fieldLabel: "Temporary",
                 xtype: "checkbox",
                 tooltip: "Save this view temporarily.  Any changes will only persist for the duration of your session.",
-                value: this.customView.session,
-                disabled: this.customView.hidden,
+                checked: this.customView.session,
+                disabled: this.readOnly || this.customView.hidden,
                 handler: function (checkbox, checked) {
+                    if (this.readOnly)
+                        return;
                     if (checked) {
                         this.sharedField.setValue(false);
                         this.sharedField.setDisabled(true);
@@ -1166,7 +1340,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         this.inheritField.setDisabled(true);
                     }
                     else {
-                        if (disabledSharedInherit)
+                        if (disableSharedAndInherit)
                         {
                             this.sharedField.reset();
                             this.sharedField.setDisabled(false);
@@ -1202,7 +1376,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 return false;
             }
         }
-        if (!this.customView.canSaveForAllUsers)
+        if (!this.designer.query.canEditSharedViews)
         {
             // UNDONE: check shared/inherit
             // Ext.Msg.alert(...)

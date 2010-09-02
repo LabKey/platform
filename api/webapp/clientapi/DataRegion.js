@@ -39,7 +39,7 @@ LABKEY.DataRegion = function (config)
     this.schemaName = config.schemaName;
     this.queryName = config.queryName;
     this.viewName = config.viewName || "";
-    this.viewUnsaved = config.viewUnsaved;
+    this.view = config.view;
     this.sortFilter = config.sortFilter;
 
     this.complete = config.complete;
@@ -365,6 +365,48 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
+     * XXX: Needs documentation
+     * @param columnName
+     * @param sortDirection either "+' for ascending or '-' for descending
+     */
+    this.changeSort = function (columnName, sortDirection)
+    {
+        if (false === this.fireEvent("beforesortchange", this, columnName, sortDirection))
+            return;
+
+        var newSortString = this.alterSortString(getParameter(this.name + ".sort"), columnName, sortDirection);
+        this._setParam(".sort", newSortString, [".sort", ".offset"]);
+    };
+
+    /**
+     * XXX: Needs documentation
+     * @param columnName
+     */
+    this.clearSort = function (columnName)
+    {
+        if (!columnName)
+            return;
+
+        if (false === this.fireEvent("beforeclearsort", this, columnName))
+            return;
+
+        var newSortString = this.alterSortString(getParameter(this.name + ".sort"), columnName, null);
+        if (newSortString.length > 0)
+            this._setParam(".sort", newSortString, [".sort", ".offset"]);
+        else
+            this._removeParams([".sort", ".offset"]);
+    };
+
+    // private
+    this.changeFilter = function (newParamValPairs, newQueryString)
+    {
+        if (false === this.fireEvent("beforefilterchange", this, newParamValPairs))
+            return;
+        
+        setSearchString(this.name, newQueryString);
+    };
+
+    /**
      * Removes all the filters for a particular field
      * @param fieldName the name of the field from which all filters should be removed
      */
@@ -451,12 +493,16 @@ LABKEY.DataRegion = function (config)
     this._showPagination(this.header);
     this._showPagination(this.footer);
 
-    if (this.viewUnsaved)
+    if (this.view && this.view.session)
     {
-        if (this.viewName)
-            this.showMessage("The custom view '" + escape(this.viewName) + "' is temporary.  <a href='#'>Save</a>.");
-        else
-            this.showMessage("This custom view is temporary.  <a href='#'>Save</a>.");
+        var msg = (this.viewName ? "The current view '<em>" + escape(this.viewName) + "</em>' " : "This current view ") + "is unsaved.";
+        msg += " &nbsp;";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].deleteCustomView(null, true);'>" + (this.viewName ? "Delete" : "Revert") + "</span>";
+        msg += ", &nbsp;";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].showCustomizeView(null, true);'>Edit</span>";
+        msg += ", &nbsp;";
+        msg += "<span class='labkey-link' onclick='LABKEY.DataRegions[\"" + escape(this.name) + "\"].saveSessionCustomView();'>Save</span>";
+        this.showMessage(msg);
     }
 
     if (this.showInitialSelectMessage)
@@ -770,18 +816,74 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
     },
 
-    showCustomizeView : function (chooseColumnsUrl)
+    // private
+    deleteCustomView : function ()
     {
-        window.location = chooseColumnsUrl;
-        return;
+        var title = (this.viewName ? "Delete " : "Revert ") +
+                    (this.view && this.view.shared ? "shared " : "your ") +
+                    (this.view && this.view.session ? "unsaved" : "") + "view";
+        var msg = "Are you sure you want to " + (this.viewName ? "delete " : "revert ") + " the current view";
+        if (this.viewName)
+            msg += " '<em>" + escape(this.viewName) + "</em>'";
+        msg += "?";
+        Ext.Msg.confirm(title, msg, function (btnId) {
+            if (btnId == "yes")
+            {
+                Ext.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL("query", "deleteView", null, {schemaName: this.schemaName, queryName: this.queryName, viewName: this.viewName}),
+                    method: "GET",
+                    scope: this,
+                    success: function () {
+                        // Go to the default view if successful
+                        // XXX: if we are deleting a session view that shadows a saved view, we should reshow that saved view.
+                        this.changeView();
+                    },
+                    failure: function () {
+                        Ext.Msg.alert("Delete View", "Deletion Failed");
+                    }
+                });
+            }
+        }, this);
+    },
 
-        // If no schema/query, use old query view designer
-        if (!this.schemaName && !this.queryName)
+    // private
+    saveSessionCustomView : function ()
+    {
+        // Note: currently only will save session views. Future version could create a new view using url sort/filters.
+        if (!(this.view && this.view.session))
+            return;
+
+        // UNDONE: prompt for shared and inherit properties if user has EditSharedViewPermission
+        Ext.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("query", "saveSessionView"),
+            method: "POST",
+            jsonData: {
+                schemaName: this.schemaName,
+                "query.queryName": this.queryName,
+                "query.viewName": this.viewName
+            },
+            headers : {
+                'Content-Type' : 'application/json'
+            },
+            scope: this,
+            success: function () {
+                this.changeView(this.viewName);
+            },
+            failure: LABKEY.Utils.getCallbackWrapper(undefined, this, true)
+        });
+    },
+
+    showCustomizeView : function (chooseColumnsUrl, hideMessage)
+    {
+        if (chooseColumnsUrl && !this.schemaName || !this.queryName)
+        {
             window.location = chooseColumnsUrl;
+            return;
+        }
 
         if (!this.customizeView)
         {
-            LABKEY.requiresScript("query/queryDesigner.js", true);
+            LABKEY.requiresScript("query/queryDesigner.js", true); // for FieldKey
             LABKEY.requiresScript("designer/designer2.js", true, function () {
 
                 LABKEY.Query.getQueryDetails({
@@ -789,6 +891,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                     queryName: this.queryName,
                     viewName: this.viewName,
                     successCallback: function (json, response, options) {
+                        if (hideMessage)
+                            this.hideMessage();
+                        
                         var el = Ext.get(this.form || this.table);
                         var renderTo = el.parent().insertFirst({tag: "div"});
 
@@ -824,8 +929,18 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         }
     },
 
-    onViewSave : function (designer, newview) {
-        this.changeView(newview.name);
+    hideCustomizeView : function ()
+    {
+        if (this.customizeView)
+            this.customizeView.setVisible(false);
+    },
+
+    onViewSave : function (designer, savedViewsInfo) {
+        if (savedViewsInfo && savedViewsInfo.views.length > 0)
+        {
+            this.hideCustomizeView();
+            this.changeView(savedViewsInfo.views[0].name);
+        }
     }
 
 });
@@ -1402,31 +1517,26 @@ function clearFilter()
 {
     hideFilterDiv();
     var dr = LABKEY.DataRegions[_tableName];
-    if (false === dr.fireEvent("beforeclearfilter", dr, _fieldName))
+    if (!dr)
         return;
-
-    var newParamValPairs = getParamValPairs(dr.requestURL, [_tableName + "." + _fieldName + "~", _tableName + ".offset"]);
-    setSearchString(_tableName, buildQueryString(newParamValPairs));
+    dr.clearFilter(_fieldName);
 }
 
 function clearAllFilters()
 {
     hideFilterDiv();
     var dr = LABKEY.DataRegions[_tableName];
-    if (false === dr.fireEvent("beforeclearallfilters", dr))
+    if (!dr)
         return;
-
-    var newParamValPairs = getParamValPairs(dr.requestURL, [_tableName + ".", _tableName + ".offset"]);
-    setSearchString(_tableName, buildQueryString(newParamValPairs));
+    dr.clearAllFilters();
 }
 
 function changeFilter(newParamValPairs, newQueryString)
 {
     var dr = LABKEY.DataRegions[_tableName];
-    if (false === dr.fireEvent("beforefilterchange", dr, newParamValPairs))
+    if (!dr)
         return;
-
-    setSearchString(_tableName, newQueryString);
+    dr.changeFilter(newParamValPairs, newQueryString);
 }
 
 function doFilter()
@@ -1631,18 +1741,13 @@ function twoDigit(num)
 
 function doSort(tableName, columnName, sortDirection)
 {
+    if (!tableName || !columnName)
+        return;
+
     var dr = LABKEY.DataRegions[tableName];
     if (!dr)
         return;
-    if (false === dr.fireEvent("beforesortchange", dr, columnName, sortDirection))
-        return;
-
-    var newSortString = dr.alterSortString(getParameter(tableName + ".sort"), columnName, sortDirection);
-
-    var paramValPairs = getParamValPairs(dr.requestURL, [tableName + ".sort", tableName + ".offset"]);
-    paramValPairs[paramValPairs.length] = [tableName + ".sort", newSortString];
-
-    setSearchString(tableName, buildQueryString(paramValPairs));
+    dr.addSort(columnName, sortDirection);
 }
 
 function clearSort(tableName, columnName)
@@ -1653,16 +1758,7 @@ function clearSort(tableName, columnName)
     var dr = LABKEY.DataRegions[tableName];
     if (!dr)
         return;
-    if (false === dr.fireEvent("beforeclearsort", dr, columnName))
-        return;
-    
-    var newSortString = dr.alterSortString(getParameter(tableName + ".sort"), columnName, null);
-
-    var paramValPairs = getParamValPairs(dr.requestURL, [tableName + ".sort", tableName + ".offset"]);
-    if(newSortString.length > 0)
-        paramValPairs.push([tableName + ".sort", newSortString]);
-
-    setSearchString(tableName, buildQueryString(paramValPairs));
+    dr.clearSort(columnName);
 }
 
 // If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.

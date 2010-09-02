@@ -253,7 +253,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //handle aggregates separately
         if(this.aggregates)
         {
-            for(idx = 0; idx < this.aggregates.length; ++idx)
+            for (var idx = 0; idx < this.aggregates.length; ++idx)
             {
                 if(this.aggregates[idx].type &&  this.aggregates[idx].column)
                     params[this.dataRegionName + '.agg.' + this.aggregates[idx].column] = this.aggregates[idx].type;
@@ -290,8 +290,10 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
      */
     render : function(renderTo) {
 
-        var idx = 0; //array index counter
-
+        var dr = LABKEY.DataRegions[this.dataRegionName];
+        if (dr)
+            dr.hideCustomizeView();
+        
         //allow renderTo param to override config property
         if(renderTo)
             this.renderTo = renderTo;
@@ -536,14 +538,19 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         delete this.offset;
         delete this.userFilters;
         delete this.sort;
-        this.viewName = viewName;
+        if (viewName)
+            this.viewName = viewName;
+        else
+        {
+            // delete the viewName so it isn't POSTed as empty string
+            delete this.viewName;
+        }
         this.qsParamsToIgnore[this.getQualifiedParamName("viewName")] = true;
         this.render();
         return false;
     },
 
     cleanupDesignerWin : function () {
-        console.log("cleanupDesignerWin");
         if (this._designerWin) {
             this._designerWin.close();
             delete this._designerWin;

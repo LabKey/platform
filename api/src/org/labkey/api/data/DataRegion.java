@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -950,7 +951,20 @@ public class DataRegion extends DisplayElement
         }
         if (ctx.getView() != null)
         {
-            out.write("'viewUnsaved' : " + ctx.getView().isSession() + ",\n");
+            CustomView view = ctx.getView();
+            // UNDONE: use CustomViewUtil.propertyMap()
+            out.write("'view' : {\n");
+            out.write(" 'name' : " + PageFlowUtil.jsString(view.getName()) + ",");
+            out.write(" 'default' : " + String.valueOf(view.getName() == null) + ",");
+            if (view.getOwner() != null)
+                out.write(" 'owner' : " + PageFlowUtil.jsString(view.getOwner().getDisplayName(ctx.getViewContext())) + ",");
+            out.write(" 'shared' : " + view.isShared() + ",");
+            out.write(" 'inherit' : " + view.canInherit() + ",");
+            out.write(" 'session' : " + view.isSession() + ",");
+            out.write(" 'editable' : " + view.isEditable() + ",");
+            out.write(" 'hidden' : " + view.isHidden() + ",");
+            out.write(" 'containerPath' : " + PageFlowUtil.jsString(view.getContainer().getPath()) + ",");
+            out.write("}\n,");
         }
         out.write("'complete' : " + _complete + ",\n");
         out.write("'offset' : " + getOffset() + ",\n");
