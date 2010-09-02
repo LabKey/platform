@@ -801,7 +801,7 @@ LABKEY.Query = new function()
          * @param config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName The name of the query.
-         * @param {String} config.views The updated view definition.
+         * @param {String} config.views The updated view definitions.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with the ssame parameters as getQueryViews.successCallback.
          * @param {function} [config.errorCallback] The function to call if this function encounters an error.
@@ -839,7 +839,7 @@ LABKEY.Query = new function()
          * @param {Object} config An object that contains the following configuration parameters
          * @param {String} config.schemaName The name of the schema.
          * @param {String} config.queryName The name of the query.
-         * @param {String} [config.viewName] An optional view name to include custom view details.  The default view details will always be included in the response.
+         * @param {String} [config.viewName] An optional view name or Array of view names to include custom view details.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
          * <ul>
@@ -876,55 +876,17 @@ LABKEY.Query = new function()
                 params.schemaName = config.schemaName;
             if(config.queryName)
                 params.queryName = config.queryName;
-            if (config.viewName)
+            if (Ext.isArray(config.viewName))
+                params.viewName = config.viewName.join(",");
+            else
                 params.viewName = config.viewName;
             if(config.fk)
                 params.fk = config.fk;
 
-            // For backwards compatibility with 10.2, create a "defaultView" object
-            // with "columns" array containing the field metadata.
-            function addDefaultView(json, response, options)
-            {
-                if (json && json.views)
-                {
-                    for (var i = 0; i < json.views.length; i++)
-                    {
-                        var view = null;
-                        if (json.views[i].name == "")
-                        {
-                            view = json.views[i];
-                            break;
-                        }
-                    }
-
-                    json.defaultView = { columns: [] };
-                    if (view)
-                    {
-                        var fieldMap = [];
-                        for (var i = 0; i < view.fields.length; i++)
-                        {
-                            var field = view.fields[i];
-                            fieldMap[field.fieldKey] = field;
-                        }
-                        for (var i = 0; i < view.columns.length; i++)
-                        {
-                            var col = view.columns[i];
-                            var field = fieldMap[col.fieldKey];
-                            if (field)
-                                json.defaultView.columns.push(field);
-                        }
-                        // copy remaining view properties (skipping 'columns')
-                        Ext.applyIf(json.defaultView, view);
-                    }
-                }
-                if (config.successCallback)
-                    config.successCallback.call(config.scope || window, json, response, options);
-            }
-
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryDetails', config.containerPath),
                 method : 'GET',
-                success: LABKEY.Utils.getCallbackWrapper(addDefaultView),
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params: params
             });

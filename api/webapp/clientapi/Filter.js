@@ -75,9 +75,15 @@ LABKEY.Filter = new function()
                 if (!dataValueRequired)
                     return true;
 
-                if (filterTypes[type].indexOf(result) == -1)
+                var f = filterTypes[type];
+                var found = false;
+                for (var i = 0; !found && i < f.length; i++)
                 {
-                    alert("Filter type " + displayText + " can't be applied to '" + type + "'.");
+                    if (f[i].getURLSuffix() == urlSuffix)
+                        found = true;
+                }
+                if (!found) {
+                    alert("Filter type '" + displayText + "' can't be applied to " + type + " types.");
                     return undefined;
                 }
 
