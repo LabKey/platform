@@ -1047,17 +1047,17 @@ public class ExperimentController extends SpringActionController
 
             QuerySettings runDataInputsSettings = new QuerySettings(getViewContext(), "RunDataInputs", ExpSchema.TableType.DataInputs.name());
             UsageQueryView runDataInputsView = new UsageQueryView("Data Inputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRun, runDataInputsSettings, errors);
-            runDataInputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             QuerySettings runDataOutputsSettings = new QuerySettings(getViewContext(), "RunDataOutputs", ExpSchema.TableType.DataInputs.name());
             UsageQueryView runDataOutputsView = new UsageQueryView("Data Outputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRunOutput, runDataOutputsSettings, errors);
+            runDataOutputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             QuerySettings runMaterialInputsSetting = new QuerySettings(getViewContext(), "RunMaterialInputs", ExpSchema.TableType.MaterialInputs.name());
             UsageQueryView runMaterialInputsView = new UsageQueryView("Material Inputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRun, runMaterialInputsSetting, errors);
-            runMaterialInputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             QuerySettings runMaterialOutputsSettings = new QuerySettings(getViewContext(), "RunMaterialOutputs", ExpSchema.TableType.MaterialInputs.name());
             UsageQueryView runMaterialOutputsView = new UsageQueryView("Material Outputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRunOutput, runMaterialOutputsSettings, errors);
+            runMaterialOutputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             HBox inputsView = new HBox(runDataInputsView, runMaterialInputsView);
             HBox outputsView = new HBox(runDataOutputsView, runMaterialOutputsView);
@@ -1076,11 +1076,12 @@ public class ExperimentController extends SpringActionController
         {
             super(new ExpSchema(context.getUser(), context.getContainer()), settings, errors);
             setTitle(title);
-            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
             setFrame(FrameType.TITLE);
             settings.setAllowChooseQuery(false);
             _run = run;
             _type = type;
+            setShowBorders(true);
+            setShadeAlternatingRows(true);
             setShowExportButtons(false);
             setShowPagination(false);
             setAllowableContainerFilterTypes(Collections.<ContainerFilter.Type>emptyList());
@@ -1891,7 +1892,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException
         {
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
+            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
         }
     }
 
@@ -1977,6 +1978,13 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
+            List<ExpProtocol> protocols = getProtocols(deleteForm);
+
+            return new ConfirmDeleteView("Protocol", "protocolDetails", protocols, deleteForm, runs);
+        }
+
+        private List<ExpProtocol> getProtocols(DeleteForm deleteForm)
+        {
             List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
             for (int protocolId : deleteForm.getIds(false))
             {
@@ -1986,13 +1994,15 @@ public class ExperimentController extends SpringActionController
                     protocols.add(protocol);
                 }
             }
-
-            return new ConfirmDeleteView("Protocol", "protocolDetails", protocols, deleteForm, runs);
+            return protocols;
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException
         {
-            ExperimentService.get().deleteProtocolByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
+            for (ExpProtocol protocol : getProtocols(deleteForm))
+            {
+                protocol.delete(getUser());
+            }
         }
     }
 
@@ -2165,7 +2175,7 @@ public class ExperimentController extends SpringActionController
             }
             for (ExpSampleSet source : sampleSets)
             {
-                ExperimentService.get().deleteSampleSet(source.getRowId(), getContainer(), getUser());
+                source.delete(getUser());
             }
         }
 

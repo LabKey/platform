@@ -29,6 +29,7 @@ import org.labkey.query.persist.QueryDef;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -160,19 +161,12 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                 List<String> pkColumnNames = table.getPkColumnNames();
                 if (pkColumnNames.size() > 0)
                 {
-                    StringBuilder sb = new StringBuilder(url.getLocalURIString());
+                    Map<String, String> params = new HashMap<String, String>();
                     for (String columnName : pkColumnNames)
                     {
-                        sb.append("&").append(columnName).append("=${").append(columnName).append("}");
+                        params.put(columnName, columnName);
                     }
-                    try
-                    {
-                        expr = new StringExpressionFactory.URLStringExpression(sb.toString());
-                    }
-                    catch (URISyntaxException e)
-                    {
-                        Logger.getLogger(TableQueryDefinition.class).error("Bad " + action.toString() + " URL: " + url.getLocalURIString(), e);
-                    }
+                    return new DetailsURL(url, params);
                 }
             }
         }

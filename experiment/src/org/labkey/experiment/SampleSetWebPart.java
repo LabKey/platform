@@ -57,7 +57,6 @@ public class SampleSetWebPart extends QueryView
         }
         else
         {
-            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
             setShowExportButtons(false);
             setShowBorders(true);
             setShadeAlternatingRows(true);

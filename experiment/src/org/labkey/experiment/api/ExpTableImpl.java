@@ -18,7 +18,10 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.*;
@@ -29,13 +32,16 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable implements ExpTable<C>
 {
     protected final UserSchema _schema;
     private final ExpObjectImpl _objectType;
+    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<Class<? extends Permission>>();
 
     protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ExpObjectImpl objectType)
     {
@@ -43,6 +49,12 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         _objectType = objectType;
         setName(name);
         _schema = schema;
+        _allowablePermissions.add(DeletePermission.class);
+    }
+
+    public void addAllowablePermission(Class<? extends Permission> permission)
+    {
+        _allowablePermissions.add(permission);
     }
 
     @Override
@@ -157,22 +169,45 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
-            return DeletePermission.class.isAssignableFrom(perm) && _schema.getContainer().hasPermission(user, perm);
+            return _allowablePermissions.contains(perm) && _schema.getContainer().hasPermission(user, perm);
         return false;
     }
 
-    public ColumnInfo addPropertyColumns(String categoryDescription, PropertyDescriptor[] pds, QuerySchema schema)
+    /**
+     * Add columns directly to the table itself, and optionally also as a single column that is a FK to the full set of properties
+     * @param domain the domain from which to add all of the properties
+     * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
+     */
+    public ColumnInfo addColumns(Domain domain, String legacyName)
     {
-        ColumnInfo colProperty = wrapColumn(categoryDescription, getLSIDColumn()); 
-        Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
-        for(PropertyDescriptor pd : pds)
+        ColumnInfo colProperty = null;
+        if (legacyName != null && domain.getProperties().length > 0)
         {
-            map.put(pd.getName(), pd);
+            colProperty = wrapColumn(legacyName, getLSIDColumn());
+            colProperty.setFk(new PropertyForeignKey(domain, _schema));
+            // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
+            // them under the legacyName node
+            colProperty.setHidden(true);
+            colProperty.setUserEditable(false);
+            colProperty.setIsUnselectable(true);
+            addColumn(colProperty);
         }
-        colProperty.setFk(new PropertyForeignKey(map, schema));
-        colProperty.setIsUnselectable(true);
-        addColumn(colProperty);
 
+        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
+        for (DomainProperty dp : domain.getProperties())
+        {
+            PropertyDescriptor pd = dp.getPropertyDescriptor();
+            ColumnInfo propColumn = new PropertyColumn(pd, getColumn("LSID"), null, _schema.getUser());
+            if (getColumn(propColumn.getName()) == null)
+            {
+                addColumn(propColumn);
+                if (!propColumn.isHidden())
+                {
+                    visibleColumns.add(FieldKey.fromParts(pd.getName()));
+                }
+            }
+        }
+        setDefaultVisibleColumns(visibleColumns);
         return colProperty;
     }
 

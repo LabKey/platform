@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -171,6 +172,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void delete(User user)
     {
+        if (getContainer().hasPermission(user, DeletePermission.class))
+        {
+            throw new UnauthorizedException();
+        }
         ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, getRowId());
     }
 

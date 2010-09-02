@@ -447,7 +447,7 @@ public class XarReader extends AbstractXarImporter
                     ExperimentService.get().getExpRunsForProtocolIds(false, existingProtocol.getRowId()).isEmpty())
                 {
                     getLog().info("Deleting existing action set with parent protocol LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
-                    ExperimentService.get().deleteProtocolByRowIds(getContainer(), getUser(), existingProtocol.getRowId());
+                    existingProtocol.delete(getUser());
                 }
                 else
                 {
@@ -470,7 +470,7 @@ public class XarReader extends AbstractXarImporter
                 if (existingProtocol.getParentProtocols().isEmpty())
                 {
                     getLog().info("Deleting existing protocol with LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
-                    ExperimentService.get().deleteProtocolByRowIds(getContainer(), getUser(), existingProtocol.getRowId());
+                    existingProtocol.delete(getUser());
                 }
                 else
                 {
@@ -491,7 +491,7 @@ public class XarReader extends AbstractXarImporter
             if (existingRun != null && (deleteExistingRuns || !PageFlowUtil.nullSafeEquals(existingRun.getFilePathRoot(), _xarSource.getRoot())))
             {
                 getLog().info("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
-                ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), existingRun.getRowId());
+                existingRun.delete(getUser());
             }
         }
     }

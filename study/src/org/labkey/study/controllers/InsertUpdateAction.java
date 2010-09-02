@@ -139,7 +139,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
                 if (domain != null)
                 {
                     Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getViewContext().getContainer(), domain, getViewContext().getUser());
-                    Map<String, String> formDefaults = new HashMap<String, String>();
+                    Map<String, Object> formDefaults = new HashMap<String, Object>();
                     for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
                     {
                         if (entry.getValue() != null)

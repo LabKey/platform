@@ -64,8 +64,6 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Material));
         defaultCols.add(FieldKey.fromParts(Column.Role));
-        defaultCols.add(FieldKey.fromParts(Column.TargetProtocolApplication, ExpProtocolApplicationTableImpl.Column.Run));
-        defaultCols.add(FieldKey.fromParts(Column.TargetProtocolApplication, ExpProtocolApplicationTableImpl.Column.Type));
         setDefaultVisibleColumns(defaultCols);
     }
 

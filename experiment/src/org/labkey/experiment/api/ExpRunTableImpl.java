@@ -20,11 +20,14 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -187,15 +190,21 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Comments:
                 return wrapColumn(alias, _rootTable.getColumn("Comments"));
             case Folder:
-                return wrapColumn(alias, _rootTable.getColumn("Container"));
+                ColumnInfo containerColumn = wrapColumn(alias, _rootTable.getColumn("Container"));
+                containerColumn.setUserEditable(false);
+                return containerColumn;
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
                 return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
             case FilePathRoot:
-                return wrapColumn(alias, _rootTable.getColumn("FilePathRoot"));
+                ColumnInfo filePathRootColumn = wrapColumn(alias, _rootTable.getColumn("FilePathRoot"));
+                filePathRootColumn.setUserEditable(false);
+                return filePathRootColumn;
             case LSID:
-                return wrapColumn(alias, _rootTable.getColumn("LSID"));
+                ColumnInfo lsidColumn = wrapColumn(alias, _rootTable.getColumn("LSID"));
+                lsidColumn.setUserEditable(false);
+                return lsidColumn;
             case Modified:
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
@@ -203,7 +212,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Protocol:
-                return wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
+                ColumnInfo protocolColumn = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
+                protocolColumn.setUserEditable(false);
+                return protocolColumn;
             case ProtocolStep:
             {
                 SQLFragment sql = new SQLFragment("(SELECT MIN(exp.Protocol.Name) FROM exp.Protocol " +
@@ -227,6 +238,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Links:
             {
                 ColumnInfo result = wrapColumn("Links", _rootTable.getColumn("RowId"));
+                result.setShownInUpdateView(false);
+                result.setShownInInsertView(false);
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -248,7 +261,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         return new RunGroupListDisplayColumn(colInfo, fk);
                     }
                 });
-
+                col.setShownInInsertView(false);
+                col.setShownInUpdateView(false);
                 return col;
             case Input:
                 return createInputLookupColumn();
@@ -534,12 +548,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList());
                             sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ") THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
-//                            SQLFragment sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
-//                            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-//                            sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ")");
-//                            sql.append(" IS NOT NULL THEN 1 ELSE 0 END) AS ");
-//                            sql.append(parent.getSqlDialect().getBooleanDatatype());
-//                            sql.append("))");
                             return sql;
                         }
                     };
@@ -599,11 +607,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     @Override
     public boolean needsContainerClauseAdded()
     {
-        if (!super.needsContainerClauseAdded())
-        {
-            return false;
-        }
-        return _experiment == null;
+        return super.needsContainerClauseAdded() && _experiment == null;
     }
 
     @Override
@@ -612,9 +616,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return new RunTableUpdateService(this);
     }
 
-    private class RunTableUpdateService extends AbstractQueryUpdateService
+    private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
-        RunTableUpdateService(TableInfo queryTable)
+        RunTableUpdateService(ExpRunTable queryTable)
         {
             super(queryTable);
         }
@@ -640,21 +644,66 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            throw new UnsupportedOperationException();
+            ExpRunImpl run = getRun(oldRow);
+            if (run != null)
+            {
+                for (Map.Entry<String, Object> entry : row.entrySet())
+                {
+                    if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
+                    {
+                        run.setName(entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class));
+                    }
+                    else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
+                    {
+                        run.setComments(entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class));
+                    }
+                    else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
+                    {
+                        run.setComment(user, entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class));
+                    }
+                    ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+                    if (col != null && col instanceof PropertyColumn)
+                    {
+                        PropertyColumn propColumn = (PropertyColumn)col;
+                        PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
+                        run.setProperty(user, propertyDescriptor, entry.getValue());
+                    }
+                }
+                // Most fields in the hard table can't be modified, but there are a few
+                run.save(user);
+            }
+            return getRow(user, container, oldRow);
         }
 
-        @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        private ExpRunImpl getRun(Map<String, Object> row)
         {
-            Object rowIdRaw = oldRow.get(Column.RowId.toString());
+            Object rowIdRaw = row.get(Column.RowId.toString());
             if (rowIdRaw != null)
             {
                 Integer rowId = (Integer) ConvertUtils.convert(rowIdRaw.toString(), Integer.class);
                 if (rowId != null)
                 {
-                    ExperimentService.get().deleteExperimentRunsByRowIds(_schema.getContainer(), user, rowId.intValue());
+                    return ExperimentServiceImpl.get().getExpRun(rowId.intValue());
                 }
             }
+            Object lsidRaw = row.get(Column.LSID.toString());
+            if (lsidRaw != null)
+            {
+                String lsid = lsidRaw.toString();
+                return ExperimentServiceImpl.get().getExpRun(lsid);
+            }
+            return null;
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            ExpRun run = getRun(oldRow);
+            if (run != null)
+            {
+                run.delete(user);
+            }
+
             return oldRow;
         }
     }

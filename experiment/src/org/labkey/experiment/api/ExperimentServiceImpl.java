@@ -133,25 +133,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new JspView<ExperimentController.ExportBean>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
     }
 
-    public ExpRun[] getRunsForPath(File file, @Nullable Container container)
-    {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("FilePathRoot", file.toString());
-            if (container != null)
-            {
-                filter.addCondition("Container", container.getId());
-            }
-            Sort sort = new Sort("Name");
-            ExperimentRun[] runs = Table.select(getTinfoExperimentRun(), Table.ALL_COLUMNS, filter, sort, ExperimentRun.class);
-            return ExpRunImpl.fromRuns(runs);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, String comment)
     {
         AuditLogEvent event = new AuditLogEvent();
@@ -1566,7 +1547,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
             for (ExpRun run : runs)
             {
-                deleteExperimentRunsByRowIds(c, user, run.getRowId());
+                run.delete(user);
             }
 
             String protocolIds = StringUtils.join(toIntegers(selectedProtocolIds), ",");
@@ -1622,7 +1603,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     if (!protocol.getContainer().equals(c))
                     {
-                        throw new SQLException("Attemping to delete a Protocol from another container");
+                        throw new SQLException("Attempting to delete a Protocol from another container");
                     }
                     DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
                     OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
@@ -1785,9 +1766,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             int[] runIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
 
             ExpExperimentImpl[] exps = getExperiments(c, user, false, true);
-
-            sql = "SELECT RowId FROM " + getTinfoMaterialSource() + " WHERE Container = ? ;";
-            int[] srcIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            ExpSampleSet[] sampleSets = getSampleSets(c, user, false);
 
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
             int[] protIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
@@ -1811,11 +1790,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // delete material sources
             // now call the specialized function to delete the Materials that belong to the Material Source,
             // including the toplevel properties of the Materials, of which there are often many
-            for (int srcId : srcIds)
+            for (ExpSampleSet sampleSet : sampleSets)
             {
-                deleteSampleSet(srcId, c, user);
+                sampleSet.delete(user);
             }
-
 
             SimpleFilter containerFilter = new SimpleFilter("container", c.getId());
             Table.delete(getTinfoActiveMaterialSource(), containerFilter);
@@ -2969,12 +2947,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpSampleSetImpl createSampleSet()
     {
         return new ExpSampleSetImpl(new MaterialSource());
-    }
-
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties)
-            throws ExperimentException, SQLException
-    {
-        return createSampleSet(c, u, name, description, properties, -1, -1, -1, -1);
     }
 
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, int idCol1, int idCol2, int idCol3, int parentCol)

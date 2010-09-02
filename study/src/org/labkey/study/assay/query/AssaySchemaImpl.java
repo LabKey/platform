@@ -19,6 +19,7 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
@@ -46,6 +47,10 @@ import java.util.*;
  */
 public class AssaySchemaImpl extends AssaySchema
 {
+    /** Legacy location for PropertyDescriptor columns is under a separate node. New location is as a top-level member of the table */
+    private static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
+    private static final String BATCH_PROPERTIES_COLUMN_NAME = "BatchProperties";
+
     private List<ExpProtocol> _protocols;
 
     static public class Provider extends DefaultSchema.SchemaProvider
@@ -98,17 +103,17 @@ public class AssaySchemaImpl extends AssaySchema
 
     public static String getBatchesTableName(ExpProtocol protocol)
     {
-        return protocol.getName() + " Batches";
+        return getProviderTableName(protocol, "Batches");
     }
 
     public static String getRunsTableName(ExpProtocol protocol)
     {
-        return protocol.getName() + " Runs";
+        return getProviderTableName(protocol, "Runs");
     }
 
     public static String getResultsTableName(ExpProtocol protocol)
     {
-        return protocol.getName() + " Data";
+        return getProviderTableName(protocol, "Data");
     }
 
     public static String getProviderTableName(ExpProtocol protocol, String tableName)
@@ -192,25 +197,17 @@ public class AssaySchemaImpl extends AssaySchema
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.Name));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.CreatedBy));
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
-        List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-        Set<String> hiddenCols = new HashSet<String>();
-        hiddenCols.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
-        for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
-        {
-            pds.add(prop.getPropertyDescriptor());
-            if (!prop.isHidden() && !hiddenCols.contains(prop.getName()))
-                defaultCols.add(FieldKey.fromParts(AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
-        }
-
-        PropertyDescriptor[] pdsArray = pds.toArray(new PropertyDescriptor[pds.size()]);
-        ColumnInfo propsCol = result.addPropertyColumns(AssayService.BATCH_PROPERTIES_COLUMN_NAME, pdsArray, this);
-        propsCol.setFk(new AssayPropertyForeignKey(pdsArray));
-
         result.setDefaultVisibleColumns(defaultCols);
 
-        result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
+        Domain batchDomain = provider.getBatchDomain(protocol);
+        ColumnInfo propsCol = result.addColumns(batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
+        if (propsCol != null)
+        {
+            // Will be null if the domain doesn't have any properties
+            propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
+        }
 
-        fixupPropertyURLs(propsCol);
+        result.setDescription("Contains a row per " + protocol.getName() + " batch, a group of runs that were loaded at the same time.");
 
         return result;
     }
@@ -220,12 +217,17 @@ public class AssaySchemaImpl extends AssaySchema
         final ExpRunTable runTable = provider.createRunTable(this, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
 
-        List<PropertyDescriptor> runColumns = provider.getRunTableColumns(protocol);
-        PropertyDescriptor[] pds = runColumns.toArray(new PropertyDescriptor[runColumns.size()]);
+        Domain runDomain = provider.getRunDomain(protocol);
+        ColumnInfo propsCol = runTable.addColumns(runDomain, RUN_PROPERTIES_COLUMN_NAME);
+        if (propsCol != null)
+        {
+            // Will be null if the domain doesn't have any properties
+            propsCol.setFk(new AssayPropertyForeignKey(runDomain));
+        }
 
-        ColumnInfo propsCol = runTable.addPropertyColumns(AssayService.RUN_PROPERTIES_COLUMN_NAME, pds, this);
-        propsCol.setFk(new AssayPropertyForeignKey(pds));
-
+        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
+        visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
+    
         SQLFragment batchSQL = new SQLFragment("(SELECT MIN(ExperimentId) FROM ");
         batchSQL.append(ExperimentService.get().getTinfoRunList(), "rl");
         batchSQL.append(", ");
@@ -245,28 +247,16 @@ public class AssaySchemaImpl extends AssaySchema
         });
         runTable.addColumn(batchColumn);
 
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
-        Set<String> hiddenCols = new HashSet<String>();
-        hiddenCols.add(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
-        FieldKey runKey = FieldKey.fromString(AssayService.RUN_PROPERTIES_COLUMN_NAME);
-        for (PropertyDescriptor runColumn : runColumns)
-        {
-            if (!runColumn.isHidden() && !hiddenCols.contains(runColumn.getName()))
-                visibleColumns.add(new FieldKey(runKey, runColumn.getName()));
-        }
-        FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName(), AssayService.BATCH_PROPERTIES_COLUMN_NAME);
+        FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
         for (DomainProperty col : provider.getBatchDomain(protocol).getProperties())
         {
-            if (!col.isHidden() && !hiddenCols.contains(col.getName()))
+            if (!col.isHidden() && !AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
                 visibleColumns.add(new FieldKey(batchPropsKey, col.getName()));
         }
-
         runTable.setDefaultVisibleColumns(visibleColumns);
 
         runTable.setDescription("Contains a row per " + protocol.getName() + " run.");
-
-        fixupPropertyURLs(propsCol);
 
         return runTable;
     }
@@ -292,13 +282,12 @@ public class AssaySchemaImpl extends AssaySchema
 
 
     /**
-     * in order to allow using short name for propeties in assay table we need
+     * in order to allow using short name for properties in assay table we need
      * to patch up the keys
      *
      * for instance ${myProp} instead of ${RunProperties/myProp}
      *
      * @param fk properties column (e.g. RunProperties)
-     * @param col
      */
     private static void fixupPropertyURL(ColumnInfo fk, ColumnInfo col)
     {
@@ -330,16 +319,15 @@ public class AssaySchemaImpl extends AssaySchema
 
     private class AssayPropertyForeignKey extends PropertyForeignKey
     {
-        public AssayPropertyForeignKey(PropertyDescriptor[] pds)
+        public AssayPropertyForeignKey(Domain domain)
         {
-            super(pds, AssaySchemaImpl.this);
+            super(domain, AssaySchemaImpl.this);
         }
 
         @Override
         protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, final PropertyDescriptor pd)
         {
             ColumnInfo result = super.constructColumnInfo(parent, name, pd);
-            fixupPropertyURL(parent, result);
             if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
             {
                 result.setFk(new LookupForeignKey("Folder", "Label")
