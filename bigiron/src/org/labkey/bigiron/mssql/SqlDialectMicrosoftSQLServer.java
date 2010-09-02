@@ -55,7 +55,14 @@ import java.util.regex.Pattern;
 // Dialect specifics for Microsoft SQL Server
 public class SqlDialectMicrosoftSQLServer extends SqlDialect
 {
-    public SqlDialectMicrosoftSQLServer()
+    private static final SqlDialect INSTANCE = new SqlDialectMicrosoftSQLServer();
+
+    public static SqlDialect get()
+    {
+        return INSTANCE;
+    }
+
+    protected SqlDialectMicrosoftSQLServer()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
@@ -481,51 +488,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         }
     }
 
-    public static class JdbcHelperTestCase extends Assert
-    {
-        @Test
-        public void testJdbcHelper()
-        {
-            try
-            {
-                String goodUrls =   "jdbc:jtds:sqlserver://localhost/database\n" +
-                                    "jdbc:jtds:sqlserver://localhost:1433/database\n" +
-                                    "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
-                                    "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com/database\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
-
-                for (String url : goodUrls.split("\n"))
-                    assertEquals(new JtdsJdbcHelper().getDatabase(url), "database");
-            }
-            catch(Exception e)
-            {
-                fail("Exception running JdbcHelper test: " + e.getMessage());
-            }
-
-            String badUrls =    "jdb:jtds:sqlserver://localhost/database\n" +
-                                "jdbc:jts:sqlserver://localhost/database\n" +
-                                "jdbc:jtds:sqlerver://localhost/database\n" +
-                                "jdbc:jtds:sqlserver://localhostdatabase\n" +
-                                "jdbc:jtds:sqlserver:database";
-
-            for (String url : badUrls.split("\n"))
-            {
-                try
-                {
-                    if (new JtdsJdbcHelper().getDatabase(url).equals("database"))
-                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
-                }
-                catch (ServletException e)
-                {
-                    // Skip -- we expect to fail on some of these
-                }
-            }
-        }
-    }
-
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
     {
         SQLFragment ret = new SQLFragment("(CHARINDEX(");
@@ -633,7 +595,25 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
     public Collection<? extends Class> getJunitTestClasses()
     {
-        return Arrays.asList(JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class, DialectRetrievalTestCase.class);
+        return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
+    }
+
+
+    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
+    {
+        public void testDialectRetrieval()
+        {
+            // These should result in bad database exception
+            badProductName("Gobbledygood", 1.0, 12.0, "");
+            badProductName("SQL Server", 1.0, 12.0, "");
+            badProductName("sqlserver", 1.0, 12.0, "");
+
+            // < 9.0 should result in SqlDialectMicrosoftSQLServer -- no bad versions at the moment
+            good("Microsoft SQL Server", 0.0, 8.9, "", SqlDialectMicrosoftSQLServer.class);
+
+            // >= 9.0 should result in SqlDialectMicrosoftSQLServer9
+            good("Microsoft SQL Server", 9.0, 11.0, "", SqlDialectMicrosoftSQLServer9.class);
+        }
     }
 
 
@@ -668,14 +648,12 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
             try
             {
-                SqlDialect dialect = new SqlDialectMicrosoftSQLServer(); // TODO: Static factory
-
                 TestUpgradeCode good = new TestUpgradeCode();
-                dialect.runSql(null, goodSql, good, null);
+                INSTANCE.runSql(null, goodSql, good, null);
                 assertEquals(10, good.getCounter());
 
                 TestUpgradeCode bad = new TestUpgradeCode();
-                dialect.runSql(null, badSql, bad, null);
+                INSTANCE.runSql(null, badSql, bad, null);
                 assertEquals(0, bad.getCounter());
             }
             catch (SQLException e)
@@ -686,21 +664,50 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
 
-    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
+    public static class JdbcHelperTestCase extends Assert
     {
         @Test
-        public void testDialectRetrieval()
+        public void testJdbcHelper()
         {
-            // These should result in bad database exception
-            badProductName("Gobbledygood", 1.0, 12.0, "");
-            badProductName("SQL Server", 1.0, 12.0, "");
-            badProductName("sqlserver", 1.0, 12.0, "");
+            JdbcHelper helper = INSTANCE.getJdbcHelper();
 
-            // < 9.0 should result in SqlDialectMicrosoftSQLServer -- no bad versions at the moment
-            good("Microsoft SQL Server", 0.0, 8.9, "", SqlDialectMicrosoftSQLServer.class);
+            try
+            {
+                String goodUrls =   "jdbc:jtds:sqlserver://localhost/database\n" +
+                                    "jdbc:jtds:sqlserver://localhost:1433/database\n" +
+                                    "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
+                                    "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com/database\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
 
-            // >= 9.0 should result in SqlDialectMicrosoftSQLServer9
-            good("Microsoft SQL Server", 9.0, 11.0, "", SqlDialectMicrosoftSQLServer9.class);
+                for (String url : goodUrls.split("\n"))
+                    assertEquals(helper.getDatabase(url), "database");
+            }
+            catch(Exception e)
+            {
+                fail("Exception running JdbcHelper test: " + e.getMessage());
+            }
+
+            String badUrls =    "jdb:jtds:sqlserver://localhost/database\n" +
+                                "jdbc:jts:sqlserver://localhost/database\n" +
+                                "jdbc:jtds:sqlerver://localhost/database\n" +
+                                "jdbc:jtds:sqlserver://localhostdatabase\n" +
+                                "jdbc:jtds:sqlserver:database";
+
+            for (String url : badUrls.split("\n"))
+            {
+                try
+                {
+                    if (helper.getDatabase(url).equals("database"))
+                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
+                }
+                catch (ServletException e)
+                {
+                    // Skip -- we expect to fail on some of these
+                }
+            }
         }
     }
 }

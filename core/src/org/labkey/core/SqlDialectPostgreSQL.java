@@ -67,6 +67,11 @@ class SqlDialectPostgreSQL extends SqlDialect
     private static final Map<DbScope, Map<String, Integer>> DOMAIN_SCALES = new ConcurrentHashMap<DbScope, Map<String, Integer>>();
     private static final SqlDialect INSTANCE = new SqlDialectPostgreSQL();
 
+    public static SqlDialect get()
+    {
+        return INSTANCE;
+    }
+
     private SqlDialectPostgreSQL()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
@@ -81,11 +86,6 @@ class SqlDialectPostgreSQL extends SqlDialect
             "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "THEN",
             "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
         ));
-    }
-
-    public static SqlDialect get()
-    {
-        return INSTANCE;
     }
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
@@ -662,51 +662,6 @@ class SqlDialectPostgreSQL extends SqlDialect
         }
     }
 
-    public static class JdbcHelperTestCase extends Assert
-    {
-        @Test
-        public void testJdbcHelper()
-        {
-            try
-            {
-                String goodUrls =   "jdbc:postgresql:database\n" +
-                                    "jdbc:postgresql://localhost/database\n" +
-                                    "jdbc:postgresql://localhost:8300/database\n" +
-                                    "jdbc:postgresql://www.host.com/database\n" +
-                                    "jdbc:postgresql://www.host.com:8499/database\n" +
-                                    "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
-
-                for (String url : goodUrls.split("\n"))
-                    assertEquals(new PostgreSQLJdbcHelper().getDatabase(url), "database");
-            }
-            catch(Exception e)
-            {
-                fail("Exception running JdbcHelper test: " + e.getMessage());
-            }
-
-            String badUrls =    "jddc:postgresql:database\n" +
-                                "jdbc:postgres://localhost/database\n" +
-                                "jdbc:postgresql://www.host.comdatabase";
-
-            for (String url : badUrls.split("\n"))
-            {
-                try
-                {
-                    if (new PostgreSQLJdbcHelper().getDatabase(url).equals("database"))
-                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
-                }
-                catch (ServletException e)
-                {
-                    // Skip -- we expect to fail on these
-                }
-            }
-        }
-    }
-
     protected String getDatabaseMaintenanceSql()
     {
         return "VACUUM ANALYZE;";
@@ -993,6 +948,23 @@ class SqlDialectPostgreSQL extends SqlDialect
         return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
     }
 
+    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
+    {
+        public void testDialectRetrieval()
+        {
+            // These should result in bad database exception
+            badProductName("Gobbledygood", 8.0, 8.5, "");
+            badProductName("Postgres", 8.0, 8.5, "");
+            badProductName("postgresql", 8.0, 8.5, "");
+
+            // 8.1 or lower should result in bad version number
+            badVersion("PostgreSQL", -5.0, 8.1, null);
+
+            //  > 8.1 should be good
+            good("PostgreSQL", 8.2, 11.0, "", SqlDialectPostgreSQL.class);
+        }
+    }
+
     public static class JavaUpgradeCodeTestCase extends Assert
     {
         @Test
@@ -1033,20 +1005,50 @@ class SqlDialectPostgreSQL extends SqlDialect
         }
     }
 
-    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
+    public static class JdbcHelperTestCase extends Assert
     {
-        public void testDialectRetrieval()
+        @Test
+        public void testJdbcHelper()
         {
-            // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 8.5, "");
-            badProductName("Postgres", 8.0, 8.5, "");
-            badProductName("postgresql", 8.0, 8.5, "");
+            JdbcHelper helper = INSTANCE.getJdbcHelper();
 
-            // 8.1 or lower should result in bad version number
-            badVersion("PostgreSQL", -5.0, 8.1, null);
+            try
+            {
+                String goodUrls =   "jdbc:postgresql:database\n" +
+                                    "jdbc:postgresql://localhost/database\n" +
+                                    "jdbc:postgresql://localhost:8300/database\n" +
+                                    "jdbc:postgresql://www.host.com/database\n" +
+                                    "jdbc:postgresql://www.host.com:8499/database\n" +
+                                    "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
 
-            //  > 8.1 should be good
-            good("PostgreSQL", 8.2, 11.0, "", SqlDialectPostgreSQL.class);
+                for (String url : goodUrls.split("\n"))
+                    assertEquals(helper.getDatabase(url), "database");
+            }
+            catch(Exception e)
+            {
+                fail("Exception running JdbcHelper test: " + e.getMessage());
+            }
+
+            String badUrls =    "jddc:postgresql:database\n" +
+                                "jdbc:postgres://localhost/database\n" +
+                                "jdbc:postgresql://www.host.comdatabase";
+
+            for (String url : badUrls.split("\n"))
+            {
+                try
+                {
+                    if (helper.getDatabase(url).equals("database"))
+                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
+                }
+                catch (ServletException e)
+                {
+                    // Skip -- we expect to fail on these
+                }
+            }
         }
     }
 }

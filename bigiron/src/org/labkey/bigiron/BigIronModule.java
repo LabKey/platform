@@ -53,7 +53,7 @@ public class BigIronModule extends DefaultModule
 
     protected void init()
     {
-        SqlDialect.register(new SqlDialectMicrosoftSQLServer());
+        SqlDialect.register(SqlDialectMicrosoftSQLServer.get());
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
         SqlDialect.register(new SqlDialectSas91());
         SqlDialect.register(new SqlDialectSas92());
