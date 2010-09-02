@@ -15,17 +15,19 @@
  */
 package org.labkey.api.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConvertUtils;
-import static org.apache.commons.collections15.IteratorUtils.filteredIterator;
-import static org.apache.commons.collections15.IteratorUtils.toList;
 import org.apache.commons.collections15.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CachedRowSetImpl;
+import org.labkey.api.data.ResultSetIterator;
+import org.labkey.api.data.ResultSetMetaDataImpl;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -35,7 +37,15 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.commons.collections15.IteratorUtils.filteredIterator;
+import static org.apache.commons.collections15.IteratorUtils.toList;
 
 
 public class ResultSetUtil
@@ -436,22 +446,10 @@ public class ResultSetUtil
             return databaseValue;
     }
     
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
-        public void testExport()
-                throws IOException, SQLException
+        @Test
+        public void testExport() throws IOException, SQLException
         {
             ArrayList<Map<String,Object>> maps = new ArrayList<Map<String,Object>>();
             Map<String,Object> m;
@@ -474,18 +472,18 @@ public class ResultSetUtil
             StringWriter swXML = new StringWriter(1000);
             rs.beforeFirst();
             exportAsXML(swXML, rs, null, null);
-            System.out.println(swXML);
+//            System.out.println(swXML);
 
             StringWriter swJS = new StringWriter(1000);
             rs.beforeFirst();
             exportAsJSON(swJS, rs);
-            System.out.println(swJS);
+//            System.out.println(swJS);
 
             rs.close();
         }
         
 
-        class TestMetaData extends ResultSetMetaDataImpl
+        private class TestMetaData extends ResultSetMetaDataImpl
         {
             TestMetaData()
             {
@@ -496,11 +494,6 @@ public class ResultSetUtil
                 colS.columnName = "s";
                 addColumn(colS);
             }
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

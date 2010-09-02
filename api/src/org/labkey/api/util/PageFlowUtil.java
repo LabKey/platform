@@ -15,8 +15,6 @@
  */
 package org.labkey.api.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
@@ -26,6 +24,8 @@ import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
@@ -2025,20 +2025,9 @@ public class PageFlowUtil
     //
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
+        @Test
         public void testPhone()
         {
             assertEquals(formatPhoneNo("5551212"), "555-1212");
@@ -2055,19 +2044,14 @@ public class PageFlowUtil
         }
 
 
+        @Test
         public void testFilter()
         {
             assertEquals(filter("this is a test"), "this is a test");
             assertEquals(filter("<this is a test"), "&lt;this is a test");
             assertEquals(filter("this is a test<"), "this is a test&lt;");
-            assertEquals(filter("'t'&his is a test\""), "'t'&amp;his is a test&quot;");
+            assertEquals(filter("'t'&his is a test\""), "&#039;t&#039;&amp;his is a test&quot;");
             assertEquals(filter("<>\"&"), "&lt;&gt;&quot;&amp;");
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 
