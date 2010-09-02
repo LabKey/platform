@@ -83,6 +83,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.SystemMaintenance;
@@ -528,7 +529,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             HString.TestCase.class,
             StringExpressionFactory.TestCase.class,
             Path.TestCase.class,
-            ModuleStaticResolverImpl.TestCase.class
+            ModuleStaticResolverImpl.TestCase.class,
+            PageFlowUtil.TestCase.class,
+            ResultSetUtil.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
