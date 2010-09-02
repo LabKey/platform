@@ -15,12 +15,12 @@
  */
 package org.labkey.api.data;
 
-import junit.framework.TestSuite;
 import org.labkey.api.module.ModuleContext;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -34,6 +34,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
 {
     // The following methods must be implemented by all dialects.  Standard implementations are provided; override them
     // if your dialect requires it.
+
+    @Override
+    public Collection<? extends Class> getJunitTestClasses()
+    {
+        return Collections.emptyList();
+    }
 
     @Override
     public boolean isSqlServer()
@@ -277,12 +283,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     // The following methods should never be called on a simple dialect.
-
-    @Override
-    public Collection<? extends Class> getJunitTestClasses()
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
 
     @Override
     protected boolean claimsDriverClassName(String driverClassName)

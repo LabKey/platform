@@ -24,7 +24,6 @@
 <%
     DialogTemplate me = (DialogTemplate) HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
-    String contextPath = request.getContextPath();
     Container c = me.getViewContext().getContainer();
 
     if (pageConfig.getFrameOption() != PageConfig.FrameOption.ALLOW)

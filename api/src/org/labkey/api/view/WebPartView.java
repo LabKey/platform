@@ -18,7 +18,6 @@ package org.labkey.api.view;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;

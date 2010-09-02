@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1052,13 +1053,20 @@ public abstract class SqlDialect
     public abstract boolean isPostgreSQL();
     public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, DbScope scope);
     public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
+
+    // Note: Tests must be safe to invoke on servers that can't connect to any datasources matching the dialect or
+    // may not even have the JDBC driver installed.
     public abstract Collection<? extends Class> getJunitTestClasses();
 
 
-    // TODO: Change this to retrieve tests for all active dialects, not just core
     public static Collection<? extends Class> getTestClasses()
     {
-        return CoreSchema.getInstance().getSqlDialect().getJunitTestClasses();
+        Set<Class> classes = new HashSet<Class>();
+
+        for (SqlDialect dialect : _dialects)
+            classes.addAll(dialect.getJunitTestClasses());
+
+        return classes;
     }
 
 

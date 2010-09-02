@@ -120,7 +120,7 @@ public class SimpleFolderType extends DefaultFolderType
         for (WebPartDocument.WebPart reference : references)
         {
             WebPartFactory factory = Portal.getPortalPart(reference.getName());
-            if (factory== null)
+            if (factory == null)
                 throw new IllegalStateException("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
             String location = null;
             if (reference.getLocation() != null)
