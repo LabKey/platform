@@ -23,6 +23,8 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -38,6 +40,8 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
     public ExpSampleSetTableImpl(String name, UserSchema schema)
     {
         super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleSetImpl(new MaterialSource()));
+        addAllowablePermission(InsertPermission.class);
+        addAllowablePermission(UpdatePermission.class);
     }
 
     public ColumnInfo createColumn(String alias, Column column)
