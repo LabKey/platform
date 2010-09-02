@@ -15,9 +15,12 @@
  */
 package org.labkey.issue;
 
-import junit.framework.TestCase;
-import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -29,12 +32,23 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * User: migra
@@ -125,9 +139,9 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         return IssuesController.getListURL(c);
     }
 
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
+        return new HashSet<Class>(Arrays.asList(
             org.labkey.issue.IssuesController.TestCase.class,
             org.labkey.issue.model.IssueManager.TestCase.class ));
     }

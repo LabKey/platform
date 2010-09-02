@@ -16,23 +16,21 @@
 
 package org.labkey.core.junit;
 
-import junit.framework.TestCase;
-import junit.framework.TestFailure;
-import junit.framework.TestResult;
-import junit.framework.TestSuite;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.json.JSONObject;
-import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
-import org.labkey.api.action.*;
-import org.labkey.api.collections.CaseInsensitiveMapTest;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
@@ -45,7 +43,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.Format;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 
 public class JunitController extends SpringActionController
@@ -55,7 +60,6 @@ public class JunitController extends SpringActionController
 
     public JunitController()
     {
-        super();
         setActionResolver(_resolver);
     }
 
@@ -69,7 +73,7 @@ public class JunitController extends SpringActionController
                 @Override
                 public void renderInternal(Object model, PrintWriter out) throws Exception
                 {
-                    Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
+                    Map<String, List<Class>> testCases = JunitManager.getTestCases();
 
                     out.println("<div><table class=\"labkey-data-region\">");
 
@@ -77,11 +81,11 @@ public class JunitController extends SpringActionController
                     {
                         String moduleTd = module;
 
-                        for (Class<? extends TestCase> clazz : testCases.get(module))
+                        for (Class clazz : testCases.get(module))
                         {
                             out.println("<tr><td>" + moduleTd + "</td><td>");
-                            moduleTd = "&nbsp;";
                             out.println(clazz.getName() + " <a href=\"run.view?testCase=" + clazz.getName() + "\">&lt;run&gt;</a></td></tr>");
+                            moduleTd = "&nbsp;";
                         }
 
                         out.println("<tr><td colspan=2>&nbsp;</td></tr>");
@@ -89,7 +93,7 @@ public class JunitController extends SpringActionController
 
                     out.println("</table></div>");
 
-                    out.print("<br>" + PageFlowUtil.generateButton("Run All", "run.view"));
+                    out.print("<br>" + PageFlowUtil.generateButton("Run All", new ActionURL(RunAction.class, getContainer())));
                 }
             };
 
@@ -110,29 +114,30 @@ public class JunitController extends SpringActionController
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
-            TestResult result = new TestResult();
 
             String testCase = form.getTestCase();
             if (null != testCase && 0 == testCase.length())
                 testCase = null;
 
-            Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
+            Map<String, List<Class>> testCases = JunitManager.getTestCases();
+            List<Result> results = new LinkedList<Result>();
 
             for (String module : testCases.keySet())
             {
-                for (Class<? extends TestCase> clazz : testCases.get(module))
+                for (Class clazz : testCases.get(module))
                 {
                     // check if the client has gone away
                     getViewContext().getResponse().getWriter().print(" ");
                     getViewContext().getResponse().flushBuffer();
+
                     // run test
                     if (null == testCase || testCase.equals(clazz.getName()))
-                        JunitRunner.run(clazz, result);
+                        results.add(JunitRunner.run(clazz));
                 }
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new TestResultView(result);
+            return new TestResultView(results);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -141,19 +146,21 @@ public class JunitController extends SpringActionController
         }
     }
 
+    // Used by JUnitTest to retrieve the current list of tests
+    @SuppressWarnings({"UnusedDeclaration"})
     @RequiresSiteAdmin
     public static class Testlist extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
+            Map<String, List<Class>> testCases = JunitManager.getTestCases();
 
-            Map<String, Object> values = new HashMap<String, Object>();
+            Map<String, List<String>> values = new HashMap<String, List<String>>();
             for (String module : testCases.keySet())
             {
                 List<String> tests = new ArrayList<String>();
                 values.put("Remote " + module, tests);
-                for (Class<? extends TestCase> clazz : testCases.get(module))
+                for (Class clazz : testCases.get(module))
                 {
                     tests.add(clazz.getName());
                 }
@@ -175,20 +182,19 @@ public class JunitController extends SpringActionController
                 throw new RuntimeException("testCase parameter required");
 
             Class clazz = Class.forName(testCase);
-            TestResult result = new TestResult();
-            JunitRunner.run(clazz, result);
+            Result result = JunitRunner.run(clazz);
 
             int status = HttpServletResponse.SC_OK;
             if (!result.wasSuccessful())
                 status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
             Map<String, Object> map = new HashMap<String, Object>();
-            map.put("runCount", result.runCount());
-            map.put("errorCount", result.errorCount());
-            map.put("failureCount", result.failureCount());
+
+            map.put("runCount", result.getRunCount());
+            map.put("failureCount", result.getFailureCount());
             map.put("wasSuccessful", result.wasSuccessful());
-            map.put("errors", toList(result.errors()));
-            map.put("failures", toList(result.failures()));
+            map.put("failures", toList(result.getFailures()));
+
             JSONObject json = new JSONObject(map);
 
             HttpServletResponse response = getViewContext().getResponse();
@@ -205,27 +211,22 @@ public class JunitController extends SpringActionController
             return null;
         }
 
-        private static List<Map<String, Object>> toList(Enumeration<TestFailure> tests)
+        private static List<Map<String, Object>> toList(List<Failure> failures)
         {
-            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-            while (tests.hasMoreElements())
+            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>(failures.size());
+
+            for (Failure failure : failures)
             {
-                TestFailure failure = tests.nextElement();
                 Map<String, Object> map = new HashMap<String, Object>();
-                map.put("failedTest", getTestName(failure.failedTest()));
-                map.put("isFailure", failure.isFailure());
-                map.put("exceptionMessage", failure.exceptionMessage());
-                map.put("trace", failure.trace());
+                map.put("failedTest", failure.getTestHeader());
+                map.put("isFailure", true);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                map.put("exceptionMessage", failure.getException().getMessage());
+                map.put("trace", failure.getTrace());
                 list.add(map);
             }
-            return list;
-        }
 
-        private static String getTestName(junit.framework.Test test)
-        {
-            return test instanceof TestCase ? ((TestCase)test).getName() :
-                   test instanceof TestSuite ? ((TestSuite)test).getName() :
-                   test.toString();
+            return list;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -243,6 +244,7 @@ public class JunitController extends SpringActionController
             return _testCase;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setTestCase(String testCase)
         {
             _testCase = testCase;
@@ -250,13 +252,13 @@ public class JunitController extends SpringActionController
     }
 
 
-    private Class<? extends TestCase> findTestClass(String testCase)
+    private Class findTestClass(String testCase)
     {
-        Map<String, List<Class<? extends TestCase>>> testCases = JunitManager.getTestCases();
+        Map<String, List<Class>> testCases = JunitManager.getTestCases();
 
         for (String module : testCases.keySet())
         {
-            for (Class<? extends TestCase> clazz : testCases.get(module))
+            for (Class clazz : testCases.get(module))
             {
                 if (null == testCase || testCase.equals(clazz.getName()))
                     return clazz;
@@ -270,6 +272,7 @@ public class JunitController extends SpringActionController
     private static final LinkedList<String> list = new LinkedList<String>();
     private static final Format format = FastDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
 
+    @SuppressWarnings({"UnusedDeclaration"})
     @RequiresNoPermission
     public class AliveAction extends SimpleViewAction
     {
@@ -280,15 +283,15 @@ public class JunitController extends SpringActionController
                 HttpServletRequest request = getViewContext().getRequest();
                 HttpServletResponse response = getViewContext().getResponse();
                 TestContext.setTestContext(request, (User) request.getUserPrincipal());
-                TestResult result = new TestResult();
 
-                Class<? extends TestCase> test = findTestClass("org.labkey.api.data.DbSchema$TestCase");
+                Class clazz = findTestClass("org.labkey.api.data.DbSchema$TestCase");
+                Result result = new Result();
 
-                if (null != test)
-                    JunitRunner.run(test, result);
+                if (null != clazz)
+                    result = JunitRunner.run(clazz);
 
                 int status = HttpServletResponse.SC_OK;
-                if (result.failureCount() != 0)
+                if (result.getFailureCount() != 0 || 0 == result.getRunCount())
                     status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
                 String time = format.format(new Date());
@@ -321,70 +324,66 @@ public class JunitController extends SpringActionController
     }
 
 
-    public static class TestResultView extends HttpView
+    private static class TestResultView extends HttpView
     {
-        TestResult _result;
+        private final List<Failure> _failures = new LinkedList<Failure>();
+        private int _runCount = 0;
+        private int _failureCount = 0;
 
-
-        TestResultView(TestResult result)
+        TestResultView(List<Result> results)
         {
-            _result = result;
-            //setTitle("JUnit test results");
+            for (Result result : results)
+            {
+                _runCount += result.getRunCount();
+                _failureCount += result.getFailureCount();
+                _failures.addAll(result.getFailures());
+            }
+
+            assert _failureCount == _failures.size();
         }
 
 
+        @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
         @Override
         public void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            if (_result.wasSuccessful())
+            if (0 == _failureCount)
                 out.print("<br><h2>SUCCESS</h2>");
             else
                 out.print("<h2 class=ms-error>FAILURE</h2>");
+
             out.print("<br><table><tr><td class=labkey-form-label>Tests</td><td align=right>");
-            out.print("" + _result.runCount());
+            out.print("" + _runCount);
             out.print("</td></tr><tr><td class=labkey-form-label>Failures</td><td align=right>");
-            out.print("" + _result.failureCount());
-            out.print("</td></tr><tr><td class=labkey-form-label>Errors</td><td align=right>");
-            out.print("" + _result.errorCount());
+            out.print("" + _failureCount);
             out.print("</td></tr></table>");
 
-            if (_result.errorCount() > 0)
+            if (_failureCount > 0)
             {
-                out.println("<br><table width=\"640\"><td width=100><hr style=\"width:40; height:1;\"></td><td nowrap><b>errors</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
-                for (Enumeration e = _result.errors(); e.hasMoreElements();)
-                {
-                    TestFailure tf = (TestFailure) e.nextElement();
-                    out.print(PageFlowUtil.filter(tf.toString(),true));
-                    out.print("<br><pre>");
-                    tf.thrownException().printStackTrace(out);
-                    out.print("</pre>");
-                }
-            }
+                out.println("<table width=\"640\"><tr><td width=100><hr style=\"width:40; height:1;\"></td><td nowrap><b>failures</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
 
-            if (_result.failureCount() > 0)
-            {
-                out.println("<table width=\"640\"><td width=100><hr style=\"width:40; height:1;\"></td><td nowrap><b>failures</b></td><td width=\"100%\"><hr style=\"height:1;\"></td></tr></table>");
-                for (Enumeration e = _result.failures(); e.hasMoreElements();)
+                for (Failure failure : _failures)
                 {
-                    TestFailure f = (TestFailure) e.nextElement();
-                    if (f.thrownException().getMessage().startsWith("<div>"))
-                        out.println(f.thrownException().getMessage() + "<br>");
-                    else
-                        out.println(PageFlowUtil.filter(f.thrownException().getMessage(),true) + "<br>");
-                    String testName = f.failedTest().getClass().getName();
-                    int count=0;
-                    for (StackTraceElement ste : f.thrownException().getStackTrace())
+                    out.println("<b>" + failure.getDescription() + "</b><br>");
+                    Throwable t = failure.getException();
+                    String message = t.getMessage();
+
+                    if (message.startsWith("<div>"))
                     {
-                         if (ste.getClassName().equals(testName))
-                        {
-                            out.print(PageFlowUtil.filter(ste.toString()));
-                            out.println("<br>");
-                            count++;
-                            if (count >= 3)
-                                break;
-                        }
+                        out.println("<br>" + message + "<br>");
                     }
-                    out.println("<p/>");
+                    else
+                    {
+                        out.print("<pre>");
+
+                        outputStackTrace(t, out);
+
+                        Throwable cause = t.getCause();
+                        if (cause != null)
+                            outputStackTrace(cause, out);
+
+                        out.println("</pre>");
+                    }
                 }
             }
         }
@@ -416,48 +415,24 @@ public class JunitController extends SpringActionController
         }
     }
 
-    static String h(String s)
+
+    private static void outputStackTrace(Throwable t, PrintWriter out)
     {
-        return PageFlowUtil.filter(s);
+        out.println(h(t.toString()));
+
+        for (StackTraceElement ste : t.getStackTrace())
+        {
+            String line = ste.toString();
+
+            if (line.startsWith("org.junit.internal.") || line.startsWith("sun.reflect.") || line.startsWith("java.lang.reflect."))
+                break;
+
+            out.println(PageFlowUtil.filter("\tat " + ste.toString(), true));
+        }
     }
 
-
-    // Test annotation-based approach to junit test.  Not integrated yet...
-    @RequiresSiteAdmin
-    public class RunNewTestsAction extends SimpleViewAction
+    private static String h(String s)
     {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            Result result = JUnitCore.runClasses(CaseInsensitiveMapTest.class);
-
-            StringBuilder html = new StringBuilder();
-            html.append(result.wasSuccessful() ? "SUCCESS" : "FAILURE");
-            html.append("<br>\nTests: ");
-            html.append(result.getRunCount());
-            html.append("<br>\nFailures: ");
-            html.append(result.getFailureCount());
-
-            if (!result.wasSuccessful())
-            {
-                html.append("<br>\n");
-                List<Failure> failures = result.getFailures();
-
-                for (Failure failure : failures)
-                {
-                    html.append(failure.toString());
-                    html.append("<br>\n");
-                }
-            }
-
-            return new HtmlView(html.toString());
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
+        return PageFlowUtil.filter(s);
     }
 }

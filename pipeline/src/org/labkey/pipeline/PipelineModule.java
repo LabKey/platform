@@ -15,7 +15,6 @@
  */
 package org.labkey.pipeline;
 
-import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -30,11 +29,24 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.DefaultWebPartFactory;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.pipeline.analysis.AnalysisController;
 import org.labkey.pipeline.analysis.FileAnalysisPipelineProvider;
-import org.labkey.pipeline.api.*;
+import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.api.PipelineManager;
+import org.labkey.pipeline.api.PipelineQuerySchema;
+import org.labkey.pipeline.api.PipelineQueueImpl;
+import org.labkey.pipeline.api.PipelineSchema;
+import org.labkey.pipeline.api.PipelineServiceImpl;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.status.StatusController;
@@ -45,7 +57,13 @@ import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  */
@@ -164,9 +182,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
 
     @Override
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
+        return new HashSet<Class>(Arrays.asList(
             PipelineQueueImpl.TestCase.class, PathMapperImpl.TestCase.class));
     }
 

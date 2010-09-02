@@ -17,12 +17,8 @@
 package org.labkey.core.junit;
 
 import junit.framework.TestCase;
-import junit.framework.TestResult;
-import junit.framework.Test;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-
-import java.lang.reflect.Method;
 
 /*
 * User: adam
@@ -31,18 +27,10 @@ import java.lang.reflect.Method;
 */
 public class JunitRunner
 {
-    static void run(Class<? extends TestCase> testCase, TestResult result) throws IllegalAccessException, InstantiationException
+    static Result run(Class clazz)
     {
-        try
-        {
-            Method m = testCase.getDeclaredMethod("suite", (Class[]) null);
-            Test test = (Test) m.invoke(null);
-            test.run(result);
-        }
-        catch (Exception x)
-        {
-            TestCase dummy = testCase.newInstance();
-            result.addError(dummy, x);
-        }
+        assert !TestCase.class.isAssignableFrom(clazz);
+
+        return JUnitCore.runClasses(clazz);
     }
 }

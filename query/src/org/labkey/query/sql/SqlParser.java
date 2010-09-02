@@ -19,9 +19,9 @@ package org.labkey.query.sql;
 import antlr.ASTFactory;
 import antlr.RecognitionException;
 import antlr.TokenStreamRecognitionException;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
@@ -29,7 +29,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
-import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
 
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -38,6 +37,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
 
 
 /**
@@ -725,18 +726,8 @@ public class SqlParser
     };
 
     
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
         private void good(String sql)
         {
             List<QueryParseException> errors = new ArrayList<QueryParseException>();
@@ -757,6 +748,7 @@ public class SqlParser
 		}
 
 		
+        @Test
         public void test()
         {
             for (String sql : testSql)
@@ -792,11 +784,6 @@ public class SqlParser
                 assertTrue(errors.isEmpty());
                 assertNotNull(e);
             }
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

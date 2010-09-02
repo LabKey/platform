@@ -16,31 +16,67 @@
 
 package org.labkey.query;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.persist.*;
+import org.labkey.query.persist.CstmView;
+import org.labkey.query.persist.ExternalSchemaDef;
+import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.sql.Query;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -49,7 +85,16 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class QueryServiceImpl extends QueryService
 {
@@ -1018,30 +1063,16 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
-        }
-
-
         ResultSet rs = null;
+
 	    void _close()
 	    {
 		    rs = ResultSetUtil.close(rs);
 	    }
 
+        @Test
         public void testSelect() throws SQLException
         {
             QueryService qs = ServiceRegistry.get().getService(QueryService.class);
@@ -1097,8 +1128,8 @@ public class QueryServiceImpl extends QueryService
 	        }
         }
 
-	    @Override
-	    protected void tearDown() throws Exception
+	    @After
+	    public void tearDown() throws Exception
 	    {
 		    _close();
 	    }

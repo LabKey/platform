@@ -15,39 +15,75 @@
  */
 package org.labkey.issue.model;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.data.*;
-import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.util.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserDisplayNameComparator;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.HString;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.AbstractDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.issue.IssuesController;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
-import static org.labkey.api.search.SearchService.PROPERTY.*;
+import static org.labkey.api.search.SearchService.PROPERTY.categories;
 
 /**
  * User: mbellew
@@ -1001,22 +1037,10 @@ public class IssueManager
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
-        public void testIssues()
-                throws IOException, SQLException, ServletException
+        @Test
+        public void testIssues() throws IOException, SQLException, ServletException
         {
             TestContext context = TestContext.get();
 
@@ -1137,8 +1161,8 @@ public class IssueManager
         }
 
 
-        @Override
-        protected void tearDown() throws Exception
+        @After
+        public void tearDown() throws Exception
         {
             Container c = JunitUtil.getTestContainer();
 
@@ -1146,12 +1170,6 @@ public class IssueManager
             Table.execute(_issuesSchema.getSchema(), deleteComments, new Object[]{c.getId()});
             String deleteIssues = "DELETE FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?";
             Table.execute(_issuesSchema.getSchema(), deleteIssues, new Object[]{c.getId()});
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

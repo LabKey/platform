@@ -16,10 +16,12 @@
 
 package org.labkey.query.sql;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.CachedRowSetImpl;
 import org.labkey.api.data.Container;
@@ -829,20 +831,10 @@ public class Query
 
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
         private String hash = GUID.makeHash();
         private QuerySchema lists;
-
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
 
 		Container getSubfolder()
 		{
@@ -866,8 +858,8 @@ public class Query
             }
         }
 
-        @Override
-        protected void setUp() throws Exception
+        @Before
+        public void setUp() throws Exception
         {
 //            _setUp();
         }
@@ -896,8 +888,8 @@ public class Query
         }
 
 
-		@Override
-        protected void tearDown() throws Exception
+		@After
+        public void tearDown() throws Exception
         {
 //            _tearDown();
         }
@@ -959,6 +951,7 @@ public class Query
         }
 
 
+        @Test
         public void testSQL() throws Exception
         {
             // note getSchema() will return NULL if there are no lists yet
@@ -1025,11 +1018,6 @@ public class Query
 //                    q.delete(user);
                 }
             }
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

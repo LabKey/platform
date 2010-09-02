@@ -16,12 +16,17 @@
 
 package org.labkey.core.junit;
 
-import junit.framework.TestCase;
-
-import java.util.*;
-
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /*
 * User: adam
@@ -30,20 +35,20 @@ import org.labkey.api.module.ModuleLoader;
 */
 public class JunitManager
 {
-    private static final Map<String, List<Class<? extends TestCase>>> _testCases;
+    private static final Map<String, List<Class>> _testCases;
 
     static
     {
-        Set<Class<? extends TestCase>> allCases = new HashSet<Class<? extends TestCase>>();
+        Set<Class> allCases = new HashSet<Class>();
 
-        _testCases = new TreeMap<String, List<Class<? extends TestCase>>>();
+        _testCases = new TreeMap<String, List<Class>>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            Set<Class<? extends TestCase>> clazzes = module.getJUnitTests();
-            List<Class<? extends TestCase>> moduleClazzes = new ArrayList<Class<? extends TestCase>>();
+            Set<Class> clazzes = module.getJUnitTests();
+            List<Class> moduleClazzes = new ArrayList<Class>();
 
-            for (Class<? extends TestCase> clazz : clazzes)
+            for (Class clazz : clazzes)
             {
                 if (allCases.contains(clazz))
                     continue;
@@ -54,8 +59,8 @@ public class JunitManager
 
             if (!moduleClazzes.isEmpty())
             {
-                Collections.sort(moduleClazzes, new Comparator<Class<? extends TestCase>>(){
-                    public int compare(Class<? extends TestCase> c1, Class<? extends TestCase> c2)
+                Collections.sort(moduleClazzes, new Comparator<Class>(){
+                    public int compare(Class c1, Class c2)
                     {
                         return c1.getName().compareTo(c2.getName());
                     }
@@ -66,7 +71,7 @@ public class JunitManager
         }
     }
 
-    public static Map<String, List<Class<? extends TestCase>>> getTestCases()
+    public static Map<String, List<Class>> getTestCases()
     {
         return _testCases;
     }

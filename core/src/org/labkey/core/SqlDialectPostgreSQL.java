@@ -16,20 +16,38 @@
 
 package org.labkey.core;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Change;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.SqlScriptParser;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
@@ -47,8 +65,9 @@ import java.util.regex.Pattern;
 class SqlDialectPostgreSQL extends SqlDialect
 {
     private static final Map<DbScope, Map<String, Integer>> DOMAIN_SCALES = new ConcurrentHashMap<DbScope, Map<String, Integer>>();
+    private static final SqlDialect INSTANCE = new SqlDialectPostgreSQL();
 
-    SqlDialectPostgreSQL()
+    private SqlDialectPostgreSQL()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC",
@@ -62,6 +81,11 @@ class SqlDialectPostgreSQL extends SqlDialect
             "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "THEN",
             "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
         ));
+    }
+
+    public static SqlDialect get()
+    {
+        return INSTANCE;
     }
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
@@ -638,13 +662,9 @@ class SqlDialectPostgreSQL extends SqlDialect
         }
     }
 
-    public static class JdbcHelperTestCase extends TestCase
+    public static class JdbcHelperTestCase extends Assert
     {
-        public JdbcHelperTestCase()
-        {
-            super("testJdbcHelper");
-        }
-
+        @Test
         public void testJdbcHelper()
         {
             try
@@ -968,22 +988,14 @@ class SqlDialectPostgreSQL extends SqlDialect
         return null;
     }
 
-    public TestSuite getTestSuite()
+    public Collection<? extends Class> getJunitTestClasses()
     {
-        TestSuite suite = new TestSuite();
-        suite.addTest(new DialectRetrievalTestCase());
-        suite.addTest(new JavaUpgradeCodeTestCase());
-        suite.addTest(new JdbcHelperTestCase());
-        return suite;
+        return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
     }
 
-    public class JavaUpgradeCodeTestCase extends TestCase
+    public static class JavaUpgradeCodeTestCase extends Assert
     {
-        public JavaUpgradeCodeTestCase()
-        {
-            super("testJavaUpgradeCode");
-        }
-
+        @Test
         public void testJavaUpgradeCode()
         {
             String goodSql =
@@ -1007,11 +1019,11 @@ class SqlDialectPostgreSQL extends SqlDialect
             try
             {
                 TestUpgradeCode good = new TestUpgradeCode();
-                runSql(null, goodSql, good, null);
+                INSTANCE.runSql(null, goodSql, good, null);
                 assertEquals(4, good.getCounter());
 
                 TestUpgradeCode bad = new TestUpgradeCode();
-                runSql(null, badSql, bad, null);
+                INSTANCE.runSql(null, badSql, bad, null);
                 assertEquals(0, bad.getCounter());
             }
             catch (SQLException e)

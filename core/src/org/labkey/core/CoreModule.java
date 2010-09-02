@@ -15,7 +15,6 @@
  */
 package org.labkey.core;
 
-import junit.framework.TestCase;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
@@ -180,7 +179,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     protected void init()
     {
-        SqlDialect.register(new SqlDialectPostgreSQL());
+        SqlDialect.register(SqlDialectPostgreSQL.get());
 
         addController("admin", AdminController.class);
         addController("admin-sql", SqlScriptController.class);
@@ -496,9 +495,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
 
     @Override
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
+        Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
             org.labkey.api.data.Table.TestCase.class,
             org.labkey.api.data.DbSchema.TestCase.class,
             org.labkey.api.data.TableViewFormTestCase.class,
@@ -526,13 +525,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             FileUtil.TestCase.class,
             FileType.TestCase.class,
             MemTracker.TestCase.class,
-            SqlDialect.SqlDialectTestCase.class,
             HString.TestCase.class,
             StringExpressionFactory.TestCase.class,
             Path.TestCase.class,
             ModuleStaticResolverImpl.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
+
+        testClasses.addAll(SqlDialect.getTestClasses());
+
+        return testClasses;
     }
 
 

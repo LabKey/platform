@@ -16,25 +16,31 @@
 
 package org.labkey.mothership;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.Module;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.data.*;
-import org.labkey.api.security.*;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.*;
+import org.labkey.api.security.User;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.mothership.query.MothershipSchema;
 
+import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.beans.PropertyChangeEvent;
-
-import junit.framework.TestCase;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -117,9 +123,9 @@ public class MothershipModule extends DefaultModule
         return result;
     }
 
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        Set<Class<? extends TestCase>> result = new HashSet<Class<? extends TestCase>>();
+        Set<Class> result = new HashSet<Class>();
         result.add(ExceptionStackTrace.TestCase.class);
         return result;
     }

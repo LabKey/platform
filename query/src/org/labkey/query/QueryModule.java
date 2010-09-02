@@ -16,7 +16,6 @@
 
 package org.labkey.query;
 
-import junit.framework.TestCase;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
@@ -30,7 +29,15 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.ExternalScriptEngineReport;
+import org.labkey.api.reports.report.InternalScriptEngineReport;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.QueryReportDescriptor;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
@@ -40,7 +47,12 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.SchemaReloadMaintenanceTask;
-import org.labkey.query.reports.*;
+import org.labkey.query.reports.ReportImporter;
+import org.labkey.query.reports.ReportServiceImpl;
+import org.labkey.query.reports.ReportWriter;
+import org.labkey.query.reports.ReportsController;
+import org.labkey.query.reports.ReportsPipelineProvider;
+import org.labkey.query.reports.ReportsWebPartFactory;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
@@ -49,7 +61,12 @@ import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.QueryWebPartFactory;
 
 import javax.script.ScriptEngineManager;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class QueryModule extends DefaultModule
@@ -145,12 +162,12 @@ public class QueryModule extends DefaultModule
         return Collections.singleton(QueryManager.get().getDbSchema());
     }
 
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
-                SqlParser.TestCase.class
-				,Query.TestCase.class
-                ,QueryServiceImpl.TestCase.class
+        return new HashSet<Class>(Arrays.asList(
+                SqlParser.TestCase.class,
+                Query.TestCase.class,
+                QueryServiceImpl.TestCase.class
         ));
     }
 }

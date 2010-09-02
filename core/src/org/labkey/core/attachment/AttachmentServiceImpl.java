@@ -16,17 +16,34 @@
 
 package org.labkey.core.attachment;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.attachments.*;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.DocumentWriter;
+import org.labkey.api.attachments.DownloadURL;
+import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.search.SearchService;
@@ -36,12 +53,27 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.webdav.*;
-import org.labkey.core.query.AttachmentAuditViewFactory;
+import org.labkey.api.webdav.AbstractDocumentResource;
+import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,13 +81,30 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.PropertyChangeEvent;
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * User: adam
@@ -1392,36 +1441,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     //JUnit TestCase
     //
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        TestCase(String name)
-        {
-            super(name);
-        }
-
-        public static Test suite()
-        {
-            TestSuite suite = new TestSuite();
-            suite.addTest(new TestCase("testDirectories"));
-            return suite;
-        }
-
-        void assertSameFile(File a, File b)
-        {
-            if (a.equals(b))
-                return;
-            try
-            {
-                a = a.getCanonicalFile();
-                b = b.getCanonicalFile();
-                assertEquals(a,b);
-            }
-            catch (IOException x)
-            {
-                fail(x.getMessage());
-            }
-        }
-
+        @Test
         public void testDirectories() throws IOException, SQLException, AttachmentService.DuplicateFilenameException
         {
             String projectRoot = AppProps.getInstance().getProjectRoot();
@@ -1514,7 +1536,23 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             ContainerManager.delete(proj, null);
         }
 
-        public void testFileAttachmentFiles(File file1, File file2) throws IOException, SQLException
+        private void assertSameFile(File a, File b)
+        {
+            if (a.equals(b))
+                return;
+            try
+            {
+                a = a.getCanonicalFile();
+                b = b.getCanonicalFile();
+                assertEquals(a,b);
+            }
+            catch (IOException x)
+            {
+                fail(x.getMessage());
+            }
+        }
+
+        private void testFileAttachmentFiles(File file1, File file2) throws IOException, SQLException
         {
             AttachmentFile aFile1 = new FileAttachmentFile(file1);
             AttachmentFile aFile2 = new FileAttachmentFile(file2);

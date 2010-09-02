@@ -16,12 +16,12 @@
 
 package org.labkey.experiment;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
@@ -308,8 +308,9 @@ public enum LSIDRelativizer
         return relativize(new Lsid(o.getLSID()), lsids);
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
+        @Test
         public void testOverlappingLSIDs()
         {
             RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
@@ -330,11 +331,6 @@ public enum LSIDRelativizer
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1", set.relativize("urn:lsid:localhost:Protocol.Folder-1:MS2.PreSearch:v1"));
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export1", set.relativize("urn:lsid:localhost:Protocol.Folder-2:MS2.PreSearch:v1"));
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Protocol.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":MS2.PreSearch:v1-Export2", set.relativize("urn:lsid:localhost:Protocol.Folder-3:MS2.PreSearch:v1"));
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

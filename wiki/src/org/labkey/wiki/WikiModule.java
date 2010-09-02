@@ -15,7 +15,6 @@
  */
 package org.labkey.wiki;
 
-import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
@@ -47,7 +46,15 @@ import org.labkey.wiki.permissions.IncludeScriptPermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: migra
@@ -201,9 +208,9 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
     }
 
 
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
+        return new HashSet<Class>(Arrays.asList(
             WikiManager.TestCase.class));
     }
 

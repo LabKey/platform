@@ -16,10 +16,13 @@
 
 package org.labkey.study;
 
-import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.EnumConverter;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.LsidManager;
@@ -40,19 +43,42 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.*;
+import org.labkey.api.study.PlateService;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.DefaultWebPartFactory;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.study.assay.*;
+import org.labkey.study.assay.AssayDomainKind;
+import org.labkey.study.assay.AssayManager;
+import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.FileBasedModuleDataHandler;
+import org.labkey.study.assay.ModuleAssayLoader;
+import org.labkey.study.assay.TsvAssayProvider;
+import org.labkey.study.assay.TsvDataHandler;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
-import org.labkey.study.controllers.*;
+import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.DatasetController;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.StudyDefinitionController;
+import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
@@ -65,23 +91,51 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyReload;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortDomainKind;
+import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
 import org.labkey.study.query.StudySchemaProvider;
-import org.labkey.study.reports.*;
+import org.labkey.study.reports.AttachmentReport;
+import org.labkey.study.reports.ChartReportView;
+import org.labkey.study.reports.EnrollmentReport;
+import org.labkey.study.reports.ExportExcelReport;
+import org.labkey.study.reports.ExternalReport;
+import org.labkey.study.reports.StudyChartQueryReport;
+import org.labkey.study.reports.StudyCrosstabReport;
+import org.labkey.study.reports.StudyQueryReport;
+import org.labkey.study.reports.StudyRReport;
+import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
-import org.labkey.study.view.*;
+import org.labkey.study.view.AssayBatchesWebPartFactory;
+import org.labkey.study.view.AssayList2WebPartFactory;
+import org.labkey.study.view.AssayListWebPartFactory;
+import org.labkey.study.view.AssayResultsWebPartFactory;
+import org.labkey.study.view.AssayRunsWebPartFactory;
+import org.labkey.study.view.DatasetsWebPartView;
+import org.labkey.study.view.ParticipantWebPartFactory;
+import org.labkey.study.view.StudyListWebPartFactory;
+import org.labkey.study.view.StudySummaryWebPartFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
@@ -411,9 +465,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        Set<Class<? extends TestCase>> set = new HashSet<Class<? extends TestCase>>();
+        Set<Class> set = new HashSet<Class>();
         set.add(StudyManager.StudyTestCase.class);
         return set;
     }

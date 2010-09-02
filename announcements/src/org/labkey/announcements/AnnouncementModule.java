@@ -15,15 +15,23 @@
  */
 package org.labkey.announcements;
 
-import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
-import org.labkey.announcements.model.*;
+import org.labkey.announcements.model.AnnouncementManager;
+import org.labkey.announcements.model.DailyDigest;
+import org.labkey.announcements.model.DiscussionServiceImpl;
+import org.labkey.announcements.model.DiscussionWebPartFactory;
+import org.labkey.announcements.model.SecureMessageBoardReadPermission;
+import org.labkey.announcements.model.SecureMessageBoardRespondPermission;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.notification.EmailService;
@@ -36,11 +44,21 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: migra
@@ -176,9 +194,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
     @Override
-    public Set<Class<? extends TestCase>> getJUnitTests()
+    public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
+        return new HashSet<Class>(Arrays.asList(
             AnnouncementManager.TestCase.class));
     }
 

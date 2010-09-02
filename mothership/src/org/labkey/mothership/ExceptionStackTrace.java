@@ -16,9 +16,9 @@
 
 package org.labkey.mothership;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.HashHelpers;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 import java.io.StringReader;
 import java.io.BufferedReader;
@@ -172,8 +172,9 @@ public class ExceptionStackTrace
         _comments = comments;
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
+        @Test
         public void testReflectionHashCombining()
         {
             ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
@@ -199,6 +200,7 @@ public class ExceptionStackTrace
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
 
+        @Test
         public void testMessageHashCombining()
         {
             ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
@@ -232,6 +234,7 @@ public class ExceptionStackTrace
             assertFalse(stackTrace1.getStackTraceHash().equals(stackTrace3.getStackTraceHash()));
         }
 
+        @Test
         public void testGroovyHashCombining()
         {
             ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
@@ -255,6 +258,7 @@ public class ExceptionStackTrace
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
 
+        @Test
         public void testVersionHashCombining()
         {
             ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
@@ -281,11 +285,5 @@ public class ExceptionStackTrace
             stackTrace2.hashStackTrace();
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
-        }
     }
-
 }

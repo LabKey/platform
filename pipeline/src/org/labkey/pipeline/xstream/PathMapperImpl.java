@@ -16,14 +16,13 @@
 package org.labkey.pipeline.xstream;
 
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.pipeline.file.PathMapper;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import java.util.Map;
 
 /**
  * PathMapper class
@@ -196,13 +195,9 @@ public class PathMapperImpl implements PathMapper
              path.charAt(lenPrefix) == '/');
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super("PathMapper");
-        }
-
+        @Test
         public void testCaseSensitiveMapping()
         {
             Map<String, String> m = new HashMap<String, String>();
@@ -220,6 +215,7 @@ public class PathMapperImpl implements PathMapper
             assertEquals(mapper.remoteToLocal("file:/e:/data/testFile.txt"), "file:/E:/data/testFile.txt");
         }
 
+        @Test
         public void testCaseInsensitiveMapping()
         {
             Map<String, String> m = new HashMap<String, String>();
@@ -236,6 +232,7 @@ public class PathMapperImpl implements PathMapper
             assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/t:/data/testFile.txt"));
         }
 
+        @Test
         public void testLongestPrefixMapping()
         {
             Map<String, String> m = new LinkedHashMap<String, String>();
@@ -253,6 +250,7 @@ public class PathMapperImpl implements PathMapper
             assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:/T:/edi/testFile.txt"));
         }
 
+        @Test
         public void testCapitalizeDriveLetter()
         {
             PathMapperImpl impl = new PathMapperImpl();
@@ -262,11 +260,6 @@ public class PathMapperImpl implements PathMapper
             assertEquals("", impl.capitalizeDriveLetter(""));
             assertEquals("file:/", impl.capitalizeDriveLetter("file:/"));
             assertEquals("f", impl.capitalizeDriveLetter("f"));
-        }
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }

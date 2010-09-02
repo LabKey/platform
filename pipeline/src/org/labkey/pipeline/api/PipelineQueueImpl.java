@@ -15,22 +15,32 @@
  */
 package org.labkey.pipeline.api;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobData;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineQueue;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  */
@@ -349,22 +359,10 @@ public class PipelineQueueImpl implements PipelineQueue
         }
     }
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super("PipelineQueue");
-        }
-
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
-
-        public void testPipeline()
-                throws Exception
+        @Test
+        public void testPipeline() throws Exception
         {
             Container root = new FakeContainer(null, null);
             Container containerA = new FakeContainer("A", root);
@@ -433,12 +431,6 @@ public class PipelineQueueImpl implements PipelineQueue
 
             assertEquals(0, queue._runner.getJobCount());
             assertEquals(jobs.length, counter.get());
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(TestCase.class);
         }
     }
 }
