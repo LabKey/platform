@@ -118,7 +118,8 @@ public class CustomViewUtil
         return toMap(schema, view, includeFieldMeta);
     }
 
-    public static Map<String, Object> toMap(QuerySchema schema, CustomView view, boolean includeFieldMeta)
+    // UNDONE: Move to API so DataRegion can use this
+    public static Map<String, Object> propertyMap(CustomView view)
     {
         Map<String, Object> ret = new LinkedHashMap<String, Object>();
         ret.put("name", view.getName() == null ? "" : view.getName());
@@ -130,6 +131,13 @@ public class CustomViewUtil
         ret.put("session", view.isSession());
         ret.put("editable", view.isEditable());
         ret.put("hidden", view.isHidden());
+        ret.put("containerPath", view.getContainer().getPath());
+        return ret;
+    }
+
+    public static Map<String, Object> toMap(QuerySchema schema, CustomView view, boolean includeFieldMeta)
+    {
+        Map<String, Object> ret = propertyMap(view);
 
         ActionURL gridURL = view.getQueryDefinition().urlFor(QueryAction.executeQuery);
         if (gridURL != null)

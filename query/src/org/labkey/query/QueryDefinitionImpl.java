@@ -140,7 +140,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             Container container = getContainer();
 
-            if (user != null)
+            if (user != null && request != null)
             {
                 for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
                 {

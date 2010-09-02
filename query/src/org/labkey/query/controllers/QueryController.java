@@ -2207,8 +2207,9 @@ public class QueryController extends SpringActionController
             assertQueryExists(form);
 
             //show all rows by default
-            if(null == form.getLimit() 
-                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.maxRows))
+            if (null == form.getLimit()
+                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.maxRows)
+                    && null == getViewContext().getRequest().getParameter(form.getDataRegionName() + "." + QueryParam.showRows))
                 form.getQuerySettings().setShowRows(ShowRows.ALL);
 
             if (form.getLimit() != null)
@@ -3380,6 +3381,89 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class SaveSessionViewForm extends QueryForm
+    {
+        private boolean inherit;
+        private boolean shared;
+
+        public boolean isInherit()
+        {
+            return inherit;
+        }
+
+        public void setInherit(boolean inherit)
+        {
+            this.inherit = inherit;
+        }
+
+        public boolean isShared()
+        {
+            return shared;
+        }
+
+        public void setShared(boolean shared)
+        {
+            this.shared = shared;
+        }
+    }
+
+    // Moves a session view into the database.
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    public class SaveSessionViewAction extends ApiAction<SaveSessionViewForm>
+    {
+        @Override
+        public ApiResponse execute(SaveSessionViewForm form, BindException errors) throws Exception
+        {
+            CustomView view = form.getCustomView();
+            if (view == null)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+            if (!view.isSession())
+                throw new IllegalArgumentException("This action only supports saving session views.");
+
+            if (!getContainer().getId().equals(view.getContainer().getId()))
+                throw new IllegalArgumentException("View may only be saved from container it was created in.");
+
+            assert !view.canInherit() && !view.isShared() && view.isEditable(): "Session view should never be inheritable or shared and always be editable";
+
+            if (form.isShared() || form.isInherit())
+            {
+                if (!getViewContext().getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                    HttpView.throwUnauthorized();
+            }
+
+            view.delete(getUser(), getViewContext().getRequest());
+
+            // Get any non-session view
+            CustomView shadowedView = form.getQueryDef().getCustomView(getUser(), null, form.getViewName());
+            if (shadowedView == null)
+            {
+                User owner = form.isShared() ? null : getUser();
+
+                CustomViewImpl viewCopy = new CustomViewImpl(form.getQueryDef(), owner, form.getQuerySettings().getViewName());
+                viewCopy.setColumns(view.getColumns());
+                viewCopy.setCanInherit(form.isInherit());
+                viewCopy.setFilterAndSort(view.getFilterAndSort());
+                viewCopy.setColumnProperties(view.getColumnProperties());
+                viewCopy.setIsHidden(view.isHidden());
+
+                viewCopy.save(getUser(), getViewContext().getRequest());
+            }
+            else
+            {
+                // UNDONE: changing shared and inherit properties is unimplemented.  Not sure if it makes sense from a usability point of view.
+                shadowedView.setColumns(view.getColumns());
+                shadowedView.setFilterAndSort(view.getFilterAndSort());
+                shadowedView.setColumnProperties(view.getColumnProperties());
+                
+                shadowedView.save(getUser(), getViewContext().getRequest());
+            }
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
 
     @RequiresNoPermission
     public class CheckSyntaxAction extends SimpleViewAction
