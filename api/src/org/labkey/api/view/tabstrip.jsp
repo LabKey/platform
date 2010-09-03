@@ -55,6 +55,7 @@
             %></li><%
         }
     %>
+        <div class="x-clear"></div>
     </ul>
     <div class="labkey-tab-strip-spacer"></div>
     <div class="labkey-tab-strip-content">
@@ -71,33 +72,3 @@
         %></div>
     </div>
 </div>
-
-<%-- enable changing selected tab in place --%>
-<script type="text/javascript">
-
-function selectTab(el)
-{
-    var tr;
-    var tdSelected;
-    while (el != document && !tr && !td)
-    {
-        if (!tdSelected && "TD" == el.tagName)
-            tdSelected = el;
-        if (!tr && "TR" == el.tagName)
-            tr = el;
-        el =  el.parentNode;
-    }
-
-    // disable the other tabs
-    var tds = tr.getElementsByTagName("TD");
-    for (var i=0 ; i<tds.length ; i++)
-    {
-        var td = tds[i];
-        if (!td.id || -1 == td.id.indexOf("tab"))
-            continue;
-        if (td.className !=  "labkey-tab-selected" && td.className != "labkey-tab")
-            continue;
-        td.className =  td == tdSelected ? "labkey-tab-selected" : "labkey-tab";
-    }
-}
-</script>

@@ -35,7 +35,7 @@
     <%if (pageConfig.getFrameOption() == PageConfig.FrameOption.DENY) {%> <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%}%>
     <title><%=h(pageConfig.getTitle())%></title>
     <%= pageConfig.getMetaTags() %>
-    <%= PageFlowUtil.getStandardIncludes(c) %>
+    <%= PageFlowUtil.getStandardIncludes(c,request.getHeader("User-Agent")) %>
 </head>
 
 <body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>

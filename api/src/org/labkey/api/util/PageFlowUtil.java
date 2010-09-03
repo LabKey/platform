@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
 import org.json.JSONArray;
@@ -1502,9 +1503,15 @@ public class PageFlowUtil
 
     public static String getStandardIncludes(Container c)
     {
+        return getStandardIncludes(c, null);
+    }
+
+    // UNDONE: use a user-agent parsing library
+    public static String getStandardIncludes(Container c, @Nullable String userAgent)
+    {
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS());
-        sb.append(getStylesheetIncludes(c));
+        sb.append(getStylesheetIncludes(c, userAgent));
         sb.append(getJavaScriptIncludes());
         return sb.toString();
     }
@@ -1530,11 +1537,22 @@ public class PageFlowUtil
 
     public static String getStylesheetIncludes(Container c)
     {
-        boolean combinedCSS = false; // UNDONE: verify that look and feel revision is modified on all relevant changes
+        return getStylesheetIncludes(c, null);
+    }
+
+    
+    public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
+    {
+        boolean oldIE = null != userAgent && (-1 != userAgent.indexOf("MSIE 6") || -1 != userAgent.indexOf("MSIE 7"));
+        boolean useLESS = null != HttpView.currentRequest().getParameter("less");
+        boolean combinedCSS = false;
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
 
+        Formatter F = new Formatter(sb);
+        String link = useLESS ? "<link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "<link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
+        
         // Combined CSS
         if (combinedCSS)
         {
@@ -1542,50 +1560,29 @@ public class PageFlowUtil
         }
         else
         {
-            sb.append("<link href=\"");
-            sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/" + extJsRoot + "/resources/css/ext-all.css\" type=\"text/css\" rel=\"stylesheet\" >\n");
-//            sb.append("<link href=\"");
-//            sb.append(AppProps.getInstance().getContextPath());
-//            sb.append("/" + extJsRoot + "/resources/css/ext-patches.css\" type=\"text/css\" rel=\"stylesheet\" >\n");
+            F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
 
-            ResourceURL stylesheetURL = new ResourceURL("stylesheet.css", ContainerManager.getRoot());
-            sb.append("<link href=\"");
-            sb.append(PageFlowUtil.filter(stylesheetURL));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
-
-            sb.append("<link href=\"");
-            sb.append(PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
-            sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
+            F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheet.css", ContainerManager.getRoot())));
+            if (oldIE)
+                F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheetIE7.css", ContainerManager.getRoot())));
+            F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
             if (null != rootCustomStylesheetURL)
-            {
-                sb.append("<link href=\"");
-                sb.append(PageFlowUtil.filter(rootCustomStylesheetURL));
-                sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
-            }
+                F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
 
             if (!c.isRoot())
             {
                 ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
 
                 if (null != containerThemeStylesheetURL)
-                {
-                    sb.append("<link href=\"");
-                    sb.append(PageFlowUtil.filter(containerThemeStylesheetURL));
-                    sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
-                }
+                    F.format(link, PageFlowUtil.filter(containerThemeStylesheetURL));
 
                 ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
                 if (null != containerCustomStylesheetURL)
-                {
-                    sb.append("<link href=\"");
-                    sb.append(PageFlowUtil.filter(containerCustomStylesheetURL));
-                    sb.append("\" type=\"text/css\" rel=\"stylesheet\" >\n");
-                }
+                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
             }
         }
         
@@ -1597,6 +1594,8 @@ public class PageFlowUtil
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
         sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
+        if (useLESS)
+            sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
         sb.append("</script>\n");
 
         return sb.toString();
