@@ -155,30 +155,23 @@
                         <br/><span id="wiki-current-format"></span>
                     </td>
                     <td width="99%">
-                        <table class="labkey-no-spacing" width="99%">
-                            <tr id="wiki-tab-strip" style="display:none"><td>
-                             <table class="labkey-no-spacing"><tr>
-                                <td class="labkey-tab-space">&nbsp;</td>
-                                <td class="labkey-tab-space">&nbsp;</td>
-                                <td id="wiki-tab-visual" class="labkey-wiki-tab labkey-tab-selected" onclick="userSwitchToVisual()">Visual</td>
-                                <td class="labkey-tab-space">&nbsp;</td>
-                                <td id="wiki-tab-source" class="labkey-wiki-tab labkey-tab" onclick="userSwitchToSource()">Source</td>
-                                <td class="labkey-tab-space" style="width:100%">&nbsp;</td>
-                             </tr></table></td>
-                            </tr>
-                            <tr><td class="labkey-tab-strip-spacer">&nbsp;</td></tr>
-                            <tr>
-                                <td id="wiki-tab-content">
-                                    <form action="">
-                                    <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
-                                              name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
-                                        <script type="text/javascript">
-                                            Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', handleTabsInTextArea);
-                                        </script>
-                                    </form>
-                                </td>
-                            </tr>
-                        </table>
+                        <div>
+                            <ul id="wiki-tab-strip" class="labkey-tab-strip">
+                                <li id="wiki-tab-visual" class="labkey-tab-active"><a href="#" onclick="userSwitchToVisual()">Visual</a></li>
+                                <li id="wiki-tab-source" class="labkey-tab-inactive"><a href="#" onclick="userSwitchToSource()">Source</a></li>
+                                <div class="x-clear"></div>
+                            </ul>
+                            <div class="labkey-tab-strip-spacer"></div>
+                            <div id="wiki-tab-content" class="labkey-tab-strip-content">
+                                <form action="">
+                                <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
+                                          name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
+                                    <script type="text/javascript">
+                                        Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', handleTabsInTextArea);
+                                    </script>
+                                </form>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 <tr>

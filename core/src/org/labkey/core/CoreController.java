@@ -247,14 +247,15 @@ public class CoreController extends SpringActionController
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
             Container c = getContainer();
-            Content content = _themeStylesheetCache.get(c);
+            Content content = null; // _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
 
             if (null == content || !dependsOn.equals(content.dependencies))
             {
                 JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
                 view.setFrame(WebPartView.FrameType.NONE);
-                content = PageFlowUtil.getViewContent(view, request, response);
+                Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
+                content  = new Content(compileCSS(contentRaw.content));
                 content.dependencies = dependsOn;
                 content.compressed = compressCSS(content.content);
                 _themeStylesheetCache.put(c, content);
@@ -346,8 +347,9 @@ public class CoreController extends SpringActionController
                     _appendCss(out, custom);
 
                     String css = out.toString();
-                    content = new Content(css);
-                    content.compressed = compressCSS(css);
+                    String compiled = compileCSS(css);
+                    content = new Content(compiled);
+                    content.compressed = compressCSS(compiled);
                     content.dependencies = dependsOn;
                     // save space
                     content.content = null; out = null;
@@ -410,6 +412,12 @@ public class CoreController extends SpringActionController
         out.write("\n");
     }
     
+
+    private static String compileCSS(String s)
+    {
+        return s;
+    }
+
 
     private static byte[] compressCSS(String s)
     {

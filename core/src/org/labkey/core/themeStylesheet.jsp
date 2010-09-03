@@ -288,7 +288,7 @@ div.labkey-status-info, .labkey-status-info
 td.labkey-main-menu
 {
     background-color:#<%=navBackground%>;
-    border-top-color: #<%=navBorder%>
+    border-top-color: #<%=navBorder%>;
     border-bottom-color: #<%=navBorder%>
 }
 
@@ -550,18 +550,6 @@ td.labkey-tab-content
    border-right-color: #<%= tabBorderColor %>;
    border-bottom-color: #<%= tabBorderColor %>;
 }
-
-td.labkey-wiki-tab-content
-{
-   border-left-color: #<%=tabBorderColor%>;
-   border-right-color: #<%=tabBorderColor%>;
-   border-bottom-color: #<%=tabBorderColor%>;
-}
-td.labkey-wiki-tab, .labkey-wiki-tab
-{
-    color: #<%=tabFontColor%>;
-}
-
 
 /* gwt */
 

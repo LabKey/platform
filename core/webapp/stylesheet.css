@@ -29,7 +29,7 @@ body, div, td, th, table, img, form
 {
     font-family: verdana, arial, helvetica, sans-serif;
     font-size: 8pt;
-    margin: 0px;
+    margin: 0;
 }
 
 html, body
@@ -112,7 +112,6 @@ legend
 {
     background-color: #EBF4FF;
     cursor: pointer;
-    cursor: hand;
 }
 
 .labkey-header:active
@@ -137,7 +136,6 @@ legend
 {
     background-color: #EBF4FF;
     cursor: pointer;
-    cursor: hand;
 }
 
 /* Used for the titles in announcement threads and elsewhere for
@@ -159,7 +157,7 @@ legend
 {
     background-color: #89A1B4;
     height: 1px;
-    padding: 0px;
+    padding: 0;
 }
 
 /*  Used across the site whenever there is a label with a colored background */
@@ -184,9 +182,8 @@ legend
   should be touching */
 table.labkey-no-spacing
 {
-    border-spacing: 0px;
+    border-spacing: 0;
     *border-collapse: collapse;
-    *border-spacing: expression(cellSpacing=0);    
 }
 
 /* Used for the error messages across the site */
@@ -342,16 +339,14 @@ span.labkey-button:hover, .labkey-button-bar .labkey-button:hover, .labkey-butto
 {
     border: 1px solid black;
     background-color: #F9F9F9;
-    cursor: pointer; /* hand-shaped cursor */
-    cursor: hand; /* for IE 5.x and older browsers */
+    cursor: pointer;
 }
 
 a.labkey-button:hover, a.labkey-menu-button:hover
 {
     border: 1px solid black;
     background-color: #F9F9F9;
-    cursor: pointer; /* hand-shaped cursor */
-    cursor: hand; /* for IE 5.x and older browsers */
+    cursor: pointer;
 }
 
 .labkey-button-bar .labkey-disabled-button:hover
@@ -494,7 +489,7 @@ div.labkey-pagination
 table.labkey-nav-trail
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* Used for the "App Bar" containing the main title and the application button bar */
@@ -502,7 +497,7 @@ table.labkey-nav-trail
 .labkey-app-bar
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
     border-top: 1px solid #89A1B4;
     padding-left:8;
     padding-right:8;
@@ -573,29 +568,27 @@ div.labkey-completion
     overflow-y: auto;
     overflow-x: hidden;
     max-height: 200px;
-    /* IE-specific hack to display srollbars on the popup properly: */
-    *height: expression( this.scrollHeight > 200 ? "200px" : "auto" );
 }
 
 .labkey-completion table
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 .labkey-completion td
 {
-    padding: 0px;
+    padding: 0;
 }
 
 table.labkey-completion-text
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 .labkey-completion-text td, .labkey-completion-text th
 {
-    padding: 0px;
+    padding: 0;
 }
 
 .labkey-completion-highlight
@@ -642,7 +635,7 @@ span.labkey-help-pop-up
     height: 100%;
     width: 100%;
     background-color: #FFFFFF;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
     border-top: 20px #DDDDDD solid;
     border-bottom: 20px #DDDDDD solid;
 }
@@ -658,7 +651,7 @@ span.labkey-help-pop-up
 /* Used for the Admin Console page under Manage Site */
 table.labkey-admin-console
 {
-    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+    border-collapse: separate; border-spacing: 10px;
 }
 
 .labkey-admin-console td
@@ -669,18 +662,18 @@ table.labkey-admin-console
 /* Used for the customize view page for data regions */
 table.labkey-customize-view
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
-    padding: 0px;
+    border-spacing: 0; *border-collapse: collapse;
+    padding: 0;
 }
 
 .labkey-customize-view table, .labkey-customize-view th
 {
-    padding: 0px;
+    padding: 0;
 }
 
 .labkey-customize-view table
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* Data Region */
@@ -744,7 +737,7 @@ table.labkey-show-borders
 {
     border: 1px solid #DDDDDD;
     /* Part of a hack for IE 7 and below since IE gives precedence to table borders over cell borders */
-    *border: 0px none;
+    *border: 0 none;
 }
 
 .labkey-show-borders td
@@ -798,12 +791,12 @@ in the table tag.  They are necessary so that the borders take precedence correc
 
 .labkey-has-row-totals td
 {
-    *border-right: 0px none; 
+    *border-right: 0 none; 
 }
 
 .labkey-has-col-totals td
 {
-    *border-bottom: 0px none;
+    *border-bottom: 0 none;
 }
 
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
@@ -847,7 +840,6 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 {
     background-color: #EBF4FF;
     cursor: pointer;
-    cursor: hand;
 }
 
 .labkey-data-region .labkey-col-header, .labkey-data-region .labkey-row-header,
@@ -862,7 +854,7 @@ th.labkey-col-header-filter:hover, td.labkey-col-header-filter:hover, tr.labkey-
 .labkey-data-region .labkey-data-region-title
 {
     background-color: #FFFFFF;
-    border: 0px;
+    border: 0;
     border-top: hidden;
     border-left: hidden;
     font-weight: bold;
@@ -910,7 +902,7 @@ td.labkey-highlight-cell, th.labkey-highlight-cell
 td.labkey-blank-cell, th.labkey-blank-cell
 {
     background: #FFFFFF;
-    border: 0px;
+    border: 0;
 }
 
 /* Used for the little icon on the column filter headers */
@@ -987,7 +979,7 @@ img.labkey-grid-filter-icon
 #helpDiv table
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);;
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* The table that is the entire page */
@@ -995,8 +987,8 @@ img.labkey-grid-filter-icon
 {
     width: 100%;
     height: 100%;
-    padding: 0px;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    padding: 0;
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* The top panel with the title and logo */
@@ -1009,12 +1001,12 @@ img.labkey-grid-filter-icon
 .labkey-header-panel table
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 .labkey-header-panel td, .labkey-header-panel th
 {
-    padding: 0px;
+    padding: 0;
 }
 
 /* The side panel with the navigation and admin expandable menus */
@@ -1023,9 +1015,9 @@ img.labkey-grid-filter-icon
     background-color: #E1ECFC;
     border-top: 1px solid #89A1B4;
     border-right: 1px solid #89A1B4;
-    border-collapse: separate; border-spacing: 2px; *border-spacing: expression(cellSpacing=2);
+    border-collapse: separate; border-spacing: 2px;
     vertical-align: top;
-    padding: 0px;
+    padding: 0;
 }
 
 /* The project area (the rest of the page besides the side and top panels) */
@@ -1034,8 +1026,8 @@ img.labkey-grid-filter-icon
     width: 100%;
     height: 100%;
     vertical-align: top;
-    padding: 0px;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    padding: 0;
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* The icon in the header panel */
@@ -1045,7 +1037,7 @@ td.labkey-main-icon
     height: 56px;
     margin-left: auto;
     margin-right: auto;
-    padding: 8px 4px 8px 0px;
+    padding: 8px 4px 8px 0;
 }
 
 td.labkey-main-icon img
@@ -1197,31 +1189,31 @@ FORM.labkey-search-form
 .labkey-site-nav-expander
 {
     width: 146px;
-    height: 0px;
+    height: 0;
 }
 
 /* The table that contains the expandable nav panels */
 .labkey-expandable-nav-panel
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* The individual expandable nav menus */
 .labkey-expandable-nav
 {
-    padding: 0px;
+    padding: 0;
 }
 
 table.labkey-expandable-nav
 {
     background-color: #FFFFFF;
-    border-left: 0px;
+    border-left: 0;
     border-top: 1px solid #89A1B4;
     border-right: 1px solid #89A1B4;
     border-bottom: 1px solid #89A1B4;
     margin-top:5px;
     margin-right:5px;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
     border-collapse: collapse;
     width: 146px;
 }
@@ -1247,7 +1239,7 @@ table.labkey-expandable-nav
 {
     width: 100%;
     vertical-align: top;
-    padding: 0px;
+    padding: 0;
 }
 
 /* The rest of the project area besides the project nav panel */
@@ -1291,7 +1283,7 @@ th.labkey-expand-collapse-area
 /* The table that contains all the expandable nodes in the expandable menus */
 table.labkey-nav-tree
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
     width: 100%;
 }
 
@@ -1313,13 +1305,12 @@ tr.labkey-nav-tree-row:hover
 {
     background-color: #EBF4FF;
     cursor: pointer;
-    cursor: hand;
 }
 
 /* The area on the left of a nav tree row which can be blank or have an expand/collapse button */
 td.labkey-nav-tree-node
 {
-    padding: 0px;
+    padding: 0;
     vertical-align: middle;
 }
 
@@ -1344,7 +1335,7 @@ table.labkey-nav-tree-child
 {
     border-collapse: collapse;
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 .labkey-nav-tree-child a
@@ -1389,7 +1380,7 @@ td.labkey-crumb-trail
 table.labkey-wp
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* This is the body of the web part */
@@ -1457,7 +1448,7 @@ tr.labkey-wp-header
 
 .labkey-warning-messages ul
 {
-    margin: 0px;
+    margin: 0;
     padding-left: 20px;
 }
 
@@ -1465,14 +1456,14 @@ tr.labkey-wp-header
 /* This is used for the left side of the wp header and often contains the title */
 th.labkey-wp-title-left, td.labkey-wp-title-left
 {
-    border-right: 0px none;
+    border-right: 0 none;
 }
 
 /* This is used for the right side of the wp header and often contains buttons */
 th.labkey-wp-title-right, td.labkey-wp-title-right
 {
     text-align:  right;
-    border-left:  0px none;
+    border-left:  0 none;
 }
 
 /* This is the panel of links right below the web part that is on the right side and has "edit",
@@ -1493,7 +1484,7 @@ div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 
 table.labkey-announcement-thread
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 .labkey-announcement-thread td
@@ -1505,14 +1496,14 @@ table.labkey-announcement-thread
 table.labkey-output
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /*  Experiment */
 
 table.labkey-protocol-applications
 {
-   border-collapse: separate; border-spacing: 5px; *border-spacing: expression(cellSpacing=5);
+   border-collapse: separate; border-spacing: 5px;
 }
 
 /* Flow */
@@ -1550,7 +1541,7 @@ td.labkey-ms1-filter
 
 table.labkey-prot-annots
 {
-    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+    border-collapse: separate; border-spacing: 10px;
 }
 
 /* Query */
@@ -1559,7 +1550,7 @@ table.labkey-prot-annots
 
 table.labkey-study-expandable-nav
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
     width: 100%;
 }
 
@@ -1576,17 +1567,17 @@ table.labkey-study-expandable-nav
 
 table.labkey-request-warnings
 {
-    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+    border-collapse: separate; border-spacing: 10px;
 }
 
 table.labkey-manage-display
 {
-    border-collapse: separate; border-spacing: 5px; *border-spacing: expression(cellSpacing=5);
+    border-collapse: separate; border-spacing: 5px;
 }
 
 table.labkey-manage-default-reqs
 {
-    border-collapse: separate; border-spacing: 10px; *border-spacing: expression(cellSpacing=10);
+    border-collapse: separate; border-spacing: 10px;
 }
 
 .labkey-data-region .labkey-participant-view-header
@@ -1617,7 +1608,7 @@ table.labkey-manage-default-reqs
 }
 
 .labkey-callout-tip img {
-    background-position: 0px 0px;
+    background-position: 0 0;
     background-repeat: no-repeat;
     background-color: transparent;
     background-image: url(./_images/callout_tip.gif);
@@ -1627,7 +1618,7 @@ table.labkey-manage-default-reqs
 }
 
 .labkey-callout-tip-over img {
-    background-position: -9px 0px;
+    background-position: -9px 0;
 }
 
 
@@ -1636,7 +1627,7 @@ table.labkey-manage-default-reqs
 /* R reports */
 table.labkey-r-tsvout
 {
-    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* GWT */
@@ -1728,8 +1719,8 @@ table.labkey-r-tsvout
 }
 
 .gwt-ProgressBar-shell .gwt-ProgressBar-text {
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   color: white;
 }
 
@@ -1764,7 +1755,6 @@ table.labkey-r-tsvout
 .gwt-StackPanel .gwt-StackPanelItem {
   background-color: #E1ECFC;
   cursor: pointer;
-  cursor: hand;
 }
 
 .gwt-StackPanel .gwt-StackPanelItem-selected {
@@ -1939,10 +1929,7 @@ div.yuimenu div.bottomscrollbar_disabled {
 
 div.yuimenu li,
 div.yuimenubar li {
-
-//    font-size:85%;
     cursor:pointer;
-    cursor:hand;
     white-space:nowrap;
     text-align:left;
 
@@ -2632,7 +2619,7 @@ body .x-window .x-window-tl .x-window-header {
 
 body .x-grid3 .x-grid3-row {
 	border-top:0;
-	padding-bottom: 0px;
+	padding-bottom: 0;
 	padding-top:1px;
 }
 
@@ -2695,12 +2682,12 @@ td.labkey-export-tab-buttons
 /*****     TAB STRIPS     *****/
 
 
-/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> TODO pick one! */
+/* labkey -- there are three different markups: <table>, table with wiki classes, and <ul> TODO pick one! (kill <table>) */
 
 table.labkey-tab-strip
 {
     width: 100%;
-    border-spacing: 0px; *border-collapse: collapse; *border-spacing: expression(cellSpacing=0);
+    border-spacing: 0; *border-collapse: collapse;
 }
 
 /* This tab has no bottom border so it looks like it is forward */
@@ -2772,9 +2759,9 @@ td.labkey-tab-content, .labkey-tab-content
 /* This is used for breaks in between tabs */
 td.labkey-tab-space, .labkey-tab-space
 {
-    border-top: 0px;
-    border-left: 0px;
-    border-right: 0px;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
     border-bottom: 1px solid #89A1B4;
 }
 
@@ -2783,7 +2770,6 @@ ul.labkey-tab-strip
 {
     border-bottom : 1px solid #89A1B4;
     margin : 0;
-    padding-bottom : 19px;
     padding-left : 10px;
 }
 
@@ -2797,7 +2783,10 @@ ul.labkey-tab-strip li
 
 ul.labkey-tab-strip a
 {
-    border : 1px solid #89A1B4;
+    border-top : 1px solid #89A1B4;
+    border-right : 1px solid #89A1B4;
+    border-left : 1px solid #89A1B4;
+    border-bottom : none;
     float : left;
     line-height : 14px;
     margin-right : 8px;
@@ -2808,7 +2797,14 @@ ul.labkey-tab-strip a
 li.labkey-tab-active a
 {
     background-color : #E1ECFC;
+    font-weight: bold;
     border-bottom : 1px solid #E1ECFC;
+    margin-bottom: -1px;
+}
+
+li.labkey-tab-inactive a
+{
+    background-color : #FFFFFF;
     font-weight: bold;
 }
 
@@ -2829,7 +2825,7 @@ li.labkey-tab-active a
 	border : 1px solid #89A1B4;
 	border-top : none;
 	clear : both;
-	margin : 0px;
+	margin : 0;
 	padding : 15px;
 }
 
@@ -2843,19 +2839,6 @@ li.labkey-tab-active a
 td.labkey-tab-space
 {
     background-color:#ffffff;
-}
-
-td.labkey-wiki-tab, .labkey-wiki-tab
-{
-    color: #000000;
-    padding: 4px 8px 4px 8px;
-}
-
-td.labkey-wiki-tab-content
-{
-    border-left: 1px solid #89A1B4;
-    border-right: 1px solid #89A1B4;
-    border-bottom: 1px solid #89A1B4;
 }
 
 /* gwt */
@@ -2881,7 +2864,6 @@ td.labkey-wiki-tab-content
   margin-right: 6px;
   padding: 2px;
   cursor: pointer;
-  cursor: hand;
 }
 
 .gwt-TabBar .gwt-TabBarItem-selected {

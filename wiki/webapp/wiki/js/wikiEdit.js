@@ -513,8 +513,8 @@ function userSwitchToSource()
 function switchToSource()
 {
     setTabStripVisible(true);
-    document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab";
-    document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab-selected";
+    document.getElementById("wiki-tab-visual").className = "labkey-tab-inactive";
+    document.getElementById("wiki-tab-source").className = "labkey-tab-active";
     if(tinyMCE.get(_idPrefix + "body"))
         tinyMCE.execCommand('mceRemoveControl', false, _idPrefix + "body");
     _editor = "source";
@@ -546,8 +546,8 @@ function switchToVisual(confirmOverride, savePreference)
     else
     {
         setTabStripVisible(true);
-        document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab-selected";
-        document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab";
+        document.getElementById("wiki-tab-visual").className = "labkey-tab-active";
+        document.getElementById("wiki-tab-source").className = "labkey-tab-inactive";
         if(!tinyMCE.get(_idPrefix + "body"))
             tinyMCE.execCommand('mceAddControl', false, _idPrefix + "body");
         _editor = "visual";
@@ -596,11 +596,13 @@ function textContainsNonVisualElements(content)
 
 function setTabStripVisible(isVisible)
 {
-    Ext.get("wiki-tab-strip").setDisplayed(isVisible);
-    if(isVisible)
-        Ext.get("wiki-tab-content").addClass("labkey-wiki-tab-content");
-    else
-        Ext.get("wiki-tab-content").removeClass("labkey-wiki-tab-content");
+// alternate strategy: keep tab-strip just hide the 'visual' tab
+    Ext.get("wiki-tab-visual").setDisplayed(isVisible);
+//    Ext.get("wiki-tab-strip").setDisplayed(isVisible);
+//    if(isVisible)
+//        Ext.get("wiki-tab-content").addClass("labkey-wiki-tab-content");
+//    else
+//        Ext.get("wiki-tab-content").removeClass("labkey-wiki-tab-content");
 }
 
 function updateExistingAttachments(attachments, encodeNames)
