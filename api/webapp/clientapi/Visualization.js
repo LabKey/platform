@@ -47,7 +47,25 @@ LABKEY.Visualization = new function() {
 
         getTypes : function(config) {
 
-            return [LABKEY.Visualization.Types.TABULAR, LABKEY.Visualization.Types.EXCEL, LABKEY.Visualization.Types.SCATTER, LABKEY.Visualization.Types.TIMEPLOT];
+            //return [LABKEY.Visualization.Types.TABULAR, LABKEY.Visualization.Types.EXCEL, LABKEY.Visualization.Types.SCATTER, LABKEY.Visualization.Types.TIMEPLOT];
+            function createTypes(json)
+            {
+                if (json.types && json.types.length)
+                {
+                    // for now just return the raw object array
+                    return json.types;
+                }
+                return [];
+            }
+
+
+            Ext.Ajax.request(
+            {
+                url : LABKEY.ActionURL.buildURL("reports", "getVisualizationTypes"),
+                method : 'GET',
+                success: getSuccessCallbackWrapper(createTypes, config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
+            });
         },
 
         getMeasures : function(config) {
