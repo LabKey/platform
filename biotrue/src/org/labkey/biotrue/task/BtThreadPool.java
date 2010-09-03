@@ -36,7 +36,7 @@ public class BtThreadPool implements ShutdownListener
 
     private BtThreadPool()
     {
-        _defaultThread = new Thread(new BtBackgroundTask(null), "Default BT Thread");
+        _defaultThread = new Thread(new BtBackgroundTask(null), "BT Default Thread");
         _defaultThread.start();
     }
 

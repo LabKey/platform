@@ -943,7 +943,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         return null;
     }
 
-    public Collection<? extends Class> getJunitTestClasses()
+    public Collection<? extends Class> getJUnitTests()
     {
         return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
     }

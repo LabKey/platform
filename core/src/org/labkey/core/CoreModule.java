@@ -535,7 +535,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 //,RateLimiter.TestCase.class
         ));
 
-        testClasses.addAll(SqlDialect.getTestClasses());
+        testClasses.addAll(SqlDialect.getAllJUnitTests());
 
         return testClasses;
     }

@@ -593,7 +593,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "EXEC sp_updatestats;";
     }
 
-    public Collection<? extends Class> getJunitTestClasses()
+    public Collection<? extends Class> getJUnitTests()
     {
         return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
     }

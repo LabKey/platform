@@ -17,6 +17,8 @@
 package org.labkey.core.junit;
 
 import org.apache.commons.lang.time.FastDateFormat;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
@@ -25,6 +27,9 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.StatusAppender;
+import org.labkey.api.action.StatusReportingRunnable;
+import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -40,10 +45,12 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.Format;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -79,7 +86,7 @@ public class JunitController extends SpringActionController
 
                     for (String module : testCases.keySet())
                     {
-                        String moduleTd = module;
+                        String moduleTd = "<a href=\"run.view?module=" + h(module) + "\">" + module + "</a>";
 
                         for (Class clazz : testCases.get(module))
                         {
@@ -94,6 +101,8 @@ public class JunitController extends SpringActionController
                     out.println("</table></div>");
 
                     out.print("<br>" + PageFlowUtil.generateButton("Run All", new ActionURL(RunAction.class, getContainer())));
+                    out.print("<br><form name=\"run2\" action=\"run2.post\" method=\"post\">" + PageFlowUtil.generateSubmitButton("Run In Background #1 (Experimental)") + "</form>");
+                    out.print("<br>" + PageFlowUtil.generateButton("Run In Background #2 (Experimental)", new ActionURL(Run3Action.class, getContainer())));
                 }
             };
 
@@ -113,31 +122,48 @@ public class JunitController extends SpringActionController
     {
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
+            List<Class> testClasses = getTestClasses(form);
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
-
-            String testCase = form.getTestCase();
-            if (null != testCase && 0 == testCase.length())
-                testCase = null;
-
-            Map<String, List<Class>> testCases = JunitManager.getTestCases();
             List<Result> results = new LinkedList<Result>();
 
-            for (String module : testCases.keySet())
+            for (Class testClass : testClasses)
             {
-                for (Class clazz : testCases.get(module))
-                {
-                    // check if the client has gone away
-                    getViewContext().getResponse().getWriter().print(" ");
-                    getViewContext().getResponse().flushBuffer();
-
-                    // run test
-                    if (null == testCase || testCase.equals(clazz.getName()))
-                        results.add(JunitRunner.run(clazz));
-                }
+                // check if the client has gone away
+                getViewContext().getResponse().getWriter().print(" ");
+                getViewContext().getResponse().flushBuffer();
+                results.add(JunitRunner.run(testClass));
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new TestResultView(results);
+        }
+
+        private List<Class> getTestClasses(TestForm form)
+        {
+            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
+
+            String module = form.getModule();
+
+            if (null != module)
+                return JunitManager.getTestCases().get(module);
+
+            List<Class> testClasses = new LinkedList<Class>();
+            String testCase = form.getTestCase();
+
+            if (null == testCase || 0 != testCase.length())
+            {
+                for (String m : allTestClasses.keySet())
+                {
+                    for (Class clazz : allTestClasses.get(m))
+                    {
+                        // include test
+                        if (null == testCase || testCase.equals(clazz.getName()))
+                            testClasses.add(clazz);
+                    }
+                }
+            }
+
+            return testClasses;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -146,7 +172,170 @@ public class JunitController extends SpringActionController
         }
     }
 
-    // Used by JUnitTest to retrieve the current list of tests
+
+    private static final String RESULTS_SESSION_KEY = "JUnit_Results";
+
+    @RequiresSiteAdmin
+    public class Run3Action extends SimpleViewAction<TestForm>
+    {
+        public ModelAndView getView(TestForm form, BindException errors) throws Exception
+        {
+            HttpSession session = getViewContext().getRequest().getSession(true);
+            @SuppressWarnings({"unchecked"})
+            List<Result> results = (List<Result>)session.getAttribute(RESULTS_SESSION_KEY);
+            ModelAndView view;
+
+            if (null != results)
+            {
+                session.removeAttribute(RESULTS_SESSION_KEY);
+                view = new TestResultView(results);
+            }
+            else
+            {
+                List<Class> testClasses = getTestClasses(form);
+                TestContext.setTestContext(getViewContext().getRequest(), getUser());
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                results = new LinkedList<Result>();
+                HttpServletResponse response = getViewContext().getResponse();
+                response.setContentType("text/plain");
+
+                for (Class testClass : testClasses)
+                {
+                    // show status.  this also stops the tests if the client goes away.
+                    response.getWriter().println(testClass.getName());
+                    response.flushBuffer();
+                    results.add(JunitRunner.run(testClass));
+                }
+
+                // TODO: Probably won't work... looks like junit Result is not Serializable
+                session.setAttribute(RESULTS_SESSION_KEY, results);
+                view = null;  // TODO: Plus we can't redirect with plain text...
+            }
+
+            return view;
+        }
+
+        private List<Class> getTestClasses(TestForm form)
+        {
+            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
+
+            String module = form.getModule();
+
+            if (null != module)
+                return JunitManager.getTestCases().get(module);
+
+            List<Class> testClasses = new LinkedList<Class>();
+            String testCase = form.getTestCase();
+
+            if (null == testCase || 0 != testCase.length())
+            {
+                for (String m : allTestClasses.keySet())
+                {
+                    for (Class clazz : allTestClasses.get(m))
+                    {
+                        // include test
+                        if (null == testCase || testCase.equals(clazz.getName()))
+                            testClasses.add(clazz);
+                    }
+                }
+            }
+
+            return testClasses;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class Run2Action extends StatusReportingRunnableAction
+    {
+        private List<Class> getTestClasses(TestForm form)
+        {
+            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
+
+            String module = form.getModule();
+
+            if (null != module)
+                return JunitManager.getTestCases().get(module);
+
+            List<Class> testClasses = new LinkedList<Class>();
+            String testCase = form.getTestCase();
+
+            if (null == testCase || 0 != testCase.length())
+            {
+                for (String m : allTestClasses.keySet())
+                {
+                    for (Class clazz : allTestClasses.get(m))
+                    {
+                        // include test
+                        if (null == testCase || testCase.equals(clazz.getName()))
+                            testClasses.add(clazz);
+                    }
+                }
+            }
+
+            return testClasses;
+        }
+
+        @Override
+        protected StatusReportingRunnable newStatusReportingRunnable()
+        {
+            List<Class> testClasses = getTestClasses(new TestForm());
+            List<Result> results = new LinkedList<Result>();
+            return new JunitRunnable(testClasses, results, getViewContext().getRequest(), getUser());
+        }
+    }
+
+
+    private static class JunitRunnable implements StatusReportingRunnable
+    {
+        private final StatusAppender _appender;
+        private final Logger _log;
+        private final List<Class> _testClasses;
+        private final List<Result> _results;
+        private volatile boolean _running = true;
+
+        private JunitRunnable(List<Class> testClasses, List<Result> results, HttpServletRequest request, User user) // TODO: Make this a Callable instead?
+        {
+            _testClasses = testClasses;
+            _results = results;
+            _appender = new StatusAppender();
+            _log = Logger.getLogger(JunitRunnable.class);
+            _log.addAppender(_appender);
+            TestContext.setTestContext(request, user);
+        }
+
+        @Override
+        public boolean isRunning()
+        {
+            return _running;
+        }
+
+        @Override
+        public Collection<String> getStatus(@Nullable Integer offset)
+        {
+            return _appender.getStatus(offset);
+        }
+
+        @Override
+        public void run()
+        {
+            for (Class testClass : _testClasses)
+            {
+                _log.info("Running " + testClass.getName());
+                _results.add(JunitRunner.run(testClass));
+            }
+
+            _running = false;
+        }
+    }
+
+
+    // Used by DRT JUnitTest to retrieve the current list of tests
     @SuppressWarnings({"UnusedDeclaration"})
     @RequiresSiteAdmin
     public static class Testlist extends ApiAction
@@ -237,6 +426,7 @@ public class JunitController extends SpringActionController
 
     public static class TestForm
     {
+        private String _module;
         private String _testCase;
 
         public String getTestCase()
@@ -248,6 +438,17 @@ public class JunitController extends SpringActionController
         public void setTestCase(String testCase)
         {
             _testCase = testCase;
+        }
+
+        public String getModule()
+        {
+            return _module;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setModule(String module)
+        {
+            _module = module;
         }
     }
 
