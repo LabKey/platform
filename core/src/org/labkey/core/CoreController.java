@@ -247,7 +247,7 @@ public class CoreController extends SpringActionController
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
             Container c = getContainer();
-            Content content = null; // _themeStylesheetCache.get(c);
+            Content content = _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
 
             if (null == content || !dependsOn.equals(content.dependencies))
