@@ -26,6 +26,8 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
 * User: adam
@@ -129,7 +131,9 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
             if (null == runnable || !runnable.isRunning())
             {
                 runnable = newStatusReportingRunnable();
-                runnable.run();
+                ExecutorService exec = Executors.newFixedThreadPool(1);
+                exec.submit(runnable);
+                exec.shutdown();
                 EXISTING_RUNNABLES.put(this.getClass(), runnable);
             }
 

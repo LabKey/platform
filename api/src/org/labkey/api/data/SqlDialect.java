@@ -1056,15 +1056,15 @@ public abstract class SqlDialect
 
     // Note: Tests must be safe to invoke on servers that can't connect to any datasources matching the dialect or
     // may not even have the JDBC driver installed.
-    public abstract Collection<? extends Class> getJunitTestClasses();
+    public abstract Collection<? extends Class> getJUnitTests();
 
 
-    public static Collection<? extends Class> getTestClasses()
+    public static Collection<? extends Class> getAllJUnitTests()
     {
         Set<Class> classes = new HashSet<Class>();
 
         for (SqlDialect dialect : _dialects)
-            classes.addAll(dialect.getJunitTestClasses());
+            classes.addAll(dialect.getJUnitTests());
 
         return classes;
     }

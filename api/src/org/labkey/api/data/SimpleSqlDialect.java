@@ -36,7 +36,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     // if your dialect requires it.
 
     @Override
-    public Collection<? extends Class> getJunitTestClasses()
+    public Collection<? extends Class> getJUnitTests()
     {
         return Collections.emptyList();
     }
