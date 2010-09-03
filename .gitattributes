@@ -1916,6 +1916,13 @@ query/webapp/reports/chart.gif -text
 query/webapp/reports/grid.gif -text
 query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/manageViews.js -text
+query/webapp/reports/output_chart.jpg -text
+query/webapp/reports/output_excel.jpg -text
+query/webapp/reports/output_grid.jpg -text
+query/webapp/reports/output_linechart.jpg -text
+query/webapp/reports/output_motionchart.jpg -text
+query/webapp/reports/output_scatterplot.jpg -text
+query/webapp/reports/output_text.jpg -text
 query/webapp/reports/r.gif -text
 query/webapp/reports/xls.gif -text
 search/Search.iml -text

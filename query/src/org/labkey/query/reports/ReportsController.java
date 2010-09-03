@@ -1959,7 +1959,7 @@ public class ReportsController extends SpringActionController
             Map<String, Map<String, TableInfo>> tables = new HashMap<String, Map<String, TableInfo>>();
             DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
 
-            if (form.getFilters().length > 0)
+            if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())
                 {
@@ -2180,6 +2180,78 @@ public class ReportsController extends SpringActionController
             }
             else
                 throw new IllegalArgumentException("name, schema and query are required parameters");
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetVisualizationTypes extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+
+            List<Map<String, Object>> types = new ArrayList<Map<String, Object>>();
+
+            // motion chart
+            Map<String, Object> motion = new HashMap<String, Object>();
+            motion.put("type", "motion");
+            motion.put("label", "Motion Chart");
+            motion.put("icon", getViewContext().getContextPath() + "/reports/output_motionchart.jpg");
+            types.add(motion);
+
+            // line chart
+            Map<String, Object> line = new HashMap<String, Object>();
+            line.put("type", "line");
+            line.put("label", "Time Chart");
+            line.put("icon", getViewContext().getContextPath() + "/reports/output_linechart.jpg");
+
+            List<Map<String, String>> lineAxis = new ArrayList<Map<String, String>>();
+            lineAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select data type for x-axis", "multiSelect", "false"));
+            line.put("axis", lineAxis);
+
+            line.put("enabled", true);
+            types.add(line);
+
+            // scatter chart
+            Map<String, Object> scatter = new HashMap<String, Object>();
+            scatter.put("type", "scatter");
+            scatter.put("label", "Scatter Plot");
+            scatter.put("icon", getViewContext().getContextPath() + "/reports/output_scatterplot.jpg");
+
+            List<Map<String, String>> scatterAxis = new ArrayList<Map<String, String>>();
+            scatterAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select data type for x-axis", "multiSelect", "false"));
+            scatterAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
+            scatter.put("axis", scatterAxis);
+
+            scatter.put("enabled", true);
+            types.add(scatter);
+
+            // data grid
+            Map<String, Object> data = new HashMap<String, Object>();
+            data.put("type", "dataGrid");
+            data.put("label", "Data Grid");
+            data.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
+            types.add(data);
+
+            // excel data export
+            Map<String, Object> excel = new HashMap<String, Object>();
+            excel.put("type", "excelExport");
+            excel.put("label", "Excel Data Export");
+            excel.put("icon", getViewContext().getContextPath() + "/reports/output_excel.jpg");
+            types.add(excel);
+
+            // TSV data export
+            Map<String, Object> tsv = new HashMap<String, Object>();
+            tsv.put("type", "tsvExport");
+            tsv.put("label", "Tab-delimited Data Export");
+            tsv.put("icon", getViewContext().getContextPath() + "/reports/output_text.jpg");
+            types.add(tsv);
+
+            resp.put("types", types);
 
             return resp;
         }
