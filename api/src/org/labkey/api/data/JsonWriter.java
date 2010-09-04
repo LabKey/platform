@@ -19,79 +19,14 @@
 
 package org.labkey.api.data;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
-import java.sql.ResultSet;
 import java.util.*;
 
 public class JsonWriter
 {
-    private TableInfo _tinfo = null;
-    private ResultSet _rs = null;
-    private List<DisplayColumn> _displayColumns = null;
-    private PrintWriter _out = null;
-    private RenderContext _ctx = null;
-    private Long _rowCount = null;
-
-    private static final int INDENT_FACTOR = 4;
-
-    public JsonWriter(ResultSet rs, TableInfo tinfo, List<DisplayColumn> displayColumns, Long rowCount)
-    {
-        _tinfo = tinfo;
-        _rs = rs;
-        _displayColumns = displayColumns;
-        _rowCount = rowCount;
-    }
-
-    public void write(HttpServletResponse response) throws Exception
-    {
-        response.setContentType("application/json");
-        _out = response.getWriter();
-
-        _ctx = new RenderContext();
-        _ctx.setResultSet(_rs);
-
-        //start the result object
-        //we don't build a JSON object for this because the number of rows
-        //could be more than we should buffer in memory
-        _out.write("{\n\"metadata\": ");
-        _out.write(getMetaData().toString(INDENT_FACTOR));
-
-        _out.write(",\n\"columnModel\": ");
-        _out.write(getColumnModel().toString(INDENT_FACTOR));
-
-        writeRows();
-
-        //end the result object
-        _out.write("\n}");
-    }
-
-    protected JSONObject getMetaData() throws Exception
-    {
-        JSONObject mdata = new JSONObject();
-        JSONArray fields = new JSONArray();
-        for(DisplayColumn dc : _displayColumns)
-            fields.put(getMetaData(dc, null, false, true));
-
-        mdata.put("root", "rowset");
-        mdata.put("totalProperty", "rowCount");
-
-        //include an id property set to the pk column name if there is one (and only one)
-        List<String> pkColNames = _tinfo.getPkColumnNames();
-        if(null != pkColNames && 1 == pkColNames.size())
-            mdata.put("id", pkColNames.get(0));
-        
-        mdata.put("fields", fields);
-
-        return mdata;
-    }
-
     public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, FieldKey fieldKeyPrefix)
     {
         List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
@@ -223,7 +158,7 @@ public class JsonWriter
                 && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
         {
             TableInfo lookupTable = columnInfo.getFkTableInfo();
-            if(lookupTable != null && lookupTable.getPkColumns().size() == 1)
+            if(lookupTable != null)
             {
                 JSONObject lookupInfo = new JSONObject();
                 if (null != fk.getLookupContainerId())
@@ -264,77 +199,5 @@ public class JsonWriter
         }
 
         return null;
-    }
-
-
-
-    protected JSONArray getColumnModel() throws Exception
-    {
-        JSONArray cols = new JSONArray();
-        for(DisplayColumn dc : _displayColumns)
-            cols.put(getColModel(dc));
-        return cols;
-    }
-
-    protected JSONObject getColModel(DisplayColumn dc) throws Exception
-    {
-        JSONObject colModel = new JSONObject();
-        ColumnInfo colInfo = dc.getColumnInfo();
-
-        colModel.put("dataIndex", dc.getName());
-        colModel.put("hidden", colInfo.isHidden());
-        colModel.put("sortable", "true");
-        if(colInfo.getTextAlign() != null)
-            colModel.put("align", colInfo.getTextAlign());
-        if (colInfo.getLabel() != null)
-            colModel.put("header", colInfo.getLabel());
-        if (colInfo.getDescription() != null)
-            colModel.put("tooltip", colInfo.getDescription());
-        if (colInfo.getWidth() != null)
-            colModel.put("width", colInfo.getWidth());
-
-        return colModel;
-    }
-
-    protected void writeRows() throws Exception
-    {
-        _out.write(",\n\"rowset\":[\n");
-
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(_rs);
-        String rowSep = "";
-
-        while(_rs.next())
-        {
-            _out.write(rowSep);
-            _ctx.setRow(factory.getRowMap(_rs));
-            _out.write(getRow().toString(INDENT_FACTOR));
-            rowSep = ",\n";
-        }
-        _out.write("]");
-
-        if(null != _rowCount)
-        {
-            _out.write(",\n\"rowCount\": ");
-            _out.write(String.valueOf(_rowCount));
-        }
-    }
-
-    protected JSONObject getRow() throws Exception
-    {
-        JSONObject row = new JSONObject();
-        for(DisplayColumn dc : _displayColumns)
-        {
-            putValue(row, dc);
-        }
-        return row;
-    }
-
-    protected void putValue(JSONObject row, DisplayColumn dc) throws Exception
-    {
-        Object value = dc.getDisplayValue(_ctx);
-        if(value instanceof Date)
-            row.put(dc.getName(), "new Date(" + String.valueOf(((Date) value).getTime()) + ")");
-        else
-            row.put(dc.getName(), value);
     }
 }

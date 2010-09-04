@@ -46,43 +46,8 @@ public class GroupedResultSet extends Table.ResultSetImpl
     private int _groupCount = 0;
 
     private boolean _ignoreNext;
-    private boolean _scrollableRS = true;
 
-    public GroupedResultSet(ResultSet rs, String columnName, int maxNestedRows, int maxGroups) throws SQLException
-    {
-        this(rs, columnName, maxNestedRows);
-        Object value = null;
-
-        if (maxNestedRows > 0 && maxGroups > 0)
-        {
-            int groupingCount = 0;
-            while (rs.next())
-            {
-                if (!getObject(_columnIndex).equals(value))
-                {
-                    value = getObject(_columnIndex);
-                    groupingCount++;
-                    if (groupingCount > maxGroups)
-                    {
-                        _groupCount = maxGroups;
-                        _lastRow = getRow() - 1;
-                        setComplete(false);
-                        break;
-                    }
-                }
-            }
-            rs.beforeFirst();
-        }
-        setComplete(_lastRow == 0);
-    }
-
-    public GroupedResultSet(ResultSet rs, String columnName, boolean scrollableRS)
-    {
-        this(rs, columnName);
-//        _scrollableRS = scrollableRS;
-    }
-
-    public GroupedResultSet(ResultSet rs, String columnName, int maxRows) throws SQLException
+    public GroupedResultSet(ResultSet rs, String columnName, int maxRows, int maxGroups) throws SQLException
     {
         this(rs, columnName);
         setMaxRows(maxRows);
@@ -113,6 +78,68 @@ public class GroupedResultSet extends Table.ResultSetImpl
             }
             rs.beforeFirst();
         }
+
+        Object value = null;
+
+        if (maxRows > 0 && maxGroups > 0)
+        {
+            int groupingCount = 0;
+            while (rs.next())
+            {
+                if (!getObject(_columnIndex).equals(value))
+                {
+                    value = getObject(_columnIndex);
+                    groupingCount++;
+                    if (groupingCount > maxGroups)
+                    {
+                        _groupCount = maxGroups;
+                        _lastRow = getRow() - 1;
+                        setComplete(false);
+                        break;
+                    }
+                }
+            }
+            rs.beforeFirst();
+        }
+        setComplete(_lastRow == 0);
+    }
+
+    public GroupedResultSet(ResultSet rs, String columnName, int maxGroups) throws SQLException
+    {
+        this(rs, columnName);
+
+        // Check if we're a complete result set. We can tell if there
+        // are no more groups than our max.
+        Object value = null;
+        while (rs.next())
+        {
+            // Look for the group number changing
+            if (!getObject(_columnIndex).equals(value))
+            {
+                _groupCount++;
+                value = getObject(_columnIndex);
+            }
+            if (_groupCount == maxGroups)
+            {
+                // We reached our max number of groups. Remember
+                // this spot so we can treat it as the end of the
+                // result set
+                _lastRow = rs.getRow();
+                if (rs.next())
+                {
+                    setComplete(false);
+                }
+                break;
+            }
+        }
+
+        rs.beforeFirst();
+    }
+
+    @Override
+    public int getSize()
+    {
+        return _groupCount;
     }
 
     public String getTruncationMessage(int maxRows)
@@ -173,7 +200,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
         }
         catch (SQLException e)
         {
-            _log.error(e);
+           throw new RuntimeSQLException(e);
         }
     }
 
@@ -220,20 +247,11 @@ public class GroupedResultSet extends Table.ResultSetImpl
 
             if (!success)
             {
-                if (_scrollableRS)
-                {
-                    previous();  // Back it up
-                }
-                else
-                {
-                    assert !_ignoreNext;
-                    _ignoreNext = true;
-                }
+                previous();  // Back it up
             }
 
             return success;
         }
-
 
         public void beforeFirst() throws SQLException
         {

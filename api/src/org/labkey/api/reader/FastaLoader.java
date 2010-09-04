@@ -177,7 +177,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
                         }
                     }
                 }
-                
+
                 // End of file -- last entry
                 T next = createNextElement(_header, bodyStream);
                 close();

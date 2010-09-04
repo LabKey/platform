@@ -52,7 +52,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
-    private Set<String> _ignoredColumnFilters = new LinkedHashSet<String>();
+    protected Set<String> _ignoredColumnFilters = new LinkedHashSet<String>();
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
@@ -155,11 +155,6 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _rs;
     }
 
-    public void setResultSet(ResultSet rs)
-    {
-        setResultSet(rs, null);
-    }
-
     public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = rs;
@@ -253,18 +248,12 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _fieldMap;
     }
 
-    public ResultSet getResultSet(Map<FieldKey, ColumnInfo> map, TableInfo tinfo, int maxRows, long offset, String name) throws SQLException, IOException
-    {
-        return getResultSet(map, tinfo, maxRows, offset, name, false);
-    }
-
-
     public ResultSet getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url = getViewContext().cloneActionURL();
 
-        SimpleFilter filter = buildFilter(tinfo, url, name);
         Sort sort = buildSort(tinfo, url, name);
+        SimpleFilter filter = buildFilter(tinfo, url, name, maxRows, offset, sort);
 
         Collection<ColumnInfo> cols = fieldMap.values();
         if (null != QueryService.get())
@@ -275,16 +264,6 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _rs;
     }
 
-    
-    public ResultSet getResultSet(Collection<ColumnInfo> cols, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
-    {
-        LinkedHashMap<FieldKey, ColumnInfo> map = new LinkedHashMap<FieldKey, ColumnInfo>();
-        for (ColumnInfo c : cols)
-            map.put(c.getFieldKey(), c);
-        return getResultSet(map, tinfo, maxRows, offset, name, async);
-    }
-    
-    
     public Map<String, Aggregate.Result> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, boolean async) throws SQLException, IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
@@ -294,8 +273,8 @@ public class RenderContext extends BoundMap // extends ViewContext
         ActionURL url = getViewContext().cloneActionURL();
         Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
-        SimpleFilter filter = buildFilter(tinfo, url, dataRegionName);
         Sort sort = buildSort(tinfo, url, dataRegionName);
+        SimpleFilter filter = buildFilter(tinfo, url, dataRegionName, Table.ALL_ROWS, 0, sort);
 
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, ignoredAggregateFilters);
@@ -342,7 +321,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     }
 
 
-    protected SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name)
+    protected SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
         SimpleFilter filter = new SimpleFilter(getBaseFilter());
         //HACK.. Need to fix up the casing of columns throughout so don't have to do

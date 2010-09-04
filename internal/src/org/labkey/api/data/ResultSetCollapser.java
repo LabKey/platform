@@ -50,6 +50,12 @@ public class ResultSetCollapser extends Table.ResultSetImpl
         return _tableRS.isComplete();
     }
 
+    @Override
+    public int getSize()
+    {
+        return -1;
+    }
+
     public String getTruncationMessage(int maxRows)
     {
         return _tableRS.getTruncationMessage(maxRows);

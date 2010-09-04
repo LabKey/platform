@@ -82,9 +82,6 @@ abstract public class QueryService
      */
     abstract public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
 
-    abstract public String[] getAvailableWebPartNames(UserSchema schema);
-    abstract public WebPartView[] getWebParts(UserSchema schema, String location);
-
     abstract public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema);
     abstract public UserSchema getExternalSchema(DefaultSchema folderSchema, String name);
 

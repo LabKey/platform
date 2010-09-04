@@ -70,7 +70,7 @@ public abstract class DataView extends WebPartView<RenderContext>
 
     public void setResultSet(ResultSet rs)
     {
-        getRenderContext().setResultSet(rs);
+        getRenderContext().setResultSet(rs, null);
     }
 
     public RenderContext getRenderContext()

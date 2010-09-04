@@ -777,20 +777,20 @@ public class DataRegion extends DisplayElement
                 colCount++;
 
 
-            if (rs instanceof CachedRowSetImpl)
+            if (rs instanceof Table.TableResultSet && ((Table.TableResultSet)rs).getSize() != -1)
             {
-                _rowCount = ((CachedRowSetImpl)rs).getSize();
+                _rowCount = ((Table.TableResultSet)rs).getSize();
                 if (_complete && _totalRows == null)
                     _totalRows = getOffset() + _rowCount.intValue();
             }
 
             // If button bar is not visible, don't render form.  Important for nested regions (forms can't be nested)
-            //TODO: Fix this so form is rendered AFTER all rows. (Does this change layoout?)
+            //TODO: Fix this so form is rendered AFTER all rows. (Does this change layout?)
             boolean renderButtons = _gridButtonBar.shouldRender(ctx);
             if (renderButtons)
                 _gridButtonBar.setConfigs(_buttonBarConfigs);
             String filterErrorMsg = getFilterErrorMessage(ctx);
-            String filterDescription =  isShowFilterDescription() ? getFilterDescription(ctx) : null;
+            String filterDescription = isShowFilterDescription() ? getFilterDescription(ctx) : null;
             if (filterErrorMsg != null && filterErrorMsg.length() > 0)
                 headerMessage.append("<span class=\"error\">").append(PageFlowUtil.filter(filterErrorMsg)).append("</span>");
 
@@ -824,7 +824,7 @@ public class DataRegion extends DisplayElement
             
             if (null == sqlx)
             {
-                renderGridHeaders(ctx, out, renderers);
+                renderGridHeaderColumns(ctx, out, renderers);
 
                 if (_aggregateRowFirst)
                     renderAggregatesTableRow(ctx, out, renderers, false, true);
@@ -1161,50 +1161,6 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    protected void renderGridStart(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws IOException
-    {
-        out.write("<tr><td>");
-        if (isShowBorders())
-        {
-            out.write("<table class=\"labkey-data-region labkey-show-borders");
-            if (_aggregateResults != null && !_aggregateResults.isEmpty())
-            {
-                out.write(" labkey-has-col-totals");
-            }
-            out.write("\"");
-        }
-        else
-        {
-            out.write("<table class=\"labkey-data-region\"");
-        }
-
-        StringBuilder style = new StringBuilder();
-        if (_fixedWidthColumns)
-            style.append("table-layout:fixed");
-
-        if (style.length() > 0)
-            out.write(" style=\"" + style.toString() + "\"");
-
-        out.write(" id=\"" + PageFlowUtil.filter("dataregion_" + getName()) + "\">\n");
-        out.write("<colgroup>");
-        if (_showRecordSelectors)
-            out.write("<col class=\"labkey-selectors\" width=\"35\"/>");
-        Iterator<DisplayColumn> itr = renderers.iterator();
-        DisplayColumn renderer;
-        while (itr.hasNext())
-        {
-            renderer = itr.next();
-            if (renderer.isVisible(ctx))
-                renderer.renderColTag(out, !itr.hasNext());
-        }
-        out.write("</colgroup>");
-    }
-
-    protected final void renderGridHeaders(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
-    {
-        renderGridHeaderColumns(ctx, out, renderers);
-    }
-
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
@@ -1230,11 +1186,6 @@ public class DataRegion extends DisplayElement
         }
 
         out.write("</tr>\n");
-    }
-
-    protected void renderGridEnd(RenderContext ctx, Writer out) throws IOException
-    {
-        out.write("</table>\n</td></tr>\n");
     }
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, boolean borderTop, boolean borderBottom) throws IOException

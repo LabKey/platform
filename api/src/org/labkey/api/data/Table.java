@@ -567,7 +567,6 @@ public class Table
         {
             _log.error("SQL Exception", e);
             _logQuery(Priority.ERROR, sql, parameters, conn);
-
         }
     }
 
@@ -1671,6 +1670,9 @@ public class Table
         public Iterator<Map<String, Object>> iterator();
 
         String getTruncationMessage(int maxRows);
+
+        /** @return the number of rows in the result set. -1 if unknown */
+        int getSize();
     }
 
 
@@ -1727,6 +1729,11 @@ public class Table
             this.isComplete = isComplete;
         }
 
+        @Override
+        public int getSize()
+        {
+            return -1;
+        }
 
         public boolean next() throws SQLException
         {

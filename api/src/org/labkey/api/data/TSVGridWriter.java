@@ -183,7 +183,7 @@ public class TSVGridWriter extends TSVWriter
     public void writeResultSet(ResultSet rs) throws SQLException
     {
         RenderContext context = new RenderContext(HttpView.currentContext());
-        context.setResultSet(rs);
+        context.setResultSet(rs, null);
         writeResultSet(context, rs);
     }
 
