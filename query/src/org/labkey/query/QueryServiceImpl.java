@@ -655,16 +655,6 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public String[] getAvailableWebPartNames(UserSchema schema)
-    {
-        return new String[0];
-    }
-
-    public WebPartView[] getWebParts(UserSchema schema, String location)
-    {
-        return new WebPartView[0];
-    }
-
     public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema)
     {
         Map<String, UserSchema> ret = new HashMap<String, UserSchema>();
