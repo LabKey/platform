@@ -99,7 +99,7 @@ public class CustomViewUtil
         view.setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
     }
 
-    public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta, boolean createDefault)
+    public static Map<String, Object> toMap(ViewContext context, UserSchema schema, String queryName, String viewName, boolean includeFieldMeta)
             throws ServletException
     {
         //build a query view.  XXX: is this necessary?  Old version used queryView.getDisplayColumns() to get cols in the default view
@@ -109,13 +109,14 @@ public class CustomViewUtil
         CustomView view = qview.getCustomView();
         if (view == null)
         {
-            if (createDefault)
+            if (viewName == null)
+                // create a new default view if it doesn't exist
                 view = qview.getQueryDef().createCustomView(context.getUser(), viewName);
             else
                 return Collections.emptyMap();
         }
 
-        return toMap(schema, view, includeFieldMeta);
+        return toMap(view, includeFieldMeta);
     }
 
     // UNDONE: Move to API so DataRegion can use this
@@ -135,7 +136,7 @@ public class CustomViewUtil
         return ret;
     }
 
-    public static Map<String, Object> toMap(QuerySchema schema, CustomView view, boolean includeFieldMeta)
+    public static Map<String, Object> toMap(CustomView view, boolean includeFieldMeta)
     {
         Map<String, Object> ret = propertyMap(view);
 
@@ -147,8 +148,8 @@ public class CustomViewUtil
             ret.put("viewDataUrl", gridURL);
         }
 
-//        UserSchema schema = view.getQueryDefinition().getSchema();
-        TableInfo tinfo = view.getQueryDefinition().getTable(schema, null, true);
+        QueryDefinition queryDef = view.getQueryDefinition();
+        TableInfo tinfo = queryDef.getTable(queryDef.getSchema(), null, true);
 
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> columns = view.getColumnProperties();
         if (columns.size() == 0)
@@ -187,8 +188,6 @@ public class CustomViewUtil
             CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
             for (FilterInfo filter : fas.getFilter())
             {
-                allKeys.add(filter.getField());
-
                 Map<String, Object> filterInfo = new HashMap<String, Object>();
                 filterInfo.put("fieldKey", filter.getField().toString());
                 filterInfo.put("op", filter.getOp().getPreferredUrlKey());

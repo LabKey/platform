@@ -1656,7 +1656,7 @@ public class QueryController extends SpringActionController
         Map<String, Object> ret = new HashMap<String, Object>();
         ret.put("redirect", returnURL);
         if (view != null)
-            ret.put("view", CustomViewUtil.toMap(schema, view, true));
+            ret.put("view", CustomViewUtil.toMap(view, true));
         return new ApiSimpleResponse(ret);
     }
 
@@ -4087,13 +4087,13 @@ public class QueryController extends SpringActionController
                 // Get info for a named view or the default view (null)
                 CustomView view = views.get(form.getViewName());
                 if (view != null)
-                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(qschema, view, form.isMetadata()));
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(view, form.isMetadata()));
             }
             else
             {
                 viewInfos = new ArrayList<Map<String, Object>>(views.size());
                 for (CustomView view : views.values())
-                    viewInfos.add(CustomViewUtil.toMap(qschema, view, form.isMetadata()));
+                    viewInfos.add(CustomViewUtil.toMap(view, form.isMetadata()));
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();

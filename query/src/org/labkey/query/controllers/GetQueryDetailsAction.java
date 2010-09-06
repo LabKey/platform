@@ -132,7 +132,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             for (String viewName : viewNames)
             {
                 viewName = StringUtils.trimToNull(viewName);
-                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true, false));
+                viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)schema, form.getQueryName(), viewName, true));
             }
 
             resp.put("views", viewInfos);
