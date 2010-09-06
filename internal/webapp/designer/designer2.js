@@ -514,7 +514,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     {
         if (record)
         {
-            var fieldKey = record.data.fieldKey || record.data.name;
+            var fieldKey = record.data.fieldKey;
             var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
             if (fieldMetaRecord)
                 var html = LABKEY.ext.FieldMetaRecord.getToolTipHtml(fieldMetaRecord);
@@ -583,21 +583,21 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     },
 
     // subclasses may override this to provide a better default
-    getDefaultRecordData : function (fieldKey) { return {fieldKey: fieldKey}; },
+    createDefaultRecordData : function (fieldKey) { return {fieldKey: fieldKey}; },
 
     addRecord : function (fieldKey) {
         var list = this.getList();
-        var defaultData = this.getDefaultRecordData(fieldKey);
-        var columnRecord = new list.store.recordType(defaultData);
+        var defaultData = this.createDefaultRecordData(fieldKey);
+        var record = new list.store.recordType(defaultData);
         var selected = list.getSelectedIndexes();
         if (selected && selected.length > 0)
         {
             var index = Math.max(selected);
-            list.store.insert(index+1, columnRecord);
+            list.store.insert(index+1, record);
         }
         else
         {
-            list.store.add([columnRecord]);
+            list.store.add([record]);
         }
     },
 
@@ -779,7 +779,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         }
     },
 
-    getDefaultRecordData : function (fieldKey) {
+    createDefaultRecordData : function (fieldKey) {
         if (fieldKey)
         {
             var o = {fieldKey: fieldKey};
@@ -795,16 +795,19 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         return { };
     },
 
-    // Called from FieldTreeLoader. Returns a TreeNode config for a FieldMetaRecord
+    // Called from FieldTreeLoader. Returns a TreeNode config for a FieldMetaRecord.
+    // This method is necessary since we need to determine checked state of the tree
+    // using the columnStore.
     createNodeAttrs : function (fieldMetaRecord) {
         var fieldMeta = fieldMetaRecord.data;
         var attrs = {
             id: fieldMeta.name,
             text: fieldMeta.caption,
             leaf: !fieldMeta.lookup,
+            //checked: fieldMeta.selectable ? this.hasField(fieldMeta.name) : undefined,
             checked: this.hasField(fieldMeta.name),
+            disabled: !fieldMeta.selectable,
             hidden: fieldMeta.hidden && !this.showHiddenFields,
-            disabled: !fieldMeta.selectable, // XXX: check unselectable nodes are still expandable
             qtip: fieldMeta.description,
             icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
         };
@@ -822,7 +825,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
             else
             {
                 var fieldKey = node.id;
-                var index = this.fieldMetaStore.findExact("name", fieldKey);
+                var index = this.fieldMetaStore.getById(fieldKey);
                 if (index > -1)
                 {
                     var fieldMetaRecord = this.fieldMetaStore.getAt(index);
@@ -1079,6 +1082,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
     getList : function () { return this.filterList; },
 
     hasField : function (fieldKey) {
+        // filterStore may have more than one filter for a fieldKey
         return this.filterStore.findExact("fieldKey", fieldKey) != -1;
     },
 
@@ -1253,7 +1257,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.updateTitle();
     },
 
-    getDefaultRecordData : function (fieldKey) {
+    createDefaultRecordData : function (fieldKey) {
         return {
             fieldKey: fieldKey,
             dir: "+"
@@ -1418,7 +1422,7 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
 /** An Ext.data.Record constructor for LABKEY.Query.FieldMetaData json objects. */
 LABKEY.ext.FieldMetaRecord = Ext.data.Record.create([
     'name',
-    'fieldKey',
+    {name: 'fieldKey', mapping: 'fieldKeyPath' },
     'description',
     'friendlyType',
     'type',
@@ -1450,7 +1454,7 @@ LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord) {
     {
         body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + field.description + "</td></tr>";
     }
-    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + field.fieldKey + "</td></tr>";
+    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + FieldKey.fromString(field.fieldKey).toDisplayString() + "</td></tr>";
     if (field.friendlyType)
     {
         body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + field.friendlyType + "</td></tr>";
@@ -1464,7 +1468,7 @@ LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord) {
 };
 
 /**
- * An Ext.data.Store for LABKEY.Query.FieldMetaData json objects.
+ * An Ext.data.Store for LABKEY.ext.FieldMetaRecord json objects.
  */
 LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
     constructor : function (config) {
@@ -1481,7 +1485,7 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         this.isLoading = false;
         this.remoteSort = true;
         this.reader = new Ext.data.JsonReader({
-            idProperty: "name", // name is actually the fieldKey
+            idProperty: "fieldKeyPath",
             root: 'columns',
             fields: LABKEY.ext.FieldMetaRecord
         });
@@ -1521,9 +1525,9 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
     },
 
     /**
-     * Loads records for the given lookup fieldKey.  The fieldKey is the relative to the base query.
+     * Loads records for the given lookup fieldKey.  The fieldKey is the full path relative to the base query.
      * The special fieldKey '<root>' returns the records in the base query.
-     * 
+     *
      * @param options
      * @param {String} [options.fieldKey] Either fieldKey or record is required.
      * @param {FieldMetaRecord} [options.record] Either fieldKey or FieldMetaRecord is required.
@@ -1540,7 +1544,7 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
         console.log(options);
 
         // The record's name is the fieldKey relative to the root query table.
-        var fieldKey = options.fieldKey || (options.record && options.record.data.name);
+        var fieldKey = options.fieldKey || (options.record && options.record.data.fieldKey);
         if (!fieldKey)
             throw new Error("fieldKey or record is required");
 
@@ -1561,18 +1565,18 @@ LABKEY.ext.FieldMetaStore = Ext.extend(Ext.data.Store, {
                 add: true
             }, options);
 
-            this.load(o);
+            this.      load(o);
         }
     },
-    
+
     queryLookup : function (fieldKey)
     {
         // XXX: check we handle fieldKeys with '/' in them
         var prefixMatch = fieldKey == "<root>" ? "" : (fieldKey + "/");
         var collection = this.queryBy(function (r, id) {
-            var fieldKey = id;
-            var idx = fieldKey.indexOf(prefixMatch);
-            if (idx == 0 && fieldKey.substring(prefixMatch.length).indexOf("/") == -1)
+            var recordFieldKey = id;//r.data.fieldKey;
+            var idx = recordFieldKey.indexOf(prefixMatch);
+            if (idx == 0 && recordFieldKey.substring(prefixMatch.length).indexOf("/") == -1)
                 return true;
             return false;
         });
@@ -1655,6 +1659,10 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
         if (!menu.loadedLookup)
         {
             menu.loadedLookup = true;
+            menu.addMenuItem({
+                text: "Loading...",
+                iconCls: "loading-indicator"
+            });
             var fieldKey = menu.fieldKey;
             this.fieldMetaStore.loadLookup({fieldKey: fieldKey, menu: menu, callback: this.onLoadItems, scope: this});
         }
@@ -1669,7 +1677,7 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
                 else
                 {
                     var fieldKey = item.fieldKey;
-                    var index = this.fieldMetaStore.findExact("name", fieldKey);
+                    var index = this.fieldMetaStore.getById(fieldKey);
                     if (index > -1)
                     {
                         var fieldMetaRecord = this.fieldMetaStore.getAt(index);
@@ -1685,6 +1693,8 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
     _onMenuItemClick : function (item, e) {
         var fieldKey = item.fieldKey;
         var fieldMetaRecord = this.fieldMetaStore.getById(fieldKey);
+        if (!fieldMetaRecord.data.selectable)
+            return false;
         if (this.fireEvent('beforeselect', this, fieldMetaRecord) !== false)
         {
             this.setValue(fieldKey);
@@ -1695,6 +1705,8 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
 
     onLoadItems : function (fieldMetaRecords, options, success) {
         var menu = options.menu;
+        menu.removeAll();
+
         for (var i = 0; i < fieldMetaRecords.length; i++)
         {
             var fieldMetaRecord = fieldMetaRecords[i];
@@ -1706,15 +1718,18 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
     createMenuConfig : function (fieldMetaRecord) {
         var fieldMeta = fieldMetaRecord.data;
         var attrs = {
-            fieldKey: fieldMeta.name,
-            text: fieldMeta.caption || fieldMeta.fieldKey,
+            fieldKey: fieldMeta.fieldKey,
+            text: fieldMeta.caption || fieldMeta.name,
             hidden: fieldMeta.hidden && !this.showHiddenFields,
-            disabled: !fieldMeta.selectable,
+//            disabled: !fieldMeta.selectable,
             icon: fieldMeta.keyField ? LABKEY.contextPath + "/_images/key.png" : ""
         };
+        // UNDONE: render unselectable items as disabled, but still allow lookup sub-menus to be expanded.
+//        if (!fieldMeta.selectable)
+//            fieldMeta.itemCls = "x-item-disabled";
         if (fieldMeta.lookup)
         {
-            attrs.menu = this.createLookupMenu(fieldMeta.name);
+            attrs.menu = this.createLookupMenu(fieldMeta.fieldKey);
         }
         return attrs;
     },
@@ -1832,15 +1847,6 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
             this.runCallback(callback, scope || node, []);
         }
     },
-
-//    getNodeFieldKey : function (node) {
-//        var path = node.getPath();
-//        if (path.indexOf("/<root>") == 0)
-//            path = path.substring("/<root>/".length);
-//        if (path.length == 0)
-//            return null;
-//        return path;
-//    },
 
     // create a new TreeNode from the record.
     createNode : function (fieldMetaRecord) {

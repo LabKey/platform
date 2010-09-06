@@ -56,8 +56,14 @@ public class JsonWriter
         props.put("type", useFriendlyAsType ? friendlyTypeName : dc.getJsonTypeName());
         props.put("jsonType", dc.getJsonTypeName());
 
+        FieldKey fieldKey;
         if (cinfo != null && null != cinfo.getFieldKey())
-            props.put("fieldKey", cinfo.getFieldKey().toString());
+            fieldKey = cinfo.getFieldKey();
+        else
+            fieldKey = new FieldKey(null, FieldKey.encodePart(name));
+
+        props.put("fieldKey", fieldKey.toString());
+        props.put("fieldKeyPath", FieldKey.fromParts(fieldKeyPrefix, fieldKey).toString());
 
         // Duplicate booleans with alternate property name for backwards compatibility
         boolean autoIncrement = cinfo != null && cinfo.isAutoIncrement();
