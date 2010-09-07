@@ -307,20 +307,29 @@ public class LoginController extends SpringActionController
             try
             {
                 // Attempt authentication with all registered providers
-                _user = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
+                AuthenticationManager.AuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
 
-                if (null != _user)
+                switch (result.getStatus())
                 {
-                    SecurityManager.setAuthenticatedUser(request, _user, null, null, null);
-
-                    return true;
-                }
-                else if (null != form.getEmail() || null != form.getPassword())
-                {
-                    // Email & password were specified, but authentication failed... display either invalid email address error or generic "couldn't authenticate" message
-                    new ValidEmail(form.getEmail());
-                    form.errorHtml = "The e-mail address and password you entered did not match any accounts on file.<br><br>\n" +
-                            "Note: Passwords are case sensitive; make sure your Caps Lock is off.";
+                    case Success:
+                        _user = result.getUser();
+                        SecurityManager.setAuthenticatedUser(request, _user, null, null, null);
+                        return true;
+                    case InactiveUser:
+                        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
+                        form.errorHtml = "Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account.";
+                        break;
+                    case BadCredentials:
+                        if (null != form.getEmail() || null != form.getPassword())
+                        {
+                            // Email & password were specified, but authentication failed... display either invalid email address error or generic "couldn't authenticate" message
+                            new ValidEmail(form.getEmail());
+                            form.errorHtml = "The e-mail address and password you entered did not match any accounts on file.<br><br>\n" +
+                                    "Note: Passwords are case sensitive; make sure your Caps Lock is off.";
+                        }
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
                 }
             }
             catch (ValidEmail.InvalidEmailException e)
@@ -810,14 +819,15 @@ public class LoginController extends SpringActionController
                 return false;
 
             // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-            // where a user is already logged in (normal changed password, admins initializing another user's password, etc.)
+            // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
             if (getUser().isGuest())
             {
-                User authenticatedUser = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
+                AuthenticationManager.AuthenticationResult result = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
-                if (null != authenticatedUser)
+                if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {
                     // Log the user into the system
+                    User authenticatedUser = result.getUser();
                     SecurityManager.setAuthenticatedUser(request, authenticatedUser, null, null, null);
                     getViewContext().setUser(authenticatedUser);
                     _skipProfile = form.getSkipProfile();
