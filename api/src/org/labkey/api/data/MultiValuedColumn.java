@@ -122,41 +122,25 @@ public class MultiValuedColumn extends LookupColumn
     // Wraps any DisplayColumn and causes it to render each value separately
     private static class MultiValuedDisplayColumn extends DisplayColumnDecorator
     {
-        private String _value = null;
-
         public MultiValuedDisplayColumn(DisplayColumn dc)
         {
             super(dc);
         }
 
-        @Override         // TODO: Similar for renderDetailsCellContents()
+        @Override         // TODO: Need similar for renderDetailsCellContents()
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            String valueString = (String)super.getValue(ctx);
-            String[] values = valueString.split(",");
+            MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, getColumnInfo().getFieldKey());
             String sep = "";
-
-            for (String value : values)
+            
+            while (mvCtx.next())
             {
-                _value = value;
                 out.append(sep);
-                super.renderGridCellContents(ctx, out);
+                super.renderGridCellContents(mvCtx, out);
                 sep = ", ";
             }
 
             // TODO: Call super in empty values case?
-        }
-
-        @Override
-        public String getFormattedValue(RenderContext ctx)
-        {
-            return _value;
-        }
-
-        @Override
-        public Object getValue(RenderContext ctx)
-        {
-            return _value;
         }
     }
 }
