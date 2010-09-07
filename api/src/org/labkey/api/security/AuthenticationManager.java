@@ -17,6 +17,8 @@ package org.labkey.api.security;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -266,7 +268,43 @@ public class AuthenticationManager
     }
 
 
-    public static User authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser}
+
+    public static class AuthenticationResult
+    {
+        private final User _user;
+        private final AuthenticationStatus _status;
+
+        // Success case
+        private AuthenticationResult(@NotNull User user)
+        {
+            _user = user;
+            _status = AuthenticationStatus.Success;
+        }
+
+        // Failure case
+        private AuthenticationResult(@NotNull AuthenticationStatus status)
+        {
+            _user = null;
+            _status = status;
+        }
+
+        @Nullable
+        public User getUser()
+        {
+            return _user;
+        }
+
+        @NotNull
+        public AuthenticationStatus getStatus()
+        {
+            return _status;
+        }
+    }
+
+
+    public static @NotNull
+    AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
     {
         AuthenticationResponse firstFailure = null;
 
@@ -306,13 +344,13 @@ public class AuthenticationManager
                     {
                         AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
                                 "Inactive user " + user.getEmail() + " attempted to login");
-                        return null;
+                        return new AuthenticationResult(AuthenticationStatus.InactiveUser);
                     }
 
                     _userProviders.put(user.getUserId(), authProvider);
                     AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
                             email + " logged in successfully via " + authProvider.getName() + " authentication.");
-                    return user;
+                    return new AuthenticationResult(user);
                 }
                 else
                 {
@@ -386,16 +424,20 @@ public class AuthenticationManager
             }
         }
 
-        return null;
+        return new AuthenticationResult(AuthenticationStatus.BadCredentials);
     }
 
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP).  This is for the case
     //  where you have an id & password in hand (from a post or get) and want to ignore SSO and other delegated
     //  authentication mechanisms that rely on cookies, browser redirects, etc.
+
+    // Returns null if credentials are incorrect, user doesn't exist, or user is inactive
     public static User authenticate(String id, String password) throws ValidEmail.InvalidEmailException
     {
-        return authenticate(null, null, id, password, null, true);
+        AuthenticationResult result = authenticate(null, null, id, password, null, true);
+
+        return result.getUser();
     }
 
 
