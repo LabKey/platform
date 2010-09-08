@@ -756,4 +756,16 @@ public class PlateManager implements PlateService.Service
     {
         return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, idString));
     }
+
+    @Override
+    public DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    {
+        return CurveFitFactory.getCurveImpl(wellGroup, assumeDecreasing, percentCalculator, type);
+    }
+
+    @Override
+    public DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    {
+        return CurveFitFactory.getCurveImpl(wellGroups, assumeDecreasing, percentCalculator, type);
+    }
 }

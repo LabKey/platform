@@ -40,11 +40,6 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
     protected Map<AUCType, Double> _aucMap = new HashMap<AUCType, Double>();
     protected List<AUCRange> _ranges = new ArrayList<AUCRange>();
 
-    public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
-    {
-        this(Collections.singletonList(wellGroup), assumeDecreasing, percentCalculator);
-    }
-
     public WellGroupCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
         _wellGroups = wellGroups;
@@ -60,7 +55,7 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
         }
     }
 
-    public double getMaxPercentage() throws FitFailedException
+    private double getMaxPercentage() throws FitFailedException
     {
         DoublePoint[] curve = getCurve();
         double max = curve[0].getY();
@@ -71,19 +66,6 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
                 max = percent;
         }
         return max;
-    }
-
-    public double getMinPercentage() throws FitFailedException
-    {
-        DoublePoint[] curve = getCurve();
-        double min = curve[0].getY();
-        for (int i = 1; i < CURVE_SEGMENT_COUNT; i++)
-        {
-            double percent = curve[i].getY();
-            if (percent < min)
-                min = percent;
-        }
-        return min;
     }
 
     public double getMaxDilution()

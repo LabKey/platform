@@ -19,6 +19,9 @@ package org.labkey.study.plate;
 import org.labkey.api.study.DilutionCurve;
 import org.labkey.api.study.WellGroup;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: klum
@@ -30,14 +33,19 @@ public class CurveFitFactory
 
     public static DilutionCurve getCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
     {
+        return getCurveImpl(Collections.singletonList(wellGroup), assumeDecreasing, percentCalculator, type);
+    }
+
+    public static DilutionCurve getCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException
+    {
         switch (type)
         {
             case FOUR_PARAMETER:
-                return new ParameterCurveImpl.FourParameterCurve(wellGroup, assumeDecreasing, percentCalculator);
+                return new ParameterCurveImpl.FourParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
             case FIVE_PARAMETER:
-                return new ParameterCurveImpl.FiveParameterCurve(wellGroup, assumeDecreasing, percentCalculator);
+                return new ParameterCurveImpl.FiveParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
             case POLYNOMIAL:
-                return new PolynomialCurveImpl(wellGroup, assumeDecreasing, percentCalculator);
+                return new PolynomialCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
         }
         throw new IllegalArgumentException("Unable to find a DilutionCurve implementation for type: " + type.getLabel());
     }

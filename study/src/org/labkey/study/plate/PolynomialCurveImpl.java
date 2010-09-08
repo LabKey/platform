@@ -19,6 +19,7 @@ package org.labkey.study.plate;
 import Jama.Matrix;
 import org.labkey.api.study.WellGroup;
 
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
@@ -65,9 +66,9 @@ public class PolynomialCurveImpl extends WellGroupCurveImpl
         }
     }
 
-    public PolynomialCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
+    public PolynomialCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
-        super(wellGroup, assumeDecreasing, percentCalculator);
+        super(wellGroups, assumeDecreasing, percentCalculator);
     }
 
     protected DoublePoint[] renderCurve() throws FitFailedException

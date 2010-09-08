@@ -109,11 +109,6 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
         }
     }
 
-    public ParameterCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws FitFailedException
-    {
-        this(Collections.singletonList(wellGroup), assumeDecreasing, percentCalculator, fitType);
-    }
-
     public ParameterCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws FitFailedException
     {
         super(wellGroups, assumeDecreasing, percentCalculator);
@@ -226,17 +221,17 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 
     public static class FourParameterCurve extends ParameterCurveImpl
     {
-        public FourParameterCurve(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
+        public FourParameterCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
         {
-            super(wellGroup, assumeDecreasing, percentCalculator, FitType.FOUR_PARAMETER);
+            super(wellGroups, assumeDecreasing, percentCalculator, FitType.FOUR_PARAMETER);
         }
     }
 
     public static class FiveParameterCurve extends ParameterCurveImpl
     {
-        public FiveParameterCurve(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
+        public FiveParameterCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
         {
-            super(wellGroup, assumeDecreasing, percentCalculator, FitType.FIVE_PARAMETER);
+            super(wellGroups, assumeDecreasing, percentCalculator, FitType.FIVE_PARAMETER);
         }
     }
 }
