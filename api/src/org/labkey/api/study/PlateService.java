@@ -26,6 +26,8 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: brittp
@@ -232,6 +234,29 @@ public class PlateService
          * Registers a handler for a particular type of plate
          */
         void registerPlateTypeHandler(PlateTypeHandler handler);
+
+        /**
+         * Calculates a dilution curve for the specified well group.
+         * @param wellGroup The well group containing WellData objects over which a curve should be calculated.
+         * @param assumeDecreasing Whether the curve is assumed to be decreasing by default.  Used only if the data points are too chaotic to provide a reasonable guess.
+         * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
+         * @param type The Type of fit desired.
+         * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
+         * @throws DilutionCurve.FitFailedException Thrown if a curve cannot be fit to the data points.
+         */
+        DilutionCurve getDilutionCurve(WellGroup wellGroup, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException;
+
+        /**
+         * Calculates a dilution curve for the specified well groups.
+         * @param wellGroups The well groups containing WellData objects over which a curve should be calculated. WellData objects from these
+         * groups will be traversed in the provided group order.
+         * @param assumeDecreasing Whether the curve is assumed to be decreasing by default.  Used only if the data points are too chaotic to provide a reasonable guess.
+         * @param percentCalculator A callback to allow the caller to determine the plottable value for a given WellData within its WellGroup.
+         * @param type The Type of fit desired.
+         * @return A DilutionCurve instance of the appropriate type, if a fit was possible.
+         * @throws DilutionCurve.FitFailedException Thrown if a curve cannot be fit to the data points.
+         */
+        DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, DilutionCurve.FitType type) throws DilutionCurve.FitFailedException;
     }
 
     public static class NameConflictException extends Exception

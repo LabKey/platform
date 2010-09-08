@@ -72,11 +72,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     // Unfortunate query hackery that orders display columns based on default view
     protected DomainProperty[] reorderDomainColumns(DomainProperty[] unorderedColumns, ViewContext context, ExpProtocol protocol)
     {
-        Map<String, DomainProperty> nameToCol = new HashMap<String, DomainProperty>();
-        // unfortunately, we have to match on label/caption when mapping propertydescriptors to columninfo objects;
-        // there are no other pieces of data that are the same.
+        Map<String, DomainProperty> uriToCol = new HashMap<String, DomainProperty>();
         for (DomainProperty pd : unorderedColumns)
-            nameToCol.put(pd.getPropertyDescriptor().getNonBlankCaption(), pd);
+            uriToCol.put(pd.getPropertyDescriptor().getPropertyURI(), pd);
 
         List<DomainProperty> orderedColumns = new ArrayList<DomainProperty>();
         // add all columns that are found in the default view in the correct order:
@@ -90,15 +88,16 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             if (dc instanceof UrlColumn)
                 continue;
 
-            DomainProperty col = nameToCol.get(dc.getCaption());
+            String uri = dc.getColumnInfo().getPropertyURI();
+            DomainProperty col = uri != null ? uriToCol.get(uri) : null;
             if (col != null)
             {
                 orderedColumns.add(col);
-                nameToCol.remove(dc.getCaption());
+                uriToCol.remove(dc.getCaption());
             }
         }
         // add the remaining columns:
-        for (DomainProperty col : nameToCol.values())
+        for (DomainProperty col : uriToCol.values())
             orderedColumns.add(col);
         return orderedColumns.toArray(new DomainProperty[orderedColumns.size()]);
     }
