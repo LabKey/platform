@@ -2022,7 +2022,9 @@ public class AdminController extends SpringActionController
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
-                html.append("<tr><td>").append(stat.getDescription()).append("</td>");
+                html.append("<tr>");
+
+                appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
                 Long limit = stat.getLimit();
                 Long maxSize = stat.getMaxSize();
@@ -2044,6 +2046,24 @@ public class AdminController extends SpringActionController
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
+        }
+
+        private void appendDescription(StringBuilder html, String description, StackTraceElement[] creationStackTrace)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (StackTraceElement element : creationStackTrace)
+            {
+                sb.append(element.toString());
+                sb.append("\n");
+            }
+
+            String message = PageFlowUtil.jsString(sb);
+            html.append("<td><a href=\"#\" onClick=\"alert(");
+            html.append(message);
+            html.append(");return false;\">");
+            html.append(PageFlowUtil.filter(description));
+            html.append("</a></td>");
         }
 
         private void appendLongs(StringBuilder html, Long... stats)
