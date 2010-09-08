@@ -82,7 +82,14 @@ public class ExternalSchema extends SimpleModuleUserSchema
         DbScope scope = DbScope.getDbScope(def.getDataSource());
 
         if (null != scope)
-            scope.invalidateSchema(def.getDbSchemaName());
+        {
+            String schemaName = def.getDbSchemaName();
+
+            // Don't uncache the built-in LabKey schemas, even those pointed at by external schemas.  Reloading
+            // these schemas is unncessary (they don't change) and causes us to leak DbCaches.  See #10508.
+            if (scope != DbScope.getLabkeyScope() || !DbSchema.getModuleSchemaNames().contains(schemaName))
+                scope.invalidateSchema(def.getDbSchemaName());
+        }
     }
 
     protected TableInfo createTable(String name, @NotNull SchemaTableInfo schematable)

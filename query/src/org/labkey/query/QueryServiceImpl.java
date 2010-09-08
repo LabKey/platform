@@ -70,7 +70,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
