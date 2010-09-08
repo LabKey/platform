@@ -19,6 +19,7 @@ package org.labkey.api.cache;
 public class CacheStats implements Comparable<CacheStats>
 {
     private final String _description;
+    private final StackTraceElement[] _stackTrace;
     private final long _gets;
     private final long _misses;
     private final long _puts;
@@ -30,14 +31,15 @@ public class CacheStats implements Comparable<CacheStats>
     private final int _limit;
 
 
-    public CacheStats(String description, Stats stats, int size, int limit)
+    public CacheStats(String description, StackTraceElement[] stackTrace, Stats stats, int size, int limit)
     {
-        this(description, stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get(), limit);
+        this(description, stackTrace, stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get(), limit);
     }
 
-    private CacheStats(String description, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize, int limit)
+    private CacheStats(String description, StackTraceElement[] stackTrace, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize, int limit)
     {
         _description = description;
+        _stackTrace = stackTrace;
         _gets = gets;
         _misses = misses;
         _puts = puts;
@@ -52,6 +54,11 @@ public class CacheStats implements Comparable<CacheStats>
     public String getDescription()
     {
         return _description;
+    }
+
+    public StackTraceElement[] getCreationStackTrace()
+    {
+        return _stackTrace;
     }
 
     public long getSize()

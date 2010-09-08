@@ -3,7 +3,10 @@ package org.labkey.api.data;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.labkey.api.query.FieldKey;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -12,40 +15,50 @@ import java.util.Iterator;
  */
 public class MultiValuedRenderContext extends RenderContextDecorator
 {
-    private final FieldKey _fieldKey;
-    private final Iterator<String> _iter;
-    private String _currentValue = null;
+    private final Map<FieldKey, Iterator<String>> _iterators = new HashMap<FieldKey, Iterator<String>>();
+    private final Map<FieldKey, String> _currentValues = new HashMap<FieldKey, String>();
 
-    public MultiValuedRenderContext(RenderContext ctx, FieldKey fieldKey)
+    public MultiValuedRenderContext(RenderContext ctx, Set<FieldKey> requiredFieldKeys)
     {
         super(ctx);
-        String valueString = (String)ctx.get(fieldKey);
-        String[] values = valueString.split(",");
-        _fieldKey = fieldKey;
-        _iter = new ArrayIterator<String>(values);
+
+        // For each required column (e.g., display value, rowId), retrieve the concatenated values, split them, and
+        // create stash away an iterator of those values.
+        for (FieldKey fieldKey : requiredFieldKeys)
+        {
+            String valueString = (String)ctx.get(fieldKey);
+            String[] values = valueString.split(",");
+            _iterators.put(fieldKey, new ArrayIterator<String>(values));
+        }
     }
 
-    // Advance the iterator, if possible
+    // Advance all the iterators, if another value is present.  Check that all iterators are in lock step.
     public boolean next()
     {
-        boolean hasNext = _iter.hasNext();
+        Boolean previousHasNext = null;
 
-        if (hasNext)
-            _currentValue = _iter.next();
+        for (Map.Entry<FieldKey, Iterator<String>> entry : _iterators.entrySet())
+        {
+            Iterator<String> iter = entry.getValue();
+            boolean hasNext = iter.hasNext();
 
-        return hasNext;
+            if (hasNext)
+                _currentValues.put(entry.getKey(), iter.next());
+
+            if (null == previousHasNext)
+                previousHasNext = hasNext;
+            else
+                assert previousHasNext == hasNext;
+        }
+
+        return null != previousHasNext && previousHasNext;
     }
 
     @Override
     public Object get(Object key)
     {
-        if (key.equals((_fieldKey)))
-        {
-            return _currentValue;
-        }
-        else
-        {
-            return super.get(key);
-        }
+        assert _currentValues.containsKey(key);
+
+        return _currentValues.get(key);
     }
 }

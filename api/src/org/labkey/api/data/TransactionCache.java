@@ -134,6 +134,12 @@ public class TransactionCache<V> implements StringKeyCache<V>
     }
 
     @Override
+    public StackTraceElement[] getCreationStackTrace()
+    {
+        return _privateCache.getCreationStackTrace();
+    }
+
+    @Override
     public Stats getTransactionStats()
     {
         return null; // TODO: Check this

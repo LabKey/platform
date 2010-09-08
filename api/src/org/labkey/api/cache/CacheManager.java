@@ -115,11 +115,11 @@ public class CacheManager
 
     public static CacheStats getCacheStats(Cache cache)
     {
-        return new CacheStats(cache.getDebugName(), cache.getStats(), cache.size(), cache.getLimit());
+        return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getStats(), cache.size(), cache.getLimit());
     }
 
     public static CacheStats getTransactionCacheStats(Cache cache)
     {
-        return new CacheStats(cache.getDebugName(), cache.getTransactionStats(), cache.size(), cache.getLimit());
+        return new CacheStats(cache.getDebugName(), cache.getCreationStackTrace(), cache.getTransactionStats(), cache.size(), cache.getLimit());
     }
 }

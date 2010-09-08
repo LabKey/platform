@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.query.FieldKey;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
@@ -26,7 +28,7 @@ import java.util.Set;
  */
 public class DisplayColumnDecorator extends DisplayColumn
 {
-    private final DisplayColumn _column;
+    protected final DisplayColumn _column;
 
     public DisplayColumnDecorator(DisplayColumn column)
     {
@@ -116,5 +118,11 @@ public class DisplayColumnDecorator extends DisplayColumn
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         _column.render(ctx, out);
+    }
+
+    @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        _column.addQueryFieldKeys(keys);
     }
 }

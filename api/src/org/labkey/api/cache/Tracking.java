@@ -24,6 +24,8 @@ public interface Tracking
 {
     String getDebugName();
 
+    StackTraceElement[] getCreationStackTrace();
+
     Stats getStats();
 
     Stats getTransactionStats();

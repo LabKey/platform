@@ -34,6 +34,7 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
+    private final StackTraceElement[] _stackTrace;
 
     public CacheWrapper(@NotNull BasicCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats)
     {
@@ -42,6 +43,7 @@ public class CacheWrapper<K, V> implements Cache<K, V>
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
         _transactionStats = new Stats();
+        _stackTrace = Thread.currentThread().getStackTrace();
     }
 
     @Override
@@ -130,6 +132,11 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     public Stats getTransactionStats()
     {
         return _transactionStats;
+    }
+
+    public StackTraceElement[] getCreationStackTrace()
+    {
+        return _stackTrace;
     }
 
     @Override

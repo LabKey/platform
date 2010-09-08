@@ -177,6 +177,12 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
     @Override
+    public StackTraceElement[] getCreationStackTrace()
+    {
+        return _sharedCache.getCreationStackTrace();
+    }
+
+    @Override
     public int getLimit()
     {
         return _sharedCache.getLimit();

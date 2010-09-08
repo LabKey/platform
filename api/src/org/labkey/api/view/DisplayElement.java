@@ -149,7 +149,7 @@ public abstract class DisplayElement implements View, Cloneable
     public final void render(Map map, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         assert map instanceof RenderContext;
-        render((RenderContext)map,  request, response);
+        render((RenderContext)map, request, response);
     }
 
     
@@ -185,7 +185,7 @@ public abstract class DisplayElement implements View, Cloneable
         _locked = true;
     }
 
-    protected void checkLocked()
+    public void checkLocked()
     {
         if (_locked)
             throw new IllegalStateException("Object has already been locked");
