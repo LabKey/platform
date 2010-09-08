@@ -56,12 +56,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ModuleStaticResolverImpl implements WebdavResolver
 {
-    static ModuleStaticResolverImpl _instance = new ModuleStaticResolverImpl();
+    private static ModuleStaticResolverImpl _instance = new ModuleStaticResolverImpl();
+
     static
     {
         ServiceRegistry.get().registerService(WebdavResolver.class, _instance);
     }
-    static Logger _log = Logger.getLogger(ModuleStaticResolverImpl.class);
+
+    private static final Logger _log = Logger.getLogger(ModuleStaticResolverImpl.class);
 
     /** System property name for an extra directory of static content */
     private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";
@@ -271,7 +273,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
     }
 
-    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(50, CacheManager.DAY, "StaticResourceCache");
+    private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "StaticResourceCache");
 
     private class StaticResource extends _PublicResource
     {

@@ -720,7 +720,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if ((!merge || null == fk) && xmlCol.getFk() != null)
         {
             ColumnType.Fk xfk = xmlCol.getFk();
-            fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), null, xfk.getFkTable(), xfk.getFkColumnName(), false);
+            fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false);
         }
 
         setFieldKey(new FieldKey(null,xmlCol.getColumnName()));
@@ -1009,7 +1009,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         final String _lookupKey;
         final boolean _joinWithContainer;
 
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String ownerName, String tableName, String lookupKey, boolean joinWithContaienr)
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContaienr)
         {
             _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
             _tableName = tableName;
@@ -1208,7 +1208,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     continue;
                 }
 
-                col.fk = new SchemaForeignKey(col, key.pkOwnerName, null, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
+                col.fk = new SchemaForeignKey(col, key.pkOwnerName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
             }
             else
             {

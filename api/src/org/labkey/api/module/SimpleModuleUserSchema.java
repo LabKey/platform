@@ -123,7 +123,7 @@ public class SimpleModuleUserSchema extends UserSchema
                         String lookupSchemaName = fk.getLookupSchemaName();
                         if (lookupSchemaName.equalsIgnoreCase(_userSchema.getDbSchema().getName()))
                             lookupSchemaName = _userSchema.getName();
-                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, lookupSchemaName, null, fk.getLookupTableName(), pkColName, fk.isJoinWithContainer());
+                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, fk.isJoinWithContainer());
                         wrap.setFk(wrapFk);
                     }
                 }
@@ -157,9 +157,9 @@ public class SimpleModuleUserSchema extends UserSchema
     {
         UserSchema _userSchema;
 
-        public SimpleModuleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String ownerName, String tableName, String lookupKey, boolean joinWithContaienr)
+        public SimpleModuleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContaienr)
         {
-            super(foreignKey, dbSchemaName, ownerName, tableName, lookupKey, joinWithContaienr);
+            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContaienr);
             _userSchema = userSchema;
         }
 
