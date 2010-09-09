@@ -22,6 +22,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -337,7 +338,7 @@ public class ModuleLoader implements Filter
 
     public static List<Module> loadModules(List<File> explodedModuleDirs)
     {
-        Map<String,File> moduleNameToFile = new HashMap<String,File>();
+        Map<String,File> moduleNameToFile = new CaseInsensitiveHashMap<File>();
         List<Module> modules = new ArrayList<Module>();
         for(File moduleDir : explodedModuleDirs)
         {
@@ -386,7 +387,7 @@ public class ModuleLoader implements Filter
                     if (moduleNameToFile.containsKey(module.getName()))
                     {
                         _log.warn("Module with name '" + module.getName() + "' has already been loaded from "
-                                + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping module.");
+                                + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir);
                     }
                     else
                     {
