@@ -482,7 +482,7 @@ public class ReportUtil
     {
         if (schema == null && query == null) return true;
 
-        QueryDefinition def = QueryService.get().getQueryDef(container, schema, query);
+        QueryDefinition def = QueryService.get().getQueryDef(user, container, schema, query);
         if (def == null)
         {                                                                                                                            
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);

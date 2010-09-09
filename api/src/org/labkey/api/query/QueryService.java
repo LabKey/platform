@@ -43,11 +43,11 @@ abstract public class QueryService
         instance = impl;
     }
 
-    abstract public Map<String, QueryDefinition> getQueryDefs(Container container, String schema);
-    abstract public List<QueryDefinition> getQueryDefs(Container container);
-    abstract public QueryDefinition createQueryDef(Container container, String schema, String name);
+    abstract public Map<String, QueryDefinition> getQueryDefs(User user, Container container, String schema);
+    abstract public List<QueryDefinition> getQueryDefs(User user, Container container);
+    abstract public QueryDefinition createQueryDef(User user, Container container, String schema, String name);
     abstract public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName);
-    abstract public QueryDefinition getQueryDef(Container container, String schema, String name);
+    abstract public QueryDefinition getQueryDef(User user, Container container, String schema, String name);
     abstract public QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String name);
     abstract public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name);
     abstract public boolean isQuerySnapshot(Container container, String schema, String name);

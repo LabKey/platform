@@ -415,7 +415,7 @@ public class QuerySettings
         String queryName = getQueryName();
         if (queryName == null)
             return null;
-        QueryDefinition ret = QueryService.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), queryName);
+        QueryDefinition ret = QueryService.get().getQueryDef(schema.getUser(), schema.getContainer(), schema.getSchemaName(), queryName);
         if (ret != null && getContainerFilterName() != null)
             ret.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
         if (ret != null)

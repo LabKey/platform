@@ -272,7 +272,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
             return null;
         if (_queryDef == null)
         {
-            _queryDef = QueryService.get().getQueryDef(getContainer(), getSchemaName().toString(), getQueryName());
+            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName().toString(), getQueryName());
         }
         if (_queryDef == null)
         {

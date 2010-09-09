@@ -472,7 +472,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
     validate : Ext.emptyFn,
 
     save : function () {
-        var store = this.getList().store;
+        var store = this.getList().getStore();
 
         // HACK: I'm most likely abusing the JsonWriter APIs which could break in future versions of Ext.
         var writer = new Ext.data.JsonWriter({

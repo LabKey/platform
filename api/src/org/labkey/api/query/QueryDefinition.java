@@ -31,6 +31,9 @@ public interface QueryDefinition
     String getName();
     String getSchemaName();
 
+    /** Returns the User this QueryDefinition was initialized with (ie, from the ViewContext).  QueryDefinitions do not have an owner. */
+    User getUser();
+    /** Returns the Container this QueryDefinition was defined in. */
     Container getContainer();
     boolean canInherit();
     void setCanInherit(boolean f);
@@ -48,7 +51,8 @@ public interface QueryDefinition
      * Return a tableInfo representing this query.
      * @param includeMetadata
      */
-    TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata);
+    TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
+    TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);
     TableInfo getMainTable();
 
     String getSql();

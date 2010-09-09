@@ -50,7 +50,7 @@
 
     boolean isReportInherited = (Boolean)context.getRequest().getAttribute("isReportInherited");
 
-    QueryDefinition queryDef = QueryService.get().getQueryDef(context.getContainer(),
+    QueryDefinition queryDef = QueryService.get().getQueryDef(context.getUser(), context.getContainer(),
             form.getSchemaName(),
             form.getQueryName());
     if (queryDef == null)

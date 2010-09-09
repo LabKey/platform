@@ -857,7 +857,7 @@ public class QueryView extends WebPartView<Object>
 
     protected ReportService.ItemFilter getItemFilter()
     {
-        QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName());
+        QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), getSchema().getSchemaName(), getSettings().getQueryName());
         if (def == null)
             def = QueryService.get().createQueryDefForTable(getSchema(), getSettings().getQueryName());
 
@@ -967,7 +967,23 @@ public class QueryView extends WebPartView<Object>
         item.setId(getDataRegionName() + ":Views:default");
         if ("".equals(currentView))
             item.setStrong(true);
-        // XXX: default view may be unsaved in session
+        if (!isReport && _customView != null)
+        {
+            StringBuilder description = new StringBuilder();
+            if (_customView.isSession())
+            {
+                item.setEmphasis(true);
+                description.append("Unsaved ");
+            }
+            if (_customView.isShared())
+                description.append("Shared ");
+
+            if (!_customView.getContainer().getId().equals(getContainer().getId()))
+                description.append("Inherited from '").append(PageFlowUtil.filter(_customView.getContainer().getPath())).append("'");
+
+            if (description.length() > 0)
+                item.setDescription(description.toString());
+        }
         item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
         menu.addMenuItem(item);
 
@@ -1008,6 +1024,10 @@ public class QueryView extends WebPartView<Object>
             }
             if (view.isShared())
                 description.append("Shared ");
+            
+            if (view.getContainer() != null && !view.getContainer().equals(getContainer()))
+                description.append("Inherited from '").append(PageFlowUtil.filter(view.getContainer().getPath())).append("'");
+
             if (description.length() > 0)
                 item.setDescription(description.toString());
 

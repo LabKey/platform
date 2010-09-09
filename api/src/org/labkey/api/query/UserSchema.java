@@ -102,7 +102,7 @@ abstract public class UserSchema extends AbstractSchema
             return table;
         }
 
-        QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchemaName(), name);
+        QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), name);
 
         if (def == null)
             return null;
@@ -232,7 +232,7 @@ abstract public class UserSchema extends AbstractSchema
         for (String tableName : visibleOnly ? getVisibleTableNames() : getTableNames())
             set.put(tableName, QueryService.get().createQueryDefForTable(this, tableName));
 
-        for (QueryDefinition query : QueryService.get().getQueryDefs(getContainer(), getSchemaName()).values())
+        for (QueryDefinition query : QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()).values())
         {
             if (!visibleOnly || !query.isHidden())
                 set.put(query.getName(), query);
@@ -290,7 +290,7 @@ abstract public class UserSchema extends AbstractSchema
     {
         QuerySettings settings = createQuerySettings(dataRegionName);
         settings.init(pvs);
-        //settings.setSchemaName(getSchemaName()); //?
+        settings.setSchemaName(getSchemaName());
 
         return settings;
     }

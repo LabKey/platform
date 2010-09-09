@@ -45,7 +45,7 @@ public class TempQuerySettings extends QuerySettings
 
     public QueryDefinition getQueryDef(UserSchema schema)
     {
-        QueryDefinition qdef = QueryService.get().createQueryDef(_container, _schemaName, "temp");
+        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), _container, _schemaName, "temp");
         qdef.setSql(_sql);
         if (getContainerFilterName() != null)
             qdef.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
