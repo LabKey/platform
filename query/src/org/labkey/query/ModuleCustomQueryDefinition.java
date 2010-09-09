@@ -28,9 +28,9 @@ import java.sql.SQLException;
 */
 public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
 {
-    public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, Container container)
+    public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, User user, Container container)
     {
-        super(moduleQueryDef.toQueryDef(container));
+        super(user, moduleQueryDef.toQueryDef(container));
     }
 
     @Override

@@ -58,7 +58,7 @@ public class StudyQueryReport extends QueryReport
         {
             try {
                 String queryName = getDescriptor().getProperty(QueryParam.queryName.name());
-                QueryDefinition def = QueryService.get().getQueryDef(context.getContainer(), StudyManager.getSchemaName(), queryName);
+                QueryDefinition def = QueryService.get().getQueryDef(context.getUser(), context.getContainer(), StudyManager.getSchemaName(), queryName);
                 if (def == null)
                 {
                     // not a custom query definition, try a table based definition

@@ -640,10 +640,11 @@ public class Query
 
 				if (name != null)
 				{
-                    QueryDefinition existing = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", name);
+                    User user = TestContext.get().getUser();
+                    QueryDefinition existing = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", name);
                     if (null != existing)
                         existing.delete(TestContext.get().getUser());
-					QueryDefinition q = QueryService.get().createQueryDef(JunitUtil.getTestContainer(), "lists", name);
+					QueryDefinition q = QueryService.get().createQueryDef(user, JunitUtil.getTestContainer(), "lists", name);
 					q.setSql(sql);
 					if (null != metadata)
 						q.setMetadataXml(metadata);
@@ -903,7 +904,7 @@ public class Query
             {
                 if (test.name != null)
                 {
-                    QueryDefinition q = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test.name);
                     if (null != q)
                         q.delete(user);
                 }
@@ -1013,7 +1014,7 @@ public class Query
             {
                 if (test.name != null)
                 {
-                    QueryDefinition q = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+                    QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", test.name);
                     assertNotNull(q);
 //                    q.delete(user);
                 }

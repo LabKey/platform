@@ -350,7 +350,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         CustomViewUtil.update(this, jsonView, saveFilterAndSort);
     }
 
-    public ViewDocument getDesignDocument(QuerySchema schema)
+    public ViewDocument getDesignDocument(UserSchema schema)
     {
         ViewDocument ret = ViewDocument.Factory.newInstance();
         DgQuery view = ret.addNewView();

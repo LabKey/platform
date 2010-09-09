@@ -149,7 +149,7 @@ public class CustomViewUtil
         }
 
         QueryDefinition queryDef = view.getQueryDefinition();
-        TableInfo tinfo = queryDef.getTable(queryDef.getSchema(), null, true);
+        TableInfo tinfo = queryDef.getTable(null, true);
 
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> columns = view.getColumnProperties();
         if (columns.size() == 0)

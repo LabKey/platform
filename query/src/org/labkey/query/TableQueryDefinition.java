@@ -16,17 +16,14 @@
 
 package org.labkey.query;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpression;
 import org.labkey.query.sql.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
 
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +38,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public TableQueryDefinition(UserSchema schema, String tableName)
     {
-        super(getQueryDef(schema, tableName));
+        super(schema.getUser(), getQueryDef(schema, tableName));
         _schema = schema;
     }
 
@@ -62,7 +59,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         ActionURL url = null;
         List<QueryException> errors = new ArrayList<QueryException>();
-        TableInfo table = getTable(getSchema(), errors, true);
+        TableInfo table = getTable(errors, true);
         if (table != null)
         {
             switch (action)
@@ -83,7 +80,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         ActionURL url = null;
         List<QueryException> errors = new ArrayList<QueryException>();
-        TableInfo table = getTable(getSchema(), errors, true);
+        TableInfo table = getTable(errors, true);
         if (table != null)
         {
             switch (action)
@@ -137,7 +134,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         StringExpression expr = null;
         List<QueryException> errors = new ArrayList<QueryException>();
-        TableInfo table = getTable(getSchema(), errors, true);
+        TableInfo table = getTable(errors, true);
         if (table == null)
             return null;
 
@@ -178,22 +175,26 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     @Override
     public String getDescription()
     {
-        TableInfo t = getTable(getSchema(), new ArrayList<QueryException>(), true);
+        TableInfo t = getTable(new ArrayList<QueryException>(), true);
         return t == null ? null : t.getDescription();
     }
 
 
-    public TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (schema == getSchema())
         {
             if (_table == null)
-                _table = schema.getTable(getName());
+                _table = schema.getTable(getName(), includeMetadata);
             if (_table != null)
             {
                 return _table;
             }
         }
+        TableInfo table = schema.getTable(getName(), includeMetadata);
+        if (table != null)
+            return table;
+
         return super.getTable(schema, errors, includeMetadata);
     }
 
@@ -220,7 +221,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public boolean isMetadataEditable()
     {
-        TableInfo tableInfo = getTable(getSchema(), new ArrayList<QueryException>(), true);
+        TableInfo tableInfo = getTable(new ArrayList<QueryException>(), true);
         // Might have been deleted out from under us
         return tableInfo != null && tableInfo.isMetadataOverrideable();
     }

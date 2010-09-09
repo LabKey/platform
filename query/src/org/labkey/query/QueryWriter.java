@@ -50,7 +50,7 @@ public class QueryWriter implements ExternalStudyWriter
     public void write(Study study, StudyContext ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();
-        List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);
+        List<QueryDefinition> queries = QueryService.get().getQueryDefs(ctx.getUser(), c);
 
         if (queries.size() > 0)
         {

@@ -161,7 +161,7 @@ public class ReportsController extends BaseStudyController
                 final ViewContext context = getViewContext();
                 final UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
                 final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-                QueryDefinition qd = QueryService.get().getQueryDef(study.getContainer(), "study", defName);
+                QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), study.getContainer(), "study", defName);
                 if (qd == null)
                     qd = schema.getQueryDefForTable(defName);
 

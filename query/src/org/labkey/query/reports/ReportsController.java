@@ -1144,7 +1144,7 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(ViewOptionsForm form, BindException errors) throws Exception
         {
             List<Map<String, String>> response = new ArrayList<Map<String, String>>();
-            QueryDefinition def = QueryService.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName());
+            QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), form.getSchemaName(), form.getQueryName());
             if (def == null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
@@ -1218,7 +1218,7 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(ViewOptionsForm form, BindException errors) throws Exception
         {
-            QueryDefinition def = QueryService.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName());
+            QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), form.getSchemaName(), form.getQueryName());
             if (def == null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
@@ -1930,7 +1930,7 @@ public class ReportsController extends SpringActionController
             {
                 for (Map.Entry<String, TableInfo> tableEntry : schemaEntry.getValue().entrySet())
                 {
-                    QueryDefinition def = QueryService.get().getQueryDef(getContainer(), schemaEntry.getKey(), tableEntry.getKey());
+                    QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schemaEntry.getKey(), tableEntry.getKey());
 
                     for (ColumnInfo col : tableEntry.getValue().getColumns())
                     {
@@ -1999,7 +1999,7 @@ public class ReportsController extends SpringActionController
         {
             if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.custom)
             {
-                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getContainer(), schema.getSchemaName());
+                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getUser(), getContainer(), schema.getSchemaName());
                 for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
                 {
                     QueryDefinition qdef = entry.getValue();
@@ -2114,7 +2114,7 @@ public class ReportsController extends SpringActionController
         {
             if (tinfo != null)
             {
-                QueryDefinition def = QueryService.get().getQueryDef(getContainer(), schema, query);
+                QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schema, query);
 
                 for (ColumnInfo col : tinfo.getColumns())
                 {

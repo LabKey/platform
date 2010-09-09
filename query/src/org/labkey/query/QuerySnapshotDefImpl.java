@@ -116,7 +116,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
                     throw new RuntimeException(e);
                 }
             }
-            return _queryDef == null ? null : new CustomQueryDefinitionImpl(_queryDef);
+            return _queryDef == null ? null : new CustomQueryDefinitionImpl(user, _queryDef);
         }
         else if (_snapshotDef.getQueryTableName() != null)
         {

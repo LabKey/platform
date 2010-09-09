@@ -113,7 +113,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -217,7 +216,7 @@ public class StudyController extends BaseStudyController
                     StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
                     if (null != studySchema.getDataSetDefinitionByName(form.getTypeName())
                             || studySchema.getTableNames().contains(form.getTypeName())
-                            || QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
+                            || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
                     {
                         errors.reject("defineDatasetType", "There is a dataset or query named " + form.getTypeName() + " already defined in this folder.");
                     }
@@ -2562,7 +2561,7 @@ public class StudyController extends BaseStudyController
 
         if (sortMap == null)
         {
-            QueryDefinition qd = QueryService.get().getQueryDef(dsd.getContainer(), "study", dsd.getLabel());
+            QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), dsd.getContainer(), "study", dsd.getLabel());
             if (qd == null)
             {
                 UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");

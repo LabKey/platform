@@ -58,19 +58,22 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     final static private QueryManager mgr = QueryManager.get();
     final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
+    protected User _user = null;
     protected UserSchema _schema = null;
     protected QueryDef _queryDef;
     private boolean _dirty;
     private ContainerFilter _containerFilter;
 
-    public QueryDefinitionImpl(QueryDef queryDef)
+    public QueryDefinitionImpl(User user, QueryDef queryDef)
     {
+        _user = user;
         _queryDef = queryDef;
         _dirty = queryDef.getQueryDefId() == 0;
     }
 
-    public QueryDefinitionImpl(Container container, String schema, String name)
+    public QueryDefinitionImpl(User user, Container container, String schema, String name)
     {
+        _user = user;
         _queryDef = new QueryDef();
         _queryDef.setName(name);
         _queryDef.setSchema(schema);
@@ -205,6 +208,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
     }
 
+    public User getUser()
+    {
+        return _user;
+    }
+
     public Container getContainer()
     {
         return ContainerManager.getForId(_queryDef.getContainerId());
@@ -279,7 +287,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public UserSchema getSchema()
     {
         if (null == _schema)
-            _schema = (UserSchema) DefaultSchema.get(null, getContainer()).getSchema(getSchemaName());
+            _schema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(getSchemaName());
         assert _schema.getSchemaName().equals(getSchemaName());
         return _schema;
     }
@@ -307,7 +315,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return null;
     }
 
-    public TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(List<QueryException> errors, boolean includeMetadata)
+    {
+        return getTable(getSchema(), errors, includeMetadata);
+    }
+
+    public TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (errors == null)
         {

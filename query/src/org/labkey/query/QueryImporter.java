@@ -105,12 +105,12 @@ public class QueryImporter implements ExternalStudyImporter
                 QueryType queryXml = queryDoc.getQuery();
 
                 // For now, just delete if a query by this name already exists.
-                QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
+                QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getUser(), ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
 
                 if (null != oldQuery)
                     oldQuery.delete(ctx.getUser());
 
-                QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
+                QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getUser(), ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
                 newQuery.setSql(sql);
                 newQuery.setDescription(queryXml.getDescription());
 

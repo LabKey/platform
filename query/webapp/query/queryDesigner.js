@@ -14,7 +14,7 @@ function FieldKey(parent, name)
 
 FieldKey.prototype.equals = function(other)
 {
-    return other != null && this.toString() == other.toString();        
+    return other != null && this.toString() == other.toString();
 }
 FieldKey.prototype.getParts = function()
 {
@@ -100,6 +100,18 @@ FieldKey.fromParts = function(rgStr)
     }
     return ret;
 }
+
+Ext.data.Types.FieldKey = {
+    convert: function (v, record) {
+        if (Ext.isArray(v))
+            return FieldKey.fromParts(v);
+        return FieldKey.fromString(v);
+    },
+    sortType: function (s) {
+        return s.toString();
+    },
+    type: 'FieldKey'
+};
 
 function Bind_Metadata(designer, dn, metadataTagName)
 {

@@ -440,7 +440,7 @@ public class QueryController extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists as a table");
                     return false;
                 }
-                QueryDefinition newDef = QueryService.get().createQueryDef(getContainer(), form.getSchemaName().toString(), form.ff_newQueryName);
+                QueryDefinition newDef = QueryService.get().createQueryDef(getUser(), getContainer(), form.getSchemaName().toString(), form.ff_newQueryName);
                 Query query = new Query(schema);
                 query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
                 newDef.setSql(query.getQueryText());
@@ -1676,7 +1676,7 @@ public class QueryController extends SpringActionController
             if (schema == null)
                 throw new NotFoundException("schema not found");
 
-            QueryDefinition queryDef = QueryService.get().getQueryDef(getContainer(), schemaName, queryName);
+            QueryDefinition queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), schemaName, queryName);
             if (queryDef == null)
                 queryDef = schema.getQueryDefForTable(queryName);
             if (queryDef == null)
@@ -1761,7 +1761,7 @@ public class QueryController extends SpringActionController
 			if (!StringUtils.isEmpty(form.rename) && !form.rename.equalsIgnoreCase(queryDef.getName()))
 			{
 				QueryService s = QueryService.get();
-				QueryDefinition copy = s.createQueryDef(queryDef.getContainer(), queryDef.getSchemaName(), form.rename);
+				QueryDefinition copy = s.createQueryDef(getUser(), queryDef.getContainer(), queryDef.getSchemaName(), form.rename);
 				copy.setSql(queryDef.getSql());
 				copy.setMetadataXml(queryDef.getMetadataXml());
 				copy.setDescription(form.description);
@@ -3930,7 +3930,7 @@ public class QueryController extends SpringActionController
             //user-defined queries
             if (form.isIncludeUserQueries())
             {
-                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getContainer(), uschema.getSchemaName());
+                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getUser(), getContainer(), uschema.getSchemaName());
                 for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
                 {
                     QueryDefinition qdef = entry.getValue();

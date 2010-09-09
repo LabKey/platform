@@ -151,7 +151,7 @@ public class ReportManager implements StudyManager.DataSetListener
 
         // add any custom query views
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-        QueryDefinition qd = QueryService.get().getQueryDef(def.getContainer(), "study", def.getLabel());
+        QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), def.getContainer(), "study", def.getLabel());
         if (null == qd)
             qd = schema.getQueryDefForTable(def.getLabel());
         Map<String, CustomView> views = qd.getCustomViews(context.getUser(), context.getRequest());

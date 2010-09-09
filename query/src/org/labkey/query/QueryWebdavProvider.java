@@ -134,7 +134,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			if (!name.endsWith(".sql"))
 				return null;
 			name = name.substring(0,name.length()-".sql".length());
-			QueryDefinition q = QueryService.get().getQueryDef(_parent._c, getName(), name);
+			QueryDefinition q = QueryService.get().getQueryDef(null, _parent._c, getName(), name);
 			if (null == q)
 				return null;
 			return new SqlResource(this, q);
@@ -142,7 +142,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 
 		public Collection<String> listNames()
 		{
-			Map<String, QueryDefinition> m = QueryService.get().getQueryDefs(_parent._c, getName());
+			Map<String, QueryDefinition> m = QueryService.get().getQueryDefs(null, _parent._c, getName());
 			ArrayList<String> list = new ArrayList<String>(m.size());
 			for (String name : m.keySet())
 				list.add(name + ".sql");

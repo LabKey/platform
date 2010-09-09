@@ -56,7 +56,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         //so it can display edit source, edit design links
         resp.put("name", form.getQueryName());
         resp.put("schemaName", form.getSchemaName());
-        Map<String,QueryDefinition> queryDefs = QueryService.get().getQueryDefs(container, form.getSchemaName());
+        Map<String,QueryDefinition> queryDefs = QueryService.get().getQueryDefs(user, container, form.getSchemaName());
         boolean isUserDefined = (null != queryDefs && queryDefs.containsKey(form.getQueryName()));
         resp.put("isUserDefined", isUserDefined);
         boolean canEdit = (null != queryDefs && queryDefs.containsKey(form.getQueryName()) && queryDefs.get(form.getQueryName()).canEdit(user));
