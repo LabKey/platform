@@ -197,7 +197,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
     {
         if (select == null)
             throw new IllegalArgumentException("select");
@@ -210,13 +210,14 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             sql.append(select);
             sql.append("\n").append(from);
             if (filter != null) sql.append("\n").append(filter);
+            if (groupBy != null) sql.append("\n").append(groupBy);
             if (order != null) sql.append("\n").append(order);
 
             return limitRows(sql, rowCount);
         }
         else
         {
-            return _limitRows(select, from, filter, order, rowCount, offset);
+            return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
         }
     }
 
@@ -231,7 +232,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return true;
     }
 
-    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
     {
         throw new UnsupportedOperationException("limitRows() with an offset not supported in SQLServer 2000");
     }

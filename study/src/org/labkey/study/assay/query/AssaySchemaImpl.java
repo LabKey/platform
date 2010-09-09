@@ -154,7 +154,7 @@ public class AssaySchemaImpl extends AssaySchema
                     if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
                         TableInfo t = provider.createDataTable(this, protocol);
-                        if (null != t.getColumn("Properties"))
+                        if (t != null && null != t.getColumn("Properties"))
                             fixupPropertyURLs(t.getColumn("Properties"));
                         return t;
                     }

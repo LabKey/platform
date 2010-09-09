@@ -919,14 +919,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         var args = this.pendingPropfind[path];
         if (args)
         {
-            console.debug("pending " + args.url);
             args.callbacks.push(cb);
             return;
         }
 
         var url = this.concatPaths(this.prefixUrl, encodePath(path));
         this.connection.url = url;
-        console.debug("requesting " + url);
         this.pendingPropfind[path] = args = {url: url, path: path, callbacks:[cb]};
         this.proxy.doRequest("read", null, {method:"PROPFIND",depth:"1", propname : this.propNames}, this.transferReader, this.processFiles, this, args);
         args.transId = this.connection.transId;

@@ -56,7 +56,7 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
     }
 
     @Override
-    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
     {
         if (order == null || order.trim().length() == 0)
             throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
@@ -69,6 +69,7 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
         sql.append(") AS _RowNum\n");
         sql.append(from);
         if (filter != null) sql.append("\n").append(filter);
+        if (groupBy != null) sql.append("\n").append(groupBy);
         sql.append("\n) AS z\n");
         sql.append("WHERE _RowNum BETWEEN ");
         sql.append(offset + 1);

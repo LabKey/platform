@@ -1091,6 +1091,7 @@ public class ExperimentController extends SpringActionController
         protected TableInfo createTable()
         {
             ExpInputTable tableInfo = (ExpInputTable)super.createTable();
+            tableInfo.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             tableInfo.setRun(_run, _type);
             return tableInfo;
         }

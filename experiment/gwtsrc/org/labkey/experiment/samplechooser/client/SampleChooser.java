@@ -17,6 +17,8 @@
 package org.labkey.experiment.samplechooser.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.assay.SampleChooserUtils;
@@ -37,7 +39,6 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
     public static final GWTSampleSet NONE_SAMPLE_SET = new GWTSampleSet("<None>", DUMMY_LSID);
 
     private SampleInfo[] _sampleInfos;
-    private SampleCache _cache;
 
     private FlexTable _table = new FlexTable();
     private int _maxSampleCount;
@@ -70,9 +71,9 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
                     _sampleCountListBox.addItem(i + " sample" + (i == 1 ? "" : "s"), Integer.toString(i));
                 }
                 _sampleCountListBox.setSelectedIndex(defaultSampleCount - minSampleCount);
-                _sampleCountListBox.addChangeListener(new ChangeListener()
+                _sampleCountListBox.addChangeHandler(new ChangeHandler()
                 {
-                    public void onChange(Widget sender)
+                    public void onChange(ChangeEvent e)
                     {
                         updateSampleCount();
                     }
@@ -84,13 +85,13 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
             _table.setWidget(0, 2, new HTML("<b>Sample Name</b>"));
 
             _sampleInfos = new SampleInfo[_maxSampleCount];
-            _cache = new SampleCache(_sampleInfos);
+            SampleCache cache = new SampleCache(_sampleInfos);
 
             for (int i = 0; i < _maxSampleCount; i++)
             {
                 String sampleLSID = PropertyUtil.getServerProperty(PROP_PREFIX_SELECTED_SAMPLE_LSID + i);
                 String sampleSetLSID = PropertyUtil.getServerProperty(PROP_PREFIX_SELECTED_SAMPLE_SET_LSID + i);
-                _sampleInfos[i] = new SampleInfo(i, _cache, sampleLSID, sampleSetLSID);
+                _sampleInfos[i] = new SampleInfo(i, cache, sampleLSID, sampleSetLSID);
                 _sampleInfos[i].setVisible(i < _maxSampleCount);
 
                 int tableRow = i + 1;
@@ -113,7 +114,7 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
                 int activeSampleSetRowId = Integer.parseInt(PropertyUtil.getServerProperty(PROP_NAME_DEFAULT_SAMPLE_SET_ROW_ID));
                 GWTSampleSet activeSampleSet = new GWTSampleSet(activeSampleSetName, activeSampleSetLSID);
                 activeSampleSet.setRowId(activeSampleSetRowId);
-                _cache.addSampleSet(activeSampleSet);
+                cache.addSampleSet(activeSampleSet);
                 List<GWTSampleSet> sets = Collections.singletonList(activeSampleSet);
                 for (SampleInfo _sampleInfo : _sampleInfos)
                 {

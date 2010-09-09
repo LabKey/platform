@@ -116,7 +116,7 @@ public class PipelineManager
         PipelineRoot oldValue = getPipelineRootObject(container, type);
         PipelineRoot newValue = null;
 
-        if (roots == null || roots.length == 0)
+        if (roots == null || roots.length == 0 || (roots.length == 1 && roots[0] == null))
         {
             if (oldValue != null)
             {

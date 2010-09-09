@@ -16,6 +16,10 @@
 
 package org.labkey.experiment.samplechooser.client;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.dom.client.KeyPressEvent;
+import com.google.gwt.event.dom.client.KeyPressHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.assay.SampleChooserUtils;
@@ -61,33 +65,34 @@ public class SampleInfo
         _materialTextBox = new TextBox();
         DOM.setElementAttribute(_materialTextBox.getElement(), "id", "sampleTextBox" + index);
 
-        _sampleSetListBox.addChangeListener(new ChangeListener()
+        _sampleSetListBox.addChangeHandler(new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 updateMaterialListBox(getSelectedSampleSet());
             }
         });
 
-        ChangeListener changeListener = new ChangeListener()
+        ChangeHandler changeHandler = new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 pushToForm();
             }
         };
-        _sampleSetListBox.addChangeListener(changeListener);
-        _materialListBox.addChangeListener(changeListener);
-        _materialTextBox.addChangeListener(changeListener);
+        _sampleSetListBox.addChangeHandler(changeHandler);
+        _materialListBox.addChangeHandler(changeHandler);
+        _materialTextBox.addChangeHandler(changeHandler);
 
-        KeyboardListener keyListener = new KeyboardListenerAdapter()
+        KeyPressHandler keyHandler = new KeyPressHandler()
         {
-            public void onKeyPress(Widget sender, char keyCode, int modifiers)
+            @Override
+            public void onKeyPress(KeyPressEvent event)
             {
                 pushToForm();
             }
         };
-        _materialTextBox.addKeyboardListener(keyListener);
+        _materialTextBox.addKeyPressHandler(keyHandler);
 
         setSampleSets(Collections.<GWTSampleSet>emptyList(), SampleChooser.NONE_SAMPLE_SET);
     }
@@ -172,19 +177,25 @@ public class SampleInfo
         refreshVisibility();
     }
 
+    private void setVisible(Widget widget, boolean visible)
+    {
+        DOM.setStyleAttribute(widget.getElement(), "display", visible ? "" : "none");
+        DOM.setStyleAttribute(widget.getElement(), "visibility", visible ? "visible" : "hidden");
+    }
+
     private void refreshVisibility()
     {
         if (_selected)
         {
-            DOM.setStyleAttribute(_label.getElement(), "visibility", "visible");
-            DOM.setStyleAttribute(_sampleSetListBox.getElement(), "visibility", "visible");
-            DOM.setStyleAttribute(_materialListBox.getElement(), "visibility", "visible");
+            setVisible(_label, true);
+            setVisible(_sampleSetListBox, true);
+            setVisible(_materialListBox, true);
 
             if (SampleChooser.NONE_SAMPLE_SET.equals(_sampleSet))
             {
                 _materialListBox.setVisible(false);
                 // Do this to prevent layout changes
-                DOM.setStyleAttribute(_materialTextBox.getElement(), "visibility", "visible");
+                setVisible(_materialTextBox, true);
             }
             else
             {
@@ -192,15 +203,15 @@ public class SampleInfo
 
                 _materialListBox.setVisible(true);
                 // Do this to prevent layout changes
-                DOM.setStyleAttribute(_materialTextBox.getElement(), "visibility", "hidden");
+                setVisible(_materialTextBox, false);
             }
         }
         else
         {
-            DOM.setStyleAttribute(_label.getElement(), "visibility", "hidden");
-            DOM.setStyleAttribute(_sampleSetListBox.getElement(), "visibility", "hidden");
-            DOM.setStyleAttribute(_materialListBox.getElement(), "visibility", "hidden");
-            DOM.setStyleAttribute(_materialTextBox.getElement(), "visibility", "hidden");
+            setVisible(_label, false);
+            setVisible(_sampleSetListBox, false);
+            setVisible(_materialListBox, false);
+            setVisible(_materialTextBox, false);
         }
     }
 
