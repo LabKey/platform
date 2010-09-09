@@ -16,8 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.log4j.Logger;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -38,8 +36,6 @@ import java.sql.SQLException;
  */
 public class GroupedResultSet extends Table.ResultSetImpl
 {
-    private static Logger _log = Logger.getLogger(GroupedResultSet.class);
-
     private int _columnIndex = 0;
     private int _rowOffset = 0;
     private int _lastRow = 0;

@@ -17,6 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -26,6 +27,7 @@ import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -70,7 +72,13 @@ public class AbstractAssayView extends VBox
 
     protected ModelAndView createHeaderView(QueryView queryView, boolean minimizeLinks, AssayProvider provider, ExpProtocol protocol)
     {
-        return new AssayHeaderView(protocol, provider, minimizeLinks, queryView.getTable().getContainerFilter());
+        TableInfo tableInfo = queryView.getTable();
+        if (tableInfo == null)
+        {
+            // Not all assay providers support all the different levels of data
+            throw new NotFoundException();
+        }
+        return new AssayHeaderView(protocol, provider, minimizeLinks, tableInfo.getContainerFilter());
     }
 
 }

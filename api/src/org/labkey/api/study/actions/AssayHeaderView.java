@@ -31,6 +31,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -124,7 +125,12 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
             links.add(new NavTree("view batches", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getViewContext().getContainer(), _protocol, _containerFilter))));
             links.add(new NavTree("view runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
-            links.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
+
+            if (getProvider().createDataTable(AssayService.get().createSchema(getViewContext().getUser(), getViewContext().getContainer()), _protocol) != null)
+            {
+                // Not all assay types have results/data
+                links.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
+            }
 
             if (AuditLogService.get().isViewable() && _provider.canCopyToStudy())
                 links.add(new NavTree("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), _protocol, _containerFilter)));

@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
@@ -89,6 +90,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** @return the URL used to import data when the user still needs to upload data files */
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
+    /** @return may return null if no results/data are tracked by this assay type */
+    @Nullable
     TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol);
 
     ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);

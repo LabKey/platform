@@ -32,6 +32,7 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -673,6 +674,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             run.setFilePathRoot(file.getParentFile());
         }
+        else
+        {
+            run.setFilePathRoot(PipelineService.get().findPipelineRoot(context.getContainer()).getRootPath());
+        }
         return run;
     }
 
@@ -1090,13 +1095,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setLabel("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
-        dataLinkColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new AssayDataLinkDisplayColumn(colInfo, runTable.getContainerFilter());
-            }
-        });
+        dataLinkColumn.setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, schema.getContainer()), Collections.singletonMap("runId", "rowId")));
         return runTable;
     }
     

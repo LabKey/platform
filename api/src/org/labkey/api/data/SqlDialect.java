@@ -419,11 +419,11 @@ public abstract class SqlDialect
      * @param from must not be null
      * @param filter may be null
      * @param order may be null
-     * @param rowCount 0 means all rows, >0 limits result set
-     * @param offset 0 based
-     * @return the query
+     * @param groupBy may be null
+     *@param rowCount 0 means all rows, >0 limits result set
+     * @param offset 0 based   @return the query
      */
-    public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset);
+    public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset);
 
     // Some databases lack true schema support; if true, we'll map the database's catalogs to schemas
     public abstract boolean treatCatalogsAsSchemas();

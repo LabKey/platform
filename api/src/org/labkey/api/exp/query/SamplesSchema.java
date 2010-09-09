@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
@@ -23,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
@@ -112,8 +115,15 @@ public class SamplesSchema extends AbstractExpSchema
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
                 ret.populate(ss, false);
+                ret.setContainerFilter(ContainerFilter.EVERYTHING);
                 QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this, new ArrayList<QueryException>());
                 return ret;
+            }
+
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return super.getURL(parent, true);
             }
         };
     }
