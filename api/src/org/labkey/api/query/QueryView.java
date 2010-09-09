@@ -978,7 +978,7 @@ public class QueryView extends WebPartView<Object>
             if (_customView.isShared())
                 description.append("Shared ");
 
-            if (!_customView.getContainer().getId().equals(getContainer().getId()))
+            if (_customView.getContainer() != null && !_customView.getContainer().equals(getContainer()))
                 description.append("Inherited from '").append(PageFlowUtil.filter(_customView.getContainer().getPath())).append("'");
 
             if (description.length() > 0)
