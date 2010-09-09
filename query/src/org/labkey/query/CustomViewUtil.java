@@ -132,7 +132,10 @@ public class CustomViewUtil
         ret.put("session", view.isSession());
         ret.put("editable", view.isEditable());
         ret.put("hidden", view.isHidden());
-        ret.put("containerPath", view.getContainer().getPath());
+        if (view.getContainer() != null)
+        {
+            ret.put("containerPath", view.getContainer().getPath());
+        }
         return ret;
     }
 
