@@ -387,6 +387,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 }
             }
 
+            // Always copy in the parameters file. It's small and in some cases is useful to the process we're launching
+            _wd.inputFile(getJobSupport().getParametersFile(), true);
+
             ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
 
             List<String> args = pb.command();
