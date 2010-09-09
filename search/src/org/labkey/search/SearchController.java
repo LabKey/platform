@@ -304,7 +304,7 @@ public class SearchController extends SpringActionController
 
             try
             {
-                ExternalAnalyzer.valueOf("foo");
+                ExternalAnalyzer.valueOf(props.getExternalIndexAnalyzer());
             }
             catch (IllegalArgumentException e)
             {
