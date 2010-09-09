@@ -17,6 +17,7 @@
 package org.labkey.search;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.analysis.Analyzer;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -37,6 +38,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
+import org.labkey.search.model.ExternalAnalyzer;
 import org.labkey.search.model.ExternalIndexProperties;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
@@ -45,6 +47,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Date;
@@ -269,15 +272,46 @@ public class SearchController extends SpringActionController
         @Override
         public ActionURL getRedirectURL(AdminForm form) throws Exception
         {
-            SearchPropertyManager.saveExternalIndexProperties(form);
-            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            String message = getValidationError(form);
 
-            // TODO: Add to SearchService interface
-            ((LuceneSearchServiceImpl)ss).resetExternalIndex();
+            if (null == message)
+            {
+                SearchPropertyManager.saveExternalIndexProperties(form);
+                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+                // TODO: Add to SearchService interface
+                ((LuceneSearchServiceImpl)ss).resetExternalIndex();
+                message = "External index set";
+            }
 
             ActionURL url = new ActionURL(AdminAction.class, ContainerManager.getRoot());
-            url.addParameter("externalMessage", "External index set");
+            url.addParameter("externalMessage", message);
             return url;
+        }
+
+        private @Nullable String getValidationError(ExternalIndexProperties props)
+        {
+            if (StringUtils.isBlank(props.getExternalIndexDescription()))
+                return "You must enter a description";
+
+            String path = props.getExternalIndexPath();
+
+            if (StringUtils.isBlank(path))
+                return "You must enter a valid path";
+
+            if (!new File(path).exists())
+                return "You must enter a path to an existing directory";
+
+            try
+            {
+                ExternalAnalyzer.valueOf("foo");
+            }
+            catch (IllegalArgumentException e)
+            {
+                return "Invalid analyzer";
+            }
+
+            return null;
         }
     }
 
