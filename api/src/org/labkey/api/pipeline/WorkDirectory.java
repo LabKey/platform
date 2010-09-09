@@ -19,7 +19,6 @@ import org.labkey.api.util.FileType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * <code>WorkDirectory</code>
@@ -29,8 +28,6 @@ import java.util.Set;
 public interface WorkDirectory
 {
     enum Function { input, output }
-
-    static final String DATA_REL_PATH = "../..";
 
     /**
      * @return the directory where the input files live and where the output files will end up
@@ -61,7 +58,6 @@ public interface WorkDirectory
 
     /**
      * Delete a file
-     * @param fileWork
      * @throws IOException
      */
     void discardFile(File fileWork) throws IOException;
