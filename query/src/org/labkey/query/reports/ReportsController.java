@@ -50,6 +50,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
 import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.controllers.ChooseColumnsForm;
@@ -1825,8 +1826,8 @@ public class ReportsController extends SpringActionController
     public static class MeasuresForm
     {
         private String[] _filters = new String[0];
-        private String _schema;
-        private String _query;
+        private String _schemaName;
+        private String _queryName;
         private String _name;
 
         public String getName()
@@ -1839,24 +1840,24 @@ public class ReportsController extends SpringActionController
             _name = name;
         }
 
-        public String getSchema()
+        public String getSchemaName()
         {
-            return _schema;
+            return _schemaName;
         }
 
-        public void setSchema(String schema)
+        public void setSchemaName(String schemaName)
         {
-            _schema = schema;
+            _schemaName = schemaName;
         }
 
-        public String getQuery()
+        public String getQueryName()
         {
-            return _query;
+            return _queryName;
         }
 
-        public void setQuery(String query)
+        public void setQueryName(String queryName)
         {
-            _query = query;
+            _queryName = queryName;
         }
 
         public String[] getFilters()
@@ -1925,6 +1926,7 @@ public class ReportsController extends SpringActionController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
+            int count = 1;
 
             for (Map.Entry<String, Map<String, TableInfo>> schemaEntry : getTables(form).entrySet())
             {
@@ -1942,6 +1944,7 @@ public class ReportsController extends SpringActionController
                             props.put("schemaName", schemaEntry.getKey());
                             props.put("queryName", tableEntry.getKey());
                             props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
+                            props.put("id", count++);
 
                             measures.add(props);
                         }
@@ -2036,8 +2039,8 @@ public class ReportsController extends SpringActionController
 
         protected Set<String> getSchemaNames(MeasuresForm form)
         {
-            if (form.getSchema() != null)
-                return Collections.singleton(form.getSchema());
+            if (form.getSchemaName() != null)
+                return Collections.singleton(form.getSchemaName());
             else
             {
                 DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
@@ -2047,8 +2050,8 @@ public class ReportsController extends SpringActionController
 
         protected Set<String> getTableNames(MeasuresForm form, UserSchema schema)
         {
-            if (form.getQuery() != null)
-                return Collections.singleton(form.getQuery());
+            if (form.getQueryName() != null)
+                return Collections.singleton(form.getQueryName());
             else
                 return schema.getTableNames();
         }
@@ -2060,7 +2063,7 @@ public class ReportsController extends SpringActionController
             props.put("name", col.getName());
             props.put("label", col.getLabel());
             props.put("type", col.getSqlTypeName());
-            props.put("description", col.getDescription());
+            props.put("description", StringUtils.trimToEmpty(col.getDescription()));
 
             return props;
         }
@@ -2074,16 +2077,16 @@ public class ReportsController extends SpringActionController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             List<Map<String, Object>> dimensions = new ArrayList<Map<String, Object>>();
 
-            if (form.getSchema() != null && form.getQuery() != null)
+            if (form.getSchemaName() != null && form.getQueryName() != null)
             {
-                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchema());
+                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
 
                 if (schema instanceof UserSchema)
                 {
                     UserSchema uschema = (UserSchema)schema;
-                    TableInfo tinfo = uschema.getTable(form.getQuery());
+                    TableInfo tinfo = uschema.getTable(form.getQueryName());
 
-                    getDimensions(tinfo, form.getSchema(), form.getQuery(), dimensions);
+                    getDimensions(tinfo, form.getSchemaName(), form.getQueryName(), dimensions);
                 }
 
                 if (form.isIncludeDemographics())
@@ -2105,7 +2108,7 @@ public class ReportsController extends SpringActionController
                 resp.put("dimensions", dimensions);
             }
             else
-                throw new IllegalArgumentException("schema and query are required parameters");
+                throw new IllegalArgumentException("schemaName and queryName are required parameters");
 
             return resp;
         }
@@ -2141,36 +2144,43 @@ public class ReportsController extends SpringActionController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            if (form.getName() != null && form.getSchema() != null && form.getQuery() != null)
+            if (form.getName() != null && form.getSchemaName() != null && form.getQueryName() != null)
             {
-                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchema());
-                List<String> values = new ArrayList<String>();
+                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
+                List<Map<String, String>> values = new ArrayList<Map<String, String>>();
 
                 if (schema instanceof UserSchema)
                 {
                     UserSchema uschema = (UserSchema)schema;
-                    TableInfo tinfo = uschema.getTable(form.getQuery());
+                    TableInfo tinfo = uschema.getTable(form.getQueryName());
 
                     if (tinfo != null)
                     {
                         ColumnInfo col = tinfo.getColumn(form.getName());
                         if (col != null)
                         {
-                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), null, null, Table.ALL_ROWS, 0);
+                            Table.TableResultSet rs = null;
+                            try {
+                                SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), null, null, Table.ALL_ROWS, 0);
 
-                            Table.TableResultSet rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
-                            Iterator<Map<String, Object>> it = rs.iterator();
+                                rs = Table.executeQuery(uschema.getDbSchema(), sql.getSQL().replaceFirst("SELECT", "SELECT DISTINCT"), sql.getParamsArray());
+                                Iterator<Map<String, Object>> it = rs.iterator();
 
-                            while (it.hasNext())
-                            {
-                                Map<String, Object> row = it.next();
-
-                                if (row.containsKey(col.getName()))
+                                while (it.hasNext())
                                 {
-                                    Object o = row.get(col.getName());
-                                    if (o != null)
-                                        values.add(ConvertUtils.convert(o));
+                                    Map<String, Object> row = it.next();
+
+                                    if (row.containsKey(col.getName()))
+                                    {
+                                        Object o = row.get(col.getName());
+                                        if (o != null)
+                                            values.add(Collections.singletonMap("value", ConvertUtils.convert(o)));
+                                    }
                                 }
+                            }
+                            finally
+                            {
+                                ResultSetUtil.close(rs);
                             }
                         }
                     }
@@ -2179,7 +2189,7 @@ public class ReportsController extends SpringActionController
                 resp.put("values", values);
             }
             else
-                throw new IllegalArgumentException("name, schema and query are required parameters");
+                throw new IllegalArgumentException("name, schemaName and queryName are required parameters");
 
             return resp;
         }
