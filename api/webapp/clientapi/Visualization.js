@@ -133,7 +133,7 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
 
     getDimensions : function(config) {
 
-        var params = {query: this.queryName, schema: this.schemaName};
+        var params = {queryName: this.queryName, schemaName: this.schemaName};
 
         if (config.includeDemographics)
             params['includeDemographics'] = config.includeDemographics;
@@ -169,11 +169,11 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
     },
 
     getQueryName : function() {
-        return this.query;
+        return this.queryName;
     },
 
     getSchemaName : function() {
-        return this.schema;
+        return this.schemaName;
     },
 
     isUserDefined : function() {
@@ -198,7 +198,7 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
 
     getValues : function(config) {
 
-        var params = {query: this.queryName, schema: this.schemaName, name: this.name};
+        var params = {queryName: this.queryName, schemaName: this.schemaName, name: this.name};
         function createValues(json)
         {
             if (json.success && json.values)
@@ -221,10 +221,10 @@ LABKEY.Visualization.Filter = new function()
 {
     function getURLParameterValue(config)
     {
-        var params = [config.schema];
+        var params = [config.schemaName];
 
         if (config.query)
-            params.push(config.query);
+            params.push(config.queryName);
         else
             params.push('~');
         
@@ -243,8 +243,8 @@ LABKEY.Visualization.Filter = new function()
 
         create : function(config)
         {
-            if (!config.schema)
-                Ext.Msg.alert("Coding Error!", "You must supply a value for schema in your configuration object!");
+            if (!config.schemaName)
+                Ext.Msg.alert("Coding Error!", "You must supply a value for schemaName in your configuration object!");
             else
                 return getURLParameterValue(config);
         }
