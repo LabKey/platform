@@ -244,12 +244,12 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
-        ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(), "Copy to Study");
+        ActionButton publishButton = new ActionButton(publishURL, "Copy to Study");
         publishButton.setScript(script, true);
         buttons.add(publishButton);
 
         publishURL.replaceParameter("validate", "true");
-        ActionButton validateButton = new ActionButton(publishURL.getLocalURIString(), "Re-Validate");
+        ActionButton validateButton = new ActionButton(publishURL, "Re-Validate");
         validateButton.setScript(script, true);
         buttons.add(validateButton);
 
@@ -257,11 +257,11 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         {
             publishURL.deleteParameter("validate");
             publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Assay.toString());
-            ActionButton fromAssayButton = new ActionButton(publishURL.getLocalURIString(), "Reset with Assay Data");
+            ActionButton fromAssayButton = new ActionButton(publishURL, "Reset with Assay Data");
             buttons.add(fromAssayButton);
 
             publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Specimen.toString());
-            ActionButton fromSpecimenButton = new ActionButton(publishURL.getLocalURIString(), "Reset with Specimen Data");
+            ActionButton fromSpecimenButton = new ActionButton(publishURL, "Reset with Specimen Data");
             buttons.add(fromSpecimenButton);
         }
 

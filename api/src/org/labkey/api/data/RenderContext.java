@@ -312,7 +312,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     }
 
 
-    protected Sort buildSort(TableInfo tinfo, ActionURL url, String name)
+    public Sort buildSort(TableInfo tinfo, ActionURL url, String name)
     {
         Sort baseSort = getBaseSort();
         Sort sort = null != baseSort ? baseSort : new Sort();
@@ -321,7 +321,7 @@ public class RenderContext extends BoundMap // extends ViewContext
     }
 
 
-    protected SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
+    public SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
         SimpleFilter filter = new SimpleFilter(getBaseFilter());
         //HACK.. Need to fix up the casing of columns throughout so don't have to do

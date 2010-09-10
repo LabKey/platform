@@ -149,10 +149,16 @@ public class ActionButton extends DisplayElement implements Cloneable
         this(url.getLocalURIString(), caption);
     }
 
+    @Deprecated /** Use version that takes an action class instead */
     public ActionButton(String actionName, String caption)
     {
         _actionName = StringExpressionFactory.create(actionName);
         _caption = StringExpressionFactory.create(caption);
+    }
+
+    public ActionButton(Class<? extends Controller> action, String caption)
+    {
+        this(SpringActionController.getActionName(action) + ".view", caption);
     }
 
     public ActionButton(Class<? extends Controller> action, String caption, int displayModes)
@@ -160,6 +166,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         this(SpringActionController.getActionName(action) + ".view", caption, displayModes);
     }
     
+    @Deprecated /** Use version that takes an action class instead */
     public ActionButton(String actionName, String caption, int displayModes)
     {
         this(actionName, caption);

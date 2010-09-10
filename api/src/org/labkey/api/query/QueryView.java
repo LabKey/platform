@@ -633,8 +633,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
         if (urlDelete != null)
         {
-            ActionButton btnDelete = new ActionButton("", "Delete");
-            btnDelete.setURL(urlDelete);
+            ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
             btnDelete.setActionType(ActionButton.Action.POST);
             btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
             return btnDelete;
@@ -647,8 +646,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
         if (urlInsert != null)
         {
-            ActionButton btnInsert = new ActionButton("", "Insert New");
-            btnInsert.setURL(urlInsert);
+            ActionButton btnInsert = new ActionButton(urlInsert, "Insert New");
             btnInsert.setActionType(ActionButton.Action.LINK);
             return btnInsert;
         }

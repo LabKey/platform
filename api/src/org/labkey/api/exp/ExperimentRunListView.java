@@ -114,8 +114,7 @@ public class ExperimentRunListView extends QueryView
         {
             getExperiment();
             ActionURL removeRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getRemoveSelectedExpRunsURL(getContainer(), getReturnURL(), getExperiment());
-            ActionButton removeRunAction = new ActionButton("","Remove");
-            removeRunAction.setURL(removeRunUrl);
+            ActionButton removeRunAction = new ActionButton(removeRunUrl,"Remove");
             removeRunAction.setActionType(ActionButton.Action.POST);
             removeRunAction.setRequiresSelection(true);
 
@@ -125,9 +124,8 @@ public class ExperimentRunListView extends QueryView
 
         if (showDeleteButton())
         {
-            ActionButton deleteButton = new ActionButton("button", "Delete");
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());
-            deleteButton.setURL(url);
+            ActionButton deleteButton = new ActionButton(url, "Delete");
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(DeletePermission.class);
@@ -161,9 +159,8 @@ public class ExperimentRunListView extends QueryView
 
         if (_showMoveRunsButton)
         {
-            ActionButton deleteButton = new ActionButton("button", "Move");
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMoveRunsLocationURL(getContainer());
-            deleteButton.setURL(url);
+            ActionButton deleteButton = new ActionButton(url, "Move");
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(DeletePermission.class);
