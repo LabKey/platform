@@ -822,9 +822,8 @@ public class StudyController extends BaseStudyController
 
                     if (canWrite)
                     {
-                        ActionButton deleteRows = new ActionButton("button", "Delete");
                         ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
-                        deleteRows.setURL(deleteRowsURL);
+                        ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
                         deleteRows.setRequiresSelection(true, "Delete selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         deleteRows.setDisplayPermission(DeletePermission.class);
@@ -838,10 +837,9 @@ public class StudyController extends BaseStudyController
 
                     if (user.isAdministrator() || canWrite)
                     {
-                        ActionButton deleteRows = new ActionButton("button", "Recall");
                         ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                         deleteRowsURL.addParameter("protocolId", protocol.getRowId());
-                        deleteRows.setURL(deleteRowsURL);
+                        ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
                         deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         deleteRows.setDisplayPermission(DeletePermission.class);
@@ -850,9 +848,8 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            ActionButton viewSamples = new ActionButton("button", "View Specimens");
             ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());
-            viewSamples.setURL(viewSamplesURL);
+            ActionButton viewSamples = new ActionButton(viewSamplesURL, "View Specimens");
             viewSamples.setRequiresSelection(true);
             viewSamples.setActionType(ActionButton.Action.POST);
             viewSamples.setDisplayPermission(ReadPermission.class);
@@ -2181,13 +2178,11 @@ public class StudyController extends BaseStudyController
                     String sourceLsid = (String)getViewContext().get("sourceLsid");
                     String recordCount = (String)getViewContext().get("recordCount");
 
-                    ActionButton deleteRows = new ActionButton("button", "Recall Rows");
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                     deleteURL.addParameter("protocolId", protocolId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
+                    ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
-                    //String deleteRowsURL = ActionURL.toPathString("Study", "deletePublishedRows", getContainer()) + "?datasetId=" + datasetId;
-                    deleteRows.setURL(deleteURL);
                     deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
                     deleteRows.setActionType(ActionButton.Action.POST);
                     deleteRows.setDisplayPermission(DeletePermission.class);

@@ -2544,7 +2544,7 @@ public class AnnouncementsController extends SpringActionController
                 rgn.setShowRecordSelectors(true);
 
                 String conversations = settings.getConversationName().toLowerCase() + "s";
-                ActionButton delete = new ActionButton("deleteThreads.post", "Delete");
+                ActionButton delete = new ActionButton(DeleteThreadsAction.class, "Delete");
                 delete.setActionType(ActionButton.Action.GET);
                 delete.setDisplayPermission(DeletePermission.class);
                 delete.setRequiresSelection(true, "Are you sure you want to delete these " + conversations + "?");

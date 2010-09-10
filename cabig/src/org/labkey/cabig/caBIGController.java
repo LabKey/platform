@@ -213,11 +213,11 @@ public class caBIGController extends SpringActionController
     {
         ButtonBar bb = new ButtonBar();
 
-        ActionButton publishAll = new ActionButton("publishAll.post", "Publish All");
+        ActionButton publishAll = new ActionButton(PublishAllAction.class, "Publish All");
         publishAll.setActionType(ActionButton.Action.POST);
         bb.add(publishAll);
 
-        ActionButton unpublishAll = new ActionButton("unpublishAll.post", "Unpublish All");
+        ActionButton unpublishAll = new ActionButton(UnpublishAllAction.class, "Unpublish All");
         unpublishAll.setActionType(ActionButton.Action.POST);
         bb.add(unpublishAll);
 

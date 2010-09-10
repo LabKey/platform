@@ -341,18 +341,17 @@ public class DemoController extends SpringActionController
         ButtonBar gridButtonBar = new ButtonBar();
         rgn.setShowRecordSelectors(true);
 
-        ActionButton delete = new ActionButton("delete.post", "Delete");
+        ActionButton delete = new ActionButton(DeleteAction.class, "Delete");
         delete.setActionType(ActionButton.Action.POST);
         delete.setDisplayPermission(DeletePermission.class);
         gridButtonBar.add(delete);
 
-        ActionButton insert = new ActionButton("insert.view", "Add Person");
+        ActionButton insert = new ActionButton(InsertAction.class, "Add Person");
         insert.setURL(new InsertAction().getURL().getLocalURIString());
         insert.setDisplayPermission(InsertPermission.class);
         gridButtonBar.add(insert);
 
-        ActionButton update = new ActionButton("bulkUpdate.view", "Bulk Update");
-        update.setURL(new BulkUpdateAction().getURL().getLocalURIString());
+        ActionButton update = new ActionButton(new BulkUpdateAction().getURL(), "Bulk Update");
         update.setDisplayPermission(UpdatePermission.class);
         gridButtonBar.add(update);
 

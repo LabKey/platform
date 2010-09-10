@@ -98,7 +98,7 @@ public class PipelineQueryView extends QueryView
     {
         if (getContainer().hasPermission(getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getContainer()))
         {
-            ActionButton button = new ActionButton("browse.view", "Process and Import Data");
+            ActionButton button = new ActionButton(PipelineController.BrowseAction.class, "Process and Import Data");
             button.setActionType(ActionButton.Action.LINK);
             button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), PipelineController.RefererValues.pipeline.toString()));
             bar.add(button);
@@ -106,7 +106,7 @@ public class PipelineQueryView extends QueryView
 
         if (PipelineService.get().canModifyPipelineRoot(getUser(), getContainer()))
         {
-            ActionButton button = new ActionButton("setup.view", "Setup");
+            ActionButton button = new ActionButton(PipelineController.SetupAction.class, "Setup");
             button.setActionType(ActionButton.Action.LINK);
             button.setURL(PipelineController.urlSetup(getContainer(), PipelineController.RefererValues.pipeline.toString()));
             bar.add(button);
@@ -120,13 +120,13 @@ public class PipelineQueryView extends QueryView
             retryStatus.setDisplayPermission(UpdatePermission.class);
             bar.add(retryStatus);
 
-            ActionButton deleteStatus = new ActionButton("deleteStatus.view", "Delete");
+            ActionButton deleteStatus = new ActionButton(StatusController.DeleteStatusAction.class, "Delete");
             deleteStatus.setRequiresSelection(true);
             deleteStatus.setActionType(ActionButton.Action.POST);
             deleteStatus.setDisplayPermission(DeletePermission.class);
             bar.add(deleteStatus);
 
-            ActionButton completeStatus = new ActionButton("completeStatus.view", "Complete");
+            ActionButton completeStatus = new ActionButton(StatusController.CompleteStatusAction.class, "Complete");
             completeStatus.setRequiresSelection(true);
             completeStatus.setActionType(ActionButton.Action.POST);
             completeStatus.setDisplayPermission(UpdatePermission.class);
@@ -137,8 +137,7 @@ public class PipelineQueryView extends QueryView
             if (!PipelineService.get().isEnterprisePipeline() &&
                     getUser().isAdministrator() && getContainer().isRoot())
             {
-                ActionButton showQueue = new ActionButton((String)null, "Show Queue");
-                showQueue.setURL(PipelineController.urlStatus(getContainer(), true));
+                ActionButton showQueue = new ActionButton(PipelineController.urlStatus(getContainer(), true), "Show Queue");
                 bar.add(showQueue);
             }
 

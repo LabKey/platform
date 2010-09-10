@@ -809,7 +809,7 @@ public class SpecimenController extends BaseStudyController
                 if (SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), sampleRequest) && !_finalState)
                 {
                     ActionButton addButton = new ActionButton("showSearch.view?showVials=true", "Specimen Search");
-                    ActionButton deleteButton = new ActionButton("handleRemoveRequestSamples.post", "Remove Selected");
+                    ActionButton deleteButton = new ActionButton(HandleRemoveRequestSamplesAction.class, "Remove Selected");
                     _specimenQueryView.addHiddenFormField("id", "" + _sampleRequest.getRowId());
                     buttons.add(addButton);
                     buttons.add(deleteButton);

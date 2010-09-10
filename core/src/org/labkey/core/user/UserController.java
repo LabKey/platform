@@ -209,7 +209,7 @@ public class UserController extends SpringActionController
             detailsButtonBar.add(showGrid);
         if (isOwnRecord || isSiteAdmin)
         {
-            ActionButton edit = new ActionButton("showUpdate.view", "Edit");
+            ActionButton edit = new ActionButton(ShowUpdateAction.class, "Edit");
             edit.setActionType(ActionButton.Action.GET);
             edit.addContextualRole(OwnerRole.class);
             detailsButtonBar.add(edit);
@@ -218,7 +218,7 @@ public class UserController extends SpringActionController
 
         ButtonBar updateButtonBar = new ButtonBar();
         updateButtonBar.setStyle(ButtonBar.Style.separateButtons);
-        ActionButton update = new ActionButton("showUpdate.post", "Submit");
+        ActionButton update = new ActionButton(ShowUpdateAction.class, "Submit");
         if (isOwnRecord)
         {
             updateButtonBar.addContextualRole(OwnerRole.class);
@@ -237,31 +237,29 @@ public class UserController extends SpringActionController
     {
         if (siteAdmin)
         {
-            ActionButton deactivate = new ActionButton("deactivateUsers.post", "Deactivate");
+            ActionButton deactivate = new ActionButton(DeactivateUsersAction.class, "Deactivate");
             deactivate.setRequiresSelection(true);
             deactivate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(deactivate);
 
-            ActionButton activate = new ActionButton("activateUsers.post", "Re-Activate");
+            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Re-Activate");
             activate.setRequiresSelection(true);
             activate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(activate);
 
-            ActionButton delete = new ActionButton("deleteUsers.post", "Delete");
+            ActionButton delete = new ActionButton(DeleteUsersAction.class, "Delete");
             delete.setRequiresSelection(true);
             delete.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(delete);
 
             // Could allow project admins to do this... but they can already add users when adding to a group
-            ActionButton insert = new ActionButton("showAddUsers", "Add Users");
-            ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, getContainer());
-            insert.setURL(actionURL.getLocalURIString());
+            ActionButton insert = new ActionButton(new ActionURL(SecurityController.AddUsersAction.class, getContainer()), "Add Users");
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
             if (getContainer().isRoot())
             {
-                ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
+                ActionButton preferences = new ActionButton(ShowUserPreferencesAction.class, "Preferences");
                 preferences.setActionType(ActionButton.Action.LINK);
                 gridButtonBar.add(preferences);
             }
@@ -271,7 +269,7 @@ public class UserController extends SpringActionController
         {
             if (AuditLogService.get().isViewable())
             {
-                gridButtonBar.add(new ActionButton("showUserHistory.view", "History",
+                gridButtonBar.add(new ActionButton(ShowUserHistoryAction.class, "History",
                         DataRegion.MODE_ALL, ActionButton.Action.LINK));
             }
         }
@@ -1050,11 +1048,10 @@ public class UserController extends SpringActionController
                 {
                     // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
                     // in with SSO and later needing to use database authentication.
-                    ActionButton reset = new ActionButton("reset", loginExists ? "Reset Password" : "Create Password");
                     ActionURL resetURL = new ActionURL(SecurityController.AdminResetPasswordAction.class, c);
                     resetURL.addParameter("email", detailsEmail.getEmailAddress());
                     resetURL.addReturnURL(getViewContext().getActionURL());
-                    reset.setURL(resetURL.getLocalURIString());
+                    ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
 
                     String message;
@@ -1069,10 +1066,9 @@ public class UserController extends SpringActionController
                     bb.add(reset);
                 }
 
-                ActionButton changeEmail = new ActionButton("", "Change Email");
-                changeEmail.setActionType(ActionButton.Action.LINK);
                 ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction(ShowChangeEmail.class);
-                changeEmail.setURL(changeEmailURL.getLocalURIString());
+                ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
+                changeEmail.setActionType(ActionButton.Action.LINK);
                 bb.add(changeEmail);
 
                 if (!isOwnRecord)
@@ -1090,10 +1086,9 @@ public class UserController extends SpringActionController
 
             if (isAnyAdmin)
             {
-                ActionButton viewPermissions = new ActionButton("", "View Permissions");
-                viewPermissions.setActionType(ActionButton.Action.LINK);
                 ActionURL viewPermissionsURL = getViewContext().cloneActionURL().setAction(UserAccessAction.class);
-                viewPermissions.setURL(viewPermissionsURL.getLocalURIString());
+                ActionButton viewPermissions = new ActionButton(viewPermissionsURL, "View Permissions");
+                viewPermissions.setActionType(ActionButton.Action.LINK);
                 bb.add(viewPermissions);
             }
 
@@ -1115,10 +1110,9 @@ public class UserController extends SpringActionController
                     else
                         doneContainer = c.getProject();
 
-                    doneButton = new ActionButton("", "Go to " + doneContainer.getName());
-                    doneButton.setActionType(ActionButton.Action.LINK);
                     ActionURL doneURL = doneContainer.getStartURL(user);
-                    doneButton.setURL(doneURL.getLocalURIString());
+                    doneButton = new ActionButton(doneURL, "Go to " + doneContainer.getName());
+                    doneButton.setActionType(ActionButton.Action.LINK);
                 }
 
                 doneButton.addContextualRole(OwnerRole.class);

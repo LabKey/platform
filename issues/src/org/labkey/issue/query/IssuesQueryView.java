@@ -79,8 +79,7 @@ public class IssuesQueryView extends QueryView
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
             String viewDetailsURL = _context.cloneActionURL().setAction(IssuesController.DetailsListAction.class).getEncodedLocalURIString();
-            ActionButton listDetailsButton = new ActionButton("button", "View Details");
-            listDetailsButton.setURL(viewDetailsURL);
+            ActionButton listDetailsButton = new ActionButton(viewDetailsURL, "View Details");
             listDetailsButton.setActionType(ActionButton.Action.POST);
             listDetailsButton.setRequiresSelection(true);
             listDetailsButton.setDisplayPermission(ReadPermission.class);

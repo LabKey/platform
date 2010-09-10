@@ -111,9 +111,8 @@ public class RunGroupWebPart extends QueryView
         super.populateButtonBar(view, bb);
         if (!_narrow)
         {
-            ActionButton deleteExperiment = new ActionButton("", "Delete");
             ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getReturnURL());
-            deleteExperiment.setURL(deleteExpUrl);
+            ActionButton deleteExperiment = new ActionButton(deleteExpUrl, "Delete");
             deleteExperiment.setActionType(ActionButton.Action.POST);
             deleteExperiment.setDisplayPermission(DeletePermission.class);
             deleteExperiment.setRequiresSelection(true);

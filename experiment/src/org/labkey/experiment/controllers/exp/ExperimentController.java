@@ -322,16 +322,14 @@ public class ExperimentController extends SpringActionController
 
                     ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
                     deleteMaterialUrl.addParameter("returnURL", getViewContext().getActionURL().toString());
-                    ActionButton deleteMaterial = new ActionButton("", "Delete");
-                    deleteMaterial.setURL(deleteMaterialUrl);
+                    ActionButton deleteMaterial = new ActionButton(deleteMaterialUrl, "Delete");
                     deleteMaterial.setActionType(ActionButton.Action.POST);
                     deleteMaterial.setDisplayPermission(DeletePermission.class);
                     deleteMaterial.setRequiresSelection(true);
                     bar.add(deleteMaterial);
 
                     ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
-                    ActionButton deriveButton = new ActionButton("", "Derive Samples");
-                    deriveButton.setURL(urlDeriveSamples);
+                    ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
                     deriveButton.setActionType(ActionButton.Action.POST);
                     deriveButton.setDisplayPermission(InsertPermission.class);
                     deriveButton.setRequiresSelection(true);
@@ -411,8 +409,7 @@ public class ExperimentController extends SpringActionController
                     super.populateButtonBar(view, bar);
 
                     ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
-                    ActionButton deriveButton = new ActionButton("", "Derive Samples");
-                    deriveButton.setURL(urlDeriveSamples);
+                    ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
                     deriveButton.setActionType(ActionButton.Action.POST);
                     deriveButton.setDisplayPermission(InsertPermission.class);
                     deriveButton.setRequiresSelection(true);
@@ -3532,7 +3529,7 @@ public class ExperimentController extends SpringActionController
             insertView.setInitialValues(getViewContext().getRequest().getParameterMap());
             ButtonBar bar = new ButtonBar();
             bar.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton submitButton = new ActionButton("deriveSamples.view", "Submit");
+            ActionButton submitButton = new ActionButton(DeriveSamplesAction.class, "Submit");
             submitButton.setActionType(ActionButton.Action.POST);
             bar.add(submitButton);
             insertView.getDataRegion().setButtonBar(bar);
