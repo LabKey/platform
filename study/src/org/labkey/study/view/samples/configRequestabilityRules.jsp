@@ -97,6 +97,7 @@
 
     var selectedQueryURL = "";
     var selectedViewURL = "";
+
     function populateQueries(queryCombo, viewCombo, queriesInfo)
     {
         var records = [];
@@ -245,11 +246,11 @@
 
         var queryHelpText = 'Select the query and view that identify vials affected by this rule.  The returned list must include a "GlobalUniqueId" column.';
         var queryLabel = new Ext.form.Label({
-            html: '<div style="' + labelStyle +'">' + queryHelpText + '</div>'
+            html: '<div style="' + labelStyle +'">' + queryHelpText + '<\/div>'
         });
 
         var actionLabel = new Ext.form.Label({
-            html: '<br><div style="' + labelStyle +'">Select whether vials identified by the query should be marked as available or unavailable.</div>'
+            html: '<br><div style="' + labelStyle +'">Select whether vials identified by the query should be marked as available or unavailable.<\/div>'
         });
 
         var formPanel = new Ext.form.FormPanel({
@@ -353,7 +354,7 @@
         var txt = '';
 
         if (record.data.testURL)
-            txt = '[<a target=\"_blank\" href=\"' + record.data.testURL + '\">view affected vials</a>]';
+            txt = '[<a target=\"_blank\" href=\"' + record.data.testURL + '\">view affected vials<\/a>]';
 
         return txt;
     }
