@@ -331,8 +331,8 @@ LABKEY.Query = new function()
         * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected' or 'all'.
         *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
         *        When 'selected' or 'unselected' the set of rows have been selected or unselected by the user in the grid view will be returned.
-        *        You can programatically get and set the selection using the {@link LABKEY.DataRegion#setSelected} APIs.
-        *        Setting {@link #maxRows}' to -1 is the same as setting {@link #paginated} to 'all'.
+        *        You can programatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
+        *        Setting <code>config.maxRows</code> to -1 is the same as setting <code>config.showRows</code> to 'all'.
         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
