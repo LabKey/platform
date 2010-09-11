@@ -3088,4 +3088,5 @@ internal/webapp/util.js -text
 internal/webapp/utils/closelabel.gif -text
 internal/webapp/utils/dialogBox.css -text
 internal/webapp/utils/dialogBox.js -text
+internal/webapp/viewPicker.js -text
 internal/webapp/wikitoc.js -text
