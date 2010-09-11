@@ -586,7 +586,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             //and the null caption in the display column
             var data = {};
             data[this.reader.meta.id] = "";
-            data[this.nullRecord.displayColumn] = this.nullCaption || "[none]";
+            data[this.nullRecord.displayColumn] = this.nullRecord.nullCaption || this.nullCaption || "[none]";
 
             var recordConstructor = Ext.data.Record.create(this.reader.meta.fields);
             var record = new recordConstructor(data, -1);

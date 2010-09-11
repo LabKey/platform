@@ -25,9 +25,9 @@
  *		{@link LABKEY.Query.updateRows}, {@link LABKEY.Query.insertRows} and
  *		{@link LABKEY.Query.deleteRows} are only available for lists, study datasets, or
  *		tables in a user-defined schema.
- *		These three methods may not be used to operate on rows returned by queries to other LabKey 
- *		module schemas (e.g., ms1, ms2, flow, etc). To update, insert or delete data returned by 
- * 		queries to these types of schemas, use the methods for their respective classes, 
+ *		These three methods may not be used to operate on rows returned by queries to other LabKey
+ *		module schemas (e.g., ms1, ms2, flow, etc). To update, insert or delete data returned by
+ * 		queries to these types of schemas, use the methods for their respective classes,
  *		such as the methods defined by {@link LABKEY.Assay} for assays.
  *            <p>Additional Documentation:
  *              <ul>
@@ -46,7 +46,7 @@ LABKEY.Query = new function()
     {
         if(config.timeout)
             Ext.Ajax.timeout = config.timeout;
-        
+
         var dataObject = {
             schemaName : config.schemaName,
             queryName : config.queryName,
@@ -198,7 +198,7 @@ LABKEY.Query = new function()
         {
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
-            
+
             var dataObject = {
                 schemaName: config.schemaName,
                 sql: config.sql
@@ -219,7 +219,7 @@ LABKEY.Query = new function()
             var qsParams;
             if (config.sort)
                 qsParams = {"query.sort": config.sort};
-            
+
             return Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
                 method : 'POST',
@@ -328,6 +328,11 @@ LABKEY.Query = new function()
                     <li><b>"CurrentPlusProjectAndShared":</b> Include the current folder plus its project plus any shared folders</li>
                     <li><b>"AllFolders":</b> Include all folders for which the user has read permission</li>
                 </ul>
+        * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected' or 'all'.
+        *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
+        *        When 'selected' or 'unselected' the set of rows have been selected or unselected by the user in the grid view will be returned.
+        *        You can programatically get and set the selection using the {@link LABKEY.DataRegion#setSelected} APIs.
+        *        Setting {@link #maxRows}' to -1 is the same as setting {@link #paginated} to 'all'.
         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
@@ -348,12 +353,12 @@ LABKEY.Query = new function()
 	        alert("Failure: " + errorInfo.exception);
 	    else
 	        alert("Failure: " + responseObj.statusText);
-	} 
+	}
 
 	function onSuccess(data)
-	{ 
+	{
 	    alert("Success! " + data.rowCount + " rows returned.");
-	} 
+	}
 
 	LABKEY.Query.selectRows({
             schemaName: 'lists',
@@ -394,15 +399,22 @@ LABKEY.Query = new function()
                     config.sort
                     );
 
-            if(config.offset)
-                dataObject['query.offset'] = config.offset;
-
-            if(config.maxRows != undefined)
+            if (!config.showRows || config.showRows == 'paginated')
             {
-                if(config.maxRows < 0)
-                    dataObject['query.showRows'] = "all";
-                else
-                    dataObject['query.maxRows'] = config.maxRows;
+                if(config.offset)
+                    dataObject['query.offset'] = config.offset;
+
+                if(config.maxRows != undefined)
+                {
+                    if(config.maxRows < 0)
+                        dataObject['query.showRows'] = "all";
+                    else
+                        dataObject['query.maxRows'] = config.maxRows;
+                }
+            }
+            else if (config.showRows in {'all':true, 'selected':true, 'unselected':true})
+            {
+                dataObject['query.showRows'] = config.showRows;
             }
 
 
@@ -478,10 +490,10 @@ LABKEY.Query = new function()
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.commands[].command Name of the command to be performed. Must be one of "insert", "update", or "delete".
         * @param {Array} config.commands[].rows An array of data for each row to be changed. See {@link LABKEY.Query.insertRows},
-        * {@link LABKEY.Query.updateRows}, or {@link LABKEY.Query.deleteRows} for requirements of what data must be included for each row. 
+        * {@link LABKEY.Query.updateRows}, or {@link LABKEY.Query.deleteRows} for requirements of what data must be included for each row.
         * @param {Function} config.successCallback Function called when the "saveRows" function executes successfully.
         	    Will be called with arguments:
-                an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request), 
+                an object with a single "result" property - an array of parsed response data ({@link LABKEY.Query.ModifyRowsResults}) (one for each command in the request),
                 the XMLHttpRequest object and (optionally) the "options" object ({@link LABKEY.Query.ModifyRowsOptions}).
         * @param {Function} [config.errorCallback] Function called if execution of the "saveRows" function fails.
         *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
@@ -1277,7 +1289,7 @@ LABKEY.Query = new function()
 /**#@+
 * @memberOf LABKEY.Query.FieldMetaDataLookup#
 * @field
-* @name schemaName    
+* @name schemaName
 * @description The name of the schema that this lookup targets
 * @type    String
 */

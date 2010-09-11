@@ -88,7 +88,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     constructor : function(config)
     {
         this.allFields = this.initFieldDefaults(config);
-        return LABKEY.ext.FormPanel.superclass.constructor.call(this,config);
+        return LABKEY.ext.FormPanel.superclass.constructor.call(this, config);
     },
 
     defaultType : 'textfield',
@@ -97,6 +97,10 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     initComponent : function()
     {
         LABKEY.ext.FormPanel.superclass.initComponent.call(this);
+        this.addEvents(
+            'beforeapplydefaults',
+            'applydefaults'
+        );
 
         // add all fields that we're not added explicitly
         if (this.addAllFields && this.allFields.length)
@@ -125,9 +129,10 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     },
 
 
-    /* called initComponent() before onRender() */
+    /* called from Ext.Container.initComponent() when adding items, before onRender() */
     applyDefaults : function(c)
     {
+        this.fireEvent('beforeapplydefaults', this, c);
         if (this.fieldDefaults)
         {
             if (typeof c == 'string')
@@ -153,9 +158,22 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             c.helpPopup.target = id;
             c.labelSeparator = "<a id=" + id + " tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:10pt;\"><sup>?</sup></span></a>";
         }
-        return LABKEY.ext.FormPanel.superclass.applyDefaults.call(this, c);
+
+        var applied = LABKEY.ext.FormPanel.superclass.applyDefaults.call(this, c);
+        this.fireEvent('applydefaults', this, applied);
+        return applied;
     },
 
+    createComponent : function (c, defaultType)
+    {
+        // Create the LABKEY.ext.Store
+        if (Ext.isObject(c.store) && !c.store.events)
+        {
+            c.store = LABKEY.ext.FormHelper.getLookupStore(c);
+        }
+
+        return LABKEY.ext.FormPanel.superclass.createComponent.call(this, c, defaultType);
+    },
 
     /* gets called before doLayout() */
     onRender : function(ct, position)
@@ -196,14 +214,89 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             if (!columnModel)
                 columnModel = config.selectRowsResults.columnModel;
             if (!metaData)
-                metaData = config.selectRowsResults.metaData;
+                config.metaData = config.selectRowsResults.metaData;
             if (config.selectRowsResults.rowCount)
-                config.values = config.selectRowsResults.rows[0];
+                config.values = config.selectRowsResults.rows;
         }
-        var fields = metaData ? metaData.fields : null;
+        var fields = config.metaData ? config.metaData.fields : null;
 
         var defaults = config.fieldDefaults = config.fieldDefaults || {};
         var items = [], i;
+
+        function findColumn(id) {
+            if (columnModel)
+                for (var i = 0; i < columnModel.length; i++)
+                    if (columnModel[i].dataIndex == id)
+                        return columnModel[i];
+            return null;
+        }
+
+        if (config.values)
+        {
+            if (!Ext.isArray(config.values))
+                config.values = [ config.values ];
+
+            var values = config.values;
+
+            // UNDONE: primary keys should be readonly when editing multiple rows.
+
+            var multiRowEdit = values.length > 1;
+            for (i = 0; i < values.length; i++)
+            {
+                var vals = values[i];
+                for (var id in vals)
+                {
+                    if (!(id in defaults))
+                        defaults[id] = {};
+
+                    // In multi-row edit case: skip if we've already discovered the values for this id are different across rows.
+                    if (multiRowEdit && defaults[id].allRowsSameValue === false)
+                        continue;
+
+                    var v = vals[id];
+                    if (typeof v == 'function')
+                        continue;
+                    if (v && typeof v == 'object' && 'value' in v)
+                        v = v.value;
+
+                    if ('xtype' in defaults[id] && defaults[id].xtype == 'checkbox')
+                    {
+                        var checked = v ? true : false;
+                        if (v == "false")
+                            v = false;
+                        if (multiRowEdit && i > 0 && v != defaults[id].checked)
+                        {
+                            defaults[id].checked = false;
+                            defaults[id].allRowsSameValue = false;
+
+                            // UNDONE: Ext checkboxes don't have an 'unset' state
+                            // Don't require a value for this field.
+                            var col = findColumn(id);
+                            if (col)
+                                col.required = false;
+                        }
+                        else
+                            defaults[id].checked = v;
+                    }
+                    else
+                    {
+                        if (multiRowEdit && i > 0 && v != defaults[id].value)
+                        {
+                            defaults[id].value = undefined;
+                            defaults[id].allRowsSameValue = false;
+                            defaults[id].emptyText = "Selected rows have different values for this field.";
+
+                            // Don't require a value for this field. Allows a '[none]' entry for ComboBox and empty text fields.
+                            var col = findColumn(id);
+                            if (col)
+                                col.required = false;
+                        }
+                        else
+                            defaults[id].value = v;
+                    }
+                }
+            }
+        }
 
         if (fields || properties)
         {
@@ -217,34 +310,8 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                         columnModel?columnModel[i]:{}
                         );
                 var name = field.originalConfig.name;
-                defaults[name] = field;
+                Ext.applyIf(defaults[name], field);
                 items.push({name:name});
-            }
-        }
-
-        if (config.values)
-        {
-            var values = config.values;
-            for (var id in values)
-            {
-                var v = values[id];
-                if (typeof v == 'function')
-                    continue;
-                if (v && typeof v == 'object' && 'value' in v)
-                    v = v.value;
-                if (!(id in defaults))
-                    defaults[id] = {};
-                if ('xtype' in defaults[id] && defaults[id].xtype == 'checkbox')
-                {
-                    var checked = v ? true : false;
-                    if (v == "false")
-                        v = false;
-                    defaults[id].checked = v;
-                }
-                else
-                {
-                    defaults[id].value = v;
-                }
             }
         }
 
@@ -304,6 +371,44 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             else
                Ext.Msg.alert("Error", formMessage);
         }
+    },
+
+    /**
+     * Returns an Array of form value Objects.  The returned values will first be populated with
+     * with {@link #values} or {@link #selectRowsResponse.values} then with the form's values.
+     * If the form was not initially populated with {@link #values}, a signle element Array with
+     * just the form's values will be returned.
+     */
+    getFormValues : function ()
+    {
+        var fieldValues = this.getForm().getFieldValues(true);
+        for (var key in fieldValues)
+        {
+            if (typeof fieldValues[key] == "string")
+                fieldValues[key] = fieldValues[key].trim();
+        }
+
+        var initialValues = this.initialConfig.values || [];
+        var len = initialValues.length || 1;
+        var result = [];
+        for (var i = 0; i < len; i++)
+        {
+            var data = {};
+            var initialVals = initialValues[i];
+            if (initialVals)
+            {
+                for (var key in initialVals)
+                {
+                    var v = initialVals[key];
+                    if (v && typeof v == 'object' && 'value' in v)
+                        v = v.value;
+                    data[key] = v;
+                }
+            }
+            Ext.apply(data, fieldValues);
+            result.push(data);
+        }
+        return result;
     }
 });
 
@@ -390,11 +495,12 @@ LABKEY.ext.FormHelper =
 
             if (l.schema == 'core' && l.table=='UsersData')
                 l.table = 'Users';
-            var lookupName = [l.schema,l.table,l.keyColumn,l.displayColumn].join('||');
-            var store = config.store || LABKEY.ext.FormHelper.getLookupStore(lookupName, config);
+            if (Ext.isObject(config.store) && config.store.events)
+                field.store = config.store;
+            else
+                field.store = LABKEY.ext.FormHelper.getLookupStoreConfig(config);
             Ext.apply(field, {
                 xtype: 'combo',
-                store: store,
                 forceSelection:true,
                 typeAhead: false,
                 hiddenName: config.name,
@@ -405,6 +511,10 @@ LABKEY.ext.FormHelper =
                 tpl : '<tpl for="."><div class="x-combo-list-item">{[values["' + l.displayColumn + '"]]}</div></tpl>', //FIX: 5860
                 listClass: 'labkey-grid-editor'
             });
+        }
+        else if (config.hidden)
+        {
+            field.xtype = 'hidden';
         }
         else
         {
@@ -492,54 +602,78 @@ LABKEY.ext.FormHelper =
         return Ext.ComponentMgr.create(field, defaultType || 'textfield');
     },
 
-
-    lookupStores : {},
-
     // private
-    getLookupStore : function(uniqueName, c)
+    getLookupStore : function(storeId, c)
     {
-        if (typeof(uniqueName) != 'string')
+        if (typeof(storeId) != 'string')
         {
-            c = uniqueName;
-            uniqueName = c.name;
+            c = storeId;
+            storeId = LABKEY.ext.FormHelper.getLookupStoreId(c);
         }
 
-        var store = this.lookupStores[uniqueName];
+        // Check if store has already been created.
+        if (Ext.isObject(c.store) && c.store.events)
+            return c.store;
+
+        var store = Ext.StoreMgr.lookup(storeId);
         if (!store)
         {
-            var config = {
-                schemaName: c.lookup.schema,
-                queryName: c.lookup.table,
-                containerPath: c.lookup.container || c.containerPath || LABKEY.container.path
-            };
-            
-            if (c.lookup.viewName)
-                config.viewName = c.lookup.viewName;
-            var columns = [];
-            if (c.lookup.keyColumn)
-                columns.push(c.lookup.keyColumn);
-            //TODO: this could possibly be removed when displayColumn = keyColumn?
-            if (c.lookup.displayColumn)
-                columns.push(c.lookup.displayColumn);
-            //TODO: not sure why we do this?
-            if (columns.length < 2)
-                columns = ['*'];
-            config.columns = columns.join(',');
-            if (!c.required)
-            {
-                config.nullRecord = {
-                    displayColumn: c.lookup.displayColumn,
-                    nullCaption: c.lookupNullCaption || "[none]"
-                };
-            }
-            config.autoLoad = true;
+            var config = c.store || LABKEY.ext.FormHelper.getLookupStoreConfig(c);
+            config.storeId = storeId;
             store = new LABKEY.ext.Store(config);
-            this.lookupStores[uniqueName] = store;
         }
         return store;
     },
 
+    // private
+    // Ext.StoreMgr uses 'storeId' to lookup stores.  A store will add itself to the Ext.StoreMgr when constructed.
+    getLookupStoreId : function (c)
+    {
+        if (c.store && c.store.storeId)
+            return c.store.storeId;
+
+        if (c.lookup)
+            return [c.lookup.schema, c.lookup.table, c.lookup.keyColumn, c.lookup.displayColumn].join('||');
+
+        return c.name;
+    },
+
+    // private
+    getLookupStoreConfig : function(c)
+    {
+        var config = {
+            storeId: LABKEY.ext.FormHelper.getLookupStoreId(c),
+            schemaName: c.lookup.schema,
+            queryName: c.lookup.table,
+            containerPath: c.lookup.container || c.containerPath || LABKEY.container.path
+        };
+
+        if (c.lookup.viewName)
+            config.viewName = c.lookup.viewName;
+        var columns = [];
+        if (c.lookup.keyColumn)
+            columns.push(c.lookup.keyColumn);
+        //TODO: this could possibly be removed when displayColumn = keyColumn?
+        if (c.lookup.displayColumn)
+            columns.push(c.lookup.displayColumn);
+        //TODO: not sure why we do this?
+        if (columns.length < 2)
+            columns = ['*'];
+        config.columns = columns.join(',');
+        if (!c.required)
+        {
+            config.nullRecord = {
+                displayColumn: c.lookup.displayColumn,
+                nullCaption: c.lookupNullCaption || "[none]"
+            };
+        }
+        config.autoLoad = true;
+        
+        return config;
+    },
+
     /**
+     * Note: this is an experimental API that may change unexpectedly in future releases.
      * Validate a form value against the json type.  Error alerts will be displayed.
      * @param type The json type ("int", "float", "date", or "boolean")
      * @param value The value to test.
@@ -700,15 +834,41 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
     constructor : function(c)
     {
         LABKEY.ext.ComboBox.superclass.constructor.call(this, c);
-        if (this.store && this.value && this.displayField && this.valueField && this.displayField != this.valueField)
+
+        // Create the LABKEY.ext.Store
+        // Note: if this ComboBox lives in an LABKEY.ext.FormPanel, ths store will
+        // have already been created during FormPanel.applyDefaults.
+        if (Ext.isObject(this.store) && !this.store.events)
+        {
+            this.store = LABKEY.ext.FormHelper.getLookupStore(this);
+        }
+
+        if (this.store)
+        {
+            this.store.on({
+                load: this.resizeList,
+                //datachanged: this.resizeList,
+                add: this.resizeList,
+                remove: this.resizeList,
+                update: this.resizeList,
+                buffer: 100,
+                scope: this
+            });
+        }
+
+        //if (this.store && this.value && this.displayField && this.valueField && this.displayField != this.valueField)
+        if (this.store && this.value && (this.displayField || this.valueField))
         {
             this.initialValue = this.value;
             if (this.store.getCount())
+            {
                 this.initialLoad();
+                this.resizeList();
+            }
             else
             {
-                this.store.on('load', this.initialLoad, this);
-                if (!this.store.proxy.activeRequest)
+                this.store.on('load', this.initialLoad, this, {single: true});
+                if (!this.store.proxy.activeRequest[Ext.data.Api.actions.read])
                     this.store.load();
             }
         }
@@ -716,12 +876,61 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
 
     initialLoad : function()
     {
-        this.store.un('load', this.initialLoad, this);
         if (this.value === this.initialValue)
         {
             var v = this.value;
             this.setValue(v);
         }
+    },
+
+    initList : function ()
+    {
+        return LABKEY.ext.ComboBox.superclass.initList.call(this);
+    },
+
+    resizeList : function ()
+    {
+        // bail early if ComboBox was set to an explicit width
+        if (Ext.isDefined(this.listWidth))
+            return;
+
+        // CONSIDER: set maxListWidth or listWidth instead of calling .doResize(w) below?
+        var w = this.measureList();
+
+        // NOTE: same as Ext.form.ComboBox.onResize except doesn't call super.
+        if(!isNaN(w) && this.isVisible() && this.list){
+            this.doResize(w);
+        }else{
+            this.bufferSize = w;
+        }
+    },
+
+    measureList : function ()
+    {
+        if (!this.tm)
+        {
+            // XXX: should we share a TextMetrics instance across ComboBoxen using a hidden span?
+            //var span = Ext.DomHelper.append(document.body, {tag:'span', id:'_hiddenSpan', style:{display:'none'}});
+            this.tm = Ext.util.TextMetrics.createInstance(this.el);
+        }
+
+        var w = this.el.getWidth(true);
+        this.store.each(function (r) {
+            var html;
+            if (this.tpl)
+                html = this.tpl.apply(r.data);
+            else
+                html = r.get(this.displayField);
+            w = Math.max(w, Math.ceil(this.tm.getWidth(html)));
+        }, this);
+
+        if (this.list)
+            w += this.list.getFrameWidth('lr');
+
+        // for vertical scrollbar
+        w += 20;
+
+        return w;
     }
 });
 
