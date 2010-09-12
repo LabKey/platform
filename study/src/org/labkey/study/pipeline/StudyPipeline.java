@@ -38,7 +38,6 @@ import java.util.List;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Jan 12, 2006
  * Time: 1:16:44 PM

@@ -153,10 +153,9 @@ public class ExperimentPipelineJob extends PipelineJob
     public void run()
     {
         if (!setStatus("LOADING EXPERIMENT"))
-        {
             return;
-        }
+
         if (loadExperiment(this, getXarSource(), _deleteExistingRuns))
-            setStatus(PipelineJob.COMPLETE_STATUS);
+            setStatus(COMPLETE_STATUS);
     }
 }
