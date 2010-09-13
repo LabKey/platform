@@ -153,7 +153,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         this.on('update', this.onUpdate, this);
 
         //Add this here instead of using Ext.store to make sure above listeners are added before 1st load
-        if(this.autoLoad){
+        if(config.autoLoad){
             this.load.defer(10, this, [
                 typeof this.autoLoad == 'object' ?
                     this.autoLoad : undefined]);
