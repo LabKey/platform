@@ -137,13 +137,27 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 }
             })),
             baseParams: baseParams,
-            listeners: {
-                'beforeload': {fn: this.onBeforeLoad, scope: this},
-                'load': {fn: this.onLoad, scope: this},
-                'loadexception' : {fn: this.onLoadException, scope: this},
-                'update' : {fn: this.onUpdate, scope: this}
-            }
+            autoLoad: false
+            //Moved below to allow user to supply listeners on creation
+//            listeners: {
+//                'beforeload': {fn: this.onBeforeLoad, scope: this},
+//                'load': {fn: this.onLoad, scope: this},
+//                'loadexception' : {fn: this.onLoadException, scope: this},
+//                'update' : {fn: this.onUpdate, scope: this}
+//            }
         });
+
+        this.on('beforeload', this.onBeforeLoad, this);
+        this.on('load', this.onLoad, this);
+        this.on('loadexception', this.onLoadException, this);
+        this.on('update', this.onUpdate, this);
+
+        //Add this here instead of using Ext.store to make sure above listeners are added before 1st load
+        if(this.autoLoad){
+            this.load.defer(10, this, [
+                typeof this.autoLoad == 'object' ?
+                    this.autoLoad : undefined]);
+        }
 
         /**
          * @memberOf LABKEY.ext.Store#

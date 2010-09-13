@@ -109,7 +109,7 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
             }
         }
         this.extElem.addClass("selected");
-        console.log(this.extElem.id  + " extPopup.y: " + this.extPopup.getY());
+        //console.log(this.extElem.id  + " extPopup.y: " + this.extPopup.getY());
         if (!this.rendered) {
             var p = new LABKEY.WebPart({
             partName: this.webPartName,
