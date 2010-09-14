@@ -14,22 +14,21 @@ import java.util.Set;
 */
 
 // Wraps any DisplayColumn and causes it to render each value separately
-class MultiValuedDisplayColumn extends DisplayColumnDecorator
+public class MultiValuedDisplayColumn extends DisplayColumnDecorator
 {
+    private final Set<FieldKey> _fieldKeys = new HashSet<FieldKey>();
+
     public MultiValuedDisplayColumn(DisplayColumn dc)
     {
         super(dc);
+        _column.addQueryFieldKeys(_fieldKeys);
+        assert _fieldKeys.contains(getColumnInfo().getFieldKey());
     }
 
     @Override         // TODO: Need similar for renderDetailsCellContents()
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
-        _column.addQueryFieldKeys(fieldKeys);
-
-        assert fieldKeys.contains(getColumnInfo().getFieldKey());
-
-        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, fieldKeys);
+        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
         String sep = "";
 
         while (mvCtx.next())
@@ -40,11 +39,5 @@ class MultiValuedDisplayColumn extends DisplayColumnDecorator
         }
 
         // TODO: Call super in empty values case?
-    }
-
-    @Override
-    public String getURL()
-    {
-        return super.getURL();    //To change body of overridden methods use File | Settings | File Templates.
     }
 }

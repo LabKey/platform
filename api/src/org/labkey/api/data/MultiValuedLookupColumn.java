@@ -14,18 +14,17 @@ import java.util.Map;
 */
 public class MultiValuedLookupColumn extends LookupColumn
 {
-    private final ColumnInfo display;
-    private final ForeignKey rightFk;
-    private final ColumnInfo junctionKey;
+    private final ColumnInfo _display;
+    private final ForeignKey _rightFk;
+    private final ColumnInfo _junctionKey;
 
     public MultiValuedLookupColumn(FieldKey fieldKey, ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
     {
         super(parentPkColumn, childKey, display);
-        this.display = display;
-        this.rightFk = fk;
-        this.junctionKey = junctionKey;
+        _display = display;
+        _rightFk = fk;
+        _junctionKey = junctionKey;
         setFieldKey(fieldKey);
-        this.copyURLFrom(display, parentPkColumn.getFieldKey(), null);
     }
 
     // We don't traverse FKs from a multi-valued column
@@ -44,7 +43,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(getTableAlias(tableAliasName) + "." + display.getAlias());
+        return new SQLFragment(getTableAlias(tableAliasName) + "." + _display.getAlias());
     }
 
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable)
@@ -57,9 +56,9 @@ public class MultiValuedLookupColumn extends LookupColumn
         strJoin.append(keyColumnName);
 
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
-        for (ColumnInfo col : rightFk.getLookupTableInfo().getColumns())
+        for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
-            ColumnInfo lc = rightFk.createLookupColumn(junctionKey, col.getName());
+            ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
             strJoin.append(", \n\t\t\t");
             strJoin.append(getAggregateFunction(lc.getValueSql("child").toString()));
             strJoin.append(" AS ");

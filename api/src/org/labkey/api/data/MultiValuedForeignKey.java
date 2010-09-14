@@ -1,7 +1,6 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.StringExpression;
 
 /**
 * User: adam
@@ -15,7 +14,6 @@ public class MultiValuedForeignKey extends ColumnInfo.SchemaForeignKey
     public MultiValuedForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, String junctionLookup, boolean joinWithContainer)
     {
         super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer);
-
         _junctionLookup = junctionLookup;
     }
 
@@ -30,11 +28,5 @@ public class MultiValuedForeignKey extends ColumnInfo.SchemaForeignKey
 
         ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
         return new MultiValuedLookupColumn(new FieldKey(parent.getFieldKey(), displayField), parent, childKey, junctionKey, fk, lookupColumn);
-    }
-
-    @Override
-    public StringExpression getURL(ColumnInfo parent)
-    {
-        return null;
     }
 }
