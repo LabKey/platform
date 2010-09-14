@@ -128,6 +128,8 @@ public class DataSetTable extends FilteredTable
                     }
                 });
 
+                qcStateColumn.setDimension(false);
+
                 addColumn(qcStateColumn);
                 // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
                 // but don't include it in the default set of columns either
@@ -147,6 +149,7 @@ public class DataSetTable extends FilteredTable
                     }
                 });
                 pvColumn.setIsUnselectable(true);
+                pvColumn.setDimension(false);
                 addColumn(pvColumn);
             }
             else

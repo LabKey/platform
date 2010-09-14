@@ -53,6 +53,7 @@ import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
 import org.labkey.query.reports.ReportsWebPartFactory;
+import org.labkey.query.reports.VisualizationController;
 import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
@@ -85,6 +86,7 @@ public class QueryModule extends DefaultModule
     {
         addController("query", QueryController.class);
         addController("reports", ReportsController.class);
+        addController("viz", VisualizationController.class);
 
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);

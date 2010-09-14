@@ -1835,6 +1835,7 @@ query/src/org/labkey/query/reports/ReportWriter.java -text
 query/src/org/labkey/query/reports/ReportsController.java -text
 query/src/org/labkey/query/reports/ReportsPipelineProvider.java -text
 query/src/org/labkey/query/reports/ReportsWebPartFactory.java -text
+query/src/org/labkey/query/reports/VisualizationController.java -text
 query/src/org/labkey/query/reports/chart/AbstractChartRenderer.java -text
 query/src/org/labkey/query/reports/chart/ChartServiceImpl.java -text
 query/src/org/labkey/query/reports/chart/TimeSeriesRenderer.java -text
