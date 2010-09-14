@@ -210,7 +210,8 @@ public class RenderContext extends BoundMap // extends ViewContext
             for (DisplayColumn dc : displayColumns)
                 dc.addQueryFieldKeys(keys);
 
-            ret.addAll(QueryService.get().getColumns(tinfo, keys, ret).values());
+            Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
+            ret.addAll(infoCollection);
 
             List<ColumnInfo> pkColumns = tinfo.getPkColumns();
             if (null != pkColumns)

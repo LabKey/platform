@@ -157,9 +157,9 @@ public class SimpleModuleUserSchema extends UserSchema
     {
         UserSchema _userSchema;
 
-        public SimpleModuleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContaienr)
+        public SimpleModuleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
         {
-            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContaienr);
+            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer);
             _userSchema = userSchema;
         }
 

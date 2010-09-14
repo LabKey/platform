@@ -300,7 +300,7 @@ public class DataRegion extends DisplayElement
 
 
 
-    public LinkedHashMap<FieldKey,ColumnInfo> getSelectColumns()
+    public LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
     {
         List<DisplayColumn> displayCols = getDisplayColumns();
 
@@ -311,7 +311,7 @@ public class DataRegion extends DisplayElement
         LinkedHashSet<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>(originalColumns);
         addQueryColumns(columns);
 
-        LinkedHashMap<FieldKey,ColumnInfo> ret = QueryService.get().getColumns(getTable(), Collections.<FieldKey>emptySet(), columns);
+        LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(getTable(), Collections.<FieldKey>emptySet(), columns);
 
         for (DisplayColumn dc : displayCols)
             dc.setAllColumns(ret);
@@ -636,7 +636,7 @@ public class DataRegion extends DisplayElement
 
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        LinkedHashMap<FieldKey,ColumnInfo> selectKeyMap = getSelectColumns();
+        LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
         return ctx.getResultSet(selectKeyMap, getTable(), getMaxRows(), getOffset(), getName(), async);
     }
 

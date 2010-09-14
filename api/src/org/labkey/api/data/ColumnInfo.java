@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -720,10 +721,27 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if ((!merge || null == fk) && xmlCol.getFk() != null)
         {
             ColumnType.Fk xfk = xmlCol.getFk();
-            fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false);
+
+            if (!xfk.isSetFkMultiValued())
+            {
+                fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false);
+            }
+            else
+            {
+                String type = xfk.getFkMultiValued();
+
+                if ("junction".equals(type))
+                {
+                    fk = new MultiValuedColumn.MultiValuedForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), xfk.getFkJunctionLookup(), false);
+                }
+                else
+                {
+                    throw new NotImplementedException("Non-junction multi-value columns NYI");
+                }
+            }
         }
 
-        setFieldKey(new FieldKey(null,xmlCol.getColumnName()));
+        setFieldKey(new FieldKey(null, xmlCol.getColumnName()));
         if (xmlCol.isSetColumnTitle())
             setLabel(xmlCol.getColumnTitle());
         if (xmlCol.isSetInputLength())
@@ -1009,12 +1027,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         final String _lookupKey;
         final boolean _joinWithContainer;
 
-        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContaienr)
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
         {
             _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
             _tableName = tableName;
             _lookupKey = lookupKey;
-            _joinWithContainer = joinWithContaienr;
+            _joinWithContainer = joinWithContainer;
         }
 
         public boolean isJoinWithContainer()

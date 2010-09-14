@@ -59,6 +59,14 @@ public class MultiValuedColumn extends ColumnInfo
         setIsUnselectable(true);
     }
 
+
+    @Override
+    public ForeignKey getFk()
+    {
+        return null; //new MultiValuedForeignKey();
+    }
+
+
     // Wraps any DisplayColumn and causes it to render each value separately
     private static class MultiValuedDisplayColumn extends DisplayColumnDecorator
     {
@@ -72,7 +80,8 @@ public class MultiValuedColumn extends ColumnInfo
         {
             Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
             _column.addQueryFieldKeys(fieldKeys);
-            fieldKeys.add(getColumnInfo().getFieldKey());
+
+            assert fieldKeys.contains(getColumnInfo().getFieldKey());
 
             MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, fieldKeys);
             String sep = "";
@@ -86,38 +95,47 @@ public class MultiValuedColumn extends ColumnInfo
 
             // TODO: Call super in empty values case?
         }
-    }
 
-
-    @Override
-    public ForeignKey getFk()
-    {
-        return new MultiValuedForeignKey();
-    }
-
-
-    private class MultiValuedForeignKey extends AbstractForeignKey
-    {
         @Override
-        public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+        public void addQueryFieldKeys(Set<FieldKey> fieldKeys)
         {
-            ColumnInfo lookupColumn = _fk.createLookupColumn(_junctionKey, displayField);
-            ColumnInfo col = new MultiValuedLookupColumn(new FieldKey(parent.getFieldKey(), displayField), _parentPkColumn, _childKey, _fk, lookupColumn);
-            return col;
+            _column.addQueryFieldKeys(fieldKeys);
+        }
+    }
+
+
+    public static class MultiValuedForeignKey extends SchemaForeignKey
+    {
+        private final String _junctionLookup;
+        private final ColumnInfo _foreignKey; // TODO: Do we need this?
+
+        private ColumnInfo _childKey;     // Junction join to primary table
+        private ColumnInfo _junctionKey;  // Junction join to value table
+        private ForeignKey _fk;           // Wrapped foreign key to value table (elided lookup)
+
+        public MultiValuedForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, String junctionLookup, boolean joinWithContainer)
+        {
+            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer);
+
+            _junctionLookup = junctionLookup;
+            _foreignKey = foreignKey;
         }
 
         @Override
-        public TableInfo getLookupTableInfo()
+        public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
-            if (null != _fk)
-            {
-                return _fk.getLookupTableInfo();
-            }
-//            else
-//            {
-//                return _ti;
-//            }
-            return null;
+            TableInfo junction = getLookupTableInfo();
+
+            _junctionKey = junction.getColumn(_junctionLookup);
+            _childKey = junction.getColumn(getLookupColumnName());
+            _fk = _junctionKey.getFk();
+
+            ColumnInfo lookupColumn = _fk.createLookupColumn(_junctionKey, displayField);
+            ColumnInfo col = new MultiValuedLookupColumn(new FieldKey(parent.getFieldKey(), displayField), parent, _childKey, _junctionKey, _fk, lookupColumn);
+
+//            ColumnInfo lookupColumn = super.createLookupColumn(parent, displayField);
+//            ColumnInfo col = new MultiValuedLookupColumn(new FieldKey(parent.getFieldKey(), displayField), parent.getParentTable().getPkColumns().get(0) /* YUCK */, getLookupTableInfo().getColumn(_junctionLookup), this, lookupColumn);
+            return col;
         }
 
         @Override
@@ -128,16 +146,18 @@ public class MultiValuedColumn extends ColumnInfo
     }
 
 
-    private class MultiValuedLookupColumn extends LookupColumn
+    private static class MultiValuedLookupColumn extends LookupColumn
     {
         private ColumnInfo display;
         private ForeignKey rightFk;
+        private ColumnInfo junctionKey;
 
-        public MultiValuedLookupColumn(FieldKey fieldKey, ColumnInfo parentPkColumn, ColumnInfo childKey, ForeignKey fk, ColumnInfo display)
+        public MultiValuedLookupColumn(FieldKey fieldKey, ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
         {
             super(parentPkColumn, childKey, display);
             this.display = display;
             this.rightFk = fk;
+            this.junctionKey = junctionKey;
             setFieldKey(fieldKey);
             this.copyURLFrom(display, parentPkColumn.getFieldKey(), null);
         }
@@ -165,11 +185,6 @@ public class MultiValuedColumn extends ColumnInfo
         {
             String keyTableName = _lookupKey.getParentTable().getSelectName();
             String keyColumnName = _lookupKey.getSelectName();
-//            String valueColumnName = _lookupColumn.getSelectName();
-
-            // First, get any lookup column joins so we have the correct alias
-            Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-            _lookupColumn.declareJoins("child", joins);
 
             strJoin.append("\n\t(\n\t\t");
             strJoin.append("SELECT child.");
@@ -178,7 +193,7 @@ public class MultiValuedColumn extends ColumnInfo
             // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
             for (ColumnInfo col : rightFk.getLookupTableInfo().getColumns())
             {
-                ColumnInfo lc = rightFk.createLookupColumn(_junctionKey, col.getName());
+                ColumnInfo lc = rightFk.createLookupColumn(junctionKey, col.getName());
                 strJoin.append(", \n\t\t\t");
                 strJoin.append(getAggregateFunction(lc.getValueSql("child").toString()));
                 strJoin.append(" AS ");
@@ -188,6 +203,9 @@ public class MultiValuedColumn extends ColumnInfo
             strJoin.append("\n\t\t\tFROM ");
             strJoin.append(keyTableName);
             strJoin.append(" child");
+
+            Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+            _lookupColumn.declareJoins("child", joins);
 
             for (SQLFragment fragment : joins.values())
             {
@@ -212,7 +230,7 @@ public class MultiValuedColumn extends ColumnInfo
         @Override
         public String getTableAlias(String baseAlias)
         {
-            return AliasManager.makeLegalName(baseAlias + "$" + MultiValuedColumn.this.getName(), getSqlDialect());
+            return AliasManager.makeLegalName(baseAlias + "$" + this.getName(), getSqlDialect());    // TODO: Change?
         }
 
         // By default, use GROUP_CONCAT aggregate function, which returns a common-separated list of values.  Override this

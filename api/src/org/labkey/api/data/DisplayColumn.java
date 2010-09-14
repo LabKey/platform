@@ -922,7 +922,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    public void setAllColumns(Map<FieldKey,ColumnInfo> map)
+    public void setAllColumns(Map<FieldKey, ColumnInfo> map)
     {
         _allColumns = map;
         // may need to recompile the _urlExpression
