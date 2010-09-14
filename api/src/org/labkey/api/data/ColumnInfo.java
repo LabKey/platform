@@ -732,7 +732,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
                 if ("junction".equals(type))
                 {
-                    fk = new MultiValuedColumn.MultiValuedForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), xfk.getFkJunctionLookup(), false);
+                    fk = new MultiValuedForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), xfk.getFkJunctionLookup(), false);
                 }
                 else
                 {

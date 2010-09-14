@@ -184,7 +184,9 @@ api/src/org/labkey/api/data/MVDisplayColumn.java -text
 api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
-api/src/org/labkey/api/data/MultiValuedColumn.java -text
+api/src/org/labkey/api/data/MultiValuedDisplayColumn.java -text
+api/src/org/labkey/api/data/MultiValuedForeignKey.java -text
+api/src/org/labkey/api/data/MultiValuedLookupColumn.java -text
 api/src/org/labkey/api/data/MultiValuedRenderContext.java -text
 api/src/org/labkey/api/data/MvUtil.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
