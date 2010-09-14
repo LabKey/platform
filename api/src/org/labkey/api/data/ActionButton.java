@@ -53,10 +53,6 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
     }
 
-    public static final int DISPLAY_TYPE_BUTTON = 0;
-    public static final int DISPLAY_TYPE_IMG = 1;
-    //public static final int DISPLAY_TYPE_LINK = 2;
-
     public static ActionButton BUTTON_DELETE = null;
     public static ActionButton BUTTON_SHOW_INSERT = null;
     public static ActionButton BUTTON_SHOW_UPDATE = null;
@@ -116,26 +112,14 @@ public class ActionButton extends DisplayElement implements Cloneable
     private Action _actionType = Action.POST;
     private StringExpression _caption;
     private StringExpression _actionName;
-    private StringExpression _imgPath;
     private StringExpression _url;
     private StringExpression _script;
-    private int _displayType;
     private StringExpression _title;
     private String _target;
     private boolean _appendScript;
     protected boolean _requiresSelection;
     private String _confirmText;
     private String _encodedSubmitForm;
-
-    public ActionButton()
-    {
-
-    }
-
-    public ActionButton(String actionName)
-    {
-        _actionName = StringExpressionFactory.create(actionName);
-    }
 
     public ActionButton(String caption, URLHelper link)
     {
@@ -161,15 +145,9 @@ public class ActionButton extends DisplayElement implements Cloneable
         this(SpringActionController.getActionName(action) + ".view", caption);
     }
 
-    public ActionButton(Class<? extends Controller> action, String caption, int displayModes)
+    public ActionButton(ActionURL url, String caption, int displayModes)
     {
-        this(SpringActionController.getActionName(action) + ".view", caption, displayModes);
-    }
-    
-    @Deprecated /** Use version that takes an action class instead */
-    public ActionButton(String actionName, String caption, int displayModes)
-    {
-        this(actionName, caption);
+        this(url, caption);
         setDisplayModes(displayModes);
     }
 
@@ -180,7 +158,8 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     public ActionButton(String actionName, String caption, int displayModes, Action actionType)
     {
-        this(actionName, caption, displayModes);
+        this(actionName, caption);
+        setDisplayModes(displayModes);
         setActionType(actionType);
     }
 
@@ -189,8 +168,6 @@ public class ActionButton extends DisplayElement implements Cloneable
         _actionName = ab._actionName;
         _actionType = ab._actionType;
         _caption = ab._caption;
-        _displayType = ab._displayType;
-        _imgPath = ab._imgPath;
         _script = ab._script;
         _title = ab._title;
         _url = ab._url;
@@ -210,17 +187,6 @@ public class ActionButton extends DisplayElement implements Cloneable
         _actionType = actionType;
     }
 
-    public int getDisplayType()
-    {
-        return _displayType;
-    }
-
-    public void setDisplayType(int displayType)
-    {
-        checkLocked();
-        _displayType = displayType;
-    }
-
     public void setActionName(String actionName)
     {
         checkLocked();
@@ -230,18 +196,6 @@ public class ActionButton extends DisplayElement implements Cloneable
     public String getActionName(RenderContext ctx)
     {
         return _eval(_actionName, ctx);
-    }
-
-    public String getImgPath(RenderContext ctx)
-    {
-        return _eval(_imgPath, ctx);
-    }
-
-    public void setImgPath(String imgPath)
-    {
-        checkLocked();
-        _imgPath = StringExpressionFactory.create(imgPath, true);
-        _displayType = DISPLAY_TYPE_IMG;
     }
 
     public String getCaption(RenderContext ctx)
@@ -378,39 +332,14 @@ public class ActionButton extends DisplayElement implements Cloneable
         
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
-            if (_displayType == DISPLAY_TYPE_IMG)
-            {
-                out.write("<input");
-                out.write(" type='image' src='");
-                out.write(getImgPath(ctx));
-                out.write("'");
-                out.write(" name='");
-                out.write(getActionName(ctx));
-                out.write("'");
-                out.write(" value='");
-                out.write(getCaption(ctx));
-                out.write("' onClick='");
+            StringBuilder onClickScript = new StringBuilder();
+            if (null == _script || _appendScript)
+                onClickScript.append(renderDefaultScript(ctx));
+            if (_script != null)
+                onClickScript.append(getScript(ctx));
 
-                // Added ability to use a script in the GET and POST case (e.g., to check the form before submiting)
-                if (null == _script || _appendScript)
-                    out.write(renderDefaultScript(ctx));
-                if (_script != null)
-                    out.write(getScript(ctx));
-
-                out.write("'>");
-            }
-            else
-            {
-                StringBuilder onClickScript = new StringBuilder();
-                if (null == _script || _appendScript)
-                    onClickScript.append(renderDefaultScript(ctx));
-                if (_script != null)
-                    onClickScript.append(getScript(ctx));
-
-                attributes.append("name='").append(getActionName(ctx)).append("'");
-                out.write(PageFlowUtil.generateSubmitButton(getCaption(ctx), onClickScript.toString(), attributes.toString()));
-            }
-
+            attributes.append("name='").append(getActionName(ctx)).append("'");
+            out.write(PageFlowUtil.generateSubmitButton(getCaption(ctx), onClickScript.toString(), attributes.toString()));
         }
         else if (_actionType.equals(Action.LINK))
         {

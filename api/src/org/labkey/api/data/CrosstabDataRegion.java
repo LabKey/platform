@@ -50,14 +50,11 @@ public class CrosstabDataRegion extends DataRegion
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         //add a row for the column axis label if there is one
-        if(_settings.getColumnAxis().getCaption() != null)
-        {
-            out.write("<tr>\n");
-            renderColumnGroupHeader(_numRowAxisCols + (getShowRecordSelectors() ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2);
-            renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (getShowRecordSelectors() ? 1 : 0),
-                    _settings.getColumnAxis().getCaption(), out);
-            out.write("</tr>\n");
-        }
+        out.write("<tr>\n");
+        renderColumnGroupHeader(_numRowAxisCols + (getShowRecordSelectors() ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2);
+        renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (getShowRecordSelectors() ? 1 : 0),
+                _settings.getColumnAxis().getCaption(), out);
+        out.write("</tr>\n");
 
         //add an extra row for the column dimension members
         out.write("<tr>\n");
@@ -66,7 +63,7 @@ public class CrosstabDataRegion extends DataRegion
         if(getShowRecordSelectors())
             out.write("<td></td>\n");
 
-        //for each col dimesion member, add a group header
+        //for each col dimension member, add a group header
         CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
         List<CrosstabMember> colMembers = _table.getColMembers();
         for(int idxColMember = 0; idxColMember < colMembers.size(); ++idxColMember)
@@ -119,7 +116,7 @@ public class CrosstabDataRegion extends DataRegion
         if(groupWidth <= 0)
             return;
 
-        out.write("<td colspan=\"");
+        out.write("<td align=\"center\" colspan=\"");
         out.write(String.valueOf(groupWidth));
         out.write("\" rowspan=\"");
         out.write(String.valueOf(groupHeight));
@@ -129,7 +126,7 @@ public class CrosstabDataRegion extends DataRegion
             out.write(" labkey-show-borders");
         }
         out.write("\">\n");
-        out.write(caption);
+        out.write(caption == null ? "" : caption);
         out.write("</td>\n");
     }
 

@@ -1595,41 +1595,6 @@ public class Table
     }
 
 
-    static public TempTableInfo createTempTable(TableInfo tinfo, String name) throws SQLException
-    {
-        //
-        // create TableInfo
-        //
-
-        ArrayList<ColumnInfo> cols = new ArrayList<ColumnInfo>();
-        for (ColumnInfo col : tinfo.getColumns())
-        {
-            ColumnInfo colDirect = new ColumnInfo(col.getName());
-            colDirect.setAlias(col.getAlias());
-            colDirect.copyAttributesFrom(col);
-            colDirect.copyURLFrom(col, null, null);
-            cols.add(colDirect);
-        }
-
-        TempTableInfo tinfoTempTable = new TempTableInfo(tinfo.getSchema(), name, cols, tinfo.getPkColumnNames());
-        String tempTableName = tinfoTempTable.getTempTableName();
-
-        //
-        // Track the table, it will be deleted when tinfoTempTable is GC'd
-        //
-
-        tinfoTempTable.track();
-
-        //
-        // create table
-        //
-
-        snapshot(tinfo, tempTableName);
-
-        return tinfoTempTable;
-    }
-
-
     public static void snapshot(TableInfo tinfo, String tableName)
             throws SQLException
     {

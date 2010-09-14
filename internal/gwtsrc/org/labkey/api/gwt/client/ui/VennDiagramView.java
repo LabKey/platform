@@ -16,6 +16,10 @@
 
 package org.labkey.api.gwt.client.ui;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.dom.client.LoadEvent;
+import com.google.gwt.event.dom.client.LoadHandler;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.DOM;
@@ -46,13 +50,13 @@ public abstract class VennDiagramView extends HorizontalPanel
     private Image _vennDiagram;
     private ListBox[] _groupListBoxes = new ListBox[3];
 
-    private Label _groupALabel = new Label(" ");
-    private Label _groupBLabel = new Label(" ");
-    private Label _groupCLabel = new Label(" ");
+    private HTML _group1Label = new HTML(" ");
+    private HTML _group2Label = new HTML(" ");
+    private HTML _group3Label = new HTML(" ");
 
-    private Label _groupACountLabel = new Label(" ");
-    private Label _groupBCountLabel = new Label(" ");
-    private Label _groupCCountLabel = new Label(" ");
+    private Label _group1CountLabel = new Label(" ");
+    private Label _group2CountLabel = new Label(" ");
+    private Label _group3CountLabel = new Label(" ");
     private Label _overlapABLabel = new Label(" ");
     private Label _overlapACLabel = new Label(" ");
     private Label _overlapBCLabel = new Label(" ");
@@ -65,7 +69,7 @@ public abstract class VennDiagramView extends HorizontalPanel
     private GWTComparisonGroup[] _groups;
     private int _totalCount;
     private GWTComparisonMember[] _members;
-    private Map _idsToGroups = new HashMap();
+    private Map<String, GWTComparisonGroup> _idsToGroups = new HashMap<String, GWTComparisonGroup>();
     private String _memberDescription;
 
     public void initialize(Panel rootPanel)
@@ -81,24 +85,18 @@ public abstract class VennDiagramView extends HorizontalPanel
         _vennDiagram.setHeight("300px");
         _vennDiagram.setWidth("300px");
         _vennDiagram.setVisible(false);
-        _vennDiagram.addLoadListener(new LoadListener()
+        _vennDiagram.addLoadHandler(new LoadHandler()
         {
-            public void onError(Widget sender)
-            {
-                _vennDiagram.setVisible(false);
-                _warningLabel.setText("Failed to load Venn Diagram image. Only available if you have an active Internet connection.");
-            }
-
-            public void onLoad(Widget sender)
+            public void onLoad(LoadEvent e)
             {
                 _vennDiagram.setVisible(true);
                 _warningLabel.setText(APPROXIMATE_CHART_DISCLAIMER);
             }
         });
 
-        ChangeListener changeListener = new ChangeListener()
+        ChangeHandler changeHandler = new ChangeHandler()
         {
-            public void onChange(Widget sender)
+            public void onChange(ChangeEvent e)
             {
                 refreshDiagram();
             }
@@ -107,7 +105,7 @@ public abstract class VennDiagramView extends HorizontalPanel
         for (int i = 0; i < _groupListBoxes.length; i++)
         {
             _groupListBoxes[i] = new ListBox();
-            _groupListBoxes[i].addChangeListener(changeListener);
+            _groupListBoxes[i].addChangeHandler(changeHandler);
         }
 
         FlexTable selectionTable = new FlexTable();
@@ -116,71 +114,71 @@ public abstract class VennDiagramView extends HorizontalPanel
         int row = 0;
         int col = 0;
 
-        Label label = new Label("Chart:");
-        label.setHorizontalAlignment(HasAlignment.ALIGN_RIGHT);
-        selectionTable.setWidget(row, col++, label);
+        Label setNameLabel = new Label("Set Name");
+        DOM.setStyleAttribute(setNameLabel.getElement(), "fontWeight", "bold");
+        selectionTable.setWidget(row, col++, setNameLabel);
+        Label countLabel = new Label("Count");
+        DOM.setStyleAttribute(countLabel.getElement(), "fontWeight", "bold");
+        selectionTable.setWidget(row, col++, countLabel);
+        Label description = new Label("Description");
+        DOM.setStyleAttribute(description.getElement(), "fontWeight", "bold");
+        selectionTable.setWidget(row, col++, description);
+        row++;
+        col = 0;
+
+        selectionTable.setWidget(row, col++, _group1Label);
+        setGroupLabel(_group1Label, " ", "ffffff");
+        selectionTable.setWidget(row, col++, _group1CountLabel);
         selectionTable.setWidget(row, col++, _groupListBoxes[0]);
         row++;
         col = 0;
 
-        label = new Label("and:");
-        label.setHorizontalAlignment(HasAlignment.ALIGN_RIGHT);
-        selectionTable.setWidget(row, col++, label);
+        selectionTable.setWidget(row, col++, _group2Label);
+        setGroupLabel(_group2Label, " ", "ffffff");
+        selectionTable.setWidget(row, col++, _group2CountLabel);
         selectionTable.setWidget(row, col++, _groupListBoxes[1]);
         row++;
         col = 0;
 
-        label = new Label("and:");
-        label.setHorizontalAlignment(HasAlignment.ALIGN_RIGHT);
-        selectionTable.setWidget(row, col++, label);
+        selectionTable.setWidget(row, col++, _group3Label);
+        setGroupLabel(_group3Label, " ", "ffffff");
+        selectionTable.setWidget(row, col++, _group3CountLabel);
         selectionTable.setWidget(row, col++, _groupListBoxes[2]);
         row++;
         col = 0;
         
-        selectionTable.setWidget(row, col++, _groupACountLabel);
-        selectionTable.setWidget(row, col++, _groupALabel);
-        row++;
-        col = 0;
-
-        selectionTable.setWidget(row, col++, _groupBCountLabel);
-        selectionTable.setWidget(row, col++, _groupBLabel);
-        row++;
-        col = 0;
-
-        selectionTable.setWidget(row, col++, _groupCCountLabel);
-        selectionTable.setWidget(row, col++, _groupCLabel);
-        row++;
-        col = 0;
-
+        selectionTable.setWidget(row, col++, setGroupLabel(new HTML(), "A&amp;B", OVERLAP_AB_COLOR));
         selectionTable.setWidget(row, col++, _overlapABLabel);
-        selectionTable.setWidget(row, col++, new Label("Overlap between A and B"));
+        selectionTable.setWidget(row, col++, new Label("Overlap between groups A and B"));
         row++;
         col = 0;
 
+        selectionTable.setWidget(row, col++, setGroupLabel(new HTML(), "A&amp;C", OVERLAP_AC_COLOR));
         selectionTable.setWidget(row, col++, _overlapACLabel);
-        selectionTable.setWidget(row, col++, new Label("Overlap between A and C"));
+        selectionTable.setWidget(row, col++, new Label("Overlap between groups A and C"));
         row++;
         col = 0;
 
+        selectionTable.setWidget(row, col++, setGroupLabel(new HTML(), "B&amp;C", OVERLAP_BC_COLOR));
         selectionTable.setWidget(row, col++, _overlapBCLabel);
-        selectionTable.setWidget(row, col++, new Label("Overlap between B and C"));
+        selectionTable.setWidget(row, col++, new Label("Overlap between groups B and C"));
         row++;
         col = 0;
 
+        selectionTable.setWidget(row, col++, setGroupLabel(new HTML(), "A&amp;B&amp;C", OVERLAP_ABC_COLOR));
         selectionTable.setWidget(row, col++, _overlapABCLabel);
-        selectionTable.setWidget(row, col, new Label("Overlap between A, B, and C"));
+        selectionTable.setWidget(row, col, new Label("Overlap between all three groups"));
         row++;
-        col = 1;
 
-        selectionTable.setWidget(row++, col, _warningLabel);
+        selectionTable.setWidget(row++, 2, _warningLabel);
 
-        setupCountLabel(_groupACountLabel, GROUP_A_COLOR);
-        setupCountLabel(_groupBCountLabel, GROUP_B_COLOR);
-        setupCountLabel(_groupCCountLabel, GROUP_C_COLOR);
-        setupCountLabel(_overlapABLabel, OVERLAP_AB_COLOR);
-        setupCountLabel(_overlapACLabel, OVERLAP_AC_COLOR);
-        setupCountLabel(_overlapBCLabel, OVERLAP_BC_COLOR);
-        setupCountLabel(_overlapABCLabel, OVERLAP_ABC_COLOR);
+        setupCountLabel(_group1CountLabel);
+        setupCountLabel(_group2CountLabel);
+        setupCountLabel(_group3CountLabel);
+        setupCountLabel(_overlapABLabel);
+        setupCountLabel(_overlapACLabel);
+        setupCountLabel(_overlapBCLabel);
+        setupCountLabel(_overlapABCLabel);
 
         HorizontalPanel diagramPanel = new HorizontalPanel();
         diagramPanel.setVerticalAlignment(HasAlignment.ALIGN_TOP);
@@ -195,22 +193,18 @@ public abstract class VennDiagramView extends HorizontalPanel
         refreshDiagram();
     }
 
-    private void setupCountLabel(Widget widget, String color)
+    private void setupCountLabel(Widget widget)
     {
         DOM.setStyleAttribute(widget.getElement(), "textAlign", "right");
         DOM.setStyleAttribute(widget.getElement(), "padding", "2px");
         DOM.setStyleAttribute(widget.getElement(), "fontFamily", "courier");
-        if (color != null)
-        {
-            setBackground(widget, color);
-        }
     }
 
     public void requestComparison()
     {
         String originalURL = PropertyUtil.getServerProperty("originalURL");
         String comparisonGroup = PropertyUtil.getServerProperty("comparisonName");
-        AsyncCallback callbackHandler = new AsyncCallback<GWTComparisonResult>()
+        AsyncCallback<GWTComparisonResult> callbackHandler = new AsyncCallback<GWTComparisonResult>()
         {
             public void onFailure(Throwable caught)
             {
@@ -225,7 +219,7 @@ public abstract class VennDiagramView extends HorizontalPanel
         requestComparison(originalURL, comparisonGroup, callbackHandler);
     }
 
-    protected abstract void requestComparison(String originalURL, String comparisonGroup, AsyncCallback callbackHandler);
+    protected abstract void requestComparison(String originalURL, String comparisonGroup, AsyncCallback<GWTComparisonResult> callbackHandler);
 
     private void setupTable(GWTComparisonResult comparisonResult)
     {
@@ -235,9 +229,9 @@ public abstract class VennDiagramView extends HorizontalPanel
         // Create an implicit group that holds all the members
         GWTComparisonGroup allGroup = new GWTComparisonGroup();
         allGroup.setName("All");
-        for (int i = 0; i < _members.length; i++)
+        for (GWTComparisonMember _member : _members)
         {
-            allGroup.addMember(_members[i]);
+            allGroup.addMember(_member);
         }
         _groups[0] = allGroup;
 
@@ -248,9 +242,9 @@ public abstract class VennDiagramView extends HorizontalPanel
 
         _memberDescription = comparisonResult.getMemberDescription();
 
-        for (int i = 0; i < _groupListBoxes.length; i++)
+        for (ListBox _groupListBoxe : _groupListBoxes)
         {
-            setupListBox(_groupListBoxes[i]);
+            setupListBox(_groupListBoxe);
         }
 
         int index = 0;
@@ -277,7 +271,7 @@ public abstract class VennDiagramView extends HorizontalPanel
     private void setupListBox(ListBox listBox)
     {
         listBox.clear();
-        _idsToGroups = new HashMap();
+        _idsToGroups = new HashMap<String, GWTComparisonGroup>();
         for (int i = 0; i < _groups.length; i++)
         {
             GWTComparisonGroup group = _groups[i];
@@ -302,7 +296,7 @@ public abstract class VennDiagramView extends HorizontalPanel
             _groupGrid.resize(_groups.length + 2, 6);
 
             _groupGrid.setCellPadding(2);
-            _groupGrid.setCellSpacing(0);
+            _groupGrid.setCellSpacing(3);
             Label groupNameLabel = new Label("Group");
             _groupGrid.setWidget(0, 0, groupNameLabel);
             DOM.setStyleAttribute(groupNameLabel.getElement(), "fontWeight", "bold");
@@ -319,7 +313,6 @@ public abstract class VennDiagramView extends HorizontalPanel
                     widget = new HTML("&nbsp;");
                     _groupGrid.setWidget(0, i, widget);
                 }
-                DOM.setStyleAttribute(DOM.getParent(widget.getElement()), "borderBottom", "1px solid rgb(170, 170, 170)");
             }
 
             for (int x = 0; x < _groups.length; x++)
@@ -401,17 +394,10 @@ public abstract class VennDiagramView extends HorizontalPanel
         return result;
     }
 
-    private void setGroupLabel(Label groupLabel, ListBox listBox, char groupLetter)
+    private HTML setGroupLabel(HTML groupLabel, String name, String color)
     {
-        int index = listBox.getSelectedIndex();
-        if (index == -1 || listBox.getItemText(index).length() == 0)
-        {
-            groupLabel.setText(groupLetter + ": (Nothing selected)");
-        }
-        else
-        {
-            groupLabel.setText(groupLetter + ": " + listBox.getItemText(index));
-        }
+        groupLabel.setHTML("<div style='width: 5em; text-align: center; padding: 2px; background: #" + color + "'>" + name + "</div>");
+        return groupLabel;
     }
 
     private void refreshDiagram()
@@ -436,26 +422,26 @@ public abstract class VennDiagramView extends HorizontalPanel
             // 1 is biggest
             sizeA = size1;
             groupA = group1;
-            setGroupLabel(_groupALabel, _groupListBoxes[0], 'A');
+            setGroupLabel(_group1Label, "A", GROUP_A_COLOR);
             if (size2 >= size3)
             {
                 // 2 is middle, 3 is smallest
                 sizeB = size2;
                 groupB = group2;
-                setGroupLabel(_groupBLabel, _groupListBoxes[1], 'B');
+                setGroupLabel(_group2Label, "B", GROUP_B_COLOR);
                 sizeC = size3;
                 groupC = group3;
-                setGroupLabel(_groupCLabel, _groupListBoxes[2], 'C');
+                setGroupLabel(_group3Label, "C", GROUP_C_COLOR);
             }
             else
             {
                 // 3 is middle, 2 is smallest
                 sizeB = size3;
                 groupB = group3;
-                setGroupLabel(_groupBLabel, _groupListBoxes[2], 'B');
+                setGroupLabel(_group3Label, "B", GROUP_B_COLOR);
                 sizeC = size2;
                 groupC = group2;
-                setGroupLabel(_groupCLabel, _groupListBoxes[1], 'C');
+                setGroupLabel(_group2Label, "C", GROUP_C_COLOR);
             }
         }
         else if (size2 >= size1 && size2 >= size3)
@@ -463,26 +449,26 @@ public abstract class VennDiagramView extends HorizontalPanel
             // 2 is biggest
             sizeA = size2;
             groupA = group2;
-            setGroupLabel(_groupALabel, _groupListBoxes[1], 'A');
+            setGroupLabel(_group2Label, "A", GROUP_A_COLOR);
             if (size1 >= size3)
             {
                 // 1 is middle, 3 is smallest
                 sizeB = size1;
                 groupB = group1;
-                setGroupLabel(_groupBLabel, _groupListBoxes[0], 'B');
+                setGroupLabel(_group1Label, "B", GROUP_B_COLOR);
                 sizeC = size3;
                 groupC = group3;
-                setGroupLabel(_groupCLabel, _groupListBoxes[2], 'C');
+                setGroupLabel(_group3Label, "C", GROUP_C_COLOR);
             }
             else
             {
                 // 3 is middle, 1 is smallest
                 sizeB = size3;
                 groupB = group3;
-                setGroupLabel(_groupBLabel, _groupListBoxes[2], 'B');
+                setGroupLabel(_group3Label, "B", GROUP_B_COLOR);
                 sizeC = size1;
                 groupC = group1;
-                setGroupLabel(_groupCLabel, _groupListBoxes[0], 'C');
+                setGroupLabel(_group1Label, "C", GROUP_C_COLOR);
             }
         }
         else
@@ -490,26 +476,26 @@ public abstract class VennDiagramView extends HorizontalPanel
             // 3 is biggest
             sizeA = size3;
             groupA = group3;
-            setGroupLabel(_groupALabel, _groupListBoxes[2], 'A');
+            setGroupLabel(_group3Label, "A", GROUP_A_COLOR);
             if (size1 >= size2)
             {
                 // 1 is middle, 2 is smallest
                 sizeB = size1;
                 groupB = group1;
-                setGroupLabel(_groupBLabel, _groupListBoxes[0], 'B');
+                setGroupLabel(_group1Label, "B", GROUP_B_COLOR);
                 sizeC = size2;
                 groupC = group2;
-                setGroupLabel(_groupCLabel, _groupListBoxes[1], 'C');
+                setGroupLabel(_group2Label, "C", GROUP_C_COLOR);
             }
             else
             {
                 // 2 is middle, 1 is smallest
                 sizeB = size2;
                 groupB = group2;
-                setGroupLabel(_groupBLabel, _groupListBoxes[1], 'B');
+                setGroupLabel(_group2Label, "B", GROUP_B_COLOR);
                 sizeC = size1;
                 groupC = group1;
-                setGroupLabel(_groupCLabel, _groupListBoxes[0], 'C');
+                setGroupLabel(_group1Label, "C", GROUP_C_COLOR);
             }
         }
 
@@ -518,9 +504,9 @@ public abstract class VennDiagramView extends HorizontalPanel
         int overlapBC = getOverlapCount(groupB, groupC);
         int overlapABC = getOverlapCount(groupA, groupB, groupC);
 
-        _groupACountLabel.setText(Integer.toString(sizeA));
-        _groupBCountLabel.setText(Integer.toString(sizeB));
-        _groupCCountLabel.setText(Integer.toString(sizeC));
+        _group1CountLabel.setText(Integer.toString(size1));
+        _group2CountLabel.setText(Integer.toString(size2));
+        _group3CountLabel.setText(Integer.toString(size3));
         _overlapABLabel.setText(Integer.toString(overlapAB));
         _overlapACLabel.setText(Integer.toString(overlapAC));
         _overlapBCLabel.setText(Integer.toString(overlapBC));
@@ -548,7 +534,7 @@ public abstract class VennDiagramView extends HorizontalPanel
             return null;
         }
         String id = listBox.getValue(index);
-        return (GWTComparisonGroup) _idsToGroups.get(id);
+        return _idsToGroups.get(id);
     }
 
     private void refreshTables()

@@ -44,10 +44,8 @@ public abstract class ComparisonCrosstabView extends CrosstabView
     {
         List<FieldKey> cols = new ArrayList<FieldKey>();
         CrosstabTableInfo table = (CrosstabTableInfo) getTable();
-        for (CrosstabDimension dim : table.getSettings().getRowAxis().getDimensions())
-        {
-            cols.add(FieldKey.fromString(dim.getSourceColumn().getName().replace('/', '_')));
-        }
+        CrosstabDimension dimension = table.getSettings().getRowAxis().getDimensions().get(0);
+        cols.add(FieldKey.fromString(dimension.getSourceColumn().getName().replace('/', '_')));
         cols.add(getComparisonColumn());
 
         _columns = cols;
@@ -57,7 +55,6 @@ public abstract class ComparisonCrosstabView extends CrosstabView
         TSVGridWriter tsvWriter = getTsvWriter();
         try
         {
-            tsvWriter.setCaptionRowVisible(false);
             tsvWriter.write(sb);
 
             StringTokenizer lines = new StringTokenizer(sb.toString(), "\n");
@@ -71,6 +68,8 @@ public abstract class ComparisonCrosstabView extends CrosstabView
                 hits[i] = new boolean[rowCount];
             }
 
+            String headers = lines.nextToken();
+
             int resultsIndex = 0;
             while (lines.hasMoreTokens())
             {
@@ -78,7 +77,7 @@ public abstract class ComparisonCrosstabView extends CrosstabView
                 String[] values = line.split("\\t");
                 for (int i = 0; i < members.size() && i + 1 < values.length ; i++)
                 {
-                    hits[i][resultsIndex] = !"".equals(values[i + table.getSettings().getRowAxis().getDimensions().size()].trim());
+                    hits[i][resultsIndex] = !"".equals(values[i + 1].trim());
                 }
                 resultsIndex++;
             }
