@@ -61,7 +61,7 @@ LABKEY.Visualization = new function() {
 
             Ext.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("reports", "getVisualizationTypes"),
+                url : LABKEY.ActionURL.buildURL("viz", "getVisualizationTypes"),
                 method : 'GET',
                 success: getSuccessCallbackWrapper(createTypes, config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true)
@@ -85,11 +85,30 @@ LABKEY.Visualization = new function() {
 
             Ext.Ajax.request(
             {
-                url : LABKEY.ActionURL.buildURL("reports", "getMeasures"),
+                url : LABKEY.ActionURL.buildURL("viz", "getMeasures"),
                 method : 'GET',
                 success: getSuccessCallbackWrapper(createMeasures, config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
                 params : params
+            });
+        },
+
+        getData : function(config) {
+
+            var params = {
+                measures : config.measures
+            };
+
+            Ext.Ajax.request(
+            {
+                url : LABKEY.ActionURL.buildURL("viz", "getData"),
+                method : 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope, false),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failureCallback, config.scope, true),
+                jsonData : params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
         }
     };
@@ -151,7 +170,7 @@ LABKEY.Visualization.Measure = Ext.extend(Object, {
 
         Ext.Ajax.request(
         {
-            url : LABKEY.ActionURL.buildURL("reports", "getDimensions"),
+            url : LABKEY.ActionURL.buildURL("viz", "getDimensions"),
             method : 'GET',
             params : params,
             success: getSuccessCallbackWrapper(createDimensions, config.successCallback, config.scope),
@@ -208,7 +227,7 @@ LABKEY.Visualization.Dimension = Ext.extend(Object, {
 
         Ext.Ajax.request(
         {
-            url : LABKEY.ActionURL.buildURL("reports", "getDimensionValues"),
+            url : LABKEY.ActionURL.buildURL("viz", "getDimensionValues"),
             method : 'GET',
             params : params,
             success: getSuccessCallbackWrapper(createValues, config.successCallback, config.scope),
