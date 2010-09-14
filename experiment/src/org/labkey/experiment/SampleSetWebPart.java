@@ -116,21 +116,17 @@ public class SampleSetWebPart extends QueryView
         uploadMaterialsButton.setDisplayPermission(UpdatePermission.class);
         bb.add(uploadMaterialsButton);
 
-        bb.add(new ActionButton(ExperimentController.UpdateMaterialSourceAction.class, "Submit", DataRegion.MODE_UPDATE));
+        bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit", DataRegion.MODE_UPDATE));
 
-        ActionURL setAsActiveURL = model.cloneActionURL();
-        setAsActiveURL.setAction(ExperimentController.SetActiveSampleSetAction.class);
-        ActionButton setAsActiveButton = new ActionButton(setAsActiveURL.toString(), "Make Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
-        setAsActiveButton.setURL(setAsActiveURL);
+        ActionURL setAsActiveURL = new ActionURL(ExperimentController.SetActiveSampleSetAction.class, model.getContainer());
+        ActionButton setAsActiveButton = new ActionButton(setAsActiveURL, "Make Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
         setAsActiveButton.setActionType(ActionButton.Action.POST);
         setAsActiveButton.setDisplayPermission(UpdatePermission.class);
         setAsActiveButton.setRequiresSelection(!detailsView);
         bb.add(setAsActiveButton);
 
-        ActionURL showAllURL = model.cloneActionURL();
-        showAllURL.setAction(ExperimentController.ShowAllMaterialsAction.class);
-        ActionButton showAllButton = new ActionButton(showAllURL.toString(), "Show All Materials", DataRegion.MODE_GRID);
-        showAllButton.setURL(showAllURL);
+        ActionURL showAllURL = new ActionURL(ExperimentController.ShowAllMaterialsAction.class, model.getContainer());
+        ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials", DataRegion.MODE_GRID);
         showAllButton.setDisplayPermission(ReadPermission.class);
         bb.add(showAllButton);
     }

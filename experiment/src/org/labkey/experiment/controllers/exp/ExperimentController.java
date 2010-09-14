@@ -357,8 +357,7 @@ public class ExperimentController extends SpringActionController
 
                 ActionURL editTypeURL = getViewContext().cloneActionURL();
                 editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
-                ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Fields", DataRegion.MODE_DETAILS);
-                editTypeButton.setURL(editTypeURL);
+                ActionButton editTypeButton = new ActionButton(editTypeURL, "Edit Fields", DataRegion.MODE_DETAILS);
                 editTypeButton.setDisplayPermission(UpdatePermission.class);
                 detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
 

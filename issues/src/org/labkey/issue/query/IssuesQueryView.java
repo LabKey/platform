@@ -78,7 +78,7 @@ public class IssuesQueryView extends QueryView
 
         if (view.getDataRegion().getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
         {
-            String viewDetailsURL = _context.cloneActionURL().setAction(IssuesController.DetailsListAction.class).getEncodedLocalURIString();
+            ActionURL viewDetailsURL = _context.cloneActionURL().setAction(IssuesController.DetailsListAction.class);
             ActionButton listDetailsButton = new ActionButton(viewDetailsURL, "View Details");
             listDetailsButton.setActionType(ActionButton.Action.POST);
             listDetailsButton.setRequiresSelection(true);
@@ -98,7 +98,7 @@ public class IssuesQueryView extends QueryView
     {
         URLHelper url = target.clone().deleteParameters();
         NavTree item = new NavTree("all", url);
-        if (currentView == "")
+        if ("".equals(currentView))
             item.setStrong(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
@@ -109,7 +109,7 @@ public class IssuesQueryView extends QueryView
         sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());        
         item = new NavTree("open", url);
-        if (currentView == "")
+        if ("".equals(currentView))
             item.setStrong(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
@@ -120,7 +120,7 @@ public class IssuesQueryView extends QueryView
         sort.addURLSort(url, getDataRegionName());
         url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
         item = new NavTree("resolved", url);
-        if (currentView == "")
+        if ("".equals(currentView))
             item.setStrong(target.toString().equals(url.toString()));
         menu.addMenuItem(item);
 
@@ -133,7 +133,7 @@ public class IssuesQueryView extends QueryView
             sort.addURLSort(url, getDataRegionName());
             url.addParameter(getDataRegionName() + ".sort", sort.getSortParamValue());
             item = new NavTree("mine", url);
-            if (currentView == "")
+            if ("".equals(currentView))
                 item.setStrong(target.toString().equals(url.toString()));
             menu.addMenuItem(item);
         }
@@ -207,11 +207,6 @@ public class IssuesQueryView extends QueryView
 
         ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.EmailPrefsAction.class).getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
         bar.add(prefsButton);
-    }
-
-    public ActionURL getCustomizeURL()
-    {
-        return urlFor(QueryAction.chooseColumns);
     }
 
     protected ActionURL urlFor(QueryAction action)
