@@ -148,7 +148,7 @@ public class TableXmlUtils
                 if (!(mDbTableOrdinals.containsKey(xmlTableName.toLowerCase())))
                 {
                     if (!xmlTableType.equals("NOT_IN_DB"))
-                        sbOut.append("<br>ERROR: TableName ").append(xmlTableName).append(" type ").append(xmlTableType).append(" found in Xml but not in database.<br>");
+                        sbOut.append("<br>ERROR: TableName \"").append(xmlTableName).append("\" type \"").append(xmlTableType).append("\" found in XML but not in database.<br>");
                     else
                     {
                         if (merge)
@@ -232,7 +232,7 @@ public class TableXmlUtils
                 {
                     xmlColName = xmlCols[m].getColumnName();
                     if (mXmlColOrdinals.containsKey(xmlColName.toLowerCase()))
-                        sbOut.append("ERROR: Table ").append(xmlTable.getTableName()).append(" Column ").append(xmlColName).append(" duplicated in Xml.<br>");
+                        sbOut.append("ERROR: Table \"").append(xmlTable.getTableName()).append("\" column \"").append(xmlColName).append("\" duplicated in XML.<br>");
                     else
                         mXmlColOrdinals.put(xmlColName.toLowerCase(), new Integer(m));
                 }
@@ -246,12 +246,26 @@ public class TableXmlUtils
                 for (ColumnType xmlCol : xmlCols)
                 {
                     xmlColName = xmlCol.getColumnName();
+                    boolean isColumnInDatabase = mDbColOrdinals.containsKey(xmlColName.toLowerCase());
 
-                    if (!mDbColOrdinals.containsKey(xmlColName.toLowerCase()))
+                    if (null == xmlCol.getWrappedColumnName())
                     {
-                        sbOut.append("ERROR: Table ").append(xmlTable.getTableName()).append(" Column ").append(xmlColName).append(" found in Xml but not in database.<br>");
-                        continue;
+                        if (!isColumnInDatabase)
+                        {
+                            sbOut.append("ERROR: Table \"").append(xmlTable.getTableName()).append("\", column \"").append(xmlColName).append("\" found in XML but not in database.<br>");
+                            continue;
+                        }
                     }
+                    else
+                    {
+                        if (isColumnInDatabase)
+                        {
+                            sbOut.append("ERROR: Table \"").append(xmlTable.getTableName()).append("\", column \"").append(xmlColName).append("\" found in database but shouldn't be, since it's a wrapped column.<br>");
+                        }
+
+                        continue;   // Skip further checks for wrapped columns... they aren't in the database
+                    }
+
                     idc = mDbColOrdinals.get(xmlColName.toLowerCase()).intValue();
                     ColumnType columnType = dbCols[idc];
 
