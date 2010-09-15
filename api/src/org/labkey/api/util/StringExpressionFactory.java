@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,7 +51,6 @@ public class StringExpressionFactory
     private static Cache<String, StringExpression> templates = CacheManager.getCache(1000, CacheManager.DAY, "StringExpression templates");
     private static Cache<String, StringExpression> templatesUrl = CacheManager.getCache(1000, CacheManager.DAY, "StringExpression template URLs");
 
-    public static final StringExpression NULL_STRING = new ConstantStringExpression(null);
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 
 
@@ -512,6 +512,40 @@ public class StringExpressionFactory
         public FieldKeyStringExpression clone()
         {
             return (FieldKeyStringExpression)super.clone();
+        }
+
+        /**
+         * Remove the specified parent prefix from all FieldKeys
+         * @return a modified copy, the original is not mutated
+         */
+        public FieldKeyStringExpression dropParent(String parentName)
+        {
+            FieldKeyStringExpression clone = this.clone();
+            clone.parse();
+            StringBuilder source = new StringBuilder();
+
+            for (StringPart stringPart : clone._parsedExpression)
+            {
+                if (stringPart instanceof FieldPart)
+                {
+                    FieldPart fieldPart = (FieldPart)stringPart;
+                    List<String> parts = fieldPart.key.getParts();
+                    // If it the first part of the FieldKey matches the parent name
+                    if (parts.get(0).equals(parentName))
+                    {
+                        FieldKey newFieldKey = null;
+                        for (int i = 1; i < parts.size(); i++)
+                        {
+                            // Copy all of the subsequent parts
+                            newFieldKey = new FieldKey(newFieldKey, parts.get(i));
+                        }
+                        fieldPart.key = newFieldKey;
+                    }
+                }
+                source.append(stringPart.toString());
+            }
+            clone._source = source.toString();
+            return clone;
         }
     }
 

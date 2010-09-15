@@ -311,6 +311,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 url = url.copy();
             setURL(url);
         }
+        setURLTargetWindow(col.getURLTargetWindow());
     }
 
 

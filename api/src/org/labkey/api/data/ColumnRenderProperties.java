@@ -58,6 +58,7 @@ public abstract class ColumnRenderProperties
     protected boolean shownInUpdateView = true;
     protected boolean shownInDetailsView = true;
     protected StringExpression url;
+    protected String urlTargetWindow;
     protected Set<String> importAliases = new LinkedHashSet<String>();
     protected DefaultValueType _defaultValueType = null;
 
@@ -241,6 +242,16 @@ public abstract class ColumnRenderProperties
     public void setURL(StringExpression url)
     {
         this.url = url;
+    }
+
+    public String getURLTargetWindow()
+    {
+        return urlTargetWindow;
+    }
+
+    public void setURLTargetWindow(String urlTargetWindow)
+    {
+        this.urlTargetWindow = urlTargetWindow;
     }
 
     public void setMeasure(boolean measure)

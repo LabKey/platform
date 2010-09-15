@@ -2,6 +2,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 
 /**
 * User: adam
@@ -29,6 +30,15 @@ public class MultiValuedForeignKey implements ForeignKey
         ForeignKey fk = junctionKey.getFk();                                // Wrapped foreign key to value table (elided lookup)
 
         ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
+
+        if (lookupColumn.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            // We need to strip off the junction table's contribution to the FieldKey in the URL since we don't
+            // expose the junction table itself as part of the Query tree of tables and columns
+            StringExpressionFactory.FieldKeyStringExpression url = (StringExpressionFactory.FieldKeyStringExpression)lookupColumn.getURL();
+            lookupColumn.setURL(url.dropParent(junctionKey.getName()));
+        }
+
         return new MultiValuedLookupColumn(lookupColumn.getFieldKey(), parent, childKey, junctionKey, fk, lookupColumn);
     }
 

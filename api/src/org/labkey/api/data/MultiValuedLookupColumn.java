@@ -24,6 +24,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         _display = display;
         _rightFk = fk;
         _junctionKey = junctionKey;
+        copyAttributesFrom(display);
+        copyURLFrom(display, parentPkColumn.getFieldKey(), null);
         setFieldKey(fieldKey);
     }
 
