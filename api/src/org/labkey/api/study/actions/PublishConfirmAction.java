@@ -265,7 +265,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             buttons.add(fromSpecimenButton);
         }
 
-        ActionButton cancelButton = new ActionButton(new ActionURL(returnURL), "Cancel");
+        ActionButton cancelButton = new ActionButton("Cancel", new ActionURL(returnURL));
         cancelButton.setScript(script, true);
         buttons.add(cancelButton);
 
