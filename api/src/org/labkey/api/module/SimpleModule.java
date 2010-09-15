@@ -15,8 +15,11 @@
  */
 package org.labkey.api.module;
 
+import org.apache.commons.collections15.Closure;
+import org.apache.commons.collections15.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.DefaultSchema;
@@ -98,20 +101,22 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     {
         if (_schemaNames == null)
         {
-            File schemasDir = new File(getExplodedPath(), "schemas");
-            if (schemasDir.exists())
+            Resource schemasDir = getModuleResource("schemas");
+            if (schemasDir != null)
             {
-                Set<String> schemaNames = new LinkedHashSet<String>();
-                File[] schemaFiles = schemasDir.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name)
+                final Set<String> schemaNames = new LinkedHashSet<String>();
+                CollectionUtils.forAllDo(schemasDir.list(), new Closure<Resource>() {
+                    @Override
+                    public void execute(Resource resource)
                     {
-                        boolean accept = false;
+                        String name = resource.getName();
                         if (name.endsWith(".xml"))
                         {
                             try
                             {
-                                TablesDocument.Factory.parse(new File(dir, name));
-                                accept = true;
+                                TablesDocument.Factory.parse(resource.getInputStream());
+                                String schemaName = name.substring(0, name.length() - ".xml".length());
+                                schemaNames.add(schemaName);
                             }
                             catch (XmlException e)
                             {
@@ -121,18 +126,9 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
                             {
                                 _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
                             }
-
                         }
-                        return accept;
                     }
                 });
-
-                for (File schemaFile : schemaFiles)
-                {
-                    String schemaName = schemaFile.getName().substring(0, schemaFile.getName().length() - ".xml".length());
-                    schemaNames.add(schemaName);
-                }
-
                 _schemaNames = Collections.unmodifiableSet(schemaNames);
             }
             else

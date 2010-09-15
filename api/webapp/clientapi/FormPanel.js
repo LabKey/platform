@@ -310,7 +310,7 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
                         columnModel?columnModel[i]:{}
                         );
                 var name = field.originalConfig.name;
-                Ext.applyIf(defaults[name], field);
+                defaults[name] = Ext.applyIf(defaults[name] || {}, field);
                 items.push({name:name});
             }
         }

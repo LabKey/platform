@@ -856,7 +856,11 @@ public abstract class DefaultModule implements Module
         {
             if (null != source)
             {
-                File f = new File(new File(source), "resources");
+                File f = new File(source);
+                if (f.isDirectory())
+                    dirs.add(FileUtil.canonicalFile(f));
+
+                f = new File(new File(source), "resources");
                 if (f.isDirectory())
                     dirs.add(FileUtil.canonicalFile(f));
 
