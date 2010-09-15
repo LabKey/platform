@@ -83,6 +83,7 @@ public class VisualizationController extends SpringActionController
         private String _schemaName;
         private String _queryName;
         private String _name;
+        private boolean _dateMeasures;
 
         public String getName()
         {
@@ -122,6 +123,16 @@ public class VisualizationController extends SpringActionController
         public void setFilters(String[] filters)
         {
             _filters = filters;
+        }
+
+        public boolean isDateMeasures()
+        {
+            return _dateMeasures;
+        }
+
+        public void setDateMeasures(boolean dateMeasures)
+        {
+            _dateMeasures = dateMeasures;
         }
     }
 
@@ -182,25 +193,32 @@ public class VisualizationController extends SpringActionController
             List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
             int count = 1;
 
-            for (Map.Entry<String, Map<String, TableInfo>> schemaEntry : getTables(form).entrySet())
+            if (form.isDateMeasures())
             {
-                for (Map.Entry<String, TableInfo> tableEntry : schemaEntry.getValue().entrySet())
+                getDateMeasures(measures);
+            }
+            else
+            {
+                for (Map.Entry<String, Map<String, TableInfo>> schemaEntry : getTables(form).entrySet())
                 {
-                    QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schemaEntry.getKey(), tableEntry.getKey());
-
-                    for (ColumnInfo col : tableEntry.getValue().getColumns())
+                    for (Map.Entry<String, TableInfo> tableEntry : schemaEntry.getValue().entrySet())
                     {
-                        if (col.isMeasure())
+                        QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schemaEntry.getKey(), tableEntry.getKey());
+
+                        for (ColumnInfo col : tableEntry.getValue().getColumns())
                         {
-                            // add measure properties
-                            Map<String, Object> props = getColumnProps(col);
+                            if (col.isMeasure())
+                            {
+                                // add measure properties
+                                Map<String, Object> props = getColumnProps(col);
 
-                            props.put("schemaName", schemaEntry.getKey());
-                            props.put("queryName", tableEntry.getKey());
-                            props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
-                            props.put("id", count++);
+                                props.put("schemaName", schemaEntry.getKey());
+                                props.put("queryName", tableEntry.getKey());
+                                props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
+                                props.put("id", count++);
 
-                            measures.add(props);
+                                measures.add(props);
+                            }
                         }
                     }
                 }
@@ -273,6 +291,41 @@ public class VisualizationController extends SpringActionController
                 for (String name : schema.getTableNames())
                 {
                     addTable(schema, name, schemas);
+                }
+            }
+        }
+
+        /**
+         * For 10.3 make the assumption that date measures consist only of date columns from study demographics
+         * datasets
+         * @param measures
+         */
+        private void getDateMeasures(List<Map<String, Object>> measures)
+        {
+            Study study = StudyService.get().getStudy(getContainer());
+            if (study != null)
+            {
+                for (DataSet ds : study.getDataSets())
+                {
+                    if (ds.isDemographicData())
+                    {
+                        TableInfo table = ds.getTableInfo(getUser());
+                        if (table != null)
+                        {
+                            for (ColumnInfo col : table.getColumns())
+                            {
+                                if (col.isDateTimeType())
+                                {
+                                    Map<String, Object> props = getColumnProps(col);
+
+                                    props.put("schemaName", "study");
+                                    props.put("queryName", ds.getName());
+
+                                    measures.add(props);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -474,7 +527,8 @@ public class VisualizationController extends SpringActionController
             line.put("icon", getViewContext().getContextPath() + "/reports/output_linechart.jpg");
 
             List<Map<String, String>> lineAxis = new ArrayList<Map<String, String>>();
-            lineAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select data type for x-axis", "multiSelect", "false"));
+            lineAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select the date measurement for the x-axis", "multiSelect", "false", "timeAxis", "true"));
+            lineAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
             line.put("axis", lineAxis);
 
             line.put("enabled", true);
