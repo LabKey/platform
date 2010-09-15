@@ -502,66 +502,71 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         }
     }
 
-    public void loadFromXML(QuerySchema schema, TableType xbTable, Collection<QueryException> errors)
+    public void loadFromXML(QuerySchema schema, TableType xmlTable, Collection<QueryException> errors)
     {
-        if (xbTable.getTitleColumn() != null)
+        if (xmlTable.getTitleColumn() != null)
         {
-            setTitleColumn(xbTable.getTitleColumn());
+            setTitleColumn(xmlTable.getTitleColumn());
         }
-        if (xbTable.getDescription() != null)
+        if (xmlTable.getDescription() != null)
         {
-            setDescription(xbTable.getDescription());
+            setDescription(xmlTable.getDescription());
         }
-        if (xbTable.getGridUrl() != null)
+        if (xmlTable.getGridUrl() != null)
         {
-            _gridURL = DetailsURL.fromString(schema.getContainer(), xbTable.getGridUrl(), errors);
+            _gridURL = DetailsURL.fromString(schema.getContainer(), xmlTable.getGridUrl(), errors);
         }
-        if (xbTable.getInsertUrl() != null)
+        if (xmlTable.getInsertUrl() != null)
         {
-            _insertURL = DetailsURL.fromString(schema.getContainer(), xbTable.getInsertUrl(), errors);
+            _insertURL = DetailsURL.fromString(schema.getContainer(), xmlTable.getInsertUrl(), errors);
         }
-        if (xbTable.getUpdateUrl() != null)
+        if (xmlTable.getUpdateUrl() != null)
         {
-            _updateURL = DetailsURL.fromString(schema.getContainer(), xbTable.getUpdateUrl(), errors);
+            _updateURL = DetailsURL.fromString(schema.getContainer(), xmlTable.getUpdateUrl(), errors);
         }
-        if (xbTable.getTableUrl() != null)
+        if (xmlTable.getTableUrl() != null)
         {
-            setDetailsURL(DetailsURL.fromString(schema.getContainer(), xbTable.getTableUrl(), errors));
+            setDetailsURL(DetailsURL.fromString(schema.getContainer(), xmlTable.getTableUrl(), errors));
         }
-        if (xbTable.isSetCacheSize())
-            _cacheSize = xbTable.getCacheSize();
-        if (xbTable.getColumns() != null)
+        if (xmlTable.isSetCacheSize())
+            _cacheSize = xmlTable.getCacheSize();
+
+        if (xmlTable.getColumns() != null)
         {
             List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
-            for (ColumnType xbColumn : xbTable.getColumns().getColumnArray())
+
+            for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
             {
-                if (xbColumn.getWrappedColumnName() != null)
+                if (xmlColumn.getWrappedColumnName() != null)
                 {
-                    wrappedColumns.add(xbColumn);
+                    wrappedColumns.add(xmlColumn);
                 }
                 else
                 {
-                    ColumnInfo column = getColumn(xbColumn.getColumnName());
+                    ColumnInfo column = getColumn(xmlColumn.getColumnName());
+
                     if (column != null)
                     {
-                        initColumnFromXml(schema, column, xbColumn, errors);
+                        initColumnFromXml(schema, column, xmlColumn, errors);
                     }
                 }
             }
-            for (ColumnType wrappedColumnXb : wrappedColumns)
+
+            for (ColumnType wrappedColumnXml : wrappedColumns)
             {
-                ColumnInfo column = getColumn(wrappedColumnXb.getWrappedColumnName());
-                if (column != null && getColumn(wrappedColumnXb.getColumnName()) == null)
+                ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
+
+                if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
                 {
-                    ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXb.getColumnName());
-                    initColumnFromXml(schema, wrappedColumn, wrappedColumnXb, errors);
+                    ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
+                    initColumnFromXml(schema, wrappedColumn, wrappedColumnXml, errors);
                     addColumn(wrappedColumn);
                 }
             }
         }
 
-        if (xbTable.getButtonBarOptions() != null)
-            _buttonBarConfig = new ButtonBarConfig(xbTable.getButtonBarOptions());
+        if (xmlTable.getButtonBarOptions() != null)
+            _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
     }
 
     /**

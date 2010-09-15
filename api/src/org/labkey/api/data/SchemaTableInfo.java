@@ -553,19 +553,43 @@ public class SchemaTableInfo implements TableInfo
         if (!merge)
             columns = new ArrayList<ColumnInfo>();
 
+        List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
+
         for (ColumnType xmlColumn : xmlColumnArray)
         {
-            ColumnInfo colInfo = null;
-            if (merge && getTableType() != TABLE_TYPE_NOT_IN_DB) {
-                colInfo = getColumn(xmlColumn.getColumnName());
-                if (null != colInfo)
-                    colInfo.loadFromXml(xmlColumn, true);
+            if (xmlColumn.getWrappedColumnName() != null)
+            {
+                wrappedColumns.add(xmlColumn);
             }
+            else
+            {
+                ColumnInfo colInfo = null;
 
-            if (null == colInfo) {
-                colInfo = new ColumnInfo(xmlColumn.getColumnName(), this);
-                addColumn(colInfo);
-                colInfo.loadFromXml(xmlColumn, false);
+                if (merge && getTableType() != TABLE_TYPE_NOT_IN_DB)
+                {
+                    colInfo = getColumn(xmlColumn.getColumnName());
+                    if (null != colInfo)
+                        colInfo.loadFromXml(xmlColumn, true);
+                }
+
+                if (null == colInfo)
+                {
+                    colInfo = new ColumnInfo(xmlColumn.getColumnName(), this);
+                    addColumn(colInfo);
+                    colInfo.loadFromXml(xmlColumn, false);
+                }
+            }
+        }
+
+        for (ColumnType wrappedColumnXml : wrappedColumns)
+        {
+            ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
+
+            if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
+            {
+                ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
+                wrappedColumn.loadFromXml(wrappedColumnXml, false);
+                addColumn(wrappedColumn);
             }
         }
 
