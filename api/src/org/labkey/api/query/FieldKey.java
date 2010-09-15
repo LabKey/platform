@@ -47,8 +47,6 @@ public class FieldKey implements Comparable
 
     /**
      * same as fromString() but URL encoded
-     * @param str
-     * @return
      */
     static public FieldKey decode(String str)
     {
@@ -212,7 +210,7 @@ public class FieldKey implements Comparable
     {
         if (_parent == null)
             return Collections.singletonList(_name);
-        List<String> ret = new ArrayList(_parent.getParts());
+        List<String> ret = new ArrayList<String>(_parent.getParts());
         ret.add(_name);
         return ret;
     }
@@ -221,11 +219,10 @@ public class FieldKey implements Comparable
     /**
      * generate a URL encoded string representing this field key
      * may be parsed by FieldKey.parse()
-     * @return
      */
     public String encode()
     {
-        List<String> encodedParts = new ArrayList();
+        List<String> encodedParts = new ArrayList<String>();
         for (String part : getParts())
         {
             String encodedPart = PageFlowUtil.encode(part);

@@ -732,7 +732,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
                 if ("junction".equals(type))
                 {
-                    fk = new MultiValuedForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), xfk.getFkJunctionLookup(), false);
+                    fk = new MultiValuedForeignKey(new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false), xfk.getFkJunctionLookup());
                 }
                 else
                 {
@@ -1075,7 +1075,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         if (displayField == null || displayField == this)
         {
-            return _displayColumnFactory.createRenderer(this);
+            return getDisplayColumnFactory().createRenderer(this);
         }
         else
         {

@@ -86,7 +86,7 @@ public class CrosstabDimension
     }
 
     /**
-     * Use this method to fetch the distict set of members for this dimension.
+     * Use this method to fetch the distinct set of members for this dimension.
      *
      * If you do not already have the set of column members for a CrosstabTableInfo,
      * use this method to fetch them. It uses the source TableInfo to select

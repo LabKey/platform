@@ -41,6 +41,19 @@ public class MultiValuedLookupColumn extends LookupColumn
     }
 
     @Override
+    public DisplayColumnFactory getDisplayColumnFactory()
+    {
+        return new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new MultiValuedDisplayColumn(MultiValuedLookupColumn.super.getDisplayColumnFactory().createRenderer(colInfo));
+            }
+        };
+    }
+
+    @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
         return new SQLFragment(getTableAlias(tableAliasName) + "." + _display.getAlias());
@@ -48,7 +61,6 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable)
     {
-        String keyTableName = _lookupKey.getParentTable().getSelectName();
         String keyColumnName = _lookupKey.getSelectName();
 
         strJoin.append("\n\t(\n\t\t");
@@ -65,9 +77,9 @@ public class MultiValuedLookupColumn extends LookupColumn
             strJoin.append(lc.getAlias());
         }
 
-        strJoin.append("\n\t\t\tFROM ");
-        strJoin.append(keyTableName);
-        strJoin.append(" child");
+        strJoin.append("\n\t\t\tFROM (");
+        strJoin.append(_lookupKey.getParentTable().getFromSQL());
+        strJoin.append(") child");
 
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         _lookupColumn.declareJoins("child", joins);

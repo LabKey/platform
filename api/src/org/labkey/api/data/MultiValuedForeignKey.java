@@ -1,32 +1,85 @@
 package org.labkey.api.data;
 
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.util.StringExpression;
 
 /**
 * User: adam
 * Date: Sep 14, 2010
 * Time: 1:10:03 PM
 */
-public class MultiValuedForeignKey extends ColumnInfo.SchemaForeignKey
+public class MultiValuedForeignKey implements ForeignKey
 {
+    private final ForeignKey _fk;
     private final String _junctionLookup;
 
-    public MultiValuedForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, String junctionLookup, boolean joinWithContainer)
+    public MultiValuedForeignKey(ForeignKey fk, String junctionLookup)
     {
-        super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer);
+        _fk = fk;
         _junctionLookup = junctionLookup;
     }
 
     @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
-        TableInfo junction = getLookupTableInfo();
+        TableInfo junction = _fk.getLookupTableInfo();
 
         ColumnInfo junctionKey = junction.getColumn(_junctionLookup);       // Junction join to value table
         ColumnInfo childKey = junction.getColumn(getLookupColumnName());    // Junction join to primary table
         ForeignKey fk = junctionKey.getFk();                                // Wrapped foreign key to value table (elided lookup)
 
         ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
-        return new MultiValuedLookupColumn(new FieldKey(parent.getFieldKey(), displayField), parent, childKey, junctionKey, fk, lookupColumn);
+        return new MultiValuedLookupColumn(lookupColumn.getFieldKey(), parent, childKey, junctionKey, fk, lookupColumn);
+    }
+
+    @Override
+    public TableInfo getLookupTableInfo()
+    {
+        ColumnInfo junctionColumn = _fk.getLookupTableInfo().getColumn(_junctionLookup);
+        if (junctionColumn != null)
+        {
+            ForeignKey junctionFK = junctionColumn.getFk();
+            if (junctionFK != null)
+            {
+                return junctionFK.getLookupTableInfo();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public StringExpression getURL(ColumnInfo parent)
+    {
+        return _fk.getURL(parent);
+    }
+
+    @Override
+    public NamedObjectList getSelectList()
+    {
+        return _fk.getSelectList();
+    }
+
+    @Override
+    public String getLookupContainerId()
+    {
+        return _fk.getLookupContainerId();
+    }
+
+    @Override
+    public String getLookupTableName()
+    {
+        return _fk.getLookupTableName();
+    }
+
+    @Override
+    public String getLookupSchemaName()
+    {
+        return _fk.getLookupSchemaName();
+    }
+
+    @Override
+    public String getLookupColumnName()
+    {
+        return _fk.getLookupColumnName();
     }
 }
