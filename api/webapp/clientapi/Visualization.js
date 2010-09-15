@@ -32,6 +32,10 @@ LABKEY.Visualization = new function() {
         {
             params['filters'] = config.filters;
         }
+
+        if (config.dateMeasures)
+            params.dateMeasures = config.dateMeasures;
+        
         return params;
     }
 
