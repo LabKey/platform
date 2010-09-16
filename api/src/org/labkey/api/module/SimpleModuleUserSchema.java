@@ -105,7 +105,7 @@ public class SimpleModuleUserSchema extends UserSchema
                 {
                     wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
                 }
-                else if (col.getFk() != null)
+                else if (col.getFk() != null && col.getFk() instanceof ColumnInfo.SchemaForeignKey)
                 {
                     //FIX: 5661
                     //get the column name in the target FK table that it would have joined against

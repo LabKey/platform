@@ -79,7 +79,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             strJoin.append(lc.getAlias());
         }
 
-        strJoin.append("\n\t\t\tFROM (");
+        strJoin.append("\n\t\tFROM (");
         strJoin.append(_lookupKey.getParentTable().getFromSQL());
         strJoin.append(") child");
 
