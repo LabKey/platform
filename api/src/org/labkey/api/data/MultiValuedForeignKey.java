@@ -35,6 +35,11 @@ public class MultiValuedForeignKey implements ForeignKey
         _junctionLookup = junctionLookup;
     }
 
+    public String getJunctionLookup()
+    {
+        return _junctionLookup;
+    }
+
     @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {

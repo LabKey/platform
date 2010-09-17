@@ -93,7 +93,8 @@ public class SimpleModuleUserSchema extends UserSchema
         {
             for (ColumnInfo col : _rootTable.getColumns())
             {
-                ColumnInfo wrap = addWrapColumn(col);
+                ColumnInfo wrap = wrapColumn(col);
+                addColumn(wrap);
 
                 // ColumnInfo doesn't copy these attributes by default
                 wrap.setHidden(col.isHidden());
@@ -105,13 +106,11 @@ public class SimpleModuleUserSchema extends UserSchema
                 {
                     wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
                 }
-                else if (col.getFk() != null && col.getFk() instanceof ColumnInfo.SchemaForeignKey)
+                else if (col.getFk() != null)
                 {
                     //FIX: 5661
-                    //get the column name in the target FK table that it would have joined against
-                    //the existing fks should be of type SchemaForeignKey, so try to downcast to that
-                    //so that we can get the declared lookup column
-                    ColumnInfo.SchemaForeignKey fk = (ColumnInfo.SchemaForeignKey)col.getFk();
+                    //get the column name in the target FK table that it would have joined against.
+                    ForeignKey fk = col.getFk();
                     String pkColName = fk.getLookupColumnName();
                     if (null == pkColName && col.getFkTableInfo().getPkColumnNames().size() == 1)
                         pkColName = col.getFkTableInfo().getPkColumnNames().get(0);
@@ -123,7 +122,17 @@ public class SimpleModuleUserSchema extends UserSchema
                         String lookupSchemaName = fk.getLookupSchemaName();
                         if (lookupSchemaName.equalsIgnoreCase(_userSchema.getDbSchema().getName()))
                             lookupSchemaName = _userSchema.getName();
-                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, fk.isJoinWithContainer());
+
+                        boolean joinWithContainer = false;
+                        if (fk instanceof ColumnInfo.SchemaForeignKey)
+                            joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
+
+                        ForeignKey wrapFk = new SimpleModuleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer);
+                        if (fk instanceof MultiValuedForeignKey)
+                        {
+                            wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
+                        }
+
                         wrap.setFk(wrapFk);
                     }
                 }
@@ -153,6 +162,10 @@ public class SimpleModuleUserSchema extends UserSchema
         }
     }
 
+    /**
+     * The SimpleModuleForeignKey returns a lookup TableInfo from the UserSchema
+     * rather than the underlying DbSchema's SchemaTableInfo.
+     */
     public static class SimpleModuleForeignKey extends ColumnInfo.SchemaForeignKey
     {
         UserSchema _userSchema;

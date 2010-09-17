@@ -23,7 +23,10 @@ import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RowIdForeignKey;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JsonWriter
 {
@@ -199,6 +202,15 @@ public class JsonWriter
                 lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
                 if (lookupTable.getPkColumns().size() > 0)
                     lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
+
+                if (fk instanceof MultiValuedForeignKey)
+                {
+                    MultiValuedForeignKey mvfk = (MultiValuedForeignKey)fk;
+                    String junctionLookup = mvfk.getJunctionLookup();
+                    lookupInfo.put("multiValued", junctionLookup != null ? "junction" : "value");
+                    if (junctionLookup != null)
+                        lookupInfo.put("junctionLookup", junctionLookup);
+                }
 
                 return lookupInfo;
             }

@@ -19,16 +19,16 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.collections.NullPreventingSet;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.action.HasViewContext;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -38,8 +38,8 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class DisplayColumn extends RenderColumn
 {
@@ -258,19 +258,6 @@ public abstract class DisplayColumn extends RenderColumn
             format = getFormat();
         }
         return formatValue(ctx, format);
-    }
-
-    public String getJsonFormattedValue(RenderContext ctx)
-    {
-        Object value = getDisplayValue(ctx);
-        if (value == null)
-            return "null";
-        else if (value instanceof Date)
-            return "new Date(" + String.valueOf(((Date) value).getTime()) + ")";
-        else if (value instanceof String)
-            return PageFlowUtil.jsString((String) value);
-        else
-            return ConvertUtils.convert(value);
     }
 
     /**

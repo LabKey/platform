@@ -53,16 +53,13 @@ Ext.namespace("LABKEY","LABKEY.ext");
 &lt;script type="text/javascript"&gt;
     function onSuccess(data) // e.g. callback from Query.selectRows
     {
-        var recordConstructor = Ext.data.Record.create(data.metaData.fields);
-
         function submitHandler(formPanel)
         {
             var form = formPanel.getForm();
             if (form.isValid())
             {
-                var record = new recordConstructor({});
-                form.updateRecord(record);
-                save(record.data);
+                var rows = formPanel.getFormValues();
+                save(rows);
             }
             else
             {
