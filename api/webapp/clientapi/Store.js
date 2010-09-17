@@ -112,7 +112,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             baseParams['query.viewName'] = config.viewName;
 
         if(config.columns && !config.sql)
-            baseParams['query.columns'] = config.columns;
+            baseParams['query.columns'] = Ext.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
         if(config.containerFilter)
             baseParams.containerFilter = config.containerFilter;
@@ -695,3 +695,5 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         this.userFilters = filters;
     }
 });
+Ext.reg("labkey-store", LABKEY.ext.Store);
+

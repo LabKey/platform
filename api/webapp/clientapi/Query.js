@@ -310,7 +310,7 @@ LABKEY.Query = new function()
         *       descending order). In the case of a multi-column sort, up to three column names can be
         *       included, separated by commas.
         * @param {String} [config.viewName] The name of a custom view saved on the server for the specified query.
-        * @param {String} [config.columns] A comma-delimited list of column names you wish to select from the specified
+        * @param {String} [config.columns] An Array of columns or a comma-delimited list of column names you wish to select from the specified
         *       query. By default, selectRows will return the set of columns defined in the default value for this query,
         *       as defined via the Customize View user interface on the server. You can override this by specifying a list
         *       of column names in this parameter, separated by commas. The names can also include references to related
@@ -363,6 +363,7 @@ LABKEY.Query = new function()
 	LABKEY.Query.selectRows({
             schemaName: 'lists',
             queryName: 'People',
+            columns: ['Name', 'Age'],
             successCallback: onSuccess,
             errorCallback: onFailure,
         });
@@ -422,7 +423,7 @@ LABKEY.Query = new function()
                 dataObject['query.viewName'] = config.viewName;
 
             if(config.columns)
-                dataObject['query.columns'] = config.columns;
+                dataObject['query.columns'] = Ext.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;

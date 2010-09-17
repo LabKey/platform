@@ -48,6 +48,7 @@ Ext.namespace("LABKEY","LABKEY.ext");
  * @param {object} [config.values] Provides initial values to populate the form.
  * @param {object} [config.errorEl] If specified, form errors will be written to this element; otherwise, a MsgBox will be used.
  * @param {string} [config.containerPath] Alternate default container for queries (e.g. for lookups)
+ * @param {boolean} [config.lazyCreateStore] If false, any lookup stores will be created immediately.  If true, any lookup stores will be created when the component is created. (default true)
  *
  * @example
 &lt;script type="text/javascript"&gt;
@@ -159,17 +160,6 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         var applied = LABKEY.ext.FormPanel.superclass.applyDefaults.call(this, c);
         this.fireEvent('applydefaults', this, applied);
         return applied;
-    },
-
-    createComponent : function (c, defaultType)
-    {
-        // Create the LABKEY.ext.Store
-        if (Ext.isObject(c.store) && !c.store.events)
-        {
-            c.store = LABKEY.ext.FormHelper.getLookupStore(c);
-        }
-
-        return LABKEY.ext.FormPanel.superclass.createComponent.call(this, c, defaultType);
     },
 
     /* gets called before doLayout() */
@@ -300,8 +290,11 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
             var count = fields ? fields.length : properties.length;
             for (i=0 ; i<count ; i++)
             {
-                var field = LABKEY.ext.FormHelper.getFieldEditorConfig(
-                        {containerPath:(config.containerPath || LABKEY.container.path)},
+                var field = this.getFieldEditorConfig(
+                        {
+                            containerPath: (config.containerPath || LABKEY.container.path),
+                            lazyCreateStore: config.lazyCreateStore
+                        },
                         fields?fields[i]:{},
                         properties?properties[i]:{},
                         columnModel?columnModel[i]:{}
@@ -313,6 +306,11 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
         }
 
         return items;
+    },
+
+    getFieldEditorConfig : function ()
+    {
+        return LABKEY.ext.FormHelper.getFieldEditorConfig.apply(null, arguments);
     },
 
     // we want to hook error handling to provide a mechanism to show form errors (vs field errors)
@@ -437,12 +435,15 @@ LABKEY.ext.FormHelper =
      * @param {integer} [config.rows] if input is a textarea, sets the height (style:height is better)
      * @param {string} [config.lookup.schema] the schema used for the lookup.  schemaName also supported
      * @param {string} [config.lookup.table] the query used for the lookup.  queryName also supported
+     * @param {Array} [config.lookup.columns] The columns used by the lookup store.  If not set, the <code>[keyColumn, displayColumn]</code> will be used.
      * @param {string} [config.lookup.keyColumn]
      * @param {string} [config.lookup.displayColumn]
+     * @param {string} [config.lookup.sort] The sort used by the lookup store.
      * @param {boolean} [config.lookups] use lookups=false to prevent creating default combobox for lookup columns
      * @param {object}  [config.ext] is a standard Ext config object that will be merged with the computed field config
      *      e.g. ext:{width:120, tpl:new Ext.Template(...)}
      * @param {object} [config.store] advanced! Pass in your own custom store for a lookup field
+     * @param {boolean} [config.lazyCreateStore] If false, the store will be created immediately.  If true, the store will be created when the component is created. (default true)
      *
      * Will accept multiple config parameters which will be combined.
      *
@@ -482,20 +483,16 @@ LABKEY.ext.FormHelper =
 
         if (config.lookup && false !== config.lookups)
         {
-            // UNDONE: avoid self-joins
-            // UNDONE: core.UsersData
-            // UNDONE: container column
             var l = config.lookup;
-            // normalize lookup
-            l.table = l.table || l.queryName;
-            l.schema = l.schema || l.schemaName;
 
-            if (l.schema == 'core' && l.table=='UsersData')
-                l.table = 'Users';
             if (Ext.isObject(config.store) && config.store.events)
                 field.store = config.store;
             else
                 field.store = LABKEY.ext.FormHelper.getLookupStoreConfig(config);
+
+            if (field.store && config.lazyCreateStore === false)
+                field.store = LABKEY.ext.FormHelper.getLookupStore(field);
+
             Ext.apply(field, {
                 xtype: 'combo',
                 forceSelection:true,
@@ -589,7 +586,6 @@ LABKEY.ext.FormHelper =
         return field;
     },
 
-
     /**
      * same as getFieldEditorConfig, but actually constructs the editor
      */
@@ -617,7 +613,7 @@ LABKEY.ext.FormHelper =
         {
             var config = c.store || LABKEY.ext.FormHelper.getLookupStoreConfig(c);
             config.storeId = storeId;
-            store = new LABKEY.ext.Store(config);
+            store = Ext.create(config, 'labkey-store');
         }
         return store;
     },
@@ -638,34 +634,54 @@ LABKEY.ext.FormHelper =
     // private
     getLookupStoreConfig : function(c)
     {
+        // UNDONE: avoid self-joins
+        // UNDONE: core.UsersData
+        // UNDONE: container column
+        var l = c.lookup;
+        // normalize lookup
+        l.table = l.table || l.queryName;
+        l.schema = l.schema || l.schemaName;
+
+        if (l.schema == 'core' && l.table=='UsersData')
+            l.table = 'Users';
+        
         var config = {
+            xtype: "labkey-store",
             storeId: LABKEY.ext.FormHelper.getLookupStoreId(c),
-            schemaName: c.lookup.schema,
-            queryName: c.lookup.table,
-            containerPath: c.lookup.container || c.containerPath || LABKEY.container.path
+            schemaName: l.schema,
+            queryName: l.table,
+            containerPath: l.container || c.containerPath || LABKEY.container.path,
+            autoLoad: true
         };
 
-        if (c.lookup.viewName)
-            config.viewName = c.lookup.viewName;
-        var columns = [];
-        if (c.lookup.keyColumn)
-            columns.push(c.lookup.keyColumn);
-        //TODO: this could possibly be removed when displayColumn = keyColumn?
-        if (c.lookup.displayColumn)
-            columns.push(c.lookup.displayColumn);
-        //TODO: not sure why we do this?
-        if (columns.length < 2)
-            columns = ['*'];
-        config.columns = columns.join(',');
+        if (l.viewName)
+            config.viewName = l.viewName;
+
+        if (l.columns)
+            config.columns = l.columns;
+        else
+        {
+            var columns = [];
+            if (l.keyColumn)
+                columns.push(l.keyColumn);
+            if (l.displayColumn && l.displayColumn != l.keyColumn)
+                columns.push(l.displayColumn);
+            if (columns.length == 0)
+                columns = ['*'];
+            config.columns = columns;
+        }
+
+        if (l.sort)
+            config.sort = l.sort;
+        
         if (!c.required)
         {
             config.nullRecord = {
-                displayColumn: c.lookup.displayColumn,
+                displayColumn: l.displayColumn,
                 nullCaption: c.lookupNullCaption || "[none]"
             };
         }
-        config.autoLoad = true;
-        
+
         return config;
     },
 
@@ -831,14 +847,6 @@ LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
     constructor : function(c)
     {
         LABKEY.ext.ComboBox.superclass.constructor.call(this, c);
-
-        // Create the LABKEY.ext.Store
-        // Note: if this ComboBox lives in an LABKEY.ext.FormPanel, ths store will
-        // have already been created during FormPanel.applyDefaults.
-        if (Ext.isObject(this.store) && !this.store.events)
-        {
-            this.store = LABKEY.ext.FormHelper.getLookupStore(this);
-        }
 
         if (this.store)
         {
