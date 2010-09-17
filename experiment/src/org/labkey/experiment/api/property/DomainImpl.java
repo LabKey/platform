@@ -19,7 +19,6 @@ package org.labkey.experiment.api.property;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
@@ -330,52 +329,8 @@ public class DomainImpl implements Domain
 
     public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)
     {
-        DomainPropertyImpl[] properties = getProperties();
-        Map<String, DomainProperty> m = new CaseInsensitiveHashMap<DomainProperty>(properties.length * 3);
-        DomainPropertyImpl[] reversedProperties = new DomainPropertyImpl[properties.length];
-        int index = 0;
-        // Reverse the order of the descriptors so that we can preserve the right priority for resolving by names, aliases, etc
-        for (DomainPropertyImpl prop : properties)
-        {
-            reversedProperties[reversedProperties.length - (index++) - 1] = prop;
-        }
-
-        // PropertyURI is lowest priority, so put it in the map first so it will be overwritten by higher priority usages
-        for (DomainPropertyImpl property : reversedProperties)
-        {
-            m.put(property.getPropertyURI(), property);
-        }
-        // Then aliases
-        for (DomainPropertyImpl property : reversedProperties)
-        {
-            for (String alias : property.getImportAliasSet())
-            {
-                m.put(alias, property);
-            }
-        }
-        // Then labels
-        for (DomainPropertyImpl property : reversedProperties)
-        {
-            if (null != property.getLabel())
-                m.put(property.getLabel(), property);
-            else
-                m.put(ColumnInfo.labelFromName(property.getName()), property); // If no label, columns will create one for captions
-        }
-        if (includeMVIndicators)
-        {
-            // Then missing value-specific columns
-            for (DomainPropertyImpl property : reversedProperties)
-            {
-                if (property.isMvEnabled())
-                    m.put(property.getName() + MvColumn.MV_INDICATOR_SUFFIX, property);
-            }
-        }
-        // Finally, names have the highest priority
-        for (DomainPropertyImpl property : reversedProperties)
-        {
-            m.put(property.getName(), property);
-        }
-        return m;
+        List<DomainProperty> properties = new ArrayList<DomainProperty>(_properties);
+        return ImportAliasable.Helper.createImportMap(properties, includeMVIndicators);
     }
 
     public DomainProperty addProperty()

@@ -467,10 +467,10 @@ public class XarExporter
         {
             xProp.setURL(prop.getURL().toString());
         }
-        if (!prop.getImportAliasesSet().isEmpty())
+        if (!prop.getImportAliasSet().isEmpty())
         {
             PropertyDescriptorType.ImportAliases xImportAliases = xProp.addNewImportAliases();
-            for (String importAlias : prop.getImportAliasesSet())
+            for (String importAlias : prop.getImportAliasSet())
             {
                 xImportAliases.addImportAlias(importAlias);
             }

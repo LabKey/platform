@@ -269,7 +269,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public Set<String> getImportAliasSet()
     {
-        return _pd.getImportAliasesSet();
+        return _pd.getImportAliasSet();
     }
 
     public void setURL(String url)
