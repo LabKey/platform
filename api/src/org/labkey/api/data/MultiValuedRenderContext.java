@@ -18,6 +18,8 @@ package org.labkey.api.data;
 import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.labkey.api.query.FieldKey;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,8 +44,17 @@ public class MultiValuedRenderContext extends RenderContextDecorator
         for (FieldKey fieldKey : requiredFieldKeys)
         {
             String valueString = (String)ctx.get(fieldKey);
-            String[] values = valueString.split(",");
-            _iterators.put(fieldKey, new ArrayIterator<String>(values));
+            Iterator<String> i;
+            if (valueString == null)
+            {
+                i = Collections.<String>emptyList().iterator();
+            }
+            else
+            {
+                String[] values = valueString.split(",");
+                i = new ArrayIterator<String>(values);
+            }
+            _iterators.put(fieldKey, i);
         }
     }
 

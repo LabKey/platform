@@ -641,7 +641,7 @@ public class ExcelWriter
                 {
                     int row = getCurrentRow();
 
-                    // Give all the reminaing space to the last column
+                    // Give all the remaining space to the last column
                     if (j == headerColumnCount - 1)
                         sheet.mergeCells(j * columnWidth, getCurrentRow(), headerWidth - 1, row);
                     else

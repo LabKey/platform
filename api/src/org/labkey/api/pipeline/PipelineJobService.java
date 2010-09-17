@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
@@ -94,7 +95,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public GlobusClientProperties getGlobusClientProperties();
 
-    abstract public String getExecutablePath(String exeRel, String packageName, String ver) throws FileNotFoundException;
+    abstract public String getExecutablePath(String exeRel, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
     abstract public String getJarPath(String jarRel, String packageName, String ver) throws FileNotFoundException;
 

@@ -163,7 +163,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getGroupConcatAggregateFunction(String selectName)
+    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

@@ -81,7 +81,7 @@ public class ExeToCommandArgs extends ListToCommandArgs
 
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setValue(PipelineJobService.get().getExecutablePath(_exePath,
-                _softwarePackage, getVersion(task)));
+                _softwarePackage, getVersion(task), task.getJob().getLogger()));
         args.addAll(Arrays.asList(converterInline.toArgs(task, visited)));
 
         return args.toArray(new String[args.size()]);

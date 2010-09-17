@@ -63,18 +63,27 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable)
     {
-        String keyColumnName = _lookupKey.getSelectName();
-
         strJoin.append("\n\t(\n\t\t");
-        strJoin.append("SELECT child.");
-        strJoin.append(keyColumnName);
+        strJoin.append("SELECT ");
+        strJoin.append(_lookupKey.getValueSql("child"));
 
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
             strJoin.append(", \n\t\t\t");
-            strJoin.append(getAggregateFunction(lc.getValueSql("child").toString()));
+            SQLFragment valueSql = new SQLFragment();
+            boolean needsCast = "entityid".equalsIgnoreCase(lc.getSqlTypeName()) || "lsidtype".equalsIgnoreCase(lc.getSqlTypeName());
+            if (needsCast)
+            {
+                valueSql.append("CAST((");
+            }
+            valueSql.append(lc.getValueSql("child"));
+            if (needsCast)
+            {
+                valueSql.append(") AS VARCHAR)");
+            }
+            strJoin.append(getAggregateFunction(valueSql));
             strJoin.append(" AS ");
             strJoin.append(lc.getAlias());
         }
@@ -93,8 +102,8 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         // TODO: Add ORDER BY?
 
-        strJoin.append("\n\t\tGROUP BY child.");
-        strJoin.append(keyColumnName);
+        strJoin.append("\n\t\tGROUP BY ");
+        strJoin.append(_lookupKey.getValueSql("child"));
         strJoin.append("\n\t)");
     }
 
@@ -114,9 +123,9 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     // By default, use GROUP_CONCAT aggregate function, which returns a common-separated list of values.  Override this
     // and (for non-varchar aggregate function) getSqlTypeName() to apply a different aggregate.
-    protected String getAggregateFunction(String selectName)
+    protected SQLFragment getAggregateFunction(SQLFragment sql)
     {
-        return getSqlDialect().getGroupConcatAggregateFunction(selectName);
+        return getSqlDialect().getGroupConcatAggregateFunction(sql);
     }
 
     @Override  // Must match the type of the aggregate function specified above.

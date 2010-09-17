@@ -32,10 +32,45 @@ public class CrosstabMeasure
     {
         COUNT,
         SUM,
-        MIN,
-        MAX,
+        MIN
+        {
+            @Override
+            public boolean retainsForeignKey()
+            {
+                return true;
+            }
+        },
+        MAX
+        {
+            @Override
+            public boolean retainsForeignKey()
+            {
+                return true;
+            }
+        },
         AVG,
-        STDDEV;
+        STDDEV
+        {
+            @Override
+            public String getSqlFunction(SqlDialect dialect)
+            {
+                return dialect.getStdDevFunction();
+            }
+        },
+        GROUP_CONCAT
+        {
+            @Override
+            public String getSqlFunction(SqlDialect dialect)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment sql)
+            {
+                return sqlDialect.getGroupConcatAggregateFunction(sql);
+            }
+        };
 
         public String getCaption()
         {
@@ -44,10 +79,7 @@ public class CrosstabMeasure
 
         public String getSqlFunction(SqlDialect dialect)
         {
-            if(STDDEV == this)
-                return dialect.getStdDevFunction();
-            else
-                return this.name();
+            return this.name();
         }
 
         public int getAggregateSqlType(ColumnInfo sourceCol)
@@ -63,11 +95,25 @@ public class CrosstabMeasure
                     return sourceCol.getSqlTypeInt();
             }
         }
+
+        public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment columnSQL)
+        {
+            SQLFragment result = new SQLFragment(getSqlFunction(sqlDialect));
+            result.append("(");
+            result.append(columnSQL);
+            result.append(")");
+            return result;
+        }
+
+        /** Many transformations don't preserve FK integrity - AVG, for example - while some do - MIN, MAX for example */
+        public boolean retainsForeignKey()
+        {
+            return false;
+        }
     }
 
     private ColumnInfo _sourceColumn = null;
     private AggregateFunction _aggregateFunction = AggregateFunction.COUNT;
-    private String _name;
     private String _caption;
     private DetailsURL _url;
 
@@ -77,7 +123,6 @@ public class CrosstabMeasure
 
         _sourceColumn = sourceColumn;
         _aggregateFunction = aggFunction;
-        _name = _aggregateFunction.name() + "_" + sourceColumn.getName();
         _caption = _aggregateFunction.getCaption() + " of " + getSourceColumn().getLabel();
     }
 
@@ -141,10 +186,9 @@ public class CrosstabMeasure
      * @param tableAlias table alias to use
      * @return select expression
      */
-    public String getSqlExpression(String tableAlias)
+    public SQLFragment getSqlExpression(String tableAlias)
     {
-        return _aggregateFunction.getSqlFunction(_sourceColumn.getSqlDialect())
-                + "(" + tableAlias + "." + _sourceColumn.getAlias() + ")";
+        return _aggregateFunction.getSqlExpression(_sourceColumn.getSqlDialect(), new SQLFragment(tableAlias + "." + _sourceColumn.getAlias()));
     }
 
     public int getAggregateSqlType()
@@ -154,7 +198,7 @@ public class CrosstabMeasure
 
     public FieldKey getFieldKey()
     {
-        return FieldKey.fromParts(AggregateColumnInfo.getColumnName(null, this));
+        return getFieldKey(null);
     }
 
     public FieldKey getFieldKey(CrosstabMember member)
