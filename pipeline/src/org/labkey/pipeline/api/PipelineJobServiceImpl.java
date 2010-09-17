@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesImpl;
 import org.labkey.pipeline.api.properties.ConfigPropertiesImpl;
@@ -384,7 +385,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return file.toString();
     }
 
-    public String getExecutablePath(String exeRel, String packageName, String ver) throws FileNotFoundException
+    public String getExecutablePath(String exeRel, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
     {
         // Make string replacements
         exeRel = getVersionedPath(exeRel, packageName, ver);
@@ -393,13 +394,15 @@ public class PipelineJobServiceImpl extends PipelineJobService
         if (toolsDir == null || toolsDir.trim().equals(""))
         {
             // If the tools directory is not set, then rely on the path.
+            jobLogger.warn("Pipeline tools directory is not set, relying on system path to find executables");
             return exeRel;
         }
         // CONSIDER(brendanx): CruiseControl fails without this, as may other situations
         //                     where the tools directory is set automatically to a bogus
         //                     path, but the required executables are on the path.
-        else if (!new File(toolsDir).exists())
+        else if (!NetworkDrive.exists(new File(toolsDir)))
         {
+            jobLogger.warn("Pipeline tools directory '" + toolsDir + "' does not exist, tool execution may fail");
             return exeRel;
         }
 

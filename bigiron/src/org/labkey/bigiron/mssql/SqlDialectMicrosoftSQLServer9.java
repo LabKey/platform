@@ -79,9 +79,9 @@ public class SqlDialectMicrosoftSQLServer9 extends SqlDialectMicrosoftSQLServer
     }
 
     @Override
-    public String getGroupConcatAggregateFunction(String selectName)
+    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql)
     {
         // TODO: Replace this with SQL Server 2005+ group concat SQL: see XML PATH code in ViabilityAssaySchema
-        return super.getGroupConcatAggregateFunction(selectName);
+        return super.getGroupConcatAggregateFunction(sql);
     }
 }

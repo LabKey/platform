@@ -306,9 +306,12 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
-    public String getGroupConcatAggregateFunction(String selectName)
+    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql)
     {
-        return "array_to_string(core.array_accum(" + selectName + "), ',')";
+        SQLFragment result = new SQLFragment("array_to_string(core.array_accum(");
+        result.append(sql);
+        result.append("), ',')");
+        return result;
     }
 
     protected String getSystemTableNames()
