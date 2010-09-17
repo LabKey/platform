@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2010 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+/*
     A pop-up, ext-style schema/query/view picker.  Just call chooseView(), specifying a dialog title, some help text,
     a separator character, and a function to call when the user clicks submit.  The function parameter is a String
     containing schema, query, and (optional) view separated by the separator character.
