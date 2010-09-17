@@ -16,27 +16,22 @@
 
 package org.labkey.api.exp.property;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.security.User;
 
 import java.util.List;
 import java.util.Set;
 
-public interface DomainProperty
+public interface DomainProperty extends ImportAliasable
 {
     int getPropertyId();
     Container getContainer();
-    String getPropertyURI();
     String getRangeURI();
-    String getName();
     String getDescription();
     String getFormat();
-    String getLabel();
     String getConceptURI();
     
     Domain getDomain();
@@ -46,7 +41,6 @@ public interface DomainProperty
     boolean isShownInInsertView();
     boolean isShownInUpdateView();
     boolean isShownInDetailsView();
-    boolean isMvEnabled();
     boolean isMeasure();
     boolean isDimension();
 
@@ -70,7 +64,6 @@ public interface DomainProperty
     void setDimension(boolean isDimension);
 
     void setImportAliasSet(Set<String> aliases);
-    Set<String> getImportAliasSet();
     void setURL(String url);
     String getURL();
 

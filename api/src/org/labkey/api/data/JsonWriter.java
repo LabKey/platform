@@ -104,9 +104,9 @@ public class JsonWriter
         if (cinfo != null)
         {
 
-            if (!cinfo.getImportAliasesSet().isEmpty())
+            if (!cinfo.getImportAliasSet().isEmpty())
             {
-                props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasesSet()));
+                props.put("importAliases", new ArrayList<String>(cinfo.getImportAliasSet()));
             }
 
             if (cinfo.getTsvFormatString() != null)

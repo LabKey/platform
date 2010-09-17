@@ -273,7 +273,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             setConceptURI(col.getConceptURI());
         setIsUnselectable(col.isUnselectable());
         setDefaultValueType(col.getDefaultValueType());
-        setImportAliasesSet(col.getImportAliasesSet());
+        setImportAliasesSet(col.getImportAliasSet());
         setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());

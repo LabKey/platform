@@ -76,12 +76,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     }
 
 
-    public String getRowTitle(Object pk) throws SQLException
-    {
-        return null;
-    }
-
-
     public AbstractTableInfo(DbSchema schema)
     {
         _schema = schema;

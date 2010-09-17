@@ -302,7 +302,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     /** Need the string version of this method because it's called by reflection and must match by name */
     public String getImportAliases()
     {
-        return ColumnRenderProperties.convertToString(getImportAliasesSet());
+        return ColumnRenderProperties.convertToString(getImportAliasSet());
     }
 
     /** Need the string version of this method because it's called by reflection and must match by name */

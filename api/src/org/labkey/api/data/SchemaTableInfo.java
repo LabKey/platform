@@ -317,15 +317,6 @@ public class SchemaTableInfo implements TableInfo
         return list;
     }
 
-    /** getSelectList().get(pk) */
-    public String getRowTitle(Object pk) throws SQLException
-    {
-        NamedObjectList selectList = getSelectList();
-        Object title = selectList.get(pk.toString());
-        return title == null ? "" : title.toString();
-    }
-
-    // UNDONE: throwing Exception is not great, why not just return NULL???
     public ColumnInfo getColumn(String colName)
     {
         if (null == colName)

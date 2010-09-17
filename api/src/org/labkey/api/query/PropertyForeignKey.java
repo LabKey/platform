@@ -19,7 +19,6 @@ package org.labkey.api.query;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -200,7 +199,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         column.setNullable(!pd.isRequired());
         column.setHidden(pd.isHidden());
         column.setURL(pd.getURL());
-        column.setImportAliasesSet(pd.getImportAliasesSet());
+        column.setImportAliasesSet(pd.getImportAliasSet());
         column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().sqlTypeNameFromSqlType(pd.getPropertyType().getSqlType()));
         column.setDescription(pd.getDescription());
         column.setFk(new PdLookupForeignKey(user, pd));

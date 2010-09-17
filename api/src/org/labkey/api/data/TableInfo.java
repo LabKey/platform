@@ -28,7 +28,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,9 +77,6 @@ public interface TableInfo
 
     /** Get select list for named (hopefully unique!) column to title column. */
     NamedObjectList getSelectList(String columnName);
-
-    /** getSelectList().get(pk) */
-    String getRowTitle(Object pk) throws SQLException;
 
     ColumnInfo getColumn(String colName);
 

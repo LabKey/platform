@@ -114,10 +114,10 @@ public class TableInfoWriter
         if (null != column.getURL())
             columnXml.setUrl(column.getURL().getSource());
 
-        if (!column.getImportAliasesSet().isEmpty())
+        if (!column.getImportAliasSet().isEmpty())
         {
             ColumnType.ImportAliases importAliasesXml = columnXml.addNewImportAliases();
-            for (String importAlias : column.getImportAliasesSet())
+            for (String importAlias : column.getImportAliasSet())
             {
                 importAliasesXml.addImportAlias(importAlias);
             }

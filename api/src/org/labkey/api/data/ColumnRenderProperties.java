@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * These are fields used by ColumnInfo and PropertyDescriptor that primarily affect
  * how the field in rendered in the HTML grids, forms, and pickers
  */
-public abstract class ColumnRenderProperties
+public abstract class ColumnRenderProperties implements ImportAliasable
 {
     protected Sort.SortDirection sortDirection = Sort.SortDirection.ASC;
     protected String inputType;
@@ -292,7 +292,7 @@ public abstract class ColumnRenderProperties
         this.nullable = nullable;
     }
 
-    public Set<String> getImportAliasesSet()
+    public Set<String> getImportAliasSet()
     {
         return importAliases;
     }

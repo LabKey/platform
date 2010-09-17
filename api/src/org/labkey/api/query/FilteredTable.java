@@ -142,11 +142,6 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         assert underlyingColumn.getParentTable() == _rootTable;
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getSqlTypeInt());
         ret.copyAttributesFrom(underlyingColumn);
-        ret.setShownInInsertView(underlyingColumn.isShownInInsertView());
-        ret.setShownInUpdateView(underlyingColumn.isShownInUpdateView());
-        ret.setShownInDetailsView(underlyingColumn.isShownInDetailsView());
-        ret.setMeasure(underlyingColumn.isMeasure());
-        ret.setDimension(underlyingColumn.isDimension());
         ret.copyURLFrom(underlyingColumn, null, null);
         ret.setLabel(ColumnInfo.labelFromName(alias));
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)

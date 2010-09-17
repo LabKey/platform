@@ -15,7 +15,12 @@
  */
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
@@ -88,6 +93,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             try
             {
                 Map<String, Object> row = rows.get(i);
+                row = coerceTypes(row);
                 getQueryTable().fireRowTrigger(TableInfo.TriggerType.INSERT, true, i, row, null);
                 row = insertRow(user, container, row);
                 if (row == null)
@@ -104,6 +110,32 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         getQueryTable().fireBatchTrigger(TableInfo.TriggerType.INSERT, false, errors);
 
+        return result;
+    }
+
+    /** Attempt to make the passed in types match the expected types so the script doesn't have to do the conversion */
+    protected Map<String, Object> coerceTypes(Map<String, Object> row)
+    {
+        Map<String, Object> result = new CaseInsensitiveHashMap<Object>(row.size());
+        Map<String, ColumnInfo> columnMap = ImportAliasable.Helper.createImportMap(_queryTable.getColumns(), true);
+        for (Map.Entry<String, Object> entry : row.entrySet())
+        {
+            ColumnInfo col = columnMap.get(entry.getKey());
+
+            Object value = entry.getValue();
+            if (col != null && value != null && !col.getJavaObjectClass().isInstance(value))
+            {
+                try
+                {
+                    value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                }
+                catch (ConversionException e)
+                {
+                    // That's OK, the transformation script may be able to fix up the value before it gets inserted
+                }
+            }
+            result.put(entry.getKey(), value);
+        }
         return result;
     }
 
@@ -128,6 +160,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             try
             {
                 Map<String, Object> row = rows.get(i);
+                row = coerceTypes(row);
                 Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
                 Map<String, Object> oldRow = getRow(user, container, oldKey);
                 if (oldRow == null)
