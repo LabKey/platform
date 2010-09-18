@@ -16,12 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.files.view.FilesWebPart" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -41,17 +39,6 @@
     Ext.QuickTips.init();
 </script>
 
-<%
-    ViewContext context = HttpView.currentContext();
-    FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm)HttpView.currentModel();
-    FilesWebPart me = (FilesWebPart) HttpView.currentView();
-
-    AttachmentDirectory root = bean.getRoot();
-    Container c = context.getContainer();
-
-    ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
-%>
-
 <style type="text/css">
     .x-layout-mini
     {
@@ -59,7 +46,18 @@
     }
 </style>
 
-<div class="extContainer" id="<%=bean.getContentId()%>"></div>
+
+<%
+    ViewContext context = HttpView.currentContext();
+    FilesWebPart.FilesForm bean = (FilesWebPart.FilesForm)HttpView.currentModel();
+
+    Container c = context.getContainer();
+
+    ActionURL projConfig = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
+    int height = 350;
+%>
+<!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
+<div class="extContainer" style="height: <%= height %>px" id="<%=bean.getContentId()%>"></div>
 
 <%  if (!bean.isEnabled()) { %>
 
@@ -177,7 +175,7 @@ function renderBrowser(rootPath, renderTo)
         },
 */
         items: [fileBrowser],
-        height: 350
+        height: <%= height %>
     });
 
     var _resize = function(w,h)
