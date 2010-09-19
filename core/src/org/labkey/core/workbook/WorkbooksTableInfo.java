@@ -163,10 +163,17 @@ public class WorkbooksTableInfo extends FilteredTable
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            String id = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
-            Container workbook = ContainerManager.getForRowId(id);
+            String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
+            Container workbook = null;
+            try
+            {
+                int id = Integer.parseInt(idString);
+                workbook = ContainerManager.getForRowId(id);
+            }
+            catch (NumberFormatException e) {}
+
             if (null == workbook || !workbook.isWorkbook())
-                throw new NotFoundException("Could not find a workbook with id '" + id + "'");
+                throw new NotFoundException("Could not find a workbook with id '" + idString + "'");
             ContainerManager.delete(workbook, user);
             return oldRow;
         }

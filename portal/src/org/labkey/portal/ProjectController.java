@@ -979,18 +979,7 @@ public class ProjectController extends SpringActionController
 
         protected Map<String, Object> getContainerProps(Container container, User user, boolean recurse, int depth)
         {
-            Map<String, Object> containerProps = new HashMap<String,Object>();
-            containerProps.put("name", container.getName());
-            containerProps.put("id", container.getId());
-            containerProps.put("path", container.getPath());
-            containerProps.put("sortOrder", container.getSortOrder());
-            containerProps.put("userPermissions", container.getPolicy().getPermsAsOldBitMask(user));
-            containerProps.put("effectivePermissions", container.getPolicy().getPermissionNames(user));
-            if (null != container.getDescription())
-                containerProps.put("description", container.getDescription());
-            containerProps.put("isWorkbook", container.isWorkbook());
-            if (null != container.getTitle())
-                containerProps.put("title", container.getTitle());
+            Map<String, Object> containerProps = container.toJSON(user);
 
             //recurse into children if requested
             if (recurse && depth < _requestedDepth)

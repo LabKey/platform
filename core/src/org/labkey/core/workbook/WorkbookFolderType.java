@@ -15,6 +15,7 @@
  */
 package org.labkey.core.workbook;
 
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.HttpView;
@@ -39,10 +40,17 @@ public class WorkbookFolderType extends DefaultFolderType
                 null,
                 Arrays.asList(
                         Portal.getPortalPart("Workbook Description").createWebPart(),
-                        Portal.getPortalPart("Files").createWebPart(HttpView.BODY),
+                        createFileWebPart(),
                         Portal.getPortalPart("Experiment Runs").createWebPart()
                 ),
                 getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), getModule("Experiment")),
                 ModuleLoader.getInstance().getCoreModule());
+    }
+
+    private static Portal.WebPart createFileWebPart()
+    {
+        Portal.WebPart result = Portal.getPortalPart("Files").createWebPart(HttpView.BODY);
+        result.setProperty("fileSet", FileContentService.PIPELINE_LINK);
+        return result;
     }
 }

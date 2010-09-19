@@ -3608,7 +3608,7 @@ public class AdminController extends SpringActionController
                     error.append("The parent folder already has a folder with this name.");
                 else
                 {
-                    Container c = ContainerManager.createContainer(parent, folderName, null, getUser());
+                    Container c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
                     String folderType = form.getFolderType();
                     assert null != folderType;
                     FolderType type = ModuleLoader.getInstance().getFolderType(folderType);

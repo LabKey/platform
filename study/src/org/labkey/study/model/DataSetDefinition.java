@@ -1637,7 +1637,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     int containerRowId = Integer.parseInt(matcher.group(1));
                     String datasetName = matcher.group(2);
-                    Container c = ContainerManager.getForRowId(Integer.toString(containerRowId));
+                    Container c = ContainerManager.getForRowId(containerRowId);
                     if (c != null)
                     {
                         StudyImpl study = StudyManager.getInstance().getStudy(c);

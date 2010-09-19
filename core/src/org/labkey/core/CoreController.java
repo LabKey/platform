@@ -34,6 +34,8 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -636,14 +638,19 @@ public class CoreController extends SpringActionController
             if (null == form.getId())
                 throw new NotFoundException("You must supply the id of the workbook you wish to find.");
 
-            //try to lookup based on id
-            Container container = ContainerManager.getForRowId(form.getId());
-            //if found, ensure it's a descendant of the current container, and redirect
-            if (null != container && container.isDescendant(getContainer()))
-                throw new RedirectException(container.getStartURL(getViewContext().getUser()));
+            try
+            {
+                int id = Integer.parseInt(form.getId());
+                //try to lookup based on id
+                Container container = ContainerManager.getForRowId(id);
+                //if found, ensure it's a descendant of the current container, and redirect
+                if (null != container && container.isDescendant(getContainer()))
+                    throw new RedirectException(container.getStartURL(getViewContext().getUser()));
+            }
+            catch (NumberFormatException e) { /* continue on with other approaches */ }
 
             //next try to lookup based on name
-            container = getContainer().findDescendant(form.getId());
+            Container container = getContainer().findDescendant(form.getId());
             if (null != container)
                 throw new RedirectException(container.getStartURL(getViewContext().getUser()));
 
@@ -686,6 +693,68 @@ public class CoreController extends SpringActionController
         }
     }
 
+    // Requires at least insert permission. Will check for admin if needed
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateContainerAction extends ApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            JSONObject json = form.getJsonObject();
+            String name = StringUtils.trimToNull(json.getString("name"));
+            String title = StringUtils.trimToNull(json.getString("title"));
+            String description = StringUtils.trimToNull(json.getString("description"));
+            boolean workbook = json.has("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+
+            if (!workbook)
+            {
+                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                {
+                    throw new UnauthorizedException("You must have admin permissions to create subfolders");
+                }
+            }
+
+            Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, workbook, getUser());
+
+            String folderTypeName = json.getString("folderType");
+            if (folderTypeName == null && workbook)
+            {
+                folderTypeName = WorkbookFolderType.NAME;
+            }
+            if (folderTypeName != null)
+            {
+                FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
+                if (folderType != null)
+                {
+                    newContainer.setFolderType(folderType);
+                }
+            }
+
+            return new ApiSimpleResponse(newContainer.toJSON(getUser()));
+        }
+    }
+
+    // Requires at least insert permission. Will check for admin if needed
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteContainerAction extends ApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            if (!getContainer().isWorkbook())
+            {
+                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                {
+                    throw new UnauthorizedException("You must have admin permissions to create subfolders");
+                }
+            }
+
+            ContainerManager.delete(getContainer(), getUser());
+
+            return new ApiSimpleResponse();
+        }
+    }
+
     @RequiresPermissionClass(InsertPermission.class)
     public class CreateWorkbookAction extends FormViewAction<CreateWorkbookForm>
     {
@@ -711,22 +780,11 @@ public class CoreController extends SpringActionController
 
         public boolean handlePost(CreateWorkbookForm form, BindException errors) throws Exception
         {
-            String name = StringUtils.trimToNull(form.getTitle());
+            String title = StringUtils.trimToNull(form.getTitle());
             Container container = getContainer();
 
-            _newWorkbook = ContainerManager.createWorkbook(container, name, StringUtils.trimToNull(form.getDescription()), getUser());
+            _newWorkbook = ContainerManager.createContainer(container, null, title, StringUtils.trimToNull(form.getDescription()), true, getUser());
             _newWorkbook.setFolderType(new WorkbookFolderType());
-
-            Portal.WebPart[] parts = Portal.getParts(_newWorkbook.getId());
-            assert null != parts;
-            for (Portal.WebPart part : parts)
-            {
-                if (part.getName().equalsIgnoreCase("Files"))
-                {
-                    part.setProperty("fileSet", FileContentService.PIPELINE_LINK);
-                    Portal.updatePart(getUser(), part);
-                }
-            }
 
             return true;
         }
@@ -806,7 +864,7 @@ public class CoreController extends SpringActionController
                 throw new RedirectException(parentContainer.getStartURL(getViewContext().getUser()));
 
             MoveWorkbooksBean bean = new MoveWorkbooksBean();
-            for (String id : ids)
+            for (int id : PageFlowUtil.toInts(ids))
             {
                 Container wb = ContainerManager.getForRowId(id);
                 if (null != wb)
@@ -824,15 +882,15 @@ public class CoreController extends SpringActionController
 
     public static class ExtContainerTreeForm
     {
-        private String _node;
+        private int _node;
         private String _requiredPermission;
 
-        public String getNode()
+        public int getNode()
         {
             return _node;
         }
 
-        public void setNode(String node)
+        public void setNode(int node)
         {
             _node = node;
         }
@@ -985,11 +1043,11 @@ public class CoreController extends SpringActionController
             if (form.getNewParentId() < 0)
                 throw new IllegalArgumentException("You must specify a newParentId parameter!");
 
-            Container wb = ContainerManager.getForRowId(String.valueOf(form.getWorkbookId()));
+            Container wb = ContainerManager.getForRowId(form.getWorkbookId());
             if (null == wb || !(wb.isWorkbook()) || !(wb.isDescendant(getViewContext().getContainer())))
                 throw new IllegalArgumentException("No workbook found with id '" + form.getWorkbookId() + "'");
 
-            Container newParent = ContainerManager.getForRowId(String.valueOf(form.getNewParentId()));
+            Container newParent = ContainerManager.getForRowId(form.getNewParentId());
             if (null == newParent || newParent.isWorkbook())
                 throw new IllegalArgumentException("No folder found with id '" + form.getNewParentId() + "'");
 

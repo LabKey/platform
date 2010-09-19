@@ -18,7 +18,6 @@ package org.labkey.workbook;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.DefaultFolderType;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.HttpView;
@@ -29,7 +28,6 @@ import org.labkey.api.wiki.WikiService;
 
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Set;
 
 /*
 * User: markigra
@@ -43,6 +41,7 @@ public class WorkbookFolderType extends DefaultFolderType
         super("Workbook", "Workbook containing assays, lists, files and other pages", null, null,
                 getDefaultModuleSet(),
                 ModuleLoader.getInstance().getModule("Workbook"));
+        setWorkbookType(true);
     }
 
     @Override
@@ -82,20 +81,4 @@ public class WorkbookFolderType extends DefaultFolderType
             throw new RuntimeException(e);
         }
     }
-
-    private static Set<Module> _activeModulesForOwnedFolder = null;
-    private synchronized static Set<Module> getActiveModulesForOwnedFolder(Module module)
-    {
-        if (null != _activeModulesForOwnedFolder)
-            return _activeModulesForOwnedFolder;
-
-        Set<Module> active = getDefaultModuleSet();
-        active.add(module);
-        Set<String> dependencies = module.getModuleDependenciesAsSet();
-        for (String moduleName : dependencies)
-            active.add(ModuleLoader.getInstance().getModule(moduleName));
-       _activeModulesForOwnedFolder = active;
-        return active;
-    }
-
 }
