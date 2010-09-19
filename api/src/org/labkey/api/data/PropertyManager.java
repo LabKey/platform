@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public class PropertyManager
 {
-    private static class PropertySchema
+    public static class PropertySchema
     {
         private static PropertySchema instance = null;
         private static final String SCHEMA_NAME = "prop";

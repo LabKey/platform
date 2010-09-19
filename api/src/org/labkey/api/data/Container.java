@@ -81,6 +81,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     //optional non-unique title for the container
     private String _title;
+    public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
+    public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
 
     // UNDONE: BeanFactory for Container
 
@@ -627,8 +629,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         oldType.unconfigureContainer(this);
         folderType.configureContainer(this);
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "folderType", true);
-        props.put("name", folderType.getName());
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);
+        props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
         PropertyManager.saveProperties(props);
 
         _folderType = null;
@@ -639,8 +641,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null != _folderType)
             return _folderType;
 
-        Map props = PropertyManager.getProperties(0, getId(), "folderType");
-        String name = (String) props.get("name");
+        Map props = PropertyManager.getProperties(0, getId(), FOLDER_TYPE_PROPERTY_SET_NAME);
+        String name = (String) props.get(FOLDER_TYPE_PROPERTY_NAME);
 
         if (null != name)
         {
@@ -663,7 +665,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     /**
      * Sets the default module for a "mixed" type folder. We try not to create
      * these any more. Instead each folder is "owned" by a module
-     * @param module
      */
     public void setDefaultModule(Module module)
     {

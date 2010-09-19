@@ -287,16 +287,21 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         applyContainerFilter(_containerFilter);
     }
 
+    protected String getContainerFilterColumn()
+    {
+        return "Container";
+    }
+
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        ColumnInfo containerColumn = _rootTable.getColumn("container");
+        ColumnInfo containerColumn = _rootTable.getColumn(getContainerFilterColumn());
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn.getName());
             Collection<String> ids = filter.getIds(getContainer());
             if (ids != null)
             {
-                addCondition(new SimpleFilter(new SimpleFilter.InClause("Container", ids)));
+                addCondition(new SimpleFilter(new SimpleFilter.InClause(getContainerFilterColumn(), ids)));
             }
         }
     }
