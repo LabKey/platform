@@ -47,7 +47,8 @@ public class DefaultFolderType implements FolderType
     protected Set<Module> activeModules;
     protected String description;
     protected String name;
-    protected  Module defaultModule;
+    protected Module defaultModule;
+    protected boolean workbookType = false;
 
     public DefaultFolderType(String name, String description)
     {
@@ -55,21 +56,15 @@ public class DefaultFolderType implements FolderType
         this.description = description;
     }
 
-    public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules)
+    public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         this.name = name;
         this.description = description;
         this.requiredParts = requiredParts == null ? Collections.<WebPart>emptyList() : requiredParts;
         this.preferredParts = preferredParts == null ? Collections.<WebPart>emptyList() : preferredParts;
         this.activeModules = activeModules;
-    }
-
-    public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
-    {
-        this(name, description, requiredParts, preferredParts, activeModules);
         this.defaultModule = defaultModule;
     }
-
 
     public void configureContainer(Container c)
     {
@@ -274,5 +269,15 @@ public class DefaultFolderType implements FolderType
     public AppBar getAppBar(ViewContext context)
     {
         return null;
+    }
+
+    public boolean isWorkbookType()
+    {
+        return workbookType;
+    }
+
+    public void setWorkbookType(boolean workbookType)
+    {
+        this.workbookType = workbookType;
     }
 }

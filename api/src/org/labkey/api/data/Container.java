@@ -861,7 +861,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      * Searches descendants of this container recursively until it finds
      * one that has a name matching the name provided. Search is done
      * breadth-first (optimize for immediate child), and name matching is
-     * case-insentitive.
+     * case-insensitive.
      * @param name The name to find
      * @return Matching Container or null if not found.
      */
@@ -887,6 +887,24 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 return ret;
         }
         return null;
+    }
+
+    public Map<String, Object> toJSON(User user)
+    {
+        Map<String, Object> containerProps = new HashMap<String,Object>();
+        containerProps.put("name", getName());
+        containerProps.put("id", getId());
+        containerProps.put("path", getPath());
+        containerProps.put("sortOrder", getSortOrder());
+        containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
+        containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
+        if (null != getDescription())
+            containerProps.put("description", getDescription());
+        containerProps.put("isWorkbook", isWorkbook());
+        if (null != getTitle())
+            containerProps.put("title", getTitle());
+
+        return containerProps;
     }
 
     public static class ContainerException extends Exception

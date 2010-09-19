@@ -359,6 +359,89 @@ LABKEY.Security = new function()
         },
 
         /**
+         * Creates a new container, which may be a project, folder, or workbook.
+         * @param config A configuration object with the following properties
+         * @param {boolean} [config.name] Required for projects or folders. The name of the container.
+         * @param {boolean} [config.title] The title of the container, used primarily for workbooks.
+         * @param {boolean} [config.description] The description of the container, used primarily for workbooks.
+         * @param {boolean} [config.isWorkbook] Whether this a workbook should be created. Defaults to false.
+         * @param {boolean} [config.folderType] The name of the folder type to be applied.
+         * @param {function} [config.successCallback] A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>containersInfo:</b> an object with the following properties:
+         *  <ul>
+         *      <li>id: the id of the requested container</li>
+         *      <li>name: the name of the requested container</li>
+         *      <li>path: the path of the requested container</li>
+         *      <li>sortOrder: the relative sort order of the requested container</li>
+         *      <li>description: an optional description for the container (may be null or missing)</li>
+         *      <li>title: an optional non-unique title for the container (may be null or missing)</li>
+         *      <li>isWorkbook: true if this container is a workbook. Workbooks do not appear in the left-hand project tree.</li>
+         *      <li>effectivePermissions: An array of effective permission unique names the group has.</li>
+         *  </ul>
+         * </li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
+         * the current container path will be used.
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        createContainer : function(config)
+        {
+            var params = {};
+            params.name = config.name;
+            params.title = config.title;
+            params.description = config.description;
+            params.isWorkbook = config.isWorkbook;
+            params.folderType = config.folderType;
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("core", "createContainer", config.containerPath),
+                method : 'POST',
+                jsonData : params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+        
+        /**
+         * Deletes an existing container, which may be a project, folder, or workbook.
+         * @param config A configuration object with the following properties
+         * @param {function} [config.successCallback] A reference to a function to call with the API results. This
+         * function will be passed the following parameter:
+         * <ul>
+         * <li><b>object:</b> Empty JavaScript object</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {string} [config.containerPath] An alternate container in which to create a new container. If not specified,
+         * the current container path will be used.
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        deleteContainer : function(config)
+        {
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("core", "deleteContainer", config.containerPath),
+                method : 'POST',
+                jsonData : {},
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
          * Returns information about the specified container, including the user's current permissions within
          * that container. If the includeSubfolders config option is set to true, it will also return information
          * about all descendants the user is allowed to see.

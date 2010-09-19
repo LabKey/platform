@@ -165,18 +165,30 @@ public class ContainerManager
     // TODO: Handle root creation here?
     public static Container createContainer(Container parent, String name)
     {
-        return createContainer(parent, name, null, false, null);
+        return createContainer(parent, name, null, null, false, null);
     }
 
-    public static Container createContainer(Container parent, String name, String description, User user)
-    {
-        return createContainer(parent, name, description, false, user);
-    }
-    
-    private static Container createContainer(Container parent, String name, String description, boolean workbook, User user)
+    public static Container createContainer(Container parent, String name, String title, String description, boolean workbook, User user)
     {
         if (core.getSchema().getScope().isTransactionActive())
             throw new IllegalStateException("Transaction should not be active");
+
+        boolean createWorkbookName = false;
+        if (workbook)
+        {
+            //parent must not be a workbook
+            if (parent.isWorkbook())
+                throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
+
+            if (name == null)
+            {
+                //default workbook names are simply "workbook-<rowid>" but since we can't know the rowid until
+                //we create the container, use a GUID for the name during the initial create
+                //and then set the name and title
+                createWorkbookName = true;
+                name = GUID.makeGUID();
+            }
+        }
 
         StringBuilder error = new StringBuilder();
         if (!Container.isLegalName(name, error))
@@ -190,6 +202,7 @@ public class ContainerManager
             HashMap<String, Object> m = new HashMap<String, Object>();
             m.put("Parent", parent.getId());
             m.put("Name", name);
+            m.put("Title", title);
             m.put("SortOrder", getNewChildSortOrder(parent));
             if (null != description)
                 m.put("Description", description);
@@ -208,6 +221,25 @@ public class ContainerManager
         Container c = getForPath(path);
         if (null == c && null != sqlx)
             throw new RuntimeSQLException(sqlx);
+
+        if (createWorkbookName)
+        {
+            name = "workbook-" + c.getRowId();
+
+            try
+            {
+                StringBuilder sql = new StringBuilder("UPDATE ");
+                sql.append(core.getTableInfoContainers());
+                sql.append(" SET Name=? WHERE RowID=?");
+                Table.execute(core.getSchema(), sql.toString(), new Object[]{name, c.getRowId()});
+
+                c = getForPath(path);
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
 
         //workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (!workbook)
@@ -280,37 +312,6 @@ public class ContainerManager
             c = createContainer(parent, name);
         }
         return c;
-    }
-
-    public static Container createWorkbook(Container parent, String title, String description, User user)
-    {
-        //parent must not be a workbook
-        if (parent.isWorkbook())
-            throw new IllegalArgumentException("Parent of a workbook must be a non-workbook container!");
-
-        //workbook names are simply "workbook-<rowid>" but since we can't know the rowid until
-        //we create the container, use a GUID for the name during the initial create
-        //and then set the name and title
-        String tempName = GUID.makeGUID();
-        Container workbook = createContainer(parent, tempName, description, true, user);
-        int rowId = workbook.getRowId();
-        String name = "workbook-" + rowId;
-
-        try
-        {
-            StringBuilder sql = new StringBuilder("UPDATE ");
-            sql.append(core.getTableInfoContainers());
-            sql.append(" SET Name=?, Title=? WHERE RowID=?");
-            Table.execute(core.getSchema(), sql.toString(), new Object[]{name, title, workbook.getRowId()});
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-
-        _removeFromCache(workbook);
-        return getForRowId(String.valueOf(rowId));
-
     }
 
     public static void updateDescription(Container container, String description, User user)
@@ -503,13 +504,12 @@ public class ContainerManager
     }
 
 
-    public static Container getForRowId(String idString)
+    public static Container getForRowId(int id)
     {
         try
         {
             // Postgres 8.3 doesn't like it if we use a string as
             // an int parameter, so parse it first
-            Integer id = Integer.parseInt(idString);
             Container[] ret = Table.executeQuery(
                     core.getSchema(),
                     "SELECT * FROM " + core.getTableInfoContainers() + " WHERE RowId = ?",
@@ -517,11 +517,6 @@ public class ContainerManager
             if (ret == null || ret.length == 0)
                 return null;
             return ret[0];
-        }
-        catch(NumberFormatException nfe)
-        {
-            // That's certainly not going to match anything
-            return null;
         }
         catch (SQLException e)
         {

@@ -311,7 +311,16 @@ public class ViewServlet extends HttpServlet
             if (name.length()==36)
                 c = ContainerManager.getForId(path.getName());
             if (null == c && name.startsWith("__r"))
-                c = ContainerManager.getForRowId(path.getName().substring(3));
+            {
+                try
+                {
+                    c = ContainerManager.getForRowId(Integer.parseInt(path.getName().substring(3)));
+                }
+                catch (NumberFormatException e)
+                {
+                    // Continue to try other ways to look up the container
+                }
+            }
         }
         if (null == c)
         {
