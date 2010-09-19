@@ -20,7 +20,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -46,6 +45,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
     public static final String PRINCIPALS_TABLE_NAME = "Principals";
     public static final String MEMBERS_TABLE_NAME = "Members";
+    public static final String CONTAINERS_TABLE_NAME = "Containers";
     public static final String WORKBOOKS_TABLE_NAME = "Workbooks";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
 
@@ -57,7 +57,7 @@ public class CoreQuerySchema extends UserSchema
     public Set<String> getTableNames()
     {
         return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
-                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
+                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
     }
 
 
@@ -75,12 +75,19 @@ public class CoreQuerySchema extends UserSchema
             return getGroups();
         if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(name))
             return getWorkbooks();
+        if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
+            return getContainers();
         return null;
     }
 
     public TableInfo getWorkbooks()
     {
         return new WorkbooksTableInfo(this);
+    }
+
+    public TableInfo getContainers()
+    {
+        return new ContainerTable(this);
     }
 
     public TableInfo getGroups()

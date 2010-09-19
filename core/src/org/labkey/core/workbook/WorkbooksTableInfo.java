@@ -20,13 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.settings.AppProps;
 import org.labkey.core.query.CoreQuerySchema;
 
 import java.sql.SQLException;
@@ -38,51 +32,13 @@ import java.util.*;
  * Date: Jan 6, 2010
  * Time: 2:18:59 PM
  */
-public class WorkbooksTableInfo extends FilteredTable
+public class WorkbooksTableInfo extends ContainerTable
 {
-    private CoreQuerySchema _schema;
-
     public WorkbooksTableInfo(CoreQuerySchema coreSchema)
     {
-        super(CoreSchema.getInstance().getTableInfoContainers(), coreSchema.getContainer());
-        _schema = coreSchema;
+        super(coreSchema);
 
-        ColumnInfo col;
-        ActionURL projBegin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(_schema.getContainer());
-        String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getPageFlow()
-                + "/__r${ID}/" + projBegin.getAction() + ".view";
-        StringExpression webURLExp = StringExpressionFactory.create(wbURL, true);
-
-        col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
-        col.setKeyField(true);
-        col.setReadOnly(true);
-        col.setURL(webURLExp);
-        this.addColumn(col);
-
-        col = this.wrapColumn(getRealTable().getColumn("Name"));
-        col.setURL(webURLExp);
-        this.addColumn(col);
-
-        col = this.wrapColumn(getRealTable().getColumn("Title"));
-        col.setURL(webURLExp);
-        this.addColumn(col);
-
-        this.addColumn(this.wrapColumn(getRealTable().getColumn("Description")));
-        
-        col = this.wrapColumn(getRealTable().getColumn("CreatedBy"));
-        final boolean isSiteAdmin = _schema.getUser().isAdministrator();
-        col.setFk(new LookupForeignKey("UserId", "DisplayName")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return isSiteAdmin ? _schema.getSiteUsers() : _schema.getUsers();
-            }
-        });
-        this.addColumn(col);
-
-        this.addColumn(this.wrapColumn(getRealTable().getColumn("Created")));
-        this.addColumn(this.wrapColumn(getRealTable().getColumn("Parent")));
-        this.addColumn(this.wrapColumn(getRealTable().getColumn("EntityID")));
+        setDescription("Contains one row for workbook in this folder or project");
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
         defCols.add(FieldKey.fromParts("ID"));
@@ -96,17 +52,9 @@ public class WorkbooksTableInfo extends FilteredTable
     }
 
     @Override
-    protected void applyContainerFilter(ContainerFilter filter)
+    protected String getContainerFilterColumn()
     {
-        clearConditions("Parent");
-        
-        //need to apply to the 'Parent' column
-        Collection<String> containerIds = filter.getIds(getContainer());
-        if (null != containerIds)
-        {
-            SimpleFilter.InClause containerClause = new SimpleFilter.InClause("Parent", containerIds);
-            this.addCondition(new SimpleFilter(containerClause));
-        }
+        return "Parent";
     }
 
     @Override
