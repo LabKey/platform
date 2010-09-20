@@ -433,8 +433,8 @@ LABKEY.ext.FormHelper =
      * @param {string} [config.caption] used to generate fieldLabel (if label is null)
      * @param {integer} [config.cols] if input is a textarea, sets the width (style:width is better)
      * @param {integer} [config.rows] if input is a textarea, sets the height (style:height is better)
-     * @param {string} [config.lookup.schema] the schema used for the lookup.  schemaName also supported
-     * @param {string} [config.lookup.table] the query used for the lookup.  queryName also supported
+     * @param {string} [config.lookup.schemaName] the schema used for the lookup.  schemaName also supported
+     * @param {string} [config.lookup.queryName] the query used for the lookup.  queryName also supported
      * @param {Array} [config.lookup.columns] The columns used by the lookup store.  If not set, the <code>[keyColumn, displayColumn]</code> will be used.
      * @param {string} [config.lookup.keyColumn]
      * @param {string} [config.lookup.displayColumn]
@@ -626,7 +626,7 @@ LABKEY.ext.FormHelper =
             return c.store.storeId;
 
         if (c.lookup)
-            return [c.lookup.schema, c.lookup.table, c.lookup.keyColumn, c.lookup.displayColumn].join('||');
+            return [c.lookup.schemaName || c.lookup.schema , c.lookup.queryName || c.lookup.table, c.lookup.keyColumn, c.lookup.displayColumn].join('||');
 
         return c.name;
     },
@@ -639,17 +639,17 @@ LABKEY.ext.FormHelper =
         // UNDONE: container column
         var l = c.lookup;
         // normalize lookup
-        l.table = l.table || l.queryName;
-        l.schema = l.schema || l.schemaName;
+        l.queryName = l.queryName || l.table;
+        l.schemaName = l.schemaName || l.schema;
 
-        if (l.schema == 'core' && l.table=='UsersData')
-            l.table = 'Users';
+        if (l.schemaName == 'core' && l.queryName =='UsersData')
+            l.queryName = 'Users';
         
         var config = {
             xtype: "labkey-store",
             storeId: LABKEY.ext.FormHelper.getLookupStoreId(c),
-            schemaName: l.schema,
-            queryName: l.table,
+            schemaName: l.schemaName,
+            queryName: l.queryName,
             containerPath: l.container || c.containerPath || LABKEY.container.path,
             autoLoad: true
         };
