@@ -207,7 +207,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (!isWide())
         {
             _path = JSP_RIGHT;
-            _page = JspLoader.createPage(HttpView.currentRequest(), (String)null, _path);
+            _page = JspLoader.createPage((String)null, _path);
         }
     }
 

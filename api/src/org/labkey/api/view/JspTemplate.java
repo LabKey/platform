@@ -16,6 +16,8 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.StringWriter;
 
@@ -42,7 +44,7 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
     public String render() throws Exception
     {
         StringWriter out = new StringWriter();
-        include(this, out);
+        include(this, out, new MockHttpServletRequest(), new MockHttpServletResponse());
         return out.getBuffer().toString().trim();
     }
 }

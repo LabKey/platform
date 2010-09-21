@@ -71,7 +71,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         super(model);
         assert MemTracker.put(this);
         _path = page;
-        _page = JspLoader.createPage(HttpView.currentRequest(), (String)null, page);
+        _page = JspLoader.createPage((String)null, page);
     }
 
     public JspView(String page, ModelClass model, BindException errors)
@@ -85,7 +85,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         super(model);
         assert MemTracker.put(this);
         _path = jspName;
-        _page = JspLoader.createPage(HttpView.currentRequest(), packageClass, jspName);
+        _page = JspLoader.createPage(packageClass, jspName);
     }
 
 

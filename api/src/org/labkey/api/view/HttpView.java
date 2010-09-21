@@ -548,9 +548,16 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         HttpServletRequest request = HttpView.currentRequest();
         HttpServletResponse response = HttpView.currentResponse();
 
+        include(mv, writer, request, response);
+    }
+
+
+    protected void include(ModelAndView mv, Writer writer, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
         if (null != writer)
         {
             final PrintWriter out = writer instanceof PrintWriter ? (PrintWriter)writer : new PrintWriter(writer);
+
             // UNDONE: this getWriter() call prevents getOutputStream() from being called later...
             if (out != response.getWriter())
             {
@@ -563,6 +570,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
                 };
             }
         }
+
         mv.getView().render(mv.getModel(), request, response);
     }
 

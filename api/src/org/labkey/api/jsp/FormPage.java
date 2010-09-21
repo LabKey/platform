@@ -26,7 +26,7 @@ abstract public class FormPage<FORM extends HasViewContext> extends ContextPage
     
     static public <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
     {
-        FormPage<F> ret = (FormPage<F>) JspLoader.createPage(form.getViewContext().getRequest(), clazzPackage, name);
+        FormPage<F> ret = (FormPage<F>) JspLoader.createPage(clazzPackage, name);
         ret.setForm(form);
         return ret;
     }

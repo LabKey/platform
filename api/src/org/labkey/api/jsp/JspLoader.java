@@ -17,13 +17,12 @@
 package org.labkey.api.jsp;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ViewContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.HttpJspPage;
 import java.util.Enumeration;
 
@@ -44,10 +43,10 @@ public class JspLoader
         }
     }
 
+
     /**
      * Create a new JSP page.
      *
-     * @param request Used to get the ServletContext
      * @param packageName Dot separated package where the JSP file was in the source tree.  May be null, in which case
      * "jspFile" should be a full path to the page, starting with "/"
      * @param jspFile Path to the JSP from the package in which it resides.  For JSP files that are in the same
@@ -55,11 +54,11 @@ public class JspLoader
      * "/"
      * @return inited page
      */
-    public static HttpJspPage createPage(HttpServletRequest request, String packageName, String jspFile)
+    public static HttpJspPage createPage(String packageName, String jspFile)
     {
         try
         {
-            ServletContext context = request.getSession(true).getServletContext();
+            ServletContext context = ModuleLoader.getServletContext();
             Class clazz = _jspClassLoader.loadClass(context, packageName, jspFile);
             HttpJspPage ret = (HttpJspPage) clazz.newInstance();
             ret.init(new JspServletConfig(context));
@@ -78,15 +77,9 @@ public class JspLoader
      * @param clazz   A class which is in the same folder as the JSP folder.
      * @param jspFile Name of the JSP file, without the path.
      */
-    public static HttpJspPage createPage(HttpServletRequest request, Class clazz, String jspFile)
+    public static HttpJspPage createPage(Class clazz, String jspFile)
     {
-        return createPage(request, clazz.getPackage().getName(), jspFile);
-    }
-
-
-    public static HttpJspPage createPage(ViewContext context, Class clazz, String jspFile)
-    {
-        return createPage(context.getRequest(), clazz.getPackage().getName(), jspFile);
+        return createPage(clazz.getPackage().getName(), jspFile);
     }
 
 
