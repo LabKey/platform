@@ -122,7 +122,7 @@ public class ModuleLoader implements Filter
 
 
     private Map<String, ModuleContext> contextMap = new HashMap<String, ModuleContext>();
-    private Map<String, Module> moduleMap = new HashMap<String, Module>();
+    private Map<String, Module> moduleMap = new CaseInsensitiveHashMap<Module>();
     private Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<Class<? extends Module>, Module>();
 
     private List<Module> _modules;

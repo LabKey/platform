@@ -233,6 +233,8 @@ public class ContainerManager
                 sql.append(" SET Name=? WHERE RowID=?");
                 Table.execute(core.getSchema(), sql.toString(), new Object[]{name, c.getRowId()});
 
+                _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
+                path = makePath(parent, name);
                 c = getForPath(path);
             }
             catch (SQLException x)

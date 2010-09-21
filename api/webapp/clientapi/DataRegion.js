@@ -378,6 +378,11 @@ LABKEY.DataRegion = function (config)
         this._setParam(".sort", newSortString, [".sort", ".offset"]);
     };
 
+    this.addButton = function (buttonConfig)
+    {
+
+    },
+
     /**
      * XXX: Needs documentation
      * @param columnName
@@ -532,6 +537,8 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.msgbox.enableDisplayMode();
         this.header = Ext.get("dataregion_header_" + this.name);
         this.footer = Ext.get("dataregion_footer_" + this.name);
+        this.buttonBarTop = Ext.get("dataregion_buttonbar_top_" + this.name);
+        this.buttonBarBottom = Ext.get("dataregion_buttonbar_bottom_" + this.name);
 
         // derived DataRegion's may not include the form id
         if (!this.form && this.table)

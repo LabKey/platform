@@ -80,8 +80,6 @@ public interface FolderType
     /**
      * URL to start at when navigating to this folder. This is often the same as getTabURL for the portal module, or
      * getTabURL for the "owner" module, but could be any URL to an appropriate starting page.
-     * @param c
-     * @param u
      * @return URL for "dashboard" of this
      */
     public ActionURL getStartURL(Container c, User u);
@@ -128,6 +126,9 @@ public interface FolderType
     public void addManageLinks(NavTree adminNavTree, Container container);
 
     public AppBar getAppBar(ViewContext context);
+
+    /** @return whether this is intended to be used exclusively for workbooks */
+    public boolean isWorkbookType();
     
     /**
      * Folder type that results in an old style "tabbed" folder.
@@ -178,6 +179,12 @@ public interface FolderType
         public AppBar getAppBar(ViewContext context)
         {
             return null;
+        }
+
+        @Override
+        public boolean isWorkbookType()
+        {
+            return false;
         }
     }
 }

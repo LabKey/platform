@@ -233,6 +233,10 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     protected FORM getCommand(HttpServletRequest request) throws Exception
     {
+        if (getCommandClass() == null)
+        {
+            return (FORM)new Object();
+        }
         FORM command = (FORM)super.createCommand();
 
         if (command instanceof HasViewContext)

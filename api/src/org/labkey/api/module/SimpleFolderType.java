@@ -140,6 +140,7 @@ public class SimpleFolderType extends DefaultFolderType
         _description = type.getDescription();
         _preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
         _requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
+        setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
 
         Set<Module> activeModules = new HashSet<Module>();
         for (String moduleName : type.getModules().getModuleNameArray())
@@ -193,6 +194,13 @@ public class SimpleFolderType extends DefaultFolderType
     {
         reloadIfStale();
         return _description;
+    }
+
+    @Override
+    public boolean isWorkbookType()
+    {
+        reloadIfStale();
+        return super.isWorkbookType();
     }
 
     @Override

@@ -442,6 +442,50 @@ LABKEY.Security = new function()
         },
 
         /**
+         * Retrieves the full set of folder types that are available on the server.
+         * @param config A configuration object with the following properties
+         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameter:
+         * <ul>
+         * <li><b>folderTypes:</b> Map from folder type name to folder type object, which consists of the following properties:
+         *  <ul>
+         *      <li><b>name:</b> the cross-version stable name of the folder type</li>
+         *      <li><b>description:</b> a short description of the folder type</li>
+         *      <li><b>label:</b> the name that's shown to the user for this folder type</li>
+         *      <li><b>defaultModule:</b> name of the module that provides the home screen for this folder type</li>
+         *      <li><b>activeModules:</b> an array of module names that are automatically active for this folder type</li>
+         *      <li><b>workbookType:</b> boolean that indicates if this is specifically intended to use as a workbook type
+         *      <li><b>requiredWebParts:</b> an array of web parts that are part of this folder type and cannot be removed
+         *          <ul>
+         *              <li><b>name:</b> the name of the web part</li>
+         *              <li><b>properties:</b> a map of properties that are automatically set</li>
+         *          </ul>
+         *      </li>
+         *      <li><b>preferredWebParts:</b> an array of web parts that are part of this folder type but may be removed. Same structure as requiredWebParts</li>
+         *  </ul>
+         * </li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        getFolderTypes : function(config)
+        {
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("core", "getFolderTypes", config.containerPath),
+                method : 'POST',
+                jsonData : {},
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
          * Returns information about the specified container, including the user's current permissions within
          * that container. If the includeSubfolders config option is set to true, it will also return information
          * about all descendants the user is allowed to see.
