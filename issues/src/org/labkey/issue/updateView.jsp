@@ -93,134 +93,123 @@
     </tr></table>
 
     <table>
-        <tr><td colspan=3><table><tr>
+        <tr>
 <%
             if (0 == issue.getIssueId())
             {
 %>
-                <td class="labkey-form-label" width="69"><%=bean.getLabel("Title")%></td>
+                <td class="labkey-form-label"><%=bean.getLabel("Title")%></td>
 <%
             } else {
 %>
-                <td class="labkey-wp-title"><%=issue.getIssueId()%></td>
+                <td class="labkey-form-label">Issue <%=issue.getIssueId()%></td>
 <%
             }
 %>
-                <td width="571">
+                <td colspan="3">
                 <%=bean.writeInput(new HString("title",false), issue.getTitle(), new HString("id=title style=\"width:100%;\"",false))%>
                 </td></tr>
-            </table></td></tr>
-        <tr>
-            <td valign="top"><table>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo",false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context))%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect(new HString("type",false), issue.getType(), bean.getTypeOptions(c))%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=bean.writeSelect(new HString("area",false), issue.getArea(), bean.getAreaOptions(c))%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect(new HString("priority",false),  HString.valueOf(issue.getPriority()), bean.getPriorityOptions(c))%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect(new HString("milestone",false), issue.getMilestone(), bean.getMilestoneOptions(c))%></td></tr>
-            </table></td>
-            <td valign="top"><table>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Opened&nbsp;By")%></td><td><%=h(issue.getCreatedByName(context))%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td><%=bean.writeDate(issue.getCreated())%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("ResolvedBy")%></td><td><%=h(issue.getResolvedByName(context))%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td><%=bean.writeDate(issue.getResolved())%></td></tr>
-                <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(new HString("resolution",false), issue.getResolution(), bean.getResolutionOptions(c))%></td></tr>
-<%
-            if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource()) && null != issue.getDuplicate())
-            {
-%>
-                <tr><td class="labkey-form-label">Duplicate</td><td>
-                <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString(issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>
-                    <script type="text/javascript">
-                        var duplicateInput = document.getElementsByName('duplicate')[0];
-                        var duplicateOrig = duplicateInput.value;
-                        var resolutionSelect = document.getElementById('resolution');
-                        function updateDuplicateInput()
+            <tr>
+                <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
+                <td rowspan="6" valign="top">
+                    <table>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(context))%></td></tr>
+                        <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(context))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(context))%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(new HString("resolution",false), issue.getResolution(), bean.getResolutionOptions(c))%></td></tr>
+        <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource()) && null != issue.getDuplicate()) { %>
+                        <tr><td class="labkey-form-label">Duplicate</td><td>
+                        <% if (bean.isEditable("duplicate")) { %>
+                            <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString(issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>
+                            <script type="text/javascript">
+                                var duplicateInput = document.getElementsByName('duplicate')[0];
+                                var duplicateOrig = duplicateInput.value;
+                                var resolutionSelect = document.getElementById('resolution');
+                                function updateDuplicateInput()
+                                {
+                                    // The options don't have an explicit value set, so look for the display text instead of
+                                    // the value
+                                    if (resolutionSelect.selectedIndex >= 0 &&
+                                        resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
+                                    {
+                                        duplicateInput.disabled = false;
+                                    }
+                                    else
+                                    {
+                                        duplicateInput.disabled = true;
+                                        duplicateInput.value = duplicateOrig;
+                                    }
+                                }
+                                if (window.addEventListener)
+                                    resolutionSelect.addEventListener('change', updateDuplicateInput, false);
+                                else if (window.attachEvent)
+                                    resolutionSelect.attachEvent('onchange', updateDuplicateInput);
+                                Ext.EventManager.on(duplicateInput, 'keypress', filterNumber);
+                            </script>
+                        <% } else { %>
+                            <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
+                        <% } %>
+                        </td></tr>
+        <% } %>
+                        <%=bean.writeCustomColumn(c, new HString("int1",false), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE)%>
+                        <%=bean.writeCustomColumn(c, new HString("int2",false), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE)%>
+                    </table>
+                </td>
+                <td valign="top" rowspan="6"><table>
+                    <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(context))%></td></tr>
+    <%
+                if (bean.isEditable("notifyList"))
+                {
+    %>
+                    <tr>
+                        <td class="labkey-form-label"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
+    <%
+                        if (issue.getIssueId() == 0)
                         {
-                            // The options don't have an explicit value set, so look for the display text instead of
-                            // the value
-                            if (resolutionSelect.selectedIndex >= 0 &&
-                                resolutionSelect.options[resolutionSelect.selectedIndex].text == 'Duplicate')
-                            {
-                                duplicateInput.disabled = false;
-                            }
-                            else
-                            {
-                                duplicateInput.disabled = true;
-                                duplicateInput.value = duplicateOrig;
-                            }
+    %>
+                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class))%>
+    <%
+                        } else {
+    %>
+                            <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%>
+    <%
                         }
-                        if (window.addEventListener)
-                            resolutionSelect.addEventListener('change', updateDuplicateInput, false);
-                        else if (window.attachEvent)
-                            resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-                        Ext.EventManager.on(duplicateInput, 'keypress', filterNumber);
-                    </script>
-                <% } else { %>
-                    <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
-                <% } %>
-                </td></tr>
-<%
-            }
-%>
-                <%=bean.writeCustomColumn(c, new HString("int1",false), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE)%>
-                <%=bean.writeCustomColumn(c, new HString("int2",false), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE)%>
-            </table></td>
-            <td valign="top"><table>
-                <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
-                <tr><td class="labkey-form-label">Changed</td><td><%=bean.writeDate(issue.getModified())%></td></tr>
-                <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(context))%></td></tr>
-                <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
-<%
-            if (bean.isEditable("notifyList"))
-            {
-%>
-                <tr>
-                    <td class="labkey-form-label"><%=bean.getLabel("NotifyList") + popup%><br/><br/>
-<%
-                    if (issue.getIssueId() == 0)
-                    {
-%>
-                        <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class))%>
-<%
-                    } else {
-%>
-                        <%= textLink("email&nbsp;prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()))%>
-<%
-                    }
-%>
-                    </td>
-                    <td><%=bean.getNotifyList(c, issue)%></td>
-                </tr>
-<%
-            } else {
-%>
-                <tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList(c, issue)%></td></tr>
-<%
-            }
-%>
-                <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1)%>
-                <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2)%>
-                <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3)%>
-                <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4)%>
-                <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5)%>
-            </table></td>
-        </tr>
-    </table>
+    %>
+                        </td>
+                        <td><%=bean.getNotifyList(c, issue)%></td>
+                    </tr>
+    <%
+                } else {
+    %>
+                    <tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList(c, issue)%></td></tr>
+    <%
+                }
+    %>
+                    <%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1)%>
+                    <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2)%>
+                    <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3)%>
+                    <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4)%>
+                    <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5)%>
+                </table></td>
+            </tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo",false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(context), bean.getUserOptions(c, issue, context))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect(new HString("type",false), issue.getType(), bean.getTypeOptions(c))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=bean.writeSelect(new HString("area",false), issue.getArea(), bean.getAreaOptions(c))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect(new HString("priority",false),  HString.valueOf(issue.getPriority()), bean.getPriorityOptions(c))%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect(new HString("milestone",false), issue.getMilestone(), bean.getMilestoneOptions(c))%></td></tr>
+            <tr><td class="labkey-form-label">Comment</td>
+                <td colspan="3">
 <%
     if (bean.getBody() != null)
     {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 100%;" onchange="LABKEY.setDirty(true);return true;"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"><%=PageFlowUtil.filter(bean.getBody())%></textarea>
 <%
     } else {
 %>
-    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 100%;" onchange="LABKEY.setDirty(true);return true;"></textarea>
-<%
-    }
-
-%>
+    <textarea id="comment" name="comment" cols="150" rows="20" style="width: 99%;" onchange="LABKEY.setDirty(true);return true;"></textarea>
+<% } %>
+    </td></tr></table>
     <table>
         <tr><td><table id="filePickerTable"></table></td></tr>
         <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=context.getRequest().getContextPath()%>/_images/paperclip.gif">Attach a file</a></td></tr>

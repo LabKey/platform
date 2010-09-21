@@ -53,6 +53,8 @@ FolderType folderType = c.getFolderType();
 
 for (FolderType ft : allFolderTypes)
 {
+if (!ft.isWorkbookType())
+{
     String arraySep = "";
 %>
         requiredModules["<%=ft.getName()%>"] =  [<%
@@ -66,6 +68,7 @@ for (FolderType ft : allFolderTypes)
         } %>];<%
         if (null != ft.getDefaultModule())
             out.print("defaultModules[\"" + ft.getName() + "\"] = \"" + ft.getDefaultModule().getName() + "\";\n");
+    }
 }
 %>
 var switchedOnLast = new Object();
@@ -189,6 +192,8 @@ function validate()
         int radioIndex = 0;
         for (FolderType ft : allFolderTypes)
         {
+            if (!ft.isWorkbookType())
+            {
     %>
                 <tr>
                     <td valign="top">
@@ -201,6 +206,7 @@ function validate()
                 </tr>
     <%
             radioIndex++;
+            }
         }
     %>
                 </table>

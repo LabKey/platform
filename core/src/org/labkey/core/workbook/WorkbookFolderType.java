@@ -45,6 +45,13 @@ public class WorkbookFolderType extends DefaultFolderType
                 ),
                 getDefaultModuleSet(ModuleLoader.getInstance().getCoreModule(), getModule("Experiment")),
                 ModuleLoader.getInstance().getCoreModule());
+        setWorkbookType(true);
+    }
+
+    @Override
+    public String getLabel()
+    {
+        return "Default Workbook";
     }
 
     private static Portal.WebPart createFileWebPart()

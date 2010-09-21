@@ -2960,7 +2960,6 @@ workbook/resources/schemas/dbscripts/sqlserver/workbook-0.00-1.00.sql -text
 workbook/resources/schemas/workbook.xml -text
 workbook/src/org/labkey/workbook/WorkbookContainerListener.java -text
 workbook/src/org/labkey/workbook/WorkbookController.java -text
-workbook/src/org/labkey/workbook/WorkbookFolderType.java -text
 workbook/src/org/labkey/workbook/WorkbookManager.java -text
 workbook/src/org/labkey/workbook/WorkbookModule.java -text
 workbook/src/org/labkey/workbook/WorkbookSchema.java -text

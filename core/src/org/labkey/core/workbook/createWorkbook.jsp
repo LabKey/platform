@@ -21,11 +21,24 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.module.FolderType" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<CreateWorkbookBean> me = (JspView<CreateWorkbookBean>) HttpView.currentView();
     CreateWorkbookBean searchBean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
+
+    Set<FolderType> folderTypes = new LinkedHashSet<FolderType>();
+    for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
+    {
+        if (folderType.isWorkbookType())
+        {
+            folderTypes.add(folderType);
+        }
+    }
 %>
 <style type="text/css">
     .cwb-layout-table
@@ -47,18 +60,57 @@
     }
 </style>
 <labkey:errors/>
-<form action="createWorkbook.post" method="POST">
+<script type="text/javascript">
+    function success(workbookInfo, request)
+    {
+        window.location = LABKEY.ActionURL.buildURL("project", "start", workbookInfo.path);
+    }
+
+    function submitForm()
+    {
+        var config =
+        {
+            isWorkbook: true,
+            successCallback: success,
+            description: document.getElementById("workbookDescription").value,
+            title: document.getElementById("workbookTitle").value
+        };
+        if (document.getElementById("workbookFolderType") &&
+                document.getElementById("workbookFolderType").value &&
+                document.getElementById("workbookFolderType").value != "")
+        {
+            config.folderType = document.getElementById("workbookFolderType").value;
+        }
+
+        LABKEY.Security.createContainer(config);
+        return false;
+    }
+</script>
+<form onsubmit="submitForm()">
     <table class="cwb-layout-table">
         <tr>
             <td class="labkey-form-label">Title:</td>
-            <td><input type="text" name="title" class="cwb-input" value="<%=searchBean.getTitle()%>"/></td>
+            <td><input id="workbookTitle" type="text" name="title" class="cwb-input" value="<%=PageFlowUtil.filter(searchBean.getTitle())%>"/></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description:</td>
             <td>
-                <textarea name="description" rows="4" cols="40" class="cwb-input"><%=null == searchBean.getDescription() ? "" : searchBean.getDescription()%></textarea>
+                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == searchBean.getDescription() ? "" : PageFlowUtil.filter(searchBean.getDescription())%></textarea>
             </td>
         </tr>
+        <% if (folderTypes.size() > 1) { %>
+            <tr>
+                <td class="labkey-form-label">Type:</td>
+                <td>
+                    <select id="workbookFolderType" name="folderType">
+                        <option value="" />
+                        <% for (FolderType folderType : folderTypes) { %>
+                            <option value="<%= PageFlowUtil.filter(folderType.getName()) %>"><%= PageFlowUtil.filter(folderType.getLabel()) %></option>
+                        <% } %>
+                    </select>
+                </td>
+            </tr>
+        <% } %>
         <tr>
             <td colspan="2" class="cwb-button-bar">
                 <%=PageFlowUtil.generateButton("Cancel", container.getStartURL(me.getViewContext().getUser()))%>

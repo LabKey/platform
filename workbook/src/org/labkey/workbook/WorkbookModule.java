@@ -61,7 +61,6 @@ public class WorkbookModule extends DefaultModule
     {
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new WorkbookContainerListener());
-        //ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
     }
 
     @Override

@@ -31,10 +31,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
@@ -49,7 +49,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -58,7 +57,6 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.*;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -756,18 +754,10 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateWorkbookAction extends FormViewAction<CreateWorkbookForm>
+    public class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookForm>
     {
-        private Container _newWorkbook;
-
-        public void validateCommand(CreateWorkbookForm form, Errors errors)
-        {
-            String title = StringUtils.trimToNull(form.getTitle());
-            if (null == title)
-                errors.reject(null, "You must supply a title for the new workbook!");
-        }
-
-        public ModelAndView getView(CreateWorkbookForm createWorkbookForm, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(CreateWorkbookForm createWorkbookForm, BindException errors) throws Exception
         {
             CreateWorkbookBean bean = new CreateWorkbookBean();
 
@@ -776,23 +766,6 @@ public class CoreController extends SpringActionController
             bean.setTitle(getViewContext().getUser().getDisplayName(getViewContext()) + " " + DateUtil.formatDate(new Date()));
 
             return new JspView<CreateWorkbookBean>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
-        }
-
-        public boolean handlePost(CreateWorkbookForm form, BindException errors) throws Exception
-        {
-            String title = StringUtils.trimToNull(form.getTitle());
-            Container container = getContainer();
-
-            _newWorkbook = ContainerManager.createContainer(container, null, title, StringUtils.trimToNull(form.getDescription()), true, getUser());
-            _newWorkbook.setFolderType(new WorkbookFolderType());
-
-            return true;
-        }
-
-        public URLHelper getSuccessURL(CreateWorkbookForm form)
-        {
-            Container c = (null != _newWorkbook ? _newWorkbook : getContainer());
-            return c.getStartURL(getViewContext().getUser());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1067,4 +1040,47 @@ public class CoreController extends SpringActionController
             return new ApiSimpleResponse("moved", true);
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetFolderTypesAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            Map<String, Object> folderTypes = new HashMap<String, Object>();
+            for (FolderType folderType : ModuleLoader.getInstance().getFolderTypes())
+            {
+                Map<String, Object> folderTypeJSON = new HashMap<String, Object>();
+                folderTypeJSON.put("name", folderType.getName());
+                folderTypeJSON.put("description", folderType.getDescription());
+                folderTypeJSON.put("defaultModule", folderType.getDefaultModule() == null ? null : folderType.getDefaultModule().getName());
+                folderTypeJSON.put("label", folderType.getLabel());
+                folderTypeJSON.put("workbookType", folderType.isWorkbookType());
+                List<String> activeModulesJSON = new ArrayList<String>();
+                for (Module module : folderType.getActiveModules())
+                {
+                    activeModulesJSON.add(module.getName());
+                }
+                folderTypeJSON.put("activeModules", activeModulesJSON);
+                folderTypeJSON.put("requiredWebParts", toJSON(folderType.getRequiredWebParts()));
+                folderTypeJSON.put("preferredWebParts", toJSON(folderType.getPreferredWebParts()));
+                folderTypes.put(folderType.getName(), folderTypeJSON);
+            }
+            return new ApiSimpleResponse(folderTypes);
+        }
+
+        private List<Map<String, Object>> toJSON(List<Portal.WebPart> webParts)
+        {
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+            for (Portal.WebPart webPart : webParts)
+            {
+                Map<String, Object> webPartJSON = new HashMap<String, Object>();
+                webPartJSON.put("name", webPart.getName());
+                webPartJSON.put("properties", webPart.getPropertyMap());
+                result.add(webPartJSON);
+            }
+            return result;
+        }
+    }
+
 }
