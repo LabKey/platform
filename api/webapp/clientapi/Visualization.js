@@ -246,7 +246,7 @@ LABKEY.Visualization.Filter = new function()
     {
         var params = [config.schemaName];
 
-        if (config.query)
+        if (config.queryName)
             params.push(config.queryName);
         else
             params.push('~');
