@@ -84,7 +84,8 @@ public class ContainerTable extends FilteredTable
         PropertyManager.PropertySchema propertySchema = PropertyManager.PropertySchema.getInstance();
         SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM " + propertySchema.getTableInfoProperties() + " p, " +
                 propertySchema.getTableInfoPropertySets() + " ps WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS +
-                ".EntityId AND ps.Category = ? AND ps.Set = p.Set AND p.Name = ?)");
+                ".EntityId AND ps.Category = ? AND ps." + getSqlDialect().getColumnSelectName("Set") + " = p." +
+                getSqlDialect().getColumnSelectName("Set") + " AND p.Name = ?)");
         folderTypeSQL.add(Container.FOLDER_TYPE_PROPERTY_SET_NAME);
         folderTypeSQL.add(Container.FOLDER_TYPE_PROPERTY_NAME);
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, Types.VARCHAR);
