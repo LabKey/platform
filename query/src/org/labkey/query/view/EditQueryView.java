@@ -34,7 +34,7 @@ public class EditQueryView extends WebPartView
     @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        EditQueryPage page = (EditQueryPage) JspLoader.createPage(getViewContext().getRequest(), EditQueryView.class, "editQueryWebPart.jsp");
+        EditQueryPage page = (EditQueryPage) JspLoader.createPage(EditQueryView.class, "editQueryWebPart.jsp");
         page.setWebPart(_part);
         page.setContext(getViewContext());
         page.include(new JspView(page), out);

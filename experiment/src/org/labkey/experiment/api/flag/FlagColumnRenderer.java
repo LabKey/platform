@@ -42,10 +42,10 @@ public class FlagColumnRenderer extends DataColumn
         if (ctx.containsKey(key_scriptrendered))
             return;
         ctx.put(key_scriptrendered, true);
-        JspBase page = (JspBase) JspLoader.createPage(ctx.getRequest(), FlagColumnRenderer.class, "setFlagScript.jsp");
+        JspBase page = (JspBase) JspLoader.createPage(FlagColumnRenderer.class, "setFlagScript.jsp");
         try
         {
-            ((HttpView) HttpView.currentView()).include(new JspView(page), out);
+            (HttpView.currentView()).include(new JspView(page), out);
         }
         catch (Exception e)
         {

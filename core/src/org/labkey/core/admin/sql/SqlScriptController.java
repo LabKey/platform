@@ -75,7 +75,7 @@ public class SqlScriptController extends SpringActionController
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
-            ShowRunningScriptsPage page = (ShowRunningScriptsPage) JspLoader.createPage(getViewContext().getRequest(), SqlScriptController.class, "showRunningScripts.jsp");
+            ShowRunningScriptsPage page = (ShowRunningScriptsPage) JspLoader.createPage(SqlScriptController.class, "showRunningScripts.jsp");
             page.setWaitForScriptsURL(getWaitForScriptsURL(form.getModuleName()));
             page.setCurrentURL(getViewContext().cloneActionURL());
             page.setScripts(scripts);

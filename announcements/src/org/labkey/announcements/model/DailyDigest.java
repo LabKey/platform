@@ -162,12 +162,12 @@ public class DailyDigest
         m.setSubject("New posts to " + c.getPath());
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
-        DailyDigestPage page = createPage("dailyDigestPlain.jsp", request, c, settings, perm, announcementModels);
+        DailyDigestPage page = createPage("dailyDigestPlain.jsp", c, settings, perm, announcementModels);
         JspView view = new JspView(page);
         view.setFrame(WebPartView.FrameType.NONE);
         m.setTemplateContent(request, view, "text/plain");
 
-        page = createPage("dailyDigest.jsp", request, c, settings, perm, announcementModels);
+        page = createPage("dailyDigest.jsp", c, settings, perm, announcementModels);
         view = new JspView(page);
         view.setFrame(WebPartView.FrameType.NONE);
         m.setTemplateContent(request, view, "text/html");
@@ -176,9 +176,9 @@ public class DailyDigest
     }
 
 
-    private static DailyDigestPage createPage(String templateName, HttpServletRequest request, Container c, Settings settings, Permissions perm, List<AnnouncementModel> announcementModels) throws ServletException
+    private static DailyDigestPage createPage(String templateName, Container c, Settings settings, Permissions perm, List<AnnouncementModel> announcementModels) throws ServletException
     {
-        DailyDigestPage page = (DailyDigestPage) JspLoader.createPage(request, AnnouncementsController.class, templateName);
+        DailyDigestPage page = (DailyDigestPage)JspLoader.createPage(AnnouncementsController.class, templateName);
 
         page.conversationName = settings.getConversationName().toLowerCase();
         page.settings = settings;

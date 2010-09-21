@@ -1850,7 +1850,7 @@ public class AnnouncementsController extends SpringActionController
     {
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
-        EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(request, AnnouncementsController.class, templateName);
+        EmailNotificationPage page = (EmailNotificationPage) JspLoader.createPage(AnnouncementsController.class, templateName);
 
         page.settings = settings;
         page.threadURL = getThreadURL(c, parent.getEntityId(), a.getRowId()).getURIString();
