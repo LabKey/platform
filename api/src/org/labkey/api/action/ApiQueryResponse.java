@@ -16,12 +16,12 @@
 package org.labkey.api.action;
 
 import org.json.JSONObject;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.exp.PropertyColumn;
 
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -318,7 +318,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected Object getColumnValue(DisplayColumn dc)
     {
-        Object value = dc.getValue(_ctx);
+        Object value = dc.getJsonValue(_ctx);
         return value instanceof Date ? _dateFormat.format(value) : value;
     }
 

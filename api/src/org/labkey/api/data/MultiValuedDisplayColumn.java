@@ -20,6 +20,8 @@ import org.labkey.api.query.FieldKey;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -36,7 +38,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
     public MultiValuedDisplayColumn(DisplayColumn dc)
     {
         super(dc);
-        _column.addQueryFieldKeys(_fieldKeys);
+        addQueryFieldKeys(_fieldKeys);
         assert _fieldKeys.contains(getColumnInfo().getFieldKey());
     }
 
@@ -54,5 +56,19 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator
         }
 
         // TODO: Call super in empty values case?
+    }
+
+    public Object getJsonValue(RenderContext ctx)
+    {
+        List<Object> values = new LinkedList<Object>();
+
+        MultiValuedRenderContext mvCtx = new MultiValuedRenderContext(ctx, _fieldKeys);
+        while (mvCtx.next())
+        {
+            Object v = super.getJsonValue(mvCtx);
+            values.add(v);            
+        }
+
+        return values;
     }
 }

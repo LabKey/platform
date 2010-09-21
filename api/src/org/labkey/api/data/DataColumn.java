@@ -184,6 +184,11 @@ public class DataColumn extends DisplayColumn
         return result;
     }
 
+    public Object getJsonValue(RenderContext ctx)
+    {
+        return getValue(ctx);
+    }
+
     public Class getValueClass()
     {
         return _boundColumn.getJavaClass();

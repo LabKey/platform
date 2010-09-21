@@ -172,6 +172,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public Object getJsonValue(RenderContext ctx)
+    {
+        return _column.getJsonValue(ctx);
+    }
+
+    @Override
     public String getName()
     {
         return _column.getName();

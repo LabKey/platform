@@ -157,6 +157,11 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract Class getValueClass();
 
+    public Object getJsonValue(RenderContext ctx)
+    {
+        return getValue(ctx);
+    }
+
     public String getName()
     {
         if (null != getColumnInfo())

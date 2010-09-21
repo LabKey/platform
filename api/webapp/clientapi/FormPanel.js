@@ -842,103 +842,104 @@ LABKEY.ext.DateField = Ext.extend(Ext.form.DateField,
 });
 
 
-LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox,
-{                                
-    constructor : function(c)
-    {
-        LABKEY.ext.ComboBox.superclass.constructor.call(this, c);
+LABKEY.ext.ComboPlugin = function () {
+    var combo = null;
 
-        if (this.store)
-        {
-            this.store.on({
-                load: this.resizeList,
-                //datachanged: this.resizeList,
-                add: this.resizeList,
-                remove: this.resizeList,
-                update: this.resizeList,
-                buffer: 100,
-                scope: this
-            });
-        }
-
-        //if (this.store && this.value && this.displayField && this.valueField && this.displayField != this.valueField)
-        if (this.store && this.value && (this.displayField || this.valueField))
-        {
-            this.initialValue = this.value;
-            if (this.store.getCount())
+    return {
+        init : function (combo) {
+            this.combo = combo;
+            if (this.combo.store)
             {
-                this.initialLoad();
-                this.resizeList();
+                this.combo.store.on({
+                    load: this.resizeList,
+                    // fired when the store is filtered or sorted
+                    //datachanged: this.resizeList,
+                    add: this.resizeList,
+                    remove: this.resizeList,
+                    update: this.resizeList,
+                    buffer: 100,
+                    scope: this
+                });
             }
-            else
+
+            if (this.combo.store && this.combo.value && (this.combo.displayField || this.combo.valueField))
             {
-                this.store.on('load', this.initialLoad, this, {single: true});
-                if (!this.store.proxy.activeRequest[Ext.data.Api.actions.read])
-                    this.store.load();
+                this.combo.initialValue = this.combo.value;
+                if (this.combo.store.getCount())
+                {
+                    this.initialLoad();
+                    this.resizeList();
+                }
+                else
+                {
+                    this.combo.store.on('load', this.initialLoad, this, {single: true});
+                }
             }
-        }
-    },
+        },
 
-    initialLoad : function()
-    {
-        if (this.value === this.initialValue)
+        initialLoad : function()
         {
-            var v = this.value;
-            this.setValue(v);
-        }
-    },
+            if (this.combo.initialValue)
+            {
+                this.combo.setValue(this.combo.initialValue);
+            }
+        },
 
-    initList : function ()
-    {
-        return LABKEY.ext.ComboBox.superclass.initList.call(this);
-    },
-
-    resizeList : function ()
-    {
-        // bail early if ComboBox was set to an explicit width
-        if (Ext.isDefined(this.listWidth))
-            return;
-
-        // CONSIDER: set maxListWidth or listWidth instead of calling .doResize(w) below?
-        var w = this.measureList();
-
-        // NOTE: same as Ext.form.ComboBox.onResize except doesn't call super.
-        if(!isNaN(w) && this.isVisible() && this.list){
-            this.doResize(w);
-        }else{
-            this.bufferSize = w;
-        }
-    },
-
-    measureList : function ()
-    {
-        if (!this.tm)
+        resizeList : function ()
         {
-            // XXX: should we share a TextMetrics instance across ComboBoxen using a hidden span?
-            //var span = Ext.DomHelper.append(document.body, {tag:'span', id:'_hiddenSpan', style:{display:'none'}});
-            this.tm = Ext.util.TextMetrics.createInstance(this.el);
+            // bail early if ComboBox was set to an explicit width
+            if (Ext.isDefined(this.combo.listWidth))
+                return;
+
+            // CONSIDER: set maxListWidth or listWidth instead of calling .doResize(w) below?
+            var w = this.measureList();
+
+            // NOTE: same as Ext.form.ComboBox.onResize except doesn't call super.
+            if(!isNaN(w) && this.combo.isVisible() && this.combo.list){
+                this.combo.doResize(w);
+            }else{
+                this.combo.bufferSize = w;
+            }
+        },
+
+        measureList : function ()
+        {
+            if (!this.tm)
+            {
+                // XXX: should we share a TextMetrics instance across ComboBoxen using a hidden span?
+                var el = this.combo.el ? this.combo.el : Ext.DomHelper.append(document.body, {tag:'span', style:{display:'none'}});
+                this.tm = Ext.util.TextMetrics.createInstance(el);
+            }
+
+            var w = this.combo.el ? this.combo.el.getWidth(true) : 0;
+            this.combo.store.each(function (r) {
+                var html;
+                if (this.combo.tpl)
+                    html = this.combo.tpl.apply(r.data);
+                else
+                    html = r.get(this.combo.displayField);
+                w = Math.max(w, Math.ceil(this.tm.getWidth(html)));
+            }, this);
+
+            if (this.combo.list)
+                w += this.combo.list.getFrameWidth('lr');
+
+            // for vertical scrollbar
+            w += 20;
+
+            return w;
         }
+    }
+};
+Ext.preg('labkey-combo', LABKEY.ext.ComboPlugin);
 
-        var w = this.el.getWidth(true);
-        this.store.each(function (r) {
-            var html;
-            if (this.tpl)
-                html = this.tpl.apply(r.data);
-            else
-                html = r.get(this.displayField);
-            w = Math.max(w, Math.ceil(this.tm.getWidth(html)));
-        }, this);
-
-        if (this.list)
-            w += this.list.getFrameWidth('lr');
-
-        // for vertical scrollbar
-        w += 20;
-
-        return w;
+LABKEY.ext.ComboBox = Ext.extend(Ext.form.ComboBox, {
+    constructor: function (config) {
+        config.plugins = config.plugins || [];
+        config.plugins.push(LABKEY.ext.ComboPlugin);
+        LABKEY.ext.ComboBox.superclass.constructor.call(this, config);
     }
 });
-
 
 
 //Ext.reg('datepicker', LABKEY.ext.DatePicker);
