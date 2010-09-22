@@ -100,7 +100,8 @@ LABKEY.Visualization = new function() {
         getData : function(config) {
 
             var params = {
-                measures : config.measures
+                measures : config.measures,
+                viewInfo : config.viewInfo
             };
 
             Ext.Ajax.request(
