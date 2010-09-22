@@ -914,7 +914,7 @@ LABKEY.ext.ComboPlugin = function () {
             var w = this.combo.el ? this.combo.el.getWidth(true) : 0;
             this.combo.store.each(function (r) {
                 var html;
-                if (this.combo.tpl)
+                if (this.combo.tpl && this.combo.rendered)
                     html = this.combo.tpl.apply(r.data);
                 else
                     html = r.get(this.combo.displayField);
