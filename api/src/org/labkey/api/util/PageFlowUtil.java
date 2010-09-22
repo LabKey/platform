@@ -48,6 +48,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebTheme;
+import org.labkey.api.view.WebThemeManager;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -1219,6 +1221,41 @@ public class PageFlowUtil
                 ">" + text + "</a>]";
     }
 
+    public static String styledTextLink(String text, HString href, String onClickScript, String id)
+    {
+        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
+            return textLink(text, href, onClickScript, id);
+        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                "><span>" + text + "</span></a>";
+    }
+
+    public static String styledTextLink(String text, String href, String onClickScript, String id)
+    {
+        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
+            return textLink(text, href, onClickScript, id);
+        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                "><span>" + text + "</span></a>";
+    }
+
+    public static String styledTextLink(String text, ActionURL url, String onClickScript, String id)
+    {
+        return styledTextLink(text, url.getLocalURIString(), onClickScript, id);
+    }
+
+    public static String styledTextLink(String text, String href, String id)
+    {
+        return styledTextLink(text, href, null, id);
+    }
+
+    public static String styledTextLink(String text, String href)
+    {
+        return styledTextLink(text, href, null, null);
+    }
+
     public static String textLink(String text, ActionURL url)
     {
         return textLink(text, url.getLocalURIString(), null, null);
@@ -1546,6 +1583,7 @@ public class PageFlowUtil
         boolean oldIE = null != userAgent && (-1 != userAgent.indexOf("MSIE 6") || -1 != userAgent.indexOf("MSIE 7"));
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         boolean combinedCSS = false;
+        WebTheme theme = WebThemeManager.getTheme(c);
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
@@ -1562,7 +1600,7 @@ public class PageFlowUtil
         {
             F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot + "/resources/css/ext-all.css");
 
-            F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheet.css", ContainerManager.getRoot())));
+            F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
             if (oldIE)
                 F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheetIE7.css", ContainerManager.getRoot())));
             F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
@@ -1593,7 +1631,7 @@ public class PageFlowUtil
 
         // mark these stylesheets as included (in case someone else tries)
         sb.append("<script type=\"text/javascript\" language=\"javascript\">\n");
-        sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','stylesheet.css','printStyle.css');\n");
+        sb.append("LABKEY.loadedScripts('" + extJsRoot + "/resources/css/ext-all.css','" + theme.getStyleSheet() + "','printStyle.css');\n");
         if (useLESS)
             sb.append("LABKEY.requiresScript('less-1.0.35.js',true);\n");
         sb.append("</script>\n");

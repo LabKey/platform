@@ -49,9 +49,13 @@
     if ("search".equalsIgnoreCase(currentURL.getPageFlow()) && "search".equalsIgnoreCase(currentURL.getAction()))
         showSearchForm = false;
 %>
-<div id="headerDiv" style="position:absolute; top:0; right:0; width:475px;"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 bordercolor=red width="auto">
+<div id="headerDiv"><table id="headerNav" cellpadding="0" cellspacing="0" border=0 bordercolor=red width="auto">
   <tr>
-    <td valign="top" align="right" class="labkey-main-nav">
+      <td valign="top" align="right" class="labkey-main-nav">
+          <% if (null != user && !user.isGuest())
+          { %>
+          <span id="header.user.friendlyName"><%=user.getFriendlyName()%></span>&nbsp;&nbsp;
+          <% } %>
       <%
           if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
           {
@@ -68,7 +72,7 @@
       <%
       if (null != user && !user.isGuest())
       {
-          %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><span id="header.user.friendlyName"><%=user.getFriendlyName()%></span><%
+          %> | <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><br/><%
       }
       else if (bean.pageConfig.shouldIncludeLoginLink())
       {

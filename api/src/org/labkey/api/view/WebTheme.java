@@ -31,6 +31,30 @@ public class WebTheme
     private final Color _titleBarBackgroundColor;
     private final Color _titleBarBorderColor;
     private final Color _titleColor;
+    private final boolean _custom;
+    private final String _stylesheet;
+    
+    WebTheme(String friendlyName, String StylesheetName)
+    {
+        if (null == friendlyName)
+            throw new IllegalArgumentException("You must specify a name for this theme");
+        else if (null == StylesheetName)
+            throw new IllegalArgumentException("You must specify a stylesheet for the Web Theme ->" + friendlyName);
+        _friendlyName = friendlyName;
+
+        // This is a custom theme, defined by the stylesheet given as a parameter -- only set during init
+        _custom = true;
+        _stylesheet = StylesheetName;
+        
+        // This theme does not use any WebTheme color definitions;
+        _navBarColor = null;
+        _headerLineColor = null;
+        _editFormColor = null;
+        _fullScreenBorderColor = null;
+        _titleBarBackgroundColor = null;
+        _titleBarBorderColor = null;
+        _titleColor = null;
+    }
 
     WebTheme(String friendlyName, String navBarColor, String headerLineColor, String editFormColor, String fullScreenBorderColor, String titleBarBackgroundColor, String titleBarBorderColor)
     {
@@ -52,7 +76,9 @@ public class WebTheme
         _titleBarBorderColor = parseColor(titleBarBorderColor);
         // UNDONE: save restore this color
         _titleColor = new Color(0x003399);
-
+        
+        _custom = false;
+        _stylesheet = "stylesheet.css";
     }
 
     private Color parseColor(String s)
@@ -71,6 +97,16 @@ public class WebTheme
         return new Color(r, g, b);
     }
 
+    public boolean isCustom()
+    {
+        return _custom;
+    }
+
+    public String getStyleSheet()
+    {
+        return _stylesheet;
+    }
+    
     public String getNavBarColor()
     {
         return _navBarColor;
@@ -105,27 +141,7 @@ public class WebTheme
     {
         String rgb = Integer.toHexString(0x00ffffff & c.getRGB());
         return rgb.length() == 6 ? rgb : "000000".substring(rgb.length()) + rgb;
-/*        StringBuffer buffer = new StringBuffer(6);
-
-        String red = Integer.toHexString(c.getRed());
-        String green = Integer.toHexString(c.getGreen());
-        String blue = Integer.toHexString(c.getBlue());
-
-        if (red.length() == 1)
-            buffer.append("0");
-        buffer.append(red.toUpperCase());
-
-        if (green.length() == 1)
-            buffer.append("0");
-        buffer.append(green.toUpperCase());
-
-        if (blue.length() == 1)
-            buffer.append("0");
-        buffer.append(blue.toUpperCase());
-
-        return buffer.toString (); */
     }
-
 
     public String getTitleBarBackgroundString()
     {
