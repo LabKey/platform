@@ -104,7 +104,9 @@ public class CoreController extends SpringActionController
 
         public ActionURL getThemeStylesheetURL()
         {
-            return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
+            if (!WebThemeManager.getTheme(ContainerManager.getRoot()).isCustom())
+                return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
+            return null;
         }
 
         public ActionURL getThemeStylesheetURL(Container c)
@@ -112,10 +114,9 @@ public class CoreController extends SpringActionController
             Container project = c.getProject();
             LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
 
-            if (laf.hasProperties())
+            if (laf.hasProperties() && !WebThemeManager.getTheme(c).isCustom())
                 return getRevisionURL(ThemeStylesheetAction.class, project);
-            else
-                return null;
+            return null;
         }
 
         public ActionURL getCustomStylesheetURL()
@@ -138,8 +139,7 @@ public class CoreController extends SpringActionController
 
             if (css instanceof NoContent)
                 return null;
-            else
-                return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
+            return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
         }
 
         public ActionURL getCombinedStylesheetURL(Container c)
@@ -249,18 +249,24 @@ public class CoreController extends SpringActionController
             Container c = getContainer();
             Content content = _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
+            WebTheme theme = WebThemeManager.getTheme(c);
 
-            if (null == content || !dependsOn.equals(content.dependencies))
+            if (theme != null && !theme.isCustom())
             {
-                JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
-                view.setFrame(WebPartView.FrameType.NONE);
-                Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
-                content  = new Content(compileCSS(contentRaw.content));
-                content.dependencies = dependsOn;
-                content.compressed = compressCSS(content.content);
-                _themeStylesheetCache.put(c, content);
+                if (null == content || !dependsOn.equals(content.dependencies))
+                {
+                    JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
+                    view.setFrame(WebPartView.FrameType.NONE);
+                    Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
+                    content  = new Content(compileCSS(contentRaw.content));
+                    content.dependencies = dependsOn;
+                    content.compressed = compressCSS(content.content);
+                    _themeStylesheetCache.put(c, content);
+                }
+                if (!c.isRoot())
+                    return content;
             }
-            return content;
+            return new NoContent(dependsOn);
         }
     }
 
@@ -329,11 +335,12 @@ public class CoreController extends SpringActionController
                 {
                     // get the root resolver
                     WebdavResolver r = ModuleStaticResolverImpl.get(); //ServiceRegistry.get(WebdavResolver.class);
+                    WebTheme webTheme = WebThemeManager.getTheme(c);
 
-                    WebdavResource stylesheet = r.lookup(new Path("stylesheet.css"));
+                    WebdavResource stylesheet = r.lookup(new Path(webTheme.getStyleSheet()));
 
                     Content root = getCustomStylesheetContent(ContainerManager.getRoot());
-                    Content theme = c.isRoot() ? null : (new ThemeStylesheetAction().getContent(request,response));
+                    Content theme = c.isRoot() || webTheme.isCustom() ? null : (new ThemeStylesheetAction().getContent(request,response));
                     Content custom = c.isRoot() ? null : getCustomStylesheetContent(c);
                     WebdavResource extAll = r.lookup(Path.parse("/" + PageFlowUtil.extJsRoot() + "/resources/css/ext-all.css"));
                     WebdavResource extPatches = r.lookup(Path.parse("/" + PageFlowUtil.extJsRoot() + "/resources/css/ext-patches.css"));

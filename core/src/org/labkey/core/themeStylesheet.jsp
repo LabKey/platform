@@ -29,26 +29,29 @@
 
    
     Container c = getViewContext().getContainer();
-    response.setContentType("text/css");
     WebTheme theme = WebThemeManager.getTheme(c);
-    ThemeFont themeFont = ThemeFont.getThemeFont(c);
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    String navBarWidth = laf.getNavigationBarWidth();
 
-    String formLabel           = theme.getEditFormColor();
-    String fullScreenBorder    = theme.getFullScreenBorderColor();
-    String wpHeaderPanel       = theme.getTitleBarBackgroundString();
-    String wpHeaderPanelBorder = theme.getTitleBarBorderString();
-    String navBorder           = theme.getHeaderLineColor();
-    String navBackground       = theme.getNavBarColor();
-    String linkAndHeaderText   = theme.getTitleColorString();
-
-    boolean testBorders = false;
-    if (testBorders)
+    if (!theme.isCustom()) // This jsp should not be used if the WebTheme is Custom. Shouldn't even get here.
     {
-        wpHeaderPanelBorder = "ff0000";
-        navBorder           = "00ff00";
-    }
+        response.setContentType("text/css");
+        ThemeFont themeFont = ThemeFont.getThemeFont(c);
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+        String navBarWidth = laf.getNavigationBarWidth();
+
+        String formLabel           = theme.getEditFormColor();
+        String fullScreenBorder    = theme.getFullScreenBorderColor();
+        String wpHeaderPanel       = theme.getTitleBarBackgroundString();
+        String wpHeaderPanelBorder = theme.getTitleBarBorderString();
+        String navBorder           = theme.getHeaderLineColor();
+        String navBackground       = theme.getNavBarColor();
+        String linkAndHeaderText   = theme.getTitleColorString();
+
+        boolean testBorders = false;
+        if (testBorders)
+        {
+            wpHeaderPanelBorder = "ff0000";
+            navBorder           = "00ff00";
+        }
 
     /*
 
@@ -609,3 +612,4 @@ ul.x-tab-strip-top li { border-color:<%=tabBorderColor%>; }
     border-color:#<%=tabBorderColor%>;
     background-color:#<%=tabSelectedColor%>
 }
+<% } %>
