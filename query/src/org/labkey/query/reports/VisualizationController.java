@@ -201,7 +201,7 @@ public class VisualizationController extends SpringActionController
 
                     for (ColumnInfo col : tableEntry.getValue().getColumns())
                     {
-                        if ((form.isDateMeasures() && col.isDateTimeType()) || col.isMeasure())
+                        if ((form.isDateMeasures() && col.isDateTimeType()) || (!form.isDateMeasures() && col.isMeasure()))
                         {
                             // add measure properties
                             Map<String, Object> props = getColumnProps(col);
@@ -212,7 +212,7 @@ public class VisualizationController extends SpringActionController
                             props.put("id", count++);
 
                             measures.add(props);
-                        }
+                        }                                                  
                     }
                 }
             }
