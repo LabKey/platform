@@ -414,7 +414,7 @@ public class Table
 
 
     // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
-    public static void batchExecute(DbSchema schema, String sql, Collection<? extends Collection<?>> paramList)
+    public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList)
             throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
@@ -739,7 +739,7 @@ public class Table
     }
 
 
-    protected static Map<String, Object> _getTableData(TableInfo table, Map<String,Object> fields, boolean insert)
+    protected static Map<String, Object> _getTableData(TableInfo table, Map<String, Object> fields, boolean insert)
     {
         if (!(fields instanceof CaseInsensitiveHashMap))
             fields = new CaseInsensitiveHashMap<Object>(fields);

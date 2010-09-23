@@ -19,6 +19,7 @@ package org.labkey.api.jsp;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HString;
@@ -461,5 +462,32 @@ abstract public class JspBase extends JspContext implements HasViewContext
         }
         message.append("</div>");
         return message.toString();
+    }
+
+    protected enum Method
+    {
+        Get("view"), Post("post");
+
+        private final String _suffix;
+
+        Method(String suffix)
+        {
+            _suffix = suffix;
+        }
+
+        public String getSuffix()
+        {
+            return _suffix;
+        }
+
+        public String getMethod()
+        {
+            return name().toLowerCase();
+        }
+    }
+
+    protected String formAction(Class<? extends Controller> actionClass, Method method)
+    {
+        return "action=\"" + SpringActionController.getActionName(actionClass) + "." + method.getSuffix() + "\" method=\"" + method.getMethod() + "\"";
     }
 }

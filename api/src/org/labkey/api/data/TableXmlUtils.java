@@ -128,7 +128,7 @@ public class TableXmlUtils
             {
                 xmlTableName = xmlTables[i].getTableName();
                 if (mXmlTableOrdinals.containsKey(xmlTableName.toLowerCase()))
-                    sbOut.append("ERROR: TableName ").append(xmlTableName).append(" duplicated in Xml.<br>");
+                    sbOut.append("ERROR: TableName \"").append(xmlTableName).append("\" duplicated in XML.<br>");
                 else
                     mXmlTableOrdinals.put(xmlTableName.toLowerCase(), new Integer(i));
             }
@@ -463,7 +463,7 @@ public class TableXmlUtils
                 for (String dbCol : mDbColOrdinals.keySet())
                 {
                     idc = mDbColOrdinals.get(dbCol).intValue();
-                    sbOut.append("ERROR: Table ").append(tt.getTableName()).append(" Column ").append(dbCol).append(" missing from Xml.<br>");
+                    sbOut.append("ERROR: Table \"").append(tt.getTableName()).append("\", Column \"").append(dbCol).append("\" missing from XML.<br>");
 
                     if (merge)
                     {
@@ -481,7 +481,7 @@ public class TableXmlUtils
                     continue;
                 idt = mDbTableOrdinals.get(dbTab).intValue();
                 TableType tt = dbTables[idt];
-                sbOut.append("ERROR: Table ").append(dbTab).append(" missing from Xml.<br>");
+                sbOut.append("ERROR: Table \"").append(dbTab).append("\" missing from XML.<br>");
                 if (merge)
                 {
                     //copy db node to end of table array
@@ -535,12 +535,12 @@ public class TableXmlUtils
 
         if (!bMatch)
         {
-            sbOut.append("property ").append(propName).append(" value ").append(refProp).append(" doesn't match xml: ").append(targetProp).append(" ; Xml value used<br>");
+            sbOut.append("property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append(" ; XML value used<br>");
             // mismatch who wins?  assume xmlDoc wins
             return true;
         }
         else if (!reqd)
-            sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in xml:<br>");
+            sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in XML:<br>");
 
         return false;
     }
@@ -556,10 +556,10 @@ public class TableXmlUtils
 
         if (refProp.equals(targetProp))
         {
-            sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in  xml:<br>");
+            sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in  XML:<br>");
             return false;
         }
-        sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match xml: ").append(targetProp).append(" ; Xml value used<br>");
+        sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append(" ; XML value used<br>");
         return true;
     }
 
@@ -574,10 +574,10 @@ public class TableXmlUtils
 
         if (refProp.equals(targetProp))
         {
-            sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in xml.<br>");
+            sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" unnecessary in XML.<br>");
             return false;
         }
-        sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match xml: ").append(targetProp).append("  ; Xml value used<br>");
+        sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match XML: ").append(targetProp).append("  ; XML value used<br>");
         return true;
     }
 }
