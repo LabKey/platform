@@ -3,7 +3,7 @@ Library|Version|Source|License|LabKey Dev|Purpose
 Crystal Project icons||{link:everaldo.com|http://www.everaldo.com/crystal/}|{link:LGPL|http://www.everaldo.com/crystal/?action=license}|matthewb|document, action, and other icons
 Ext JS|3.2|{link:Ext JS|http://extjs.com/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://extjs.com/products/floss-exception.php}|daves|Ajax Support, Various UI widgets
 js_color_picker|v2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html?whichScript=js_color_picker_v2}|{link:LGPL|http://www.dhtmlgoodies.com/index.html?page=termsOfUse}|jeckels|Color picker for web themes
-LovCombo|??|??|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|kevink|Multi-select ("List Of Values") combo box widget for Ext JS
+LovCombo|1.3|{link:Ext.ux.form.LovCombo|http://lovcombo.extjs.eu/}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|kevink|Multi-select ("List Of Values") combo box widget for Ext JS
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|daves|Basis for the range slider used for m/z range filter
 TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|daves|HTML WYSIWYG editor
 YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
