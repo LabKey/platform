@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %><%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
@@ -37,6 +38,7 @@
     base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = me.getViewContext().getContainer();
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
     if (bean.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", bean.getFrameOption().name());
@@ -95,7 +97,7 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
                 <!-- /HEADER -->
             </td>
         </tr><%
-    if (null != me.getView("topmenu"))
+    if (null != me.getView("topmenu") && laf.isShowMenuBar())
     {%>
         <tr id="topmenu" class="labkey-header-panel">
             <td colspan=3>

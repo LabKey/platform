@@ -100,11 +100,18 @@ public class WebThemeManager
             // just continue
         }
 
-        if (_webThemeMap.isEmpty())
+        if (!_webThemeMap.containsKey(BLUE.getFriendlyName()))
         {
-            // add the defaults if nothing was loaded
             addToMap(BLUE);
+        }
+
+        if (!_webThemeMap.containsKey(BROWN.getFriendlyName()))
+        {
             addToMap(BROWN);
+        }
+
+        if (!_webThemeMap.containsKey(TEN_THREE.getFriendlyName()))
+        {
             addToMap(TEN_THREE);
         }
     }
