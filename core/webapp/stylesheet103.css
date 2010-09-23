@@ -342,7 +342,7 @@ a.labkey-menu-button span, a.labkey-disabled-menu-button span
 
 a.labkey-menu-button span
 {
-    color: black;
+    color: #126495;
 }
 
 span.labkey-button:active
@@ -1015,22 +1015,23 @@ table.labkey-main
 #headerpanel
 {
     height: 56px;
+    background-color: #FFFFFF;
 }
 
 /* The top panel with the title and logo */
 .labkey-header-panel table
 {
     width: 100%;
-    border-spacing: 0; *border-collapse: collapse;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
-tr.labkey-header-panel {
+/*tr.labkey-header-panel {
     background-color: #fff;
-}
+}*/
 
 .labkey-header-panel td, .labkey-header-panel th
 {
-    padding: 0;
+    padding: 0px;
 }
 
 /* The side panel with the navigation and admin expandable menus */
@@ -3071,6 +3072,7 @@ tr.labkey-header-panel {
     background-color: #fff;
 }*/
 
+/* Quick options (admin, help, my account, signout) table */
 #headerDiv {
     position: absolute;
     top: 0; right: 0; 
@@ -3288,9 +3290,9 @@ th.labkey-wp-title-left a:hover {
     font-weight: bold;
 }
 
-a.labkey-menu-button span {
+/*a.labkey-menu-button span {
     color: #126495;
-}
+}*/
 
 a.labkey-menu-button:hover span {
     color: #000;
