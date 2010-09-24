@@ -8,13 +8,17 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -193,26 +197,23 @@ public class VisualizationController extends SpringActionController
             List<Map<String, Object>> measures = new ArrayList<Map<String, Object>>();
             int count = 1;
 
-            for (Map.Entry<String, Map<String, TableInfo>> schemaEntry : getTables(form).entrySet())
+            for (Map.Entry<String, Map<String, QueryView>> schemaEntry : getViews(form).entrySet())
             {
-                for (Map.Entry<String, TableInfo> tableEntry : schemaEntry.getValue().entrySet())
+                for (Map.Entry<String, QueryView> tableEntry : schemaEntry.getValue().entrySet())
                 {
                     QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), schemaEntry.getKey(), tableEntry.getKey());
 
-                    for (ColumnInfo col : tableEntry.getValue().getColumns())
+                    for (ColumnInfo col : getMeasureColumns(tableEntry.getValue(), def, form))
                     {
-                        if ((form.isDateMeasures() && col.isDateTimeType()) || (!form.isDateMeasures() && col.isMeasure()))
-                        {
-                            // add measure properties
-                            Map<String, Object> props = getColumnProps(col);
+                        // add measure properties
+                        Map<String, Object> props = getColumnProps(col);
 
-                            props.put("schemaName", schemaEntry.getKey());
-                            props.put("queryName", tableEntry.getKey());
-                            props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
-                            props.put("id", count++);
+                        props.put("schemaName", schemaEntry.getKey());
+                        props.put("queryName", tableEntry.getKey());
+                        props.put("isUserDefined", (def != null && !def.isTableQueryDefinition()));
+                        props.put("id", count++);
 
-                            measures.add(props);
-                        }                                                  
+                        measures.add(props);
                     }
                 }
             }
@@ -220,6 +221,60 @@ public class VisualizationController extends SpringActionController
             resp.put("measures", measures);
 
             return resp;
+        }
+
+        protected List<ColumnInfo> getMeasureColumns(QueryView view, QueryDefinition def, Form form)
+        {
+            List<ColumnInfo> columns = new ArrayList<ColumnInfo>();
+
+            for (DisplayColumn dc : view.getDisplayColumns())
+            {
+                ColumnInfo col = dc.getColumnInfo();
+
+                if (col != null)
+                {
+                    // ignore hidden columns
+                    if (col.isHidden()) continue;
+
+                    if (form.isDateMeasures())
+                    {
+                        if (col.isDateTimeType())
+                            columns.add(col);
+                    }
+                    else
+                    {
+                        if (col.isMeasure())
+                            columns.add(col);
+                    }
+                }
+            }
+
+            TableInfo tinfo = view.getTable();
+            if (form.isDateMeasures() && "study".equalsIgnoreCase(tinfo.getSchema().getName()))
+            {
+                // for visit based studies, we will look for the participantVisit.VisitDate column and
+                // if found, return that as a date measure
+                Study study = StudyService.get().getStudy(getContainer());
+                if (study != null && study.getTimepointType().isVisitBased())
+                {
+                    String visitColName = StudyService.get().getSubjectVisitColumnName(getContainer());
+                    ColumnInfo visitCol = tinfo.getColumn(visitColName);
+                    if (visitCol != null)
+                    {
+                        TableInfo visitTable = visitCol.getFkTableInfo();
+                        if (visitTable != null)
+                        {
+                            ColumnInfo visitDate = visitTable.getColumn("visitDate");
+                            if (visitDate != null)
+                            {
+                                visitDate.setFieldKey(FieldKey.fromParts(visitColName, visitDate.getName()));
+                                columns.add(visitDate);
+                            }
+                        }
+                    }
+                }
+            }
+            return columns;
         }
 
         protected Map<String, Map<String, TableInfo>> getTables(MeasuresForm form)
@@ -263,6 +318,47 @@ public class VisualizationController extends SpringActionController
             return tables;
         }
 
+        protected Map<String, Map<String, QueryView>> getViews(MeasuresForm form)
+        {
+            Map<String, Map<String, QueryView>> tables = new HashMap<String, Map<String, QueryView>>();
+            DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
+
+            if (form.getFilters() != null && form.getFilters().length > 0)
+            {
+                for (String filter : form.getFilters())
+                {
+                    MeasureFilter mf = new MeasureFilter(filter);
+                    QuerySchema schema = defSchema.getSchema(mf.getSchema());
+                    if (schema instanceof UserSchema)
+                    {
+                        UserSchema uschema = (UserSchema)schema;
+
+                        if (mf.getQuery() == null)
+                        {
+                            // add all tables from this schema
+                            getViewsFromSchema(uschema, mf.getQueryType(), tables);
+                        }
+                        else
+                            // add a specific table
+                            addView(uschema, mf.getQuery(), tables);
+                    }
+                }
+            }
+            else
+            {
+                // get all tables in this container
+                for (String schemaName : defSchema.getUserSchemaNames())
+                {
+                    QuerySchema schema = defSchema.getSchema(schemaName);
+                    if (schema instanceof UserSchema)
+                    {
+                        getViewsFromSchema((UserSchema)schema, MeasureFilter.QueryType.all, tables);
+                    }
+                }
+            }
+            return tables;
+        }
+
         private void getTablesFromSchema(UserSchema schema, MeasureFilter.QueryType type, Map<String, Map<String, TableInfo>> schemas)
         {
             if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.custom)
@@ -288,6 +384,31 @@ public class VisualizationController extends SpringActionController
             }
         }
 
+        private void getViewsFromSchema(UserSchema schema, MeasureFilter.QueryType type, Map<String, Map<String, QueryView>> schemas)
+        {
+            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.custom)
+            {
+                Map<String,QueryDefinition> queryDefMap = QueryService.get().getQueryDefs(getUser(), getContainer(), schema.getSchemaName());
+                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
+                {
+                    QueryDefinition qdef = entry.getValue();
+                    if (!qdef.isHidden())
+                    {
+                        addView(schema, qdef.getName(), schemas);
+                    }
+                }
+            }
+
+            // built in tables
+            if (type == MeasureFilter.QueryType.all || type == MeasureFilter.QueryType.builtIn)
+            {
+                for (String name : schema.getTableNames())
+                {
+                    addView(schema, name, schemas);
+                }
+            }
+        }
+
         private void addTable(UserSchema schema, String tableName, Map<String, Map<String, TableInfo>> schemas)
         {
             TableInfo tinfo = schema.getTable(tableName);
@@ -299,6 +420,22 @@ public class VisualizationController extends SpringActionController
                 Map<String, TableInfo> tables = schemas.get(schema.getSchemaName());
                 if (!tables.containsKey(tableName))
                     tables.put(tableName, tinfo);
+            }
+        }
+
+        private void addView(UserSchema schema, String tableName, Map<String, Map<String, QueryView>> schemas)
+        {
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, tableName);
+            QueryView view = new QueryView(schema, settings, null);
+
+            if (view != null)
+            {
+                if (!schemas.containsKey(schema.getSchemaName()))
+                    schemas.put(schema.getSchemaName(), new HashMap<String, QueryView>());
+
+                Map<String, QueryView> tables = schemas.get(schema.getSchemaName());
+                if (!tables.containsKey(tableName))
+                    tables.put(tableName, view);
             }
         }
 
@@ -588,12 +725,18 @@ public class VisualizationController extends SpringActionController
                 {
                     if (ds.isDemographicData())
                     {
-                        TableInfo table = ds.getTableInfo(getUser());
-                        if (table != null)
+                        DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
+                        UserSchema schema = (UserSchema)defSchema.getSchema("study");
+                        QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ds.getName());
+                        QueryView view = new QueryView(schema, settings, null);
+
+                        if (view != null)
                         {
-                            for (ColumnInfo col : table.getColumns())
+                            for (DisplayColumn dc : view.getDisplayColumns())
                             {
-                                if (col.isDateTimeType())
+                                ColumnInfo col = dc.getColumnInfo();
+
+                                if (col != null && col.isDateTimeType())
                                 {
                                     Map<String, Object> props = getColumnProps(col);
 
