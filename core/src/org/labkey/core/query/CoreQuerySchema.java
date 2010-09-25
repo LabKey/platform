@@ -151,6 +151,8 @@ public class CoreQuerySchema extends UserSchema
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
         " The data in this table are available only to site administrators. All other users will see no rows.");
 
+        addGroupsColumn(users);
+        
         return users;
     }
 
@@ -286,6 +288,8 @@ public class CoreQuerySchema extends UserSchema
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);
+
+            addGroupsColumn(users);
         }
 
         users.setDescription("Contains all users who are members of the current project." +
@@ -294,6 +298,51 @@ public class CoreQuerySchema extends UserSchema
         " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
 
         return users;
+    }
+
+    private void addGroupsColumn(FilteredTable users)
+    {
+        ColumnInfo groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
+        groupsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("User")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getMembersTable();
+            }
+        }, "Group"));
+        groupsCol.setIsUnselectable(true);
+        users.addColumn(groupsCol);
+    }
+
+    protected TableInfo getMembersTable()
+    {
+        TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
+        FilteredTable result = new FilteredTable(membersBase);
+
+        ColumnInfo userColumn = result.wrapColumn("User", membersBase.getColumn("UserId"));
+        result.addColumn(userColumn);
+        userColumn.setFk(new LookupForeignKey("UserId")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getUser().isAdministrator() ? getSiteUsers() : getUsers();
+            }
+        });
+
+        ColumnInfo groupColumn = result.wrapColumn("Group", membersBase.getColumn("GroupId"));
+        result.addColumn(groupColumn);
+        groupColumn.setFk(new LookupForeignKey("UserId")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getGroups();
+            }
+        });
+
+        return result;
     }
 
     protected FilteredTable getUserTable()
