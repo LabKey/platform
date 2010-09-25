@@ -461,7 +461,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (navtree != null)
         {
             PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
-            popup.renderMenuScript(out);
+            popup.renderMenuScript(out, null);
         }
 
         out.write("</td>");
@@ -610,7 +610,7 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
-    public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException, SQLException
+    public final void renderGridDataCell(RenderContext ctx, Writer out) throws IOException, SQLException
     {
         out.write("<td");
         if (_displayClass != null)

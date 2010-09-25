@@ -459,7 +459,7 @@ public abstract class SqlDialect
 
     public abstract String getSubstringFunction(String s, String start, String length);
 
-    public abstract SQLFragment getGroupConcatAggregateFunction(SQLFragment sql);
+    public abstract SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted);
 
     public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException;
 

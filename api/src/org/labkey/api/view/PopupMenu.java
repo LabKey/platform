@@ -19,7 +19,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.RenderContext;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.StringWriter;
 import java.io.Writer;
 import java.io.IOException;
 
@@ -61,20 +60,6 @@ public class PopupMenu extends DisplayElement
         _navTree = navTree;
     }
 
-    String renderString()
-    {
-        try
-        {
-            StringWriter out = new StringWriter();
-            render(out);
-            return out.toString();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         render(out);
@@ -83,25 +68,25 @@ public class PopupMenu extends DisplayElement
     public void render(Writer out) throws IOException
     {
         renderMenuButton(out);
-        renderMenuScript(out);
+        renderMenuScript(out, null);
     }
 
     public void renderMenuButton(Writer out) throws IOException
     {
-        renderMenuButton(out, null);
+        renderMenuButton(out, null, false);
     }
 
-    public void renderMenuButton(Writer out, String requiresSelectionDataRegion) throws IOException
+    public void renderMenuButton(Writer out, String dataRegionName, boolean requiresSelection) throws IOException
     {
         if (null == _navTree.getKey())
             return;
 
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
-            assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
+            assert !requiresSelection : "Only button-style popups can require selection.";
             out.append("[");
             out.append("<a href='javascript:void(0)'");
-            out.append("onclick=\"showMenu(this, ").append(PageFlowUtil.jsString(getId())).append(",'").append(_align.getExtPosition()).append("');\">");
+            out.append("onclick=\"showMenu(this, ").append(PageFlowUtil.jsString(getId(dataRegionName))).append(",'").append(_align.getExtPosition()).append("');\">");
             out.append(PageFlowUtil.filter(_navTree.getKey())).append(" &gt;&gt;");
             out.append("</a>");
             out.append("]");
@@ -109,27 +94,27 @@ public class PopupMenu extends DisplayElement
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
             String attributes = null;
-            if (requiresSelectionDataRegion != null)
-                attributes = "labkey-requires-selection=\"" + PageFlowUtil.filter(requiresSelectionDataRegion) + "\"";
+            if (requiresSelection)
+                attributes = "labkey-requires-selection=\"" + PageFlowUtil.filter(dataRegionName) + "\"";
             out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
-                    (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
-                    "showMenu(this, " + PageFlowUtil.jsString(getId()) + ",'" + _align.getExtPosition() + "');", attributes));
+                    (requiresSelection ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
+                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", attributes));
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {
-            assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
+            assert !requiresSelection : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, " + PageFlowUtil.jsString(getId()) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
+                    "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT));
         }
     }
 
-    public void renderMenuScript(Writer out) throws IOException
+    public void renderMenuScript(Writer out, String dataRegionName) throws IOException
     {
         out.append("<script type=\"text/javascript\">\n");
         out.append("Ext.onReady(function() {\n");
-        out.append(renderUnregScript(getId()));
+        out.append(renderUnregScript(getId(dataRegionName)));
         out.append("        new Ext.menu.Menu(");
-        out.append(renderMenuModel(_navTree.getChildren(), getId()));
+        out.append(renderMenuModel(_navTree.getChildren(), getId(dataRegionName)));
         out.append("         );});\n</script>");
     }
 
@@ -223,9 +208,17 @@ public class PopupMenu extends DisplayElement
         _buttonStyle = buttonStyle;
     }
 
-    public String getId()
+    public String getId(String dataRegionName)
     {
-        return null != StringUtils.trimToNull(_navTree.getId()) ? _navTree.getId() : String.valueOf(System.identityHashCode(this));
+        if (null != StringUtils.trimToNull(_navTree.getId()))
+        {
+            return _navTree.getId();
+        }
+        if (dataRegionName != null)
+        {
+            return dataRegionName + ".Menu." + _navTree.getKey();
+        }
+        return String.valueOf(System.identityHashCode(this));
     }
 
     public enum Align
@@ -247,25 +240,9 @@ public class PopupMenu extends DisplayElement
 
     public enum ButtonStyle
     {
-        MENUBUTTON("shadedMenu"),
-        BOLDTEXT("boldMenu"),
-        TEXT("textMenu"),
-        TEXTBUTTON(null);
-
-        private String _styleText;
-        ButtonStyle(String buttonStyle)
-        {
-            _styleText = buttonStyle;
-        }
-
-        public String getStyleText()
-        {
-            return _styleText;
-        }
-
-        public void setStyleText(String buttonStyle)
-        {
-            _styleText = buttonStyle;
-        }
+        MENUBUTTON,
+        BOLDTEXT,
+        TEXT,
+        TEXTBUTTON
     }
 }

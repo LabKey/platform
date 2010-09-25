@@ -1028,6 +1028,33 @@ public class DataRegion extends DisplayElement
             out.write("</td></tr>");
         }
 
+        boolean firstScript = true;
+
+        for (ButtonBarConfig buttonBarConfig : _buttonBarConfigs)
+        {
+            if (buttonBarConfig.getOnRenderScript() != null)
+            {
+                if (firstScript)
+                {
+                    firstScript = false;
+                    out.write("<script type=\"text/javascript\">\n");
+                    out.write("Ext.onReady(\n");
+                    out.write("function () {\n");
+                    out.write("\tvar dr = LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "];\n");
+                }
+                // We need to give any included scripts time to load, so wait for our desired function to available
+                // before invoking it.
+                out.write("\t var tester = function() { return undefined != " + buttonBarConfig.getOnRenderScript() + "; };\n");
+                out.write("\t var onTrue = function() { " + buttonBarConfig.getOnRenderScript() + "(dr); };\n");
+                out.write("\t LABKEY.Utils.onTrue( { testCallback: tester, successCallback: onTrue });\n");
+            }
+        }
+
+        if (!firstScript)
+        {
+            out.write("});\n");
+            out.write("</script>\n");
+        }
     }
 
     protected boolean needToRenderFooter(boolean renderButtons)

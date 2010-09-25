@@ -50,12 +50,13 @@ public class MenuButton extends ActionButton
 
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        popupMenu.renderMenuButton(out, _requiresSelection ? ctx.getCurrentRegion().getName() : null);
+        String dataRegionName = ctx.getCurrentRegion() == null ? null : ctx.getCurrentRegion().getName();
+        popupMenu.renderMenuButton(out, dataRegionName, _requiresSelection);
 
         if (!BooleanUtils.toBoolean((String)ctx.get(getCaption() + "MenuRendered")))
         {
             ctx.put(getCaption() + "MenuRendered", "true");
-            popupMenu.renderMenuScript(out);
+            popupMenu.renderMenuScript(out, dataRegionName);
         }
 
     }

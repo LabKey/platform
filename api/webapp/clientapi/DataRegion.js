@@ -27,7 +27,7 @@ if (!LABKEY.DataRegions)
 }
 
 /**
- * The DataRegion constructor is private.
+ * The DataRegion constructor is private - to get a LABKEY.DataRegion object, use LABKEY.DataRegions[<em>&lt;dataregionname&gt;</em>].
  * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
  */
 LABKEY.DataRegion = function (config)
@@ -35,15 +35,21 @@ LABKEY.DataRegion = function (config)
     this.config = config || {};
 
     this.id = config.name; // XXX: may not be unique on the on page with webparts
+    /** Name of the DataRegion. Should be unique within a given page */
     this.name = config.name;
+    /** Schema name of the query to which this DataRegion is bound */
     this.schemaName = config.schemaName;
+    /** Name of the query to which this DataRegion is bound */
     this.queryName = config.queryName;
+    /** Name of the custom view to which this DataRegion is bound, may be blank */
     this.viewName = config.viewName || "";
     this.view = config.view;
     this.sortFilter = config.sortFilter;
 
     this.complete = config.complete;
+    /** Starting offset of the rows to be displayed. 0 if at the beginning of the results */
     this.offset = config.offset || 0;
+    /** Maximum number of rows to be displayed. 0 if the count is not limited */
     this.maxRows = config.maxRows || 0;
     this.totalRows = config.totalRows; // may be undefined
     this.rowCount = config.rowCount; // may be null
@@ -365,8 +371,8 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
-     * XXX: Needs documentation
-     * @param columnName
+     * Replaces the sort on the given column, if present, or sets a brand new sort
+     * @param columnName name of the column to be sorted
      * @param sortDirection either "+' for ascending or '-' for descending
      */
     this.changeSort = function (columnName, sortDirection)
@@ -378,14 +384,9 @@ LABKEY.DataRegion = function (config)
         this._setParam(".sort", newSortString, [".sort", ".offset"]);
     };
 
-    this.addButton = function (buttonConfig)
-    {
-
-    },
-
     /**
-     * XXX: Needs documentation
-     * @param columnName
+     * Removes the sort on a specified column
+     * @param columnName name of the column
      */
     this.clearSort = function (columnName)
     {
@@ -537,8 +538,6 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
         this.msgbox.enableDisplayMode();
         this.header = Ext.get("dataregion_header_" + this.name);
         this.footer = Ext.get("dataregion_footer_" + this.name);
-        this.buttonBarTop = Ext.get("dataregion_buttonbar_top_" + this.name);
-        this.buttonBarBottom = Ext.get("dataregion_buttonbar_bottom_" + this.name);
 
         // derived DataRegion's may not include the form id
         if (!this.form && this.table)

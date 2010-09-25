@@ -140,7 +140,8 @@ public class MultiValuedLookupColumn extends LookupColumn
     // and (for non-varchar aggregate function) getSqlTypeName() to apply a different aggregate.
     protected SQLFragment getAggregateFunction(SQLFragment sql)
     {
-        return getSqlDialect().getGroupConcatAggregateFunction(sql);
+        // Can't sort because we need to make sure that all of the multi-value columns come back in the same order 
+        return getSqlDialect().getGroupConcatAggregateFunction(sql, false, false);
     }
 
     @Override  // Must match the type of the aggregate function specified above.

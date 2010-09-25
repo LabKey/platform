@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.ButtonBarItem;
 import org.labkey.data.xml.ButtonBarOptions;
@@ -46,13 +47,10 @@ public class ButtonBarConfig
     private List<ButtonConfig> _items = new ArrayList<ButtonConfig>();
     private boolean _includeStandardButtons = false;
     private String[] _scriptIncludes;
+    private String _onRenderScript;
 
     private static final Logger LOG = Logger.getLogger(ButtonBarConfig.class);
 
-    public ButtonBarConfig()
-    {
-    }
-    
     public ButtonBarConfig(JSONObject json)
     {
         if (json.has("position") && null != json.getString("position"))
@@ -135,6 +133,10 @@ public class ButtonBarConfig
             _items = new ArrayList<ButtonConfig>();
             for (ButtonBarItem item : items)
                 _items.add(loadButtonConfig(item));
+        }
+        if (buttonBarOptions.isSetOnRender())
+        {
+            _onRenderScript = buttonBarOptions.getOnRender();
         }
     }
 
@@ -229,7 +231,7 @@ public class ButtonBarConfig
         if (item.getOnClick() != null && item.getOnClick().length() > 0)
             tree.setScript(item.getOnClick());
         if (item.getIcon() != null && item.getIcon().length() > 0)
-            tree.setImageSrc(item.getIcon());
+            tree.setImageSrc(AppProps.getInstance().getContextPath() + item.getIcon());
         if (item.getItemArray() != null && item.getItemArray().length > 0)
         {
             for (ButtonMenuItem child : item.getItemArray())
@@ -323,5 +325,10 @@ public class ButtonBarConfig
     public void setScriptIncludes(String[] scriptIncludes)
     {
         _scriptIncludes = scriptIncludes;
+    }
+
+    public String getOnRenderScript()
+    {
+        return _onRenderScript;
     }
 }

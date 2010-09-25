@@ -102,7 +102,11 @@
  * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
  * 'div', 'portal', 'none', 'dialog', 'title', left-nav'.
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
- * @param {Function} [config.successCallback] An optional function to call after the part has been rendered.
+ * @param {Function} [config.successCallback] An optional function to call after the part has been rendered. It will be passed two arguments:
+ * <ul>
+ * <li><b>dataRegion:</b> the LABKEY.DataRegion object representing the rendered QueryWebPart</li>
+ * <li><b>request:</b> the XMLHTTPRequest that was issued to the server</li>
+ * </ul>
  * @param {Function} [config.errorCallback] An optional function to call if the request to retrieve the content fails.
  * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
  * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
@@ -348,10 +352,11 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
                         dr.on("beforechangeview", this.beforeChangeView, this);
                         dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
                         dr.on("buttonclick", this.onButtonClick, this);
+
+                        if(this.successCallback)
+                            Ext.onReady(function(){this.successCallback.call(this.scope || this, dr, response);}, this, {delay: 100}); //8721: need to use onReady()
                     }, this, {delay: 100});
 
-                    if(this.successCallback)
-                        Ext.onReady(function(){this.successCallback.call(this.scope || this);}, this, {delay: 100}); //8721: need to use onReady()
                     this.fireEvent("render");
                 }
                 else

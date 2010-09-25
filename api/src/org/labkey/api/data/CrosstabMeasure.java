@@ -68,7 +68,7 @@ public class CrosstabMeasure
             @Override
             public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment sql)
             {
-                return sqlDialect.getGroupConcatAggregateFunction(sql);
+                return sqlDialect.getGroupConcatAggregateFunction(sql, false, false);
             }
         };
 

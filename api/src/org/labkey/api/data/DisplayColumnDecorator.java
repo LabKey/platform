@@ -345,12 +345,6 @@ public class DisplayColumnDecorator extends DisplayColumn
         return _column.getGridDataCell(ctx);
     }
 
-    @Override
-    public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException, SQLException
-    {
-        _column.renderGridDataCell(ctx, out);
-    }
-
     @NotNull
     @Override
     protected String getCssStyle(RenderContext ctx)
