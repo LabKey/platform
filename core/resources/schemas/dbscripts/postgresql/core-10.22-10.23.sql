@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2009 LabKey Corporation
+ * Copyright (c) 2010 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,8 @@
  * limitations under the License.
  */
 
-package org.labkey.query.sql;
-
-import java.sql.Types;
-
-public class QNull extends QExpr
-{
-	public QNull()
-	{
-		super(false);
-	}
-	
-    public void appendSql(SqlBuilder builder)
-    {
-        builder.append("NULL");
-    }
-
-    public void appendSource(SourceBuilder builder)
-    {
-        builder.append("NULL");
-    }
-
-    public String getValueString()
-    {
-        return " NULL ";
-    }
-
-    @Override
-    public int getSqlType()
-    {
-        return Types.NULL;
-    }
-}
+CREATE FUNCTION core.sort(anyarray)
+RETURNS anyarray AS $$
+SELECT ARRAY(SELECT $1[i] from generate_series(array_lower($1,1),
+array_upper($1,1)) g(i) ORDER BY 1)
+$$ LANGUAGE SQL STRICT IMMUTABLE;

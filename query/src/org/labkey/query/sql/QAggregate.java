@@ -17,31 +17,63 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MultiValuedDisplayColumn;
 
 import java.sql.Types;
 import java.util.List;
 
-
 public class QAggregate extends QExpr
 {
+    public static final String STDDEV = "stddev";
+    public static final String COUNT = "count";
+    public static final String GROUP_CONCAT = "group_concat";
+    private boolean _distinct;
+
+    public QAggregate()
+    {
+        super(QNode.class);
+    }
+
     public void appendSql(SqlBuilder builder)
     {
         String function = getTokenText();
-        if (function.equalsIgnoreCase("stddev"))
+        if (GROUP_CONCAT.equalsIgnoreCase(function))
         {
-            function = builder.getDialect().getStdDevFunction();
+            SqlBuilder nestedBuilder = new SqlBuilder(builder.getDialect());
+            for (QNode child : children())
+            {
+                ((QExpr)child).appendSql(nestedBuilder);
+            }
+            builder.append(builder.getDialect().getGroupConcatAggregateFunction(nestedBuilder, _distinct, true));
         }
-        builder.append(" " + function + "(");
-        for (QNode child : children())
+        else
         {
-            ((QExpr)child).appendSql(builder);
+            if (STDDEV.equalsIgnoreCase(function))
+            {
+                function = builder.getDialect().getStdDevFunction();
+            }
+            builder.append(" " + function + "(");
+            if (_distinct)
+            {
+                builder.append("DISTINCT ");
+            }
+            for (QNode child : children())
+            {
+                ((QExpr)child).appendSql(builder);
+            }
+            builder.append(")");
         }
-        builder.append(")");
     }
 
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" " + getTokenText() + "(");
+        if (_distinct)
+        {
+            builder.append("DISTINCT ");
+        }
         for (QNode child : children())
         {
             child.appendSource(builder);
@@ -51,9 +83,13 @@ public class QAggregate extends QExpr
 
     public int getSqlType()
     {
-        if ("count".equalsIgnoreCase(getTokenText()))
+        if (COUNT.equalsIgnoreCase(getTokenText()))
         {
             return Types.INTEGER;
+        }
+        if (GROUP_CONCAT.equalsIgnoreCase(getTokenText()))
+        {
+            return Types.VARCHAR;
         }
 		if (getFirstChild() != null)
 			return ((QExpr)getFirstChild()).getSqlType();
@@ -78,6 +114,23 @@ public class QAggregate extends QExpr
                 ret.setLabel(null);
             }
         }
+        if (GROUP_CONCAT.equalsIgnoreCase(getTokenText()))
+        {
+            final DisplayColumnFactory originalFactory = ret.getDisplayColumnFactory();
+            ret.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                @Override
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new MultiValuedDisplayColumn(originalFactory.createRenderer(colInfo));
+                }
+            });
+        }
         return ret;
+    }
+
+    public void setDistinct(boolean distinct)
+    {
+        _distinct = distinct;
     }
 }

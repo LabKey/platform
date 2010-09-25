@@ -54,6 +54,7 @@ tokens
 	LIKE="like";
 	LIMIT="limit";
 	MAX="max";
+	GROUP_CONCAT="group_concat";
 	MIN="min";
 	NEW="new";
 	NOT="not";
@@ -612,7 +613,8 @@ identPrimary
 
 aggregate
 	: ( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ ) OPEN! additiveExpression CLOSE! { #aggregate.setType(AGGREGATE); }
-	| COUNT^ OPEN! (additiveExpression | STAR{ #STAR.setType(ROW_STAR); }) CLOSE! { #aggregate.setType(AGGREGATE); }
+	| COUNT^ OPEN! (DISTINCT)? ( additiveExpression | STAR{ #STAR.setType(ROW_STAR); }) CLOSE! { #aggregate.setType(AGGREGATE); }
+	| GROUP_CONCAT^ OPEN! (DISTINCT)? additiveExpression CLOSE! { #aggregate.setType(AGGREGATE); }
 	;
 
 

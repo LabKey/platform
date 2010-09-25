@@ -284,11 +284,25 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql)
+    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted)
     {
-        SQLFragment result = new SQLFragment("array_to_string(core.array_accum(");
+        SQLFragment result = new SQLFragment("array_to_string(");
+        if (sorted)
+        {
+            result.append("core.sort(");
+        }
+        result.append("core.array_accum(");
+        if (distinct)
+        {
+            result.append("DISTINCT ");
+        }
         result.append(sql);
-        result.append("), ',')");
+        result.append(")");
+        if (sorted)
+        {
+            result.append(")");
+        }
+        result.append(", ',')");
         return result;
     }
 

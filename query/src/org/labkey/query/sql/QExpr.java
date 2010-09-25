@@ -111,7 +111,12 @@ abstract public class QExpr extends QNode
         {
             if (qNode instanceof QExpr)
             {
-                if (result != ((QExpr)qNode).getSqlType())
+                int newType = ((QExpr) qNode).getSqlType();
+                if (result == Types.NULL)
+                {
+                    result = newType;
+                }
+                else if (newType != Types.NULL && result != newType)
                 {
                     return Types.OTHER;
                 }

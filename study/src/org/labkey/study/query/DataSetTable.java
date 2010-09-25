@@ -281,12 +281,6 @@ public class DataSetTable extends FilteredTable
     }
 
     @Override
-    public boolean isMetadataOverrideable()
-    {
-        return true;
-    }
-
-    @Override
     public QueryUpdateService getUpdateService()
     {
         User user = _schema.getUser();

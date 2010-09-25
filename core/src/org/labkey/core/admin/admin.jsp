@@ -75,7 +75,7 @@
 </td>
 
 <td>
-<table class="labkey-data-region">
+<table>
 <%
     String location=null;
     try
@@ -113,7 +113,7 @@
 
     <tr><td>&nbsp;</td></tr>
 </table>
-<table class="labkey-data-region">
+<table>
     <tr><td colspan="4"><b>Module Information</b></td></tr><%
 
     for (Module module : bean.modules)

@@ -284,6 +284,7 @@ public class SqlParser
 		switch (node.getType())
 		{
 			case METHOD_CALL:
+            {
                 QNode id = first(children), exprList = second(children);
                 if (!(id instanceof QIdentifier))
                         break;
@@ -353,7 +354,19 @@ public class SqlParser
                 }
                 
 				break;
-
+            }
+            case AGGREGATE:
+            {
+                if ((QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) || QAggregate.COUNT.equalsIgnoreCase(node.getText()))
+                        && children.size() > 1 && first(children) instanceof QDistinct)
+                {
+                    children.remove(0);
+                    QAggregate result = (QAggregate)qnode(node, children);
+                    result.setDistinct(true);
+                    return result;
+                }
+                break;
+            }
 			default:
 				break;
 		}

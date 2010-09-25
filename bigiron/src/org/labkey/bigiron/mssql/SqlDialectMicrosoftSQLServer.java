@@ -294,7 +294,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql)
+    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted)
     {
         return new SQLFragment("MIN(" + sql + ")");    // No GROUP_CONCAT support for SQL Server 2000
     }

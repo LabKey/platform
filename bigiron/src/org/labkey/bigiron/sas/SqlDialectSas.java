@@ -126,7 +126,7 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql)
+    public SQLFragment getGroupConcatAggregateFunction(SQLFragment sql, boolean distinct, boolean sorted)
     {
         SQLFragment result = new SQLFragment("MIN(");
         result.append(sql);
