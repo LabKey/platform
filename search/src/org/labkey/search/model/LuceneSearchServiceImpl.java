@@ -666,7 +666,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (body.startsWith(title))
         {
             body = body.substring(title.length());
-            body = StringUtils.stripStart(body,"/. \n\r\t");
+            body = StringUtils.stripStart(body, "/. \n\r\t");
         }
 
         if (body.length() <= SUMMARY_LENGTH)
