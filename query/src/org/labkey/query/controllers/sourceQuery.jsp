@@ -26,6 +26,11 @@
     boolean canEdit = form.canEdit();
     boolean editableSQL = canEdit && !form.getQueryDef().isTableQueryDefinition();
 %>
+
+<script type="text/javascript">
+    LABKEY.requiresScript("/editarea/edit_area_full.js");
+</script>
+
 <div class="extContainer">
 <labkey:errors />
 <form method="POST" action="<%=form.urlFor(QueryAction.sourceQuery)%>">
@@ -35,12 +40,18 @@
         <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="queryText" name="ff_queryText"><%=h(form.ff_queryText)%></textarea>
         <script type="text/javascript">
             Ext.EventManager.on('queryText', 'keydown', handleTabsInTextArea);
+            editAreaLoader.init({
+                id : "queryText",
+                syntax: "sql",
+                start_highlight: true,
+                allow_toggle: false
+            });
         </script>
     <% } else { %>
         <input type="hidden" name="ff_queryText" value="<%=h(form.ff_queryText)%>" />
         <pre><%=h(form.ff_queryText)%></pre>
     <% } %>
-</p><%
+<br/><%
 if (canEdit)
 {
     %><labkey:button text="Save" onclick="submit_onclick('sourceQuery')" />&nbsp;<%
@@ -53,10 +64,17 @@ if (!form.getQueryDef().isTableQueryDefinition())
     <labkey:button text="Edit Metadata" onclick="submit_onclick('metadataQuery')" />&nbsp;
 <% } %>
     <labkey:button text="View Data" onclick="submit_onclick('executeQuery')" />
-<p>Metadata XML<%=PageFlowUtil.helpPopup("Metadata XML", "This XML lets you configure how your columns are displayed and other query-level attributes. See the <a target='_blank' href='https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html'>XSD documentation</a> to learn more.", true)%>:<br>
+<br/><br/>
+    <p>Metadata XML<%=PageFlowUtil.helpPopup("Metadata XML", "This XML lets you configure how your columns are displayed and other query-level attributes. See the <a target='_blank' href='https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html'>XSD documentation</a> to learn more.", true)%>:<br>
     <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
     <script type="text/javascript">
          Ext.EventManager.on('metadataText', 'keydown', handleTabsInTextArea);
+         editAreaLoader.init({
+             id : "metadataText",
+             syntax: "xml",
+             start_highlight: true,
+             allow_toggle: false
+         });
      </script>
  </p>
 
@@ -77,6 +95,14 @@ window.onbeforeunload = LABKEY.beforeunload(isDirty);
 
 function submit_onclick(method)
 {
+    if (document.getElementById("queryText"))
+    {
+        document.getElementById("queryText").value = editAreaLoader.getValue("queryText");
+    }
+    if (document.getElementById("metadataText"))
+    {
+        document.getElementById("metadataText").value = editAreaLoader.getValue("metadataText");
+    }
     _id('redirect').value = method;
     window.onbeforeunload = null;
 }
