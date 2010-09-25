@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
@@ -39,10 +40,13 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
@@ -171,5 +175,17 @@ public class QueryModule extends DefaultModule
                 Query.TestCase.class,
                 QueryServiceImpl.TestCase.class
         ));
+    }
+
+    @Override
+    public ActionURL getTabURL(Container c, User user)
+    {
+        // Don't show Query nav trails to users that aren't admins or developers since they almost certainly don't want
+        // to go to those links
+        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper() || user.isAdministrator())
+        {
+            return super.getTabURL(c, user);
+        }
+        return null;
     }
 }

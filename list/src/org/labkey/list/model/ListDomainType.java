@@ -27,7 +27,6 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -69,9 +68,9 @@ public class ListDomainType extends AbstractDomainKind
     }
 
     @Override
-    public void appendNavTrail(NavTree root, Container c)
+    public void appendNavTrail(NavTree root, Container c, User user)
     {
-        ListController.appendRootNavTrail(root, c);
+        ListController.appendRootNavTrail(root, c, user);
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)

@@ -21,8 +21,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.audit.AuditLogService;
@@ -91,5 +93,17 @@ public class ListModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    public ActionURL getTabURL(Container c, User user)
+    {
+        // Don't show full List nav trails to users that aren't admins or developers since they almost certainly don't
+        // want to go to those links
+        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper() || user.isAdministrator())
+        {
+            return super.getTabURL(c, user);
+        }
+        return null;
     }
 }

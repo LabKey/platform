@@ -20,6 +20,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -66,7 +67,7 @@ public class ListQueryView extends QueryView
             ActionButton btnUpload = new ActionButton("Import Data", getList().urlFor(ListController.Action.uploadListItems));
             bar.add(btnUpload);
         }
-        if (getViewContext().hasPermission(UpdatePermission.class))
+        if (getViewContext().hasPermission(DesignListPermission.class))
         {
             ActionURL designURL = getList().urlFor(ListController.Action.editListDefinition);
             designURL.addReturnURL(getViewContext().getActionURL());

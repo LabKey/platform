@@ -45,6 +45,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -98,13 +99,16 @@ public class ListController extends SpringActionController
 
     private NavTree appendRootNavTrail(NavTree root)
     {
-        return appendRootNavTrail(root, getContainer());
+        return appendRootNavTrail(root, getContainer(), getUser());
     }
 
 
-    public static NavTree appendRootNavTrail(NavTree root, Container c)
+    public static NavTree appendRootNavTrail(NavTree root, Container c, User user)
     {
-        root.addChild("Lists", getBeginURL(c));
+        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper() || user.isAdministrator())
+        {
+            root.addChild("Lists", getBeginURL(c));
+        }
         return root;
     }
 
