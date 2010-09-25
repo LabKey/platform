@@ -50,7 +50,7 @@ abstract public class DomainKind
     abstract public boolean canEditDefinition(User user, Domain domain);
 
     // Override to customize the nav trail on shared pages like edit domain
-    abstract public void appendNavTrail(NavTree root, Container c);
+    abstract public void appendNavTrail(NavTree root, Container c, User user);
 
     // Do any special handling before a PropertyDescriptor is deleted -- do nothing by default
     abstract public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd);
