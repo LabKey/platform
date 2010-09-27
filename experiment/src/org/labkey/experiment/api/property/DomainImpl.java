@@ -24,11 +24,8 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.*;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -378,54 +375,6 @@ public class DomainImpl implements Domain
                 return prop;
         }
         return null;
-    }
-
-    public void initColumnInfo(final User user, final Container container, ColumnInfo columnInfo)
-    {
-        final Domain domain = this;
-        final DomainKind type = getDomainKind();
-        if (type == null)
-            return;
-        columnInfo.setFk(new AbstractForeignKey()
-        {
-            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
-            {
-                ColumnInfo displayColumn;
-                Map.Entry<TableInfo, ColumnInfo> entry = getTableInfo();
-                if (entry == null)
-                    return null;
-                if (displayField == null)
-                {
-                    displayColumn = entry.getKey().getColumn(entry.getKey().getTitleColumn());
-                }
-                else
-                {
-                    displayColumn = entry.getKey().getColumn(displayField);
-                }
-                return new LookupColumn(parent, entry.getValue(), displayColumn);
-            }
-
-            public TableInfo getLookupTableInfo()
-            {
-                Map.Entry<TableInfo, ColumnInfo> entry = getTableInfo();
-                if (entry == null)
-                    return null;
-                return entry.getKey();
-            }
-
-            private Map.Entry<TableInfo, ColumnInfo> getTableInfo()
-            {
-                return type.getTableInfo(user, domain, getInstanceContainers(user, ReadPermission.class));
-            }
-
-            public StringExpression getURL(ColumnInfo parent)
-            {
-                Map.Entry<TableInfo, ColumnInfo> entry = getTableInfo();
-                if (entry == null)
-                    return null;
-                return LookupForeignKey.getDetailsURL(parent, entry.getKey(), getName());
-            }
-        });
     }
 
     public ColumnInfo[] getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, User user)

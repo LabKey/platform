@@ -25,8 +25,8 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListImportProgress;
+import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -37,9 +37,8 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListImportHelper;
 
@@ -74,8 +73,8 @@ public class ListDefinitionImpl implements ListDefinition
         _def = new ListDef();
         _def.setContainer(container.getId());
         _def.setName(name);
-        String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ":" + name;
-        _domain = PropertyService.get().createDomain(container, new Lsid(typeURI).toString(), name);
+        Lsid lsid = ListDomainType.generateDomainURI(name, container);
+        _domain = PropertyService.get().createDomain(container, lsid.toString(), name);
     }
 
     public int getListId()

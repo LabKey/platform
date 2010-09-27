@@ -1823,6 +1823,8 @@ query/src/org/labkey/query/controllers/newQuery.jsp -text
 query/src/org/labkey/query/controllers/propertiesQuery.jsp -text
 query/src/org/labkey/query/controllers/sourceQuery.jsp -text
 query/src/org/labkey/query/data/ExternalSchemaTable.java -text
+query/src/org/labkey/query/data/SimpleTableDomainKind.java -text
+query/src/org/labkey/query/data/SimpleUserSchema.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text

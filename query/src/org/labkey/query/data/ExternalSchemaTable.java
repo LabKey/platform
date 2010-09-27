@@ -17,7 +17,6 @@
 package org.labkey.query.data;
 
 import org.labkey.api.data.*;
-import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -28,7 +27,7 @@ import org.labkey.query.ExternalSchema;
 import java.util.List;
 import java.util.Map;
 
-public class ExternalSchemaTable extends SimpleModuleUserSchema.SimpleModuleTable
+public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable
 {
     private String _containerId;
     private Container _container;

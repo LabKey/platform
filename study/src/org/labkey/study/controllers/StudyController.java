@@ -305,7 +305,7 @@ public class StudyController extends BaseStudyController
             if (null == def.getTypeURI())
             {
                 def = def.createMutable();
-                String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), def);
+                String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), getUser(), def);
                 OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
                 def.setTypeURI(domainURI);
             }

@@ -16,16 +16,15 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
+<%@ page import="org.labkey.api.study.DataSet"%>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.WebPartView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -138,7 +137,11 @@
 
     <tr>
         <td>New Datasets can be added to this study at any time.</td>
-        <td><%= textLink("Create New Dataset", "defineDatasetType.view?autoDatasetId=true")%></td>
+        <%
+            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getViewContext().getContainer());
+            createURL.addParameter("autoDatasetId", "true");
+        %>
+        <td><%= textLink("Create New Dataset", createURL)%></td>
     </tr>
 </table>
 <% WebPartView.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null); %>

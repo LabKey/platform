@@ -21,6 +21,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.ui.*;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
@@ -29,7 +30,6 @@ import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
-import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +55,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     private Label _loading = null;
     private PropertiesEditor _propTable = null;
     boolean _saved = false;
+    boolean _newDomain = false;
     SubmitButton _submitButton = new SubmitButton();
 
     public void onModuleLoad()
@@ -191,7 +192,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         }
 
         GWTDomain edited = _propTable.getUpdates();
-        getService().updateDomainDescriptor(_domain, edited, new ErrorDialogAsyncCallback<List<String>>("Save failed")
+        getService().updateDomainDescriptor(_domain, edited, _newDomain, new ErrorDialogAsyncCallback<List<String>>("Save failed")
         {
             public void onSuccess(List<String> errors)
             {
@@ -282,10 +283,17 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
                     {
                         if (domain == null)
                         {
-                            String message = "Could not find " + domainURI;
-                            Window.alert(message);
-                            _loading.setText("ERROR: " + message);
-                            return;
+                            if (domainURI == null)
+                            {
+                                _loading.setText("ERROR: domainURI required to create new domain");
+                                return;
+                            }
+                            else
+                            {
+                                _newDomain = true;
+                                domain = new GWTDomain();
+                                domain.setDomainURI(domainURI);
+                            }
                         }
 
                         domain.setAllowFileLinkProperties(_allowFileLinkProperties);

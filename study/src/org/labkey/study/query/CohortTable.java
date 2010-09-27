@@ -5,8 +5,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -34,6 +34,8 @@ import java.util.List;
  */
 public class CohortTable extends BaseStudyTable
 {
+    private Domain _domain;
+
     public CohortTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoCohort());
@@ -58,10 +60,10 @@ public class CohortTable extends BaseStudyTable
 
         String domainURI = CohortImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 
-        Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
-        if (domain != null)
+        _domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
+        if (_domain != null)
         {
-            ColumnInfo[] extraColumns = domain.getColumns(this, lsidColumn, schema.getUser());
+            ColumnInfo[] extraColumns = _domain.getColumns(this, lsidColumn, schema.getUser());
             for (ColumnInfo extraColumn : extraColumns)
             {
                 safeAddColumn(extraColumn);
@@ -70,6 +72,12 @@ public class CohortTable extends BaseStudyTable
         }
         
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    @Override
+    public Domain getDomain()
+    {
+        return _domain;
     }
 
     @Override

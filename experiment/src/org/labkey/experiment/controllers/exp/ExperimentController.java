@@ -22,33 +22,36 @@ import jxl.write.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.*;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
@@ -4295,6 +4298,13 @@ public class ExperimentController extends SpringActionController
         {
             ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
             url.addParameter("domainId", domainId);
+            return url;
+        }
+
+        public ActionURL getDomainEditorURL(Container container, String domainURI)
+        {
+            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
+            url.addParameter("domainURI", domainURI);
             return url;
         }
 

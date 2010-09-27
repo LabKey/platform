@@ -16,7 +16,10 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
@@ -46,6 +49,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
+    private Domain _domain;
 
     public ExpDataTableImpl(String name, UserSchema schema)
     {
@@ -90,10 +94,10 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
         if (dd != null)
         {
-            Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-            if (domain != null)
+            _domain = PropertyService.get().getDomain(dd.getDomainId());
+            if (_domain != null)
             {
-                for (DomainProperty prop : domain.getProperties())
+                for (DomainProperty prop : _domain.getProperties())
                 {
                     // don't set container on property column so that inherited domain properties work
                     ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, null, /*getContainer().getId(),*/ _schema.getUser());
@@ -101,6 +105,12 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 }
             }
         }
+    }
+
+    @Override
+    public Domain getDomain()
+    {
+        return _domain;
     }
 
     @Override

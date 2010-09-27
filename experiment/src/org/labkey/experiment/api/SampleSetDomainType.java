@@ -16,8 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -25,7 +23,6 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -37,7 +34,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class SampleSetDomainType extends AbstractDomainKind
 {
@@ -56,10 +56,10 @@ public class SampleSetDomainType extends AbstractDomainKind
         return "SampleSet".equals(lsid.getNamespacePrefix());
     }
 
-//    public String generateDomainURI(Container container, String name)
-//    {
-//        return ExperimentServiceImpl.get().generateLSID(container, ExpSampleSet.class, name);
-//    }
+    public String generateDomainURI(String schemaName, String queryName, Container container, User user)
+    {
+        return ExperimentServiceImpl.get().generateLSID(container, ExpSampleSet.class, queryName);
+    }
 
     private ExpSampleSet getSampleSet(Domain domain)
     {
@@ -78,7 +78,7 @@ public class SampleSetDomainType extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain)
     {
-        return urlShowData(domain);
+        return domain.urlEditDefinition(false, false, false);
     }
 
     public String getTypeLabel(Domain domain)
@@ -93,18 +93,13 @@ public class SampleSetDomainType extends AbstractDomainKind
         return ret;
     }
 
-    public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containerFilter)
+    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containerFilter)
     {
         SamplesSchema schema = new SamplesSchema(user, domain.getContainer());
         TableInfo table = schema.getSampleTable(ExperimentService.get().getSampleSet(domain.getTypeURI()));
         if (table == null)
             return null;
-        return new Pair<TableInfo,ColumnInfo>(table, table.getColumn("LSID"));
-    }
-
-    public boolean canEditDefinition(User user, Domain domain)
-    {
-        return domain.getContainer().hasPermission(user, UpdatePermission.class);
+        return new Pair<TableInfo, ColumnInfo>(table, table.getColumn("LSID"));
     }
 
     public Set<String> getReservedPropertyNames(Domain domain)
@@ -118,23 +113,35 @@ public class SampleSetDomainType extends AbstractDomainKind
     }
 
     @Override
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        // Cannot edit default sample set
+        ExpSampleSet ss = getSampleSet(domain);
+        if (ss == null || ExperimentService.get().ensureDefaultSampleSet().equals(ss))
+        {
+            return false;
+        }
+        return domain.getContainer().hasPermission(user, UpdatePermission.class);
+    }
+
+    @Override
     public boolean canCreateDefinition(User user, Container container)
     {
         return container.hasPermission(user, AdminPermission.class);
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
     {
         String name = domain.getName();
         String description = domain.getDescription();
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
 
-        JSONArray idCols = arguments.containsKey("idCols") ? (JSONArray)arguments.get("idCols") : new JSONArray();
-        int idCol1 = idCols.optInt(0, -1);
-        int idCol2 = idCols.optInt(1, -1);
-        int idCol3 = idCols.optInt(2, -1);
-        int parentCol = arguments.optInt("parentCol", -1);
+        Object[] idCols = arguments.containsKey("idCols") ? (Object[])arguments.get("idCols") : new Object[0];
+        int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
+        int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
+        int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
+        int parentCol = arguments.get("parentCol") instanceof Number ? ((Number)arguments.get("parentCol")).intValue() : -1;
 
         ExpSampleSet ss;
         try

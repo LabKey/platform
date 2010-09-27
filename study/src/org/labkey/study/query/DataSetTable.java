@@ -16,24 +16,25 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.*;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.security.User;
 import org.labkey.study.controllers.DatasetController;
-import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyManager;
 
 import java.util.*;
@@ -198,6 +199,13 @@ public class DataSetTable extends FilteredTable
         }
     }
 
+    @Override
+    public Domain getDomain()
+    {
+        if (_dsd != null)
+            return _dsd.getDomain();
+        return null;
+    }
 
     @Override
     public boolean hasContainerContext()

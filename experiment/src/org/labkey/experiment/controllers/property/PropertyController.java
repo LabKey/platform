@@ -28,15 +28,13 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
@@ -70,20 +68,41 @@ public class PropertyController extends SpringActionController
 
         public ModelAndView getView(DomainForm form, BindException errors) throws Exception
         {
+            // Try to get existing domain from form.
             _domain = form.getDomain();
 
-            if (null == _domain)
+            if (_domain == null)
             {
-                HttpView.throwNotFound();
-            }
+                if (!form.isCreateOrEdit())
+                    HttpView.throwNotFound("Domain not found");
 
-            if (null == _domain.getDomainKind() || !_domain.getDomainKind().canEditDefinition(getUser(), _domain))
+                // Domain wasn't found, let's create a new one.
+                String domainURI = form.getDomainURI();
+                if (domainURI == null && form.getSchemaName() != null && form.getQueryName() != null)
+                {
+                    domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), getContainer(), getUser());
+                }
+
+                if (domainURI == null)
+                    HttpView.throwNotFound("Can't create domain without DomainURI or schemaName/queryName pair.");
+
+                DomainKind kind = PropertyService.get().getDomainKind(domainURI);
+                if (kind == null)
+                    HttpView.throwNotFound("Domain kind not found");
+
+                if (!kind.canCreateDefinition(getUser(), getContainer()))
+                    HttpView.throwUnauthorized();
+
+                _domain = PropertyService.get().createDomain(getContainer(), domainURI, form.getQueryName() != null ? form.getQueryName() : "");
+            }
+            else
             {
-                HttpView.throwUnauthorized();
+                if (!_domain.getDomainKind().canEditDefinition(getUser(), _domain))
+                    HttpView.throwUnauthorized();
             }
 
             Map<String, String> props = new HashMap<String, String>();
-            ActionURL returnURL = _domain.getDomainKind().urlEditDefinition(_domain);
+            ActionURL returnURL = _domain.getDomainKind().urlShowData(_domain);
             props.put("typeURI", _domain.getTypeURI());
             props.put("returnURL", returnURL.toString());
             props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
@@ -120,9 +139,21 @@ public class PropertyController extends SpringActionController
 
             String kindName = jsonObj.getString("kind");
             GWTDomain newDomain = convertJsonToDomain(jsonObj);
-            JSONObject options = jsonObj.optJSONObject("options");
-            if (options == null)
-                options = new JSONObject();
+            JSONObject jsOptions = jsonObj.optJSONObject("options");
+            if (jsOptions == null)
+                jsOptions = new JSONObject();
+
+            // Convert JSONObject to a Map, unpacking JSONArray as we go.
+            // XXX: There must be utility for this somewhere?
+            Map<String, Object> options = new HashMap<String, Object>();
+            for (String key : jsOptions.keySet())
+            {
+                Object value = jsOptions.get(key);
+                if (value instanceof JSONArray)
+                    options.put(key, ((JSONArray) value).toArray());
+                else
+                    options.put(key, value);
+            }
 
             createDomain(kindName, newDomain, options, getContainer(), getUser());
 
@@ -393,7 +424,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    private static Domain createDomain(String kindName, GWTDomain domain, JSONObject arguments, Container container, User user)
+    private static Domain createDomain(String kindName, GWTDomain domain, Map<String, Object> arguments, Container container, User user)
     {
         DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
         if (kind == null)
@@ -420,14 +451,7 @@ public class PropertyController extends SpringActionController
     @NotNull
     private static GWTDomain getDomain(String schemaName, String queryName, Container container, User user)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
-        if (schema == null)
-            throw new IllegalArgumentException("Schema '" + schemaName + "' does not exist.");
-
-        String domainURI = schema.getDomainURI(queryName);
-        if (domainURI == null)
-            throw new UnsupportedOperationException(queryName + " in " + schemaName + " does not support reading domain information");
-
+        String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
         GWTDomain domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
         if (domain == null)
@@ -455,10 +479,24 @@ public class PropertyController extends SpringActionController
             super(context);
         }
 
-        public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+        public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update, boolean create)
         {
             try
             {
+                if (create)
+                {
+                    String domainURI = update.getDomainURI();
+                    if (domainURI == null)
+                        throw new IllegalArgumentException("domainURI required to create domain");
+
+                    DomainKind kind = PropertyService.get().getDomainKind(domainURI);
+                    if (kind == null)
+                        throw new IllegalArgumentException("domain kind not found for domainURI");
+
+                    Domain d = PropertyService.get().createDomain(getContainer(), domainURI, update.getName());
+                    d.save(getUser());
+                }
+
                 return super.updateDomainDescriptor(orig, update);
             }
             catch (ChangePropertyDescriptorException e)
@@ -471,6 +509,9 @@ public class PropertyController extends SpringActionController
         public GWTDomain getDomainDescriptor(String typeURI)
         {
             GWTDomain domain = super.getDomainDescriptor(typeURI);
+            if (domain == null)
+                return null;
+            
             domain.setDefaultValueOptions(new DefaultValueType[]
                     { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
             return domain;

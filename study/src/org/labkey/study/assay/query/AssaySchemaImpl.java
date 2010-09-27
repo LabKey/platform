@@ -19,22 +19,23 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.study.actions.ShowSelectedRunsAction;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.study.model.StudyManager;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.study.model.StudyManager;
 
 import javax.servlet.ServletException;
 import java.sql.Types;
@@ -199,6 +200,7 @@ public class AssaySchemaImpl extends AssaySchema
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
         result.setDefaultVisibleColumns(defaultCols);
 
+        // UNDONE: need to add batch domain to table.getDomain()
         Domain batchDomain = provider.getBatchDomain(protocol);
         ColumnInfo propsCol = result.addColumns(batchDomain, BATCH_PROPERTIES_COLUMN_NAME);
         if (propsCol != null)
@@ -217,6 +219,7 @@ public class AssaySchemaImpl extends AssaySchema
         final ExpRunTable runTable = provider.createRunTable(this, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
 
+        // UNDONE: need to add run domain to table.getDomain()
         Domain runDomain = provider.getRunDomain(protocol);
         ColumnInfo propsCol = runTable.addColumns(runDomain, RUN_PROPERTIES_COLUMN_NAME);
         if (propsCol != null)

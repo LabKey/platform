@@ -20,6 +20,9 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -136,6 +139,31 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             }
 
             resp.put("views", viewInfos);
+
+            // add a create or edit url for the associated domain.
+            DomainKind kind = tinfo.getDomainKind();
+            if (kind == null)
+            {
+                String domainURI = ((UserSchema) schema).getDomainURI(tinfo.getName());
+                if (domainURI != null)
+                    kind = PropertyService.get().getDomainKind(domainURI);
+            }
+            
+            if (kind != null)
+            {
+                Domain domain = tinfo.getDomain();
+                if (domain != null)
+                {
+                    if (kind.canEditDefinition(user, domain))
+                        resp.put("editDefinitionUrl", kind.urlEditDefinition(domain));
+                }
+                else
+                {
+                    // Yes, some tables exist before their Domain does
+                    if (kind.canCreateDefinition(user, container))
+                        resp.put("createDefinitionUrl", kind.urlCreateDefinition(schema.getName(), tinfo.getName(), container, user));
+                }
+            }
         }
 
         return resp;

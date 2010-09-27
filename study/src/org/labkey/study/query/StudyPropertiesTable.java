@@ -38,6 +38,8 @@ import java.util.List;
  */
 public class StudyPropertiesTable extends BaseStudyTable
 {
+    private Domain _domain;
+
     public StudyPropertiesTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy());
@@ -72,10 +74,10 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 
-        Domain domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
-        if (domain != null)
+        _domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
+        if (_domain != null)
         {
-            ColumnInfo[] extraColumns = domain.getColumns(this, lsidColumn, schema.getUser());
+            ColumnInfo[] extraColumns = _domain.getColumns(this, lsidColumn, schema.getUser());
             for (ColumnInfo extraColumn : extraColumns)
             {
                 safeAddColumn(extraColumn);
@@ -84,6 +86,12 @@ public class StudyPropertiesTable extends BaseStudyTable
         }
 
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    @Override
+    public Domain getDomain()
+    {
+        return _domain;
     }
 
     @Override

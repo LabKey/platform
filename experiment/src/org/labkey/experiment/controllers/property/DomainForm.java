@@ -31,6 +31,10 @@ import java.util.Map;
 public class DomainForm extends ViewForm
 {
     private Domain _domain;
+    private String _schemaName;
+    private String _queryName;
+    private String _domainURI;
+    private boolean _createOrEdit = false;
     private boolean _allowFileLinkProperties = false;
     private boolean _allowAttachmentProperties = false;
     private boolean _showDefaultValueSettings = false;
@@ -45,9 +49,49 @@ public class DomainForm extends ViewForm
         _domain = PropertyService.get().getDomain(domainId);
     }
 
+    public String getDomainURI()
+    {
+        return _domainURI;
+    }
+
+    public void setDomainURI(String domainURI)
+    {
+        _domainURI = domainURI;
+    }
+
     public Domain getDomain()
     {
+        if (_domain == null)
+        {
+            String domainURI = _domainURI;
+            if (domainURI == null && _schemaName != null && _queryName != null)
+                domainURI = PropertyService.get().getDomainURI(_schemaName, _queryName, getContainer(), getUser());
+
+            if (domainURI != null)
+                _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+        }
+
         return _domain;
+    }
+
+    public String getSchemaName()
+    {
+        return _schemaName;
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        _schemaName = schemaName;
+    }
+
+    public String getQueryName()
+    {
+        return _queryName;
+    }
+
+    public void setQueryName(String queryName)
+    {
+        _queryName = queryName;
     }
 
     public String getLabel(DomainProperty pd)
@@ -119,6 +163,16 @@ public class DomainForm extends ViewForm
             ret.put(currentValue, typeURItoString(currentValue));
         }
         return ret;
+    }
+
+    public boolean isCreateOrEdit()
+    {
+        return _createOrEdit;
+    }
+
+    public void setCreateOrEdit(boolean b)
+    {
+        _createOrEdit = b;
     }
 
     public boolean getAllowFileLinkProperties()

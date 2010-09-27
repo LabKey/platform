@@ -30,7 +30,7 @@ import java.util.List;
  */
 public interface PropertyServiceAsync extends LookupServiceAsync
 {
-    void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
+    void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, boolean create, AsyncCallback<List<String>> async);
 
     void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
 }

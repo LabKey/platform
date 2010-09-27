@@ -28,16 +28,17 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 public class ListDomainType extends AbstractDomainKind
@@ -84,13 +85,18 @@ public class ListDomainType extends AbstractDomainKind
         return ret;
     }
 
-//    public String generateDomainURI(Container container, String name)
-//    {
-//        String str = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":List" + ".Folder-" + container.getRowId() + ":" + name;
-//        return new Lsid(str).toString();
-//    }
+    public static Lsid generateDomainURI(String name, Container c)
+    {
+        String typeURI = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".Folder-" + c.getRowId() + ":" + name;
+        return new Lsid(typeURI);
+    }
 
-    public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
+    public String generateDomainURI(String schemaName, String name, Container container, User user)
+    {
+        return generateDomainURI(name, container).toString();
+    }
+
+    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
     {
         return null;
     }

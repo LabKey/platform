@@ -21,10 +21,11 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.DataSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
@@ -33,7 +34,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,7 +44,7 @@ import java.util.Set;
  */
 public class DatasetDomainKind extends AbstractDomainKind
 {
-    private static final String LSID_PREFIX = "StudyDataset";
+    public static final String LSID_PREFIX = "StudyDataset";
 
     /*
      * the columns common to all datasets
@@ -106,7 +106,7 @@ public class DatasetDomainKind extends AbstractDomainKind
 
 
     // Lsid.toString() encodes incorrectly TODO: fix
-    public String generateDomainURI(Container container, String name)
+    public String generateDomainURI(String schemaName, String name, Container container, User user)
     {
         // UNDONE can't use id, because it won't match OntologyManager.importTypes()!
         //String objectid = name == null ? "" : name + "-" + id;
@@ -115,7 +115,7 @@ public class DatasetDomainKind extends AbstractDomainKind
     }
 
 
-    public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
+    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
     {
         return null;
     }
@@ -138,6 +138,13 @@ public class DatasetDomainKind extends AbstractDomainKind
         return url;
     }
 
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, container);
+        createURL.addParameter("autoDatasetId", "true");
+        return createURL;
+    }
 
     DataSet getDatasetDefinition(Container c, String domainURI)
     {

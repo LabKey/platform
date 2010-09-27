@@ -16,11 +16,9 @@
 
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.IPropertyType;
-import org.labkey.api.security.User;
 
 public class PrimitiveType implements IPropertyType
 {
@@ -50,8 +48,4 @@ public class PrimitiveType implements IPropertyType
         return getLabel();
     }
 
-    public void initColumnInfo(User user, Container container, ColumnInfo column)
-    {
-        column.setSqlTypeName(column.getSqlDialect().sqlTypeNameFromSqlType(_type.getSqlType()));
-    }
 }

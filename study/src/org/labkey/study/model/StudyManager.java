@@ -29,31 +29,8 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableInfoGetter;
-import org.labkey.api.exp.DomainNotFoundException;
-import org.labkey.api.exp.DomainURIFactory;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -67,31 +44,17 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.RoleAssignment;
-import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
+import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -120,23 +83,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 
@@ -2247,7 +2194,7 @@ public class StudyManager
         return result;
     }
 
-    public boolean importDatasetSchemas(StudyImpl study, User user, SchemaReader reader, BindException errors) throws IOException, SQLException
+    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors) throws IOException, SQLException
     {
         if (errors.hasErrors())
             return false;
@@ -2263,7 +2210,7 @@ public class StudyManager
             DomainURIFactory factory = new DomainURIFactory() {
                 public String getDomainURI(String name)
                 {
-                    return StudyManager.getDomainURI(c, name);
+                    return StudyManager.getDomainURI(c, user, name);
                 }
             };
 
@@ -2339,7 +2286,7 @@ public class StudyManager
                         def.setLabel(label);
                         def.setName(name);
                         def.setDescription(info.description);
-                        def.setTypeURI(getDomainURI(c, def));
+                        def.setTypeURI(getDomainURI(c, user, def));
                         def.setVisitDatePropertyName(info.visitDatePropertyName);
                         def.setShowByDefault(!info.isHidden);
                         def.setKeyPropertyName(info.keyPropertyName);
@@ -2356,17 +2303,17 @@ public class StudyManager
     }
 
 
-    public String getDomainURI(Container c, DataSet def)
+    public String getDomainURI(Container c, User u, DataSet def)
     {
         if (null == def)
-            return getDomainURI(c, (String)null);
+            return getDomainURI(c, u, (String)null);
         else
-            return getDomainURI(c, def.getName());
+            return getDomainURI(c, u, def.getName());
     }
 
-    private static String getDomainURI(Container c, String name)
+    private static String getDomainURI(Container c, User u, String name)
     {
-        return new DatasetDomainKind().generateDomainURI(c, name);
+        return new DatasetDomainKind().generateDomainURI(StudyQuerySchema.SCHEMA_NAME, name, c, u);
     }
 
     /** NOTE: this is usually handled at import time, this is only useful if DataSetDefinition.visitDatePropertyName changes */

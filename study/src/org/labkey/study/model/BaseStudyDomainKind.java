@@ -22,11 +22,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.Pair;
 
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,7 +60,7 @@ public abstract class BaseStudyDomainKind extends AbstractDomainKind
         return sql;
     }
 
-    public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
+    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
     {
         return null;
     }

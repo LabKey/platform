@@ -19,22 +19,27 @@ package org.labkey.experiment.api;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -308,6 +313,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
         setDefaultVisibleColumns(defaultCols);
 
+    }
+
+    public Domain getDomain()
+    {
+        return _ss.getType();
     }
 
     private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)

@@ -16,23 +16,25 @@
 
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.exp.property.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.Pair;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.fhcrc.cpas.exp.xml.*;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.fhcrc.cpas.exp.xml.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.*;
 
 public class PropertyServiceImpl implements PropertyService.Interface
 {
@@ -69,6 +71,22 @@ public class PropertyServiceImpl implements PropertyService.Interface
     public Domain createDomain(Container container, String typeURI, String name)
     {
         return new DomainImpl(container, typeURI, name);
+    }
+
+    public String getDomainURI(String schemaName, String queryName, Container container, User user)
+    {
+        if (schemaName == null || queryName == null)
+            throw new IllegalArgumentException("schemaName and queryName required");
+
+        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
+        if (schema == null)
+            throw new IllegalArgumentException("Schema '" + schemaName + "' does not exist.");
+
+        String domainURI = schema.getDomainURI(queryName);
+        if (domainURI == null)
+            throw new UnsupportedOperationException(queryName + " in " + schemaName + " does not support reading domain information");
+
+        return domainURI;
     }
 
     public DomainKind getDomainKindByName(String name)

@@ -25,16 +25,15 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 import java.util.List;
@@ -80,7 +79,7 @@ public class AssayDomainKind extends AbstractDomainKind
         return new SQLFragment("NULL");
     }
 
-    public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
+    public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
     {
         return null;
     }

@@ -21,18 +21,18 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
-import org.labkey.api.module.SimpleModuleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Filter;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.ExternalSchemaTable;
+import org.labkey.query.data.SimpleUserSchema;
 import org.labkey.query.persist.ExternalSchemaDef;
 
 import java.util.Arrays;
 import java.util.Set;
 
-public class ExternalSchema extends SimpleModuleUserSchema
+public class ExternalSchema extends SimpleUserSchema
 {
     private final ExternalSchemaDef _def;
 
