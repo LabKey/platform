@@ -48,7 +48,7 @@
         %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class)))%></td><%
     }%>
 
-    <td><%= textLink("view grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class)))%></td><%
+    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class)))%></td><%
 
     if (bean.getHasUpdatePermissions())
     {
