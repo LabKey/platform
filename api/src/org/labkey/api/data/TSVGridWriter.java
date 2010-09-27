@@ -39,6 +39,7 @@ public class TSVGridWriter extends TSVWriter
     private List<DisplayColumn> _displayColumns;
     private boolean _captionRowVisible = true;
     private ColumnHeaderType _columnHeaderType = ColumnHeaderType.caption;
+    private boolean _applyFormats = true;
 
 
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws SQLException, IOException
@@ -155,6 +156,18 @@ public class TSVGridWriter extends TSVWriter
     }
 
 
+    public boolean isApplyFormats()
+    {
+        return _applyFormats;
+    }
+
+
+    public void setApplyFormats(boolean applyFormats)
+    {
+        _applyFormats = applyFormats;
+    }
+
+
     public ColumnHeaderType getColumnHeaderType()
     {
         return _columnHeaderType;
@@ -230,8 +243,20 @@ public class TSVGridWriter extends TSVWriter
         {
             if (dc.isVisible(ctx))
             {
+                String value;
+
+                // Export formatted values some of the time; see #10771
+                if (isApplyFormats())
+                {
+                    value = dc.getTsvFormattedValue(ctx);
+                }
+                else
+                {
+                    Object rawValue = dc.getValue(ctx);
+                    value = (null == rawValue ? "" : String.valueOf(rawValue)); 
+                }
+
                 // Encode all tab and newline characters; see #8435, #8748
-                String value = dc.getTsvFormattedValue(ctx);
                 row.append(quoteValue(value));
                 row.append(_chDelimiter);
             }
