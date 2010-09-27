@@ -2,40 +2,24 @@ package org.labkey.query.reports;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
+import org.json.JSONArray;
+import org.labkey.api.action.*;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.sql.ResultSet;
+import java.util.*;
 
 /**
  * Copyright (c) 2010 LabKey Corporation
@@ -670,28 +654,571 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class GetDataForm implements CustomApiForm
+    public abstract static class VisualizationMetadata
     {
-        private Map<String,Object> _extendedProperites;
+        private String _name;
+        private String _queryName;
+        private String _schemaName;
+        protected Container _container;
+        protected User _user;
+
+        public VisualizationMetadata(Container container, User user, Map<String, Object> properties)
+        {
+            _name = (String) properties.get("name");
+            _queryName = (String) properties.get("queryName");
+            _schemaName = (String) properties.get("schemaName");
+            _user = user;
+            _container = container;
+        }
+
+        public TableInfo getTableInfo()
+        {
+            UserSchema schema = QueryService.get().getUserSchema(_user, _container, _schemaName);
+            return schema.getTable(_queryName);
+        }
+
+        public DbSchema getDbSchema()
+        {
+            UserSchema schema = QueryService.get().getUserSchema(_user, _container, _schemaName);
+            return schema.getDbSchema();
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public Set<String> getSelectColumns()
+        {
+            Set<String> cols = new HashSet<String>();
+            cols.add(getName().replace('/', '.'));
+            return cols;
+        }
+
+        public boolean isSameTable(VisualizationMetadata other)
+        {
+            return this._schemaName.equals(other._schemaName) &&
+                    this._queryName.equals(other._queryName);
+        }
+
+        public String getJoinColumn()
+        {
+            if ("study".equals(_schemaName))
+                return "ParticipantSequenceKey";
+            else
+                throw new IllegalArgumentException("Cannot join non-study tables: " + _schemaName + "." + _queryName);
+        }
+    }
+
+    public static class Dimension extends VisualizationMetadata
+    {
+        private Object[] _values;
+
+        public Dimension(Container container, User user, Map<String, Object> properties, Object[] values)
+        {
+            super(container, user, properties);
+            _values = values;
+        }
+
+        public Object[] getValues()
+        {
+            return _values;
+        }
+    }
+
+    public static class Measure extends VisualizationMetadata
+    {
+        private Dimension[] _dimensions;
+        private TableInfo _tableInfo;
+        private List<Measure> _additionalColumns = new ArrayList<Measure>();
+        private List<Measure> _dependentMeasures = new ArrayList<Measure>();
+        private Map<String, String> _measureNameToColumnName;
+
+        public Measure(Container container, User user, Map<String, Object> measureInfo)
+        {
+            this(container, user, measureInfo, null, null);
+        }
+
+        public Measure(Container container, User user, Map<String, Object> measureInfo, Map<String, Object> dimensionInfo, Object[] dimensionValues)
+        {
+            super(container, user, measureInfo);
+            if (dimensionInfo != null)
+                _dimensions = new Dimension[] { new Dimension(container, user, dimensionInfo, dimensionValues) };
+        }
+
+        @Override
+        public TableInfo getTableInfo()
+        {
+            if (_tableInfo == null)
+            {
+                TableInfo tinfo = super.getTableInfo();
+
+                Dimension[] dimensions = getDimensions();
+                if (dimensions != null && dimensions.length > 0)
+                {
+                    if (dimensions.length > 1)
+                        throw new IllegalArgumentException("Only one dimension is currently supported per measure; found " + dimensions.length);
+                    Dimension dimension = dimensions[0];
+                    ColumnInfo col = tinfo.getColumn(getName());
+                    CrosstabSettings settings = new CrosstabSettings(tinfo);
+                    settings.addMeasure(col.getFieldKey(), CrosstabMeasure.AggregateFunction.MAX);
+                    String dimensionColumnName = dimension.getName();
+
+                    CrosstabDimension columnDimension = settings.getColumnAxis().addDimension(tinfo.getColumn(dimensionColumnName).getFieldKey());
+
+                    // We need to group by all join and non-dimension value columns, including those of merged measures:
+                    Set<String> rowCols = new HashSet<String>();
+                    addAxisDimension(settings.getRowAxis(), tinfo, getJoinColumn(), rowCols);
+                    for (Measure metadata : _additionalColumns)
+                    {
+                        addAxisDimension(settings.getRowAxis(), tinfo, metadata.getName(), rowCols);
+                        addAxisDimension(settings.getRowAxis(), tinfo, metadata.getJoinColumn(), rowCols);
+                        for (Measure dependentMeasure : metadata.getDependentMeasures())
+                            addAxisDimension(settings.getRowAxis(), tinfo, dependentMeasure.getJoinColumn(), rowCols);
+                    }
+
+                    List<CrosstabMember> members = new ArrayList<CrosstabMember>();
+                    for (Object value : dimension.getValues())
+                        members.add(new CrosstabMember(value, columnDimension));
+                    tinfo = new CrosstabTableInfo(settings, members);
+                    _measureNameToColumnName = ((CrosstabTableInfo) tinfo).getMeasureNameToColumnNameMap();
+                }
+                else
+                {
+                    _measureNameToColumnName = new HashMap<String, String>();
+                    for (String selectCol : getSelectColumns())
+                        _measureNameToColumnName.put(selectCol, selectCol);
+                }
+                _tableInfo = tinfo;
+            }
+            return _tableInfo;
+        }
+
+        public Map<String, String> getMeasureNameToColumnNameMap()
+        {
+            return _measureNameToColumnName;
+        }
+
+        private void addAxisDimension(CrosstabAxis axis, TableInfo tinfo, String colName, Set<String> previouslyAdded)
+        {
+            if (!previouslyAdded.contains(colName))
+            {
+                FieldKey key = FieldKey.fromString(colName);
+                axis.addDimension(key);
+                previouslyAdded.add(colName);
+            }
+        }
+
+        public void addAdditionalColumn(Measure measure)
+        {
+            if (!measure.isSameTable(this))
+                throw new IllegalArgumentException("Can only merge metadata from the same table.");
+            _additionalColumns.add(measure);
+        }
+
+        public void addDependentMeasure(Measure measure)
+        {
+            _dependentMeasures.add(measure);
+        }
+
+        public List<Measure> getDependentMeasures()
+        {
+            return Collections.unmodifiableList(_dependentMeasures);
+        }
+
+        @Override
+        public Set<String> getSelectColumns()
+        {
+            Dimension[] dimensions = getDimensions();
+            Set<String> cols;
+            if (dimensions != null && dimensions.length > 0)
+            {
+                // Don't add _additionalColumns here- they've already been added when we created the crosstabtableinfo
+                // to pivot by dimension.
+                cols = getTableInfo().getColumnNameSet();
+            }
+            else
+            {
+                cols = super.getSelectColumns();
+                for (VisualizationMetadata metadata : _additionalColumns)
+                    cols.add(metadata.getName().replace('/', '.'));
+            }
+            return cols;
+       }
+
+        public List<Measure> getAdditionalColumns()
+        {
+            return Collections.unmodifiableList(_additionalColumns);
+        }
+
+        public boolean hasDimensions()
+        {
+            return _dimensions != null && _dimensions.length > 0;
+        }
+
+        public Dimension[] getDimensions()
+        {
+            return _dimensions;
+        }
+    }
+
+    public static class GetDataForm implements CustomApiForm, HasViewContext
+    {
+        private List<Measure> _measures;
+        private ViewContext _context;
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _context;
+        }
 
         public void bindProperties(Map<String, Object> props)
         {
-            _extendedProperites = props;
+            _measures = new ArrayList<Measure>();
+            Object measuresProp = props.get("measures");
+            if (measuresProp != null)
+            {
+                for (Map<String, Object> measureInfo : ((JSONArray) measuresProp).toJSONObjectArray())
+                {
+                    Map<String, Object> axisInfo = (Map<String, Object>) measureInfo.get("axis");
+                    Map<String, Object> measureProperties = (Map<String, Object>) measureInfo.get("measure");
+
+                    Map<String, Object> dimensionProperties = (Map<String, Object>) measureInfo.get("dimension");
+                    JSONArray dimensionValues = (JSONArray) measureInfo.get("dimensionValues");
+                    Object[] valuesArray = null;
+                    if (dimensionValues != null)
+                    {
+                        valuesArray = new Object[dimensionValues.length()];
+                        for (int i = 0; i < dimensionValues.length(); i++)
+                            valuesArray[i] = dimensionValues.get(i);
+                    }
+
+                    Measure measure = new Measure(_context.getContainer(), _context.getUser(), measureProperties, dimensionProperties, valuesArray);
+
+                    Object timeAxis = axisInfo.get("timeAxis");
+                    if (timeAxis instanceof String && Boolean.parseBoolean((String) timeAxis))
+                    {
+                        Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
+                        Measure zeroDateMeasure = new Measure(_context.getContainer(), _context.getUser(), (Map<String, Object>) dateOptions.get("zeroDateCol"), null, null)
+                        {
+                            @Override
+                            public String getJoinColumn()
+                            {
+                                return StudyService.get().getSubjectColumnName(_context.getContainer());
+                            }
+                        };
+                        measure.addDependentMeasure(zeroDateMeasure);
+                    }
+                    _measures.add(measure);
+                }
+            }
         }
 
-        public Map<String, Object> getExtendedProperites()
+        public List<Measure> getMeasures()
         {
-            return _extendedProperites;
+            return _measures;
         }
+    }
+
+    private static class VisualizationUserSchema extends UserSchema
+    {
+        private Map<String, Measure> _tableNameToMeasure;
+        public static final String SCHEMA_NAME = "VizTempUserSchema";
+        public static final String SCHEMA_DESCRIPTION = "Temporary user schema to allow resolution of crosstab tableinfo objects";
+
+        public VisualizationUserSchema(User user, Container container, Map<String, Measure> tableNameToMeasure)
+        {
+            super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, container, DefaultSchema.get(user, container).getDbSchema());
+            _tableNameToMeasure = tableNameToMeasure;
+        }
+
+        @Override
+        public QuerySchema getSchema(String name)
+        {
+            if (VisualizationSchema.SCHEMA_NAME.equals(name))
+                return new VisualizationSchema(getDbSchema(), getUser(), getContainer(), _tableNameToMeasure);
+            else
+                return super.getSchema(name);
+        }
+
+        @Override
+        protected TableInfo createTable(String name)
+        {
+            return null;
+        }
+
+        @Override
+        public Set<String> getTableNames()
+        {
+            return Collections.emptySet();
+        }
+    }
+
+    private static class VisualizationSchema extends AbstractSchema
+    {
+        private Map<String, Measure> _tableNameToMeasure;
+        public static final String SCHEMA_NAME = "VizTempSchema";
+        public static final String SCHEMA_DESCRIPTION = "Temporary schema to allow resolution of crosstab tableinfo objects";
+
+        public VisualizationSchema(DbSchema dbSchema, User user, Container container, Map<String, Measure> tableNameToMeasure)
+        {
+            super(dbSchema, user, container);
+            _tableNameToMeasure = tableNameToMeasure;
+        }
+
+        @Override
+        public TableInfo getTable(String name)
+        {
+            VisualizationMetadata metadata = _tableNameToMeasure.get(name);
+            if (metadata != null)
+                return metadata.getTableInfo();
+            return null;
+        }
+
+        @Override
+        public String getName()
+        {
+            return SCHEMA_NAME;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return SCHEMA_DESCRIPTION;
+        }
+
     }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class GetDataAction extends ApiAction<GetDataForm>
     {
+        private List<Measure> flattenMeasures(Collection<Measure> metadatas, Map<Measure, Measure> childToParent)
+        {
+            List<Measure> flattened = new ArrayList<Measure>();
+            flattenMeasures(metadatas, flattened, null, childToParent);
+            return flattened;
+        }
+
+        private void flattenMeasures(Collection<Measure> metadatas, List<Measure> flattened, Measure parent, Map<Measure, Measure> childToParent)
+        {
+            for (Measure measure : metadatas)
+            {
+                if (parent != null)
+                    childToParent.put(measure, parent);
+                flattened.add(measure);
+            }
+
+            for (Measure measure : metadatas)
+            {
+                if (measure.getDependentMeasures() != null)
+                    flattenMeasures(measure.getDependentMeasures(), flattened, measure, childToParent);
+            }
+        }
+
+        private void loadTableNames(List<Measure> collapsedMeasures,
+                                  Map<String, Measure> tableNameToMetadata)
+        {
+            for (Measure measure :  collapsedMeasures)
+            {
+                String name = ColumnInfo.legalNameFromName(measure.getQueryName());
+                while (tableNameToMetadata.containsKey(name))
+                    name = name + "X";
+                tableNameToMetadata.put(name, measure);
+            }
+        }
+
+        private List<Measure> collapseMeasures(List<Measure> originalMeasures)
+        {
+            // This method looks through the available measures for pairs that come from the same table.
+            // If a pair is found, and if one if sufficiently simple (i.e., without dimensions), it will be
+            // folded into the more complex dimension so we only query the table once.
+            Map<String, List<Measure>> tableMeasures = new HashMap<String, List<Measure>>();
+            for (Measure measure : originalMeasures)
+            {
+                String tableName = measure.getSchemaName() + "." + measure.getQueryName();
+                List<Measure> sameTableMeasures = tableMeasures.get(tableName);
+                if (sameTableMeasures == null)
+                {
+                    sameTableMeasures = new ArrayList<Measure>();
+                    tableMeasures.put(tableName, sameTableMeasures);
+                }
+                sameTableMeasures.add(measure);
+            }
+
+            List<Measure> returnMeasures = new ArrayList<Measure>(originalMeasures);
+            for (List<Measure> measures : tableMeasures.values())
+            {
+                if (measures.size() > 1)
+                {
+                    Measure mostComplex = null;
+                    for (Measure measure : measures)
+                    {
+                        if (mostComplex == null || (!mostComplex.hasDimensions() && measure.hasDimensions()))
+                            mostComplex = measure;
+                    }
+                    for (Measure measure : measures)
+                    {
+                        if (measure != mostComplex && !measure.hasDimensions())
+                        {
+                            mostComplex.addAdditionalColumn(measure);
+                            returnMeasures.remove(measure);
+                        }
+                    }
+                }
+            }
+            return returnMeasures;
+        }
+
         @Override
         public ApiResponse execute(GetDataForm getDataForm, BindException errors) throws Exception
         {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
+            Map<Measure, Measure> childToParent = new HashMap<Measure, Measure>();
+            // First we flatten, to ensure that all requested columns are considered when we call 'collapseMeasures'
+            List<Measure> measures = flattenMeasures(getDataForm.getMeasures(), childToParent);
+            // Collapse measures where possible to eliminate unnecessary self-joins:
+            measures = collapseMeasures(measures);
+
+            // For the measures that remain, find the set of tables that we'll have to query to get all data:
+            Map<String, Measure> tableNameToMetadata = new LinkedHashMap<String, Measure>();
+            loadTableNames(measures, tableNameToMetadata);
+
+            Map<Measure, String> metadataToTableName = new HashMap<Measure, String>();
+            for (Map.Entry<String, Measure> entry : tableNameToMetadata.entrySet())
+            {
+                Measure measure = entry.getValue();
+                String tableName = entry.getKey();
+                metadataToTableName.put(measure, tableName);
+                if (measure.getAdditionalColumns() != null)
+                {
+                    for (Measure additionalColumn : measure.getAdditionalColumns())
+                        metadataToTableName.put(additionalColumn, tableName);
+                }
+            }
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT ");
+            String sep = "";
+            Set<String> selectedCols = new HashSet<String>();
+            for (Map.Entry<String, Measure> entry : tableNameToMetadata.entrySet())
+            {
+                String tableName = entry.getKey();
+                for (String column : entry.getValue().getSelectColumns())
+                {
+                    sql.append(sep).append(tableName).append(".").append(column);
+
+                    String alias = column;
+                    if (alias.contains("."))
+                        alias = alias.replaceAll("\\.", "_");
+                    // It may be necessary to disambiguate column names, since the same name ("Result", for example) may exist
+                    // in multiple tables:
+                    if (selectedCols.contains(alias))
+                        alias = tableName + "_" + alias;
+
+                    if (!alias.equals(column))
+                        sql.append(" AS ").append(alias);
+
+                    selectedCols.add(alias);
+                    sep = ", ";
+                }
+                sql.append("\n");
+            }
+
+            sql.append("FROM ");
+            Map.Entry<String, Measure> previousEntry = null;
+            for (Map.Entry<String, Measure> entry : tableNameToMetadata.entrySet())
+            {
+                if (previousEntry != null)
+                    sql.append("\nJOIN\n");
+
+                String tableName = entry.getKey();
+                sql.append(VisualizationSchema.SCHEMA_NAME).append(".").append(tableName).append(" AS ").append(tableName);
+
+                if (previousEntry != null)
+                {
+                    Measure joinToMeasure = childToParent.get(entry.getValue());
+                    if (joinToMeasure == null)
+                        joinToMeasure = previousEntry.getValue();
+                    String prevTablename = metadataToTableName.get(joinToMeasure);
+                    String joinColumn = entry.getValue().getJoinColumn();
+                    sql.append("\n\tON ").append(tableName).append(".").append(joinColumn);
+                    sql.append(" = ");
+                    sql.append(prevTablename).append(".").append(joinColumn);
+                }
+                previousEntry = entry;
+            }
+
+            VisualizationUserSchema schema = new VisualizationUserSchema(getUser(), getContainer(), tableNameToMetadata);
+            ApiQueryResponse response = getApiResponse(schema, sql.toString(), errors);
+
+            // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
+            Map<String, Object> extraProperties = new HashMap<String, Object>();
+            Map<String, String> measureNameToColumnName = new HashMap<String, String>();
+            extraProperties.put("measureToColumn", measureNameToColumnName);
+            for (Measure measure : measures)
+                measureNameToColumnName.putAll(measure.getMeasureNameToColumnNameMap());
+
+            Map<String, String> nameRemap = new HashMap<String, String>();
+            nameRemap.put("ParticipantVisit_VisitDate", "ParticipantVisit/VisitDate");
+            nameRemap.put("ParticipantVisit.VisitDate", "ParticipantVisit/VisitDate");
+            // Hack to deal with the fact that crosstabtableinfo returns a less friendly name for the VisitDate column:
+            for (Map.Entry<String, String> names : nameRemap.entrySet())
+            {
+                String oldName = names.getKey();
+                String newName = names.getValue();
+                if (measureNameToColumnName.containsKey(oldName))
+                {
+                    String value = measureNameToColumnName.remove(oldName);
+                    measureNameToColumnName.put(newName, value);
+                }
+            }
+            response.setExtraReturnProperties(extraProperties);
+            return response;
+        }
+
+        private ApiQueryResponse getApiResponse(VisualizationUserSchema schema, String sql, BindException errors) throws Exception
+        {
+            String schemaName = schema.getName();
+            //create a temp query settings object initialized with the posted LabKey SQL
+            //this will provide a temporary QueryDefinition to Query
+            TempQuerySettings settings = new TempQuerySettings(schemaName, sql, getViewContext().getContainer());
+
+            //need to explicitly turn off various UI options that will try to refer to the
+            //current URL and query string
+            settings.setAllowChooseQuery(false);
+            settings.setAllowChooseView(false);
+            settings.setAllowCustomizeView(false);
+
+            //by default, return all rows
+            settings.setShowRows(ShowRows.ALL);
+
+            //apply optional settings (maxRows, offset)
+            boolean metaDataOnly = false;
+
+            //build a query view using the schema and settings
+            QueryView view = new QueryView(schema, settings, errors);
+            view.setShowRecordSelectors(false);
+            view.setShowExportButtons(false);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+
+            return new ExtendedApiQueryResponse(view, getViewContext(), false,
+                    false, schemaName, "sql", 0, null, metaDataOnly);
         }
     }
 

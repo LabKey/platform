@@ -131,8 +131,17 @@ public class SchemaXmlReader implements SchemaReader
                 boolean shownInUpdateView = !columnXml.isSetShownInUpdateView() || columnXml.getShownInUpdateView();
                 boolean shownInDetailsView = !columnXml.isSetShownInDetailsView() || columnXml.getShownInDetailsView();
 
-                boolean measure = columnXml.isSetMeasure() && columnXml.getMeasure();
-                boolean dimension = columnXml.isSetDimension() && columnXml.getDimension();
+                boolean measure;
+                if (columnXml.isSetMeasure())
+                    measure = columnXml.getMeasure();
+                else
+                    measure = ColumnRenderProperties.inferIsMeasure(t.isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden());
+
+                boolean dimension;
+                if (columnXml.isSetDimension())
+                    dimension = columnXml.getDimension();
+                else
+                    dimension = ColumnRenderProperties.inferIsDimension(columnXml.getFk() != null, columnXml.getIsHidden());
 
                 Set<String> importAliases = new LinkedHashSet<String>();
                 if (columnXml.isSetImportAliases())
