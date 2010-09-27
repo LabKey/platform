@@ -22,7 +22,6 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartView;
 
 import java.io.File;
 import java.sql.ResultSet;
@@ -84,6 +83,8 @@ abstract public class QueryService
 
     abstract public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema);
     abstract public UserSchema getExternalSchema(DefaultSchema folderSchema, String name);
+
+    abstract public UserSchema createSimpleUserSchema(String name, String description, User user, Container container, DbSchema schema);
 
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 

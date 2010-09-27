@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp.property;
 
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -23,8 +25,6 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -51,6 +51,9 @@ public class PropertyService
         Domain getDomain(int domainId);
         Domain[] getDomains(Container container);
         Domain createDomain(Container container, String typeURI, String name);
+
+        /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */
+        String getDomainURI(String schemaName, String queryName, Container container, User user);
 
         /**
          * Create a Domain from the DomainDescriptorType xmlbean.

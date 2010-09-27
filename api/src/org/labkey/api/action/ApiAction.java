@@ -279,19 +279,9 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 String key = (String)keys.next();
                 Object value = jsonObj.get(key);
 
-                if(value instanceof JSONArray)
+                if (value instanceof JSONArray)
                 {
-                    JSONArray array = (JSONArray) value;
-                    Object[] valueArray = new Object[array.length()];
-                    for(int idx = 0; idx < array.length(); ++idx)
-                    {
-                        Object entry = array.get(idx);
-                        if(entry instanceof JSONObject || entry instanceof JSONArray)
-                            throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
-                        else
-                            valueArray[idx] = entry;
-                    }
-                    value = valueArray;
+                    value = ((JSONArray)value).toArray();
                 }
                 else if (value instanceof JSONObject)
                     throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");

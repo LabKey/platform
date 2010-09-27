@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryUpdateService;
@@ -164,6 +166,21 @@ public interface TableInfo
     public int getCacheSize();
 
     public String getDescription();
+
+    /**
+     * Get Domain associated with this TableInfo if any.
+     * @return
+     */
+    @Nullable
+    public Domain getDomain();
+
+    /**
+     * Get DomainKind associated with this TableInfo if any.
+     * Domain may or may not exist even if DomainKind is available.
+     * @return
+     */
+    @Nullable
+    public DomainKind getDomainKind();
 
     /**
      * Returns a QueryUpdateService implementation for this TableInfo,

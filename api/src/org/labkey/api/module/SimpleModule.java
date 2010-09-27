@@ -17,24 +17,27 @@ package org.labkey.api.module;
 
 import org.apache.commons.collections15.Closure;
 import org.apache.commons.collections15.CollectionUtils;
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.data.xml.TablesDocument;
-import org.apache.xmlbeans.XmlException;
-import org.apache.log4j.Logger;
 
+import java.beans.PropertyChangeEvent;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.beans.PropertyChangeEvent;
 
 /*
 * User: Dave
@@ -48,6 +51,13 @@ import java.beans.PropertyChangeEvent;
 public class SimpleModule extends SpringModule implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
+
+    public static String NAMESPACE_PREFIX = "ExtensibleTable";
+    public static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = NAMESPACE_PREFIX + "-${SchemaName}";
+    public static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
+
+    public static String PROPERTY_NAMESPACE_PREFIX_TEMPLATE = NAMESPACE_PREFIX + "-${SchemaName}-${TableName}";
+    public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
 
     int _factorySetHash = 0;
     private Set<String> _schemaNames;
@@ -149,7 +159,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
             {
                 public QuerySchema getSchema(final DefaultSchema schema)
                 {
-                    return new SimpleModuleUserSchema(schemaName, null, schema.getUser(), schema.getContainer(), dbschema);
+                    return QueryService.get().createSimpleUserSchema(schemaName, null, schema.getUser(), schema.getContainer(), dbschema);
                 }
             });
         }

@@ -151,7 +151,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
             for (NavTree item : _menuItems)
             {
                 NavTree toAdd = new NavTree(item);
-                toAdd.setScript(getWrappedOnClick(ctx, toAdd.getScript()));
+                if (toAdd.getScript() != null)
+                    toAdd.setScript(getWrappedOnClick(ctx, toAdd.getScript()));
                 processURLs(ctx, toAdd);
                 btn.addMenuItem(toAdd);
             }

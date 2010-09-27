@@ -16,15 +16,11 @@
 
 package org.labkey.api.exp.property;
 
-import org.json.JSONObject;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -39,11 +35,16 @@ abstract public class DomainKind
     abstract public boolean isDomainType(String domainURI);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
 
-//    abstract public String generateDomainURI(Container container, String name);
+    /**
+     * Create a DomainURI for a Domain that may or may not exist yet.
+     */
+    abstract public String generateDomainURI(String schemaName, String queryName, Container container, User user);
 
-    abstract public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers);
+    // UNUSED: remove?
+    abstract public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers);
     abstract public ActionURL urlShowData(Domain domain);
     abstract public ActionURL urlEditDefinition(Domain domain);
+    abstract public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user);
 
     abstract public boolean canCreateDefinition(User user, Container container);
 
@@ -73,7 +74,7 @@ abstract public class DomainKind
      * @param user User
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user);
+    abstract public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.

@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -164,7 +165,7 @@ public class ButtonBarConfig
                 }
                 buttonConfig.setAction(method);
             }
-            buttonConfig.setOnClick(item.getOnClick());
+            buttonConfig.setOnClick(StringUtils.trimToNull(item.getOnClick()));
             buttonConfig.setRequiresSelection(item.getRequiresSelection());
 
             if (item.getPermission() == PermissionType.READ)

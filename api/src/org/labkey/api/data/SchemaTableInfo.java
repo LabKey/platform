@@ -23,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -823,6 +825,18 @@ public class SchemaTableInfo implements TableInfo
     public void setDescription(String description)
     {
         _description = description;        
+    }
+
+    @Nullable
+    public Domain getDomain()
+    {
+        return null;
+    }
+
+    @Nullable
+    public DomainKind getDomainKind()
+    {
+        return null;
     }
 
     @Nullable

@@ -15,18 +15,21 @@
  */
 package org.labkey.api.exp.property;
 
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +40,12 @@ import java.util.Set;
  */
 public abstract class AbstractDomainKind extends DomainKind
 {
+    @Override
+    public String generateDomainURI(String schemaName, String queryName, Container container, User user)
+    {
+        return null;
+    }
+
     public boolean canCreateDefinition(User user, Container container)
     {
         return false;
@@ -45,6 +54,18 @@ public abstract class AbstractDomainKind extends DomainKind
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        String domainURI = generateDomainURI(schemaName, queryName, container, user);
+        if (domainURI == null)
+            return null;
+
+        ActionURL ret = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI);
+        ret.addParameter("createOrEdit", true);
+        return ret;
     }
 
     // Override to customize the nav trail on shared pages like edit domain
@@ -57,7 +78,7 @@ public abstract class AbstractDomainKind extends DomainKind
     {
     }
 
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user)
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
     {
         return null;
     }

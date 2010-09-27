@@ -22,14 +22,16 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
@@ -620,6 +622,21 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     public int getCacheSize()
     {
         return _cacheSize;
+    }
+
+    @Nullable
+    public Domain getDomain()
+    {
+        return null;
+    }
+
+    @Nullable
+    public DomainKind getDomainKind()
+    {
+        Domain domain = getDomain();
+        if (domain != null)
+            return domain.getDomainKind();
+        return null;
     }
 
     @Nullable

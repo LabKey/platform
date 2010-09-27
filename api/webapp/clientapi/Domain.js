@@ -84,6 +84,7 @@ LABKEY.Domain = new function()
          *
          * @param {Function} successCallback Required success callback.
          * @param {Function} [failureCallback] Optional failure callback.
+         * @param {String} kind The domain kind name to create.
          * @param {LABKEY.Domain.DomainDesign} domainDesign The domain design to save.
          * @param {Object} [options] Optional arguments used to create the specific domain type.
          * @param {String} [containerPath] The container path in which to create the domain.

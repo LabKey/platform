@@ -40,6 +40,8 @@ import java.util.Set;
  */
 public class RunDataTable extends FilteredTable
 {
+    private Domain _resultsDomain;
+
     public RunDataTable(final AssaySchema schema, final ExpProtocol protocol)
     {
         super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
@@ -51,8 +53,8 @@ public class RunDataTable extends FilteredTable
         column.setKeyField(false);
         column.setIsUnselectable(true);
         final AssayProvider provider = AssayService.get().getProvider(protocol);
-        Domain resultsDomain = provider.getResultsDomain(protocol);
-        DomainProperty[] resultsDPs = resultsDomain.getProperties();
+        _resultsDomain = provider.getResultsDomain(protocol);
+        DomainProperty[] resultsDPs = _resultsDomain.getProperties();
         QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema);
         fk.setParentIsObjectId(true);
         fk.addDecorator(new SpecimenPropertyColumnDecorator(provider, protocol, schema));
@@ -106,6 +108,11 @@ public class RunDataTable extends FilteredTable
         }
 
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    public Domain getDomain()
+    {
+        return _resultsDomain;
     }
 
     @Override
