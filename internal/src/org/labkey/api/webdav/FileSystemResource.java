@@ -477,7 +477,7 @@ public class FileSystemResource extends AbstractWebdavResource
             return Collections.emptyList();
         List<WebdavResolver.History> history = new ArrayList<WebdavResolver.History>(logs.size());
         for (AuditLogEvent e : logs)
-            history.add(new HistoryImpl(e.getCreatedBy(), e.getCreated(), e.getComment(), null));
+            history.add(new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null));
         return history;
     }
 
