@@ -291,6 +291,23 @@ public class CrosstabTableInfo extends VirtualTable
 
     } //addCrosstabQuery()
 
+    public Map<String, String> getMeasureNameToColumnNameMap()
+    {
+        Map<String, String> measureNameToColumnName = new HashMap<String, String>();
+        for (Map.Entry<String, ColumnInfo> entry : _columnMap.entrySet())
+        {
+            String colName = entry.getKey();
+            ColumnInfo col = entry.getValue();
+            String measureName;
+            if (col instanceof AggregateColumnInfo)
+                measureName = ((AggregateColumnInfo) col).getMember().getValue().toString();
+            else
+                measureName = col.getName();
+            measureNameToColumnName.put(measureName, colName);
+        }
+        return measureNameToColumnName;
+    }
+
     protected void addPivotQuery(SQLFragment sql)
     {
         sql.append("SELECT ");
@@ -365,13 +382,13 @@ public class CrosstabTableInfo extends VirtualTable
     protected String getMemberInstanceCountAlias(CrosstabMember member)
     {
         return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias()
-                    + member.getValue().toString() + COL_INSTANCE_COUNT;
+                    + member.getValueSQLAlias() + COL_INSTANCE_COUNT;
     }
 
     protected String getMemberSortPatternAlias(CrosstabMember member)
     {
         return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias()
-                    + member.getValue().toString() + COL_SORT_PATTERN;
+                    + member.getValueSQLAlias() + COL_SORT_PATTERN;
     }
 
     protected void addMemberCase(SQLFragment sql, CrosstabMember member, String queryAlias, String ifSql, String elseSql, String alias)

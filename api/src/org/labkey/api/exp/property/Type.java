@@ -77,6 +77,11 @@ public enum Type
         return sqlTypeName;
     }
 
+    public boolean isNumeric()
+    {
+        return this == IntType || this == DoubleType;
+    }
+
     public static Type getTypeByLabel(String label)
     {
         for (Type type : values())

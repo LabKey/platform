@@ -264,22 +264,32 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         this.dimension = dimension;
     }
 
+    public static boolean inferIsDimension(boolean isLookup, boolean isHidden)
+    {
+        return isLookup && !isHidden;
+    }
+
     public boolean isDimension()
     {
         // If dimension is unspecified/null, make a best guess based on the type of the field:
         if (dimension == null)
-            return isLookup() && !isHidden();
+            return inferIsDimension(isLookup(), isHidden());
         else
-            return dimension.booleanValue();
+            return dimension;
+    }
+
+    public static boolean inferIsMeasure(boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
+    {
+        return isNumeric && !isAutoIncrement && !isLookup && !isHidden;
     }
 
     public boolean isMeasure()
     {
         // If measure is unspecified/null, make a best guess based on the type of the field:
         if (measure == null)
-            return isNumericType() && !isAutoIncrement() && !isLookup() && !isHidden();
+            return inferIsMeasure(isNumericType(), isAutoIncrement(), isLookup(), isHidden());
         else
-            return measure.booleanValue();
+            return measure;
     }
 
     public boolean isNullable()

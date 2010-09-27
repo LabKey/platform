@@ -75,7 +75,7 @@ public class AggregateColumnInfo extends ColumnInfo
         if(null == member)
             return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
         else
-            return PIVOTED_NAME_PREFIX + member.getValue().toString() + "_"
+            return PIVOTED_NAME_PREFIX + member.getValueSQLAlias() + "_"
                     + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
     }
 }

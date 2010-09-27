@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
@@ -56,6 +57,12 @@ public class CrosstabMember
     public Object getValue()
     {
         return _value;
+    }
+
+    public String getValueSQLAlias()
+    {
+        SqlDialect dialect = getDimension().getSourceColumn().getSqlDialect();
+        return AliasManager.makeLegalName(getValue().toString(), dialect);
     }
 
     public void setValue(Object value)

@@ -53,6 +53,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     private long _numRespRows = 0;              //number of response rows
     private List<FieldKey> _fieldKeys = null;
     private boolean _metaDataOnly = false;
+    private Map<String, Object> _extraReturnProperties;
 
     public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly) throws Exception
@@ -80,6 +81,11 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return null;
     }
 
+    public void setExtraReturnProperties(Map<String, Object> extraReturnProperties)
+    {
+        _extraReturnProperties = extraReturnProperties;
+    }
+
     public void render(ApiResponseWriter writer) throws Exception
     {
         writer.startResponse();
@@ -93,6 +99,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         Map<String,String> qcInfo = getQcInfo();
         if (qcInfo != null)
             writer.writeProperty("qcInfo", qcInfo);    // TODO: Change to mvInfo?
+
+        if (_extraReturnProperties != null)
+        {
+            for (Map.Entry<String, Object> entry : _extraReturnProperties.entrySet())
+                writer.writeProperty(entry.getKey(), entry.getValue());
+        }
 
         writeRowset(writer);
 
@@ -172,12 +184,12 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 mdata.put("sortInfo", sortInfo);
             }
         }
-        
+
         //include an id property set to the pk column name if there is one (and only one)
         List<ColumnInfo> pkCols = _tinfo.getPkColumns();
         if (null != pkCols && 1 == pkCols.size())
             mdata.put("id", pkCols.get(0).getName());
-        
+
         mdata.put("fields", fields);
 
         return mdata;
