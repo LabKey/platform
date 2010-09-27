@@ -25,6 +25,8 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/remotesrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/webapp/ext-3.2.2/adapter" />
+      <excludeFolder url="file://$MODULE_DIR$/webapp/ext-3.2.2/pkgs" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -435,6 +437,15 @@
         <SOURCES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-lang-2.5-sources.zip!/" />
         </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/guava-r05.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library">
