@@ -84,7 +84,7 @@ public class SiteSettingsAuditDetailsModel
         if(null == _event)
             return null;
 
-        _user = UserManager.getUser(_event.getCreatedBy());
+        _user = _event.getCreatedBy();
         return _user;
     }
 }

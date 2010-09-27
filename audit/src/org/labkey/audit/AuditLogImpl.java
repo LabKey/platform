@@ -160,7 +160,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public AuditLogEvent addEvent(AuditLogEvent event)
     {
-        User user = UserManager.getUser(event.getCreatedBy());
+        User user = event.getCreatedBy();
         if (user == null)
         {
             _log.warn("user was not specified, defaulting to guest user.");
