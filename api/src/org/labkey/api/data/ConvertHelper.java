@@ -21,9 +21,12 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.converters.*;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleConverter;
 import org.labkey.api.study.DataSet;
@@ -48,8 +51,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     // just a list of converters we know about
     HashSet<Class> _converters = new HashSet<Class>();
-    
-    
+
+
     public static void registerHelpers()
     {
         // Should register only once
@@ -122,6 +125,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
         _register(new ShowRowsConverter(), ShowRows.class);
         _register(new EnumConverter(), DataSet.KeyManagementType.class);
+        _register(new UserConverter(), User.class);
     }
 
 
@@ -519,6 +523,20 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (value == null)
                 return null;
             return new String[] {String.valueOf(value)};
+        }
+    }
+
+    public static class UserConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if(value == null || value.equals("null") || !type.equals(User.class))
+                return null;
+            else
+            {
+                return UserManager.getUser(NumberUtils.toInt(value.toString(), -1));
+            }
         }
     }
 }

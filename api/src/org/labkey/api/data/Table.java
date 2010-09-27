@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
@@ -870,14 +871,15 @@ public class Table
             {
                 if (PropertyUtils.isWriteable(fields, propName))
                 {
-                    PropertyUtils.setProperty(fields, propName, value);
+                    // use BeanUtils instead of PropertyUtils because BeanUtils will use a registered Converter
+                    BeanUtils.copyProperty(fields, propName, value);
                 }
                 // UNDONE: horrible postgres hack..., not general fix
                 else if (propName.endsWith("id"))
                 {
                     propName = propName.substring(0,propName.length()-2) + "Id";
                     if (PropertyUtils.isWriteable(fields, propName))
-                        PropertyUtils.setProperty(fields, propName, value);
+                        BeanUtils.copyProperty(fields, propName, value);
                 }
             }
             catch (Exception x)

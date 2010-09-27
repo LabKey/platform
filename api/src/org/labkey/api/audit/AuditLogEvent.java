@@ -17,6 +17,7 @@
 package org.labkey.api.audit;
 
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 
 import java.util.Date;
 
@@ -29,7 +30,7 @@ public class AuditLogEvent
 {
     private int _rowId;
     private Date _created;
-    private int _createdBy;
+    private User _createdBy;
     private Integer _impersonatedBy;
     private String _entityId;
     private String _comment;
@@ -53,7 +54,7 @@ public class AuditLogEvent
     {
         _rowId = rowId;
     }
-    
+
     public Date getCreated()
     {
         return _created;
@@ -64,20 +65,14 @@ public class AuditLogEvent
         _created = created;
     }
 
-    public int getCreatedBy()
+    public User getCreatedBy()
     {
         return _createdBy;
     }
-
-    @Deprecated    // Don't use -- set using a User object instead.  This setting is here so BeanUtils works right.
-    public void setCreatedBy(int createdBy)
-    {
-        _createdBy = createdBy;
-    }
-
+    
     public void setCreatedBy(User user)
     {
-        _createdBy = user.getUserId();
+        _createdBy = user;
 
         if (user.isImpersonated())
             setImpersonatedBy(user.getImpersonatingUser().getUserId());
