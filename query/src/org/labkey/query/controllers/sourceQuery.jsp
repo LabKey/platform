@@ -43,8 +43,7 @@
             editAreaLoader.init({
                 id : "queryText",
                 syntax: "sql",
-                start_highlight: true,
-                allow_toggle: false
+                start_highlight: true
             });
         </script>
     <% } else { %>
@@ -72,8 +71,7 @@ if (!form.getQueryDef().isTableQueryDefinition())
          editAreaLoader.init({
              id : "metadataText",
              syntax: "xml",
-             start_highlight: true,
-             allow_toggle: false
+             start_highlight: true
          });
      </script>
  </p>
@@ -95,11 +93,11 @@ window.onbeforeunload = LABKEY.beforeunload(isDirty);
 
 function submit_onclick(method)
 {
-    if (document.getElementById("queryText"))
+    if (document.getElementById("queryText") && document.getElementById("edit_area_toggle_checkbox_queryText") && document.getElementById("edit_area_toggle_checkbox_queryText").checked)
     {
         document.getElementById("queryText").value = editAreaLoader.getValue("queryText");
     }
-    if (document.getElementById("metadataText"))
+    if (document.getElementById("metadataText") && document.getElementById("edit_area_toggle_checkbox_metadataText") && document.getElementById("edit_area_toggle_checkbox_metadataText").checked)
     {
         document.getElementById("metadataText").value = editAreaLoader.getValue("metadataText");
     }
