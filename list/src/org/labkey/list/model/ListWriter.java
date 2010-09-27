@@ -19,8 +19,14 @@ package org.labkey.list.model;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -37,10 +43,20 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.list.view.ListItemAttachmentParent;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: adam
@@ -87,6 +103,7 @@ public class ListWriter
 
                     ResultSet rs = QueryService.get().select(ti, columns, null, null);
                     TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
+                    tsvWriter.setApplyFormats(false);
                     tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                     PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
                     tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet

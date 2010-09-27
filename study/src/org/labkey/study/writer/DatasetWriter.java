@@ -162,6 +162,7 @@ class DatasetWriter implements InternalStudyWriter
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
             ResultSet rs = QueryService.get().select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);       // TODO: Add columns?
+            tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
             PrintWriter out = vf.getPrintWriter(def.getFileName());
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
