@@ -1610,7 +1610,8 @@ public class PageFlowUtil
             F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
             if (oldIE)
                 F.format(link, PageFlowUtil.filter(new ResourceURL("stylesheetIE7.css", ContainerManager.getRoot())));
-            F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
+            if (coreUrls.getThemeStylesheetURL() != null)
+                F.format(link, PageFlowUtil.filter(coreUrls.getThemeStylesheetURL()));
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
