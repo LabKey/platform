@@ -43,7 +43,7 @@ public class UrlColumn extends SimpleDisplayColumn
         String url = renderURL(ctx);
         if (value != null && url != null)
         {
-            out.write(PageFlowUtil.textLink(value.toString(), PageFlowUtil.filter(url)));
+            out.write(PageFlowUtil.textLink(value.toString(), url));
         }
     }
 }
