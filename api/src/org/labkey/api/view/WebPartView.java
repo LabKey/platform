@@ -452,20 +452,33 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                 Boolean collapsed = (Boolean) context.get("collapsed");
                 if (title != null)
                 {
-                    out.print("<tr>" +
-                            "<th class=\"labkey-header\" style=\"padding-left: 4px\" title=\"");
-                    out.print(PageFlowUtil.filter(title));
-                    out.print("\">");
+                    out.print("<tr>");
 
                     String rootId = (String) context.get("rootId");
                     ActionURL expandCollapseUrl = null;
                     String expandCollapseGifId = "expandCollapse-" + rootId;
+
                     if (collapsed != null)
                     {
                         if (rootId == null)
                             throw new IllegalArgumentException("pathToHere or rootId not provided");
                         expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class). getExpandCollapseURL(getViewContext().getContainer(), "", rootId);
                     }
+                    
+                    out.print("<th class=\"labkey-expand-collapse-area\">");
+
+                    if (collapsed != null)
+                    {
+                        out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
+                                filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
+                        String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
+                        out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                    }
+                    out.print("</th>"); // end of first <th>
+
+                    out.print("<th class=\"labkey-header\" title=\"");
+                    out.print(PageFlowUtil.filter(title));
+                    out.print("\">");
 
                     if (null != href)
                     {
@@ -487,17 +500,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
                         // print the title alone:
                         out.print(PageFlowUtil.filter(title));
                     }
-
-                    out.print("</th>\n<th class=\"labkey-expand-collapse-area\">");
-
-                    if (collapsed != null)
-                    {
-                        out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
-                                filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
-                        String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
-                        out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
-                    }
-                    out.print("</th></tr>\n");
+                    
+                    out.print("</th></tr>\n"); // end of second <th>
                 }
                 out.print("<tr" + (collapsed != null && collapsed.booleanValue() ? " style=\"display:none\"" : "") + " class=\"" + className + "\">" +
                         "<td colspan=\"2\" class=\"labkey-expandable-nav-body\">");

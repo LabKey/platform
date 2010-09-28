@@ -1081,20 +1081,7 @@ public class QueryView extends WebPartView<Object>
     {
         if (url == null)
             return null;
-        StringBuilder sb = new StringBuilder();
-        sb.append("[<a href=\"");
-        sb.append(url.getEncodedLocalURIString());
-        sb.append("\"");
-        if (anchorElementId != null)
-        {
-            sb.append(" id=\"");
-            sb.append(anchorElementId);
-            sb.append("\"");
-        }
-        sb.append(">");
-        sb.append(PageFlowUtil.filter(text));
-        sb.append("</a>]&nbsp;");
-        return sb.toString();
+        return PageFlowUtil.textLink(text, url, anchorElementId).concat("&nbsp;");
     }
 
     protected String textLink(String text, ActionURL url)

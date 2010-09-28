@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -197,6 +198,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, href, onClickScript, id);
     }
 
+    public String textLink(String text, String href, String onClickScript, String id, Map<String, String> props)
+    {
+        return PageFlowUtil.textLink(text, href, onClickScript, id, props);
+    }
+    
     public String textLink(String text, ActionURL url, String onClickScript, String id)
     {
         return PageFlowUtil.textLink(text, url, onClickScript, id);

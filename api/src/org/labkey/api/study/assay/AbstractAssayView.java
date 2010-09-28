@@ -60,7 +60,7 @@ public class AbstractAssayView extends VBox
             if (container.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
                 ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(container);
-                html.append("[<a href=\"").append(url.getLocalURIString()).append("\">setup pipeline</a>]");
+                html.append(PageFlowUtil.textLink("setup pipeline", url.getLocalURIString()));
             }
             else
                 html.append(" Please ask an administrator for assistance.");

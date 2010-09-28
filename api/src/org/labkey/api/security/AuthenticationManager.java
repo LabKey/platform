@@ -503,19 +503,15 @@ public class AuthenticationManager
             {
                 if (isActive(authProvider))
                 {
-                    sb.append("<td>[<a href=\"");
-                    sb.append(disable.getActionURL(authProvider).getEncodedLocalURIString());
-                    sb.append("\">");
-                    sb.append("disable");
-                    sb.append("</a>]</td>");
+                    sb.append("<td>");
+                    sb.append(PageFlowUtil.textLink("disable", disable.getActionURL(authProvider).getEncodedLocalURIString()));
+                    sb.append("</td>");
                 }
                 else
                 {
-                    sb.append("<td>[<a href=\"");
-                    sb.append(enable.getActionURL(authProvider).getEncodedLocalURIString());
-                    sb.append("\">");
-                    sb.append("enable");
-                    sb.append("</a>]</td>");
+                    sb.append("<td>");
+                    sb.append(PageFlowUtil.textLink("enable", enable.getActionURL(authProvider).getEncodedLocalURIString()));
+                    sb.append("</td>");
                 }
             }
 
@@ -527,11 +523,9 @@ public class AuthenticationManager
             }
             else
             {
-                sb.append("<td>[<a href=\"");
-                sb.append(url.getEncodedLocalURIString());
-                sb.append("\">");
-                sb.append("configure");
-                sb.append("</a>]</td>");
+                sb.append("<td>");
+                sb.append(PageFlowUtil.textLink("configure", url.getEncodedLocalURIString()));
+                sb.append("</td>");
             }
 
             sb.append("<td>");
@@ -674,7 +668,7 @@ public class AuthenticationManager
                 html.append("<td id=\"").append(id1).append("\">");
                 html.append(logo);
                 html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
-                html.append("[<a href=\"javascript:{}\" onClick=\"deleteLogo('").append(prefix).append("');\">delete</a>]");
+                html.append(PageFlowUtil.textLink("delete", "javascript:{}", "deleteLogo('" + prefix + "');", "")); // RE_CHECK
                 html.append("</td>\n");
 
                 return html.toString();

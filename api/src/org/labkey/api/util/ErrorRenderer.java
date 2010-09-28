@@ -113,7 +113,7 @@ public class ErrorRenderer
 
             if (!showDetails)
             {
-                out.println("<p><div id='togglePanel' style='cursor:pointer' onclick='contentPanel.style.display=\"block\";togglePanel.style.display=\"none\"'>[<a href='#details'>Show more details</a>]</div>\n" +
+                out.println("<p><div id='togglePanel' style='cursor:pointer' onclick='contentPanel.style.display=\"block\";togglePanel.style.display=\"none\"'>" + PageFlowUtil.textLink("Show more details", "#details") + "</div>\n" +
                         "<div id=\"contentPanel\" style=\"display:none;\">");
             }
 

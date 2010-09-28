@@ -220,8 +220,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
             url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
             url.addParameter("domainId", domain.getTypeId());
-            headerHtml.append(" [<a href=\"").append(url).append("\">edit default values for this table in ");
-            headerHtml.append(PageFlowUtil.filter(domain.getContainer().getPath())).append("</a>]");
+            headerHtml.append(PageFlowUtil.textLink("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
         headerHtml.append("<br><br>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.");
 

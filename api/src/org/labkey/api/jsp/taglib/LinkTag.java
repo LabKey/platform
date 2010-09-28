@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
 import javax.servlet.jsp.JspException;
@@ -45,10 +46,6 @@ public class LinkTag extends SimpleTagBase
     public void doTag() throws JspException, IOException
     {
         JspWriter out = getOut();
-        out.write("[<a href=\"");
-        out.write(h(_href));
-        out.write("\">");
-        out.write(h(_text));
-        out.write("</a>]");
+        out.write(PageFlowUtil.textLink(h(_text), h(_href)));
     }
 }

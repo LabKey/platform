@@ -2,6 +2,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -12,6 +13,8 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Copyright (c) 2008 LabKey Corporation
@@ -58,7 +61,10 @@ public class RunListDetailsQueryView extends RunListQueryView
                 if (runId != null)
                 {
                     ActionURL url = new ActionURL(_detailsActionClass, ctx.getContainer()).addParameter(_detailsIdColumn, "" + runId);
-                    out.write("[<a href=\"" + url.getLocalURIString() + "\" title=\"View run details\">run&nbsp;details</a>]");
+                    Map<String, String> map = new HashMap<String, String>();
+                    map.put("title", "View run details");
+                    out.write(PageFlowUtil.textLink("run details", url.getLocalURIString(), null, null, map));
+                    /*out.write("[<a href=\"" + url.getLocalURIString() + "\" title=\"View run details\">run&nbsp;details</a>]");*/ // RE_CHECK
                 }
             }
         });

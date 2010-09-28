@@ -1199,61 +1199,68 @@ public class PageFlowUtil
 
     public static String textLink(String text, HString href, String onClickScript, String id)
     {
-        return "[<a href=\"" + filter(href) + "\"" +
+        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
+        {
+            return "[<a href=\"" + filter(href) + "\"" +
+                    (id != null ? " id=\"" + id + "\"" : "") +
+                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                    ">" + text + "</a>]";
+        }
+        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>]";
+                "><span>" + text + "</span></a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id)
     {
-        return "[<a href=\"" + filter(href) + "\"" +
+        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
+        {
+            return "[<a href=\"" + filter(href) + "\"" +
+                    (id != null ? " id=\"" + id + "\"" : "") +
+                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                    ">" + text + "</a>]";
+        }
+        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>]";
+                "><span>" + text + "</span></a>";
+    }
+
+    public static String textLink(String text, String href, String onClickScript, String id, Map<String, String> properties)
+    {
+        String additions = "";
+        for (Map.Entry<String, String> entry : properties.entrySet())
+        {
+            additions += entry.getKey() + "=\"" + entry.getValue() + "\" ";
+        }
+
+        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
+        {
+            return "[<a " + additions + "href=\"" + filter(href) + "\"" +
+                    (id != null ? " id=\"" + id + "\"" : "") +
+                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                    ">" + text + "</a>]";
+        }
+        return "<a class='labkey-button' " + additions + "href=\"" + filter(href) + "\"" +
+                (id != null ? " id=\"" + id + "\"" : "") +
+                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                "><span>" + text + "</span></a>";
     }
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id)
     {
-        return "[<a href=\"" + filter(url) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + text + "</a>]";
-    }
-
-    public static String styledTextLink(String text, HString href, String onClickScript, String id)
-    {
         if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
-            return textLink(text, href, onClickScript, id);
-        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
+        {
+            return "[<a href=\"" + filter(url) + "\"" +
+                    (id != null ? " id=\"" + id + "\"" : "") +
+                    (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
+                    ">" + text + "</a>]";
+        }
+        return "<a class='labkey-button' href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 "><span>" + text + "</span></a>";
-    }
-
-    public static String styledTextLink(String text, String href, String onClickScript, String id)
-    {
-        if (!WebThemeManager.getTheme(HttpView.getContextContainer()).isCustom())
-            return textLink(text, href, onClickScript, id);
-        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                "><span>" + text + "</span></a>";
-    }
-
-    public static String styledTextLink(String text, ActionURL url, String onClickScript, String id)
-    {
-        return styledTextLink(text, url.getLocalURIString(), onClickScript, id);
-    }
-
-    public static String styledTextLink(String text, String href, String id)
-    {
-        return styledTextLink(text, href, null, id);
-    }
-
-    public static String styledTextLink(String text, String href)
-    {
-        return styledTextLink(text, href, null, null);
     }
 
     public static String textLink(String text, ActionURL url)
@@ -1607,21 +1614,34 @@ public class PageFlowUtil
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
-            if (null != rootCustomStylesheetURL)
-                F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+            /*if (!theme.isCustom())
+            {*/
+                if (null != rootCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
 
-            if (!c.isRoot())
+                if (!c.isRoot())
+                {
+                    ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
+
+                    if (null != containerThemeStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(containerThemeStylesheetURL));
+
+                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+                    if (null != containerCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                }
+            /*}
+            else
             {
-                ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
+                if (!c.isRoot())
+                {
+                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
 
-                if (null != containerThemeStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(containerThemeStylesheetURL));
-
-                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-                if (null != containerCustomStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-            }
+                    if (null != containerCustomStylesheetURL)
+                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+                }
+            }*/
         }
         
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());

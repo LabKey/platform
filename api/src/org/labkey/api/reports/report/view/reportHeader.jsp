@@ -144,7 +144,7 @@
         <tr><td style="border:none;font-weight:bold">Inherited from project :</td><td style="border:none">&nbsp;<%=form.getReport().getDescriptor().getContainerPath()%></td></tr>
     <%  }
         if (!viewMap.isEmpty()) { %>
-        <tr><td style="border:none;font-weight:bold">Created from Grid View :</td><td style="border:none">&nbsp;<%=StringUtils.isEmpty(viewName) ? DEFAULT_VIEW : viewName%>&nbsp;[<a href="javascript:void(0)" onclick="javascript:showViewPicker()">change</a>]</td></tr>
+        <tr><td style="border:none;font-weight:bold">Created from Grid View :</td><td style="border:none">&nbsp;<%=StringUtils.isEmpty(viewName) ? DEFAULT_VIEW : viewName%>&nbsp;<%=PageFlowUtil.textLink("change", "javascript:void(0)", "javascript:showViewPicker()")%></td></tr>
     <%  } else { %>
         <tr><td style="border:none;font-weight:bold">Created from Grid View :</td><td style="border:none">&nbsp;<%=StringUtils.isEmpty(viewName) ? DEFAULT_VIEW : viewName%></td></tr>
     <%  }

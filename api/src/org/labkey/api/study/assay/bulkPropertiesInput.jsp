@@ -62,7 +62,7 @@
     <tr>
         <td/>
         <td id="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>" <%= !useBulk ? "style=\"display: none;\"" : "" %>>
-            <% if (form.getTemplateURL() != null) { %>[<a href="<%= form.getTemplateURL() %>">download Excel template</a>]<br/><% } %>
+            <% if (form.getTemplateURL() != null) { %><%=PageFlowUtil.textLink("download Excel template", form.getTemplateURL())%><br/><% } %>
             <textarea style="width: 100%"
                     rows="5" cols="80"
                     name="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>"><%= PageFlowUtil.filter(existingValue) %></textarea>

@@ -163,7 +163,7 @@ public class Overview
             ret.append("<span class=\"action-label\">");
             if (_url != null)
             {
-                ret.append("[<a href=\"" + h(_url) + "\">" + h(_label) + "</a>]");
+                ret.append(PageFlowUtil.textLink(h(_label), h(_url)));
             }
             else
             {

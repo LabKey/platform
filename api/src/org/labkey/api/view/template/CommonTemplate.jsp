@@ -108,6 +108,7 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
         </tr><%
      }%>
         <tr>
+            <%     if (HttpView.currentContext().isShowFolders()) { %>
             <td id="leftmenupanel" class="labkey-site-nav-panel">
 <%            if (HttpView.currentContext().isShowFolders())
                 {%>
@@ -115,6 +116,7 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
             <%  } %>
                 <% me.include(me.getView("menu") ,out); %>
             </td>
+            <% } %>
             <td class="labkey-proj">
                 <!--content area-->
                 <table class="labkey-proj">
