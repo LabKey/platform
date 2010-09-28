@@ -107,6 +107,16 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     }
 
     @Override
+    public void setModuleDependencies(String dependencies)
+    {
+        super.setModuleDependencies(dependencies);
+        Set<String> deps = getModuleDependenciesAsSet();
+
+        // SimpleUserSchema is defined in Query
+        deps.add("query");
+    }
+
+    @Override
     public Set<String> getSchemaNames()
     {
         if (_schemaNames == null)
