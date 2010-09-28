@@ -73,29 +73,29 @@ if (hasContent && includeLinks)
 
     if (null != context.get("updateContentLink"))
     {
-        %><%=textLink("edit", PageFlowUtil.filter(context.get("updateContentLink")))%><%
+        %><%=textLink("edit", context.get("updateContentLink").toString())%><%
     }
 
     //user must have update perms
     if (null != context.get("manageLink"))
     {
-        %>&nbsp;<%=textLink("manage", PageFlowUtil.filter(context.get("manageLink")))%><%
+        %>&nbsp;<%=textLink("manage", context.get("manageLink").toString())%><%
     }
 
     //user must have update perms
     if (null != context.get("versionsLink"))
     {
-        %>&nbsp;<%=textLink("history", PageFlowUtil.filter(context.get("versionsLink")))%><%
+        %>&nbsp;<%=textLink("history", context.get("versionsLink").toString())%><%
     }
 
     if (null != context.get("printLink"))
     {
-        %>&nbsp;<%=textLink("print", PageFlowUtil.filter(context.get("printLink")), null, null, printProperty)%><%
+        %>&nbsp;<%=textLink("print", context.get("printLink").toString(), null, null, printProperty)%><%
     }
 
     if (null != context.get("printLink") && null != wiki.getChildren() && wiki.getChildren().size() > 0)
     {
-        %>&nbsp;<%=textLink("print branch", PageFlowUtil.filter(printBranchUrl.getLocalURIString()), null, null, printProperty)%><%
+        %>&nbsp;<%=textLink("print branch", printBranchUrl.getLocalURIString(), null, null, printProperty)%><%
     }
     %>
     </td></tr></table><%
@@ -138,7 +138,7 @@ if (!hasContent)
         if (wikiPageCount == 0 && null != context.get("insertLink"))
         {%>
             This Wiki currently does not contain any pages.<br><br>
-            <%=textLink("add a new page", PageFlowUtil.filter(context.get("insertLink")))%>
+            <%=textLink("add a new page", context.get("insertLink").toString())%>
         <%}
         else
         {
@@ -148,7 +148,7 @@ if (!hasContent)
 
             if (null != context.get("insertLink"))
             {%>
-                <%=textLink("add content", PageFlowUtil.filter(context.get("insertLink")))%>
+                <%=textLink("add content", context.get("insertLink").toString())%>
             <%}
         }
     }

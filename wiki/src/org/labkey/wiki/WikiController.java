@@ -2162,7 +2162,7 @@ public class WikiController extends SpringActionController
                     //pass in source container as a param.
                     copyUrl.addParameter("sourceContainer", cToc.getPath());
 
-                    out.print("&nbsp;" + PageFlowUtil.textLink("copy pages", PageFlowUtil.filter(copyUrl.toString())));
+                    out.print("&nbsp;" + PageFlowUtil.textLink("copy pages", copyUrl.toString()));
                 }
 
                 if (bHasPrint)
