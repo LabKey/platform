@@ -100,9 +100,8 @@ public class QueryModule extends DefaultModule
         QueryView.register(new RExportScriptFactory());
         QueryView.register(new JavaScriptExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
-
-        PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
     }
+
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -140,6 +139,8 @@ public class QueryModule extends DefaultModule
         SystemMaintenance.addTask(new SchemaReloadMaintenanceTask());
         ServiceRegistry.get(SearchService.class).addDocumentProvider(ExternalSchemaDocumentProvider.getInstance());
         ServiceRegistry.get(SearchService.class).addSearchCategory(ExternalSchemaDocumentProvider.externalTableCategory);
+
+        PropertyService.get().registerDomainKind(new SimpleTableDomainKind());
     }
 
     public Set<String> getSchemaNames()
