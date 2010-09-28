@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
@@ -1162,6 +1163,12 @@ public class Table
 
     public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
     {
+        return selectObject(table, null, pk, clss);
+    }
+
+
+    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
+    {
         SimpleFilter filter = new SimpleFilter();
         List<ColumnInfo> pkColumns = table.getPkColumns();
         Object[] pks;
@@ -1175,6 +1182,9 @@ public class Table
 
         for (int i = 0; i < pkColumns.size(); i++)
             filter.addCondition(pkColumns.get(i), pks[i]);
+
+        if (null != c)
+            filter.addCondition("container", c);
 
         try
         {
