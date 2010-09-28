@@ -629,10 +629,33 @@ public class VisualizationController extends SpringActionController
 
             // data grid
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put("type", "dataGrid");
-            data.put("label", "Data Grid");
+            data.put("type", "dataGridTime");
+            data.put("label", "Data Grid (Time)");
             data.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
+
+            List<Map<String, String>> dataAxis = new ArrayList<Map<String, String>>();
+            dataAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select the date measurement for the x-axis", "multiSelect", "false", "timeAxis", "true"));
+            dataAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
+            data.put("axis", lineAxis);
+            data.put("isGrid", true);
+            data.put("enabled", true);
+
             types.add(data);
+
+            // data grid
+            Map<String, Object> dataScatter = new HashMap<String, Object>();
+            dataScatter.put("type", "dataGridScatter");
+            dataScatter.put("label", "Data Grid (X/Y)");
+            dataScatter.put("icon", getViewContext().getContextPath() + "/reports/output_grid.jpg");
+
+            List<Map<String, String>> dataScatterAxis = new ArrayList<Map<String, String>>();
+            dataScatterAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select data type for x-axis", "multiSelect", "false"));
+            dataScatterAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
+            dataScatter.put("axis", dataScatterAxis);
+            dataScatter.put("isGrid", true);
+            dataScatter.put("enabled", true);
+
+            types.add(dataScatter);
 
             // excel data export
             Map<String, Object> excel = new HashMap<String, Object>();
