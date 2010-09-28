@@ -33,6 +33,8 @@ public class BuiltInButtonConfig implements ButtonConfig
 {
     private String _caption;
     private String _originalCaption;
+    private String _insertAfter, _insertBefore;
+    private Integer _insertPosition;
 
     public BuiltInButtonConfig(String originalCaption)
     {
@@ -54,6 +56,36 @@ public class BuiltInButtonConfig implements ButtonConfig
     public void setCaption(String caption)
     {
         _caption = caption;
+    }
+
+    public String getInsertAfter()
+    {
+        return _insertAfter;
+    }
+
+    public void setInsertAfter(String insertAfter)
+    {
+        _insertAfter = insertAfter;
+    }
+
+    public String getInsertBefore()
+    {
+        return _insertBefore;
+    }
+
+    public void setInsertBefore(String insertBefore)
+    {
+        _insertBefore = insertBefore;
+    }
+
+    public Integer getInsertPosition()
+    {
+        return _insertPosition;
+    }
+
+    public void setInsertPosition(Integer insertPosition)
+    {
+        _insertPosition = insertPosition;
     }
 
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)

@@ -45,6 +45,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
     /** Permission that a user must have in order to see the button */
     private Class<? extends Permission> _permission;
     private List<NavTree> _menuItems;
+    private String _insertAfter, _insertBefore;
+    private Integer _insertPosition;
 
     public String getText()
     {
@@ -109,6 +111,36 @@ public class UserDefinedButtonConfig implements ButtonConfig
     public void setPermission(Class<? extends Permission> permission)
     {
         _permission = permission;
+    }
+
+    public String getInsertAfter()
+    {
+        return _insertAfter;
+    }
+
+    public void setInsertAfter(String insertAfter)
+    {
+        _insertAfter = insertAfter;
+    }
+
+    public String getInsertBefore()
+    {
+        return _insertBefore;
+    }
+
+    public void setInsertBefore(String insertBefore)
+    {
+        _insertBefore = insertBefore;
+    }
+
+    public Integer getInsertPosition()
+    {
+        return _insertPosition;
+    }
+
+    public void setInsertPosition(Integer insertPosition)
+    {
+        _insertPosition = insertPosition;
     }
 
     private String processURL(RenderContext ctx, String url)

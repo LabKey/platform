@@ -144,11 +144,46 @@ public class ButtonBarConfig
     protected ButtonConfig loadButtonConfig(ButtonBarItem item)
     {
         if (item.getOriginalText() != null)
-            return new BuiltInButtonConfig(item.getOriginalText(), item.getText());
+        {
+            BuiltInButtonConfig buttonConfig = new BuiltInButtonConfig(item.getOriginalText(), item.getText());
+            
+            if (item.isSetInsertBefore())
+                buttonConfig.setInsertBefore(item.getInsertBefore());
+            else if (item.isSetInsertAfter())
+                buttonConfig.setInsertAfter(item.getInsertAfter());
+            else if (item.isSetInsertPosition())
+            {
+                Object position = item.getInsertPosition();
+                if (position instanceof Integer)
+                    buttonConfig.setInsertPosition(((Integer)position));
+                else if ("beginning".equals(position))
+                    buttonConfig.setInsertPosition(0);
+                else if ("end".equals(position))
+                    buttonConfig.setInsertPosition(-1);
+            }
+
+            return buttonConfig;
+        }
         else
         {
             UserDefinedButtonConfig buttonConfig = new UserDefinedButtonConfig();
             buttonConfig.setText(item.getText());
+
+            if (item.isSetInsertBefore())
+                buttonConfig.setInsertBefore(item.getInsertBefore());
+            else if (item.isSetInsertAfter())
+                buttonConfig.setInsertAfter(item.getInsertAfter());
+            else if (item.isSetInsertPosition())
+            {
+                Object position = item.getInsertPosition();
+                if (position instanceof Integer)
+                    buttonConfig.setInsertPosition(((Integer)position));
+                else if ("beginning".equals(position))
+                    buttonConfig.setInsertPosition(0);
+                else if ("end".equals(position))
+                    buttonConfig.setInsertPosition(-1);
+            }
+
             if (item.getTarget() != null && item.getTarget().getStringValue() != null)
             {
                 buttonConfig.setUrl(item.getTarget().getStringValue());
@@ -202,6 +237,7 @@ public class ButtonBarConfig
                     menuItems.add(loadNavTree(subItem));
                 buttonConfig.setMenuItems(menuItems);
             }
+
             return buttonConfig;
         }
     }

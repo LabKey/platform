@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
@@ -207,11 +208,17 @@ public class ButtonBar extends DisplayElement
         List<DisplayElement> originalButtons = _elementList;
         _elementList = new ArrayList<DisplayElement>();
 
+        List<Pair<ButtonConfig, DisplayElement>> mergedItems = new ArrayList<Pair<ButtonConfig, DisplayElement>>();
         for (ButtonConfig item : config.getItems())
         {
             DisplayElement elem = item.createButton(ctx, originalButtons);
-            if (null != elem)
-                add(elem);
+            if (null == elem)
+                continue;
+
+            if (item.getInsertAfter() != null || item.getInsertBefore() != null || item.getInsertPosition() != null)
+                mergedItems.add(new Pair(item, elem));
+            else
+                _elementList.add(elem);
         }
 
         if (config.isIncludeStandardButtons())
@@ -230,6 +237,43 @@ public class ButtonBar extends DisplayElement
                 if (!newCaptions.contains(elem.getCaption()))
                     _elementList.add(elem);
             }
+        }
+
+        for (Pair<ButtonConfig, DisplayElement> pair : mergedItems)
+        {
+            boolean added = false;
+            ButtonConfig item = pair.first;
+            DisplayElement elem = pair.second;
+
+            if (item.getInsertBefore() != null || item.getInsertAfter() != null)
+            {
+                boolean before = item.getInsertBefore() != null;
+                String target = item.getInsertBefore() != null ? item.getInsertBefore() : item.getInsertAfter();
+
+                for (int i = 0; i < _elementList.size(); i++)
+                {
+                    DisplayElement existing = _elementList.get(i);
+                    if (existing.getCaption().equalsIgnoreCase(target))
+                    {
+                        _elementList.add(before ? i : i+1, elem);
+                        added = true;
+                        break;
+                    }
+                }
+
+            }
+            else if (item.getInsertPosition() != null)
+            {
+                if (item.getInsertPosition() == -1)
+                    _elementList.add(elem);
+                else
+                    _elementList.add(item.getInsertPosition(), elem);
+                added = true;
+            }
+
+            // Just add to end if we didn't find an element to insert before or after.
+            if (!added)
+                _elementList.add(elem);
         }
 
     }

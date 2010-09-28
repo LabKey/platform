@@ -32,5 +32,12 @@ import java.util.List;
  */
 public interface ButtonConfig
 {
+    /**
+     * Insert position: 0 for head, -1 for tail, or the index at which to insert.
+     * @return
+     */
+    public Integer getInsertPosition();
+    public String getInsertBefore();
+    public String getInsertAfter();
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons);
 }
