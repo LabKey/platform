@@ -68,11 +68,11 @@ if (!bean.print && !embedded)
     <td align="left"><%
     if (null != bean.listURL)
     {
-        %>[<a href="<%=h(bean.listURL)%>">view list</a>]&nbsp;<%
+        %><%=textLink("view list", h(bean.listURL))%>&nbsp;<%
     }
     if (!bean.isResponse)
     {
-        %>[<a href="<%=h(bean.printURL)%>" target="printAnn">print</a>]&nbsp;<%
+        %><%=textLink("print", h(bean.printURL))%>&nbsp;<%
     }
     %></td>
 </tr>
@@ -80,7 +80,7 @@ if (!bean.print && !embedded)
 }
 if (!bean.print && null != discussionSrc)
 { %>
-    <p></p><img src="<%=contextPath%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  [<a href='<%=h(discussionSrc.getLocalURIString())%>'>view&nbsp;page</a>]<%
+    <p></p><img src="<%=contextPath%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", h(discussionSrc.getLocalURIString()))%><%
 }
 %>
 
@@ -92,13 +92,13 @@ if (!bean.print && null != discussionSrc)
 
 if (false && !bean.print && null != discussionSrc)
 {
-    %>[<a href="<%=h(discussionSrc.getLocalURIString())%>#discussionArea">view&nbsp;in&nbsp;context</a>]&nbsp;<%
+    %><%=textLink("view in context", h(discussionSrc.getLocalURIString()))%>&nbsp;<%
 }
 
 if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 {
     ActionURL update = AnnouncementsController.getUpdateURL(c, announcementModel.getEntityId(), bean.currentURL);
-    %>[<a href="<%=h(update.getLocalURIString())%>">edit</a>]<%
+    %><%=textLink("edit", h(update.getLocalURIString()))%><%
 }
 %>&nbsp;<%=h(DateUtil.formatDateTime(announcementModel.getCreated()))%></td>
 </tr>
@@ -182,12 +182,12 @@ if (0 < announcementModel.getResponses().size())
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
                     ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), bean.currentURL);
-                    %>[<a href="<%=h(update.getLocalURIString())%>">edit</a>]<%
+                    %><%=textLink("edit", h(update.getLocalURIString()))%><%
                     }
                     if (bean.perm.allowDeleteMessage(r) && !bean.print)
                     {
                         ActionURL deleteResponse = AnnouncementsController.getDeleteResponseURL(c, r.getEntityId(), bean.currentURL);
-                %>&nbsp;[<a href="<%=h(deleteResponse.getLocalURIString())%>">delete</a>]<%
+                %>&nbsp;<%=textLink("delete", deleteResponse.getLocalURIString())%><%
                 }
                 %>&nbsp;<%=h(DateUtil.formatDateTime(r.getCreated()))%></td>
             </tr><%

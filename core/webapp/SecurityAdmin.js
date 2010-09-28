@@ -800,7 +800,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     if (canRemove)
                     {
                         removeWrapper = '$remove$' + id + user.UserId;
-                        html.push("<td>[<a href=# id=" + removeWrapper + ">remove</a>]</td>");
+                        html.push('<td><a class="labkey-button" href="#" id="' + removeWrapper + '"><span>remove</span></a></td>');
                     }
                     html.push("<td>");
                     html.push(_open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));

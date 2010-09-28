@@ -1281,11 +1281,12 @@ th.labkey-expand-collapse-area
 {
     font-weight: bold;
     color: #003399;
-    padding-right: 4px;
     padding-top: 2px;
     padding-bottom: 2px;
+    padding-left: 5px;
     white-space: nowrap;
-    text-align: right;
+    text-align: left;
+    width: 12px;
 }
 
 /* The table that contains all the expandable nodes in the expandable menus */

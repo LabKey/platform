@@ -49,7 +49,7 @@
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
-                    if (url != null) { %>[<a href="<%= url %>">view</a>]<% } %><br/>
+                    if (url != null) { %><%=textLink("view", url)%><% } %><br/>
                 <% } %>
             </td>
             <td valign="top">
@@ -61,7 +61,7 @@
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
-                    if (url != null) { %>[<a href="<%= url %>">view</a>]<% } %><br/>
+                    if (url != null) { %><%=textLink("view", url)%><% } %><br/>
                 <% } %>
             </td>
         </tr>

@@ -606,7 +606,7 @@ public class ListController extends SpringActionController
 
             if (form.isShowHistory())
             {
-                WebPartView linkView = new HtmlView("[<a href=\"" + PageFlowUtil.filter(getViewContext().cloneActionURL().deleteParameter("showHistory")) + "\">hide item history</a>]");
+                WebPartView linkView = new HtmlView(PageFlowUtil.textLink("hide item history", PageFlowUtil.filter(getViewContext().cloneActionURL().deleteParameter("showHistory"))));
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
                 WebPartView history = ListAuditViewFactory.getInstance().createListItemDetailsView(getViewContext(), item.getEntityId());
@@ -615,7 +615,7 @@ public class ListController extends SpringActionController
             }
             else
             {
-                view.addView(new HtmlView("[<a href=\"" + PageFlowUtil.filter(getViewContext().cloneActionURL().addParameter("showHistory", "1")) + "\">show item history</a>]"));
+                view.addView(new HtmlView(PageFlowUtil.textLink("show item history", PageFlowUtil.filter(getViewContext().cloneActionURL().addParameter("showHistory", "1")))));
             }
 
             if (_list.getDiscussionSetting().isLinked())

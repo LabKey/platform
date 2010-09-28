@@ -24,7 +24,7 @@
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
     var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
-    var permissionLink_show = '[<a href="#blank" onclick="showUserAccess();">permissions<\/a>]';
+    var permissionLink_show = '<a href="#blank" class="labkey-button" onclick="showUserAccess();"><span>permissions</span><\/a>';
 
     function enableText()
     {

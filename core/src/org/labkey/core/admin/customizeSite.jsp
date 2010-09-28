@@ -235,7 +235,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td></td>
-    <td>[<a href="javascript:submitSystemMaintenance()">Run system maintenance now</a>]</td>
+    <td><%=textLink("Run system maintenance now", "javascript:submitSystemMaintenance()")%></td>
 </tr>
 
 <tr>
@@ -291,7 +291,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td></td>
-    <td>[<a href="javascript:testNetworkDrive()">Test network drive settings</a>] - Note: Do not test if the drive is currently being accessed from within LabKey Server.</td>
+    <td><%=textLink("Test network drive settings", "javascript:testNetworkDrive()")%> - Note: Do not test if the drive is currently being accessed from within LabKey Server.</td>
 </tr>
 
 <tr>
@@ -319,7 +319,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td></td>
-    <td>[<a href="javascript:testMascot()">Test Mascot settings</a>]
+    <td><%=textLink("Test Mascot settings", "javascript:testMascot()")%>
 </td>
 </tr>
 
@@ -335,7 +335,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td></td>
-    <td>[<a href="javascript:testSequest()">Test Sequest settings</a>]
+    <td><%=textLink("Test Sequest settings", "javascript:testSequest()")%>
 </td>
 </tr>
 

@@ -646,7 +646,7 @@ function updateExistingAttachments(attachments, encodeNames)
 
             cell = row.insertCell(2);
             cell.id = "wiki-ea-del-" + idx;
-            cell.innerHTML = "[<a onclick='onDeleteAttachment(" + idx + ")'>delete</a>]";
+            cell.innerHTML = "<a class='labkey-button' onclick='onDeleteAttachment(" + idx + ")'><span>delete</span></a>";
         }
     }
 }
@@ -657,7 +657,7 @@ function onDeleteAttachment(index)
 
     getExistingAttachmentIconImg(index).src = LABKEY.ActionURL.getContextPath() + "/_icons/_deleted.gif";
     row.cells[1].style.textDecoration = "line-through";
-    row.cells[2].innerHTML = "[<a onclick='onUndeleteAttachment(" + index + ")'>undelete</a>]"
+    row.cells[2].innerHTML = "<a class='labkey-button' onclick='onUndeleteAttachment(" + index + ")'><span>undelete</span></a>"
             + "<input type='hidden' name='toDelete' value='" + _attachments[index].name + "'/>";
 
     //add a prop so we know we need to save the attachments
@@ -670,7 +670,7 @@ function onUndeleteAttachment(index)
 
     getExistingAttachmentIconImg(index).src = _attachments[index].iconUrl;
     row.cells[1].style.textDecoration = "";
-    row.cells[2].innerHTML = "[<a onclick='onDeleteAttachment(" + index + ")'>delete</a>]";
+    row.cells[2].innerHTML = "<a class='labkey-button' onclick='onDeleteAttachment(" + index + ")'><span>delete</span></a>";
 }
 
 function getFilesForm()
@@ -729,7 +729,7 @@ function onAddAttachment(fileInput, index)
     if(cell)
     {
         cell.setAttribute("nobreak", "1");
-        cell.innerHTML = "[<a onclick='onRemoveNewAttachment(" + index + ")'>remove</a>]&nbsp;"
+        cell.innerHTML = "<a class='labkey-button' onclick='onRemoveNewAttachment(" + index + ")'><span>remove</span></a>&nbsp;"
                 + getFileName(fileInput.value);
     }
 

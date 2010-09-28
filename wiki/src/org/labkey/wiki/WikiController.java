@@ -2151,11 +2151,9 @@ public class WikiController extends SpringActionController
 
                 if (bHasInsert)
                 {
-                    out.print("[<a href=\"");
                     ActionURL newPageUrl = new ActionURL(EditWikiAction.class, cToc);
                     newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-                    out.print(newPageUrl.getLocalURIString());
-                    out.print("\">new page</a>]&nbsp;");
+                    out.print("&nbsp;" + PageFlowUtil.textLink("new page", newPageUrl.getLocalURIString()));
                 }
 
                 if (bHasCopy)
@@ -2164,16 +2162,16 @@ public class WikiController extends SpringActionController
                     //pass in source container as a param.
                     copyUrl.addParameter("sourceContainer", cToc.getPath());
 
-                    out.print("[<a href=\"");
-                    out.print(PageFlowUtil.filter(copyUrl.toString()));
-                    out.print("\">copy pages</a>]&nbsp;");
+                    out.print("&nbsp;" + PageFlowUtil.textLink("copy pages", PageFlowUtil.filter(copyUrl.toString())));
                 }
 
                 if (bHasPrint)
                 {
-                    out.print("[<a href=\"");
-                    out.print(PageFlowUtil.filter(new ActionURL(PrintAllAction.class, cToc)));
-                    out.print("\" target=\"_blank\">print all</a>]");
+                    Map<String, String> map = new HashMap<String, String>();
+                    map.put("target", "_blank");
+                    
+                    out.print("&nbsp;" + PageFlowUtil.textLink("print all",
+                            PageFlowUtil.filter(new ActionURL(PrintAllAction.class, cToc).toString()), null, null, map));
                 }
 
                 out.println("");
@@ -2211,8 +2209,8 @@ public class WikiController extends SpringActionController
                 if (showExpandOption)
                 {
                     out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                    out.println("[<a onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, true)\" href=\"javascript:;\">expand&nbsp;all</a>]");
-                    out.println("[<a onclick=\"adjustAllTocEntries('NavTree-"+getId()+"', true, false)\" href=\"javascript:;\">collapse&nbsp;all</a>]");
+                    out.println(PageFlowUtil.textLink("expand all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, true)", ""));
+                    out.println(PageFlowUtil.textLink("collapse all", "javascript:;", "adjustAllTocEntries('" + getId() + "', true, false)", ""));
                 }
                 out.println("</td>\n</tr>\n</table>");
             }

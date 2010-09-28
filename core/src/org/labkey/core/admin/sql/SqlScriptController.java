@@ -173,7 +173,7 @@ public class SqlScriptController extends SpringActionController
             Container c = getContainer();
             StringBuilder html = new StringBuilder();
             if (AppProps.getInstance().isDevMode())
-                html.append("[<a href='consolidateScripts.view'>consolidate scripts</a>]<p/>");
+                html.append(PageFlowUtil.textLink("consolidate scripts", "consolidateScripts.view") + "<p/>");
             html.append("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
             html.append("<tr valign=top>");
@@ -353,7 +353,7 @@ public class SqlScriptController extends SpringActionController
                 html.append("<br>\n");
 
                 ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
-                html.append("[<a href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</a>]<br><br>\n");
+                html.append("<a class='labkey-button' href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\"><span>").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</span></a><br><br>\n"); //RE_CHECK
             }
 
             if (0 == html.length())

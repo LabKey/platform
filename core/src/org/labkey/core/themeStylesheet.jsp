@@ -30,10 +30,10 @@
    
     Container c = getViewContext().getContainer();
     WebTheme theme = WebThemeManager.getTheme(c);
-
+    response.setContentType("text/css");
+    
     if (!theme.isCustom()) // This jsp should not be used if the WebTheme is Custom. Shouldn't even get here.
     {
-        response.setContentType("text/css");
         ThemeFont themeFont = ThemeFont.getThemeFont(c);
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
         String navBarWidth = laf.getNavigationBarWidth();

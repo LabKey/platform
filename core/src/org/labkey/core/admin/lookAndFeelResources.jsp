@@ -50,7 +50,7 @@
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. [<a href="resetLogo.view">reset logo to default</a>]
+            Currently using a custom logo. <%=textLink("reset logo to default", "resetLogo.view")%>
         <% } else { %>
             Currently using the default logo.
         <% } %>
@@ -66,7 +66,7 @@
     <td>
         <% if (null != bean.customFavIcon)
         { %>
-            Currently using a custom favorite icon. [<a href="resetFavicon.view">reset favorite icon to default</a>]
+            Currently using a custom favorite icon. <%=textLink("reset favorite icon to default", "resetFavicon.view")%>
         <% } else { %>
             Currently using the default favorite icon.
         <% } %>
@@ -82,7 +82,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. [<a href="deleteCustomStylesheet.view">delete custom stylesheet</a>]
+            Currently using a custom stylesheet. <%=textLink("delete custom stylesheet", "deleteCustomStylesheet.view")%>
         <% } else { %>
             No custom stylesheet.
         <% } %>

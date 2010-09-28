@@ -164,16 +164,15 @@ public class CoreController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             Content content = getContent(request, response);
 
-            // No custom stylesheet for this container
-            if (content instanceof NoContent)
-                return;
-
             response.setContentType(getContentType());
-
             response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 35);
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.setDateHeader("Last-Modified", content.modified);
+
+            // No custom stylesheet for this container
+            if (content instanceof NoContent)
+                return;
 
             if (!checkIfModifiedSince(request, content.modified))
             {

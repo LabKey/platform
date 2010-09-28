@@ -66,8 +66,8 @@
     if (form.isAdvanced())
     {
 %>
-[<a href="<%=h(new ActionURL(IndexAction.class, c).addParameter("full", "1"))%>">reindex (full)</a>]<br>
-[<a href="<%=h(new ActionURL(IndexAction.class, c))%>">reindex (incremental)</a>]<br><%
+<%=textLink("reindex (full)", h(new ActionURL(IndexAction.class, c).addParameter("full", "1")))%><br>
+<%=textLink("reindex (incremental)", h(new ActionURL(IndexAction.class, c)))%><br><%
     }
 
     if (!form.isWebPart() && searchConfig.includeAdvancedUI())

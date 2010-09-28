@@ -201,7 +201,7 @@ function restoreDefaultPage()
                 %><option <%=selected%> value="<%=c.getId()%>"><%=h(c.getPath())%></option><%
             }
         %></select>
-        [<a href="javascript:restoreDefaultPage();">Reset to Folder Default Page</a>]
+        <%=textLink("Reset to Folder Default Page", "javascript:restoreDefaultPage();")%>
         </td>
      </tr>
     <tr>

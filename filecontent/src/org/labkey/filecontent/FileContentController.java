@@ -398,7 +398,7 @@ public class FileContentController extends SpringActionController
                out.write("<a href='begin.view?fileSetName=" + PageFlowUtil.filter(attDir.getLabel()) + "'>" + PageFlowUtil.filter(attDir.getLabel()) + "</a><br>");
 
            if (HttpView.currentContext().getUser().isAdministrator())
-               out.write("<br>[<a href='showAdmin.view'>Configure</a>]");
+               out.write("<br>" + PageFlowUtil.textLink("Configure", "showAdmin.view"));
        }
    }
 

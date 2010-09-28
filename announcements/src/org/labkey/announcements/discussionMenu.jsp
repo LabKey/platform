@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.jsp.JspBase" %>
 <%
     DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
     ViewContext context = me.getViewContext();
@@ -107,20 +108,20 @@ var discussionMenu = {};
     Ext.onReady(function(){Ext.get("discussionMenuToggle").on("click", onShow)});
 })();
 </script>
-<span id=discussionMenuToggle>[<a href="#" onclick="return false;"><%
+<span id=discussionMenuToggle><%
     if (announcementModels.length > 0)
     {
         if (me.allowMultipleDiscussions)
         {
-            %>see discussions (<%=announcementModels.length%>)<%
+            %><%=PageFlowUtil.textLink("see discussions (" + announcementModels.length + ")", "#", "return false;", "")%><%         
         }
         else
         {
-            %>discussion<%
+            %><%=PageFlowUtil.textLink("discussion", "#", "return false;", "")%><%
         }
     }
     else
     {
-        %>discuss this<%
+        %><%=PageFlowUtil.textLink("discuss this", "#", "return false;", "")%><%
     }
-%></a>]</span>
+%></span>

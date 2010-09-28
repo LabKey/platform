@@ -56,7 +56,7 @@
         <td colspan=2>[<%=bean.helpLink%>]</td>
     </tr>
     <tr>
-        <td colspan=2>[<a href="<%=urlFor(LdapController.TestLdapAction.class).addReturnURL(me.getViewContext().getActionURL())%>">Test LDAP settings</a>]</td>
+        <td colspan=2><%=textLink("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(me.getViewContext().getActionURL()))%></td>
     </tr>
 </table>
 </form>

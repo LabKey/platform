@@ -51,7 +51,7 @@
             <td><input type="checkbox" name="deleteServer" value="<%=server.getRowId()%>"></td>
             <td>Server:&nbsp;<%=server.getName()%></td>
             <td>Status:&nbsp;<%=status%></td>
-            <td>[<a href="<%=btServer.urlFor(BtController.ScheduledSyncAction.class)%>">configure synchronization</a>]
+            <td><%=textLink("configure synchronization", btServer.urlFor(BtController.ScheduledSyncAction.class))%>
 <%
         if (anyTasks) {
 %>

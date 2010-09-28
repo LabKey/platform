@@ -119,7 +119,7 @@ else
                 <%= h(email) %>
             </td>
             <td>
-                [<a href="<%=h(urlProvider(UserUrls.class).getUserAccessURL(c, userId))%>">permissions</a>]
+                <%=textLink("permissions", h(urlProvider(UserUrls.class).getUserAccessURL(c, userId)))%>
             </td>
         </tr>
         <%

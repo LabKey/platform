@@ -1035,7 +1035,7 @@ table.labkey-main
 }
 
 /* The side panel with the navigation and admin expandable menus */
-.labkey-site-nav-panel
+/*.labkey-site-nav-panel
 {
     background-color: #E1ECFC;
     border-top: 0;
@@ -1053,9 +1053,10 @@ table.labkey-main
     border-right: 0;
     vertical-align: top;
     padding: 0;
-}
+}*/
 
 td.labkey-site-nav-panel {
+    padding: 0;
     background-color: #f8f8f8;
     padding-top: 10px;
     padding-left: 5px;
@@ -1063,6 +1064,9 @@ td.labkey-site-nav-panel {
     border-bottom: 0;
     border-left: 0;
     border-right: 1px solid #e0e6ea;
+    border-collapse: separate; border-spacing: 2px;
+    vertical-align: top;
+    width: 120px;
 }
 
 /* The project area (the rest of the page besides the side and top panels) */
@@ -1239,17 +1243,6 @@ FORM.labkey-search-form
 }
 
 /* The table that contains the expandable nav panels */
-.labkey-expandable-nav-panel
-{
-    border-spacing: 0; *border-collapse: collapse;
-}
-
-/* The individual expandable nav menus */
-.labkey-expandable-nav
-{
-    padding: 0;
-}
-
 table.labkey-expandable-nav
 {
     background-color: #F8F8F8;
@@ -1259,7 +1252,13 @@ table.labkey-expandable-nav
     border-bottom: 1px solid #E0E6EA;
     border-spacing: 0; *border-collapse: collapse;
     border-collapse: collapse;
-    width: 146px;
+    width: 160px;
+}
+
+/* The individual expandable nav menus */
+.labkey-expandable-nav
+{
+    padding: 0;
 }
 
 #menuBarFolder_menu .labkey-expandable-nav
@@ -1316,12 +1315,12 @@ table.labkey-expandable-nav
 th.labkey-expand-collapse-area
 {
     font-weight: bold;
-    color: #003399;
-    padding-right: 4px;
     padding-top: 2px;
+    text-align: left;
     padding-bottom: 2px;
     white-space: nowrap;
-    text-align: right;
+    color:#126495;
+    width: 12px !important;
 }
 
 /* The table that contains all the expandable nodes in the expandable menus */
@@ -3108,13 +3107,12 @@ th.labkey-header {
     border: 0;
     padding: 5px 0;
     color: #000;
+    float: left;
 }
 
 th.labkey-header a:link, th.labkey-header a:visited {
     color: #000;
     font-weight: normal;
-    padding-left: 18px;
-    background: url("./_images/minus.gif") left no-repeat;
     text-transform: uppercase;
     font-size: 12px;
 }
@@ -3123,10 +3121,6 @@ th.labkey-header a:hover {
     color: #126495;
     font-weight: normal;
     text-transform: uppercase;
-}
-
-th.labkey-expand-collapse-area img {
-    display: none;
 }
 
 .labkey-expandable-nav-body {
@@ -3423,9 +3417,9 @@ color:#126495;
 th.labkey-col-header-filter, td.labkey-col-header-filter, .labkey-col-header-filter th {
 color:#126495;
 }
-th.labkey-expand-collapse-area {
+/*th.labkey-expand-collapse-area {
 color:#126495;
-}
+}*/
 tr.labkey-nav-tree-row {
 color:#126495;
 }

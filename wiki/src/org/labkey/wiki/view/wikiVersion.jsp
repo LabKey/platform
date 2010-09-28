@@ -82,7 +82,7 @@ else
                <i>date:</i> <%=bean.created%><br>
            </td>
            <td align=right>
-               [<a href="<%=h(bean.pageLink)%>">page</a>]&nbsp;[<a href="<%=h(bean.versionsLink)%>">history</a>]&nbsp;<%
+               <%=textLink("page", h(bean.pageLink))%>&nbsp;<%=textLink("history", h(bean.versionsLink))%>&nbsp;<%
 
         WikiVersion[] versions = WikiManager.getAllVersions(bean.wiki);
 

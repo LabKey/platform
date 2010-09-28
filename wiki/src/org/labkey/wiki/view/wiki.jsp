@@ -27,6 +27,9 @@
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="javax.servlet.http.HttpServletResponse" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
     HttpView me = HttpView.currentView();
@@ -46,6 +49,8 @@
     boolean includeLinks = (Boolean)context.get("includeLinks");
     boolean isEmbedded = (Boolean)context.get("isEmbedded");
     int wikiPageCount = ((Integer)context.get("wikiPageCount")).intValue();
+    Map<String, String> printProperty = new HashMap<String, String>();
+    printProperty.put("target", "_blank");
 
 if (!c.hasPermission(user, ReadPermission.class))
 {
@@ -68,29 +73,29 @@ if (hasContent && includeLinks)
 
     if (null != context.get("updateContentLink"))
     {
-        %>[<a href="<%=PageFlowUtil.filter(context.get("updateContentLink"))%>">edit</a>]<%
+        %><%=textLink("edit", PageFlowUtil.filter(context.get("updateContentLink")))%><%
     }
 
     //user must have update perms
     if (null != context.get("manageLink"))
     {
-        %>&nbsp;[<a href="<%=PageFlowUtil.filter(context.get("manageLink"))%>">manage</a>]<%
+        %>&nbsp;<%=textLink("manage", PageFlowUtil.filter(context.get("manageLink")))%><%
     }
 
     //user must have update perms
     if (null != context.get("versionsLink"))
     {
-        %>&nbsp;[<a href="<%=PageFlowUtil.filter(context.get("versionsLink"))%>">history</a>]<%
+        %>&nbsp;<%=textLink("history", PageFlowUtil.filter(context.get("versionsLink")))%><%
     }
 
     if (null != context.get("printLink"))
     {
-        %>&nbsp;[<a target="_blank" href="<%= PageFlowUtil.filter(context.get("printLink")) %>">print</a>]<%
+        %>&nbsp;<%=textLink("print", PageFlowUtil.filter(context.get("printLink")), null, null, printProperty)%><%
     }
 
     if (null != context.get("printLink") && null != wiki.getChildren() && wiki.getChildren().size() > 0)
     {
-        %>&nbsp;[<a target="_blank" href="<%= PageFlowUtil.filter(printBranchUrl.getLocalURIString()) %>">print branch</a>]<%
+        %>&nbsp;<%=textLink("print branch", PageFlowUtil.filter(printBranchUrl.getLocalURIString()), null, null, printProperty)%><%
     }
     %>
     </td></tr></table><%
@@ -133,7 +138,7 @@ if (!hasContent)
         if (wikiPageCount == 0 && null != context.get("insertLink"))
         {%>
             This Wiki currently does not contain any pages.<br><br>
-            [<a href="<%=PageFlowUtil.filter(context.get("insertLink"))%>">add a new page</a>]
+            <%=textLink("add a new page", PageFlowUtil.filter(context.get("insertLink")))%>
         <%}
         else
         {
@@ -143,7 +148,7 @@ if (!hasContent)
 
             if (null != context.get("insertLink"))
             {%>
-                [<a href="<%=PageFlowUtil.filter(context.get("insertLink"))%>">add content</a>]
+                <%=textLink("add content", PageFlowUtil.filter(context.get("insertLink")))%>
             <%}
         }
     }

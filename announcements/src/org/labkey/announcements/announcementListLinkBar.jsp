@@ -28,22 +28,22 @@
 <td align="left" width="33%"><%
 if (null != bean.insertURL)
     {
-    %>[<a href="<%=bean.insertURL%>">new <%=h(bean.settings.getConversationName().toLowerCase())%></a>]&nbsp;<%
+    %><%=textLink("new " + h(bean.settings.getConversationName().toLowerCase()), bean.insertURL)%>&nbsp;<%
     }
 %></td>
 <td align="center" width="33%"><%=h(bean.filterText)%></td>
 <td align="right"  width="33%"><%
 if (null != bean.emailPrefsURL)
     {
-    %>[<a href="<%=bean.emailPrefsURL%>">email&nbsp;preferences</a>]<%
+    %><%=textLink("email preferences", bean.emailPrefsURL)%><%
     }
 if (null != bean.emailManageURL)
     {
-    %>&nbsp;[<a href="<%=bean.emailManageURL%>">email&nbsp;admin</a>]<%
+    %>&nbsp;<%=textLink("email admin", bean.emailManageURL)%><%
     }
 if (null != bean.customizeURL)
     {
-    %>&nbsp;[<a href="<%=bean.customizeURL%>">customize</a>]<%
+    %>&nbsp;<%=textLink("customize",bean.customizeURL)%><%
     }
 %></td>
 </tr><%

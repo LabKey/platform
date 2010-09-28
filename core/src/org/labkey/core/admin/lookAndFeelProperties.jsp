@@ -91,7 +91,7 @@
         if (c.isRoot())
         { %>
 
-        [<a href="<%=AdminController.getDefineWebThemesURL(false)%>">define web themes</a>]<%
+        <%=textLink("define web themes", AdminController.getDefineWebThemesURL(false))%><%
 
         }
         %>

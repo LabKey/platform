@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String caption;
     UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
@@ -36,7 +37,7 @@
 <table>
     <tr>
         <td>
-            [<a href="<%=url.getLocalURIString()%>"><%=caption%></a>]
+            <%=textLink("caption", url.getLocalURIString())%>
         </td>
     </tr>
 </table>

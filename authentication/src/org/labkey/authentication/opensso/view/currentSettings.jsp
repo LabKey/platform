@@ -27,9 +27,9 @@
     ConfigProperties bean = me.getModelBean();
 %>
 <table>
-    <tr><td colspan="2">[<a href="<%=bean.authLogoURL%>">Pick a link and logos to use for OpenSSO sign in</a>]</td></tr>
+    <tr><td colspan="2"><%=textLink("Pick a link and logos to use for OpenSSO sign in", bean.authLogoURL)%></td></tr>
     <tr><td colspan="2">&nbsp;</td></tr>
-    <tr><td colspan="2">[<a href="<%=bean.pickRefererPrefixURL%>">Enter a referrer URL prefix that will automatically redirect to the OpenSSO link</a>]</td></tr>
+    <tr><td colspan="2"><%=textLink("Enter a referrer URL prefix that will automatically redirect to the OpenSSO link", bean.pickRefererPrefixURL)%></td></tr>
     <tr><td colspan="2">&nbsp;</td></tr><%
 
     for (String key : bean.props.keySet())

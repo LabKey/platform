@@ -48,7 +48,7 @@
     <tr><td colspan="2"><b><%=type.name()%></b></td></tr><%
         for (AdminLink link : AdminConsole.getLinks(type))
         { %>
-    <tr><td colspan="2">[<a href="<%=h(link.getUrl())%>"><%=h(link.getText())%></a>]</td></tr><%
+    <tr><td colspan="2"><%=textLink(h(link.getText()), h(link.getUrl()))%></td></tr><%
         } %>
     <tr><td colspan="2">&nbsp;</td></tr><%
     }

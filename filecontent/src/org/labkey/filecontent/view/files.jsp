@@ -57,7 +57,7 @@
         out.println("The file set for this directory is not configured properly.");
         if (me.isShowAdmin() && context.getUser().isAdministrator())
         {
-            %>[<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure Directories</a>]<%
+            %><%=textLink("Configure Directories", h(new ActionURL(FileContentController.ShowAdminAction.class, c)))%><%
         }
     return;
     }
@@ -160,18 +160,18 @@
 <% if (context.hasPermission(InsertPermission.class))
 {
     // UNDONE: use yahoo dialog to avoid pop-under
-    %>[<a href="#uploadFile" onclick="window.open('<%=addAttachmentUrl%>','uploadFiles','height=200,width=550,resizable=yes', false);">Upload&nbsp;File</a>]&nbsp;<%
+    %><%=textLink("Upload File", "#uploadFile", "window.open('" + addAttachmentUrl + "', 'uploadFiles', 'height=200,width=550,resizable=yes', false);")%>&nbsp;<%
 }
 if (context.hasPermission(UpdatePermission.class))
 {
     ActionURL manage = new ActionURL("FileContent", "begin", c);
     if (null != fileSetName)
         manage.addParameter("fileSetName",fileSetName);
-    %>[<a href="<%=h(manage)%>" >Manage&nbsp;Files</a>]&nbsp;<%
+    %><%=textLink("Manage Files", h(manage))%>&nbsp;<%
 }
 if (me.isShowAdmin() && context.getUser().isAdministrator())
 {
-    %>[<a href="<%=h(new ActionURL(FileContentController.ShowAdminAction.class, c))%>" >Configure</a>]&nbsp;<%
+    %><%=textLink("Configure", h(new ActionURL(FileContentController.ShowAdminAction.class, c)))%>&nbsp;<%
 }%>
 <%!
     URLHelper showFileUrl(URLHelper u, Attachment a)

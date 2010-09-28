@@ -20,6 +20,7 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
@@ -121,9 +122,7 @@ public class SiteSettingsAuditViewFactory implements AuditLogService.AuditViewFa
 
             _urlDetails.replaceParameter("id", val.toString());
 
-            out.write("[<a href='");
-            out.write(_urlDetails.getLocalURIString());
-            out.write("'>details</a>]");
+            out.write(PageFlowUtil.textLink("details", _urlDetails.getLocalURIString()));
         }
 
         public void renderTitle(RenderContext ctx, Writer out) throws IOException

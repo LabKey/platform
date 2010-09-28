@@ -559,7 +559,7 @@ public class ExperimentController extends SpringActionController
                 if (expr != null)
                 {
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
-                    updateLinks.append("[<a href=\"").append(url).append("\">edit</a>] ");
+                    updateLinks.append(PageFlowUtil.textLink("edit", url) + " ");
                 }
             }
 
@@ -568,7 +568,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());
 
-                updateLinks.append("[<a href=\"").append(deriveURL).append("\">derive samples from this sample</a>] ");
+                updateLinks.append(PageFlowUtil.textLink("derive samples from this sample", deriveURL) + " ");
             }
 
             vbox.addView(new HtmlView(updateLinks.toString()));
@@ -968,9 +968,7 @@ public class ExperimentController extends SpringActionController
             StringBuilder sb = new StringBuilder();
             if (showGraphSummary)
             {
-                sb.append("[<a href=\"");
-                sb.append(ExperimentUrlsImpl.get().getRunGraphURL(expRun));
-                sb.append("\">graph summary view</a>] ");
+                sb.append(PageFlowUtil.textLink("graph summary view", ExperimentUrlsImpl.get().getRunGraphURL(expRun)) + " ");
             }
             else
             {
@@ -978,9 +976,7 @@ public class ExperimentController extends SpringActionController
             }
             if (showGraphDetail)
             {
-                sb.append("[<a href=\"");
-                sb.append(ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun));
-                sb.append("\">graph detail view</a>] ");
+                sb.append(PageFlowUtil.textLink("graph detail view", ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun)) + " ");
             }
             else
             {
@@ -988,9 +984,7 @@ public class ExperimentController extends SpringActionController
             }
             if (showText)
             {
-                sb.append("[<a href=\"");
-                sb.append(ExperimentUrlsImpl.get().getRunTextURL(expRun));
-                sb.append("\">text view</a>] ");
+                sb.append(PageFlowUtil.textLink("text view", ExperimentUrlsImpl.get().getRunTextURL(expRun)) + " ");
             }
             else
             {
@@ -1009,14 +1003,12 @@ public class ExperimentController extends SpringActionController
                     if (pipelineRoot.isUnderRoot(runRoot))
                     {
                         String path = pipelineRoot.relativePath(runRoot);
-                        sb.append("[<a href=\"");
-                        sb.append(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(expRun.getContainer(), null, path));
-                        sb.append("\">files view</a>] ");
+                        sb.append(PageFlowUtil.textLink("files view", PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(expRun.getContainer(), null, path)) + " ");
                     }
                 }
             }
 
-            sb.append("[<a onclick=\"document.getElementById('exportFilesForm').submit(); return false;\">download all files</a>]");
+            sb.append(PageFlowUtil.textLink("download all files", "", "document.getElementById('exportFilesForm').submit(); return false;", ""));
             sb.append("<form id=\"exportFilesForm\" method=\"post\" action=\"");
             sb.append(new ActionURL(ExportRunFilesAction.class, expRun.getContainer()));
             sb.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");

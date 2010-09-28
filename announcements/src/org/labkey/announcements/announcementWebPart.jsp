@@ -29,33 +29,40 @@
     Container c = me.getViewContext().getContainer();
 %>
 <!--ANNOUNCEMENTS-->
-<table style="table-layout:fixed;width:100%">
+<table style="width:100%">
     <tr>
-        <td width="40%" align="left"><%
+        <td>
+            <div style="text-align: left"><%
             if (null != bean.insertURL)
             {
-        %>[<a href="<%=bean.insertURL%>">new <%=bean.settings.getConversationName().toLowerCase()%></a>]&nbsp;<%
+        %><%=textLink("new " + bean.settings.getConversationName().toLowerCase(), bean.insertURL)%>&nbsp;<%
             }
             if (null != bean.listURL)
             {
-        %>[<a href="<%=bean.listURL%>">view list</a>]<%
+        %><%=textLink("view list", bean.listURL)%><%
     }
-%></td>
-        <td  width="20%" align="center"><%=bean.filterText%></td>
-        <td  width="40%" align="right"><%
-            if (null != bean.emailPrefsURL)
-            {
-        %>[<a href="<%=bean.emailPrefsURL%>">email&nbsp;preferences</a>]<%
-            }
-            if (null != bean.emailManageURL)
-            {
-        %>&nbsp;[<a href="<%=bean.emailManageURL%>">email&nbsp;admin</a>]<%
-            }
-            if (null != bean.customizeURL)
-            {
-        %>&nbsp;[<a href="<%=bean.customizeURL%>">customize</a>]<%
-    }
-%></td>
+%></div>
+        </td>
+        <td style="text-align:center">
+            <div style="text-align: center;"><%=bean.filterText.replace(" ", "&nbsp;")%></div>
+        </td>
+        <td>
+            <div style="text-align: right"><%
+                if (null != bean.emailPrefsURL)
+                {
+            %><%=textLink("email preferences", bean.emailPrefsURL)%><%
+                }
+                if (null != bean.emailManageURL)
+                {
+            %>&nbsp;<%=textLink("email admin", bean.emailManageURL)%><%
+                }
+                if (null != bean.customizeURL)
+                {
+            %>&nbsp;<%=textLink("customize", bean.customizeURL)%><%
+                }
+            %>
+            </div>
+        </td>
     </tr><%
     if (0 == bean.announcementModels.length)
     {%>
@@ -85,7 +92,7 @@
         %>
     </td></tr>
 <%      } %>    <tr><td style="padding-bottom:4;" colspan=3 align="left">[<a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>">view <%=bean.settings.getConversationName().toLowerCase()%><%if (null != bean.insertURL)
-{%> or respond<%}%></a>]</td></tr>
+{%> or respond<%}%></a>]</td></tr> <!-- RE_CHECK -->
 <%
     }
 %></table>

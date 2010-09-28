@@ -113,8 +113,8 @@ public class PermissionsDetailsView extends WebPartView
         if (!_c.isRoot())
         {
             out.print("<td>");
-            out.print("&nbsp;[<a href=\"" + PageFlowUtil.filter(PageFlowUtil.urlProvider(SecurityUrls.class).getGroupPermissionURL(_c, group.getUserId())) + "\">");
-            out.print("permissions</a>]</td>");
+            out.print(PageFlowUtil.textLink("permissions", PageFlowUtil.filter(PageFlowUtil.urlProvider(SecurityUrls.class).getGroupPermissionURL(_c, group.getUserId()))));
+            out.print("</td>");
         }
         out.print("</tr>");
     }
