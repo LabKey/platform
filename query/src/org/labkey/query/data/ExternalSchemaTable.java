@@ -17,7 +17,6 @@
 package org.labkey.query.data;
 
 import org.labkey.api.data.*;
-import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;

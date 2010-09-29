@@ -114,6 +114,20 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         }
     }
 
+    public static String getPropertyURI(String schemaName, String tableName, Container c, User u)
+    {
+        try
+        {
+            XarContext xc = getXarContext(schemaName, tableName, c, u);
+            xc.addSubstitution(XAR_SUBSTITUTION_GUID, GUID.makeGUID());
+            return LsidUtils.resolveLsidFromTemplate(SimpleModule.PROPERTY_LSID_TEMPLATE, xc, SimpleModule.PROPERTY_NAMESPACE_PREFIX_TEMPLATE);
+        }
+        catch (XarFormatException xfe)
+        {
+            return null;
+        }
+    }
+
     private static XarContext getXarContext(String schemaName, String tableName, Container c, User u)
     {
         // XXX: need to escape '-' (and '.' ?) in the schema and table names
@@ -210,20 +224,6 @@ public class SimpleTableDomainKind extends AbstractDomainKind
 
         String domainURI = generateDomainURI(schemaName, tableName, container, user);
         return PropertyService.get().createDomain(container, domainURI, domain.getName());
-    }
-
-    private static String getPropertyURI(String schemaName, String tableName, Container c, User u)
-    {
-        try
-        {
-            XarContext xc = getXarContext(schemaName, tableName, c, u);
-            xc.addSubstitution(XAR_SUBSTITUTION_GUID, GUID.makeGUID());
-            return LsidUtils.resolveLsidFromTemplate(SimpleModule.PROPERTY_LSID_TEMPLATE, xc, SimpleModule.PROPERTY_NAMESPACE_PREFIX_TEMPLATE);
-        }
-        catch (XarFormatException xfe)
-        {
-            return null;
-        }
     }
 
 }
