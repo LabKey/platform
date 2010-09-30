@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Type;
 import org.labkey.api.query.*;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -677,11 +678,13 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public abstract static class VisualizationMetadata
+    public static class VisualizationMetadata
     {
         private String _name;
         private String _queryName;
         private String _schemaName;
+        private Type _type;
+        private Set<Object> _values;
         protected Container _container;
         protected User _user;
 
@@ -690,8 +693,16 @@ public class VisualizationController extends SpringActionController
             _name = (String) properties.get("name");
             _queryName = (String) properties.get("queryName");
             _schemaName = (String) properties.get("schemaName");
+            _type = Type.getTypeBySqlTypeName((String) properties.get("type"));
             _user = user;
             _container = container;
+            JSONArray values = (JSONArray) properties.get("values");
+            if (values != null)
+            {
+                _values = new HashSet<Object>();
+                for (int i = 0; i < values.length(); i++)
+                    _values.add(values.get(i));
+            }
         }
 
         public TableInfo getTableInfo()
@@ -711,6 +722,11 @@ public class VisualizationController extends SpringActionController
             return _queryName;
         }
 
+        public Type getType()
+        {
+            return _type;
+        }
+
         public String getSchemaName()
         {
             return _schemaName;
@@ -721,10 +737,21 @@ public class VisualizationController extends SpringActionController
             return _name;
         }
 
-        public Set<String> getSelectColumns()
+        public Set<Object> getValues()
         {
-            Set<String> cols = new HashSet<String>();
-            cols.add(getName().replace('/', '.'));
+            return _values;
+        }
+
+        protected String getSelectName()
+        {
+            return getName().replaceAll("/", "\\.");
+
+        }
+
+        public List<String> getSelectColumns()
+        {
+            List<String> cols = new ArrayList<String>();
+            cols.add(getSelectName());
             return cols;
         }
 
@@ -743,25 +770,9 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class Dimension extends VisualizationMetadata
-    {
-        private Object[] _values;
-
-        public Dimension(Container container, User user, Map<String, Object> properties, Object[] values)
-        {
-            super(container, user, properties);
-            _values = values;
-        }
-
-        public Object[] getValues()
-        {
-            return _values;
-        }
-    }
-
     public static class Measure extends VisualizationMetadata
     {
-        private Dimension[] _dimensions;
+        private Measure[] _dimensions;
         private TableInfo _tableInfo;
         private List<Measure> _additionalColumns = new ArrayList<Measure>();
         private List<Measure> _dependentMeasures = new ArrayList<Measure>();
@@ -769,14 +780,14 @@ public class VisualizationController extends SpringActionController
 
         public Measure(Container container, User user, Map<String, Object> measureInfo)
         {
-            this(container, user, measureInfo, null, null);
+            this(container, user, measureInfo, null);
         }
 
-        public Measure(Container container, User user, Map<String, Object> measureInfo, Map<String, Object> dimensionInfo, Object[] dimensionValues)
+        public Measure(Container container, User user, Map<String, Object> measureInfo, Map<String, Object> dimensionInfo)
         {
             super(container, user, measureInfo);
             if (dimensionInfo != null)
-                _dimensions = new Dimension[] { new Dimension(container, user, dimensionInfo, dimensionValues) };
+                _dimensions = new Measure[] { new Measure(container, user, dimensionInfo) };
         }
 
         @Override
@@ -786,12 +797,12 @@ public class VisualizationController extends SpringActionController
             {
                 TableInfo tinfo = super.getTableInfo();
 
-                Dimension[] dimensions = getDimensions();
+                VisualizationMetadata[] dimensions = getDimensions();
                 if (dimensions != null && dimensions.length > 0)
                 {
                     if (dimensions.length > 1)
                         throw new IllegalArgumentException("Only one dimension is currently supported per measure; found " + dimensions.length);
-                    Dimension dimension = dimensions[0];
+                    VisualizationMetadata dimension = dimensions[0];
                     ColumnInfo col = tinfo.getColumn(getName());
                     CrosstabSettings settings = new CrosstabSettings(tinfo);
                     settings.addMeasure(col.getFieldKey(), CrosstabMeasure.AggregateFunction.MAX);
@@ -860,21 +871,21 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public Set<String> getSelectColumns()
+        public List<String> getSelectColumns()
         {
-            Dimension[] dimensions = getDimensions();
-            Set<String> cols;
+            VisualizationMetadata[] dimensions = getDimensions();
+            List<String> cols;
             if (dimensions != null && dimensions.length > 0)
             {
                 // Don't add _additionalColumns here- they've already been added when we created the crosstabtableinfo
                 // to pivot by dimension.
-                cols = getTableInfo().getColumnNameSet();
+                cols = new ArrayList<String>(getTableInfo().getColumnNameSet());
             }
             else
             {
                 cols = super.getSelectColumns();
                 for (VisualizationMetadata metadata : _additionalColumns)
-                    cols.add(metadata.getName().replace('/', '.'));
+                    cols.add(metadata.getSelectName());
             }
             return cols;
        }
@@ -889,15 +900,63 @@ public class VisualizationController extends SpringActionController
             return _dimensions != null && _dimensions.length > 0;
         }
 
-        public Dimension[] getDimensions()
+        public VisualizationMetadata[] getDimensions()
         {
             return _dimensions;
+        }
+
+        public List<String> getSortColumns()
+        {
+            List<String> sorts = new ArrayList<String>();
+            // this is a select column, so we don't sort on ourselves.  Additional columns from this table may be sorts,
+            // however, so we iterate them here.
+            for (Measure possibleSort : _additionalColumns)
+            {
+                // Column names may have been mapped to different names if we did a pivot on dimension.  Correct the
+                // additional column names to match those that will actually be in the query here:
+                for (String sortCol : possibleSort.getSortColumns())
+                {
+                    // Column names are separated by dots, while measure names are separated by slashes.  Map from original select column name
+                    // to select measure name before mapping from original measure name to final selected column name:
+                    String colName;
+                    if (_measureNameToColumnName != null)
+                    {
+                        sortCol = sortCol.replaceAll("\\.", "/");
+                        colName = _measureNameToColumnName.get(sortCol);
+                        if (colName == null)
+                            throw new IllegalStateException("Expected to find all selected columns in the measure to column map.  Didn't find: " + sortCol);
+                    }
+                    else
+                        colName = sortCol;
+
+                    sorts.add(colName);
+                }
+            }
+            return sorts;
+        }
+    }
+
+    public static class Sort extends Measure
+    {
+        public Sort(Container container, User user, Map<String, Object> sortInfo)
+        {
+            super(container, user, sortInfo);
+        }
+
+        @Override
+        public List<String> getSortColumns()
+        {
+            List<String> sorts = new ArrayList<String>();
+            sorts.add(getSelectName());
+            sorts.addAll(super.getSortColumns());
+            return sorts;
         }
     }
 
     public static class GetDataForm implements CustomApiForm, HasViewContext
     {
-        private List<Measure> _measures;
+        private List<Measure> _measures = new ArrayList<Measure>();
+        private List<Measure> _sorts = new ArrayList<Measure>();
         private ViewContext _context;
 
         @Override
@@ -914,7 +973,6 @@ public class VisualizationController extends SpringActionController
 
         public void bindProperties(Map<String, Object> props)
         {
-            _measures = new ArrayList<Measure>();
             Object measuresProp = props.get("measures");
             if (measuresProp != null)
             {
@@ -924,22 +982,14 @@ public class VisualizationController extends SpringActionController
                     Map<String, Object> measureProperties = (Map<String, Object>) measureInfo.get("measure");
 
                     Map<String, Object> dimensionProperties = (Map<String, Object>) measureInfo.get("dimension");
-                    JSONArray dimensionValues = (JSONArray) measureInfo.get("dimensionValues");
-                    Object[] valuesArray = null;
-                    if (dimensionValues != null)
-                    {
-                        valuesArray = new Object[dimensionValues.length()];
-                        for (int i = 0; i < dimensionValues.length(); i++)
-                            valuesArray[i] = dimensionValues.get(i);
-                    }
 
-                    Measure measure = new Measure(_context.getContainer(), _context.getUser(), measureProperties, dimensionProperties, valuesArray);
+                    Measure measure = new Measure(_context.getContainer(), _context.getUser(), measureProperties, dimensionProperties);
 
                     Object timeAxis = axisInfo.get("timeAxis");
                     if (timeAxis instanceof String && Boolean.parseBoolean((String) timeAxis))
                     {
                         Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
-                        Measure zeroDateMeasure = new Measure(_context.getContainer(), _context.getUser(), (Map<String, Object>) dateOptions.get("zeroDateCol"), null, null)
+                        Measure zeroDateMeasure = new Measure(_context.getContainer(), _context.getUser(),(Map<String, Object>) dateOptions.get("zeroDateCol"))
                         {
                             @Override
                             public String getJoinColumn()
@@ -952,11 +1002,26 @@ public class VisualizationController extends SpringActionController
                     _measures.add(measure);
                 }
             }
+
+            Object sortsProp = props.get("sorts");
+            if (sortsProp != null)
+            {
+                for (Map<String, Object> sortInfo : ((JSONArray) sortsProp).toJSONObjectArray())
+                {
+                    Sort sortMeasure = new Sort(_context.getContainer(), _context.getUser(), sortInfo);
+                    _sorts.add(sortMeasure);
+                }
+            }
         }
 
         public List<Measure> getMeasures()
         {
             return _measures;
+        }
+
+        public List<Measure> getSorts()
+        {
+            return _sorts;
         }
     }
 
@@ -1115,6 +1180,8 @@ public class VisualizationController extends SpringActionController
             Map<Measure, Measure> childToParent = new HashMap<Measure, Measure>();
             // First we flatten, to ensure that all requested columns are considered when we call 'collapseMeasures'
             List<Measure> measures = flattenMeasures(getDataForm.getMeasures(), childToParent);
+            // sorts are simple measures, so we can add them after flattening:
+            measures.addAll(getDataForm.getSorts());
             // Collapse measures where possible to eliminate unnecessary self-joins:
             measures = collapseMeasures(measures);
 
@@ -1164,6 +1231,7 @@ public class VisualizationController extends SpringActionController
             }
 
             sql.append("FROM ");
+
             Map.Entry<String, Measure> previousEntry = null;
             for (Map.Entry<String, Measure> entry : tableNameToMetadata.entrySet())
             {
@@ -1186,6 +1254,59 @@ public class VisualizationController extends SpringActionController
                 }
                 previousEntry = entry;
             }
+
+            Map<String, Set<String>> filters = new HashMap<String, Set<String>>();
+            for (Map.Entry<Measure, String> entry : metadataToTableName.entrySet())
+            {
+                Set<Object> filterValues = entry.getKey().getValues();
+                if (filterValues != null && !filterValues.isEmpty())
+                {
+                    Set<String> formattedFilterValues = new HashSet<String>();
+                    Type type = entry.getKey().getType();
+                    for (Object value : filterValues)
+                    {
+                        if (type.isNumeric() || type == Type.BooleanType)
+                            formattedFilterValues.add(value.toString());
+                        else
+                            formattedFilterValues.add("'" + value.toString() + "'");
+                    }
+                    filters.put(entry.getValue() + "." + entry.getKey().getSelectName(), formattedFilterValues);
+                }
+            }
+
+            if (!filters.isEmpty())
+            {
+                sql.append("\nWHERE ");
+                sep = "";
+                for (Map.Entry<String, Set<String>> entry : filters.entrySet())
+                {
+                    String subsep = "";
+                    sql.append(sep).append(entry.getKey()).append(" IN (");
+                    for (String value : entry.getValue())
+                    {
+                        sql.append(subsep).append(value);
+                        subsep = ", ";
+                    }
+                    sql.append(")\n");
+                    sep = "AND";
+                }
+            }
+
+            StringBuilder sortClause = new StringBuilder();
+            sep = "";
+            for (Map.Entry<String, Measure> entry : tableNameToMetadata.entrySet())
+            {
+                String tableName = entry.getKey();
+                for (String column : entry.getValue().getSortColumns())
+                {
+                    sortClause.append(sep).append(tableName).append(".").append(column);
+                    sep = ", ";
+                }
+            }
+
+            if (sortClause.length() > 0)
+                sql.append("\nORDER BY ").append(sortClause);
+
 
             VisualizationUserSchema schema = new VisualizationUserSchema(getUser(), getContainer(), tableNameToMetadata);
             ApiQueryResponse response = getApiResponse(schema, sql.toString(), errors);
