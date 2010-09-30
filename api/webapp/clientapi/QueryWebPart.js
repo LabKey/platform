@@ -92,8 +92,12 @@
  * @param {String} [config.sort] A base sort order to use. This may be a comma-separated list of column names, each of
  * which may have a - prefix to indicate a descending sort.
  * @param {Array} [config.filters] A base set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
- * each of which is created using the {@link LABKEY.Filter.create} method.
+ * each of which is created using the {@link LABKEY.Filter.create} method. These filters cannot be removed by the user
+ * interacting with the UI.
  * For compatibility with the {@link LABKEY.Query} object, you may also specify base filters using config.filterArray.
+ * @param {Array} [config.removeableFilters] A set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
+ * each of which is created using the {@link LABKEY.Filter.create} method. These filters can be modified or removed by the user
+ * interacting with the UI.
  * @param {Array} [config.aggregates] A array of aggregate definitions. The objects in this array should have two
  * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
  * the {@link LABKEY.AggregateTypes} values.
@@ -218,6 +222,13 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         LABKEY.QueryWebPart.superclass.constructor.apply(this, arguments);
 
         this.filters = this.filters || this.filterArray;
+        if (config.removeableFilters)
+        {
+            // Translate the set of filters that are removeable to be included as the initial set of URL parameters
+            var translatedFilters = {};
+            LABKEY.Filter.appendFilterParams(translatedFilters, config.removeableFilters, this.dataRegionName);
+            this.userFilters = translatedFilters;
+        }
         this.qsParamsToIgnore = {};
 
         /**
