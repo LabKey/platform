@@ -76,7 +76,7 @@ String guid = GUID.makeGUID();
             <td colspan="2" />
             <td>
                 <% for (String role : bean.getRoles()) { %>
-                    <span style="white-space:nowrap"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= PageFlowUtil.filter(role) %>" value="<%= PageFlowUtil.filter(role) %>" /><%= PageFlowUtil.filter(role) %>&nbsp;</span>
+                    <div style="white-space:nowrap; width: 15em; float: left;"><input type="checkbox" class="file-download-role-checkbox-<%= guid %>" disabled="true" name="roles" id="role<%= PageFlowUtil.filter(role) %>" value="<%= PageFlowUtil.filter(role) %>" /><span style="padding-left: .4em; padding-right: 1.5em;"><%= PageFlowUtil.filter(role) %></span></div>
                 <% } %>
             </td>
         </tr>

@@ -94,10 +94,8 @@
     YAHOO.util.Event.addListener(window, "load", updateFailureNotifyInterval);
 </script>
 
-&nbsp;&nbsp;
 <form action="updateEmailNotification.view" method="post">
     <table>
-        <tr class="labkey-wp-header"><th colspan=2><b>Email Notification</b></th></tr>
         <tr><td><labkey:errors /></td></tr>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
             when a pipeline job succeeds and/or fails.<br/><%=c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration."%>
@@ -164,7 +162,7 @@
     </table>
     <table>
         <tr>
-            <td><%=generateSubmitButton("Update")%>&nbsp;
+            <td><%=generateSubmitButton("Update")%>
             <%=PageFlowUtil.generateSubmitButton("Reset to Default", "this.form.action='resetEmailNotification.view'")%></td>
         </tr>
         <tr><td></td></tr>
