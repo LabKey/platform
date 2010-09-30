@@ -78,7 +78,7 @@ public class AbstractAssayView extends VBox
             // Not all assay providers support all the different levels of data
             throw new NotFoundException();
         }
-        return new AssayHeaderView(protocol, provider, minimizeLinks, tableInfo.getContainerFilter());
+        return new AssayHeaderView(protocol, provider, minimizeLinks, true, tableInfo.getContainerFilter());
     }
 
 }

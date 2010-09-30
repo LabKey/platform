@@ -21,33 +21,25 @@
 <%
     JspView<AssayHeaderView> me = (JspView<AssayHeaderView>) HttpView.currentView();
     AssayHeaderView bean = me.getModelBean();
+    if (bean.isIncludeDescription() && bean.getProtocol().getProtocolDescription() != null && !"".equals(bean.getProtocol().getProtocolDescription().trim())) { %>
+        <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
+<% }
+    ActionURL current = getViewContext().getActionURL();
+    for (NavTree link : bean.getLinks())
+    {
+        if (link.getChildCount() == 0)
+        {
+            String url = link.getValue();
+            boolean active = current.getLocalURIString().equals(url);
 %>
-<table width="100%">
-    <tr>
-        <td>
-            <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
-            <p>
-                <%
-                    ActionURL current = getViewContext().getActionURL();
-                    for (NavTree link : bean.getLinks())
-                    {
-                        if (link.getChildCount() == 0)
-                        {
-                            String url = link.getValue();
-                            boolean active = current.getLocalURIString().equals(url);
-                %>
-                            <%= active ? "<strong>" : "" %><%= textLink(link.getKey(), url) %><%= active ? "</strong>" : "" %>
-                <%
-                        }
-                        else
-                        {
-                            PopupMenuView popup = new PopupMenuView(link);
-                            popup.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
-                            me.include(popup, out);
-                        }
-                    }
-                %>
-            </p>
-        </td>
-    </tr>
-</table>
+            <%= active ? "<strong>" : "" %><%= textLink(link.getKey(), url) %><%= active ? "</strong>" : "" %>
+<%
+        }
+        else
+        {
+            PopupMenuView popup = new PopupMenuView(link);
+            popup.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
+            me.include(popup, out);
+        }
+    }
+%>

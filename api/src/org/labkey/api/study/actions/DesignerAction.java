@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.actions;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -25,6 +26,7 @@ import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -89,7 +91,13 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         // hack for 4404 : Lookup picker performance is terrible when there are many containers
         ContainerManager.getAllChildren(ContainerManager.getRoot());
 
-        return createGWTView(properties);
+        VBox result = new VBox();
+        if (_protocol != null)
+        {
+            result.addView(new AssayHeaderView(_protocol, getProvider(form), false, false, ContainerFilter.CURRENT));
+        }
+        result.addView(createGWTView(properties));
+        return result;
     }
 
     protected ModelAndView createGWTView(Map<String, String> properties)

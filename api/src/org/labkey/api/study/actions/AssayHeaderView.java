@@ -53,16 +53,23 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
     protected final boolean _minimizeLinks;
     protected final ContainerFilter _containerFilter;
+    protected final boolean _includeDescription;
 
-    public AssayHeaderView(ExpProtocol protocol, AssayProvider provider, boolean minimizeLinks, ContainerFilter containerFilter)
+    public AssayHeaderView(ExpProtocol protocol, AssayProvider provider, boolean minimizeLinks, boolean includeDescription, ContainerFilter containerFilter)
     {
         super("/org/labkey/api/study/actions/assayHeader.jsp");
         _minimizeLinks = minimizeLinks;
+        _includeDescription = includeDescription;
         _containerFilter = containerFilter;
         setModelBean(this);
 
         _protocol = protocol;
         _provider = provider;
+    }
+
+    public boolean isIncludeDescription()
+    {
+        return _includeDescription;
     }
 
     public List<NavTree> getLinks()
