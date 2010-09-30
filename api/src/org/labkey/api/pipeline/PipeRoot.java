@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.Permission;
 
 import java.io.File;
 import java.net.URI;
+import java.util.List;
 
 /**
  * User: Nick
@@ -70,6 +71,9 @@ public interface PipeRoot extends SecurableResource
     boolean isSearchable();
 
     String getWebdavURL();
+
+    /** @return a list of any problems found with this pipeline root */
+    List<String> validate();
 
     /** @return true if this root exists on disk and is a directory */
     boolean isValid();

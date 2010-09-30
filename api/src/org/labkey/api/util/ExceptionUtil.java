@@ -290,6 +290,10 @@ public class ExceptionUtil
             {
                 return true;
             }
+            if (ex.getClass().equals(IllegalStateException.class) && "Cannot create a session after the response has been committed".equals(ex.getMessage()))
+            {
+                return true;
+            }
             if (ex.getCause() != ex)
             {
                 return isClientAbortException(ex.getCause());

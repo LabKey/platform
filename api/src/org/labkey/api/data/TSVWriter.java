@@ -301,6 +301,11 @@ public abstract class TSVWriter
 
     public void close() throws ServletException
     {
+        if (_pw == null)
+        {
+            return;
+        }
+        
         _pw.close();
 
         if (_pw.checkError())

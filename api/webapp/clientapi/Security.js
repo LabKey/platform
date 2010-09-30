@@ -361,11 +361,11 @@ LABKEY.Security = new function()
         /**
          * Creates a new container, which may be a project, folder, or workbook.
          * @param config A configuration object with the following properties
-         * @param {boolean} [config.name] Required for projects or folders. The name of the container.
-         * @param {boolean} [config.title] The title of the container, used primarily for workbooks.
-         * @param {boolean} [config.description] The description of the container, used primarily for workbooks.
+         * @param {String} [config.name] Required for projects or folders. The name of the container.
+         * @param {String} [config.title] The title of the container, used primarily for workbooks.
+         * @param {String} [config.description] The description of the container, used primarily for workbooks.
          * @param {boolean} [config.isWorkbook] Whether this a workbook should be created. Defaults to false.
-         * @param {boolean} [config.folderType] The name of the folder type to be applied.
+         * @param {String} [config.folderType] The name of the folder type to be applied.
          * @param {function} [config.successCallback] A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
