@@ -58,21 +58,24 @@ public class PanelButton extends ActionButton
         // Remember that we've already rendered the content once
         ctx.put(getId(), true);
 
-        StringBuilder config = new StringBuilder("{ activeTab: 0, items: [");
+        StringBuilder config = new StringBuilder("{ items: [");
         String separator = "";
         for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
         {
             config.append(separator);
             separator = ", ";
-            config.append("{contentEl:");
+            config.append("new Ext.ux.GroupTab({ mainItem: 0, expanded: false, frame: true, headerAsText: true, hideBorders: false, items: [{layout: 'fit', contentEl:");
             String subPanelId = getId() + PageFlowUtil.filter(entry.getKey());
             config.append(PageFlowUtil.jsString(subPanelId));
             config.append(", title:");
             config.append(PageFlowUtil.jsString(entry.getKey()));
-            config.append("}");
+            config.append("}]})");
             if (includeContent)
             {
-                out.write("<div class=\"x-hide-display\" id=\"" + subPanelId + "\">");
+                // HACK - since I can't figure out how to get the tabs to take the full height of the tab panel,
+                // force a minimum height in their enclosing div based on the number of tabs.
+                // Ideally, this would be handled by an Ext.layout.FitLayout instead
+                out.write("<div class=\"x-hide-display\" id=\"" + subPanelId + "\" style=\"min-height: " + _subpanels.size() * 2.1 + "em\">");
                 try
                 {
                     entry.getValue().render(ctx.getRequest(), ctx.getViewContext().getResponse());
@@ -90,8 +93,10 @@ public class PanelButton extends ActionButton
         }
         config.append("]}");
         out.write("<script language=\"javascript\">Ext.onReady(function() {\n" +
-                "LABKEY.requiresCss(\"verticalTabPanel/VerticalTabPanel.css\");\n" +
-                "LABKEY.requiresScript(\"verticalTabPanel/VerticalTabPanel.js\", true);\n" +
+                "LABKEY.requiresCss(\"groupTabPanel/GroupTab.css\");\n" +
+                "LABKEY.requiresCss(\"groupTabPanel/UngroupedTab.css\");\n" +
+                "LABKEY.requiresScript(\"groupTabPanel/GroupTabPanel.js\", true);\n" +
+                "LABKEY.requiresScript(\"groupTabPanel/GroupTab.js\", true);\n" +
                 "});</script>");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
                 (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +

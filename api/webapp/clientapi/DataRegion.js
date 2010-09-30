@@ -762,31 +762,31 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
                         
                         // New up the TabPanel if we haven't already
                         // Only create one per button, even if that button is rendered both above and below the grid
-                        tabPanelConfig.tabPosition = 'left';
-                        tabPanelConfig.tabWidth = 100;
+                        tabPanelConfig.cls ='vertical-tabs';
+                        tabPanelConfig.tabWidth = 80;
                         tabPanelConfig.renderTo = panelDiv;
+                        tabPanelConfig.activeGroup = 0;
                         var newItems = new Array(tabPanelConfig.items.length);
                         for (var i = 0; i < tabPanelConfig.items.length; i++)
                         {
-                            newItems[i] = new Object();
-                            newItems[i].contentEl = Ext.get(tabPanelConfig.items[i].contentEl);
-                            newItems[i].title = tabPanelConfig.items[i].title;
+                            newItems[i] = tabPanelConfig.items[i];
                             newItems[i].autoScroll = true;
 
                             //FF and IE won't auto-resize the tab panel to fit the content 
                             //so we need to calculate the min size and set it explicitly
                             if (Ext.isGecko || Ext.isIE)
                             {
-                                newItems[i].contentEl.removeClass("x-hide-display");
-                                tabContentWidth = newItems[i].contentEl.getWidth();
-                                newItems[i].contentEl.addClass("x-hide-display");
+                                newItems[i].removeClass("x-hide-display");
+                                tabContentWidth = Ext.get(newItems[i].items.items[0].contentEl).getWidth();
+//                                tabContentWidth = Ext.get(newItems[i].contentEl).getWidth();
+                                newItems[i].addClass("x-hide-display");
                                 minWidth = Math.max(minWidth, tabContentWidth);
                             }
                         }
                         tabPanelConfig.items = newItems;
                         if ((Ext.isGecko || Ext.isIE) && minWidth > 0 && regionHeader.getWidth() < minWidth)
-                            tabPanelConfig.width = minWidth; 
-                        this.panelButtonContents[panelButton.id] = new Ext.ux.VerticalTabPanel(tabPanelConfig);
+                            tabPanelConfig.width = minWidth;
+                        this.panelButtonContents[panelButton.id] = new Ext.ux.GroupTabPanel(tabPanelConfig);
                     }
                     else
                     {
