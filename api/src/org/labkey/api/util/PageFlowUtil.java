@@ -1206,10 +1206,10 @@ public class PageFlowUtil
                     (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                     ">" + text + "</a>]";
         }
-        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
+        return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                "><span>" + text + "</span></a>";
+                ">" + text + "</a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id)
@@ -1221,10 +1221,10 @@ public class PageFlowUtil
                     (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                     ">" + text + "</a>]";
         }
-        return "<a class='labkey-button' href=\"" + filter(href) + "\"" +
+        return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                "><span>" + text + "</span></a>";
+                ">" + text + "</a>";
     }
 
     public static String textLink(String text, String href, String onClickScript, String id, Map<String, String> properties)
@@ -1242,10 +1242,10 @@ public class PageFlowUtil
                     (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                     ">" + text + "</a>]";
         }
-        return "<a class='labkey-button' " + additions + "href=\"" + filter(href) + "\"" +
+        return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                "><span>" + text + "</span></a>";
+                ">" + text + "</a>";
     }
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id)
@@ -1257,10 +1257,10 @@ public class PageFlowUtil
                     (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                     ">" + text + "</a>]";
         }
-        return "<a class='labkey-button' href=\"" + filter(url) + "\"" +
+        return "<a class='labkey-text-link' href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                "><span>" + text + "</span></a>";
+                ">" + text + "</a>";
     }
 
     public static String textLink(String text, ActionURL url)
