@@ -301,6 +301,8 @@ public class CrosstabTableInfo extends VirtualTable
             String measureName;
             if (col instanceof AggregateColumnInfo)
                 measureName = ((AggregateColumnInfo) col).getMember().getValue().toString();
+            else if (col instanceof DimensionColumnInfo)
+                measureName = ((DimensionColumnInfo) col).getSourceFieldKey().toString();
             else
                 measureName = col.getName();
             measureNameToColumnName.put(measureName, colName);

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpressionFactory;
 
 /**
@@ -37,6 +38,12 @@ public class DimensionColumnInfo extends ColumnInfo
         setLabel(_dimension.getSourceColumn().getLabel());
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
     }
+
+    public FieldKey getSourceFieldKey()
+    {
+        return _dimension.getSourceFieldKey();
+    }
+
 
     public SQLFragment getValueSql(String tableAliasName)
     {

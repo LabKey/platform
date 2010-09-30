@@ -62,7 +62,9 @@ public class CrosstabMember
     public String getValueSQLAlias()
     {
         SqlDialect dialect = getDimension().getSourceColumn().getSqlDialect();
-        return AliasManager.makeLegalName(getValue().toString(), dialect);
+        // Prefix the value with an underscore to allow us to filter on integer values.  (Otherwise
+        // the first digit will be replaced by an underscore, creating collisions between 10 and 20, for example.
+        return AliasManager.makeLegalName("_" + getValue().toString(), dialect);
     }
 
     public void setValue(Object value)
