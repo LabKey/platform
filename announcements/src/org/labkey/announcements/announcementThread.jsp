@@ -68,11 +68,11 @@ if (!bean.print && !embedded)
     <td align="left"><%
     if (null != bean.listURL)
     {
-        %><%=textLink("view list", h(bean.listURL))%>&nbsp;<%
+        %><%=textLink("view list", bean.listURL)%>&nbsp;<%
     }
     if (!bean.isResponse)
     {
-        %><%=textLink("print", h(bean.printURL))%>&nbsp;<%
+        %><%=textLink("print", bean.printURL.toString())%>&nbsp;<%
     }
     %></td>
 </tr>
@@ -80,7 +80,7 @@ if (!bean.print && !embedded)
 }
 if (!bean.print && null != discussionSrc)
 { %>
-    <p></p><img src="<%=contextPath%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", h(discussionSrc.getLocalURIString()))%><%
+    <p></p><img src="<%=contextPath%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page.  <%=textLink("view page", discussionSrc.getLocalURIString())%><%
 }
 %>
 
@@ -92,13 +92,13 @@ if (!bean.print && null != discussionSrc)
 
 if (false && !bean.print && null != discussionSrc)
 {
-    %><%=textLink("view in context", h(discussionSrc.getLocalURIString()))%>&nbsp;<%
+    %><%=textLink("view in context", discussionSrc.getLocalURIString())%>&nbsp;<%
 }
 
 if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 {
     ActionURL update = AnnouncementsController.getUpdateURL(c, announcementModel.getEntityId(), bean.currentURL);
-    %><%=textLink("edit", h(update.getLocalURIString()))%><%
+    %><%=textLink("edit", update.getLocalURIString())%><%
 }
 %>&nbsp;<%=h(DateUtil.formatDateTime(announcementModel.getCreated()))%></td>
 </tr>
@@ -182,7 +182,7 @@ if (0 < announcementModel.getResponses().size())
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
                     ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), bean.currentURL);
-                    %><%=textLink("edit", h(update.getLocalURIString()))%><%
+                    %><%=textLink("edit", update.getLocalURIString())%><%
                     }
                     if (bean.perm.allowDeleteMessage(r) && !bean.print)
                     {

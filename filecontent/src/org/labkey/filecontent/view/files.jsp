@@ -57,7 +57,7 @@
         out.println("The file set for this directory is not configured properly.");
         if (me.isShowAdmin() && context.getUser().isAdministrator())
         {
-            %><%=textLink("Configure Directories", h(new ActionURL(FileContentController.ShowAdminAction.class, c)))%><%
+            %><%=textLink("Configure Directories", new ActionURL(FileContentController.ShowAdminAction.class, c))%><%
         }
     return;
     }
@@ -167,11 +167,11 @@ if (context.hasPermission(UpdatePermission.class))
     ActionURL manage = new ActionURL("FileContent", "begin", c);
     if (null != fileSetName)
         manage.addParameter("fileSetName",fileSetName);
-    %><%=textLink("Manage Files", h(manage))%>&nbsp;<%
+    %><%=textLink("Manage Files", manage)%>&nbsp;<%
 }
 if (me.isShowAdmin() && context.getUser().isAdministrator())
 {
-    %><%=textLink("Configure", h(new ActionURL(FileContentController.ShowAdminAction.class, c)))%>&nbsp;<%
+    %><%=textLink("Configure", new ActionURL(FileContentController.ShowAdminAction.class, c))%>&nbsp;<%
 }%>
 <%!
     URLHelper showFileUrl(URLHelper u, Attachment a)
