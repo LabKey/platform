@@ -1,16 +1,3 @@
-body, html{
-	margin: 0; 
-	padding: 0;
-	height: 100%;
-	border: none;
-	overflow: hidden;
-	background-color: #FFF;
-}
-
-body, html, table, form, textarea{
-	font: 12px monospace, sans-serif;
-}
-
 #editor{
 	border: solid #888 1px;
 	overflow: hidden;
