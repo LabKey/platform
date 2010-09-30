@@ -1174,6 +1174,14 @@ public class VisualizationController extends SpringActionController
             return returnMeasures;
         }
 
+        private String getColumnAlias(String tableName, String column)
+        {
+            if (column.contains("."))
+                column = column.replaceAll("\\.", "_");
+            // disambiguate column names, since the same name ("Result", for example) may exist in multiple tables:
+            return tableName + "_" + column;
+        }
+
         @Override
         public ApiResponse execute(GetDataForm getDataForm, BindException errors) throws Exception
         {
@@ -1211,21 +1219,14 @@ public class VisualizationController extends SpringActionController
                 String tableName = entry.getKey();
                 for (String column : entry.getValue().getSelectColumns())
                 {
-                    sql.append(sep).append(tableName).append(".").append(column);
-
-                    String alias = column;
-                    if (alias.contains("."))
-                        alias = alias.replaceAll("\\.", "_");
-                    // It may be necessary to disambiguate column names, since the same name ("Result", for example) may exist
-                    // in multiple tables:
-                    if (selectedCols.contains(alias))
-                        alias = tableName + "_" + alias;
-
-                    if (!alias.equals(column))
+                    String alias = getColumnAlias(tableName, column);
+                    if (!selectedCols.contains(alias))
+                    {
+                        sql.append(sep).append(tableName).append(".").append(column);
                         sql.append(" AS ").append(alias);
-
-                    selectedCols.add(alias);
-                    sep = ", ";
+                        selectedCols.add(alias);
+                        sep = ", ";
+                    }
                 }
                 sql.append("\n");
             }
@@ -1316,7 +1317,16 @@ public class VisualizationController extends SpringActionController
             Map<String, String> measureNameToColumnName = new HashMap<String, String>();
             extraProperties.put("measureToColumn", measureNameToColumnName);
             for (Measure measure : measures)
-                measureNameToColumnName.putAll(measure.getMeasureNameToColumnNameMap());
+            {
+                for (Map.Entry<String, String> entry : measure.getMeasureNameToColumnNameMap().entrySet())
+                {
+                    String measureName = entry.getKey();
+                    String columnName = entry.getValue();
+                    String tableName = metadataToTableName.get(measure);
+                    String columnAlias = getColumnAlias(tableName, columnName);
+                    measureNameToColumnName.put(measureName, columnAlias);
+                }
+            }
 
             Map<String, String> nameRemap = new HashMap<String, String>();
             nameRemap.put("ParticipantVisit_VisitDate", "ParticipantVisit/VisitDate");
