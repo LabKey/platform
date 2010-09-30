@@ -612,7 +612,7 @@ public class AssayController extends SpringActionController
 
             _protocol = getProtocol(form);
             VBox view = new VBox();
-            view.addView(new AssayHeaderView(_protocol, getProvider(form), false, containerFilter));
+            view.addView(new AssayHeaderView(_protocol, getProvider(form), false, true, containerFilter));
             view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
             return view;
         }
