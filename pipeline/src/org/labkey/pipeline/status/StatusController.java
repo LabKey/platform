@@ -446,12 +446,10 @@ public class StatusController extends SpringActionController
 
                     if (NetworkDrive.exists(fileShow))
                     {
-                        boolean visible = false;
+                        boolean visible = isVisibleFile(fileName, basename);
 
                         String providerName = sf.getProvider();
-                        if (providerName == null)
-                            visible = isVisibleFile(fileName, basename);
-                        else
+                        if (providerName != null)
                         {
                             PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
                             if (provider != null)
@@ -847,7 +845,7 @@ public class StatusController extends SpringActionController
         if (!name.startsWith(basename) || name.length() == basename.length() ||
                 name.charAt(basename.length()) != '.')
             return false;
-        return name.endsWith(".log") || name.endsWith(".out") || name.endsWith(".err");
+        return name.endsWith(".log") || name.endsWith(".out");
     }
 
 /////////////////////////////////////////////////////////////////////////////

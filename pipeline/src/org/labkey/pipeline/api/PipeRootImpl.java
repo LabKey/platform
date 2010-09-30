@@ -315,9 +315,32 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
+    public List<String> validate()
+    {
+        List<String> result = new ArrayList<String>();
+        int i = 0;
+        for (File rootPath : getRootPaths())
+        {
+            if (!NetworkDrive.exists(rootPath))
+            {
+                result.add("Pipeline root does not exist.");
+            }
+            else if (!rootPath.isDirectory())
+            {
+                result.add("Pipeline root is not a directory.");
+            }
+            else if (URIUtil.resolve(_uris[i], _uris[i], "test") == null)
+            {
+                result.add("Pipeline root is invalid.");
+            }
+        }
+        return result;
+    }
+
+    @Override
     public boolean isValid()
     {
-        return NetworkDrive.exists(getRootPath()) && getRootPath().isDirectory();
+        return validate().isEmpty();
     }
 
     @Override
@@ -338,6 +361,16 @@ public class PipeRootImpl implements PipeRoot
     @Override
     public String toString()
     {
-        return "Pipeline root pointed at " + getRootPath();
+        StringBuilder result = new StringBuilder();
+        String separator = "";
+        for (File rootPath : getRootPaths())
+        {
+            result.append(separator);
+            separator = " and supplemental location ";
+            result.append("'");
+            result.append(rootPath);
+            result.append("'");
+        }
+        return result.toString();
     }
 }

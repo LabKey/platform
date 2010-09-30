@@ -170,6 +170,11 @@ public class PipelineController extends SpringActionController
 
     private static URI validatePath(String path, BindException errors)
     {
+        if (path == null)
+        {
+            return null;
+        }
+        
         if (path.startsWith("\\\\"))
         {
             errors.reject(ERROR_MSG, "UNC paths are not supported for pipeline roots. Consider creating a Network Drive configuration in the Admin Console under Site Settings.");
@@ -316,27 +321,17 @@ public class PipelineController extends SpringActionController
                 bean.setErrors(errors);
 
                 PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
-                URI root = null;
 
                 if (pipeRoot != null)
                 {
-                    root = pipeRoot.getUri();
-                    File fileRoot = pipeRoot.getRootPath();
-
-                    if (!NetworkDrive.exists(fileRoot))
+                    for (String errorMessage : pipeRoot.validate())
                     {
-                        errors.addError(new LabkeyError("Pipeline root does not exist."));
-                        root = null;
-                    }
-                    else if (URIUtil.resolve(root, root, "test") == null)
-                    {
-                        errors.addError(new LabkeyError("Pipeline root is invalid."));
-                        root = null;
+                        errors.addError(new LabkeyError(errorMessage));
                     }
 
-                    if (root != null && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
+                    if (!errors.hasErrors() && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
                     {
-                        bean.setConfirmMessage("The pipeline root was set to '" + fileRoot.getPath() + "'.");
+                        bean.setConfirmMessage("The pipeline root was set to " + pipeRoot);
                     }
                 }
 
@@ -345,7 +340,7 @@ public class PipelineController extends SpringActionController
 
                 main.addView(leftBox);
 
-                if (pipeRoot != null && root != null)
+                if (pipeRoot != null && !errors.hasErrors())
                 {
                     main.addView(new PermissionView(SecurityManager.getPolicy(pipeRoot)));
                 }
@@ -354,7 +349,7 @@ public class PipelineController extends SpringActionController
 
                 view.addView(main);
 
-                if (root != null)
+                if (!errors.hasErrors())
                 {
                     Set<Module> activeModules = c.getActiveModules();
                     for (PipelineProvider provider : PipelineService.get().getPipelineProviders())
@@ -368,7 +363,10 @@ public class PipelineController extends SpringActionController
                     }
                 }
             }
-            view.addView(new JspView<FORM>("/org/labkey/pipeline/emailNotificationSetup.jsp", form));
+            JspView<FORM> emailView = new JspView<FORM>("/org/labkey/pipeline/emailNotificationSetup.jsp", form);
+            emailView.setFrame(WebPartView.FrameType.PORTAL);
+            emailView.setTitle("Email Notification");
+            view.addView(emailView);
             return view;
         }
 

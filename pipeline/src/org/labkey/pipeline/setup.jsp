@@ -79,6 +79,7 @@
             document.getElementById('pipeProjectRootPath').style.display = 'none';
             document.getElementById('pipeRootPath').style.display = '';
             document.getElementById('pipeIndexTd').style.display = 'none';
+            document.getElementById('pipeSupplementalPathTd').style.display = 'none';
         }
         if (document.getElementById('pipeOptionProjectSpecified').checked)
         {
@@ -88,6 +89,7 @@
             document.getElementById('pipeProjectRootPath').style.display = '';
             document.getElementById('pipeRootPath').style.display = 'none';
             document.getElementById('pipeIndexTd').style.display = '';
+            document.getElementById('pipeSupplementalPathTd').style.display = '';
         }
     }
 
@@ -150,7 +152,7 @@
                     </tr>
                     <tr>
                         <td></td>
-                        <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath" <%=bean.getSupplementalPath() == null ? "" : " checked"%> onclick="Ext.get('supplementalPathDiv').dom.style.display = (Ext.get('pipeOptionSupplementalPath').dom.checked ? null : 'none'); Ext.get('pipeProjectSupplementalPath').dom.disabled = (Ext.get('pipeOptionSupplementalPath').dom.checked ? false : true);">
+                        <td id="pipeSupplementalPathTd"><input type="checkbox" id="pipeOptionSupplementalPath" <%=bean.getSupplementalPath() == null ? "" : " checked"%> onclick="Ext.get('supplementalPathDiv').dom.style.display = (Ext.get('pipeOptionSupplementalPath').dom.checked ? '' : 'none'); Ext.get('pipeProjectSupplementalPath').dom.disabled = (Ext.get('pipeOptionSupplementalPath').dom.checked ? false : true);">
                             <label for="pipeOptionSupplementalPath">Include a supplemental file location</label>
                             <div id="supplementalPathDiv" <% if (bean.getSupplementalPath() == null) { %>style="display:none"<% } %>>
                                 <input type="text" id="pipeProjectSupplementalPath" <% if (bean.getSupplementalPath() == null) { %>disabled<% } %> name="supplementalPath" size="50" value="<%=h(bean.getSupplementalPath())%>">
@@ -210,7 +212,6 @@
             </tr><%
         }
         %>
-        <tr><td colspan="3" style="font-size: 4px">&nbsp;</td></tr>
         <tr>
             <td colspan="2"><labkey:button text="Save"/></td>
         </tr>

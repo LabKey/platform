@@ -2207,7 +2207,7 @@ public class DavController extends SpringActionController
         if (!resource.isCollection())
         {
             if (!resource.delete(getUser()))
-                throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Unable to delete resource");
             boolean temp = rmTempFile(resource);
             if (!temp)
             {

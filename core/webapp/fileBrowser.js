@@ -789,7 +789,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
             var resourcePath = this.concatPaths(this.prefixUrl, encodePath(path));
             var fileSystem = this;
             var connection = new Ext.data.Connection();
-            connection.handleResponse = function(response)
+            var callbackFunction = function(options, success, response)
             {
                 if (204 == response.status || 404 == response.status) // NO_CONTENT (success), NOT_FOUND (actually goes to handleFailure)
                 {
@@ -803,9 +803,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
                     callback(fileSystem, false, path, response);
                 else
+                {
                     window.alert(response.statusText);
-            }
-            connection.request({method:"DELETE", url:resourcePath});
+                    callback(fileSystem, false, path, response);
+                }
+            };
+            connection.request({method:"DELETE", url:resourcePath, callback: callbackFunction});
         }
         catch (x)
         {
