@@ -135,6 +135,11 @@ public class QueryWebPart extends WebPartView
             if (queryDef != null)
             {
                 QueryView queryView = _schema.createView(getViewContext(), _settings);
+                String linkTarget = _properties.get("linkTarget");
+                if (linkTarget != null)
+                {
+                    queryView.setLinkTarget(linkTarget);
+                }
                 queryView.setShadeAlternatingRows(true);
                 queryView.setShowBorders(true);
 

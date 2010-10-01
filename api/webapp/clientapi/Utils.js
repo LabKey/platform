@@ -350,7 +350,7 @@ LABKEY.Utils.convertToExcel(
             for(var prop in source)
             {
                 //special case: Ext adds a "constructor" property to every object, which we don't want to apply
-                if (prop == "constructor")
+                if (prop == "constructor" || Ext.isFunction(prop))
                     continue;
                 
                 targetPropName = translationMap[prop];

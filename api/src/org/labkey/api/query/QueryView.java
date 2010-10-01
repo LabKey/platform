@@ -58,6 +58,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showUpdateColumn = true;
 
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
+    private String _linkTarget;
 
     public static void register(ExportScriptFactory factory)
     {
@@ -658,6 +659,12 @@ public class QueryView extends WebPartView<Object>
         ActionButton btnPrint = actionButton("Print", QueryAction.printRows);
         btnPrint.setTarget("_blank");
         return btnPrint;
+    }
+
+    /** Make all links rendered in columns target the specified browser window/tab */
+    public void setLinkTarget(String linkTarget)
+    {
+        _linkTarget = linkTarget;
     }
 
     public static class ExcelExportOptionsBean
@@ -1643,6 +1650,13 @@ public class QueryView extends WebPartView<Object>
         }
 
         ret.addAll(getQueryDef().getDisplayColumns(_customView, table));
+        if (_linkTarget != null)
+        {
+            for (DisplayColumn displayColumn : ret)
+            {
+                displayColumn.setLinkTarget(_linkTarget);
+            }
+        }
         return ret;
     }
 

@@ -21,6 +21,8 @@ import org.labkey.api.util.StringExpression;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 public class UrlColumn extends SimpleDisplayColumn
@@ -43,7 +45,16 @@ public class UrlColumn extends SimpleDisplayColumn
         String url = renderURL(ctx);
         if (value != null && url != null)
         {
-            out.write(PageFlowUtil.textLink(value.toString(), url));
+            Map<String, String> props;
+            if (_linkTarget != null)
+            {
+                props = Collections.singletonMap("target", _linkTarget);
+            }
+            else
+            {
+                props = Collections.emptyMap();
+            }
+            out.write(PageFlowUtil.textLink(value.toString(), url, null ,null, props));
         }
     }
 }

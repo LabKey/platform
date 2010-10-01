@@ -103,8 +103,10 @@
  * the {@link LABKEY.AggregateTypes} values.
  * @param {String} [config.dataRegionName] The name to be used for the data region. This should be unique within
  * the set of query views on the page. If not supplied, a unique name is generated for you.
+ * @param {String} [config.linkTarget] The name of a browser window/tab in which to open URLs rendered in the
+ * QueryWebPart. If not supplied, links will generally be opened in the same browser window/tab where the QueryWebPart. 
  * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
- * 'div', 'portal', 'none', 'dialog', 'title', left-nav'.
+ * 'div', 'portal', 'none', 'dialog', 'title', 'left-nav'.
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
  * @param {Function} [config.successCallback] An optional function to call after the part has been rendered. It will be passed two arguments:
  * <ul>
