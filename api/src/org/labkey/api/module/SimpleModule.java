@@ -20,13 +20,10 @@ import org.apache.commons.collections15.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -37,6 +34,7 @@ import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.*;
 
 /*
@@ -202,7 +200,61 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
 
     public void containerDeleted(Container c, User user)
     {
-        // UNDONE: delete data from schemas
+        for (final String schemaName : getSchemaNames())
+        {
+            purgeSchema(schemaName, c, user);
+        }
+    }
+
+    private void purgeSchema(String schemaName, Container c, User user)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(user, c, schemaName);
+        try
+        {
+            List<TableInfo> sorted = schema.getSortedTables();
+            Collections.reverse(sorted);
+            for (TableInfo table : sorted)
+            {
+                ColumnInfo containerCol = null;
+                for (ColumnInfo column : table.getColumns())
+                {
+                    if ("container".equalsIgnoreCase(column.getName()))
+                    {
+                        containerCol = column;
+                        break;
+                    }
+                }
+
+                if (containerCol != null)
+                    purgeTable(table, c, user);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private void purgeTable(TableInfo table, Container c, User u)
+            throws SQLException
+    {
+        Domain domain = table.getDomain();
+        if (domain != null)
+        {
+            SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
+            objectIds.append(" AND Container = ?");
+            objectIds.add(c);
+
+            Integer[] ids = Table.executeArray(table.getSchema(), objectIds, Integer.class);
+            OntologyManager.deleteOntologyObjects(ids, c, true);
+        }
+
+        if (table instanceof FilteredTable)
+        {
+            SimpleFilter filter = new SimpleFilter("Container", c);
+            TableInfo realTable = ((FilteredTable)table).getRealTable();
+            Table.delete(realTable, filter);
+        }
     }
 
     public void propertyChange(PropertyChangeEvent evt)

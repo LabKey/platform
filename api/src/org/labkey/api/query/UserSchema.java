@@ -18,9 +18,9 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -125,6 +125,103 @@ abstract public class UserSchema extends AbstractSchema
     public Set<String> getVisibleTableNames()
     {
         return getTableNames();
+    }
+
+    /**
+     * NOTE: This is an experimental API and may change.
+     * Gets a topologically sorted list of TableInfos within this schema.
+     * Not all existing schemas are supported yet since their FKs don't expose the query tableName they join to or they contain loops.
+     * 
+     * @throws IllegalStateException if a loop is detected.
+     */
+    public List<TableInfo> getSortedTables()
+    {
+        String schemaName = getName();
+        Set<String> tableNames = new HashSet<String>(getTableNames());
+        Map<String, TableInfo> tables = new CaseInsensitiveHashMap<TableInfo>();
+        for (String tableName : tableNames)
+            tables.put(tableName, getTable(tableName));
+
+        // Find all tables with no incoming FKs
+        Set<String> startTables = new CaseInsensitiveHashSet();
+        startTables.addAll(tableNames);
+        for (String tableName : tableNames)
+        {
+            TableInfo table = tables.get(tableName);
+            for (ColumnInfo column : table.getColumns())
+            {
+                ForeignKey fk = column.getFk();
+
+                // skip fake FKs that just wrap the RowId
+                if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
+                    continue;
+
+                // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
+                TableInfo t = fk.getLookupTableInfo();
+                if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+                    continue;
+
+                // Attempt to use FK name first, then use the actual table name.
+                String lookupTableName = fk.getLookupTableName();
+                if (!tables.containsKey(lookupTableName) && tables.containsKey(t.getName()))
+                    lookupTableName = t.getName();
+
+                startTables.remove(lookupTableName);
+            }
+        }
+
+        if (startTables.isEmpty())
+            throw new IllegalArgumentException("No tables without incoming FKs found");
+
+        // Depth-first topological sort of the tables starting with the startTables
+        Set<TableInfo> visited = new HashSet<TableInfo>(tableNames.size());
+        List<TableInfo> sorted = new ArrayList<TableInfo>(tableNames.size());
+        for (String tableName : startTables)
+            depthFirstWalk(schemaName, tables, tables.get(tableName), visited, new LinkedList<TableInfo>(), sorted);
+        
+        return sorted;
+    }
+
+    private void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<TableInfo> visiting, List<TableInfo> sorted)
+    {
+        // NOTE: loops exist in current schemas
+        //   core.Containers has a self join to parent Container
+        //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
+        if (visiting.contains(table))
+            throw new IllegalStateException("loop detected");
+
+        if (visited.contains(table))
+            return;
+
+        visiting.addFirst(table);
+        visited.add(table);
+
+        for (ColumnInfo column : table.getColumns())
+        {
+            ForeignKey fk = column.getFk();
+
+            // skip fake FKs that just wrap the RowId
+            if (fk == null || fk instanceof RowIdForeignKey || fk instanceof MultiValuedForeignKey)
+                continue;
+
+            // Unforuntaely, we need to get the lookup table since some FKs don't expose .getLookupSchemaName() or .getLookupTableName()
+            TableInfo t = fk.getLookupTableInfo();
+            if (!(schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) || (t != null && schemaName.equalsIgnoreCase(t.getPublicSchemaName()))))
+                continue;
+
+            // Attempt to use FK name first, then use the actual table name.
+            String lookupTableName = fk.getLookupTableName();
+            if (!tables.containsKey(lookupTableName) && tables.containsKey(t.getName()))
+                lookupTableName = t.getName();
+
+            TableInfo lookupTable = tables.get(lookupTableName);
+            assert lookupTable != null : "Lookup failed";
+            if (lookupTable != null)
+                depthFirstWalk(schemaName, tables, lookupTable, visited, visiting, sorted);
+        }
+
+        sorted.add(table);
+        visiting.removeFirst();
     }
 
     public Container getContainer()
