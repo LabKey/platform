@@ -31,49 +31,20 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.AuthorRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NavTreeManager;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.security.roles.*;
+import org.labkey.api.util.*;
+import org.labkey.api.view.*;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -1883,7 +1854,7 @@ public class ContainerManager
             {
                 Container child = getForPath(makePath(parent, childName));
                 cleanUpChildren(mm, childName, child);
-                assertTrue(ContainerManager.delete(child, null));
+                assertTrue(ContainerManager.delete(child, TestContext.get().getUser()));
             }
         }
 

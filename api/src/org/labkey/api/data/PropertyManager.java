@@ -26,11 +26,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -490,7 +486,7 @@ public class PropertyManager
                 testProperties(user, child, "junit");
                 testProperties(user, child, "junit2");
                 //Properties should get cleaned up when container is deleted.
-                ContainerManager.delete(child, null);
+                ContainerManager.delete(child, TestContext.get().getUser());
                 Map m = PropertyManager.getProperties(user.getUserId(), objectId, "junit");
                 assertTrue(m == NULL_MAP);
                 m = PropertyManager.getProperties(user.getUserId(), objectId, "junit2");

@@ -25,21 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.MVDisplayColumnFactory;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -50,11 +36,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
@@ -66,17 +48,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.labkey.api.search.SearchService.PROPERTY;
 
@@ -2434,7 +2406,7 @@ public class OntologyManager
 
                 OntologyManager.deleteAllObjects(c);
                 assertEquals(0L, OntologyManager.getObjectCount(c));
-                assertTrue(ContainerManager.delete(c, null));
+                assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
             }
             catch (ValidationException ve)
             {
@@ -2614,19 +2586,19 @@ public class OntologyManager
 
             Container c;
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fb");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
 
         }
@@ -2635,53 +2607,53 @@ public class OntologyManager
         {
             Container c;
             c = ContainerManager.getForPath("/_ontMgrTestP2/Fc");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fb");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP2/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP2/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP1/Fa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP2/Fa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP2/_ontMgrDemotePromoteFa/Faa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP2/_ontMgrDemotePromoteFa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrTestP2");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrTestP1");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
             c = ContainerManager.getForPath("/_ontMgrDemotePromoteFc");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrDemotePromoteFb");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrDemotePromoteFa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrDemotePromoteFa/Faa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/_ontMgrDemotePromoteFa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/Fa/Faa/Faaa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/Fa/Faa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
             c = ContainerManager.getForPath("/Fa");
-            if (null!= c)  ContainerManager.delete(c, null);
+            if (null!= c)  ContainerManager.delete(c, TestContext.get().getUser());
 
         }
 
@@ -2772,7 +2744,7 @@ public class OntologyManager
 
                 OntologyManager.deleteAllObjects(c);
                 assertEquals(0L, OntologyManager.getObjectCount(c));
-                assertTrue(ContainerManager.delete(c, null));
+                assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
             }
             catch (ValidationException ve)
             {
@@ -2834,7 +2806,7 @@ public class OntologyManager
 
             OntologyManager.deleteType(domURIa, c);
             assertEquals(0L, OntologyManager.getObjectCount(c));
-            assertTrue(ContainerManager.delete(c, null));
+            assertTrue(ContainerManager.delete(c, TestContext.get().getUser()));
         }
 	}
 
