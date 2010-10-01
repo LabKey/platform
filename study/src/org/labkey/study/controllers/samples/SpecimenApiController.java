@@ -25,12 +25,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SampleManager;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.util.*;
 import java.sql.SQLException;
 /*
@@ -148,7 +146,7 @@ public class SpecimenApiController extends BaseStudyController
         User user = UserManager.getUser(request.getCreatedBy());
         Map<String, Object> userMap = new HashMap<String, Object>();
         userMap.put("userId", request.getCreatedBy());
-        userMap.put("displayName", user.getDisplayName(context));
+        userMap.put("displayName", user.getDisplayNameOld(context));
         map.put("createdBy", userMap);
         map.put("destination", request.getDestinationSiteId() != null ? getLocation(getContainer(), request.getDestinationSiteId().intValue()) : null);
         map.put("statusId", request.getStatusId());

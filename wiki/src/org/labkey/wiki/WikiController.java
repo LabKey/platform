@@ -674,7 +674,7 @@ public class WikiController extends SpringActionController
     {
         public List<Wiki> wikiPageList;
         public List<Wiki> wikiContentList;
-        public String displayName = getUser().getDisplayName(getViewContext());
+        public String displayName = getUser().getDisplayNameOld(getViewContext());
 
         private PrintAllBean(List<Wiki> wikiPageList, List<Wiki> wikiContentList)
         {
@@ -742,7 +742,7 @@ public class WikiController extends SpringActionController
         private PrintRawBean(List<Wiki> wikiList)
         {
             this.wikiList = wikiList;
-            displayName = getUser().getDisplayName(getViewContext());
+            displayName = getUser().getDisplayNameOld(getViewContext());
         }
     }
 

@@ -1542,7 +1542,7 @@ public class UserController extends SpringActionController
                         userInfo.put(PROP_USER_ID, user.getUserId());
 
                         //force sanitize of the display name, even for logged-in users
-                        userInfo.put(PROP_USER_NAME, user.getDisplayName(getViewContext()));
+                        userInfo.put(PROP_USER_NAME, user.getDisplayNameOld(getViewContext()));
 
                         //include email address (we now require login so no guests can see the response)
                         userInfo.put("email", user.getEmail());

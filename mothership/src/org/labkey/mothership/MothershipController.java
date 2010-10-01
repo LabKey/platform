@@ -35,7 +35,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
@@ -805,7 +804,7 @@ public class MothershipController extends SpringActionController
         {
             builder.append("<a class=\"labkey-text-link\" href=\"");
             builder.append("showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=");
-            builder.append(getUser().getDisplayName(getViewContext()));
+            builder.append(getUser().getDisplayNameOld(getViewContext()));
             builder.append("\">My Exceptions</a><br>");
         }
         return builder.toString();

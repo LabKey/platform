@@ -33,7 +33,7 @@
     <%
         for(User user : bean.getUsers())
         {
-            %><li><%=PageFlowUtil.filter(user.getDisplayName(me.getViewContext()))%></li><%
+            %><li><%=PageFlowUtil.filter(user.getDisplayNameOld(me.getViewContext()))%></li><%
         } 
     %>
     </ul>

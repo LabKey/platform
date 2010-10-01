@@ -127,7 +127,7 @@ public class IssuesQueryView extends QueryView
         if (!getUser().isGuest())
         {
             url = target.clone().deleteParameters();
-            url.addFilter("Issues", FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getViewContext()));
+            url.addFilter("Issues", FieldKey.fromString("AssignedTo/DisplayName"), CompareType.EQUAL, getUser().getDisplayNameOld(getViewContext()));
             url.addFilter("Issues", FieldKey.fromString("Status"), CompareType.NEQ_OR_NULL, "closed");
             sort = new Sort("-Milestone");
             sort.addURLSort(url, getDataRegionName());

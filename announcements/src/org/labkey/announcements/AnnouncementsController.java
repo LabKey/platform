@@ -27,7 +27,6 @@ import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
-import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
 import org.labkey.api.jsp.JspLoader;
@@ -1222,7 +1221,7 @@ public class AnnouncementsController extends SpringActionController
         {
             public int compare(User u1, User u2)
             {
-                return u1.getDisplayName(context).compareToIgnoreCase(u2.getDisplayName(context));
+                return u1.getDisplayNameOld(context).compareToIgnoreCase(u2.getDisplayNameOld(context));
             }
         });
 
@@ -1240,7 +1239,7 @@ public class AnnouncementsController extends SpringActionController
                 select.append(" selected");
 
             select.append(">");
-            select.append(user.getDisplayName(context));
+            select.append(user.getDisplayNameOld(context));
             select.append("</option>\n");
         }
 

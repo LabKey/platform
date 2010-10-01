@@ -440,8 +440,8 @@ public class SecurityController extends SpringActionController
                     names.add(user.getLastName() + ", " + user.getFirstName() + " (" + user.getEmail() + ")");
                     shortName += " (" + user.getFirstName() + " " + user.getLastName() + ")";
                 }
-                if (user.getDisplayName(_context).compareToIgnoreCase(user.getEmail()) != 0)
-                    names.add(user.getDisplayName(_context) + " (" + user.getEmail() + ")");
+                if (user.getDisplayNameOld(_context).compareToIgnoreCase(user.getEmail()) != 0)
+                    names.add(user.getDisplayNameOld(_context) + " (" + user.getEmail() + ")");
 
                 names.add(shortName);
             }

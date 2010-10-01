@@ -100,7 +100,7 @@ else
                 if (n != bean.wikiVersion.getVersion())
                 {
                     // Show the author who created the version if available, or skip if that user's been deleted
-                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayName(ctx) + ")"), baseCompareLink + "&version2=" + n);
+                    compare.addMenuItem((n == nLatestVersion ? "Latest Version" : "Version " + n) + (author == null ? "" : " (" + author.getDisplayNameOld(ctx) + ")"), baseCompareLink + "&version2=" + n);
                 }
             }
 

@@ -37,7 +37,7 @@
 %>
 <%= textLink("All User Requests", userLink.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
 <%= textLink("My Requests", userLink.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
-        context.getUser().getDisplayName(context))) %>
+        context.getUser().getDisplayNameOld(context))) %>
 Filter by status: <select onChange="document.location=options[selectedIndex].value;">
 <%
     ActionURL current = context.cloneActionURL();

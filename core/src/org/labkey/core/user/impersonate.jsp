@@ -45,7 +45,7 @@
             if (user.isImpersonated())
             {
         %>
-        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayName(context))%>.<%
+        Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request))%>">here</a> to change back to <%=h(user.getImpersonatingUser().getDisplayNameOld(context))%>.<%
             }
             else
             {

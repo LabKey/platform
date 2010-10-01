@@ -218,7 +218,7 @@ public class SecurityApiActions
 
             Map<String, Object> userInfo = new HashMap<String, Object>();
             userInfo.put("userId", user.getUserId());
-            userInfo.put("displayName", user.getDisplayName(getViewContext()));
+            userInfo.put("displayName", user.getDisplayNameOld(getViewContext()));
             response.put("user", userInfo);
 
             response.put("container", getContainerPerms(getViewContext().getContainer(), user, form.isIncludeSubfolders()));
@@ -349,7 +349,7 @@ public class SecurityApiActions
             //so we can swap it out
             Map<String, Object> userInfo = new HashMap<String, Object>();
             userInfo.put("id", user.getUserId());
-            userInfo.put("displayName", user.getDisplayName(getViewContext()));
+            userInfo.put("displayName", user.getDisplayNameOld(getViewContext()));
             userInfo.put("email", user.getEmail());
             userInfo.put("canInsert", container.hasPermission(user, InsertPermission.class) ? "true" : "false");
             userInfo.put("canUpdate", container.hasPermission(user, UpdatePermission.class) ? "true" : "false");

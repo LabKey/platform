@@ -370,7 +370,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         for (User member : members)
         {
             select.append("<option value=").append(member.getUserId()).append(">");
-            select.append(member.getDisplayName(context));
+            select.append(member.getDisplayNameOld(context));
             select.append("</option>\n");
         }
 

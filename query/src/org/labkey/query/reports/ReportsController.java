@@ -16,7 +16,6 @@
 
 package org.labkey.query.reports;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -43,14 +42,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
 import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.controllers.ChooseColumnsForm;
@@ -741,7 +736,7 @@ public class ReportsController extends SpringActionController
 
                 User user = UserManager.getUser(_report.getDescriptor().getCreatedBy());
                 if (user != null)
-                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayName(getViewContext())));
+                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayNameOld(getViewContext())));
 
                 addRow(out, "Key", PageFlowUtil.filter(_report.getDescriptor().getReportKey()));
                 for (Map.Entry<String, Object> prop : _report.getDescriptor().getProperties().entrySet())

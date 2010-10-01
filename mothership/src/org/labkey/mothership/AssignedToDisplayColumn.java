@@ -66,7 +66,7 @@ public class AssignedToDisplayColumn extends DataColumn
                 out.write(" selected");
             }
             out.write(">");
-            out.write(member.getDisplayName(ctx.getViewContext()));
+            out.write(member.getDisplayNameOld(ctx.getViewContext()));
             out.write("</option>\n");
         }
         out.write("</select>");

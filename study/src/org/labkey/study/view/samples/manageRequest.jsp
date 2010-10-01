@@ -285,7 +285,7 @@
         else
         {
 %>
-                Only the request creator (<%= creatingUser.getDisplayName(context) %>) or an administrator may submit or cancel this request.
+                Only the request creator (<%= creatingUser.getDisplayNameOld(context) %>) or an administrator may submit or cancel this request.
 <%
         }
     }
@@ -298,7 +298,7 @@
                 <table>
                     <tr>
                         <th valign="top" align="right">Requester</th>
-                        <td><%= creatingUser != null ? h(creatingUser.getDisplayName(context)) : "Unknown" %></td>
+                        <td><%= creatingUser != null ? h(creatingUser.getDisplayNameOld(context)) : "Unknown" %></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Requesting Location</th>
