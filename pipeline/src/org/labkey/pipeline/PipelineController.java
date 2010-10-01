@@ -299,12 +299,11 @@ public class PipelineController extends SpringActionController
                     StringBuilder html = new StringBuilder();
                     html.append("<p>This folder inherits its pipeline root settings from the folder '");
                     html.append(PageFlowUtil.filter(root.getContainer().getPath()));
-                    html.append("'.<br>You can either [<a href=\"");
-                    html.append(PageFlowUtil.filter(urlOverride));
-                    html.append("\">override</a>] the inherited settings in this folder,<br>or ");
-                    html.append("[<a href=\"");
-                    html.append(PageFlowUtil.filter(urlEditParent));
-                    html.append("\">modify the setting for all folders</a>] by setting the value in the folder '");
+                    html.append("'.<br>You can either ");
+                    html.append(PageFlowUtil.textLink("override", urlOverride));
+                    html.append(" the inherited settings in this folder,<br>or ");
+                    html.append(PageFlowUtil.textLink("modify the setting for all folders", urlEditParent));
+                    html.append(" by setting the value in the folder '");
                     html.append(PageFlowUtil.filter(root.getContainer().getPath()));
                     html.append("'.</p>");
                     return new HtmlView(html.toString());

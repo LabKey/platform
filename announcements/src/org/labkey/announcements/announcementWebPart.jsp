@@ -91,8 +91,7 @@
             }
         %>
     </td></tr>
-<%      } %>    <tr><td style="padding-bottom:4;" colspan=3 align="left">[<a href="<%=h(a.getThreadURL(c))%>rowId=<%=a.getRowId()%>">view <%=bean.settings.getConversationName().toLowerCase()%><%if (null != bean.insertURL)
-{%> or respond<%}%></a>]</td></tr> <!-- RE_CHECK -->
+<%      } %>    <tr><td style="padding-bottom:4;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr>
 <%
     }
 %></table>

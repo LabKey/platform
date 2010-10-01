@@ -271,10 +271,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             ActionURL url = new ActionURL(DatasetController.DatasetAuditHistoryAction.class, c);
             url.addParameter("auditRowId", rowId.intValue());
 
-            out.write("[<a href=\"");
-            out.write(PageFlowUtil.filter(url.getLocalURIString()));
-            out.write("\">details</a>]");
-
+            out.write(PageFlowUtil.textLink("details", url));
         }
     }
 }

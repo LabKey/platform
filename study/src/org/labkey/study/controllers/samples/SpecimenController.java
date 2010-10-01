@@ -3241,7 +3241,7 @@ public class SpecimenController extends BaseStudyController
                 if (rowId != null && rowId.length > 0)
                     selectedVials = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
                 if (selectedVials == null || selectedVials.length == 0)
-                    return new HtmlView("No vials selected.  [<a href=\"javascript:back()\">back</a>]");
+                    return new HtmlView("No vials selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
             }
 
             return new JspView<UpdateSpecimenCommentsBean>("/org/labkey/study/view/samples/updateComments.jsp",

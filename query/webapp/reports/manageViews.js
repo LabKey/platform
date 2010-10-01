@@ -203,8 +203,8 @@ LABKEY.ViewsPanel.prototype = {
                     '<tr><td><b>permissions</b></td><td>{permissions}</td>',
                     '<tpl if="runUrl != undefined || editUrl != undefined">',
                         '<tr><td></td><td>',
-                            '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
-                            '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl></td></tr>',
+                            '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" class="labkey-text-link">view</a></tpl>',
+                            '<tpl if="editUrl != undefined">&nbsp;<a href="{editUrl}" class="labkey-text-link">source</a></tpl></td></tr>',
                     '</tpl>',
                 '</table>')
         }),

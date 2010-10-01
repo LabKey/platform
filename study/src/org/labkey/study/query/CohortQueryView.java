@@ -146,15 +146,10 @@ public class CohortQueryView extends ExtensibleObjectQueryView
 
         private void renderEditLink(Writer out, int rowId) throws IOException
         {
-            out.write("[<a href=\"");
-
             ActionURL actionURL = new ActionURL(CohortController.UpdateAction.class, container);
             actionURL.addParameter("rowId", rowId);
 
-            out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
-            out.write("\">");
-            out.write("edit");
-            out.write("</a>]");
+            out.write(PageFlowUtil.textLink("edit", actionURL.getLocalURIString()));
         }
     }
 
@@ -178,16 +173,10 @@ public class CohortQueryView extends ExtensibleObjectQueryView
 
             if (!inUse)
             {
-                out.write("[<a href=\"");
-
                 ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, container);
-
                 actionURL.addParameter("rowId", rowId.toString());
 
-                out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
-                out.write("\">");
-                out.write("delete");
-                out.write("</a>]");
+                out.write(PageFlowUtil.textLink("delete", actionURL.getLocalURIString()));
             }
             else
             {

@@ -20,10 +20,18 @@
 <%@ page import="org.labkey.issue.IssuesController.KeywordPicker"%>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<List<KeywordPicker>> me = (HttpView<List<KeywordPicker>>) HttpView.currentView();
     List<KeywordPicker> keywordPickers = me.getModelBean();
+    Map<String, String> delete = new HashMap<String, String>();
+    delete.put("title", "Delete this keyword");
+    Map<String, String> clear = new HashMap<String, String>();
+    clear.put("title", "Clear the default values");
+    Map<String, String> set = new HashMap<String, String>();
+    set.put("title", "Set as the default value");
 %>
 <table>
 <tr><%
@@ -47,14 +55,14 @@
         {
             boolean selected = keyword.isDefault();
 %>
-        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td>[<a href="javascript:callAction('deleteKeyword','form<%=kwp.plural%>',<%=h(PageFlowUtil.jsString(keyword.getKeyword()))%>)" title="Delete this keyword">delete</a>]&nbsp;<%
+        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', 'form" + kwp.plural + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")","","",delete)%>&nbsp;<%
             if (selected)
             {
-                %>[<a href="javascript:callAction('clearKeywordDefault','form<%=kwp.plural%>',<%=h(PageFlowUtil.jsString(keyword.getKeyword()))%>)" title="Clear the default value">clear</a>]<%
+                %><%=textLink("clear", "javascript:callAction('clearKeywordDefault','form" + kwp.plural + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", "", clear)%><%
             }
             else
             {
-                %>[<a href="javascript:callAction('setKeywordDefault','form<%=kwp.plural%>',<%=h(PageFlowUtil.jsString(keyword.getKeyword()))%>)" title="Set as the default value">set</a>]<%
+                %><%=textLink("set", "javascript:callAction('setKeywordDefault','form" + kwp.plural + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", "", set)%><%
             }%></td></tr><%
         }
 

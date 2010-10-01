@@ -44,6 +44,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.MothershipReport;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.mothership.query.MothershipSchema;
 import org.springframework.validation.BindException;
@@ -68,12 +69,6 @@ public class MothershipController extends SpringActionController
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(MothershipController.class);
 
     private static Logger _log = Logger.getLogger(MothershipController.class);
-    private static final String LINK_HTML_PREFIX =
-            "[<a href=\"showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true\">View Exceptions</a>] " +
-            "[<a href=\"showInstallations.view\">View All Installations</a>] " +
-            "[<a href=\"editUpgradeMessage.view\">Configure Mothership</a>] " +
-            "[<a href=\"showReleases.view\">List of Releases</a>] " +
-            "[<a href=\"reports.view\">Reports</a>] ";
 
     public MothershipController()
     {
@@ -801,13 +796,17 @@ public class MothershipController extends SpringActionController
     private String getLinkBarHTML()
     {
         StringBuilder builder = new StringBuilder();
-        builder.append(LINK_HTML_PREFIX);
+        builder.append(PageFlowUtil.textLink("View Exceptions", "showExceptions.view?" + DataRegion.LAST_FILTER_PARAM + "=true") + " " +
+            PageFlowUtil.textLink("View All Installations", "showInstallations.view") + " " +
+            PageFlowUtil.textLink("Configure Mothership", "editUpgradeMessage.view") + " " +
+            PageFlowUtil.textLink("List of Releases", "showReleases.view") + " " +
+            PageFlowUtil.textLink("Reports", "reports.view") + " ");
         if (getUser() != null && !getUser().isGuest())
         {
-            builder.append("[<a href=\"");
+            builder.append("<a class=\"labkey-text-link\" href=\"");
             builder.append("showExceptions.view?ExceptionSummary.BugNumber~isblank=&ExceptionSummary.AssignedTo/DisplayName~eq=");
             builder.append(getUser().getDisplayName(getViewContext()));
-            builder.append("\">My Exceptions</a>]<br>");
+            builder.append("\">My Exceptions</a><br>");
         }
         return builder.toString();
     }

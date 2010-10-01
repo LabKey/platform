@@ -44,6 +44,11 @@ body, div, td, th, table, img, form,
     font-size: 14px;
 }
 
+td
+{
+    vertical-align: top; /* IE */
+}
+
 img
 {
     border: 0 none;

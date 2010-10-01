@@ -319,7 +319,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             }
 
             if (LABKEY.devMode)
-                container.children.push(this.formatQueryLink("rawTableMetaData", params, "view raw table meta data"));
+                container.children.push(this.formatQueryLink("rawTableMetaData", params, "view raw table metadata"));
         }
         
         return container;
@@ -331,22 +331,10 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             queryName: queryDetails.name
         });
         return {
-            tag: 'span',
-            children: [
-                {
-                    tag: 'span',
-                    html: '['
-                },
-                {
-                    tag: 'a',
-                    href: url,
-                    html: 'Inherited: Jump to Definition'
-                },
-                {
-                    tag: 'span',
-                    html: ']'
-                }
-            ]
+            tag: 'a',
+            cls: 'labkey-text-link',
+            href: url,
+            html: 'Inherited: Jump to Definition'
         };
     },
 
@@ -354,26 +342,13 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         url = url || LABKEY.ActionURL.buildURL("query", action, undefined, params);
         var link = {
             tag: 'a',
+            cls: 'labkey-text-link',
             href: url,
             html: caption
         };
         if (target)
             link.target = target;
-        return {
-            tag: 'span',
-            cls: 'lk-qd-query-link',
-            children: [
-                {
-                    tag: 'span',
-                    html: '['
-                },
-                link,
-                {
-                    tag: 'span',
-                    html: ']'
-                }
-            ]
-        };
+        return link;
     },
 
     formatQueryInfo : function(queryDetails) {

@@ -33,6 +33,8 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -70,9 +72,9 @@ public class StudyDesignsWebPart extends GridView
                 {
                     Container c = ContainerManager.getForId((String) ctx.get("Container"));
                     studyFolderUrl.setContainer(c);
-                    out.write("[<a style='white-space:nowrap' href='");
-                    out.write(PageFlowUtil.filter(studyFolderUrl));
-                    out.write("'>Go To Study Folder</a>]");
+                    Map<String, String> style = new HashMap<String, String>();
+                    style.put("style", "white-space:nowrap");
+                    out.write(PageFlowUtil.textLink("Go To Study Folder", studyFolderUrl.getLocalURIString(), "", "", style));
                 }
                 else
                 {
