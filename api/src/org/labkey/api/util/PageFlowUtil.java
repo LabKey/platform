@@ -1911,7 +1911,7 @@ public class PageFlowUtil
         Container container = context.getContainer();
         User user = HttpView.currentView().getViewContext().getUser();
         sb.append("user:{id:").append(user.getUserId());
-        sb.append(",displayName:").append(jsString(user.getDisplayName(context)));
+        sb.append(",displayName:").append(jsString(user.getDisplayNameOld(context)));
         sb.append(",email:").append(PageFlowUtil.jsString(user.getEmail()));
         sb.append(",phone:").append(PageFlowUtil.jsString(user.getPhone()));
         sb.append(",sessionid:").append(jsString(getSessionId(context.getRequest())));

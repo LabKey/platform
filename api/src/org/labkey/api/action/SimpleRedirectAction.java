@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
@@ -28,7 +29,7 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 {
     public final ModelAndView getView(FORM form, BindException errors) throws Exception
     {
-        ActionURL url;
+        URLHelper url;
 
         try
         {
@@ -49,7 +50,7 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
         return null;
     }
 
-    public abstract ActionURL getRedirectURL(FORM form) throws Exception;
+    public abstract URLHelper getRedirectURL(FORM form) throws Exception;
 
     // Called whenever getRedirectURL() throws an exception.  Standard code rethrows the exception.  Override this
     // method to customize the handling of certain exceptions (e.g., display an error view). 

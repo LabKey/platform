@@ -957,7 +957,7 @@ public class DataRegion extends DisplayElement
             out.write(" 'name' : " + PageFlowUtil.jsString(view.getName()) + ",");
             out.write(" 'default' : " + String.valueOf(view.getName() == null) + ",");
             if (view.getOwner() != null)
-                out.write(" 'owner' : " + PageFlowUtil.jsString(view.getOwner().getDisplayName(ctx.getViewContext())) + ",");
+                out.write(" 'owner' : " + PageFlowUtil.jsString(view.getOwner().getDisplayNameOld(ctx.getViewContext())) + ",");
             out.write(" 'shared' : " + view.isShared() + ",");
             out.write(" 'inherit' : " + view.canInherit() + ",");
             out.write(" 'session' : " + view.isSession() + ",");

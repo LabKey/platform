@@ -377,9 +377,9 @@ public class ReportUtil
                 record.put("reportId", descriptor.getReportId().toString());
                 record.put("query", StringUtils.defaultIfEmpty(query, "None : (stand-alone views)"));
                 record.put("schema", schema);
-                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : String.valueOf(descriptor.getCreatedBy()));
+                record.put("createdBy", createdBy != null ? createdBy.getDisplayNameOld(context) : String.valueOf(descriptor.getCreatedBy()));
                 record.put("created", DateUtil.formatDate(descriptor.getCreated()));
-                record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayName(context) : String.valueOf(descriptor.getModifiedBy()));
+                record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayNameOld(context) : String.valueOf(descriptor.getModifiedBy()));
                 record.put("modified", DateUtil.formatDate(descriptor.getModified()));
                 record.put("type", r.getTypeDescription());
                 record.put("editable", String.valueOf(descriptor.canEdit(user, c)));
@@ -456,7 +456,7 @@ public class ReportUtil
                 record.put("schema", view.getSchemaName());
                 record.put("type", "query view");
                 record.put("editable", String.valueOf(view.isEditable()));
-                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
+                record.put("createdBy", createdBy != null ? createdBy.getDisplayNameOld(context) : null);
                 record.put("permissions", view.isShared() ? "public" : "private");
 
                 boolean inherited = isInherited(view, c);

@@ -33,7 +33,7 @@
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 %>
 
-User: <%=user.getDisplayName(context)%>
+User: <%=user.getDisplayNameOld(context)%>
 File: <%=bean.getResource().getName()%>
 Action: <%=bean.getAction()%>
 

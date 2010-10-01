@@ -107,17 +107,23 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _lastName;
     }
 
+    @Deprecated // Use getDisplayName(User) instead
+    public String getDisplayNameOld(ViewContext context)
+    {
+        return getDisplayName(null == context ? null : context.getUser());
+    }
+
     /**
-     * Returns the display name of this user. Requires a ViewContext
+     * Returns the display name of this user. Requires a User
      * in order to check if the current web browser is logged in.
      * We then filter the display name for guests, stripping out the @domain.com
      * if it is an email address.
-     * @param context
+     * @param currentUser
      * @return The display name, possibly sanitized
      */
-    public String getDisplayName(ViewContext context)
+    public String getDisplayName(User currentUser)
     {
-        if (null == context || null == context.getUser() || context.getUser().isGuest())
+        if (null == currentUser || currentUser.isGuest())
         {
             return UserManager.sanitizeEmailAddress(_displayName);
         }

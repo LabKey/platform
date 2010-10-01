@@ -324,7 +324,7 @@ public class UserManager
                 return null;
         }
 
-        return user.getDisplayName(context);
+        return user.getDisplayNameOld(context);
     }
 
 
@@ -763,11 +763,11 @@ public class UserManager
                         display = user.getEmail();
                     completions.add(new AjaxCompletion(display, user.getEmail()));
                 }
-                else if (user.getDisplayName(context).compareToIgnoreCase(user.getEmail()) != 0 &&
-                        user.getDisplayName(context).toLowerCase().startsWith(lowerPrefix))
+                else if (user.getDisplayNameOld(context).compareToIgnoreCase(user.getEmail()) != 0 &&
+                        user.getDisplayNameOld(context).toLowerCase().startsWith(lowerPrefix))
                 {
                     StringBuilder builder = new StringBuilder();
-                    builder.append(user.getDisplayName(context)).append(" ");
+                    builder.append(user.getDisplayNameOld(context)).append(" ");
                     builder.append(" (").append(user.getEmail()).append(")");
                     completions.add(new AjaxCompletion(builder.toString(), user.getEmail()));
                 }

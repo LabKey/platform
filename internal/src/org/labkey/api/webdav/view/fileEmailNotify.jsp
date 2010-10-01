@@ -43,7 +43,7 @@
 
 <table>
     <tr class="labkey-alternate-row">
-        <td>User</td><td><%=user.getDisplayName(context)%></td></tr>
+        <td>User</td><td><%=user.getDisplayNameOld(context)%></td></tr>
 <%
     if (bean.getResource().getFile().exists()) {
 %>
