@@ -19,10 +19,10 @@ package org.labkey.mothership.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.mothership.MothershipManager;
+import org.labkey.api.view.ActionURL;
 import org.labkey.mothership.MothershipController;
+import org.labkey.mothership.MothershipManager;
 import org.labkey.mothership.StackTraceDisplayColumn;
 
 import java.sql.Types;
@@ -133,6 +133,18 @@ public class MothershipSchema extends UserSchema
             {
                 return createServerInstallationTable();
             }
+
+            @Override
+            public String getLookupSchemaName()
+            {
+                return SCHEMA_NAME;
+            }
+
+            @Override
+            public String getLookupTableName()
+            {
+                return SERVER_INSTALLATIONS_TABLE_NAME;
+            }
         });
         result.getColumn("ServerInstallationId").setLabel("Server");
 
@@ -231,6 +243,18 @@ public class MothershipSchema extends UserSchema
             public TableInfo getLookupTableInfo()
             {
                 return createServerSessionTable();
+            }
+
+            @Override
+            public String getLookupSchemaName()
+            {
+                return SCHEMA_NAME;
+            }
+
+            @Override
+            public String getLookupTableName()
+            {
+                return SERVER_SESSIONS_TABLE_NAME;
             }
         });
         result.addColumn(currentVersionColumn);
@@ -370,6 +394,18 @@ public class MothershipSchema extends UserSchema
             {
                 return createExceptionStackTraceTable();
             }
+
+            @Override
+            public String getLookupSchemaName()
+            {
+                return SCHEMA_NAME;
+            }
+
+            @Override
+            public String getLookupTableName()
+            {
+                return EXCEPTION_STACK_TRACE_TABLE_NAME;
+            }
         });
 
         result.getColumn("PageflowName").setLabel("Controller");
@@ -383,6 +419,18 @@ public class MothershipSchema extends UserSchema
             public TableInfo getLookupTableInfo()
             {
                 return createServerSessionTable();
+            }
+
+            @Override
+            public String getLookupSchemaName()
+            {
+                return SCHEMA_NAME;
+            }
+
+            @Override
+            public String getLookupTableName()
+            {
+                return SERVER_SESSIONS_TABLE_NAME;
             }
         };
         fk.setPrefixColumnCaption(false);
