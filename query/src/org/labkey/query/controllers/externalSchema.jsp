@@ -132,7 +132,7 @@ selModel.addListener('rowdeselect', updateTableTitle);
 
 var initialTables = '<%=def.getTables()%>';
 
-// create the Grid
+// create the table grid
 var grid = new Ext.grid.GridPanel({
     fieldLabel:'Tables',
     helpPopup:{title:'Tables', html:'<%=bean.getHelpHTML("Tables")%>'},
