@@ -17,17 +17,14 @@
 package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.*;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
@@ -54,6 +51,7 @@ public class GroupManager
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
 
     private static final StringKeyCache<int[]> GROUP_ID_CACHE = CacheManager.getSharedCache();
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
 
     public enum PrincipalType
     {
@@ -88,8 +86,11 @@ public class GroupManager
     }
 
     /** this method returns the FLATTENED group list for this principal */
-    static int[] getAllGroupsForPrincipal(UserPrincipal user)
+    static int[] getAllGroupsForPrincipal(@NotNull UserPrincipal user)
     {
+        if (user == null)
+            return EMPTY_INT_ARRAY;
+
         int userId = user.getUserId();
         int[] groups = GROUP_ID_CACHE.get(USER_CACHE_PREFIX + userId);
 
@@ -102,7 +103,7 @@ public class GroupManager
         return groups;
     }
 
-    static int[] getAllGroupsForUser(User user)
+    static int[] getAllGroupsForUser(@NotNull User user)
     {
         return getAllGroupsForPrincipal(user);
     }

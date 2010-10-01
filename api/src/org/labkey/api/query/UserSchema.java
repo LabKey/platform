@@ -62,6 +62,8 @@ abstract public class UserSchema extends AbstractSchema
     protected boolean canReadSchema()
     {
         User user = getUser();
+        if (user == null)
+            return false;
         return user == User.getSearchUser() || getContainer().hasPermission(user, ReadPermission.class);
     }
 
