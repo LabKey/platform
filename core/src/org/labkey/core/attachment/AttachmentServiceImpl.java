@@ -22,28 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.DocumentWriter;
-import org.labkey.api.attachments.DownloadURL;
-import org.labkey.api.attachments.FileAttachmentFile;
-import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.*;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.search.SearchService;
@@ -53,26 +36,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ContainerUtil;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.MimeMap;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.*;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.webdav.AbstractDocumentResource;
-import org.labkey.api.webdav.AbstractWebdavResourceCollection;
-import org.labkey.api.webdav.FileSystemAuditViewFactory;
-import org.labkey.api.webdav.WebdavResolver;
-import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.*;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
@@ -81,30 +48,13 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.PropertyChangeEvent;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * User: adam
@@ -1453,11 +1403,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             File webRoot = new File(testDir, "JUnitWebFileRoot");
 
             if (null != ContainerManager.getForPath("/JUnitAttachmentProject/Test"))
-                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject/Test"), null);
+                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject/Test"), TestContext.get().getUser());
             if (null != ContainerManager.getForPath("/JUnitAttachmentProject/newName"))
-                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject/newName"), null);
+                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject/newName"), TestContext.get().getUser());
             if (null != ContainerManager.getForPath("/JUnitAttachmentProject"))
-                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject"), null);
+                ContainerManager.delete(ContainerManager.getForPath("/JUnitAttachmentProject"), TestContext.get().getUser());
             Container proj = ContainerManager.ensureContainer("/JUnitAttachmentProject");
             Container folder = ContainerManager.ensureContainer("/JUnitAttachmentProject/Test");
             webRoot.mkdirs();
@@ -1532,8 +1482,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             //Need to reselect folder or its name is wrong!
             folder = ContainerManager.getForId(folder.getId());
-            ContainerManager.delete(folder, null);
-            ContainerManager.delete(proj, null);
+            ContainerManager.delete(folder, TestContext.get().getUser());
+            ContainerManager.delete(proj, TestContext.get().getUser());
         }
 
         private void assertSameFile(File a, File b)
