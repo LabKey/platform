@@ -61,7 +61,7 @@ public class CustomViewUtil
 
         ActionURL url = new ActionURL();
 
-        JSONArray jsonFilters = jsonView.optJSONArray("filters");
+        JSONArray jsonFilters = jsonView.optJSONArray("filter");
         if (jsonFilters != null && jsonFilters.length() > 0)
         {
             for (Map<String, Object> filterInfo : jsonFilters.toMapList())
@@ -193,7 +193,7 @@ public class CustomViewUtil
             {
                 Map<String, Object> filterInfo = new HashMap<String, Object>();
                 filterInfo.put("fieldKey", filter.getField().toString());
-                filterInfo.put("op", filter.getOp().getPreferredUrlKey());
+                filterInfo.put("op", filter.getOp() != null ? filter.getOp().getPreferredUrlKey() : "");
                 filterInfo.put("value", filter.getValue());
                 allKeys.add(filter.getField());
                 filterInfos.add(filterInfo);
@@ -214,6 +214,7 @@ public class CustomViewUtil
         }
         ret.put("filter", filterInfos);
         ret.put("sort", sortInfos);
+        ret.put("containerFilter", view.getContainerFilterName());
 
         if (includeFieldMeta)
         {
