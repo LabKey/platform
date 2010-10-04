@@ -109,7 +109,7 @@
         <table>
             <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
-            [<a href="<%= h(url.relativeUrl("manageReports.view", null, "Study-Reports")) %>">Manage Views</a>]
+            <%=textLink("Manage Views", h(url.relativeUrl("manageReports.view", null, "Study-Reports")))%>
             </td></tr>
         </table>
 <%

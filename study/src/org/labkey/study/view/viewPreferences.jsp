@@ -45,7 +45,7 @@
     %>
             <tr><td><%=getLabel(view, defaultView)%></td>
                 <td>&nbsp;</td>
-                <td>[<a href="<%=url.relativeUrl("viewPreferences", Collections.singletonMap("defaultView", view.getValue()), "Study", false)%>">select</a>]</td>
+                <td><%=textLink("select", url.relativeUrl("viewPreferences", Collections.singletonMap("defaultView", view.getValue()), "Study", false))%></td>
             </tr>
     <%
         }

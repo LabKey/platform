@@ -111,7 +111,7 @@
     {
         if (dataset.getTypeURI() == null)
         {
-            %>[<a href="bulkImportDataTypes.view?">Bulk import dataset schemas</a>]<%
+            %><%=textLink("Bulk import dataset schemas", "bulkImportDataTypes.view?")%><%
         }
     }
 %>

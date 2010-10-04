@@ -26,7 +26,7 @@
 %>
 <labkey:errors/>
 Use this form to <b>replace all specimens</b> in the repository with a new list of specimens.<br>
-[<a href="getSpecimenExcel.view">Download a template workbook</a>]<br><br>
+<%=textLink("Download a template workbook", "getSpecimenExcel.view")%><br><br>
 Paste data in the area below
 <form action="showUploadSpecimens.post" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>

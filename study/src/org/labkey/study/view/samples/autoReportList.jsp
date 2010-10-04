@@ -90,7 +90,7 @@
             <tr class="<%= rowClass %>">
                 <th style="text-align:right"><%= h(factory.getLabel())%></th>
                 <td class="<%= rowClass %>">
-                    [<a href="#" id="showOptionsLink<%= showHideSuffix %>" onclick="return showOrHide('<%= showHideSuffix %>');">show options</a>]
+                    <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
                 <td valign="top" align="left" class="<%= rowClass %>">
                     <%= generateSubmitButton("View") %>
                 </td>

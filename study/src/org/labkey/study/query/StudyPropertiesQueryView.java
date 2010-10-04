@@ -77,14 +77,8 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            out.write("[<a href=\"");
-
             ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);
-
-            out.write(PageFlowUtil.filter(actionURL.getLocalURIString()));
-            out.write("\">");
-            out.write("edit");
-            out.write("</a>]");
+            out.write(PageFlowUtil.textLink("edit", actionURL));
         }
     }
 }

@@ -156,7 +156,7 @@ public class DataHeader extends HttpView
         {
             if (!getViewContext().getUser().isGuest() && getViewContext().hasPermission(ReadPermission.class))
             {
-                out.printf("&nbsp;[<a href=\"%s\">Customize View</a>] ", _customizeURL);
+                out.printf("&nbsp;" + PageFlowUtil.textLink("Customize View", _customizeURL));
             }
 
             // make sure there is a participant id available
@@ -191,12 +191,12 @@ public class DataHeader extends HttpView
                 ActionURL url = new ActionURL(StudyController.DeleteDatasetReportAction.class, getViewContext().getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, _datasetDef.getDataSetId()).
                         addParameter("Dataset.viewName", viewName);
-                out.printf("&nbsp;[<a href=\"%s\">Remove View</a>] ", url);
+                out.printf("&nbsp;" + PageFlowUtil.textLink("Remove View", url));
             }
         }
         if (!getViewContext().getUser().isGuest())
-            out.printf("[<a href=\"%s\">Set Default View</a>] ", _currentUrl.relativeUrl("viewPreferences.view",
-                    Collections.singletonMap(DataSetDefinition.DATASETKEY, String.valueOf(_datasetDef.getDataSetId())),"Study", false));
+            out.printf(PageFlowUtil.textLink("Set Default View", _currentUrl.relativeUrl("viewPreferences.view",
+                    Collections.singletonMap(DataSetDefinition.DATASETKEY, String.valueOf(_datasetDef.getDataSetId())),"Study", false)));
 
         out.print("</form>");
     }

@@ -95,18 +95,12 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         SiteImpl site = siteId >= 0 ? StudyManager.getInstance().getSite(container, siteId) : null;
         return new ActorNotificationRecipientSet(actor, site);
     }
-
-    public String textLink(String text, String href)
-    {
-        return "[<a href=\"" + PageFlowUtil.filter(href) + "\">" + text + "</a>]";
-    }
-
     public String getConfigureEmailsLinkHTML()
     {
         String configureMembersURL = "showGroupMembers.view?id=" + getActor().getRowId();
         if (getSite() != null)
             configureMembersURL += "&siteId=" + getSite().getRowId();
         configureMembersURL += "&returnUrl=" + PageFlowUtil.encode(HttpView.currentContext().getActionURL().getLocalURIString());
-        return textLink("Configure Addresses", configureMembersURL);
+        return PageFlowUtil.textLink("Configure Addresses", configureMembersURL);
     }
 }

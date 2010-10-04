@@ -179,7 +179,7 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
             if (pass == 0)
             {
             %>
-    [<a href="#" id="additionalColumnsLink" onclick="showOrHideAdditionalColumns()">Show all columns</a>]<br>
+    <%=textLink("Show all columns", "#", "showOrHideAdditionalColumns()", "additionalColumnsLink")%><br>
             <%
             }
         }

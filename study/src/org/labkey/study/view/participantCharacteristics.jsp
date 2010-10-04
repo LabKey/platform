@@ -173,7 +173,7 @@
                     addAction.addParameter("datasetId", datasetId);
                     addAction.addParameter("quf_ParticipantId", bean.getParticipantId());
                     
-                    %><td colspan="2" class="labkey-alternate-row">[<a href="<%=addAction.getLocalURIString()%>">add</a>]</td> <%
+                    %><td colspan="2" class="labkey-alternate-row"><%=textLink("add", addAction.getLocalURIString())%></td> <%
                 }
 
                 continue;
@@ -189,7 +189,7 @@
                             editAction.addParameter("datasetId", datasetId);
                             editAction.addParameter("lsid", lsid);
 
-                        %>[<a href="<%=editAction.getLocalURIString()%>">edit data</a>]</td>
+                        %><%=textLink("edit data", editAction.getLocalURIString())%></td>
                 </tr>
                 <%
             }

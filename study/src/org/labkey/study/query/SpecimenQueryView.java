@@ -154,13 +154,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 {
                     out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
                             "This specimen is unavailable because it is not currently held by a repository.<br><br>" +
-                                    "Click [<a href=\"" + getHistoryLink(ctx) + "\">history</a>] for more information.", true));
+                                    "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
                 }
                 else if (isInActiveRequest(ctx))
                 {
                     out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
                             "This specimen is unavailable because it is part of an active specimen request.<br><br>" +
-                                    "Click [<a href=\"" + getHistoryLink(ctx) + "\">history</a>] for more information.", true));
+                                    "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
                 }
                 else
                 {

@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
+<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -97,6 +98,7 @@
         %>
     </td>
 </tr>
+<% if (!WebThemeManager.getTheme(c).isCustom()) {%>
 <tr>
     <td class="labkey-form-label">Font size</td>
     <td>
@@ -115,6 +117,7 @@
             %>
     </td>
 </tr>
+<% } %>
 <tr>
     <td class="labkey-form-label">Show left navigation bar</td>
     <td><%
@@ -125,12 +128,14 @@
         <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>" <%=currentMode == FolderDisplayMode.ADMIN ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
+<% if (!WebThemeManager.getTheme(c).isCustom()) {%>
 <tr>
     <td class="labkey-form-label">Left navigation bar width (pixels)</td>
     <td>
         <input name="navigationBarWidth" value="<%=laf.getNavigationBarWidth() %>" type="text" size="4">
     </td>
 </tr>
+<% } %>
 <%
 if (AppProps.getInstance().isDevMode())
 { %>

@@ -228,7 +228,7 @@
             {
                 %>
                 <tr style="<%=expanded ? "" : "display:none"%>">
-                    <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row">[<a href="<%=url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(pdKey.datasetId))%>">add chart</a>]</td>
+                    <td colspan="<%=totalSeqKeyCount+1%>" class="labkey-alternate-row"><%=textLink("add chart", url.replaceParameter("queryName", dataSet.getLabel()).replaceParameter("datasetId", String.valueOf(pdKey.datasetId)))%></td>
                 </tr>
                 <%
             }
@@ -340,7 +340,7 @@
                                 {
                                     ActionURL sourceURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, context.getContainer());
                                     sourceURL.addParameter("sourceLsid", sourceLsid);
-                                    link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
+                                    link = PageFlowUtil.textLink("details", sourceURL.getLocalURIString());
                                 }
                                 %><td><%= link%></td><%
                                 countTD++;
