@@ -513,7 +513,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _queue = null;
     }
 
-    abstract public ActionURL getStatusHref();
+    abstract public URLHelper getStatusHref();
 
     abstract public String getDescription();
 
