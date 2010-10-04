@@ -432,6 +432,87 @@ LABKEY.DataRegion = function (config)
     };
 
     /**
+     * Returns user filters from the URL as an Array of objects of the form:
+     * <ul>
+     *   <li><b>fieldKey</b>: {String} The field key of the filter.
+     *   <li><b>op</b>: {String} The filter operator (eg. "eq" or "in")
+     *   <li><b>value</b>: {String} Optional value to filter by.
+     * </ul>.
+     */
+    this.getUserFilter = function ()
+    {
+        var userFilter = [];
+        var paramValPairs = getParamValPairs(this.requestURL, null);
+        for (var i = 0; i < paramValPairs.length; i++)
+        {
+            var pair = paramValPairs[i];
+            if (pair[0].indexOf(this.name + ".") == 0 && pair[0].indexOf('~') > -1)
+            {
+                var tilde = pair[0].indexOf('~');
+                var fieldKey = pair[0].substring(this.name.length + 1, tilde);
+                var op = pair[0].substring(tilde + 1);
+                var value = pair[1];
+
+                userFilter.push({fieldKey: fieldKey, op: op, value: value});
+            }
+        }
+
+        return userFilter;
+    };
+
+    /**
+     * Returns the user containerFilter from the URL.
+     * Supported values include:
+     * <ul>
+     *   <li>"Current": Include the current folder only</li>
+     *   <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
+     *   <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
+     *   <li>"CurrentAndParents": Include the current folder and its parent folders</li>
+     *   <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
+     *   <li>"AllFolders": Include all folders for which the user has read permission</li>
+     * </ul>
+     */
+    this.getUserContainerFilter = function ()
+    {
+        return getParameter(this.name + ".containerFilterName");
+    };
+
+    /**
+     * Returns user sorts from the URL as an Array of objects of the form:
+     * <ul>
+     *   <li><b>fieldKey</b>: {String} The field key of the sort.
+     *   <li><b>dir</b>: {String} The sort direction, either "+" or "-".
+     * </ul>.
+     */
+    this.getUserSort = function ()
+    {
+        var userSort = [];
+        var sortParam = getParameter(this.name + ".sort");
+        if (sortParam)
+        {
+            var sortArray = sortParam.split(",");
+            for (var i = 0; i < sortArray.length; i++)
+            {
+                var sort = sortArray[i];
+                var fieldKey = sort;
+                var dir = "+";
+                if (sort.charAt(0) == "-")
+                {
+                    fieldKey = fieldKey.substring(1);
+                    dir = "-";
+                }
+                else if (sort.charAt(0) == "+")
+                {
+                    fieldKey = fieldKey.substring(1);
+                }
+                userSort.push({fieldKey: fieldKey, dir: dir});
+            }
+        }
+
+        return userSort;
+    };
+
+    /**
      * Show a message in the header of this DataRegion.
      * @param html the HTML source of the message to be shown
      */

@@ -33,12 +33,53 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         });
         this.fieldMetaStore.loadData(this.query);
 
-        // Add any additional field metadata for view's selected columns, sorts, filters.
-        // The view may be filtered upon columns not present in the query's selected column metadata.
         if (this.customView)
         {
-            // The FieldMetaStore uses a reader that expectes the field metadata to be under a 'columns' property instead of 'fields'
+            // Add any additional field metadata for view's selected columns, sorts, filters.
+            // The view may be filtered upon columns not present in the query's selected column metadata.
+            // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
             this.fieldMetaStore.loadData({columns: this.customView.fields}, true);
+
+            // Add user filters
+            this.userFilter = this.dataRegion.getUserFilter();
+            for (var i = 0; i < this.userFilter.length; i++)
+            {
+                // copy the filter so the original userFilter isn't modified by the designer
+                var userFilter = Ext.apply({userFilter: true}, this.userFilter[i]);
+                this.customView.filter.unshift(userFilter);
+            }
+
+            // Add user sort
+            this.userSort = this.dataRegion.getUserSort();
+            var newSortArray = [];
+            for (var i = 0; i < this.userSort.length; i++)
+            {
+                // copy the sort so the original userSort isn't modified by the designer
+                var userSort = Ext.apply({userSort: true}, this.userSort[i]);
+                newSortArray.push(userSort);
+            }
+
+            for (var i = 0; i < this.customView.sort.length; i++)
+            {
+                var sort = this.customView.sort[i];
+                var found = false;
+                for (var j = 0; j < newSortArray.length; j++)
+                {
+                    if (sort.fieldKey == userSort.fieldKey)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    newSortArray.push(sort);
+            }
+            this.customView.sort = newSortArray;
+
+            // Add user containerFilter
+            this.userContainerFilter = this.dataRegion.getUserContainerFilter();
+            if (this.userContainerFilter && this.customView.containerFilter != this.userContainerFilter)
+                this.customView.containerFilter = this.userContainerFilter;
         }
 
         this.showHiddenFields = config.showHiddenFields || false;
@@ -266,7 +307,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
     },
 
     onSaveClick : function (btn, e) {
-        var disableSharedAndInherit = this.customView.hidden || this.customView.session || (this.customView.containerPath != LABKEY.ActionURL.getContainer());
+        var disableSharedAndInherit = LABKEY.user.isGuest || this.customView.hidden || this.customView.session || (this.customView.containerPath != LABKEY.ActionURL.getContainer());
         var canEdit = this.canEdit();
         var win = new Ext.Window({
             title: "Save Custom View" + (this.customView.name ? ": " + escape(this.customView.name) : ""),
@@ -308,8 +349,8 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
                 fieldLabel: "Temporary",
                 xtype: "checkbox",
                 tooltip: "Save this view temporarily.  Any changes will only persist for the duration of your session.",
-                checked: this.customView.session,
-                disabled: this.customView.hidden,
+                checked: LABKEY.user.isGuest || this.customView.session,
+                disabled: LABKEY.user.isGuest || this.customView.hidden,
                 handler: function (checkbox, checked) {
                     if (checked) {
                         win.sharedField.setValue(false);
@@ -633,7 +674,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         this.customView = config.customView;
         this.fieldMetaStore = config.fieldMetaStore;
 
-        this.columnsStore = new Ext.data.JsonStore({
+        this.columnStore = new Ext.data.JsonStore({
             fields: ['name', 'fieldKey', 'title'],
             root: 'columns',
             idProperty: 'fieldKey',
@@ -682,7 +723,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     ref: "../columnsList",
                     xtype: "listview",
                     flex: 1,
-                    store: this.columnsStore,
+                    store: this.columnStore,
                     emptyText: "No fields selected",
                     disableHeaders: true,
                     hideHeaders: true,
@@ -837,7 +878,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     hasField : function (fieldKey) {
-        return this.columnsStore.findExact("fieldKey", fieldKey) != -1;
+        return this.columnStore.findExact("fieldKey", fieldKey) != -1;
     },
 
     revert : function () {
@@ -845,7 +886,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     },
 
     validate : function () {
-        if (this.columnsStore.getCount() == 0)
+        if (this.columnStore.getCount() == 0)
         {
             alert("You must select at least one field to display in the grid.");
             return false;
@@ -868,7 +909,7 @@ LABKEY.DataRegion.FilterItemPanel = Ext.extend(Ext.Container, {
             xtype: 'component'
         },{
             ref: "fieldKeyButtonMenu",
-            xtype: 'lk.fieldMetaButtonMenu',
+            xtype: 'labkey-fieldMetaButtonMenu',
             cls: 'item-fieldKey',
             applyValue: 'fieldKey',
             fieldMetaStore: this.fieldMetaStore,
@@ -879,7 +920,7 @@ LABKEY.DataRegion.FilterItemPanel = Ext.extend(Ext.Container, {
             }
         },{
             ref: 'opCombo',
-            xtype: 'lk.filterOpCombo',
+            xtype: 'labkey-filterOpCombo',
             cls: 'item-op',
             applyValue: 'op',
             fieldMetaStore: this.fieldMetaStore,
@@ -945,7 +986,7 @@ LABKEY.DataRegion.FilterItemPanel = Ext.extend(Ext.Container, {
     }
 
 });
-Ext.reg('lk.filteritem', LABKEY.DataRegion.FilterItemPanel);
+Ext.reg('labkey-filteritem', LABKEY.DataRegion.FilterItemPanel);
 
 
 LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
@@ -995,7 +1036,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         '</dl>'
                 ),
                 items: [{
-                    xtype: 'lk.filteritem',
+                    xtype: 'labkey-filteritem',
                     applyValue: 'fieldKey',
                     fieldMetaStore: this.fieldMetaStore
                 }]
@@ -1175,7 +1216,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                         '</dl>'
                 ),
                 items: [{
-                    xtype: 'lk.fieldMetaButtonMenu',
+                    xtype: 'labkey-fieldMetaButtonMenu',
                     renderTarget: 'div.item-fieldKey',
                     applyValue: 'fieldKey',
                     fieldMetaStore: this.fieldMetaStore
@@ -1755,7 +1796,7 @@ LABKEY.ext.FieldMetaButtonMenu = Ext.extend(Ext.Button, {
         };
     }
 });
-Ext.reg('lk.fieldMetaButtonMenu', LABKEY.ext.FieldMetaButtonMenu);
+Ext.reg('labkey-fieldMetaButtonMenu', LABKEY.ext.FieldMetaButtonMenu);
 
 
 LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
@@ -1807,7 +1848,7 @@ LABKEY.ext.FilterOpCombo = Ext.extend(Ext.form.ComboBox, {
         return LABKEY.Filter.getFilterTypeForURLSuffix(this.getValue());
     }
 });
-Ext.reg("lk.filterOpCombo", LABKEY.ext.FilterOpCombo);
+Ext.reg("labkey-filterOpCombo", LABKEY.ext.FilterOpCombo);
 
 // This TreeLoader returns TreeNodes for field metadata and is backed by a FieldMetaStore.
 LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {

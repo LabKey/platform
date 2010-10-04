@@ -112,6 +112,7 @@ LABKEY.Filter = new function()
 
 		Types : {
 
+            HAS_ANY_VALUE : createFilterType("Has Any Value", "", false),
 			EQUAL : createFilterType("Equals", "eq", true),
             DATE_EQUAL : createFilterType("Equals", "dateeq", true),
             DATE_NOT_EQUAL : createFilterType("Does Not Equal", "dateneq", true),
@@ -260,11 +261,11 @@ LABKEY.Filter = new function()
 
     var ft = ret.Types;
     var filterTypes = {
-        "int":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
-        "string":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN],
-        "boolean":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
-        "float":[ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
-        "date":[ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN]
+        "int":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
+        "string":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.CONTAINS, ft.DOES_NOT_CONTAIN, ft.DOES_NOT_START_WITH, ft.STARTS_WITH, ft.IN],
+        "boolean":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK],
+        "float":[ft.HAS_ANY_VALUE, ft.EQUAL, ft.NEQ_OR_NULL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN],
+        "date":[ft.HAS_ANY_VALUE, ft.DATE_EQUAL, ft.DATE_NOT_EQUAL, ft.ISBLANK, ft.NONBLANK, ft.GT, ft.LT, ft.GTE, ft.LTE, ft.IN]
     };
 
     /** @private Returns an Array of filter types that can be used with the given type ("int", "double", "string", "boolean", "date") */
