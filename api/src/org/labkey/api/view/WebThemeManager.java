@@ -116,7 +116,7 @@ public class WebThemeManager
         }
     }
 
-    public final static WebTheme DEFAULT_THEME = BLUE;
+    public final static WebTheme DEFAULT_THEME = TEN_THREE;
 
     public static WebTheme getTheme(Container c)
     {
