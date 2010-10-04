@@ -1103,20 +1103,14 @@ public class QueryView extends WebPartView<Object>
             ActionURL urlTableInfo = getSchema().urlFor(QueryAction.tableInfo);
             urlTableInfo.addParameter(QueryParam.queryName.toString(), getQueryDef().getName());
 
-            NavTree item;
-            if (false)
-            {
-                item = new NavTree("Customize View");
-                item.setId(getDataRegionName() + ":Views:Customize View");
-                item.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
-                        ".showCustomizeView(" + PageFlowUtil.jsString(urlFor(QueryAction.chooseColumns).toString()) + ");");
-            }
-            else
-            {
-                item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
-            }
+            NavTree customizeView = new NavTree("Customize New View");
+            customizeView.setId(getDataRegionName() + ":Views:Customize View");
+            customizeView.setScript("LABKEY.DataRegions[" + PageFlowUtil.jsString(getDataRegionName()) + "]" +
+                    ".showCustomizeView(" + PageFlowUtil.jsString(urlFor(QueryAction.chooseColumns).toString()) + ");");
+            button.addMenuItem(customizeView);
 
-            button.addMenuItem(item);
+            NavTree oldCustomizeView = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
+            button.addMenuItem(oldCustomizeView);
         }
 
         if (QueryService.get().isQuerySnapshot(getContainer(), getSchema().getSchemaName(), getSettings().getQueryName()))
