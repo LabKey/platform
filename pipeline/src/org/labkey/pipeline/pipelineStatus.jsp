@@ -27,13 +27,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 private Object outputJob(String status, PipelineJob job,
                          boolean isAllContainers, boolean canCancel)
 {
     StringBuffer ret = new StringBuffer("<tr><td>");
-    ActionURL href = null;
+    URLHelper href = null;
     if (!status.equals("pending"))
         href = job.getStatusHref();
 

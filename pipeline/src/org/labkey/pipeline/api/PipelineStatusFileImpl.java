@@ -22,12 +22,13 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.User;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
-import java.io.*;
-import java.util.HashSet;
-import java.util.Arrays;
+import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * @author B. MacLean
@@ -86,9 +87,14 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
         if (PipelineJob.COMPLETE_STATUS.equals(status))
         {
-            ActionURL urlData = job.getStatusHref();
+            URLHelper urlData = job.getStatusHref();
             if (urlData != null)
-                setDataUrl(urlData.getLocalURIString());
+            {
+                if (urlData instanceof ActionURL)
+                    setDataUrl(urlData.getLocalURIString());
+                else
+                    setDataUrl(urlData.getURIString());
+            }
         }
         // Store the job that was split, so we will have a place to merge
         // changes from the split-jobs.
