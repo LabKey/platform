@@ -266,36 +266,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         });
     },
 
-    /**
-     * Commits all changes made locally to the server. This method executes the updates asynchronously,
-     * so it will return before the changes are fully made on the server. Records that are being saved
-     * will have a property called 'saveOperationInProgress' set to true, and you can test if a Record
-     * is currently being saved using the isUpdateInProgress method. Once the record has been updated
-     * on the server, it's properties may change to reflect server-modified values such as Modified and ModifiedBy.
-     * <p>
-     * Before records are sent to the server, the "beforecommit" event will fire. Return false from your event
-     * handler to prohibit the commit. The beforecommit event handler will be passed the following parameters:
-     * <ul>
-     * <li><b>records</b>: An array of Ext.data.Record objects that will be sent to the server.</li>
-     * <li><b>rows</b>: An array of row data objects from those records.</li>
-     * </ul>
-     * <p>
-     * The "commitcomplete" or "commitexception" event will be fired when the server responds. The former
-     * is fired if all records are successfully saved, and the latter if an exception occurred. All modifications
-     * to the server are transacted together, so all records will be saved or none will be saved. The "commitcomplete"
-     * event is passed no parameters. The "commitexception" even is passed the error message as the only parameter.
-     * You may return false form the "commitexception" event to supress the default display of the error message.
-     * <p>
-     * For information on the Ext event model, see the
-     * <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.util.Observable">Ext API documentation</a>.
-     * @name commitChanges
-     * @function
-     * @memberOf LABKEY.ext.Store#
-     */
-    commitChanges : function() {
-        var records = this.getModifiedRecords();
+
+    getChanges : function(records) {
+        records = records || this.getModifiedRecords();
+
         if(!records || records.length == 0)
-            return;
+            return [];
 
         if (!this.updatable)
             throw "this LABKEY.ext.Store is not updatable!";
@@ -324,11 +300,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             if(record.saveOperationInProgress)
                 continue;
 
+            //NOTE: this check could possibly be eliminated since the form/server should do the same thing
             if(!this.readyForSave(record))
                 continue;
 
             record.saveOperationInProgress = true;
-            if (record.isNew)
+            //NOTE: modified since ext uses the term phantom for any record not saved to server
+            if (record.isNew || record.phantom)
             {
                 insertCommand.rows.push({
                     values: this.getRowData(record),
@@ -344,10 +322,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             }
         }
 
-        if((insertCommand.rows.length > 0 && false === this.fireEvent("beforecommit", records, insertCommand.rows)) ||
-           (updateCommand.rows.length > 0 && false === this.fireEvent("beforecommit", records, updateCommand.rows)))
-            return;
-
         var commands = [];
         if (insertCommand.rows.length > 0)
         {
@@ -356,6 +330,48 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if (updateCommand.rows.length > 0)
         {
             commands.push(updateCommand);
+        }
+
+        for(var i=0;i<commands.length;i++){
+            if(commands[i].rows.length > 0 && false === this.fireEvent("beforecommit", records, commands[i].rows))
+                return [];
+        }
+
+        return commands
+    },
+
+    /**
+     * Commits all changes made locally to the server. This method executes the updates asynchronously,
+     * so it will return before the changes are fully made on the server. Records that are being saved
+     * will have a property called 'saveOperationInProgress' set to true, and you can test if a Record
+     * is currently being saved using the isUpdateInProgress method. Once the record has been updated
+     * on the server, it's properties may change to reflect server-modified values such as Modified and ModifiedBy.
+     * <p>
+     * Before records are sent to the server, the "beforecommit" event will fire. Return false from your event
+     * handler to prohibit the commit. The beforecommit event handler will be passed the following parameters:
+     * <ul>
+     * <li><b>records</b>: An array of Ext.data.Record objects that will be sent to the server.</li>
+     * <li><b>rows</b>: An array of row data objects from those records.</li>
+     * </ul>
+     * <p>
+     * The "commitcomplete" or "commitexception" event will be fired when the server responds. The former
+     * is fired if all records are successfully saved, and the latter if an exception occurred. All modifications
+     * to the server are transacted together, so all records will be saved or none will be saved. The "commitcomplete"
+     * event is passed no parameters. The "commitexception" even is passed the error message as the only parameter.
+     * You may return false form the "commitexception" event to supress the default display of the error message.
+     * <p>
+     * For information on the Ext event model, see the
+     * <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.util.Observable">Ext API documentation</a>.
+     * @name commitChanges
+     * @function
+     * @memberOf LABKEY.ext.Store#
+     */    
+    commitChanges : function(){
+        var records = this.getModifiedRecords();
+        var commands = this.getChanges(records);
+
+        if (!commands.length){
+            return false;
         }
 
         Ext.Ajax.request({
@@ -474,56 +490,64 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             return;
 
         var idCol = this.reader.jsonData.metaData.id;
-        var row;
-        var record;
         for(var commandIdx = 0; commandIdx < json.result.length; ++commandIdx)
         {
-            var commandJson = json.result[commandIdx];
-            for(var idx = 0; idx < commandJson.rows.length; ++idx)
-            {
-                row = commandJson.rows[idx];
-                if(!row || !row.values)
-                    continue;
-
-                //find the record using the id sent to the server
-                record = this.getById(row.oldKeys[this.reader.meta.id]);
-                if(!record)
-                    continue;
-
-                //apply values from the result row to the sent record
-                for(var col in record.data)
-                {
-                    //since the sent record might contain columns form a related table,
-                    //ensure that a value was actually returned for that column before trying to set it
-                    if(undefined !== row.values[col])
-                        record.set(col, record.fields.get(col).convert(row.values[col], row.values));
-
-                    //clear any displayValue there might be in the extended info
-                    if(record.json && record.json[col])
-                        delete record.json[col].displayValue;
-                }
-
-                //if the id changed, fixup the keys and map of the store's base collection
-                //HACK: this is using private data members of the base Store class. Unfortunately
-                //Ext Store does not have a public API for updating the key value of a record
-                //after it has been added to the store. This might break in future versions of Ext.
-                if(record.id != row.values[idCol])
-                {
-                    record.id = row.values[idCol];
-                    this.data.keys[this.data.indexOf(record)] = row.values[idCol];
-
-                    delete this.data.map[record.id];
-                    this.data.map[row.values[idCol]] = record;
-                }
-
-                //reset transitory flags and commit the record to let
-                //bound controls know that it's now clean
-                delete record.saveOperationInProgress;
-                delete record.isNew;
-                record.commit();
-            }
+            this.processResponse(json.result[commandIdx].rows);
         }
         this.fireEvent("commitcomplete");
+    },
+
+    processResponse : function(rows){
+        var idCol = this.reader.jsonData.metaData.id;
+        var row;
+        var record;
+        for(var idx = 0; idx < rows.length; ++idx)
+        {
+            row = rows[idx];
+
+            if(!row || !row.values)
+                return;
+
+            //find the record using the id sent to the server
+            record = this.getById(row.oldKeys[this.reader.meta.id]);
+            if(!record)
+                return;
+
+            //apply values from the result row to the sent record
+            for(var col in record.data)
+            {
+                //since the sent record might contain columns form a related table,
+                //ensure that a value was actually returned for that column before trying to set it
+                if(undefined !== row.values[col]){
+                    var x = record.fields.get(col);
+                    record.set(col, record.fields.get(col).convert(row.values[col], row.values));
+                }
+
+                //clear any displayValue there might be in the extended info
+                if(record.json && record.json[col])
+                    delete record.json[col].displayValue;
+            }
+
+            //if the id changed, fixup the keys and map of the store's base collection
+            //HACK: this is using private data members of the base Store class. Unfortunately
+            //Ext Store does not have a public API for updating the key value of a record
+            //after it has been added to the store. This might break in future versions of Ext.
+            if(record.id != row.values[idCol])
+            {
+                record.id = row.values[idCol];
+                this.data.keys[this.data.indexOf(record)] = row.values[idCol];
+
+                delete this.data.map[record.id];
+                this.data.map[row.values[idCol]] = record;
+            }
+
+            //reset transitory flags and commit the record to let
+            //bound controls know that it's now clean
+            delete record.saveOperationInProgress;
+            delete record.isNew;
+            record.commit();
+        }
+
     },
 
     getOnCommitFailure : function(records) {
@@ -669,6 +693,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         //for required columns is the job of the store, not
         //the bound control. Since the required prop is in the
         //column model, go get that from the reader
+        if (this.noValidationCheck)
+            return true;
+
         var colmodel = this.reader.jsonData.columnModel;
         if(!colmodel)
             return true;
