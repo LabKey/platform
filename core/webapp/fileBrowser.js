@@ -2812,13 +2812,13 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
     {
         var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
         var url = uri.toString();
-        this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
-        this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
+        this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path});
+        this.progressBar = new Ext.ProgressBar();
 
         var toolbar = new Ext.Toolbar({buttons:[
             this.actions.appletFileAction, this.actions.appletDirAction
         ]});
-        this.appletStatusBar = new LABKEY.ext.StatusBar({id:'appletStatusBar', defaultText:'Ready', busyText:'Copying...', items:[
+        this.appletStatusBar = new LABKEY.ext.StatusBar({defaultText:'Ready', busyText:'Copying...', items:[
             {xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120}
         ]});
 
@@ -3174,7 +3174,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             iconCls: 'iconUpload',
             disabledClass:'x-button-disabled',
             tooltip: 'Upload files or folders from your local machine to the server',
-            listeners: {click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}
+            listeners: {click:function(button, event) {this.toggleTabPanel(this.uploadPanel.getId());}, scope:this}
         });
 
         actions.appletFileAction = new Ext.Action({
@@ -3251,7 +3251,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             // the file upload collapsible panel
             this.fileUploadField = new Ext.form.FileUploadField(
             {
-                id: this.id ? this.id + 'Upload' : 'fileUpload',
+                //id: this.id ? this.id + 'Upload' : 'fileUpload',
                 buttonText: "Browse...",
                 fieldLabel: 'Choose a file',
                 width: 340
@@ -3272,8 +3272,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
             });
 
             this.uploadPanel = new Ext.FormPanel({
-                id: 'uploadFileTab',
-                formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
+                //id: 'uploadFileTab',
+                //formId : Ext.id(), //this.id ? this.id + 'Upload-form' : 'fileUpload-form',
                 method : 'POST',
                 fileUpload: true,
                 enctype:'multipart/form-data',
@@ -3296,7 +3296,7 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 ],
                 buttons:[
                     {text: 'Submit', handler:this.submitFileUploadForm, scope:this},
-                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadFileTab');}, scope:this}}
+                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel(this.uploadPanel.getId());}, scope:this}}
                 ],
                 listeners: {
                     "actioncomplete" : {fn: this.uploadSuccess, scope: this},
@@ -3309,16 +3309,16 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 boxLabel: 'Single file', name: 'rb-auto', inputValue: 1, width: 100,
                 listeners:{check:function(button, checked) {
                     if (checked)
-                        this.toggleTabPanel('uploadFileTab');
+                        this.toggleTabPanel(this.uploadPanel.getId());
                 }, scope:this}
             });
             var uploadMultiPanel_rb2 = new Ext.form.Radio({
                 boxLabel: 'Multiple files', name: 'rb-auto', inputValue: 2, checked: true, width: 100
             });
 
-            this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
+            this.progressBar = new Ext.ProgressBar();
             this.appletStatusBar = new LABKEY.ext.StatusBar({
-                id:'appletStatusBar', defaultText:'', busyText:'Copying...',
+                defaultText:'', busyText:'Copying...',
                 width: 200,
                 hidden: true,
                 statusAlign: 'right',
@@ -3335,8 +3335,8 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 width: 325
             });
 
-            var uploadMultiPanel = new Ext.FormPanel({
-                id: 'uploadMultiFileTab',
+            this.uploadMultiPanel = new Ext.FormPanel({
+                //id: 'uploadMultiFileTab',
                 layout: 'form',
                 border:false,
                 stateful: false,
@@ -3356,11 +3356,11 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 buttons:[
                     new Ext.Button(this.actions.appletFileAction),
                     new Ext.Button(this.actions.appletDirAction),
-                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel('uploadMultiFileTab');}, scope:this}},
+                    {text: 'Close', listeners:{click:function(button, event) {this.toggleTabPanel(this.uploadMultiPanel.getId());}, scope:this}},
                     this.appletStatusBar
                 ]
             });
-            uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
+            this.uploadMultiPanel.on('beforeshow', function(c){uploadMultiPanel_rb1.setValue(false); uploadMultiPanel_rb2.setValue(true);}, this);
 
             this.fileUploadPanel = new LABKEY.TinyTabPanel({
                 region: 'north',
@@ -3374,12 +3374,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
                 collapsible: true,
                 collapsed: true,
                 hideCollapseTool: true,
-                activeTab: 'uploadFileTab',
+                activeTab: this.uploadPanel.getId(),
                 deferredRender: false,
                 stateful: false,
                 items: [
                     this.uploadPanel,
-                    uploadMultiPanel
+                    this.uploadMultiPanel
                 ]});
 
             layoutItems.push(this.fileUploadPanel);
@@ -3565,12 +3565,12 @@ LABKEY.FileBrowser = Ext.extend(Ext.Panel,
         this.hideProgressBar();
         this.lastSummary= {info:0, success:0, file:'', pct:0};
         this.progressRecord = null;
-        this.toggleTabPanel('uploadMultiFileTab');
+        this.toggleTabPanel(this.uploadMultiPanel.getId());
         if (!this.applet)
         {
             var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
             var url = uri.toString();
-            this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
+            this.applet = new TransferApplet({id: Ext.id(), url:url, directory:this.currentDirectory.data.path});
 
             this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
             this.applet.on(TRANSFER_EVENTS.update, this.fireUploadEvents, this);

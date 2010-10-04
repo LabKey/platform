@@ -55,7 +55,9 @@ public class FileContentModule extends DefaultModule
 
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new FilesWebPart.Factory(HttpView.BODY), new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT)));
+        return new ArrayList<WebPartFactory>(Arrays.asList(
+                new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT),
+                new FilesWebPart.Factory(HttpView.BODY))); 
     }
 
     public boolean hasScripts()
