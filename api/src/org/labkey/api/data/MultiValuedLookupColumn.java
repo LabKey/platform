@@ -85,6 +85,10 @@ public class MultiValuedLookupColumn extends LookupColumn
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
+            // Skip text and ntext columns -- aggregates don't work on them in some databases
+            if (col.isLongTextType())
+                continue;
+
             ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
             strJoin.append(", \n\t\t\t");
             SQLFragment valueSql = new SQLFragment();
