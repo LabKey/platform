@@ -104,9 +104,7 @@ public class CoreController extends SpringActionController
 
         public ActionURL getThemeStylesheetURL()
         {
-            if (!WebThemeManager.getTheme(ContainerManager.getRoot()).isCustom())
-                return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
-            return null;
+            return getRevisionURL(ThemeStylesheetAction.class, ContainerManager.getRoot());
         }
 
         public ActionURL getThemeStylesheetURL(Container c)
@@ -114,9 +112,7 @@ public class CoreController extends SpringActionController
             Container project = c.getProject();
             LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
 
-            if (laf.hasProperties() && !WebThemeManager.getTheme(c).isCustom())
-                return getRevisionURL(ThemeStylesheetAction.class, project);
-            return null;
+            return getRevisionURL(ThemeStylesheetAction.class, project);
         }
 
         public ActionURL getCustomStylesheetURL()
@@ -164,15 +160,15 @@ public class CoreController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             Content content = getContent(request, response);
 
+            // No custom stylesheet for this container
+            if (content instanceof NoContent)
+                return;
+
             response.setContentType(getContentType());
             response.setDateHeader("Expires", System.currentTimeMillis() + MILLIS_IN_DAY * 35);
             response.setHeader("Cache-Control", "private");
             response.setHeader("Pragma", "cache");
             response.setDateHeader("Last-Modified", content.modified);
-
-            // No custom stylesheet for this container
-            if (content instanceof NoContent)
-                return;
 
             if (!checkIfModifiedSince(request, content.modified))
             {
@@ -248,24 +244,18 @@ public class CoreController extends SpringActionController
             Container c = getContainer();
             Content content = _themeStylesheetCache.get(c);
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
-            WebTheme theme = WebThemeManager.getTheme(c);
 
-            if (theme != null && !theme.isCustom())
+            if (null == content || !dependsOn.equals(content.dependencies))
             {
-                if (null == content || !dependsOn.equals(content.dependencies))
-                {
-                    JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
-                    view.setFrame(WebPartView.FrameType.NONE);
-                    Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
-                    content  = new Content(compileCSS(contentRaw.content));
-                    content.dependencies = dependsOn;
-                    content.compressed = compressCSS(content.content);
-                    _themeStylesheetCache.put(c, content);
-                }
-                if (!c.isRoot())
-                    return content;
+                JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
+                view.setFrame(WebPartView.FrameType.NONE);
+                Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
+                content  = new Content(compileCSS(contentRaw.content));
+                content.dependencies = dependsOn;
+                content.compressed = compressCSS(content.content);
+                _themeStylesheetCache.put(c, content);
             }
-            return new NoContent(dependsOn);
+            return content;
         }
     }
 

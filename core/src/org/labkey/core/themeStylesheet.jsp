@@ -31,27 +31,25 @@
     Container c = getViewContext().getContainer();
     WebTheme theme = WebThemeManager.getTheme(c);
     response.setContentType("text/css");
-    
-    if (!theme.isCustom()) // This jsp should not be used if the WebTheme is Custom. Shouldn't even get here.
+
+    ThemeFont themeFont = ThemeFont.getThemeFont(c);
+    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+    String navBarWidth = laf.getNavigationBarWidth();
+
+    String formLabel           = theme.getEditFormColor();
+    String fullScreenBorder    = theme.getFullScreenBorderColor();
+    String wpHeaderPanel       = theme.getTitleBarBackgroundString();
+    String wpHeaderPanelBorder = theme.getTitleBarBorderString();
+    String navBorder           = theme.getHeaderLineColor();
+    String navBackground       = theme.getNavBarColor();
+    String linkAndHeaderText   = theme.getTitleColorString();
+
+    boolean testBorders = false;
+    if (testBorders)
     {
-        ThemeFont themeFont = ThemeFont.getThemeFont(c);
-        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-        String navBarWidth = laf.getNavigationBarWidth();
-
-        String formLabel           = theme.getEditFormColor();
-        String fullScreenBorder    = theme.getFullScreenBorderColor();
-        String wpHeaderPanel       = theme.getTitleBarBackgroundString();
-        String wpHeaderPanelBorder = theme.getTitleBarBorderString();
-        String navBorder           = theme.getHeaderLineColor();
-        String navBackground       = theme.getNavBarColor();
-        String linkAndHeaderText   = theme.getTitleColorString();
-
-        boolean testBorders = false;
-        if (testBorders)
-        {
-            wpHeaderPanelBorder = "ff0000";
-            navBorder           = "00ff00";
-        }
+        wpHeaderPanelBorder = "ff0000";
+        navBorder           = "00ff00";
+    }
 
     /*
 
@@ -209,7 +207,7 @@ th.labkey-expand-collapse-area
 
 /* home template */
 
-.labkey-main-title
+a.labkey-main-title
 {
     font-size:<%= themeFont.getPageTitleSize() %>;
 }
@@ -612,4 +610,3 @@ ul.x-tab-strip-top li { border-color:<%=tabBorderColor%>; }
     border-color:#<%=tabBorderColor%>;
     background-color:#<%=tabSelectedColor%>
 }
-<% } %>

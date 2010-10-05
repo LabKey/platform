@@ -341,7 +341,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             href: url || LABKEY.ActionURL.buildURL("query", action, undefined, params),
             text: caption,
             attrs: {
-                target: target
+                target: (target === undefined ? "" : target)
             }
         });
     },

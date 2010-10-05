@@ -98,7 +98,6 @@
         %>
     </td>
 </tr>
-<% if (!WebThemeManager.getTheme(c).isCustom()) {%>
 <tr>
     <td class="labkey-form-label">Font size</td>
     <td>
@@ -117,7 +116,6 @@
             %>
     </td>
 </tr>
-<% } %>
 <tr>
     <td class="labkey-form-label">Show left navigation bar</td>
     <td><%
