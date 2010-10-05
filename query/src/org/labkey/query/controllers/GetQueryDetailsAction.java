@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
 import org.springframework.validation.BindException;
 
@@ -144,7 +145,13 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             DomainKind kind = tinfo.getDomainKind();
             if (kind == null)
             {
-                String domainURI = ((UserSchema) schema).getDomainURI(tinfo.getName());
+                String domainURI = null;
+                try
+                {
+                    domainURI = ((UserSchema) schema).getDomainURI(tinfo.getName());
+                }
+                catch (NotFoundException nfe) { }
+
                 if (domainURI != null)
                     kind = PropertyService.get().getDomainKind(domainURI);
             }

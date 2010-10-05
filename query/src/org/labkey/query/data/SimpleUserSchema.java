@@ -32,6 +32,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.Filter;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.Collections;
 import java.util.Map;
@@ -86,7 +87,7 @@ public class SimpleUserSchema extends UserSchema
     {
         SimpleTable table = (SimpleTable)getTable(queryName);
         if (table == null)
-            return null;
+            throw new NotFoundException("Table '" + queryName + "' not found in this container '" + getContainer().getPath() + "'.");
 
         return table.getDomainURI();
     }
