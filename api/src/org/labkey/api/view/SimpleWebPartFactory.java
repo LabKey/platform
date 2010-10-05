@@ -28,7 +28,7 @@ import java.lang.reflect.Constructor;
  * Time: 1:22:39 PM
  *
  *
- * The tricky part is choosing the constructor, we try the folling in order
+ * The tricky part is choosing the constructor, we try the following in order
  *
  * if null != _formClass
  *      view(ViewContext, FORM, BindException)

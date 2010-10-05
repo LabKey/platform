@@ -17,6 +17,7 @@
 package org.labkey.api.ms2;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -39,7 +40,7 @@ public class MS2Service
 
         TableInfo createPeptidesTableInfo(User user, Container container);
         TableInfo createPeptidesTableInfo(User user, Container container, boolean includeFeatureFk, 
-                                          boolean restrictContainer, SimpleFilter filter, Iterable<FieldKey> defaultColumns);
+                                          ContainerFilter containerFilter, SimpleFilter filter, Iterable<FieldKey> defaultColumns);
     }
 
     public static void register(Service serviceImpl)

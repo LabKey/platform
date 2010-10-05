@@ -469,7 +469,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     return _values != null;
                 }
             }
-            catch (Exception e)
+            catch (IOException e)
             {
                 _log.error("unexpected io error", e);
                 throw new RuntimeException(e);

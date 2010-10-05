@@ -258,32 +258,39 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _sampleProperties.put(propertyName, rows);
     }
 
-    protected void writeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw)
+    protected void writeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw) throws ValidationException
     {
-        Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>(context.getRunProperties());
-        for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
-            _formFields.put(entry.getKey().getName(), entry.getValue());
-
-        runProperties.putAll(context.getBatchProperties());
-
-        // serialize the run properties to a tsv
-        for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
+        try
         {
-            pw.append(entry.getKey().getName());
-            pw.append('\t');
-            pw.append(StringUtils.defaultString(entry.getValue()));
-            pw.append('\t');
-            pw.println(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName());
+            Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>(context.getRunProperties());
+            for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
+                _formFields.put(entry.getKey().getName(), entry.getValue());
+
+            runProperties.putAll(context.getBatchProperties());
+
+            // serialize the run properties to a tsv
+            for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
+            {
+                pw.append(entry.getKey().getName());
+                pw.append('\t');
+                pw.append(StringUtils.defaultString(entry.getValue()));
+                pw.append('\t');
+                pw.println(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName());
+            }
+
+            // additional context properties
+            for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
+            {
+                pw.append(entry.getKey());
+                pw.append('\t');
+                pw.append(entry.getValue());
+                pw.append('\t');
+                pw.println(String.class.getName());
+            }
         }
-
-        // additional context properties
-        for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
+        catch (ExperimentException e)
         {
-            pw.append(entry.getKey());
-            pw.append('\t');
-            pw.append(entry.getValue());
-            pw.append('\t');
-            pw.println(String.class.getName());
+            throw new ValidationException(e.getMessage());
         }
     }
 
@@ -622,7 +629,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return _protocol;
         }
 
-        public Map<DomainProperty, String> getRunProperties()
+        public Map<DomainProperty, String> getRunProperties() throws ExperimentException
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
             Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();

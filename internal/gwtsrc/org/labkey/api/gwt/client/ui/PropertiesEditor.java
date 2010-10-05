@@ -504,7 +504,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             for (int row = 0; row < _table.getRowCount(); row++)
             {
                 Element e = _table.getRowFormatter().getElement(row);
-                DOM.setStyleAttribute(e, "backgroundColor", "#ffffff");
+                DOM.setStyleAttribute(e, "backgroundColor", null);
             }
         }
 
@@ -787,19 +787,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
 
         RowWidgetListener listener = new RowWidgetListener(pd,index);
-
-//        TextBox textbox = new _TextBox();
-//        textbox.setName("ff_textbox" + index);
-//        textbox.addFocusHandler(listener);
-//        textbox.addKeyPressHandler(listener);
-//        textbox.addChangeHandler(new ChangeHandler(){
-//            public void onChange(ChangeEvent event)
-//            {
-//                _log("onChange(ff_textbox)");
-//            }
-//        });
-//        _table.setWidget(tableRow,col++,textbox);
-
 
         Widget name;
         if (readOnly || !isNameEditable(rowObject))
