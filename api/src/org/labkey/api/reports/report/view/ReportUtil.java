@@ -463,7 +463,10 @@ public class ReportUtil
 
                 if (!inherited)
                 {
-                    record.put("editUrl", filter.getViewEditURL(c, view, user).getLocalURIString());
+                    ActionURL url = filter.getViewEditURL(c, view, user);
+                    url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
+
+                    record.put("editUrl", url.getLocalURIString());
                 }
 
                 record.put("runUrl", filter.getViewRunURL(user, c, view).getLocalURIString());
