@@ -117,7 +117,7 @@ public enum PropertyType
             return ((NumberCell)cell).getValue();
         }
     },
-    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', Types.LONGVARCHAR, 100, null,CellType.LABEL, null)
+    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', Types.LONGVARCHAR, 100, null, CellType.LABEL, null)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
