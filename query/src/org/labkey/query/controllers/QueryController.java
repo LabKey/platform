@@ -3255,6 +3255,7 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
         {
+            form.refreshFromDb();
             QueryManager.get().delete(getUser(), form.getBean());
             return true;
         }
