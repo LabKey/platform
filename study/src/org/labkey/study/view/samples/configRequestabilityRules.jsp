@@ -357,9 +357,7 @@
             txt = LABKEY.Utils.textLink({
                 href: record.data.testURL,
                 text: "view affected vials",
-                attrs : {
-                    target: "_blank"
-                }
+                target: "_blank"
             });
         }
 
