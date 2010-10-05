@@ -61,7 +61,7 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
     private class BulkPropertiesBatchStepHandler extends BatchStepHandler
     {
         @Override
-        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException
+        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             if (form.isBulkUploadAttempted())
             {

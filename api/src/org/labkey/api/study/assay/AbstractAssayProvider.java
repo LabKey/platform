@@ -355,37 +355,39 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             // Grab all the files that are related based on naming convention
             File[] relatedFiles = primaryFile.getParentFile().listFiles(getRelatedOutputDataFileFilter(primaryFile, baseName));
-
-            for (File relatedFile : relatedFiles)
+            if (relatedFiles != null)
             {
-                String roleName = null;
-                DataType dataType = null;
-                for (AssayDataType inputType : knownRelatedDataTypes)
+                for (File relatedFile : relatedFiles)
                 {
-                    // Check if we recognize it as a specially handled file type
-                    if (inputType.getFileType().isMatch(relatedFile.getName(), baseName))
+                    String roleName = null;
+                    DataType dataType = null;
+                    for (AssayDataType inputType : knownRelatedDataTypes)
                     {
-                        roleName = inputType.getRole();
-                        dataType = inputType;
-                        break;
+                        // Check if we recognize it as a specially handled file type
+                        if (inputType.getFileType().isMatch(relatedFile.getName(), baseName))
+                        {
+                            roleName = inputType.getRole();
+                            dataType = inputType;
+                            break;
+                        }
                     }
+                    // If not, make up a new type and role for it
+                    if (roleName == null)
+                    {
+                        roleName = relatedFile.getName().substring(baseName.length());
+                        while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
+                        {
+                            roleName = roleName.substring(1);
+                        }
+                        if ("".equals(roleName))
+                        {
+                            roleName = null;
+                        }
+                        dataType = RELATED_FILE_DATA_TYPE;
+                    }
+                    ExpData imageData = createData(container, relatedFile, relatedFile.getName(), dataType);
+                    outputDatas.put(imageData, roleName);
                 }
-                // If not, make up a new type and role for it
-                if (roleName == null)
-                {
-                    roleName = relatedFile.getName().substring(baseName.length());
-                    while (roleName.length() > 0 && (roleName.startsWith(".") || roleName.startsWith("-") || roleName.startsWith("_") || roleName.startsWith(" ")))
-                    {
-                        roleName = roleName.substring(1);
-                    }
-                    if ("".equals(roleName))
-                    {
-                        roleName = null;
-                    }
-                    dataType = RELATED_FILE_DATA_TYPE;
-                }
-                ExpData imageData = createData(container, relatedFile, relatedFile.getName(), dataType);
-                outputDatas.put(imageData, roleName);
             }
         }
     }

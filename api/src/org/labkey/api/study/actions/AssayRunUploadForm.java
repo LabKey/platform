@@ -18,10 +18,7 @@ package org.labkey.api.study.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
@@ -35,7 +32,6 @@ import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
 import java.util.*;
@@ -110,7 +106,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return reorderDomainColumns(properties, getViewContext(), getProtocol());
     }
 
-    public Map<DomainProperty, String> getRunProperties()
+    public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
         {

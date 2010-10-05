@@ -134,13 +134,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return handler.handleStep(form, errors);
     }
 
-    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException
+    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException, ExperimentException
     {
         return runUploadComplete(form, errors);
     }
 
     protected ModelAndView runUploadComplete(FormType form, BindException errors)
-            throws ServletException
+            throws ServletException, ExperimentException
     {
         if (form.isMultiRunUpload())
         {
@@ -278,7 +278,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         bbar.add(resetDefaultsButton);
     }
 
-    protected InsertView createRunInsertView(FormType newRunForm, boolean errorReshow, BindException errors)
+    protected InsertView createRunInsertView(FormType newRunForm, boolean errorReshow, BindException errors) throws ExperimentException
     {
         Set<DomainProperty> propertySet = newRunForm.getRunProperties().keySet();
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
@@ -294,7 +294,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 "lsid", properties, reshow, BatchStepHandler.NAME, runForm, errors);
     }
 
-    protected ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors)
+    protected ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors) throws ExperimentException
     {
         if (!errorReshow && !newRunForm.isResetDefaultValues())
         {
@@ -346,7 +346,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addHiddenRunProperties(AssayRunUploadForm newRunForm, InsertView insertView)
     {
-        addHiddenProperties(newRunForm.getRunProperties(), insertView);
+        try
+        {
+            addHiddenProperties(newRunForm.getRunProperties(), insertView);
+        }
+        catch (ExperimentException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
     }
 
     public static String getInputName(DomainProperty property, String disambiguationId)
@@ -509,7 +516,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         public static final String NAME = "BATCH";
 
-        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException
+        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, ExperimentException
         {
             if (!form.isResetDefaultValues() && validatePostedProperties(form.getBatchProperties(), errors))
                 return getRunPropertiesView(form, false, false, errors);
@@ -525,7 +532,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     public static abstract class StepHandler<StepFormClass extends AssayRunUploadForm>
     {
-        public abstract ModelAndView handleStep(StepFormClass form, BindException error) throws ServletException, SQLException;
+        public abstract ModelAndView handleStep(StepFormClass form, BindException error) throws ServletException, SQLException, ExperimentException;
 
         public abstract String getName();
     }
@@ -545,7 +552,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         public static final String NAME = "RUN";
 
-        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, SQLException
+        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
         {
             if (getCompletedUploadAttemptIDs().contains(form.getUploadAttemptID()))
             {
@@ -558,7 +565,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 return getRunPropertiesView(form, !form.isResetDefaultValues(), false, errors);
         }
 
-        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws SQLException, ServletException
+        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws SQLException, ServletException, ExperimentException
         {
             ExpRun run;
             try
@@ -612,7 +619,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             return run;
         }
 
-        protected boolean validatePost(FormType form, BindException errors)
+        protected boolean validatePost(FormType form, BindException errors) throws ExperimentException
         {
             return validatePostedProperties(form.getRunProperties(), errors);
         }

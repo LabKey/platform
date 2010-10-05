@@ -57,7 +57,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
     public abstract Map<String, Object> getBulkProperties() throws ExperimentException;
 
     @Override
-    public Map<DomainProperty, String> getRunProperties()
+    public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
         {

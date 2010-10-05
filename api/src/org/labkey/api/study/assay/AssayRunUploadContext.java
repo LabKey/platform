@@ -41,7 +41,7 @@ public interface AssayRunUploadContext
     @NotNull
     ExpProtocol getProtocol();
 
-    Map<DomainProperty, String> getRunProperties();
+    Map<DomainProperty, String> getRunProperties() throws ExperimentException;
 
     Map<DomainProperty, String> getBatchProperties();
 
