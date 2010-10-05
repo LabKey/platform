@@ -138,6 +138,11 @@ abstract public class UserSchema extends AbstractSchema
      */
     public List<TableInfo> getSortedTables()
     {
+        if (getTableNames().isEmpty())
+        {
+            return Collections.emptyList();
+        }
+        
         String schemaName = getName();
         Set<String> tableNames = new HashSet<String>(getTableNames());
         Map<String, TableInfo> tables = new CaseInsensitiveHashMap<TableInfo>();
