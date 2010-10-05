@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusFile" %>
+<%@ page import="org.labkey.pipeline.status.StatusController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PipelineStatusFileImpl> me = (JspView<PipelineStatusFileImpl>) HttpView.currentView();
@@ -33,7 +34,7 @@
 
     String escalationUsers = StringUtils.defaultString(org.labkey.pipeline.api.PipelineEmailPreferences.get().getEscalationUsers(c));
     String[] users = escalationUsers.split(";");
-    ActionURL cancelUrl = new ActionURL("Pipeline-Status", "details", c);
+    ActionURL cancelUrl = new ActionURL(StatusController.DetailsAction.class, c);
 
     String defaultSubject = "Re: failure for pipeline job: " + bean.getDescription();
 %>

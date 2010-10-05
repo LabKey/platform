@@ -628,6 +628,10 @@ public class StatusController extends SpringActionController
 
             VBox view = new VBox(detailsView);
             PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
+            if (sf == null)
+            {
+                throw new NotFoundException();
+            }
             view.addView(new JspView<PipelineStatusFileImpl>("/org/labkey/pipeline/status/escalateJobFailure.jsp", sf));
 
             return view;

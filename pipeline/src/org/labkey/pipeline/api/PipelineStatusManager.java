@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -499,8 +500,13 @@ public class PipelineStatusManager
             // First check that it still exists in the database and that it isn't running anymore
             if (sf != null && !sf.isActive())
             {
+                Container c = sf.lookupContainer();
+                if (!c.hasPermission(info.getUser(), DeletePermission.class))
+                {
+                    throw new UnauthorizedException();
+                }
                 // Check if the job has any children
-                PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId(), ContainerManager.getForId(info.getContainerId()));
+                PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId(), sf.lookupContainer());
                 boolean hasActiveChildren = false;
                 for (PipelineStatusFileImpl child : children)
                 {

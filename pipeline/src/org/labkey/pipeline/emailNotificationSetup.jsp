@@ -106,7 +106,7 @@
         <tr style="display:<%=displaySuccess%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess" <%=notifyOwnerOnSuccess ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner")%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_SUCCESS, c, "Additional users to notify<br/><i>Enter one or more email addresses, each on its own line:</i>")%></td></tr>
         <tr style="display:<%=displaySuccess%>"><td></td><td>
-            <textarea id="notifyUsersOnSuccess" name="notifyUsersOnSuccess" style="width: 100%;" rows="5"
+            <textarea id="notifyUsersOnSuccess" name="notifyUsersOnSuccess" cols="60" rows="5"
                       onKeyDown="return ctrlKeyCheck(event);"
                       onBlur="hideCompletionDiv();"
                       autocomplete="off"
@@ -132,14 +132,14 @@
         <tr style="display:<%=displayError%>"><td>&nbsp;&nbsp;&nbsp;</td><td><input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError" <%=notifyOwnerOnError ? "checked" : ""%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send to owner")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_USERS_ON_ERROR, c, "Additional users to notify:")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td>
-            <textarea id="notifyUsersOnError" name="notifyUsersOnError" style="width: 100%;" rows="5"
+            <textarea id="notifyUsersOnError" name="notifyUsersOnError" cols="60" rows="5"
                       onKeyDown="return ctrlKeyCheck(event);"
                       onBlur="hideCompletionDiv();"
                       autocomplete="off"
                       onKeyUp="return handleChange(this, event, 'completeUser.view?prefix=');"><%=notifyUsersOnError%></textarea>
         <tr style="display:<%=displayError%>"><td></td><td width="350"><%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users<br/><i>Email addresses entered here will appear in a view accesible from pipeline job details. Additional email messages can be sent from this view regarding a job failure.</i>")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td>
-            <textarea id="escalationUsers" name="escalationUsers" style="width: 100%;" rows="5"
+            <textarea id="escalationUsers" name="escalationUsers" cols="60" rows="5"
                       onKeyDown="return ctrlKeyCheck(event);"
                       onBlur="hideCompletionDiv();"
                       autocomplete="off"
