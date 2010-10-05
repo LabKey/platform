@@ -194,7 +194,7 @@
         <ns:description>A URI/LSID uniquely identifying each dataset's type.</ns:description>
       </ns:column>
       <ns:column columnName="Label">
-        <ns:description>The long/friendly name of each dataset.</ns:description>
+        <ns:description>The label to be presented to users for each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="Category">
         <ns:description>The category of each dataset.</ns:description>
@@ -205,7 +205,7 @@
       <ns:column columnName="ShowByDefault">
         <ns:description>Whether each dataset should be displayed by default in study reports.</ns:description>
       </ns:column>
-      <ns:column columnName="entityid">
+      <ns:column columnName="EntityId">
         <ns:description>A unique string identifier for each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="VisitDatePropertyName">
@@ -217,8 +217,8 @@
       <ns:column columnName="KeyManagementType">
         <ns:description>Whether the additional key column of each dataset is managed by the server (either as RowId or GUID/EntityId, versus provided during import), or is None.</ns:description>
       </ns:column>
-      <ns:column columnName="name">
-        <ns:description>The long/friendly name of each dataset.</ns:description>
+      <ns:column columnName="Name">
+        <ns:description>The name of each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="description">
         <ns:description>The description of each dataset.</ns:description>

@@ -881,7 +881,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    return new DataSetsTable(new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), user, true));
+                    StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), user, true);
+                    return schema.getTable("Datasets");
                 }
             };
             datasetColumn.setFk(datasetFk);

@@ -36,6 +36,6 @@ public class DataSetsTable extends FilteredTable
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
                 colInfo.setHidden(true);
         }
-        setTitleColumn("name");
+        setTitleColumn("Label");
     }
 }
