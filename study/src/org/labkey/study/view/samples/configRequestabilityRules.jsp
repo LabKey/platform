@@ -353,8 +353,15 @@
     {
         var txt = '';
 
-        if (record.data.testURL)
-            txt = '[<a target=\"_blank\" href=\"' + record.data.testURL + '\">view affected vials<\/a>]';
+        if (record.data.testURL){
+            txt = LABKEY.Utils.textLink({
+                href: record.data.testURL,
+                text: "view affected vials",
+                attrs : {
+                    target: "_blank"
+                }
+            });
+        }
 
         return txt;
     }

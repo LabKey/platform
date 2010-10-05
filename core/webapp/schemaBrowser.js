@@ -330,25 +330,20 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             schemaName: queryDetails.schemaName,
             queryName: queryDetails.name
         });
-        return {
-            tag: 'a',
-            cls: 'labkey-text-link',
+        return LABKEY.Utils.textLink({
             href: url,
-            html: 'Inherited: Jump to Definition'
-        };
+            text: 'Inherited: Jump to Definition'
+        });
     },
 
     formatQueryLink : function(action, params, caption, target, url) {
-        url = url || LABKEY.ActionURL.buildURL("query", action, undefined, params);
-        var link = {
-            tag: 'a',
-            cls: 'labkey-text-link',
-            href: url,
-            html: caption
-        };
-        if (target)
-            link.target = target;
-        return link;
+        return LABKEY.Utils.textLink({
+            href: url || LABKEY.ActionURL.buildURL("query", action, undefined, params),
+            text: caption,
+            attrs: {
+                target: target
+            }
+        });
     },
 
     formatQueryInfo : function(queryDetails) {
