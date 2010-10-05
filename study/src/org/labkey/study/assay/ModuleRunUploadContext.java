@@ -17,6 +17,7 @@
 package org.labkey.study.assay;
 
 import org.json.JSONObject;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -51,7 +52,7 @@ public class ModuleRunUploadContext extends AssayRunUploadForm<ModuleAssayProvid
     }
 
     @Override
-    public Map<DomainProperty, String> getRunProperties()
+    public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
         {
