@@ -534,8 +534,7 @@ LABKEY.Utils.convertToExcel(
     });
 &lt;/script&gt;
          */
-        onTrue : function(config)
-        {
+        onTrue : function(config) {
             config.maxTests = config.maxTests || 1000;
             try
             {
@@ -543,10 +542,9 @@ LABKEY.Utils.convertToExcel(
                     config.successCallback.apply(config.scope || this, config.successArguments);
                 else
                 {
-                    if (config.maxTests <= 0)
+                    if (config.maxTests <= 0) {
                         throw "Maximum number of tests reached!";
-                    else
-                    {
+                    } else {
                         --config.maxTests;
                         LABKEY.Utils.onTrue.defer(10, this, [config]);
                     }
@@ -554,8 +552,9 @@ LABKEY.Utils.convertToExcel(
             }
             catch(e)
             {
-                if (config.errorCallback)
-                    config.errorCallback.apply(config.scope || this, [e,config.errorArguments]);
+                if (config.errorCallback) {
+                    config.errorCallback.apply(config.scope || this, [e,config.errorArguments]);                    
+                }
             }
         },
 
@@ -567,8 +566,7 @@ LABKEY.Utils.convertToExcel(
           * Copyright (c) 2010 Robert Kieffer
           * Dual licensed under the MIT and GPL licenses.
         */
-        generateUUID : function()
-        {
+        generateUUID : function() {
             // First see if there are any server-generated UUIDs available to return
             if (LABKEY && LABKEY.uuids && LABKEY.uuids.length > 0)
             {
@@ -576,17 +574,13 @@ LABKEY.Utils.convertToExcel(
             }
             // From the original Math.uuidFast implementation
             var chars = CHARS, uuid = new Array(36), rnd = 0, r;
-            for (var i = 0; i < 36; i++)
-            {
-                if (i == 8 || i == 13 || i == 18 || i == 23)
-                {
+            for (var i = 0; i < 36; i++) {
+                if (i == 8 || i == 13 || i == 18 || i == 23) {
                     uuid[i] = '-';
-                } else if (i == 14)
-                {
+                } else if (i == 14) {
                     uuid[i] = '4';
                 }
-                else
-                {
+                else {
                     if (rnd <= 0x02) rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
                     r = rnd & 0xf;
                     rnd = rnd >> 4;
@@ -594,6 +588,24 @@ LABKEY.Utils.convertToExcel(
                 }
             }
             return uuid.join('');
+        },
+
+        /**
+         * Returns a string containing a well-formed html anchor that adheres the the styling rules. 
+         */
+        textLink : function(linkConfig) {
+            if (linkConfig.href === undefined && !linkConfig.onClick === undefined) {
+                throw "href AND/OR onClick required in call to LABKEY.Utils.textLink()"
+            }
+            var attrs = " ";
+            if (linkConfig.attrs) {
+                for (var i in linkConfig.attrs) {
+                    attrs += i.toString() + "='" + linkConfig.attrs[i] + "' ";
+                }
+            }
+            return "<a" + (linkConfig.id != null ? " id='" + linkConfig.id + "'" : "") + " href='" + Ext.util.Format.htmlEncode(linkConfig.href) + "'" +
+                   (linkConfig.onClick != null ? " onClick='" + linkConfig.onClick + "' ": " ") + "class='labkey-text-link'" + attrs + 
+                    ">" + linkConfig.text + "</a>";
         }
     };
 };
