@@ -376,7 +376,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                         xtype: 'checkbox',
                         checked: this.importDataEnabled,
                         labelSeparator: '',
-                        boxLabel: 'Show Import Data<br/><i>Administrators will always see this button</i>)',
+                        boxLabel: "Show 'Import Data' toolbar button<br/>(<i>Administrators will always see this button</i>)",
                         name: 'importAction',
                         listeners: {check: function(button, checked) {this.importDataEnabled = checked;}, scope:this}
                     }

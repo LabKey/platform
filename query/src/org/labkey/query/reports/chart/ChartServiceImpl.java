@@ -119,6 +119,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
         QuerySettings qs = schema.getSettings(_context, null, chart.getQueryName());
+        qs.setViewName(chart.getViewName());
 
         QueryView view = new QueryView(schema, qs, null);
         List<GWTChartRenderer> gwtRenderers = new ArrayList<GWTChartRenderer>();

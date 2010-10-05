@@ -72,7 +72,7 @@
         <tr>
             <td class="labkey-form-label">Show View Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
                     "Some views may be rendered with multiple tabs showing. Select this option to only show the primary view.")%></td>
-            <td><input type="checkbox" name="<%=Report.renderParam.showTabs.name()%>" <%=BooleanUtils.toBoolean(pm.get(Report.renderParam.showTabs.name())) ? "checked" : ""%>></td>
+            <td><input id='showTabs' type="checkbox" name="<%=Report.renderParam.showTabs.name()%>" <%=BooleanUtils.toBoolean(pm.get(Report.renderParam.showTabs.name())) ? "checked" : ""%> onclick="onShowTabs(this.checked);"></td>
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",
@@ -122,6 +122,10 @@
                 select = select.concat("</select>");
 
                 td.innerHTML = select;
+
+                var showTabs = document.getElementById("showTabs");
+                if (showTabs)
+                    onShowTabs(showTabs.checked);
             }
         }
     }
@@ -145,6 +149,13 @@
             if (params.length > 0)
                 document.getElementById("showSectionHidden").value = params.join("&");
         }
+    }
+
+    function onShowTabs(checked)
+    {
+        var showSection = document.getElementById("showSection");
+        if (showSection)
+            showSection.disabled = checked;
     }
 
     YAHOO.util.Event.addListener(window, "load", getSectionNames(document.getElementById('reportId')));

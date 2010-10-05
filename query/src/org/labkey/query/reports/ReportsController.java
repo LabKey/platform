@@ -1753,6 +1753,7 @@ public class ReportsController extends SpringActionController
         private String _schemaName;
         private String _queryName;
         private String _viewName;
+        private String _srcURL;
 
         public String getSchemaName()
         {
@@ -1783,6 +1784,16 @@ public class ReportsController extends SpringActionController
         {
             _viewName = viewName;
         }
+
+        public String getSrcURL()
+        {
+            return _srcURL;
+        }
+
+        public void setSrcURL(String srcURL)
+        {
+            _srcURL = srcURL;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -1792,7 +1803,8 @@ public class ReportsController extends SpringActionController
         {
             ActionURL url = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.chooseColumns, form.getSchemaName().toString(), form.getQueryName()).
                     addParameter(QueryParam.queryName.name(), form.getQueryName()).
-                    addParameter(QueryParam.viewName.name(), form.getViewName());
+                    addParameter(QueryParam.viewName.name(), form.getViewName()).
+                    addParameter(QueryParam.srcURL, form.getSrcURL());
 
             return HttpView.redirect(url);
         }
