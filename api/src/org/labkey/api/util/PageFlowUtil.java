@@ -1926,6 +1926,7 @@ public class PageFlowUtil
             sb.append(",project:{id:'").append(project.getId()).append("'");
             sb.append(",path:").append(jsString(project.getPath()));
             sb.append(",name:").append(jsString(project.getName()));
+            sb.append(",isCustomTheme:").append(WebThemeManager.getTheme(project).isCustom() ? "true" : "false");
             sb.append("}"); //end project object
         }
 

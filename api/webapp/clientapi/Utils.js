@@ -603,9 +603,14 @@ LABKEY.Utils.convertToExcel(
                     attrs += i.toString() + "='" + linkConfig.attrs[i] + "' ";
                 }
             }
-            return "<a" + (linkConfig.id != null ? " id='" + linkConfig.id + "'" : "") + " href='" + Ext.util.Format.htmlEncode(linkConfig.href) + "'" +
-                   (linkConfig.onClick != null ? " onClick='" + linkConfig.onClick + "' ": " ") + "class='labkey-text-link'" + attrs + 
-                    ">" + linkConfig.text + "</a>";
+            if (LABKEY.project.isCustomTheme) {
+                return "<a" + (linkConfig.id != null ? " id='" + linkConfig.id + "'" : "") + " href='" + Ext.util.Format.htmlEncode(linkConfig.href) + "'" +
+                        (linkConfig.onClick != null ? " onClick='" + linkConfig.onClick + "' ": " ") + "class='labkey-text-link'" + attrs +
+                        ">" + linkConfig.text + "</a>";
+            }
+            return "[<a" + (linkConfig.id != null ? " id='" + linkConfig.id + "'" : "") + " href='" + Ext.util.Format.htmlEncode(linkConfig.href) + "'" +
+                    (linkConfig.onClick != null ? " onClick='" + linkConfig.onClick + "' ": " ") + "class='labkey-text-link'" + attrs +
+                    ">" + linkConfig.text + "</a>]";
         }
     };
 };
