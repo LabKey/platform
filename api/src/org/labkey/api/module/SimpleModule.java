@@ -249,11 +249,14 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
             OntologyManager.deleteOntologyObjects(ids, c, true);
         }
 
-        if (table instanceof FilteredTable && table.getTableType() == TableInfo.TABLE_TYPE_TABLE)
+        if (table instanceof FilteredTable)
         {
             SimpleFilter filter = new SimpleFilter("Container", c);
             TableInfo realTable = ((FilteredTable)table).getRealTable();
-            Table.delete(realTable, filter);
+            if (realTable.getTableType() == TableInfo.TABLE_TYPE_TABLE)
+            {
+                Table.delete(realTable, filter);
+            }
         }
     }
 
