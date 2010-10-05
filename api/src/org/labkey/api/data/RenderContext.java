@@ -445,6 +445,22 @@ public class RenderContext extends BoundMap // extends ViewContext
     @Override
     public boolean containsKey(Object key)
     {
+        if (key instanceof FieldKey)
+        {
+            if (null != _fieldMap)
+            {
+                ColumnInfo col = _fieldMap.get(key);
+                if (col != null && _row.containsKey(col.getAlias()))
+                {
+                    return true;
+                }
+            }
+            // <UNDONE>
+            FieldKey f = (FieldKey)key;
+            key = f.getParent() == null ? f.getName() : f.encode();
+            // </UNDONE>
+        }
+
         return super.containsKey(key) || (_row != null && _row.containsKey(key));
     }
 

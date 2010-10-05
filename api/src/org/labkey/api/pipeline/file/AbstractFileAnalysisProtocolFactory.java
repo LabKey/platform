@@ -93,6 +93,10 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
      */
     public File getParametersFile(File dirData, String protocolName)
     {
+        if (dirData == null)
+        {
+            return null;
+        }
         return new File(getAnalysisDir(dirData, protocolName), getParametersFileName());
     }
 

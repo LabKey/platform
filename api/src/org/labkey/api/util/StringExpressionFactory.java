@@ -418,13 +418,10 @@ public class StringExpressionFactory
 
         String getValue(Map map)
         {
-            Object value = map.get(key);
-
-            // See #10398.  MS1Bvt hits this warning -- but perhaps MS1 is intentionally including URL parameter substitutions
-            // whose values can be null.  TODO: Either fix cases that cause this warning or remove the warning.
-            if (null == value)
+            if (!map.containsKey(key))
                 LOG.warn("No replacement value found for FieldKey " + key.toString() + ". Could be a FieldKey vs. alias/column name mismatch.");
 
+            Object value = map.get(key);
             return PageFlowUtil.encodePath(valueOf(value));
         }
 
