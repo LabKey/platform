@@ -657,7 +657,8 @@ public class StatusController extends SpringActionController
             {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
-                final String message = form.getEscalationMessage() + "\n\nJob details can be found:\n\n" + form.getDetailsUrl();
+                final String message = (form.getEscalationMessage() == null ? "" : form.getEscalationMessage() + "\n\n") +
+                        "Job details can be found:\n\n" + form.getDetailsUrl();
                 m.setBodyContent(message, "text/plain");
                 m.setBodyContent(PageFlowUtil.filter(message, true, true), "text/html");
                 m.setSubject(form.getEscalationSubject());

@@ -671,32 +671,6 @@ public class CoreController extends SpringActionController
         }
     }
 
-    public static class CreateWorkbookForm
-    {
-        private String _title;
-        private String _description;
-
-        public String getTitle()
-        {
-            return _title;
-        }
-
-        public void setTitle(String title)
-        {
-            _title = title;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public void setDescription(String description)
-        {
-            _description = description;
-        }
-    }
-
     // Requires at least insert permission. Will check for admin if needed
     @RequiresPermissionClass(InsertPermission.class)
     public class CreateContainerAction extends ApiAction<SimpleApiJsonForm>
@@ -716,6 +690,11 @@ public class CoreController extends SpringActionController
                 {
                     throw new UnauthorizedException("You must have admin permissions to create subfolders");
                 }
+            }
+
+            if (name != null && getContainer().getChild(name) != null)
+            {
+                throw new ApiUsageException("A child container with that name already exists");
             }
 
             Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, workbook, getUser());
@@ -753,6 +732,11 @@ public class CoreController extends SpringActionController
                 }
             }
 
+            if (getContainer().hasChildren())
+            {
+                throw new ApiUsageException("You cannot delete a container that still has child containers");
+            }
+
             ContainerManager.delete(getContainer(), getUser());
 
             return new ApiSimpleResponse();
@@ -760,10 +744,10 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookForm>
+    public class CreateWorkbookAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(CreateWorkbookForm createWorkbookForm, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             CreateWorkbookBean bean = new CreateWorkbookBean();
 
