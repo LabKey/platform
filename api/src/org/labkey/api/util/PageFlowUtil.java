@@ -1615,34 +1615,21 @@ public class PageFlowUtil
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
-            /*if (!theme.isCustom())
-            {*/
-                if (null != rootCustomStylesheetURL)
-                    F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
+            if (null != rootCustomStylesheetURL)
+                F.format(link, PageFlowUtil.filter(rootCustomStylesheetURL));
 
-                if (!c.isRoot())
-                {
-                    ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
-
-                    if (null != containerThemeStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(containerThemeStylesheetURL));
-
-                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
-
-                    if (null != containerCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-                }
-            /*}
-            else
+            if (!c.isRoot())
             {
-                if (!c.isRoot())
-                {
-                    ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+                ActionURL containerThemeStylesheetURL = coreUrls.getThemeStylesheetURL(c);
 
-                    if (null != containerCustomStylesheetURL)
-                        F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
-                }
-            }*/
+                if (null != containerThemeStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(containerThemeStylesheetURL));
+
+                ActionURL containerCustomStylesheetURL = coreUrls.getCustomStylesheetURL(c);
+
+                if (null != containerCustomStylesheetURL)
+                    F.format(link, PageFlowUtil.filter(containerCustomStylesheetURL));
+            }
         }
         
         ResourceURL printStyleURL = new ResourceURL("printStyle.css", ContainerManager.getRoot());

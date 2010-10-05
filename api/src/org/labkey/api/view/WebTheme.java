@@ -47,10 +47,10 @@ public class WebTheme
         _stylesheet = StylesheetName;
         
         // This theme does not use any WebTheme color definitions;
-        _navBarColor = null;
-        _headerLineColor = null;
-        _editFormColor = null;
-        _fullScreenBorderColor = null;
+        _navBarColor = "";
+        _headerLineColor = "";
+        _editFormColor = "";
+        _fullScreenBorderColor = "";
         _titleBarBackgroundColor = null;
         _titleBarBorderColor = null;
         _titleColor = null;
@@ -145,12 +145,16 @@ public class WebTheme
 
     public String getTitleBarBackgroundString()
     {
-        return toRGB(_titleBarBackgroundColor);
+        if (_titleBarBackgroundColor != null)
+            return toRGB(_titleBarBackgroundColor);
+        return "";
     }
 
     public String getTitleBarBorderString()
     {
-        return toRGB(_titleBarBorderColor);
+        if (_titleBarBorderColor != null)
+            return toRGB(_titleBarBorderColor);
+        return "";
     }
 
     public Color getTitleColor()
@@ -160,7 +164,9 @@ public class WebTheme
 
     public String getTitleColorString()
     {
-        return toRGB(_titleColor);
+        if (_titleColor != null)
+            return toRGB(_titleColor);
+        return "";
     }
 
 }
