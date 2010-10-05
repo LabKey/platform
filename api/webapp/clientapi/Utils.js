@@ -574,13 +574,18 @@ LABKEY.Utils.convertToExcel(
             }
             // From the original Math.uuidFast implementation
             var chars = CHARS, uuid = new Array(36), rnd = 0, r;
-            for (var i = 0; i < 36; i++) {
-                if (i == 8 || i == 13 || i == 18 || i == 23) {
+            for (var i = 0; i < 36; i++)
+            {
+                if (i == 8 || i == 13 || i == 18 || i == 23)
+                {
                     uuid[i] = '-';
-                } else if (i == 14) {
+                }
+                else if (i == 14)
+                {
                     uuid[i] = '4';
                 }
-                else {
+                else
+                {
                     if (rnd <= 0x02) rnd = 0x2000000 + (Math.random() * 0x1000000) | 0;
                     r = rnd & 0xf;
                     rnd = rnd >> 4;
@@ -591,26 +596,37 @@ LABKEY.Utils.convertToExcel(
         },
 
         /**
-         * Returns a string containing a well-formed html anchor that adheres the the styling rules. 
+         * Returns a string containing a well-formed html anchor that will apply theme specific styling. The configuration
+         * takes any property value pair and places them on the anchor.
+         * @param {Object} config a configuration object that models html anchor properties:
+         * @param {String} config.href (required if config.onClick not specified) the reference the anchor will use.
+         * @param {String} config.onClick {requried if config.href not specified) script called when the onClick event is fired by
+         * the anchor.
+         * @param {String} config.text text that is rendered inside the anchor element.
          */
-        textLink : function(linkConfig) {
-            if (linkConfig.href === undefined && !linkConfig.onClick === undefined) {
-                throw "href AND/OR onClick required in call to LABKEY.Utils.textLink()"
+        textLink : function(config)
+        {
+            if (config.href === undefined && !config.onClick === undefined)
+            {
+                throw "href AND/OR onClick required in call to LABKEY.Utils.textLink()";
             }
             var attrs = " ";
-            if (linkConfig.attrs) {
-                for (var i in linkConfig.attrs) {
-                    attrs += i.toString() + "='" + linkConfig.attrs[i] + "' ";
+            if (config)
+            {
+                for (var i in config)
+                {
+                    if (i.toString() != "text" && i.toString() != "class")
+                    {
+                        attrs += i.toString() + '=\"' + config[i] + '\" ';
+                    }
                 }
+                if (LABKEY.project.cssRespectedTheme)
+                {
+                    return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
+                }
+                return '[<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>]';
             }
-            if (LABKEY.project.isCustomTheme) {
-                return "<a" + (linkConfig.id != null ? " id='" + linkConfig.id + "'" : "") + " href='" + Ext.util.Format.htmlEncode(linkConfig.href) + "'" +
-                        (linkConfig.onClick != null ? " onClick='" + linkConfig.onClick + "' ": " ") + "class='labkey-text-link'" + attrs +
-                        ">" + linkConfig.text + "</a>";
-            }
-            return "[<a" + (linkConfig.id != null ? " id='" + linkConfig.id + "'" : "") + " href='" + Ext.util.Format.htmlEncode(linkConfig.href) + "'" +
-                    (linkConfig.onClick != null ? " onClick='" + linkConfig.onClick + "' ": " ") + "class='labkey-text-link'" + attrs +
-                    ">" + linkConfig.text + "</a>]";
+            throw "Config object not found for textLink.";
         }
     };
 };
