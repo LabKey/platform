@@ -40,7 +40,7 @@
     ct.setInitialLevel(1);
 %>
 
-<table class="labkey-data-region">
+<table>
     <tr><td style="padding-left:0">Pick a folder to modify:</td></tr>
     <tr><td>&nbsp;</td></tr>
     <%= ct.render()%>

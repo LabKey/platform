@@ -246,7 +246,6 @@ table.labkey-no-spacing
 /* Used for messages across the site */
 .labkey-message
 {
-    font-size: 8pt;
     color: #008000;
 }
 
@@ -3217,12 +3216,6 @@ li.labkey-tab-inactive a
     padding-right: 5px;
     white-space: nowrap;
 }
-
-td.labkey-tab-space
-{
-    background-color:#ffffff;
-}
-
 
 /*****     TAB STRIPS kc     *****/
 

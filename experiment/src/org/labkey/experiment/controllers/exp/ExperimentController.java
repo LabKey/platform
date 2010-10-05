@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.exp;
 import jxl.*;
 import jxl.read.biff.BiffException;
 import jxl.write.*;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -339,6 +340,7 @@ public class ExperimentController extends SpringActionController
                     bar.add(deriveButton);
                 }
             };
+            queryView.setShowDeleteButton(false);
             queryView.setShowRecordSelectors(getContainer().hasPermission(getUser(), DeletePermission.class) || getContainer().hasPermission(getUser(), InsertPermission.class));
             queryView.setShowBorders(true);
             queryView.setShadeAlternatingRows(true);

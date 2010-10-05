@@ -63,6 +63,10 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public void addSuccessorRunId(int runId)
     {
+        if (_successorRunIdList == null)
+        {
+            _successorRunIdList = new ArrayList<Integer>();
+        }
         _successorRunIdList.add(runId);
     }
 

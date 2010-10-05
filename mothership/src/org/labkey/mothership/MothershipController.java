@@ -16,6 +16,7 @@
 
 package org.labkey.mothership;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
@@ -548,8 +549,16 @@ public class MothershipController extends SpringActionController
     {
         public ModelAndView getView(ExceptionStackTraceForm form, BindException errors) throws Exception
         {
-            ExceptionStackTrace stackTrace = form.getBean();
-            stackTrace = MothershipManager.get().getExceptionStackTrace(stackTrace.getExceptionStackTraceId(), getContainer());
+            ExceptionStackTrace stackTrace;
+            try
+            {
+                stackTrace = form.getBean();
+                stackTrace = MothershipManager.get().getExceptionStackTrace(stackTrace.getExceptionStackTraceId(), getContainer());
+            }
+            catch (ConversionException e)
+            {
+                throw new NotFoundException();
+            }
             if (stackTrace == null)
             {
                 throw new NotFoundException();
@@ -1253,6 +1262,7 @@ public class MothershipController extends SpringActionController
             super(new DataRegion(), form, errors);
 
             ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
             ActionURL saveURL = new ActionURL(UpdateStackTraceAction.class, c);
             ActionButton b = new ActionButton(saveURL, "Save");
             b.setDisplayPermission(UpdatePermission.class);
