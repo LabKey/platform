@@ -214,72 +214,87 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String body = null;
             String displayTitle = (String)props.get(PROPERTY.displayTitle.toString());
             String searchTitle = (String)props.get(PROPERTY.searchTitle.toString());
+
+            Map<String, String> customProperties = r.getCustomProperties(User.getSearchUser());
+
+            if (null != customProperties && !customProperties.isEmpty())
+            {
+                assert searchTitle != null;
+
+                for (String value : customProperties.values())
+                    searchTitle += " " + value;
+            }
+
             String type = r.getContentType();
 
-            // Skip images and zip files for now
+            // Don't load content of images or zip files (for now), but allow searching name and properties
             if (isImage(type) || isZip(type))
             {
-                return null;
-            }
-
-            InputStream is = fs.openInputStream();
-
-            if (null == is)
-            {
-                logAsWarning(r, "InputStream is null");
-                return null;
-            }
-
-            if ("text/html".equals(type))
-            {
-                String html;
-                if (isTooBig(fs, type))
-                    html = "<html><body></body></html>";
-                else
-                    html = PageFlowUtil.getStreamContentsAsString(is);
-
-                // TODO: Need better check for issue HTML vs. rendered page HTML
-                if (r instanceof ActionResource)
-                {
-                    HTMLContentExtractor extractor = new HTMLContentExtractor.LabKeyPageHTMLExtractor(html);
-                    body = extractor.extract();
-                    String extractedTitle = extractor.getTitle();
-
-                    if (StringUtils.isBlank(displayTitle))
-                        displayTitle = extractedTitle;
-
-                    searchTitle = searchTitle + " " + extractedTitle;
-                }
-
-                if (StringUtils.isEmpty(body))
-                {
-                    body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
-                }
-            }
-            else if (type.startsWith("text/") && !type.contains("xml"))
-            {
-                if (isTooBig(fs, type))
-                    body = "";
-                else
-                    body = PageFlowUtil.getStreamContentsAsString(is);
+                body = "";
             }
             else
             {
-                Metadata metadata = new Metadata();
-                metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
-                metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                InputStream is = fs.openInputStream();
 
-                parse(r, fs, is, handler, metadata);
+                if (null == is)
+                {
+                    logAsWarning(r, "InputStream is null");
+                    return null;
+                }
 
-                body = handler.toString();
+                if ("text/html".equals(type))
+                {
+                    String html;
+                    if (isTooBig(fs, type))
+                        html = "<html><body></body></html>";
+                    else
+                        html = PageFlowUtil.getStreamContentsAsString(is);
 
-                String extractedTitle = metadata.get(Metadata.TITLE);
-                if (StringUtils.isBlank(displayTitle))
-                    displayTitle = extractedTitle;
-                searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
+                    // TODO: Need better check for issue HTML vs. rendered page HTML
+                    if (r instanceof ActionResource)
+                    {
+                        HTMLContentExtractor extractor = new HTMLContentExtractor.LabKeyPageHTMLExtractor(html);
+                        body = extractor.extract();
+                        String extractedTitle = extractor.getTitle();
+
+                        if (StringUtils.isBlank(displayTitle))
+                            displayTitle = extractedTitle;
+
+                        searchTitle = searchTitle + " " + extractedTitle;
+                    }
+
+                    if (StringUtils.isEmpty(body))
+                    {
+                        body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
+                    }
+                }
+                else if (type.startsWith("text/") && !type.contains("xml"))
+                {
+                    if (isTooBig(fs, type))
+                        body = "";
+                    else
+                        body = PageFlowUtil.getStreamContentsAsString(is);
+                }
+                else
+                {
+                    Metadata metadata = new Metadata();
+                    metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                    metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
+                    ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+
+                    parse(r, fs, is, handler, metadata);
+
+                    body = handler.toString();
+
+                    String extractedTitle = metadata.get(Metadata.TITLE);
+                    if (StringUtils.isBlank(displayTitle))
+                        displayTitle = extractedTitle;
+                    searchTitle = searchTitle + getInterestingMetadataProperties(metadata);
+                }
+
+                fs.closeInputStream();
             }
-            fs.closeInputStream();
+
             fs = null;
 
             String url = r.getExecuteHref(null);

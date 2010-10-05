@@ -16,7 +16,11 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
@@ -26,9 +30,13 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
@@ -37,9 +45,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 
-import java.io.File;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -217,7 +223,11 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 }
                 if (resource != null)
                 {
-                    // TODO: reindex this resource here
+                    SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+
+                    if (null != ss)
+                        ss.defaultTask().addResource(resource, SearchService.PRIORITY.item);
+
                     resource.notify(new ContainerUser(){
                         public User getUser(){
                             return user;
