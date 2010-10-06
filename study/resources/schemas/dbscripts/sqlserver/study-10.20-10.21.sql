@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-SELECT core.executeJavaUpgradeCode('materializeDatasets');
-
+EXEC core.executeJavaUpgradeCode 'materializeDatasets'
+GO
 
 DELETE FROM exp.ObjectProperty
 WHERE propertyid IN (SELECT propertyid FROM exp.PropertyDescriptor where propertyuri like '%:StudyDataset.Folder-%');
 
 DROP TABLE study.StudyData;
+GO
