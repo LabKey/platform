@@ -220,6 +220,9 @@ public class ContainerManager
         
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
+        // init the list of active modules in the Container
+        c.getActiveModules(true);
+
         fireCreateContainer(c, user);
         return c;
     }

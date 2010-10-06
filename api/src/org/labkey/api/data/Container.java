@@ -726,7 +726,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // UNDONE: move to ModuleLoader? 
     public Set<Module> getActiveModules()
     {
-        return getActiveModules(true);
+        return getActiveModules(false);
     }
 
     public Set<Module> getActiveModules(boolean init)
