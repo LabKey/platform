@@ -580,7 +580,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 // UNDONE WE'RE NOT TRACKING UPDATES SO ALWAYS ADD/DROP NV COLUMN
 //            if (prop.isMvEnabled())
             {
-                createTableSqlParts.add(String.format("%s.%s %s", change.getSchemaName(), prop.getMvIndicatorColumnName(), sqlTypeNameFromSqlType(Types.VARCHAR)));
+                createTableSqlParts.add(String.format("%s %s", prop.getMvIndicatorColumnName(), sqlTypeNameFromSqlType(Types.VARCHAR)));
             }
         }
 
@@ -588,7 +588,11 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("CREATE %s INDEX %s ON %s.%s (%s)", index.isUnique ? "UNIQUE" : "", nameIndex(change.getTableName(), index.columnNames), makeTableIdentifier(change), StringUtils.join(index.columnNames, ", ")));
+            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)", 
+                    index.isUnique ? "UNIQUE" : "",
+                    nameIndex(change.getTableName(), index.columnNames),
+                    makeTableIdentifier(change),
+                    StringUtils.join(index.columnNames, ", ")));
         }
 
         return statements;
