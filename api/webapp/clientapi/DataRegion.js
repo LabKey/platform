@@ -27,7 +27,7 @@ if (!LABKEY.DataRegions)
 }
 
 /**
- * The DataRegion constructor is private - to get a LABKEY.DataRegion object, use LABKEY.DataRegions[<em>&lt;dataregionname&gt;</em>].
+ * The DataRegion constructor is private - to get a LABKEY.DataRegion object, use <code>Ext.ComponentMgr.get(<em>&lt;dataregionname&gt;</em>)</code> or <code>Ext.ComponentMgr.onAvailable(<em>&lt;dataregionname&gt;</em>, callback)</code>.
  * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
  */
 LABKEY.DataRegion = function (config)
@@ -211,7 +211,6 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Get all selected items.
-     * <b>This is an experimental API and is subject to change with out warning.</b>
      *
      * @param config A configuration object with the following properties:
      * @param {Function} config.successCallback The function to be called upon success of the request.
@@ -325,7 +324,6 @@ LABKEY.DataRegion = function (config)
 
     /**
      * Clear all selected items.
-     * <b>This is an experimental API and is subject to change with out warning.</b>
      *
      * @param config A configuration object with the following properties:
      * @param {Function} config.successCallback The function to be called upon success of the request.
@@ -1035,10 +1033,9 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
 /**
  * Add or remove items from the current selection.
- * <b>This is an experimental API and is subject to change with out warning.</b>
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey The selection key.
+ * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
  * @param {Array} config.id Array of primary key ids for each row to select/unselect.
  * @param {Boolean} config.checked If true, the ids will be selected, otherwise unselected.
  * @param {Function} config.successCallback The function to be called upon success of the request.
@@ -1074,10 +1071,9 @@ LABKEY.DataRegion.setSelected = function (config)
 
 /**
  * Clear all selected items.
- * <b>This is an experimental API and is subject to change with out warning.</b>
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey The selection key.
+ * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
  * @param {Function} config.successCallback The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
@@ -1103,10 +1099,9 @@ LABKEY.DataRegion.clearSelected = function (config)
 
 /**
  * Get all selected items.
- * <b>This is an experimental API and is subject to change with out warning.</b>
  *
  * @param config A configuration object with the following properties:
- * @param {String} config.selectionKey The selection key.
+ * @param {String} config.selectionKey Unique string used by selection APIs as a key store or retrieve the selected items for a grid.
  * @param {Function} config.successCallback The function to be called upon success of the request.
  * The callback will be passed the following parameters:
  * <ul>
