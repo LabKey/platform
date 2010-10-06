@@ -575,13 +575,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         for (PropertyStorageSpec prop : change.getColumns())
         {
             createTableSqlParts.add(getSqlColumnSpec(prop));
-            // if it has a qc note (aka "missing value indicator")
-            // make an additional column for that
-// UNDONE WE'RE NOT TRACKING UPDATES SO ALWAYS ADD/DROP NV COLUMN
-//            if (prop.isMvEnabled())
-            {
-                createTableSqlParts.add(String.format("%s %s", prop.getMvIndicatorColumnName(), sqlTypeNameFromSqlType(Types.VARCHAR)));
-            }
         }
 
         statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ", ")));
@@ -648,6 +641,8 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(prop.getName());
         colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+        if (prop.getSqlTypeInt() == Types.VARCHAR)
+            colSpec.add("(" + prop.getSize() + ")");
         if (prop.isUnique()) colSpec.add("UNIQUE");
         if (!prop.isNullable()) colSpec.add("NOT NULL");
         // todo auto increment?

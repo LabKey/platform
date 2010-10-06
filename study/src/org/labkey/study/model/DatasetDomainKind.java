@@ -61,13 +61,13 @@ public class DatasetDomainKind extends AbstractDomainKind
     static
     {
         PropertyStorageSpec[] props = {
-                new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR),
-                new PropertyStorageSpec(LSID, Types.VARCHAR, true, false),
+                new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR, 32),
+                new PropertyStorageSpec(LSID, Types.VARCHAR, 200, true, false),
                 new PropertyStorageSpec(SEQUENCENUM, Types.FLOAT),
-                new PropertyStorageSpec(SOURCELSID, Types.VARCHAR),
-                new PropertyStorageSpec(_KEY, Types.VARCHAR),
+                new PropertyStorageSpec(SOURCELSID, Types.VARCHAR, 200),
+                new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
                 new PropertyStorageSpec(QCSTATE, Types.INTEGER),
-                new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR)
+                new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR, 200)
         };
 
         BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
