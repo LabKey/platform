@@ -279,6 +279,8 @@ public class StorageProvisioner
         assert scope.isTransactionActive();
 
         String tableName = domain.getStorageTableName();
+        if (null == tableName)
+            tableName = makeTableName(kind, domain);
 
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.AddColumns);
         for (DomainProperty prop : props)
