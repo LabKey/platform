@@ -708,6 +708,8 @@ public class Query
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
+        new SqlTest("SELECT * FROM R", Rcolumns, Rsize),
+        new SqlTest("SELECT R.d, seven FROM lists.R", 2, Rsize),
         new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
         new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
@@ -824,10 +826,11 @@ public class Query
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
         new FailTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5"),
-        new FailTest("SELECT * FROM R"),
+        new FailTest("SELECT * FROM R A inner join R B ON 1=1"),            // ambiguous columns
         new FailTest("SELECT SUM(*) FROM R"),
-        new FailTest("SELECT d FROM R A inner join R B on 1=1"),         // ambiguous
-        new FailTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),  // ambiguous
+        new FailTest("SELECT d FROM R A inner join R B on 1=1"),            // ambiguous
+        new FailTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),     // ambiguous
+        new FailTest("SELECT R.d, seven FROM lists.R A")                    // R is hidden
 	};
 
 
@@ -839,7 +842,7 @@ public class Query
 
 		Container getSubfolder()
 		{
-			return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
+            return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
 		}
 
 

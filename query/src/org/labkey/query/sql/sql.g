@@ -360,41 +360,47 @@ groupByClause
 	: GROUP^ "by"! expression ( COMMA! expression )*
 	;
 
-//## orderByClause:
-//##     ORDER_BY selectedPropertiesList;
 
 orderByClause
 	: ORDER^ "by"! orderElement ( COMMA! orderElement )*
 	;
 
+
 limitClause
     : LIMIT^ NUM_INT;
+
 
 orderElement
 	: expression ( ascendingOrDescending )?
 	;
+
 
 ascendingOrDescending
 	: ( "asc" | "ascending" )	{ #ascendingOrDescending.setType(ASCENDING); }
 	| ( "desc" | "descending") 	{ #ascendingOrDescending.setType(DESCENDING); }
 	;
 
+
 havingClause
 	: HAVING^ logicalExpression
 	;
+
 
 whereClause
 	: WHERE^ logicalExpression
 	;
 
+
 selectedPropertiesList
-	: aliasedExpression ( COMMA! aliasedExpression )*
+	: aliasedSelectExpression ( COMMA! aliasedSelectExpression )*
 	;
 
-aliasedExpression
-	: (expression ( AS^ identifier )?) |
-	;
 
+aliasedSelectExpression
+	: (STAR COMMA) => (star:STAR) {#star.setType(ROW_STAR); }
+	| (expression ( AS^ identifier )?)
+	| ()
+	;
 
 
 // expressions

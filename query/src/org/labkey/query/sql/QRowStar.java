@@ -19,15 +19,10 @@ package org.labkey.query.sql;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 
-public class QRowStar extends QExpr
+public class QRowStar extends QFieldKey
 {
     static FieldKey _starFieldKey = new FieldKey(null,"*");
 
-	public QRowStar()
-	{
-		super(false);
-	}
-	
     public void appendSource(SourceBuilder builder)
     {
         builder.append("*");

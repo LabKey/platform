@@ -158,7 +158,7 @@ public abstract class QueryRelation
      * with QueryTableInfo's etc... But I didn't. I have a light-weight class that wraps
      * schema ColumnInfo's and represents internal uses of columns
      */
-    public abstract static class RelationColumn // implements SqlColumn
+    public abstract static class RelationColumn
     {
         public abstract FieldKey getFieldKey();     // field key does NOT include table name/alias
         abstract String getAlias();
@@ -190,6 +190,12 @@ public abstract class QueryRelation
         protected static SqlDialect getDialect(RelationColumn c)
         {
             return c.getTable()._schema.getDbSchema().getSqlDialect();
+        }
+
+        // expose this without having to call copyColumnAttributesTo
+        public boolean isUnselectable()
+        {
+            return false;
         }
     }
 

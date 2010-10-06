@@ -251,6 +251,12 @@ public class QueryTable extends QueryRelation
             to.copyAttributesFrom(_col);
             to.copyURLFrom(_col, null, null);
         }
+
+        @Override
+        public boolean isUnselectable()
+        {
+            return _col.isUnselectable();
+        }
     }
 
     public boolean setContainerFilter(ContainerFilter containerFilter)

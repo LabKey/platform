@@ -49,12 +49,18 @@ public class QTable
         return _table.getFieldKey();
     }
 
+
+    // should be a one part field key (but strings are case-sensitive)
     public FieldKey getAlias()
     {
         if (_alias == null)
-            return getTableKey();
+        {
+            FieldKey fk = getTableKey();
+            return null == fk.getParent() ? fk : new FieldKey(null, fk.getName());
+        }
         return new FieldKey(null, _alias.getIdentifier());
     }
+
 
     public void appendSource(SourceBuilder builder, boolean first)
     {

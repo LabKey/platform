@@ -154,14 +154,28 @@ public class QuerySelect extends QueryRelation
         ArrayList<SelectColumn> columnList = new ArrayList<SelectColumn>();
         if (select != null)
         {
-            for (QNode node : _root.getSelect().children())
+            LinkedList<QNode> process = new LinkedList(_root.getSelect().childList());
+            while (!process.isEmpty())
             {
+                QNode node = process.removeFirst();
+                
                 if (node instanceof QDistinct)
                 {
                     if (!columnList.isEmpty())
                         parseError("DISTINCT not expected", node);
                     else
                         _distinct = (QDistinct)node;
+                    continue;
+                }
+
+                if (node instanceof QRowStar)
+                {
+                    for (QTable t : _from.values())
+                    {
+                        QNode tableStar = QFieldKey.of(new FieldKey(t.getAlias(), "*"));
+                        tableStar.setLineAndColumn(node);
+                        process.addFirst(tableStar);
+                    }
                     continue;
                 }
 
@@ -173,24 +187,25 @@ public class QuerySelect extends QueryRelation
                     if (null != key && key.getName().equals("*"))
                     {
                         FieldKey parent = key.getParent();
-                        if (null == parent)
-                        {
-                            parseError("SELECT * is not supported", node);
-                            continue;
-                        }
                         if (parent.getParent() != null)
                         {
                             parseError("Can't resolve column: " + node.getSourceText(), node);
                             continue;
                         }
-                        QueryRelation r = _tables.get(parent);
+                        QueryRelation r = getTable(parent);
                         if (null == r)
                         {
                             parseError("Can't resolve column: " + node.getSourceText(), node);
                             continue;
                         }
                         for (Map.Entry<String,RelationColumn> e :  r.getAllColumns().entrySet())
-                            columnList.add(new SelectColumn(new FieldKey(parent,e.getKey())));
+                        {
+                            String name = e.getKey();
+                            RelationColumn rc = e.getValue();
+                            if (rc.isUnselectable())
+                                continue;
+                            columnList.add(new SelectColumn(new FieldKey(parent,name)));
+                        }
                         continue;
                     }
                 }
@@ -243,7 +258,7 @@ public class QuerySelect extends QueryRelation
 
     public TableInfo getFromTable(FieldKey key)
     {
-        QueryRelation qr = _tables.get(key);
+        QueryRelation qr = getTable(key);
         if (qr != null)
             return qr.getTableInfo();
         return null;
@@ -491,7 +506,12 @@ loop:
                 }
             }
             if (null == table)
-                return super.declareField(declareKey, location);
+            {
+                RelationColumn ret = super.declareField(declareKey, location);
+                if (null == ret)
+                    parseError("Could not resolve column: " + declareKey, location);
+                return ret;
+            }
 
             FieldKey fullKey = FieldKey.fromParts(tableKey,declareKey);
             colTry = _declaredFields.get(fullKey);
