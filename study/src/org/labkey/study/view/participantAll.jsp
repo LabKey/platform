@@ -128,7 +128,7 @@
     SimpleFilter filter = new SimpleFilter(study.getSubjectColumnName(), bean.getParticipantId());
     Sort sort = new Sort("SequenceNum");
     SQLFragment f = new SQLFragment();
-    f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS RowCount FROM ");
+    f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");
     f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets).getFromSQL("SD"));
     f.append("\n");
     f.append("GROUP BY ParticipantId, SequenceNum, DatasetId");
