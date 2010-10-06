@@ -36,7 +36,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
         if (this.customView)
         {
             // Add any additional field metadata for view's selected columns, sorts, filters.
-            // The view may be filtered upon columns not present in the query's selected column metadata.
+            // The view may be filtered or sorted upon columns not present in the query's selected column metadata.
             // The FieldMetaStore uses a reader that expects the field metadata to be under a 'columns' property instead of 'fields'
             this.fieldMetaStore.loadData({columns: this.customView.fields}, true);
 
@@ -825,9 +825,9 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         {
             var o = {fieldKey: fieldKey};
             var fk = FieldKey.fromString(fieldKey);
-            var index = this.fieldMetaStore.findExact("name", fieldKey);
-            if (index > -1)
-                o.name = fk.name;
+            var record = this.fieldMetaStore.getById(fieldKey);
+            if (record)
+                o.name = record.caption || fk.name;
             else
                 o.name = fk.name + " (not found)";
             return o;
@@ -842,11 +842,12 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
     createNodeAttrs : function (fieldMetaRecord) {
         var fieldMeta = fieldMetaRecord.data;
         var attrs = {
-            id: fieldMeta.name,
+            id: fieldMeta.fieldKey,
+            fieldKey: fieldMeta.fieldKey,
             text: fieldMeta.caption,
             leaf: !fieldMeta.lookup,
-            //checked: fieldMeta.selectable ? this.hasField(fieldMeta.name) : undefined,
-            checked: this.hasField(fieldMeta.name),
+            //checked: fieldMeta.selectable ? this.hasField(fieldMeta.fieldKey) : undefined,
+            checked: this.hasField(fieldMeta.fieldKey),
             disabled: !fieldMeta.selectable,
             hidden: fieldMeta.hidden && !this.showHiddenFields,
             qtip: fieldMeta.description,
