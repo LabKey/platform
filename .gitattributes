@@ -139,7 +139,6 @@ api/src/org/labkey/api/data/ButtonConfig.java -text
 api/src/org/labkey/api/data/CacheKey.java -text
 api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedRowSetImpl.java -text
-api/src/org/labkey/api/data/Change.java -text
 api/src/org/labkey/api/data/ColumnRenderProperties.java -text
 api/src/org/labkey/api/data/CompareType.java -text
 api/src/org/labkey/api/data/ConditionalFormat.java -text
@@ -297,7 +296,6 @@ api/src/org/labkey/api/exp/api/ExperimentService.java -text
 api/src/org/labkey/api/exp/api/ExperimentUrls.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text
 api/src/org/labkey/api/exp/api/ProtocolImplementation.java -text
-api/src/org/labkey/api/exp/api/ProvisioningService.java -text
 api/src/org/labkey/api/exp/list/ListDefinition.java -text
 api/src/org/labkey/api/exp/list/ListImportProgress.java -text
 api/src/org/labkey/api/exp/list/ListItem.java -text

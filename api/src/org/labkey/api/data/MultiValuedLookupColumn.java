@@ -76,7 +76,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         return new SQLFragment(getTableAlias(tableAliasName) + "." + _display.getAlias());
     }
 
-    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable)
+
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
         strJoin.append("\n\t(\n\t\t");
         strJoin.append("SELECT ");
@@ -107,9 +108,8 @@ public class MultiValuedLookupColumn extends LookupColumn
             strJoin.append(lc.getAlias());
         }
 
-        strJoin.append("\n\t\tFROM (");
-        strJoin.append(_lookupKey.getParentTable().getFromSQL());
-        strJoin.append(") child");
+        strJoin.append("\n\t\tFROM ");
+        strJoin.append(_lookupKey.getParentTable().getFromSQL("child"));
 
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
         _lookupColumn.declareJoins("child", joins);
@@ -123,8 +123,9 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         strJoin.append("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql("child"));
-        strJoin.append("\n\t)");
+        strJoin.append("\n\t) ").append(alias);
     }
+    
 
     @Override
     // The multivalued column joins take place within the aggregate function sub-select; we don't want super class

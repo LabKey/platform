@@ -132,9 +132,7 @@ public class LookupColumn extends ColumnInfo
             _foreignKey.declareJoins(baseAlias, map);
             SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
 
-            addLookupSql(strJoin, _lookupKey.getParentTable());
-
-            strJoin.append(" AS ").append(colTableAlias);
+            addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
             strJoin.append(" ON ");
             strJoin.append(getJoinCondition(baseAlias));
             assert null == map.get(colTableAlias) || map.get(colTableAlias).getSQL().equals(strJoin.getSQL());
@@ -146,17 +144,9 @@ public class LookupColumn extends ColumnInfo
     }
 
 
-    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable)
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
-        String selectName = lookupTable.getSelectName();
-        if (null != selectName)
-            strJoin.append(selectName);
-        else
-        {
-            strJoin.append("(");
-            strJoin.append(lookupTable.getFromSQL());
-            strJoin.append(")");
-        }
+        strJoin.append(lookupTable.getFromSQL(alias));
     }
 
 

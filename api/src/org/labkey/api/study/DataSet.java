@@ -46,6 +46,8 @@ public interface DataSet extends StudyEntity
 
     TableInfo getTableInfo(User user) throws UnauthorizedException;
 
+    TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException;
+
     boolean isDemographicData();
 
     Study getStudy();

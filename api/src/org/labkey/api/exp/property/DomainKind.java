@@ -16,7 +16,12 @@
 
 package org.labkey.api.exp.property;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
@@ -88,4 +93,12 @@ abstract public class DomainKind
 
     abstract public Set<PropertyStorageSpec> getBaseProperties();
 
+    /**
+     * If domains of this kind should get hard tables automatically provisioned, this returns
+     * the db schema where they reside. If it is null, hard tables are not to be provisioned for doamins of this kind.
+     * @return
+     */
+    abstract public DbScope getScope();
+    abstract public String getStorageSchemaName();
+    abstract public Set<PropertyStorageSpec.Index> getPropertyIndices();
 }

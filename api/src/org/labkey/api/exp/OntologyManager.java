@@ -16,7 +16,6 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -27,6 +26,7 @@ import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -36,12 +36,18 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResource;
 
-import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -242,7 +248,7 @@ public class OntologyManager
 		return resultingLsids;
 	}
 
-    private static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value,
+    public static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value,
                                             List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
@@ -718,7 +724,6 @@ public class OntologyManager
                             "WHERE PDM.DomainId = " + getTinfoDomainDescriptor() + ".DomainId)";
 
             Table.execute(getExpSchema(), deleteDD, new Object[]{dd.getDomainId()});
-
             clearCaches();
 
             if (ownTransaction)
@@ -1621,11 +1626,26 @@ public class OntologyManager
 		}
 	}
     
-    public static DomainDescriptor getDomainDescriptor(int id)
+
+    public static DomainDescriptor getDomainDescriptor(int id, boolean force)
     {
         return Table.selectObject(getTinfoDomainDescriptor(), id, DomainDescriptor.class);
     }
-        
+
+
+    public static DomainDescriptor getDomainDescriptor(int id)
+    {
+        return getDomainDescriptor(id, false);
+    }
+
+
+    private static DomainDescriptor EMPTY = new DomainDescriptor();
+    static
+    {
+        assert MemTracker.remove(EMPTY);
+    }
+    
+
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
 	{
         try
@@ -1655,7 +1675,7 @@ public class OntologyManager
                 dd = ddArray[0];
 
                 // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-                // and one of the two is in the shared project, use the project-level descriiptor.
+                // and one of the two is in the shared project, use the project-level descriptor.
                 if (ddArray.length>1)
                 {
                     _log.debug("Multiple DomainDescriptors found for " + domainURI);
@@ -1674,6 +1694,7 @@ public class OntologyManager
         }
         finally { _log.debug("getDomainDescriptor for "+ domainURI + " container= "+ c.getPath() ); }
     }
+
 
     public static DomainDescriptor[] getDomainDescriptors(Container container) throws SQLException
     {
@@ -2276,6 +2297,13 @@ public class OntologyManager
             list.add(pdInserted);
         }
 
+        // provision new hard tables
+        // XXX - probably not always appropriate
+        for (DomainDescriptor dd : domainMap.values())
+        {
+            StorageProvisioner.create(PropertyService.get().getDomain(dd.getDomainId()));
+        }
+
         return list.toArray(new PropertyDescriptor[list.size()]);
     }
 
@@ -2818,6 +2846,38 @@ public class OntologyManager
 	}
 
 
+    /**
+     * v.first value IN/OUT parameter
+     * v.second mvIndicator OUT parameter
+     */
+    public static void convertValuePair(PropertyDescriptor pd, PropertyType pt, Pair<Object,String> v)
+    {
+        if (v.first == null)
+            return;
+
+        // Handle field-level QC
+        if (v.first instanceof MvFieldWrapper)
+        {
+            MvFieldWrapper mvWrapper = (MvFieldWrapper) v.first;
+            v.second = mvWrapper.getMvIndicator();
+            v.first = mvWrapper.getValue();
+        }
+        else if (pd.isMvEnabled())
+        {
+            // Not all callers will have wrapped an MV value if there isn't also
+            // a real value
+            if (MvUtil.isMvIndicator(v.first.toString(), pd.getContainer()))
+            {
+                v.second = v.first.toString();
+                v.first = null;
+            }
+        }
+
+        if (null != v.first && null != pt)
+            v.first = pt.convert(v.first);
+    }
+
+
     public static class PropertyRow
 	{
 		protected int objectId;
@@ -2838,86 +2898,35 @@ public class OntologyManager
 			this.propertyId = pd.getPropertyId();
 			this.typeTag = pt.getStorageType();
 
-            // Handle field-level QC
-            if (value instanceof MvFieldWrapper)
-            {
-                MvFieldWrapper mvWrapper = (MvFieldWrapper) value;
-                this.mvIndicator = mvWrapper.getMvIndicator();
-                value = mvWrapper.getValue();
-            }
-            else if (pd.isMvEnabled())
-            {
-                // Not all callers will have wrapped an MV value if there isn't also
-                // a real value
-                if (MvUtil.isMvIndicator(value.toString(), pd.getContainer()))
-                {
-                    this.mvIndicator = value.toString();
-                    value = null;
-                }
-            }
+            Pair<Object,String> p = new Pair<Object,String>(value,null);
+            convertValuePair(pd, pt, p);
+            mvIndicator = p.second;
             
             switch (pt)
             {
                 case STRING:
                 case MULTI_LINE:
-                    if (value instanceof String)
-                        this.stringValue = (String) value;
-                    else
-                        this.stringValue = ConvertUtils.convert(value);
-                    break;
                 case ATTACHMENT:
-                    if (value instanceof File)
-                        this.stringValue = ((File) value).getName();
-                    else
-                        this.stringValue = (String) value;
-                    break;
                 case FILE_LINK:
-                    if (value instanceof File)
-                        this.stringValue = ((File) value).getPath();
-                    else
-                        this.stringValue = (String) value;
+                case RESOURCE:
+                    this.stringValue = (String)p.first;
                     break;
                 case DATE_TIME:
-                    if (value instanceof Date)
-                        this.dateTimeValue = (Date) value;
-                    else if (null != value)
-                        this.dateTimeValue = (Date) ConvertUtils.convert(value.toString(), Date.class);
+                    this.dateTimeValue = (java.util.Date)p.first;
                     break;
                 case INTEGER:
-                    if (value instanceof Integer)
-                        this.floatValue = ((Integer) value).doubleValue();
-                    else if (null != value)
-                        this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                    break;
                 case DOUBLE:
-                    if (value instanceof Double)
-                        this.floatValue = (Double) value;
-                    else if (null != value)
-                        this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                    Number n = (Number)p.first;
+                    if (null != n)
+                        this.floatValue = n.doubleValue();
                     break;
                 case BOOLEAN:
-                {
-                    boolean boolValue = false;
-                    if (value instanceof Boolean)
-                        boolValue = (Boolean)value;
-                    else if (null != value && !"".equals(value))
-                        boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-                    this.floatValue = boolValue ? 1.0 : 0.0;
-                    break;
-                }
-                case RESOURCE:
-                    if (value instanceof Identifiable)
-                    {
-                        this.stringValue = ((Identifiable) value).getLSID();
-                    }
-                    else if (null != value)
-                        this.stringValue = value.toString();
-
+                    Boolean b = (Boolean)p.first;
+                    this.floatValue = b == Boolean.TRUE ? 1.0 : 0.0;
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown property type: " + pt);
             }
-
 		}
 
 		public int getObjectId()
@@ -2988,6 +2997,11 @@ public class OntologyManager
         public void setMvIndicator(String mvIndicator)
         {
             this.mvIndicator = mvIndicator;
+        }
+
+        public Object getObjectValue()
+        {
+            return stringValue != null ? stringValue : floatValue != null ? floatValue : dateTimeValue;
         }
 
         @Override

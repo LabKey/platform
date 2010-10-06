@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.study.StudyService;
 
 import java.sql.Types;
 import java.util.Map;
@@ -63,21 +64,22 @@ public class StudyDataSetColumn extends ExprColumn
         SQLFragment joinSql = new SQLFragment();
         String datasetAlias = getDatasetIdAlias();
         String studyDataAlias = "StudyData" + _studyContainer.getRowId();
+        TableInfo studyDataTable = StudyService.get().getStudyDataTable(_studyContainer);
 
-        joinSql.append(" LEFT OUTER JOIN study.StudyData ").append(studyDataAlias).append(" ON ");
+        joinSql.appendComment("<StudyDataSetColumn.join " + _studyContainer.getPath() + ">", getSqlDialect());
+        joinSql.append(" LEFT OUTER JOIN ").append(studyDataTable.getFromSQL(studyDataAlias)).append(" ON ");
         joinSql.append(studyDataAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata().getResultRowIdFieldKey().getName() + " AS ");
-        joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200)) AND ");
-        joinSql.append(studyDataAlias).append(".container = ?\n");
-        joinSql.add(_studyContainer.getId());
-
-        joinSql.append("LEFT OUTER JOIN (\n");
+        joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200))");
+        joinSql.append(" LEFT OUTER JOIN (\n");
         joinSql.append("SELECT MAX(study.Dataset.datasetid) AS datasetid, study.Dataset.container \n");
         joinSql.append("FROM study.Dataset \n");
         joinSql.append("WHERE study.Dataset.protocolid = ? \n");
         joinSql.add(_protocolId);
         joinSql.append("GROUP BY study.Dataset.container\n");
-        joinSql.append(") ").append(datasetAlias).append(" ON ").append(studyDataAlias).append(".container = ").append(datasetAlias);
+        joinSql.append(") ").append(datasetAlias).append(" ON ? = ").append(datasetAlias);
         joinSql.append(".container AND ").append(studyDataAlias).append(".datasetid = ").append(datasetAlias).append(".datasetid");
+        joinSql.add(_studyContainer);
+        joinSql.appendComment("</StudyDataSetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);
     }
 }

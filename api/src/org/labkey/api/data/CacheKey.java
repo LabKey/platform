@@ -18,12 +18,15 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.SQLException;
 
-public class CacheKey<T, C extends Enum<C>> implements Cloneable
+
+public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<String,Object>
 {
     private void addBitMaskFilter(ColumnInfo column, int mask, int value)
     {
@@ -85,6 +88,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
         addConditionToString(column.toString() + "~" + ct.getPreferredUrlKey(), value);        
     }
 
+
     private void addConditionToString(String columnName, Object value)
     {
         _toString.append("&");
@@ -96,61 +100,49 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
         }
     }
 
+
     public void setFlagMask(int mask, int value)
     {
         addBitMaskFilter(_table.getColumn("flags"), mask, value);
     }
+
 
     public String toString()
     {
         return _toString.toString();
     }
 
+
+    public Object load(String stringKey, Object arg)
+    {
+        try
+        {
+            Object[] ret = Table.select(_table, Table.ALL_COLUMNS, _filter, null, _clazz);
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+
+    private BlockingCache getCache()
+    {
+        return new BlockingCache<String,Object>(DbCache.getCache(_table), null);
+    }
+
+
     public T[] select() throws SQLException
     {
-        T[] ret = getArrayFromCache();
-        if (ret != null)
-            return ret;
-        ret = Table.select(_table, Table.ALL_COLUMNS, _filter, null, _clazz);
-        putArrayInCache(ret);
-        return ret;
+        return (T[])getCache().get(toString(), null, this);
     }
+
 
     public T selectObject() throws SQLException
     {
-        Object o = DbCache.get(_table, toString());
-        if (o != null)
-            return notFoundValue==o ? null : (T)o;
-        T ret = Table.selectObject(_table, Table.ALL_COLUMNS, _filter, null, _clazz);
-        putInCache(ret);
-        return ret;
-    }
-    
-    private static Object notFoundValue = new Object(){@Override public String toString()
-    {
-        return "~~NOT FOUND VALUE~~";
-    }};
-
-    public T getFromCache()
-    {
-        Object o = DbCache.get(_table, toString());
-        if (o == notFoundValue)
-            return null;
-        return (T)o;
-    }
-
-    public void putInCache(T value)
-    {
-        DbCache.put(_table, toString(), null==value ? notFoundValue : value);
-    }
-
-    public T[] getArrayFromCache()
-    {
-        return (T[]) DbCache.get(_table, "[]" + toString());
-    }
-
-    public void putArrayInCache(T[] value)
-    {
-        DbCache.put(_table, "[]" + toString(), value);
+        T[] arr = select();
+        assert null == arr || arr.length == 0 || arr.length == 1;
+        return null == arr || 0==arr.length ? null : arr[0];
     }
 }

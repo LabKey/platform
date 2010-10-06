@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import junit.framework.Assert;
 import org.apache.log4j.Logger;
 import org.junit.Test;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
@@ -97,6 +98,11 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         return getCache().get(key);
     }
 
+    @Override
+    public ValueType get(String key, Object arg, CacheLoader<String, ValueType> loader)
+    {
+        return getCache().get(key,arg,loader);
+    }
 
     public void remove(final String key)
     {
@@ -363,7 +369,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            public void releaseConnection(Connection conn) throws SQLException
+            public void releaseConnection(Connection conn)
             {
             }
 

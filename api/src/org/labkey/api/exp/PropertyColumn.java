@@ -47,13 +47,26 @@ public class PropertyColumn extends LookupColumn
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)), false);
         setName(pd.getName());
         setAlias(ColumnInfo.legalNameFromName(pd.getName()));
-        setNullable(!pd.isRequired());
-        setHidden(pd.isHidden());
-        setShownInDetailsView(pd.isShownInDetailsView());
-        setShownInInsertView(pd.isShownInInsertView());
-        setShownInUpdateView(pd.isShownInUpdateView());
-        setDimension(pd.isDimension());
-        setMeasure(pd.isMeasure());
+
+        copyAttributes(user, this, pd);
+
+        _pd = pd;
+        _containerId = containerId;
+    }
+
+
+
+    public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd)
+    {
+//        to.setName(pd.getName());
+//        to.setAlias(ColumnInfo.legalNameFromName(pd.getName()));
+        to.setNullable(!pd.isRequired());
+        to.setHidden(pd.isHidden());
+        to.setShownInDetailsView(pd.isShownInDetailsView());
+        to.setShownInInsertView(pd.isShownInInsertView());
+        to.setShownInUpdateView(pd.isShownInUpdateView());
+        to.setDimension(pd.isDimension());
+        to.setMeasure(pd.isMeasure());
         String description = pd.getDescription();
         if (null == description && null != pd.getConceptURI())
         {
@@ -61,26 +74,23 @@ public class PropertyColumn extends LookupColumn
             if (null != concept)
                 description = concept.getDescription();
         }
-        setDescription(description);
-        setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
-        _pd = pd;
-        setSqlTypeName(getPropertySqlType(OntologyManager.getSqlDialect()));
+        to.setDescription(description);
+        to.setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
+        to.setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
         String format = StringUtils.trimToNull(pd.getFormat());
         if (null != format)
-            setFormat(format);
+            to.setFormat(format);
 
         // UNDONE PropertyDescriptor() does not have getScale()
-        setInputType(pd.getPropertyType().getInputType());
-        setInputLength(pd.getInputLength());
-        setInputRows(pd.getInputRows());
-        setURL(pd.getURL());
-        setImportAliasesSet(pd.getImportAliasSet());
-
-        _containerId = containerId;
+        to.setInputType(pd.getPropertyType().getInputType());
+        to.setInputLength(pd.getInputLength());
+        to.setInputRows(pd.getInputRows());
+        to.setURL(pd.getURL());
+        to.setImportAliasesSet(pd.getImportAliasSet());
 
         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
         {
-            setDisplayColumnFactory(new DisplayColumnFactory() {
+            to.setDisplayColumnFactory(new DisplayColumnFactory() {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
                     DataColumn dc = new DataColumn(colInfo);
@@ -91,11 +101,14 @@ public class PropertyColumn extends LookupColumn
         }
 
         if (pd.getLookupSchema() != null && pd.getLookupQuery() != null && user != null)
-            setFk(new PdLookupForeignKey(user, pd));
+            to.setFk(new PdLookupForeignKey(user, pd));
 
-        setDefaultValueType(pd.getDefaultValueTypeEnum());
-        setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
+        to.setDefaultValueType(pd.getDefaultValueTypeEnum());
+        to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
+
+        to.setPropertyURI(pd.getPropertyURI());
     }
+
 
 
     // select the mv column instead
@@ -150,7 +163,19 @@ public class PropertyColumn extends LookupColumn
         if (!_parentIsObjectId)
             super.declareJoins(baseAlias, map);
     }
-    
+
+
+    private static String getPropertySqlType(PropertyDescriptor pd, SqlDialect dialect)
+    {
+        return dialect.sqlTypeNameFromSqlType(getPropertySqlTypeInt(pd));
+    }
+
+
+    private static int getPropertySqlTypeInt(PropertyDescriptor pd)
+    {
+        return pd.getPropertyType().getSqlType();
+    }
+
 
     private String getPropertySqlType(SqlDialect dialect)
     {

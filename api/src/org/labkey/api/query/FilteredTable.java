@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
@@ -34,6 +35,7 @@ import java.util.Set;
 public class FilteredTable extends AbstractTableInfo implements ContainerFilterable
 {
     final private SimpleFilter _filter;
+    private String _innerAlias = null;
     protected TableInfo _rootTable;
 
     private Container _container;
@@ -52,6 +54,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _rootTable = table;
         _name = _rootTable.getName();
         _description = _rootTable.getDescription();
+        // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig();
         setTitleColumn(table.getTitleColumn());
     }
@@ -74,6 +77,15 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         else
             applyContainerFilter(ContainerFilter.CURRENT);
     }
+
+
+    // This is for special case where filter depends on alias
+    // should probably only be used if a column from the _rootTable needs to be disambiguated
+    public void setInnerAlias(String a)
+    {
+        _innerAlias = a;
+    }
+
 
     public void wrapAllColumns(boolean preserveHidden)
     {
@@ -234,24 +246,33 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     
 
     @NotNull
-    public SQLFragment getFromSQL()
+    public final SQLFragment getFromSQL()
+    {
+        throw new IllegalStateException();
+    }
+
+
+    @NotNull
+    public SQLFragment getFromSQL(String alias)
     {
         if (_filter.getWhereSQL(_rootTable.getSqlDialect()).length() == 0)
-            return getFromTable().getFromSQL();
+            return getFromTable().getFromSQL(alias);
 
-        SQLFragment fromSQL = getFromTable().getFromSQL();
+        // SELECT
+        SQLFragment ret = new SQLFragment("(SELECT * FROM ");
+
+        // FROM
+        //   NOTE some filters depend on knowing the name of this table in the simple case, so don't alias it
+        String selectName = _rootTable.getSelectName();
+        if (null != selectName && null == _innerAlias)
+            ret.append(selectName);
+        else
+            ret.append(getFromTable().getFromSQL(StringUtils.defaultString(_innerAlias,"x")));
+
+        // WHERE
         Map<String, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = _filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
-
-        String s = fromSQL.getSQL();
-        boolean simple = s.startsWith("SELECT *") && -1 == s.indexOf("WHERE");
-        if (simple)
-            return fromSQL.append(" ").append(filterFrag);
-
-        SQLFragment ret = new SQLFragment("SELECT * FROM (");
-        ret.append(fromSQL);
-        ret.append(") x ");
-        ret.append(filterFrag);
+        ret.append("\n").append(filterFrag).append(") ").append(alias);
         return ret;
     }
 

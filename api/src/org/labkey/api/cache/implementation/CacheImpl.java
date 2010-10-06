@@ -17,6 +17,7 @@ package org.labkey.api.cache.implementation;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.BasicCache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.util.Filter;
 
 /**
@@ -26,11 +27,12 @@ class CacheImpl<K, V> implements BasicCache<K, V>
 {
     private static final Logger _log = Logger.getLogger(CacheImpl.class);
 
-    private final TTLCacheMap<K, V> _cache;
+    private final TTLCacheMap<K, Object> _cache;
+    private static final Object _nullMarker = BasicCache.NULL_MARKER;
 
     public CacheImpl(int limit, long defaultTimeToLive)
     {
-        _cache = new TTLCacheMap<K, V>(limit, defaultTimeToLive, null);   // TODO: remove last param?
+        _cache = new TTLCacheMap<K, Object>(limit, defaultTimeToLive, null);   // TODO: remove last param?
     }
 
 
@@ -53,9 +55,24 @@ class CacheImpl<K, V> implements BasicCache<K, V>
     @Override
     public synchronized V get(K key)
     {
-        V v = _cache.get(key);
+        Object v = _cache.get(key);
         _logDebug("Cache.get(" + key + ") " + (null == v ? "not found" : "found"));
-        return v;
+        return v==_nullMarker ? null : (V)v;
+    }
+
+
+    @Override
+    public V get(K key, Object arg, CacheLoader<K, V> loader)
+    {
+        Object v = _cache.get(key);
+        _logDebug("Cache.get(" + key + ") " + (null == v ? "not found" : "found"));
+        if (null == v)
+        {
+            v = loader.load(key, arg);
+            _logDebug("Cache.put(" + key + ")");
+            _cache.put(key, null==v ? _nullMarker : v);
+        }
+        return v==_nullMarker ? null : (V)v;
     }
 
 

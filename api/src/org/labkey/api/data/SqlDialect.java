@@ -163,7 +163,7 @@ public abstract class SqlDialect
             }
             finally
             {
-                try {  if (null != conn) scope.releaseConnection(conn); } catch (SQLException e) { /**/ }
+                if (null != conn) scope.releaseConnection(conn);
             }
 
             if (null != url)
@@ -1046,7 +1046,7 @@ public abstract class SqlDialect
         return partName;
     }
 
-    public abstract String getChangeStatement(Change change);
+    public abstract List<String> getChangeStatements(TableChange change);  
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
     public abstract boolean isCaseSensitive();

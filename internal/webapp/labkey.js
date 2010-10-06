@@ -190,7 +190,7 @@ LABKEY.requiresCss = function(file)
     LABKEY.addElemToHead("link", {
         type: "text/css",
         rel: "stylesheet",
-        href: fullPath
+        href: fullPath + "?" + LABKEY.hash
     });
     this._requestedCssFiles[fullPath] = 1;
 };

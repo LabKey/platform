@@ -48,13 +48,30 @@ public interface TableInfo
 
     String getName();
 
-    /** simple name that can be used in from clause.  e.g. "Issues.Issues", may return null */
+    /**
+     * simple name that can be used directly in SQL statement
+     *
+     * use only for tables known to be real database tables, usually
+     * for INSERT/UPDATE/DELETE. For SELECT use getFromSQL(alias).
+     */
     @Nullable
     String getSelectName();
 
-    /** SQL representing this table, e.g. "SELECT * FROM Issues.Issues WHERE Container='...'" */
+    /**
+     * SQL representing this table, e.g. "SELECT * FROM Issues.Issues WHERE Container='...'"
+     *
+     * @deprecated use getFromSQL(String alias)
+    @Deprecated
     @NotNull
     SQLFragment getFromSQL();
+     **/
+
+    /**
+     * SQL representing this table, e.g.
+     *     "Issues.Issues <alias>"
+     *     "(SELECT * FROM Issues.Issues WHERE Container='...') <alias>"
+     **/
+    SQLFragment getFromSQL(String alias);
 
     DbSchema getSchema();
 

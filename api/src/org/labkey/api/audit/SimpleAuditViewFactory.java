@@ -18,6 +18,7 @@ package org.labkey.api.audit;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
@@ -36,7 +37,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -69,7 +74,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
     public void setupView(DataView view)
     {
-        
+
     }
 
     private static Object _82decodeObject(String s) throws IOException
@@ -98,13 +103,14 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
     public static Map<String, String> _safeDecodeFromDataMap(String properties)
     {
-        try {
+        try
+        {
             // try to filter out non-encoded values ('&' is not in the base64 character set)
             if (properties != null && !properties.contains("&"))
             {
                 Object o = _82decodeObject(properties);
                 if (Map.class.isAssignableFrom(o.getClass()))
-                    return (Map<String, String>)o;
+                    return (Map<String, String>) o;
             }
         }
         catch (IOException e)
@@ -116,7 +122,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
     public static Map<String, String> decodeFromDataMap(String properties)
     {
-        try {
+        try
+        {
             if (properties != null)
             {
                 return PageFlowUtil.mapFromQueryString(properties);
@@ -135,7 +142,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     //
     public static String encodeForDataMap(Map<String, String> properties, boolean validateSize)
     {
-        try {
+        try
+        {
             String data = PageFlowUtil.toQueryString(properties.entrySet());
             int count = 0;
 
@@ -143,7 +151,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             {
                 _truncateEntry(properties, (data.length() - MAX_FIELD_SIZE));
                 data = PageFlowUtil.toQueryString(properties.entrySet());
-                if (count++ > 4) 
+                if (count++ > 4)
                     break;
             }
 
@@ -157,7 +165,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
                 while (data.length() > MAX_FIELD_SIZE)
                 {
-                    newSize = Math.max(1, newSize-10);
+                    newSize = Math.max(1, newSize - 10);
                     if (newSize == 1)
                         break;
                     List<Map.Entry<String, String>> a = newProps.subList(0, newSize);
@@ -176,7 +184,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
     {
         diff = diff * 13 / 10;
         diff = Math.max(diff, 200);
-        
+
         int max = 0;
         String largest = null;
 
@@ -191,7 +199,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
 
         if (largest != null && max > diff)
         {
-            String newValue = properties.get(largest).substring(0, max-diff) + "...";
+            String newValue = properties.get(largest).substring(0, max - diff) + "...";
             properties.put(largest, newValue);
         }
         else
@@ -204,47 +212,43 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         {
             boolean dirty = false;
 
-            try
+            Map<String, DomainProperty> existingProps = new HashMap<String, DomainProperty>();
+
+            for (DomainProperty dp : domain.getProperties())
             {
-                Map<String, DomainProperty> existingProps = new HashMap<String, DomainProperty>();
+                existingProps.put(dp.getName(), dp);
+            }
 
-                for (DomainProperty dp : domain.getProperties())
+            for (PropertyInfo pInfo : properties)
+            {
+                DomainProperty prop = existingProps.remove(pInfo.name);
+                if (prop == null)
                 {
-                    existingProps.put(dp.getName(), dp);
-                }
-
-                for (PropertyInfo pInfo : properties)
-                {
-                    DomainProperty prop = existingProps.remove(pInfo.name);
-                    if (prop == null)
-                    {
-                        dirty = true;
-                        prop = domain.addProperty();
-                        prop.setLabel(pInfo.label);
-                        prop.setName(pInfo.name);
-                        prop.setType(PropertyService.get().getType(domain.getContainer(), pInfo.type.getXmlName()));
-                        prop.setPropertyURI(AuditLogService.get().getPropertyURI(getEventType(), pInfo.name));
-                    }
-                }
-
-                // remove orphaned properties
-                for (DomainProperty dp : existingProps.values())
-                {
-                    try
-                    {
-                        dirty = true;
-                        OntologyManager.deletePropertyDescriptor(dp.getPropertyDescriptor());
-                    }
-                    catch (SQLException se)
-                    {
-                    }
+                    dirty = true;
+                    prop = domain.addProperty();
+                    prop.setLabel(pInfo.label);
+                    prop.setName(pInfo.name);
+                    prop.setType(PropertyService.get().getType(domain.getContainer(), pInfo.type.getXmlName()));
+                    prop.setPropertyURI(AuditLogService.get().getPropertyURI(getEventType(), pInfo.name));
                 }
             }
-            finally
+
+            // remove orphaned properties
+            for (DomainProperty dp : existingProps.values())
             {
-                if (dirty)
-                    domain.save(user);
+                try
+                {
+                    dirty = true;
+                    OntologyManager.deletePropertyDescriptor(dp.getPropertyDescriptor());
+                }
+                catch (SQLException se)
+                {
+                    throw new RuntimeSQLException(se);
+                }
             }
+            if (dirty)
+                domain.save(user);
+
         }
     }
 

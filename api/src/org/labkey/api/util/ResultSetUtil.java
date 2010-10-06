@@ -154,42 +154,51 @@ public class ResultSetUtil
     }
 
 
-    // Just for testing purposes... splats ResultSet data to log
     public static void logData(ResultSet rs)
+    {
+        logData(rs, _log);
+    }
+
+
+    // Just for testing purposes... splats ResultSet data to log
+    public static void logData(ResultSet rs, Logger log)
     {
         try
         {
-            StringBuilder sb = new StringBuilder();
-
-            ResultSetMetaData md = rs.getMetaData();
-            int columnCount = md.getColumnCount();
-
-            sb.append('\n');
-
-            for (int i = 1; i <= columnCount; i++)
+            if (!log.isInfoEnabled())
             {
-                sb.append(md.getColumnName(i)).append(" ");
-            }
+                StringBuilder sb = new StringBuilder();
 
-            sb.append('\n');
+                ResultSetMetaData md = rs.getMetaData();
+                int columnCount = md.getColumnCount();
 
-            while (rs.next())
-            {
+                sb.append('\n');
+
                 for (int i = 1; i <= columnCount; i++)
                 {
-                    Object value = rs.getObject(i);
-
-                    sb.append(null == value ? "-" : value.toString().trim()).append(" ");
+                    sb.append(md.getColumnName(i)).append(" ");
                 }
 
                 sb.append('\n');
-            }
 
-            _log.info(sb);
+                while (rs.next())
+                {
+                    for (int i = 1; i <= columnCount; i++)
+                    {
+                        Object value = rs.getObject(i);
+
+                        sb.append(null == value ? "-" : value.toString().trim()).append(" ");
+                    }
+
+                    sb.append('\n');
+                }
+
+                log.info(sb);
+            }
         }
         catch (SQLException e)
         {
-            _log.error("logMetaData: " + e);
+            log.error("logMetaData: " + e);
         }
         finally
         {

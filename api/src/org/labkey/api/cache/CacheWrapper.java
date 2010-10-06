@@ -67,6 +67,12 @@ public class CacheWrapper<K, V> implements Cache<K, V>
     }
 
     @Override
+    public V get(K key, Object arg, CacheLoader<K, V> kvObjectCacheLoader)
+    {
+        return trackGet(_cache.get(key,arg,kvObjectCacheLoader));
+    }
+
+    @Override
     public void remove(K key)
     {
         _cache.remove(key);

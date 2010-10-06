@@ -283,18 +283,8 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append("\n\tLEFT OUTER JOIN ");
 
                 TableInfo lookupTable = _lookupKey.getParentTable();
-                String selectName = lookupTable.getSelectName();
-                if (null != selectName)
-                    sql.append(selectName);
-                else
-                {
-                    sql.append("(");
-                    sql.append(lookupTable.getFromSQL());
-                    sql.append(")");
-                }
-
                 String colTableAlias = getTableAlias(parentAlias);
-                sql.append(" AS ").append(colTableAlias);
+                sql.append(lookupTable.getFromSQL(colTableAlias));
                 sql.append(" ON ");
                 sql.append(vialSubqueryAlias + ".RowId = " + colTableAlias + ".RowId");
 

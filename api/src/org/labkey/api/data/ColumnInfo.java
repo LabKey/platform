@@ -28,6 +28,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
@@ -108,6 +109,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     // Only set if we have an associated mv column for this column
     private String _mvColumnName = null;
+    // indicates that this is an mv column for another column
+    private boolean _isMvIndicatorColumn = false;
 
 
     public ColumnInfo(FieldKey key)
@@ -354,11 +357,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getPropertyURI()
     {
         if (null == propertyURI)
-            propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getParentTable().getName() + "." + getSelectName();
+            propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getParentTable().getName() + "." + PageFlowUtil.encode(getName());
         return propertyURI;
     }
 
-    protected void setPropertyURI(String propertyURI)
+    public void setPropertyURI(String propertyURI)
     {
         this.propertyURI = propertyURI;
     }
@@ -1337,6 +1340,17 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         this._mvColumnName = mvColumnName;
     }
+
+    public boolean isMvIndicatorColumn()
+    {
+        return _isMvIndicatorColumn;
+    }
+
+    public void setMvIndicatorColumn(boolean mvIndicatorColumn)
+    {
+        _isMvIndicatorColumn = mvIndicatorColumn;
+    }
+    
 
     /**
      * Returns true if this column does not contain data that should be queried, but is a lookup into a valid table.

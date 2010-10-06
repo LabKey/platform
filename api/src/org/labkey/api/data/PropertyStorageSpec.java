@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 
 /**
@@ -33,21 +34,18 @@ public class PropertyStorageSpec
     String name;
     int sqlTypeInt;
     boolean unique = false;
-    boolean indexed = false;
     boolean nullable = true;
     boolean autoIncrement = false;
-    boolean hasQcNote;
-
+    boolean isMvEnabled = false;
     Integer size;
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
     {
         setName(propertyDescriptor.getName());
         setSqlTypeInt(propertyDescriptor.getSqlTypeInt());
-        setUnique(propertyDescriptor.isLookup());
         setNullable(propertyDescriptor.isNullable());
         setAutoIncrement(propertyDescriptor.isAutoIncrement());
-        hasQcNote(propertyDescriptor.isMvEnabled());
+        setMvEnabled(propertyDescriptor.isMvEnabled());
         // todo size
     }
 
@@ -61,6 +59,21 @@ public class PropertyStorageSpec
     {
         this.name = name;
         this.sqlTypeInt = sqlTypeInt;
+    }
+
+    public PropertyStorageSpec(String name, int sqlTypeInt, boolean unique)
+    {
+        this.sqlTypeInt = sqlTypeInt;
+        this.name = name;
+        this.unique = unique;
+    }
+
+    public PropertyStorageSpec(String name, int sqlTypeInt, boolean unique, boolean nullable)
+    {
+        this.name = name;
+        this.sqlTypeInt = sqlTypeInt;
+        this.unique = unique;
+        this.nullable = nullable;
     }
 
     public String getName()
@@ -103,21 +116,6 @@ public class PropertyStorageSpec
     public void setUnique(boolean unique)
     {
         this.unique = unique;
-    }
-
-    public boolean isIndexed()
-    {
-        return indexed;
-    }
-
-    /**
-     *  defaults false
-     *
-     * @param indexed
-     */
-    public void setIndexed(boolean indexed)
-    {
-        this.indexed = indexed;
     }
 
     public boolean isNullable()
@@ -167,18 +165,38 @@ public class PropertyStorageSpec
         this.size = size;
     }
 
-    public boolean hasQcNote()
+    public boolean isMvEnabled()
     {
-        return hasQcNote;
+        return isMvEnabled;
     }
 
-    public void hasQcNote(boolean hasQcNote)
+    public void setMvEnabled(boolean isMvEnabled)
     {
-        this.hasQcNote = hasQcNote;
+        this.isMvEnabled = isMvEnabled;
     }
 
-    public String getQcNoteFieldName()
+    public String getMvIndicatorColumnName()
     {
-        return this.getName() + "qcnote";
+        return this.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }
+
+    public String getMvIndicatorColumnName(String rootName)
+    {
+        return rootName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
+    }
+
+    public static class Index
+    {
+        final public String[] columnNames;
+        final public boolean isUnique;
+
+        public Index(boolean unique, String... columnNames)
+        {
+            this.columnNames = columnNames;
+            this.isUnique = unique;
+        }
+
+
+    }
+
 }

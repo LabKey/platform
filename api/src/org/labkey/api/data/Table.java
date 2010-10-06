@@ -602,14 +602,8 @@ public class Table
         {
             _log.error("_doFinally", x);
         }
-        try
-        {
-            if (null != conn) schema.getScope().releaseConnection(conn);
-        }
-        catch (SQLException x)
-        {
-            _log.error("_doFinally", x);
-        }
+
+        if (null != conn) schema.getScope().releaseConnection(conn);
     }
 
 

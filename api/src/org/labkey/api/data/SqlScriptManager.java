@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
@@ -121,7 +122,9 @@ public class SqlScriptManager
         try
         {
             dialect.checkSqlScript(contents, script.getToVersion());
+            Logger.getLogger(SqlScriptManager.class).info("start running script : " + script.getDescription());
             dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext);
+            Logger.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());
         }
         catch(SQLException e)
         {

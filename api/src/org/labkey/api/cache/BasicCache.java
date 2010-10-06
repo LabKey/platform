@@ -32,15 +32,23 @@ public interface BasicCache<K, V>
 
     V get(K key);
 
+    /**
+     * The wrapped calls to get() and put() are not guaranteed synchronous (see subclass/wrapper impl)
+     */
+    V get(K key, Object arg, CacheLoader<K,V> loader);
+
     void remove(K key);
 
-    // Removes every element in the cache where filter.accept(K key) evaluates to true.
-    // Returns the number of elements that were removed.
+    /** Removes every element in the cache where filter.accept(K key) evaluates to true.
+     * Returns the number of elements that were removed.
+     */
     int removeUsingFilter(Filter<K> filter);
 
     void clear();
 
-    // Maximum number of elements allowed in the cache
+    /**
+     * Maximum number of elements allowed in the cache
+     */
     int getLimit();
 
     // Current number of elements in the cache
@@ -50,8 +58,10 @@ public interface BasicCache<K, V>
 
     CacheType getCacheType();
 
-    // Some CacheProviders (e.g., Ehcache) hold on to the caches they create.  close() lets us discard temporary
-    // caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
+    /**
+     * Some CacheProviders (e.g., Ehcache) hold on to the caches they create.  close() lets us discard temporary
+     * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
+     */
     void close();
 
     static enum CacheType
@@ -59,4 +69,7 @@ public interface BasicCache<K, V>
         DeterministicLRU,
         NonDeterministicLRU
     }
+
+    // implementations are encouraged to use this singleton if it is useful
+    public static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
 }

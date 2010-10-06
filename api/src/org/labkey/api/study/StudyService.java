@@ -18,6 +18,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.roles.Role;
@@ -153,6 +154,12 @@ public class StudyService
         boolean isValidSubjectColumnName(Container container, String subjectColumnName);
 
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
+
+
+        // NOTE: this is to fix two places in the code that directly queries study.studydata from outside
+        // the study module.  That does not seem like a good practice, however.
+        @Deprecated
+        TableInfo getStudyDataTable(Container container);
     }
 
     public static void register(Service serviceImpl)

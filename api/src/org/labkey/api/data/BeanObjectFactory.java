@@ -41,8 +41,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     private Class<K> _class;
 
     // for performance pre-calculate readable/writeable properties
-    private HashSet<String> _writeableProperties = null;
-    private HashSet<String> _readableProperties = null;
+    protected HashSet<String> _writeableProperties = null;
+    protected HashSet<String> _readableProperties = null;
 
 
     protected BeanObjectFactory()

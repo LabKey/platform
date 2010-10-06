@@ -232,31 +232,21 @@ public class SQLFragment
     }
 
 
+
+    @Deprecated  // use append(TableInfo, String alias)
     public SQLFragment append(TableInfo table)
     {
         String s = table.getSelectName();
         if (s != null)
             return append(s);
 
-        append("(");
-        append(table.getFromSQL());
-        append(") ");
-        append(table.getName());
-        return this;
+        return append(table.getFromSQL(table.getName()));
     }
 
 
     public SQLFragment append(TableInfo table, String alias)
     {
-        String s = table.getSelectName();
-        if (s != null)
-            return append(s).append(" ").append(alias);
-
-        append("(");
-        append(table.getFromSQL());
-        append(") ");
-        append(alias);
-        return this;
+        return append(table.getFromSQL(alias));
     }
 
     

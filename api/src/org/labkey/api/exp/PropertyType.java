@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 
 import jxl.*;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.io.File;
 import java.sql.Types;
@@ -42,12 +43,31 @@ public enum PropertyType
         {
             return ((BooleanCell)cell).getValue();
         }
+
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            boolean boolValue = false;
+            if (value instanceof Boolean)
+                boolValue = (Boolean)value;
+            else if (null != value && !"".equals(value))
+                boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
+            return boolValue;
+        }
     },
     STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', Types.VARCHAR, 100, null, CellType.LABEL, String.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
             return cell.getContents();
+        }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (value instanceof String)
+                return value;
+            else
+                return ConvertUtils.convert(value);
         }
     },
     MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', Types.VARCHAR, 1000, "textarea", CellType.LABEL, String.class)
@@ -56,12 +76,30 @@ public enum PropertyType
         {
             return cell.getContents();
         }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (value instanceof String)
+                return value;
+            else
+                return ConvertUtils.convert(value);
+        }
     },
     RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', Types.VARCHAR, 100, null, CellType.LABEL, Identifiable.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
             return cell.getContents();
+        }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (null == value)
+                return null;
+            if (value instanceof Identifiable)
+                return ((Identifiable) value).getLSID();
+            else
+                return value.toString();
         }
     },
     INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', Types.INTEGER, 10, null, CellType.NUMBER, Integer.class, Long.class)
@@ -70,6 +108,16 @@ public enum PropertyType
         {
             return (int)((NumberCell)cell).getValue();
         }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (null == value)
+                return null;
+            if (value instanceof Integer)
+                return (Integer)value;
+            else
+                return (Integer)ConvertUtils.convert(value.toString(), Integer.class);
+        }
     },
     FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', Types.VARCHAR, 100, "file", CellType.LABEL, File.class)
     {
@@ -77,12 +125,32 @@ public enum PropertyType
         {
             return cell.getContents();
         }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (null == value)
+                return null;
+            if (value instanceof File)
+                return ((File) value).getPath();
+            else
+                return String.valueOf(value);
+        }
     },
     ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', Types.VARCHAR, 100, "file", CellType.LABEL, File.class)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
             return cell.getContents();
+        }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (null == value)
+                return null;
+            if (value instanceof File)
+                return ((File) value).getPath();
+            else
+                return String.valueOf(value);
         }
     },
     DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', Types.TIMESTAMP, 100, null, CellType.DATE, Date.class)
@@ -109,6 +177,16 @@ public enum PropertyType
             }
             return date;
         }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (null == value)
+                return null;
+            if (value instanceof Date)
+                return value;
+            else
+                return ConvertUtils.convert(value.toString(), Date.class);
+        }
     },
     DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', Types.DOUBLE, 20, null, CellType.NUMBER, Double.class, Float.class)
     {
@@ -116,12 +194,30 @@ public enum PropertyType
         {
             return ((NumberCell)cell).getValue();
         }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (null == value)
+                return null;
+            if (value instanceof Double)
+                return value;
+            else
+                return ConvertUtils.convert(String.valueOf(value), Double.class);
+        }
     },
     XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', Types.LONGVARCHAR, 100, null, CellType.LABEL, null)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
             return cell.getContents();
+        }
+        @Override
+        public Object convert(Object value) throws ConversionException
+        {
+            if (value instanceof String)
+                return value;
+            else
+                return ConvertUtils.convert(value);
         }
     };
 
@@ -284,6 +380,8 @@ public enum PropertyType
     }
 
     protected abstract Object convertExcelValue(Cell cell) throws ConversionException;
+
+    public abstract Object convert(Object value) throws ConversionException;
 
     public static Object getFromExcelCell(Cell cell) throws ConversionException
     {

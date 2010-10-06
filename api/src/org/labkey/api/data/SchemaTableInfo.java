@@ -82,10 +82,20 @@ public class SchemaTableInfo implements TableInfo
         this(parentSchema);
 
         this.name = tableName;
-        String name = getSqlDialect().makeLegalIdentifier(parentSchema.getName())
+        String selectName = getSqlDialect().makeLegalIdentifier(parentSchema.getName())
                 + "." + getSqlDialect().makeLegalIdentifier(tableName);
-        this.selectName = new SQLFragment(name);
+        this.selectName = new SQLFragment(selectName);
     }
+
+
+    public SchemaTableInfo(String tableName, String selectName, DbSchema parentSchema)
+    {
+        this(parentSchema);
+
+        this.name = tableName;
+        this.selectName = new SQLFragment(selectName);
+    }
+
 
     public String getName()
     {
@@ -103,6 +113,15 @@ public class SchemaTableInfo implements TableInfo
         this.metaDataName = metaDataName;
     }
 
+    public void setSelectName(String s)
+    {
+        selectName = new SQLFragment(s);
+    }
+
+    public void setSelectName(SQLFragment s)
+    {
+        selectName = s;
+    }
 
     public String getSelectName()
     {
@@ -114,6 +133,16 @@ public class SchemaTableInfo implements TableInfo
     public SQLFragment getFromSQL()
     {
         return new SQLFragment().append("SELECT * FROM ").append(selectName);
+    }
+
+
+    @NotNull
+    public SQLFragment getFromSQL(String alias)
+    {
+        if (null != getSelectName())
+            return new SQLFragment().append(getSelectName()).append(" ").append(alias);
+        else
+            return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }
 
 

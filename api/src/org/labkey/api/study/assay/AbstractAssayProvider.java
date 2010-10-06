@@ -1520,14 +1520,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (!studyContainer.hasPermission(user, ReadPermission.class))
                 continue;
 
+            // CONSIDER: get list of datasets for protocolid first and filter studyDataTable (see StudySchema.getTableInfoStudyDataFiltered)
+            TableInfo studyDataTable = StudyService.get().getStudyDataTable(studyContainer);
+            
             // We need the dataset ID as a separate column in order to display the URL
-            String datasetIdSQL = "(SELECT max(sd.datasetid) FROM study.StudyData sd, study.dataset d " +
-                "WHERE sd.container = '" + studyContainer.getId() + "' AND " +
-                "sd.container = d.container AND sd.datasetid = d.datasetid AND " +
+            SQLFragment datasetIdSQL = new SQLFragment();
+            datasetIdSQL.appendComment("<dataset column " + studyContainer.getPath() + ">", table.getSqlDialect());
+            datasetIdSQL.append("(SELECT max(sd.datasetid) FROM ").append(studyDataTable.getFromSQL("sd")).append(" study.dataset d " +
+                "WHERE ? = d.container AND sd.datasetid = d.datasetid AND " +
                 "d.protocolid = " + protocol.getRowId() + " AND " +
                 "sd._key = CAST(" + ExprColumn.STR_TABLE_ALIAS + "." + keyColumnName + " AS " +
                 table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
-                "(200)))";
+                "(200)))");
+            datasetIdSQL.appendComment("</dataset column>", table.getSqlDialect());
+            datasetIdSQL.add(studyContainer);
 
             String datasetIdColumnName = "dataset" + datasetIndex++;
             final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table,

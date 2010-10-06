@@ -394,14 +394,21 @@ public class DbScope
     }
 
 
-    public void releaseConnection(Connection conn) throws SQLException
+    public void releaseConnection(Connection conn)
     {
         Transaction t = getCurrentTransaction();
 
         if (null != t)
             assert t.getConnection() == conn; //Should release same conn we handed out
         else
-            conn.close();
+            try
+            {
+                conn.close();
+            }
+            catch (SQLException e)
+            {
+                _log.warn("error releasing connection: " + e.getMessage(), e);
+            }
     }
 
 

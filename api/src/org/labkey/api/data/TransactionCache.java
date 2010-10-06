@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.cache.BasicCache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Stats;
 import org.labkey.api.cache.StringKeyCache;
@@ -28,9 +30,10 @@ import org.labkey.api.util.Filter;
 */
 public class TransactionCache<V> implements StringKeyCache<V>
 {
+    private static final Object _nullMarker = BasicCache.NULL_MARKER;
     private boolean _hasWritten = false;
     private final StringKeyCache<V> _sharedCache;
-    private final StringKeyCache<V> _privateCache;
+    private final StringKeyCache<Object> _privateCache;
 
     // A read-through transaction cache.  Reads through to the passed-in shared cache until any write occurs, at which
     // point it switches to using a private cache for the remainder of the transaction.
@@ -43,10 +46,30 @@ public class TransactionCache<V> implements StringKeyCache<V>
     @Override
     public V get(String key)
     {
+        Object v;
         if (_hasWritten)
-            return _privateCache.get(key);
+            v = _privateCache.get(key);
         else
-            return _sharedCache.get(key);
+            v = _sharedCache.get(key);
+        return v==_nullMarker?null:(V)v;
+    }
+
+
+    @Override
+    public V get(String key, Object arg, CacheLoader<String, V> loader)
+    {
+        Object v;
+        if (_hasWritten)
+            v = _privateCache.get(key);
+        else
+            v = _sharedCache.get(key);
+        if (null == v)
+        {
+            v = loader.load(key, arg);
+            _hasWritten = true;
+            _privateCache.put(key,v==null?_nullMarker:(V)v);
+        }
+        return v==_nullMarker?null:(V)v;
     }
 
     @Override

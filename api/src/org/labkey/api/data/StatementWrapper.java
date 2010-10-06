@@ -16,9 +16,11 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.DateUtil;
 
@@ -1532,6 +1534,15 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             logEntry.append("\n    ").append(x);
         _appendTableStackTrace(logEntry, 5);
         _log.log(Priority.DEBUG, logEntry);
+
+        // check for deadlock or transaction related error
+        if (x instanceof SQLException)
+        {
+            String msg = StringUtils.defaultString(x.getMessage(),"");
+            String state = StringUtils.defaultString(((SQLException)x).getSQLState(),"");
+            if (-1 != msg.toLowerCase().indexOf("deadlock") || state.startsWith("25") || state.startsWith("40"))
+                BreakpointThread.dumpThreads(_log);
+        }
     }
 
 

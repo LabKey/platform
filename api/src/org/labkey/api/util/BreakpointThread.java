@@ -130,12 +130,19 @@ public class BreakpointThread extends Thread implements ShutdownListener
         }
     }
 
+
     private void dumpThreads()
+    {
+        dumpThreads(_log);
+    }
+
+
+    public static void dumpThreads(Logger log)
     {
         Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
         {
-            _log.debug("");
+            log.debug("");
             Thread thread = threadEntry.getKey();
             StringBuilder threadInfo = new StringBuilder(thread.getName());
             threadInfo.append(" (");
@@ -148,10 +155,10 @@ public class BreakpointThread extends Thread implements ShutdownListener
                 threadInfo.append(spids);
             }
 
-            _log.debug(threadInfo);
+            log.debug(threadInfo);
             for (StackTraceElement stackTraceElement : threadEntry.getValue())
             {
-                _log.debug("\t" + stackTraceElement.toString());
+                log.debug("\t" + stackTraceElement.toString());
             }
         }
     }

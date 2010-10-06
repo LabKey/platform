@@ -37,7 +37,7 @@ public class ProtocolFilteredObjectTable extends FilteredTable
     }
 
     @Override @NotNull
-    public SQLFragment getFromSQL()
+    public SQLFragment getFromSQL(String alias)
     {
         SQLFragment fromSQL = new SQLFragment("(");
         fromSQL.append("SELECT o.*, d.RowID as DataID, r.RowID AS RunID FROM " + getFromTable() + " o\n" +
@@ -49,7 +49,7 @@ public class ProtocolFilteredObjectTable extends FilteredTable
                 "\t\td.RunId = r.RowId AND \n" +
                 "\t\tr.ProtocolLSID = ?");
         fromSQL.add(_protocolLsid);
-        fromSQL.append(")");
+        fromSQL.append(") ").append(alias);
         return fromSQL;
     }
 }

@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -339,7 +340,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getChangeStatement(Change change)
+    public List<String> getChangeStatements(TableChange change)
     {
         throw new RuntimeException("schema changes not currently supported via SimpleSqlDialect");
     }

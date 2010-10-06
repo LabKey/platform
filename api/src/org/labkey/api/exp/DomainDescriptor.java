@@ -36,6 +36,10 @@ public class DomainDescriptor implements Cloneable
     private Container project;
     private int titlePropertyId;
 
+    // for StorageProvisioner (currently assuming labkey scope)
+    private String storageTableName;
+    private String storageSchemaName;
+
     public DomainDescriptor()
     {
         assert MemTracker.put(this);
@@ -134,6 +138,31 @@ public class DomainDescriptor implements Cloneable
     {
         this.titlePropertyId = titlePropertyId;
     }
+
+
+    public String getStorageTableName()
+    {
+        return storageTableName;
+    }
+
+
+    public void setStorageTableName(String storageTableName)
+    {
+        this.storageTableName = storageTableName;
+    }
+
+
+    public String getStorageSchemaName()
+    {
+        return storageSchemaName;
+    }
+
+
+    public void setStorageSchemaName(String storageSchemaName)
+    {
+        this.storageSchemaName = storageSchemaName;
+    }
+
 
     @Override
     public String toString()

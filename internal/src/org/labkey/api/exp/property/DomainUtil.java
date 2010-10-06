@@ -425,6 +425,9 @@ public class DomainUtil
 
     private static void _copyProperties(DomainProperty to, GWTPropertyDescriptor from, List<String> errors)
     {
+        // avoid problems with setters that depend on rangeURI being set
+        to.setRangeURI(from.getRangeURI());
+
         try
         {
             BeanUtils.copyProperties(to, from);

@@ -61,4 +61,7 @@ public interface Domain extends IPropertyType
      * @param includeMVIndicators whether or not to include the missing value indicator "column" names in the map
      */
     Map<String, DomainProperty> createImportMap(boolean includeMVIndicators);
+
+    /** only used by storage provisioner */
+    String getStorageTableName();
 }

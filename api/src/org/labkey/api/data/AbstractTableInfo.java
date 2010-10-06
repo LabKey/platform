@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -152,6 +153,21 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return TABLE_TYPE_NOT_IN_DB;
     }
 
+
+    @NotNull
+    public SQLFragment getFromSQL(String alias)
+    {
+        if (null != getSelectName())
+            return new SQLFragment().append(getSelectName()).append(" ").append(alias);
+        else
+            return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
+    }
+
+
+    // don't have to implement if you override getFromSql(String alias)
+    abstract protected SQLFragment getFromSQL();
+
+
     public NamedObjectList getSelectList()
     {
         List<ColumnInfo> pkColumns = getPkColumns();
@@ -161,6 +177,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return getSelectList(pkColumns.get(0));
     }
 
+
     public NamedObjectList getSelectList(String columnName)
     {
         if (columnName == null)
@@ -169,6 +186,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         ColumnInfo column = getColumn(columnName);
         return getSelectList(column);
     }
+
 
     public NamedObjectList getSelectList(ColumnInfo firstColumn)
     {
@@ -604,6 +622,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         return true;
     }
+
 
     public String getSelectName()
     {

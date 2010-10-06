@@ -47,6 +47,7 @@ public class MvColumn extends LookupColumn
         setNullable(true);
         setHidden(true);
         setUserEditable(false);
+        setMvIndicatorColumn(true);
     }
 
     public SQLFragment getValueSql(String tableAlias)

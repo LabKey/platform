@@ -36,6 +36,12 @@ public class ModuleUpgrader
     }
 
 
+    public static Logger getLogger()
+    {
+        return _log;
+    }
+
+
     void upgrade() throws Exception
     {
         ListIterator<Module> iter = _modules.listIterator(_modules.size());

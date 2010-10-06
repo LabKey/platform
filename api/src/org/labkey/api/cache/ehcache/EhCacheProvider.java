@@ -21,6 +21,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.BasicCache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheProvider;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Filter;
@@ -42,7 +43,8 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
     private static final EhCacheProvider INSTANCE = new EhCacheProvider();
     private static final CacheManager MANAGER = new CacheManager();
     private static final AtomicLong cacheCount = new AtomicLong(0);
-
+    private static final Object _nullMarker = BasicCache.NULL_MARKER;
+    
     static
     {
         ContextListener.addShutdownListener(INSTANCE);
@@ -127,11 +129,23 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         public V get(K key)
         {
             Element e = _cache.get(key);
+            Object v = null==e ? null : e.getObjectValue();
+            return v==_nullMarker ? null : (V)v;
+        }
 
-            if (null == e)
-                return null;
-            else
-                return (V)e.getObjectValue();
+        @Override
+        public V get(K key, Object arg, CacheLoader<K, V> loader)
+        {
+            Element e = _cache.get(key);
+            Object v;
+            if (null != e)
+            {
+                v = e.getObjectValue();
+                return v==_nullMarker ? null : (V)v;
+            }
+            v = loader.load(key, arg);
+            _cache.put(new Element(key, v==null?_nullMarker:v));
+            return v==_nullMarker ? null : (V)v;
         }
 
         @Override
