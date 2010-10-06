@@ -440,6 +440,8 @@ public abstract class SqlDialect
 
     public abstract String concatenate(String... args);
 
+    public abstract SQLFragment concatenate(SQLFragment... args);
+
     /**
      * Return the operator which, in addition to the usual LIKE things ('%' and '_'), also supports
      * character classes. (i.e. [abc] matching a,b or c)
