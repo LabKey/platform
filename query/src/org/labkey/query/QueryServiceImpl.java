@@ -874,20 +874,8 @@ public class QueryServiceImpl extends QueryService
         }
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
-        String selectName = table.getSelectName();
-
-        if (null != selectName)
-        {
-            fromFrag.append(selectName);
-        }
-        else
-        {
-            fromFrag.append("(");
-            fromFrag.append(table.getFromSQL());
-            fromFrag.append(")");
-        }
-
-        fromFrag.append(" ").append(tableAlias).append(" ");
+        fromFrag.append(table.getFromSQL(tableAlias));
+        fromFrag.append(" ");
 
 		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
 		{
@@ -926,7 +914,7 @@ public class QueryServiceImpl extends QueryService
         if (AppProps.getInstance().isDevMode())
         {
             SQLFragment t = new SQLFragment();
-            t.appendComment("<QueryServiceImpl.getSelectSQL()>", dialect);
+            t.appendComment("<QueryServiceImpl.getSelectSQL(" + table + ")>", dialect);
             t.append(ret);
             t.appendComment("</QueryServiceImpl.getSelectSQL()>", dialect);
             String s = _prettyPrint(t.getSQL());

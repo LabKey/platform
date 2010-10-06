@@ -166,7 +166,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 10.20;
+        return 10.21;
     }
 
     protected void init()
@@ -257,7 +257,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
-        ContainerManager.addContainerListener(new StudyContainerListener());
+        // This is in the First group because when a container is deleted,
+        // the Experiment listener needs to be called after the Study listener,
+        // because Study needs the metadata held by Experiment to delete properly.
+        ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
         LsidManager.get().registerHandler("Study", StudyManager.getLsidHandler());

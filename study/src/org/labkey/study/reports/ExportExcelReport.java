@@ -171,7 +171,7 @@ public class ExportExcelReport extends RedirectReport
             if (checkUserPermissions && !def.canRead(user))
                 continue;
 
-            TableInfo tinfo = def.getTableInfo(user, checkUserPermissions, true);
+            TableInfo tinfo = def.getTableInfo(user, checkUserPermissions);
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(getContainer()) + ",SequenceNum");
             ResultSet rs = Table.select(tinfo, Table.ALL_COLUMNS, siteFilter, sort);
 

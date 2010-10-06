@@ -411,11 +411,12 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="studydata" tableDbType="TABLE">
+  <ns:table tableName="studydatatemplate" tableDbType="NOT_IN_DB">
     <ns:columns>
       <ns:column columnName="container"/>
       <ns:column columnName="ParticipantSequenceKey">
         <ns:description>A string value uniquely identfying the subject/visit combination for each dataset row.</ns:description>
+          <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantSequenceKey</ns:propertyURI>
       </ns:column>
       <ns:column columnName="participantid">
         <ns:columnTitle>Participant ID</ns:columnTitle>
@@ -426,7 +427,9 @@
         <ns:columnTitle>Dataset ID</ns:columnTitle>
         <ns:propertyURI>http://cpas.labkey.com/Study#DatasetId</ns:propertyURI>
       </ns:column>
-      <ns:column columnName="lsid"/>
+      <ns:column columnName="lsid">
+          <ns:propertyURI>http://cpas.labkey.com/Study#LSID</ns:propertyURI>
+      </ns:column>
       <ns:column columnName="sourcelsid">
         <ns:columnTitle>Source Lsid</ns:columnTitle>
         <ns:propertyURI>http://cpas.labkey.com/Study#SourceLSID</ns:propertyURI>
@@ -441,12 +444,28 @@
         <ns:shownInInsertView>false</ns:shownInInsertView>
         <ns:shownInUpdateView>false</ns:shownInUpdateView>
       </ns:column>
+        <ns:column columnName="CreatedBy">
+            <ns:propertyURI>http://cpas.labkey.com/Study#CreatedBy</ns:propertyURI>
+            <ns:fk>
+              <ns:fkColumnName>UserId</ns:fkColumnName>
+              <ns:fkTable>Users</ns:fkTable>
+              <ns:fkDbSchema>core</ns:fkDbSchema>
+            </ns:fk>
+        </ns:column>
       <ns:column columnName="modified">
         <ns:columnTitle>Modified</ns:columnTitle>
         <ns:description>Last time record/form was modified</ns:description>
         <ns:propertyURI>http://cpas.labkey.com/Study#Modified</ns:propertyURI>
           <ns:shownInInsertView>false</ns:shownInInsertView>
           <ns:shownInUpdateView>false</ns:shownInUpdateView>
+      </ns:column>
+      <ns:column columnName="ModifiedBy">
+          <ns:propertyURI>http://cpas.labkey.com/Study#ModifiedBy</ns:propertyURI>
+          <ns:fk>
+            <ns:fkColumnName>UserId</ns:fkColumnName>
+            <ns:fkTable>Users</ns:fkTable>
+            <ns:fkDbSchema>core</ns:fkDbSchema>
+          </ns:fk>
       </ns:column>
       <ns:column columnName="SequenceNum">
         <ns:propertyURI>http://cpas.labkey.com/Study#SequenceNum</ns:propertyURI>

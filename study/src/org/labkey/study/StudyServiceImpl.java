@@ -209,7 +209,7 @@ public class StudyServiceImpl implements StudyService.Service
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause("lsid", lsids);
 
-        TableInfo tInfo = def.getTableInfo(u, true, false);
+        TableInfo tInfo = def.getTableInfo(u, true);
         Map<String,Object>[] datas = Table.select(tInfo, Table.ALL_COLUMNS, filter, null, Map.class);
 
         if (datas.length == 0)
@@ -217,6 +217,9 @@ public class StudyServiceImpl implements StudyService.Service
 
         Map<String,Object>[] canonicalDatas = new Map[datas.length];
         List<ColumnInfo> columns = tInfo.getColumns();
+        ColumnInfo colLSID = tInfo.getColumn("lsid");
+        ColumnInfo colSourceLSID = tInfo.getColumn("sourcelsid");
+        ColumnInfo colQCState = tInfo.getColumn("QCState");
         for (int i = 0; i < datas.length; i++)
         {
             Map<String, Object> data = datas[i];
@@ -226,9 +229,7 @@ public class StudyServiceImpl implements StudyService.Service
             {
                 // special handling for lsids and keys -- they're not user-editable,
                 // but we want to display them
-                if (col.getName().equals("lsid") ||
-                        col.getName().equals("sourcelsid") ||
-                        col.getName().equals("QCState") ||
+                if (col == colLSID || col == colSourceLSID || col == colQCState ||
                         col.isKeyField() ||
                         col.getName().equalsIgnoreCase(def.getKeyPropertyName()))
                 {
@@ -269,6 +270,7 @@ public class StudyServiceImpl implements StudyService.Service
 
                 if (transactionOwner)
                     commitTransaction();
+                transactionOwner = false;    
 
                 return result.get(0);
             }
@@ -276,6 +278,8 @@ public class StudyServiceImpl implements StudyService.Service
             // Update failed
             return null;
         }
+
+        // WTF?
         finally
         {
             if (transactionOwner)
@@ -320,7 +324,7 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Map<String,Object> map = new HashMap<String,Object>();
 
-        TableInfo tInfo = def.getTableInfo(user, false, false);
+        TableInfo tInfo = def.getTableInfo(user, false);
 
         Set<String> mvColumnNames = new HashSet<String>();
         for (ColumnInfo col : tInfo.getColumns())
@@ -440,10 +444,11 @@ public class StudyServiceImpl implements StudyService.Service
         {
             event.setKey1(ul.getFilePath());
         }
-
+/*
         AuditLogService.get().addEvent(event,
                 Collections.<String,Object>emptyMap(),
                 AuditLogService.get().getDomainURI(DatasetAuditViewFactory.DATASET_AUDIT_EVENT));
+                */
     }
 
     private String encodeAuditMap(Map<String,Object> data)
@@ -606,31 +611,39 @@ public class StudyServiceImpl implements StudyService.Service
 
     public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
     {
-        TableInfo studyDataTable = StudySchema.getInstance().getTableInfoStudyData();
-        for (ColumnInfo col : studyDataTable.getColumns())
-        {
-            String colName = col.getName();
-            // Our subject column name isn't allowed to match the name of a non-participant column in the same table:
-            if (!"ParticipantId".equalsIgnoreCase(colName) && subjectColumnName.equalsIgnoreCase(colName))
-                return false;
-        }
+// UNDONE move call to this method to Controller/designer and out of setter()
+//        TableInfo studyDataTable = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
+//        for (ColumnInfo col : studyDataTable.getColumns())
+//        {
+//            String colName = col.getName();
+//            // Our subject column name isn't allowed to match the name of a non-participant column in the same table:
+//            if (!"ParticipantId".equalsIgnoreCase(colName) && subjectColumnName.equalsIgnoreCase(colName))
+//                return false;
+//        }
         return true;
     }
 
     public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
     {
-        String subjectTableName = getSubjectTableName(subjectNounSingular);
-        String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
-        for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())
-        {
-            String tableName = schemaTable.getName();
-            if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
-            {
-                if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
-                    return false;
-            }
-        }
+// UNDONE move call to this method to Controller/designer and out of setter()
+//        String subjectTableName = getSubjectTableName(subjectNounSingular);
+//        String subjectVisitTableName = getSubjectVisitTableName(subjectNounSingular);
+//        for (SchemaTableInfo schemaTable : StudySchema.getInstance().getSchema().getTables())
+//        {
+//            String tableName = schemaTable.getName();
+//            if (!tableName.equalsIgnoreCase("Participant") && !tableName.equalsIgnoreCase("ParticipantVisit"))
+//            {
+//                if (subjectTableName.equalsIgnoreCase(tableName) || subjectVisitTableName.equalsIgnoreCase(tableName))
+//                    return false;
+//            }
+//        }
         return true;
     }
 
+
+    @Override
+    public TableInfo getStudyDataTable(Container container)
+    {
+        return StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
+    }
 }

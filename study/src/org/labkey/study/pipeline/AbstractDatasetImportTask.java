@@ -132,14 +132,6 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 pj.info("Updating participant visits");
                 getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser(), datasets);
 
-                // materialize datasets only AFTER all other work has been completed; otherwise the background thread
-                // materializing datasets will fight with other operations that may try to clear the materialized cache.
-                // (updateParticipantVisits does this, for example)
-                for (DatasetImportRunnable runnable : runnables)
-                {
-                    if (!(runnable instanceof ParticipantImportRunnable))
-                        runnable.getDatasetDefinition().materializeInBackground(pj.getUser());
-                }
                 pj.info("Finished updating participants");
             }
             catch (RuntimeException x)

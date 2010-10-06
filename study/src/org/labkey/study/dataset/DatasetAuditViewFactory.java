@@ -218,7 +218,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             }
             catch (Exception e)
             {
-                LOG.error(e);
+                LOG.error("Unexpected error", e);
             }
         }
     }

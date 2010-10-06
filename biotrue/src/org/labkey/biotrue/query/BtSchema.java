@@ -86,11 +86,12 @@ public class BtSchema extends UserSchema
     public TableInfo createTasksTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoTask());
+        ret.setInnerAlias("task");
         ret.setName(TableType.Tasks.name());
         SQLFragment containerCondition = new SQLFragment();
         containerCondition.append("(SELECT biotrue.server.container\n" +
                 "FROM biotrue.server\n" +
-                "WHERE biotrue.server.rowid = biotrue.task.serverid) = ?");
+                "WHERE biotrue.server.rowid = task.serverid) = ?");
         containerCondition.add(_container.getId());
         ret.addCondition(containerCondition);
         ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setKeyField(true);
@@ -123,7 +124,8 @@ public class BtSchema extends UserSchema
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoEntity());
         ret.setName(TableType.Entities.name());
-        SQLFragment containerCondition = new SQLFragment("(SELECT biotrue.server.container FROM biotrue.server WHERE biotrue.server.rowid = biotrue.entity.serverid) = ?");
+        ret.setInnerAlias("entity");
+        SQLFragment containerCondition = new SQLFragment("(SELECT biotrue.server.container FROM biotrue.server WHERE biotrue.server.rowid = entity.serverid) = ?");
         containerCondition.add(getContainer().getId());
         ret.addCondition(containerCondition);
         ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setKeyField(true);

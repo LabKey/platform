@@ -21,6 +21,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.User;
@@ -30,13 +31,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class DomainPropertyImpl implements DomainProperty
 {
     DomainImpl _domain;
-    boolean _new;   // TODO: This is never set, though we check it in a couple places?!
     PropertyDescriptor _pdOld;
     PropertyDescriptor _pd;
     boolean _deleted;
@@ -230,7 +232,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setMeasure(boolean isMeasure)
     {
-        if (isMeasure == isMeasure())
+        // UNDONE: isMeasure() has side-effect due to calling isNumeric()->getSqlTypeInt() which relies on rangeURI which might not be set yet.
+        if (!isEdited() && isMeasure == isMeasure())
             return;
         edit().setMeasure(isMeasure);
     }
@@ -238,7 +241,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setDimension(boolean isDimension)
     {
-        if (isDimension == isDimension())
+        // UNDONE: isDimension() has side-effect due to calling isNumeric()->getSqlTypeInt() which relies on rangeURI which might not be set yet.
+        if (!isEdited() && isDimension == isDimension())
             return;
         edit().setDimension(isDimension);
     }
@@ -285,10 +289,13 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getURL() == null ? null : _pd.getURL().toString();
     }
 
+    private boolean isEdited()
+    {
+        return null != _pdOld;
+    }
+
     private PropertyDescriptor edit()
     {
-        if (_new)
-            return _pd;
         if (_pdOld == null)
         {
             _pdOld = _pd;
@@ -420,7 +427,31 @@ public class DomainPropertyImpl implements DomainProperty
         if (isNew())
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         else if (_pdOld != null)
+        {
             _pd = OntologyManager.updatePropertyDescriptor(user, _domain._dd, _pdOld, _pd, sortOrder);
+
+            boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName();
+
+            if (hasProvisioner)
+            {
+                boolean mvAdded = !_pdOld.isMvEnabled() && _pd.isMvEnabled();
+                boolean mvDropped = _pdOld.isMvEnabled() && !_pd.isMvEnabled();
+                boolean propRenamed = !_pdOld.getName().equals(_pd.getName());
+
+                if (mvDropped)
+                    StorageProvisioner.dropMvIndicator(this);
+                else if (mvAdded)
+                    StorageProvisioner.addMvIndicator(this);
+
+                if (propRenamed)
+                {
+                    Map<DomainProperty, String> renames = new HashMap<DomainProperty, String>();
+                    renames.put(this, _pdOld.getName());
+                    StorageProvisioner.renameProperties(this.getDomain(), renames);
+                }
+
+            }
+        }
         else
             OntologyManager.ensurePropertyDomain(_pd, _domain._dd, sortOrder);
 
@@ -503,6 +534,11 @@ public class DomainPropertyImpl implements DomainProperty
             _formats.addAll(Arrays.asList(DomainPropertyManager.get().getConditionalFormats(this)));
         }
         return _formats;
+    }
+
+    public PropertyDescriptor getOldProperty()
+    {
+        return _pdOld;
     }
 
     @Override

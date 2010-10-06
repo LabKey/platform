@@ -23,7 +23,9 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartReport;
@@ -208,12 +210,17 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
 
     private static ResultSet getVisitDateResultSet(Study study, int datasetId, double sequenceNum) throws ServletException, SQLException
     {
-        // CONSIDER this would be much simpler if we didn't care about datasetid
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+        TableInfo ti = def.getTableInfo(null);
+        SQLFragment sql = new SQLFragment();
+        sql.append(
                 "SELECT PV.VisitDate\n" +
-                "FROM study.ParticipantVisit PV JOIN study.StudyData SD ON PV.ParticipantId=SD.ParticipantID AND PV.SequenceNum=SD.SequenceNum\n" +
-                "WHERE  PV.Container=? AND PV.SequenceNum=? AND SD.Container=? AND SD.DatasetId=? AND SD.SequenceNum=?",
-                new Object[] {study.getContainer(), sequenceNum, study.getContainer(), datasetId, sequenceNum, });
+                "FROM study.ParticipantVisit PV JOIN ").append(ti.getFromSQL("SD")).append(" ON PV.ParticipantId=SD.ParticipantID AND PV.SequenceNum=SD.SequenceNum\n" +
+                "WHERE PV.Container=? AND PV.SequenceNum=? AND SD.SequenceNum=?");
+        sql.add(study.getContainer());
+        sql.add(sequenceNum);
+        sql.add(sequenceNum);
+        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
         return rs;
     }
 

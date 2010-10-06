@@ -152,7 +152,7 @@ public class StudyQuerySchema extends UserSchema
         return null;
     }
 
-    public FilteredTable getDataSetTable(DataSetDefinition definition)
+    public TableInfo getDataSetTable(DataSetDefinition definition)
     {
         try
         {

@@ -16,6 +16,9 @@
 
 package org.labkey.study;
 
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.TableInfo;
@@ -78,6 +81,14 @@ public class StudyCache
         if (!ENABLE_CACHING)
             return null;
         return DbCache.get(tinfo, getCacheName(containerId, cacheKey));
+    }
+
+    public static Object get(TableInfo tinfo, String containerId, Object cacheKey, CacheLoader<String,Object> loader)
+    {
+        if (!ENABLE_CACHING)
+            return loader.load(getCacheName(containerId, cacheKey), null);
+        BlockingCache cache = new BlockingCache<String,Object>(DbCache.getCache(tinfo), loader);
+        return cache.get(getCacheName(containerId, cacheKey), null);
     }
 
     public static void clearCache(TableInfo tinfo, String containerId)

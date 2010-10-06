@@ -16,31 +16,54 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.*;
+import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.module.ModuleUpgrader;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.study.*;
+import org.labkey.api.study.DataSet;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
@@ -48,10 +71,25 @@ import org.labkey.study.query.DataSetTable;
 import org.labkey.study.query.DataSetsTable;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,7 +128,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "DatasetId",
         "SiteId",
         "Created",
+        "CreatedBy",
         "Modified",
+        "ModifiedBy",
         "sourcelsid",
         "QCState",
         "visitRowId",
@@ -310,6 +350,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return getRowId();
     }
 
+
+    public static TableInfo getTemplateTableInfo()
+    {
+        return StudySchema.getInstance().getSchema().getTable("studydatatemplate");
+    }
+    
+
     /**
      * Get table info representing dataset.  This relies on the DataSetDefinition being removed from
      * the cache if the dataset type changes.  The temptable version also relies on the dataset being
@@ -319,315 +366,123 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     public TableInfo getTableInfo(User user) throws UnauthorizedException
     {
-        return getTableInfo(user, true, true);
+        return getTableInfo(user, true);
     }
 
 
-    public TableInfo getTableInfo(@NotNull User user, boolean checkPermission, boolean materialized) throws UnauthorizedException
+    public TableInfo getTableInfo(@NotNull User user, boolean checkPermission) throws UnauthorizedException
     {
         //noinspection ConstantConditions
-        if (user == null)
+        if (user == null && checkPermission)
             throw new IllegalArgumentException("user cannot be null");
 
         if (checkPermission && !canRead(user) && user != User.getSearchUser())
             HttpView.throwUnauthorized();
 
-        if (materialized)
-            return getMaterializedTempTableInfo(user, true);
-        else
-            return getJoinTableInfo(user);
+        return new StudyDataTableInfo(this, user);
     }
 
 
-    public void materializeInBackground(final User user)
+    /** why do some datasets have a typeURI, but no domain? */
+    private synchronized Domain ensureDomain()
     {
-        Runnable task = new Runnable()
+        if (null == getTypeURI())
+            throw new IllegalStateException();
+        Domain d = getDomain();
+        if (null == d)
         {
-            public void run()
+            _domain = PropertyService.get().createDomain(getContainer(), getTypeURI(), getName());
+            try
             {
-                unmaterialize();
-                JobRunner.getDefault().submit(new Runnable()
-                    {
-                        public void run()
-                        {
-                            getMaterializedTempTableInfo(user, true);
-                        }
-                    });
+                _domain.save(null);
             }
-        };
-
-        if (getScope().isTransactionActive())
-            getScope().addCommitTask(task);
-        else
-            task.run();
+            catch (ChangePropertyDescriptorException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+        return _domain;
     }
+
+
+    // CONSIDER: move this method to StorageProvisioner
+    private TableInfo loadStorageTableInfo()
+    {
+        if (null == getTypeURI())
+            return null;
+        Domain d = ensureDomain();
+
+        TableInfo ti = StorageProvisioner.createTableInfo(new DatasetDomainKind(), d, StudySchema.getInstance().getSchema());
+
+        TableInfo template = getTemplateTableInfo();
+
+        for (PropertyStorageSpec pss : DatasetDomainKind.BASE_PROPERTIES)
+        {
+            ColumnInfo c = ti.getColumn(pss.getName());
+            ColumnInfo t = template.getColumn(pss.getName());
+            if (null != t)
+                c.setExtraAttributesFrom(t);
+        }
+
+        return ti;
+    }
+
+
+    private TableInfo _storageTable = null;
+    
+    /** I think the caching semantics of the dataset are such that I can cache the StorageTableInfo in a member */
+    public TableInfo getStorageTableInfo() throws UnauthorizedException
+    {
+        if (null == _storageTable)
+            _storageTable = loadStorageTableInfo();
+        return _storageTable;
+    }
+
+
+    public int deleteRows(User user, Date cutoff)
+    {
+        assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
+        int count;
+
+        TableInfo table = getStorageTableInfo();
+
+        try
+        {
+            CPUTimer time = new CPUTimer("purge");
+            time.start();
+
+            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table + "\n");
+            if (cutoff != null)
+                studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
+            count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
+
+            time.stop();
+            _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
+        }
+        catch (SQLException s)
+        {
+            String sqlState = StringUtils.defaultString("");
+            if ("42P01".equals(sqlState) || "42S02".equals(sqlState)) // UNDEFINED TABLE
+                return 0;
+            throw new RuntimeSQLException(s);
+        }
+        finally
+        {
+            StudyManager.fireDataSetChanged(this);
+        }
+        return count;
+    }
+
 
     public boolean isDemographicData()
     {
         return _demographicData;
     }
 
+
     public void setDemographicData(boolean demographicData)
     {
         _demographicData = demographicData;
-    }
-
-
-    /**
-     * materializedCache is a cache of the table that was materialized for this DatasetDefinition.
-     */
-    private static class MaterializedLockObject
-    {
-        private final String _name;
-        private SchemaTableInfo _tinfoMaterialized = null;
-
-        // for debugging
-        TableInfo _tinfoOntology = null;
-        private long _lastVerify = 0;
-
-        public MaterializedLockObject(String name)
-        {
-            _name = name;
-        }
-
-        synchronized SchemaTableInfo getExitingTableInfo(DataSetDefinition dataset, User user)
-        {
-            long now = System.currentTimeMillis();
-            if (_lastVerify + 5* CacheManager.MINUTE > now && _tinfoMaterialized != null)
-                return _tinfoMaterialized;
-            _lastVerify = now;
-            if (isMaterialized(_name))
-            {
-                if (_tinfoMaterialized == null)
-                {
-                    if (_tinfoOntology == null)
-                    {
-                        _tinfoOntology = dataset.getJoinTableInfo(user);
-                    }
-                    _tinfoMaterialized = getMaterializedTableInfo(_tinfoOntology, _name);
-                }
-            }
-            else
-            {
-                _tinfoMaterialized = null;
-            }
-            return _tinfoMaterialized;
-        }
-    }
-
-
-    private static boolean isMaterialized(String tempTableName)
-    {
-        DbScope scope = StudySchema.getInstance().getDatasetSchema().getScope();
-        Connection conn = null;
-        ResultSet rs = null;
-        try
-        {
-            conn = scope.getConnection();
-            rs = conn.getMetaData().getTables(scope.getDatabaseName(), StudySchema.getInstance().getDatasetSchema().getName(), tempTableName, new String[]{"TABLE"});
-            if (rs.next())
-            {
-                return true;
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
-            if (conn != null) { try { scope.releaseConnection(conn); } catch (SQLException e) {} }
-        }
-        return false;
-    }
-
-    private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
-
-
-    public TableInfo getMaterializedTempTableInfo(User user, boolean forceMaterialization)
-    {
-        MaterializedLockObject mlo = getMaterializationLockObject();
-
-        // prevent multiple threads from materializing the same dataset
-        synchronized(mlo)
-        {
-            try
-            {
-                TableInfo currentFrom = getJoinTableInfo(user);
-                SchemaTableInfo result = mlo.getExitingTableInfo(this, user);
-
-                if (result != null)
-                {
-                    TableInfo cachedFrom = mlo._tinfoOntology;
-                    if (!cachedFrom.getColumnNameSet().equals(currentFrom.getColumnNameSet()))
-                    {
-                        StringBuilder msg = new StringBuilder("unexpected difference in columns sets for dataset " + getName() + " in " + getContainer().getPath() + "\n");
-                        msg.append("  cachedFrom:  ").append(StringUtils.join(new TreeSet<String>(cachedFrom.getColumnNameSet()),",")).append("\n");
-                        msg.append("  currentFrom: ").append(StringUtils.join(new TreeSet<String>(currentFrom.getColumnNameSet()), ",")).append("\n");
-                        _log.error(msg);
-                        dropMaterializedTable();
-                        result = null;
-                    }
-                }
-                
-                if (result == null && forceMaterialization)
-                {
-                    result = materialize(currentFrom);
-                    result.setButtonBarConfig(currentFrom.getButtonBarConfig());
-
-                    mlo._tinfoMaterialized = result;
-                    mlo._tinfoOntology = currentFrom;
-                }
-                _log.debug("DataSetDefinition returning " + (result == null ? "null" : result.getSelectName()));
-                return result;
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-        }
-    }
-
-    public MaterializedLockObject getMaterializationLockObject()
-    {
-        synchronized(materializedCache)
-        {
-            String tempName = getCacheString();
-            MaterializedLockObject mlo = materializedCache.get(tempName);
-            if (null == mlo)
-            {
-                mlo = new MaterializedLockObject(tempName);
-                materializedCache.put(tempName, mlo);
-            }
-            return mlo;
-        }
-    }
-
-    private SchemaTableInfo materialize(TableInfo tinfoFrom)
-            throws SQLException
-    {
-        //noinspection UnusedAssignment
-        boolean debug=false;
-        //noinspection ConstantConditions
-        assert debug=true;
-
-        SchemaTableInfo tinfoMat = getMaterializedTableInfo(tinfoFrom, getCacheString());
-
-        Table.snapshot(tinfoFrom, tinfoMat.toString());
-        String tempName = getCacheString();
-
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_seq") +
-                " ON " + tinfoMat + "(SequenceNum)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_ptidsequencekey") +
-                " ON " + tinfoMat + "(ParticipantSequenceKey)", null);
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX " + tinfoMat.getSqlDialect().makeLegalIdentifier("IX_" + tempName + "_ptid_seq") +
-                " ON " + tinfoMat + "(" + StudyService.get().getSubjectColumnName(getContainer()) + ", SequenceNum)", null);
-
-        //noinspection ConstantConditions
-        if (debug)
-        {
-            // NOTE: any PropertyDescriptor we hold onto will look like a leak
-            // CONSIDER: make MemTracker aware of this cache
-            for (ColumnInfo col : tinfoFrom.getColumns())
-            {
-                if (col instanceof PropertyColumn)
-                    assert MemTracker.remove(((PropertyColumn)col).getPropertyDescriptor());
-            }
-        }
-        return tinfoMat;
-    }
-
-    private static SchemaTableInfo getMaterializedTableInfo(TableInfo tinfoFrom, String tempName)
-    {
-        SchemaTableInfo tinfoMat = new SchemaTableInfo(tempName, StudySchema.getInstance().getDatasetSchema());
-        for (final ColumnInfo col : tinfoFrom.getColumns())
-        {
-            ColumnInfo colDirect = new ColumnInfo(col.getName())
-            {
-                @Override
-                public String getSelectName()
-                {
-                    // It's very important that this match exactly what was used as the alias when generating the SELECT
-                    // that fed into the temp table. Hence, we ask that column directly
-                    return getSqlDialect().makeLegalIdentifier(col.getAlias());
-                }
-            };
-            colDirect.copyAttributesFrom(col);
-            colDirect.copyURLFrom(col, null, null);
-            colDirect.setParentTable(tinfoMat);
-            tinfoMat.addColumn(colDirect);
-        }
-        tinfoMat.setTableType(TableInfo.TABLE_TYPE_TABLE);
-        tinfoMat.setPkColumnNames(tinfoFrom.getPkColumnNames());
-        return tinfoMat;
-    }
-
-
-    public void unmaterialize()
-    {
-        Runnable task = new Runnable()
-        {
-            public void run()
-            {
-                MaterializedLockObject mlo;
-                String tempName = getCacheString();
-                if (isMaterialized(tempName))
-                {
-                    try
-                    {
-                        dropMaterializedTable();
-                        _log.debug("DataSetDefinition unmaterialize(" + getName() + ")");
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
-                }
-                synchronized(materializedCache)
-                {
-                    mlo = materializedCache.get(tempName);
-                }
-                if (null == mlo)
-                    return;
-                synchronized (mlo)
-                {
-                    mlo._tinfoOntology = null;
-                    mlo._tinfoMaterialized = null;
-                }
-            }
-        };
-
-        DbScope scope = getScope();
-        if (scope.isTransactionActive())
-            scope.addCommitTask(task);
-
-        task.run();
-    }
-
-    private void dropMaterializedTable()
-            throws SQLException
-    {
-        Table.execute(StudySchema.getInstance().getDatasetSchema(), "DROP TABLE studydataset." + getScope().getSqlDialect().makeLegalIdentifier(getCacheString()), new Object[0]);
-    }
-
-
-    private DbScope getScope()
-    {
-        return StudySchema.getInstance().getSchema().getScope();
-    }
-
-
-    private String getCacheString()
-    {
-        return "c" + getContainer().getRowId() + "_" + getName().toLowerCase();
-    }
-
-    private synchronized TableInfo getJoinTableInfo(User user)
-    {
-        if (null == _tableInfoProperties)
-            _tableInfoProperties = new StudyDataTableInfo(this, user);
-        return _tableInfoProperties;
     }
 
 
@@ -673,23 +528,33 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             return true;
         }
-        
+
         return SecurityManager.getPolicy(getStudy()).hasPermission(user, UpdatePermission.class) ||
             SecurityManager.getPolicy(this).hasPermission(user, UpdatePermission.class);
     }
 
-    public String getVisitDatePropertyName()
+
+    /** most external users should use this */
+    public String getVisitDateColumnName()
     {
         if (null == _visitDatePropertyName && getStudy().getTimepointType() != TimepointType.VISIT)
             _visitDatePropertyName = "Date"; //Todo: Allow alternate names
         return _visitDatePropertyName;
     }
 
+
+    public String getVisitDatePropertyName()
+    {
+        return _visitDatePropertyName;
+    }
+
+
     public void setVisitDatePropertyName(String visitDatePropertyName)
     {
         _visitDatePropertyName = visitDatePropertyName;
     }
 
+    
     /**
      * Returns the key names for display purposes.
      * If demographic data, visit keys are suppressed
@@ -707,7 +572,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         return keyNames.toArray(new String[keyNames.size()]);
     }
-    
+
     public String getKeyPropertyName()
     {
         return _keyPropertyName;
@@ -768,73 +633,84 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
-    private static class StudyDataTableInfo extends SchemaTableInfo
+
+    /**
+     * NOTE the constructor takes a USER in order that some lookup columns can be property
+     * verified/constructed
+     *
+     * CONSIDER: we could use a way to delay permission checking and final schema construction for lookups
+     * so that this object can be cached...
+     */
+
+    public static class StudyDataTableInfo extends SchemaTableInfo
     {
         private Container _container;
-        private User _user;
-        int _datasetId;
-        SQLFragment _fromSql;
+        ColumnInfo _ptid;
+
+        TableInfo _storage;
+        TableInfo _template;
+
+
+        private ColumnInfo getStorageColumn(String name)
+        {
+            if (null != _storage)
+                return _storage.getColumn(name);
+            else
+                return _template.getColumn(name);
+        }
+
+
+        private ColumnInfo getStorageColumn(Domain d, DomainProperty p)
+        {
+            return _storage.getColumn(p.getName());
+        }
+
 
         StudyDataTableInfo(DataSetDefinition def, final User user)
         {
             super(def.getLabel(), StudySchema.getInstance().getSchema());
             _container = def.getContainer();
-            _user = user;
             Study study = StudyManager.getInstance().getStudy(_container);
-            _datasetId = def.getDataSetId();
 
-            TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData();
-            TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            final TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
-            // StudyData columns
-            List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified");
-            for (ColumnInfo col : columnsBase)
+            _storage = def.getStorageTableInfo();
+            this._template = getTemplateTableInfo();
+            
+            //
+            // Built-in/shared columns
+            //
+
             {
-                boolean ptid = "participantid".equals(col.getColumnName());
-                if (!ptid)
-                    col.setUserEditable(false);
-                ColumnInfo wrapped = newDatasetColumnInfo(this, col);
-                if (ptid)
-                {
-                    wrapped.setName(StudyService.get().getSubjectColumnName(_container));
-                    wrapped.setLabel(StudyService.get().getSubjectColumnName(_container));
-                    wrapped.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.ParticipantId));
-                    wrapped.setDimension(true);
-                }
+            // StudyData columns
+            // NOTE (MAB): I think it was probably wrong to alias participantid to subjectname here
+            // That probably should have been done only in the StudyQuerySchema
+            // CONSIDER: remove this aliased column
+            ColumnInfo ptidCol = getStorageColumn("ParticipantId");
+            ColumnInfo wrapped = newDatasetColumnInfo(this, ptidCol, getParticipantIdURI());
+            wrapped.setName("ParticipantId");
+            String subject = StudyService.get().getSubjectColumnName(_container);
+            if ("ParticipantId".equalsIgnoreCase(subject))
+                _ptid = wrapped;
+            else
+                _ptid = new AliasedColumn(this, subject, wrapped);
+            columns.add(_ptid);
+            }
+
+            for (String name : Arrays.asList("lsid","ParticipantSequenceKey","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
+            {
+                ColumnInfo col = getStorageColumn(name);
+                if (null == col) continue;
+                ColumnInfo wrapped = newDatasetColumnInfo(this, col, uriForName(col.getName()));
+                wrapped.setName(name);
+                wrapped.setUserEditable(false);
                 columns.add(wrapped);
             }
-            ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, studyData.getColumn("sequenceNum"));
+
+            int insertVisitDatePos = columns.size();
+
+            ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, getStorageColumn("SequenceNum"), getSequenceNumURI());
+            sequenceNumCol.setName("SequenceNum");
             sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
             sequenceNumCol.setMeasure(false);
-
-            if (study.getTimepointType() != TimepointType.VISIT)
-            {
-                sequenceNumCol.setNullable(true);
-                sequenceNumCol.setHidden(true);
-                sequenceNumCol.setUserEditable(false);
-                ColumnInfo visitDateCol = newDatasetColumnInfo(this, studyData.getColumn("_visitDate"));
-                visitDateCol.setName("Date");
-                visitDateCol.setNullable(false);
-                columns.add(visitDateCol);
-
-                ColumnInfo dayColumn = null;
-                if (study.getTimepointType() == TimepointType.DATE)
-                {
-                    dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
-                    dayColumn.setUserEditable(false);
-                    dayColumn.setDimension(false);
-                    dayColumn.setMeasure(false);
-                    columns.add(dayColumn);
-                }
-
-                if (def.isDemographicData())
-                {
-                    visitDateCol.setHidden(true);
-                    visitDateCol.setUserEditable(false);
-                    if (dayColumn != null)
-                        dayColumn.setHidden(true);
-                }
-            }
 
             if (def.isDemographicData())
             {
@@ -844,21 +720,93 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             columns.add(sequenceNumCol);
 
-            ColumnInfo qcStateCol = newDatasetColumnInfo(this, studyData.getColumn(DataSetTable.QCSTATE_ID_COLNAME));
+            ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DataSetTable.QCSTATE_ID_COLNAME), getQCStateURI());
             // UNDONE: make the QC column user editable.  This is turned off for now because StudyDataTableInfo is not
             // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
             // Note that QC state can still be modified via the standard update UI.
             qcStateCol.setUserEditable(false);
             columns.add(qcStateCol);
 
-            // Property columns
-            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, _container, _user);
-            columns.addAll(Arrays.asList(columnsLookup));
-            ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
-            visitRowId.setHidden(true);
-            visitRowId.setUserEditable(false);
-            visitRowId.setMeasure(false);
-            columns.add(visitRowId);
+            // Property columns (see OntologyManager.getColumnsForType())
+            Domain d = def.getDomain();
+            DomainProperty[] properties = null==d ? new DomainProperty[0] : d.getProperties();
+            ColumnInfo visitDateColumn = null;
+            for (DomainProperty p : properties)
+            {
+                ColumnInfo col = getStorageColumn(d, p);
+                if (col == null)
+                {
+                    _log.error("didn't find column for property: " + p.getPropertyURI());
+                    continue;
+                }
+                ColumnInfo wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
+                columns.add(wrapped);
+                if (p.isMvEnabled())
+                {
+                    ColumnInfo mvColumn = new ColumnInfo(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
+                    mvColumn.setPropertyURI(wrapped.getPropertyURI());
+                    mvColumn.setAlias(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                    mvColumn.setNullable(true);
+                    mvColumn.setUserEditable(false);
+                    mvColumn.setHidden(true);
+                    mvColumn.setMvIndicatorColumn(true);
+
+                    ColumnInfo rawValueCol = new AliasedColumn(wrapped.getName() + RawValueColumn.RAW_VALUE_SUFFIX, wrapped);
+                    rawValueCol.setLabel(getName());
+                    rawValueCol.setUserEditable(false);
+                    rawValueCol.setHidden(true);
+                    rawValueCol.setMvColumnName(null); // This column itself does not allow QC
+                    rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
+
+                    columns.add(mvColumn);
+                    columns.add(rawValueCol);
+
+                    wrapped.setDisplayColumnFactory(new MVDisplayColumnFactory());
+                    wrapped.setMvColumnName(mvColumn.getName());
+                }
+
+                if (null != def._visitDatePropertyName && wrapped.getName().equalsIgnoreCase(def._visitDatePropertyName))
+                    visitDateColumn = wrapped;
+            }
+
+            if (study.getTimepointType() != TimepointType.VISIT)
+            {
+                sequenceNumCol.setNullable(true);
+                sequenceNumCol.setHidden(true);
+                sequenceNumCol.setUserEditable(false);
+
+                ColumnInfo dateCol = null == visitDateColumn ?
+                        new NullColumnInfo(this, "Date", getSqlDialect().getDefaultDateTimeDataType()) :
+                        new AliasedColumn(this, "Date", visitDateColumn);
+                dateCol.setNullable(false);
+                columns.add(insertVisitDatePos++, dateCol);
+
+                 ColumnInfo dayColumn = null;
+//                if (study.getTimepointType() == TimepointType.DATE)
+//                {
+//                    dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
+//                    dayColumn.setName("Day");
+//                    dayColumn.setUserEditable(false);
+//                    dayColumn.setDimension(false);
+//                    dayColumn.setMeasure(false);
+//                    columns.add(insertVisitDatePos, dayColumn);
+//                }
+
+                if (def.isDemographicData())
+                {
+                    dateCol.setHidden(true);
+                    dateCol.setUserEditable(false);
+                    if (dayColumn != null)
+                        dayColumn.setHidden(true);
+                }
+            }
+
+//            ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
+//            visitRowId.setName("VisitRowId");
+//            visitRowId.setHidden(true);
+//            visitRowId.setUserEditable(false);
+//            visitRowId.setMeasure(false);
+//            columns.add(visitRowId);
 
             // If we have an extra key, and it's server-managed, make it non-editable
             if (def.getKeyManagementType() != KeyManagementType.None)
@@ -873,10 +821,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // Add the dataset table via a foreign key lookup
-            String datasetSql = "(SELECT D.entityid FROM " + datasetTable + " D WHERE " +
-                    "D.container ='" + _container.getId() + "' AND D.datasetid = " + _datasetId + ")";
-
-            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment(datasetSql), Types.VARCHAR);
+            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("'" + def.getEntityId() + "'"), Types.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 public TableInfo getLookupTableInfo()
@@ -895,15 +840,23 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             colMap = null;
 
             setPkColumnNames(Arrays.asList("LSID"));
-
-//          <UNDONE> just add a lookup column to the columnlist for VisitDate
-            _fromSql = new SQLFragment(
-                    "SELECT SD.container, SD.lsid, SD.ParticipantId AS " + StudyService.get().getSubjectColumnName(_container) + ", SD.ParticipantSequenceKey, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
-                    "  FROM " + studyData.getSelectName() + " SD LEFT OUTER JOIN " + participantVisit.getSelectName() + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+
-                    "  WHERE SD.container=? AND SD.datasetid=?");
-            _fromSql.add(_container);
-            _fromSql.add(_datasetId);
         }
+
+
+        public ColumnInfo getParticipantColumn()
+        {
+            return _ptid;
+        }
+
+
+        @Override
+        public ColumnInfo getColumn(String name)
+        {
+            if ("ParticipantId".equalsIgnoreCase(name))
+                return getParticipantColumn();
+            return super.getColumn(name);
+        }
+
 
         @Override
         public ButtonBarConfig getButtonBarConfig()
@@ -915,19 +868,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (config != null)
                 return config;
 
-            // If no button config was found for this dataset, fall back to the button config on StudyData.  This
-            // lets users configure buttons that should appear on all datasets.
-            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), _user, true);
-            try
-            {
-                TableInfo studyData = schema.getTable(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
-                return studyData.getButtonBarConfig();
-            }
-            catch (UnauthorizedException e)
-            {
-                return null;
-            }
+//            // If no button config was found for this dataset, fall back to the button config on StudyData.  This
+//            // lets users configure buttons that should appear on all datasets.
+//            StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), _user, true);
+//            try
+//            {
+//                TableInfo studyData = schema.getTable(StudyQuerySchema.STUDY_DATA_TABLE_NAME);
+//                return studyData.getButtonBarConfig();
+//            }
+//            catch (UnauthorizedException e)
+//            {
+//                return null;
+//            }
+            return null;
         }
+
 
         @Override
         public String getSelectName()
@@ -937,16 +892,72 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         @Override
         @NotNull
-        public SQLFragment getFromSQL()
+        public SQLFragment getFromSQL(String alias)
         {
-            return _fromSql;
+            SqlDialect d = getSqlDialect();
+            SQLFragment from = new SQLFragment();
+            from.appendComment("<DataSetDefinition: " + getName() + ">", d); // UNDONE stash name
+
+            if (null == _storage)
+            {
+                String comma = " ";
+                from.append("(SELECT ");
+                for (ColumnInfo ci : _template.getColumns())
+                {
+                    from.append(comma).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).append(" AS ").append(ci.getName());
+                    comma = ", ";
+                }
+                from.append("\nWHERE 0=1) AS ").append(alias);
+            }
+            else
+            {
+                return new SQLFragment(_storage.getSelectName() + " AS " + alias);
+/*
+                TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+
+                from.append(
+                        "(SELECT DS.*, PV.Day, PV.VisitRowId");
+                if (!"participantid".equalsIgnoreCase(StudyService.get().getSubjectColumnName(_container)))
+                    from.append(", DS.participantId AS " + StudyService.get().getSubjectColumnName(_container));
+                from.append("\n" +
+                        "FROM ").append(_storage.getFromSQL("DS")).append(" LEFT OUTER JOIN " + participantVisit + " PV\n" +
+                        " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _container.getId() + "') AS ").append(alias);
+*/
+            }
+            from.appendComment("</DataSetDefinition>", d);
+            return from;
         }
     }
 
 
-    static ColumnInfo newDatasetColumnInfo(StudyDataTableInfo tinfo, ColumnInfo from)
+    static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from, final String propertyURI)
     {
-        return new ColumnInfo(from, tinfo);
+        return new ColumnInfo(from, tinfo)
+        {
+            @Override
+            public String getPropertyURI()
+            {
+                return null!=propertyURI ? propertyURI : super.getPropertyURI();
+            }
+        };
+    }
+
+    
+    static ColumnInfo newDatasetColumnInfo(User user, TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
+    {
+        ColumnInfo ci = newDatasetColumnInfo(tinfo, from, p.getPropertyURI());
+        // We are currently assuming the db column name is the same as the propertyname
+        // I want to know if that changes
+        assert ci.getName().equalsIgnoreCase(p.getName());
+        ci.setName(p.getName());
+        PropertyColumn.copyAttributes(user, ci, p);
+        return ci;
+    }
+
+
+    static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from)
+    {
+        return newDatasetColumnInfo(tinfo, from, (String)null);
     }
 
 
@@ -959,7 +970,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             if (standardPropertySet.isEmpty())
             {
-                TableInfo info = StudySchema.getInstance().getTableInfoStudyData();
+                TableInfo info = getTemplateTableInfo();
                 for (ColumnInfo col : info.getColumns())
                 {
                     String propertyURI = col.getPropertyURI();
@@ -979,10 +990,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
-    public Domain getDomain()
+
+    Domain _domain = null;
+
+    public synchronized Domain getDomain()
     {
-        return PropertyService.get().getDomain(getContainer(), getTypeURI());
+        if (null == _domain)
+        {
+            _domain = PropertyService.get().getDomain(getContainer(), getTypeURI());
+        }
+        return _domain;
     }
+
 
     public static Map<String,PropertyDescriptor> getStandardPropertiesMap()
     {
@@ -1003,7 +1022,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static String uriForName(String name)
     {
         final String StudyURI = "http://cpas.labkey.com/Study#";
-        assert getStandardPropertiesMap().get(name).getPropertyURI().equals(StudyURI + name);
+        assert getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
 
@@ -1052,6 +1071,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return uriForName(DataSetTable.QCSTATE_ID_COLNAME);
     }
 
+
     @Override
     protected boolean supportsPolicyUpdate()
     {
@@ -1096,10 +1116,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         Container c = getContainer();
 
-        TableInfo data = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo data = getStorageTableInfo();
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", c.getId());
-        filter.addCondition("DatasetId", getDataSetId());
+//        filter.addCondition("Container", c.getId());
+//        filter.addCondition("DatasetId", getDataSetId());
         filter.addInClause("LSID", rowLSIDs);
 
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
@@ -1121,8 +1141,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), new SQLFragment(sb.toString(), paramList), c, false);
             Table.delete(data, filter);
 
-            deleteFromMaterialized(user, rowLSIDs);
-
             if (startTransaction)
                 scope.commitTransaction();
 
@@ -1139,16 +1157,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
-    public void deleteFromMaterialized(User user, Collection<String> lsids) throws SQLException
-    {
-        TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
-        if (tempTableInfo != null)
-        {
-            SimpleFilter tempTableFilter = new SimpleFilter();
-            tempTableFilter.addInClause("LSID", lsids);
-            Table.delete(tempTableInfo, tempTableFilter);
-        }
-    }
 
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
@@ -1159,7 +1167,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (dataMaps.size() == 0)
             return Collections.emptyList();
 
-        TableInfo tinfo = getTableInfo(user, false, false);
+        TableInfo tinfo = getTableInfo(user, false);
         Map<String, QCState> qcStateLabels = new CaseInsensitiveHashMap<QCState>();
 
         boolean needToHandleQCState = tinfo.getColumn(DataSetTable.QCSTATE_ID_COLNAME) != null;
@@ -1359,7 +1367,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             throws SQLException
     {
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        DatasetImportHelper helper = null;
         boolean startedTransaction = false;
 
         try
@@ -1451,13 +1458,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (logger != null) logger.debug("generated keys");
             }
 
-            String typeURI = getTypeURI();
-            Container c = study.getContainer();
-            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
-            helper = new DatasetImportHelper(user, scope.getConnection(), c, this, lastModified);
-            List<String> imported = OntologyManager.insertTabDelimited(c, user, null, helper, pds, dataMaps, ensureObjects, logger);
-
-            insertIntoMaterialized(user, imported);
+            List<String> imported = _insertPropertyMaps(study, user, dataMaps, lastModified, ensureObjects, logger, scope);
 
             if (startedTransaction)
             {
@@ -1477,8 +1478,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         finally
         {
-            if (helper != null)
-                helper.done();
             if (startedTransaction)
             {
                 scope.closeConnection();
@@ -1487,26 +1486,155 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-
-    public void insertIntoMaterialized(User user, Collection<String> lsids)
-            throws SQLException
+    /*
+     * Actually persist rows to the database.  These maps are keyed by property URI.
+     *
+     * These maps have QC states and keys generated.  Should behave like OntologyManager.insertTabDelimited()
+     *
+     * TODO: should OntolgoyManager.insertTabDelimited handle this case too (share code with other materialized domains)
+     *
+     */
+    private List<String> _insertPropertyMaps(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, boolean ensureObjects, Logger logger, DbScope scope)
+            throws SQLException, ValidationException
     {
-        TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
-        if (tempTableInfo != null)
-        {
-            // Update the materialized temp table if it's still around
-            SimpleFilter tempTableFilter = new SimpleFilter();
-            tempTableFilter.addInClause("LSID", lsids);
-            SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
-            SQLFragment sqlSelectInto = new SQLFragment();
-            sqlSelectInto.append("INSERT INTO ").append(tempTableInfo).append(" SELECT * FROM (");
-            sqlSelectInto.append(sqlSelect);
-            sqlSelectInto.append(") x ");
-            sqlSelectInto.append(tempTableFilter.getSQLFragment(tempTableInfo.getSqlDialect()));
+        NumberFormat sequenceFormat = new DecimalFormat("0.0000");
+        assert ExperimentService.get().getSchema().getScope().isTransactionActive();
 
-            Table.execute(tempTableInfo.getSchema(), sqlSelectInto);
+        List<String> imported = new ArrayList<String>(dataMaps.size());
+        DatasetImportHelper helper = null;
+        try
+        {
+            String typeURI = getTypeURI();
+            Container c = study.getContainer();
+
+            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
+            helper = new DatasetImportHelper(user, scope.getConnection(), c, this, lastModified);
+            TableInfo table = getStorageTableInfo();
+
+            ValidatorContext validatorCache = new ValidatorContext(c, user);
+
+            List<ValidationError> errors = new ArrayList<ValidationError>();
+            Map<Integer, IPropertyValidator[]> validatorMap = new HashMap<Integer, IPropertyValidator[]>();
+
+            // cache all the property validators for this upload
+            for (PropertyDescriptor pd : pds)
+            {
+                IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
+                if (validators.length > 0)
+                    validatorMap.put(pd.getPropertyId(), validators);
+            }
+
+            // UNDONE: custom INSERT VALUES and use with bulk operations
+            // CONSIDER: or use QueryUpdateService for the dataset
+            // This is just a temp fix to get some data in!
+            // NOTE: we are assuming column names and property names match exactly
+
+            Map<String,PropertyDescriptor> propertyNameMap = new CaseInsensitiveHashMap<PropertyDescriptor>(pds.length * 2);
+            for (PropertyDescriptor pd : pds)
+                propertyNameMap.put(pd.getName(), pd);
+            for (PropertyDescriptor pd : pds)
+                propertyNameMap.put(pd.getPropertyURI(), pd);
+            propertyNameMap.put("ptid", propertyNameMap.get("participantid"));
+
+            Map<PropertyDescriptor,PropertyType> propertyTypeMap = new IdentityHashMap<PropertyDescriptor, PropertyType>();
+            for (PropertyDescriptor pd : pds)
+                propertyTypeMap.put(pd, PropertyType.getFromURI(pd.getConceptURI(), pd.getRangeURI()));
+
+            Pair<Object,String> valuePair = new Pair<Object,String>(null,null);
+            
+            for (Map row : dataMaps)
+            {
+                if (Thread.currentThread().isInterrupted())
+                    throw new CancellationException();
+
+                // create a new map with underlying column names
+                Map insertMap = new HashMap();
+                for (Map.Entry<String,Object> e : (Set<Map.Entry<String,Object>>)row.entrySet())
+                {
+                    PropertyDescriptor pd = propertyNameMap.get(e.getKey());
+                    if (null == pd) continue;
+                    
+                    PropertyType type = propertyTypeMap.get(pd);
+                    valuePair.first = e.getValue();
+                    valuePair.second = null;
+                    if (null == valuePair.first && pd.isRequired())
+                    {
+                        throw new ValidationException("Missing value for required property " + pd.getName());
+                    }
+                    if (validatorMap.containsKey(pd.getPropertyId()))
+                    {
+                        OntologyManager.validateProperty(validatorMap.get(pd.getPropertyId()), pd, valuePair.first, errors, validatorCache);
+                        if (!errors.isEmpty())
+                            throw new ValidationException(errors);
+                    }
+                    try
+                    {
+                        String name = pd.getName();
+
+                        OntologyManager.convertValuePair(pd, type, valuePair);
+
+                        insertMap.put(name, valuePair.first);
+                        if (null != valuePair.second)
+                            insertMap.put(name + "_" + MvColumn.MV_INDICATOR_SUFFIX, valuePair.second);
+                    }
+                    catch (ConversionException x)
+                    {
+                        throw new ValidationException("Could not convert '" + e.getValue() + "' for field " + pd.getName() + ", should be of type " + type.getJavaType().getSimpleName());
+                    }
+                }
+
+                String lsid = helper.getURI(row);
+                String participantId = helper.getParticipantId(row);
+                double sequenceNum = helper.getSequenceNum(row);
+                Object key = helper.getKey(row);
+                String participantSequenceKey = participantId + "|" + sequenceFormat.format(sequenceNum);
+//                Date visitDate = helper.getVisitDate(row);
+                Integer qcState = helper.getQCState(row);
+                String sourceLsid = helper.getSourceLsid(row);
+
+                insertMap.put("participantsequencekey", participantSequenceKey);
+//                insertMap.put("_visitdate", visitDate);
+                insertMap.put("participantid", participantId);
+                insertMap.put("sequencenum", sequenceNum);
+                insertMap.put("_key", key==null ? "" : String.valueOf(key));
+                insertMap.put("lsid", lsid);
+                insertMap.put("qcstate", qcState);
+                insertMap.put("sourcelsid", sourceLsid);
+
+                Table.insert(user, table, insertMap);
+
+                imported.add(lsid);
+                // UNDONE: OntologyManager.validateProperty
+            }
         }
+        finally
+        {
+            if (null != helper)
+                helper.done();
+        }
+        return imported;
     }
+
+
+//    public void insertIntoMaterialized(User user, Collection<String> lsids)
+//            throws SQLException
+//    {
+//        TableInfo tempTableInfo = getMaterializedTempTableInfo(user, false);
+//        if (tempTableInfo != null)
+//        {
+//            // Update the materialized temp table if it's still around
+//            SimpleFilter tempTableFilter = new SimpleFilter();
+//            tempTableFilter.addInClause("LSID", lsids);
+//            SQLFragment sqlSelect = Table.getSelectSQL(getTableInfo(user, false, false), null, null, null);
+//            SQLFragment sqlSelectInto = new SQLFragment();
+//            sqlSelectInto.append("INSERT INTO ").append(tempTableInfo).append(" SELECT * FROM (");
+//            sqlSelectInto.append(sqlSelect);
+//            sqlSelectInto.append(") x ");
+//            sqlSelectInto.append(tempTableFilter.getSQLFragment(tempTableInfo.getSqlDialect()));
+//
+//            Table.execute(tempTableInfo.getSchema(), sqlSelectInto);
+//        }
+//    }
 
     /**
      * If all the dupes can be replaced, delete them. If not return the ones that should NOT be replaced
@@ -1538,7 +1666,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             sep = ", ";
         }
 
-        TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo tinfo = getStorageTableInfo();
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("LSID IN (" + sbIn + ")", new Object[]{});
 
@@ -1575,8 +1703,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             sep = ", ";
         }
         deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
-        Table.delete(StudySchema.getInstance().getTableInfoStudyData(), deleteFilter);
-        OntologyManager.deleteOntologyObjects(c, deleteSet.toArray(new String[deleteSet.size()]));
+        Table.delete(tinfo, deleteFilter);
+//        OntologyManager.deleteOntologyObjects(c, deleteSet.toArray(new String[deleteSet.size()]));
 
         return null;
     }
@@ -1587,11 +1715,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     private int getMaxKeyValue() throws SQLException
     {
-        TableInfo tInfo = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo tInfo = getStorageTableInfo();
         Integer newKey = Table.executeSingleton(tInfo.getSchema(),
-                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo +
-                " WHERE container = ? AND datasetid = ?",
-                new Object[] { getContainer(), getDataSetId() },
+                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo,
+                null,
                 Integer.class
                 );
         return newKey.intValue();
@@ -1626,9 +1753,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         Connection conn = null;
         try
         {
-            DbScope scope = StudySchema.getInstance().getDatasetSchema().getScope();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
             conn = scope.getConnection();
-            ResultSet tablesRS = conn.getMetaData().getTables(scope.getDatabaseName(), "studydataset", null, new String[]{"TABLE"});
+            ResultSet tablesRS = conn.getMetaData().getTables(scope.getDatabaseName(), StudySchema.getInstance().getDatasetSchemaName(), null, new String[]{"TABLE"});
             while (tablesRS.next())
             {
                 String tableName = tablesRS.getString("TABLE_NAME");
@@ -1660,7 +1787,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     try
                     {
                         statement = conn.createStatement();
-                        statement.execute("DROP TABLE " + StudySchema.getInstance().getDatasetSchema().getName() + "." + scope.getSqlDialect().makeLegalIdentifier(tableName));
+                        statement.execute("DROP TABLE " + StudySchema.getInstance().getDatasetSchemaName() + "." + scope.getSqlDialect().makeLegalIdentifier(tableName));
                     }
                     finally
                     {
@@ -1668,8 +1795,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     }
                 }
             }
-
-
         }
         catch (SQLException e)
         {
@@ -1683,4 +1808,262 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
         }
     }
+
+
+
+    private static class DataSetDefObjectFactory extends BeanObjectFactory
+    {
+        DataSetDefObjectFactory()
+        {
+            super(DataSetDefinition.class);
+            _readableProperties.remove("storageTableInfo");
+        }
+    }
+
+    static
+    {
+        ObjectFactory.Registry.register(DataSetDefinition.class, new DataSetDefObjectFactory());        
+    }
+
+    /** UPGRADE
+     *
+     * upgrade happens in steps to maximize the chance that either no data is deleted unless the entire upgrade works
+     *
+     * 1) provision all tables
+     * 2) copy all data into provisioned tables
+     * 3) delete data from OntologyManager
+     * 
+     ****/
+
+    public static void upgradeAll() throws SQLException
+    {
+        // find all containers with datasets
+        List<Container> allContainers = new ArrayList<Container>();
+        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT DISTINCT container FROM study.dataset"));
+        while (rs.next())
+        {
+            String id = rs.getString(1);
+            Container c = ContainerManager.getForId(id);
+            if (null == c)
+            {
+                ModuleUpgrader.getLogger().error("Found orphaned dataset with containerid=" + id);
+                continue;
+            }
+            allContainers.add(c);
+        }
+        ResultSetUtil.close(rs);
+
+        // find all datasets
+        List<DataSetDefinition> defs = new ArrayList<DataSetDefinition>();
+        for (Container c : allContainers)
+        {
+            Study study = StudyManager.getInstance().getStudy(c);
+            DataSetDefinition[] arr = StudyManager.getInstance().getDataSetDefinitions(study);
+            if (null == arr) continue;
+            defs.addAll(Arrays.asList(arr));
+        }
+
+        ModuleUpgrader.getLogger().info("STUDY UPGRADE drop old materialized tables");
+        for (DataSetDefinition def : defs)
+            def.dropOldMaterializedTable();
+
+//        CPUTimer.dumpAllTimers(ModuleUpgrader.getLogger());
+        ModuleUpgrader.getLogger().info("STUDY UPGRADE create new tables");
+        for (DataSetDefinition def : defs)
+            def.upgradeProvision();
+
+//        CPUTimer.dumpAllTimers(ModuleUpgrader.getLogger());
+        ModuleUpgrader.getLogger().info("STUDY UPGRADE copy data");
+        for (DataSetDefinition def : defs)
+            def.upgradeCopy();
+
+//        CPUTimer.dumpAllTimers(ModuleUpgrader.getLogger());
+        ModuleUpgrader.getLogger().info("STUDY UPGRADE resuming SQL script");
+        // delete exp.objectproperty is in the upgrade script
+    }
+
+
+    private void upgradeProvision() throws SQLException
+    {
+        if (null == getTypeURI())
+            return;
+        Domain d = ensureDomain();
+        StorageProvisioner.create(new DatasetDomainKind(), d);
+//        CPUTimer.dumpAllTimers(ModuleUpgrader.getLogger());
+    }
+
+
+    private void upgradeCopy() throws SQLException
+    {
+        TableInfo fromTable = new StudyDataTableInfoUpgrade(this);
+        TableInfo toTable = getStorageTableInfo();
+
+        if (null == toTable)
+        {
+            throw new IllegalStateException("Unprovisioned dataset: " + getName());
+        }
+
+        Map<String,ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();
+        for (ColumnInfo c : fromTable.getColumns())
+        {
+            if (null != c.getPropertyURI())
+                colMap.put(c.getPropertyURI(), c);
+            colMap.put(c.getName(), c);
+        }
+
+        SQLFragment insertInto = new SQLFragment("INSERT INTO " + toTable.getSelectName() + " (");
+        SQLFragment select = new SQLFragment("SELECT " );
+        Map<String,SQLFragment> joinMap = new HashMap<String,SQLFragment>();
+        String comma = "";
+        for (ColumnInfo to : toTable.getColumns())
+        {
+            ColumnInfo from = colMap.get(to.getPropertyURI());
+            if (null == from)
+                from = colMap.get(to.getName());
+            if (null == from)
+            {
+                String name = to.getName().toLowerCase();
+                if ("modifiedby".equals(name) || "createdby".equals(name))
+                {
+                    continue;
+                }
+                else if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
+                {
+                    from = colMap.get(to.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                    if (null == from)
+                        continue;
+                }
+                else
+                {
+                    ModuleUpgrader.getLogger().error("Could not copy column: " + getContainer().getId()+"-"+getContainer().getPath() + " " + getDataSetId() + "-" + getName() + " " + to.getName());
+                    continue;
+//                    throw new IllegalStateException("Could not copy column: " + getContainer().getPath() + " " + getName() + " " + to.getName());
+                }
+            }
+            insertInto.append(comma).append(to.getSelectName());
+            select.append(comma).append(from.getValueSql("SD"));
+            from.declareJoins("SD", joinMap);
+            comma = ", ";
+        }
+        insertInto.append(")\n");
+        insertInto.append(select);
+        insertInto.append("\n FROM ").append(fromTable.getFromSQL("SD"));
+        for (SQLFragment j : joinMap.values())
+            insertInto.append(j);
+
+        ModuleUpgrader.getLogger().info("Migrating data for [" + getContainer().getPath() + "]  '" + getName() + "'");
+        Table.execute(StudySchema.getInstance().getSchema(), insertInto);
+    }
+
+
+    private void upgradeClean() throws SQLException
+    {
+    }
+
+
+    @Deprecated
+    private static class StudyDataTableInfoUpgrade extends SchemaTableInfo
+    {
+        private Container _container;
+        int _datasetId;
+        SQLFragment _fromSql;
+
+        StudyDataTableInfoUpgrade(DataSetDefinition def)
+        {
+            super(def.getLabel(), StudySchema.getInstance().getSchema());
+            _container = def.getContainer();
+            _datasetId = def.getDataSetId();
+
+            // getTableInfoStudyData is the new UNION version
+            //TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(study, user);
+            TableInfo studyData = StudySchema.getInstance().getSchema().getTable("StudyData");
+
+            List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencekey");
+            for (ColumnInfo col : columnsBase)
+            {
+                ColumnInfo wrapped = newDatasetColumnInfo(this, col, null);
+                columns.add(wrapped);
+            }
+
+            // Property columns
+            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, def.getContainer(), null);
+            columns.addAll(Arrays.asList(columnsLookup));
+
+            // HACK reset colMap
+            colMap = null;
+
+            _fromSql = new SQLFragment(
+                    "SELECT *\n" +
+                    "  FROM " + studyData.getSelectName() + "\n"+
+                    "  WHERE container=? AND datasetid=?");
+            _fromSql.add(_container);
+            _fromSql.add(_datasetId);
+        }
+
+        @Override
+        public String getSelectName()
+        {
+            return null;
+        }
+
+
+        @NotNull
+        @Override
+        public SQLFragment getFromSQL()
+        {
+            return _fromSql;
+        }
+    }
+
+    private void dropOldMaterializedTable()
+    {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        Connection conn=null;
+        try
+        {
+            // avoid logging sql exception
+            //Table.execute(schema, "DROP TABLE studydataset." + schema.getScope().getSqlDialect().makeLegalIdentifier(getCacheString()), new Object[0]);
+            conn = schema.getScope().getConnection();
+            conn.prepareStatement("DROP TABLE studydataset." + schema.getScope().getSqlDialect().makeLegalIdentifier(getCacheString())).execute();
+        }
+        catch (SQLException x)
+        {
+            /* */
+        }
+        finally
+        {
+            schema.getScope().releaseConnection(conn);
+        }
+    }
+
+    private String getCacheString()
+    {
+        return "c" + getContainer().getRowId() + "_" + getName().toLowerCase();
+    }
 }
+
+
+/*** TODO
+ [ ] JUnit test
+ [ ] storage provisioner admin page?
+ [N] implement getChange in MS SQL Server dialect
+ [ ] see UNDONE in StudyServivceImpl.isValidSubjectNounSingular
+ [ ] implement deletion across datasets in a study
+ [B] getButtonBarConfig(), there is not DataSet table, so where does default button bar config go?
+ [ ] metadata for forms, correct input boxes
+ [ ] verify synchronize/transact updates to domain/storage table
+ [ ] verify provisioned tables vs expected (handle unexpected shut down e.g. dev machines)
+ [ ] PropertyServiceImpl.getDomain does not use cached PropertyDescriptors
+ [N] test column rename, name collisions
+ [N] enabling/disabling mv indicators
+ [N] we seem to still be orphaning tables in the studydataset schema
+ [N] provision indexes
+ [ ] exp StudyDataSetColumn usage of getStudyDataTable()
+ [ ] NOT NULL UNDONE in getPropertySpec()
+ [ ] Does AssayPublishManager correcly call StorageProvisioner if it modifies the domain of a dataset?
+ // FUTURE
+ [ ] don't use subjectname alias at this level
+ [ ] remove _Key columns
+ [ ] make OntologyManager.insertTabDelimited could handle materialized domains (maybe two subclasses?)
+ [ ] clean up architecture of import/queryupdateservice
+ ***/

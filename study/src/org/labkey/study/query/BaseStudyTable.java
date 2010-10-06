@@ -333,8 +333,8 @@ public abstract class BaseStudyTable extends FilteredTable
             SQLFragment joinSql = new SQLFragment();
             if (_includeVialComments)
             {
-                joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment()).append(" AS ");
-                joinSql.append(tableAlias).append(" ON ");
+                joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoSpecimenComment().getFromSQL(tableAlias));
+                joinSql.append(" ON ");
                 joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
                 joinSql.append(parentAlias).append(".Container = ").append(tableAlias).append(".Container\n");
             }
@@ -343,18 +343,18 @@ public abstract class BaseStudyTable extends FilteredTable
             {
                 String ptidTableAlias = parentAlias + "$" + PARTICIPANT_COMMENT_JOIN;
 
-                joinSql.append(" LEFT OUTER JOIN ").append(_ptidCommentTable.getSelectName()).append(" AS ");
-                joinSql.append(ptidTableAlias).append(" ON ");
-                joinSql.append(parentAlias).append(".Ptid = ").append(ptidTableAlias).append("." +
-                        StudyService.get().getSubjectColumnName(_container) + "\n");
+                joinSql.append(" LEFT OUTER JOIN ").append(_ptidCommentTable.getFromSQL(ptidTableAlias));
+                joinSql.append(" ON ");
+                joinSql.append(parentAlias).append(".Ptid = ").append(
+                        _ptidCommentTable.getColumn(StudyService.get().getSubjectColumnName(_container)).getValueSql(ptidTableAlias) + "\n");
             }
 
             if (_ptidVisitCommentTable != null)
             {
                 String ptidTableAlias = parentAlias + "$" + PARTICIPANTVISIT_COMMENT_JOIN;
 
-                joinSql.append(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getSelectName()).append(" AS ");
-                joinSql.append(ptidTableAlias).append(" ON ");
+                joinSql.append(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getFromSQL(ptidTableAlias));
+                joinSql.append(" ON ");
                 joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(ptidTableAlias).append(".ParticipantSequenceKey");
             }
             map.put(tableAlias, joinSql);

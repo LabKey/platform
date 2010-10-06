@@ -1452,10 +1452,8 @@ public class SampleManager
                     }
                     else
                     {
-                        SQLFragment fromSQL = tinfo.getFromSQL();
-                        SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM (");
-                        sql.append(fromSQL);
-                        sql.append(") _distinct");
+                        SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct").getSQL() + " FROM ");
+                        sql.append(tinfo.getFromSQL("_distinct"));
                         if (orderBy != null)
                             sql.append(" ORDER BY " + orderBy);
                         rs = Table.executeQuery(tinfo.getSchema(), sql);

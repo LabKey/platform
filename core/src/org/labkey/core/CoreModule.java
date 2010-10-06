@@ -38,6 +38,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.XMLWriterTest;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeResourceLoader;
@@ -532,7 +533,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ModuleStaticResolverImpl.TestCase.class,
             PageFlowUtil.TestCase.class,
             ResultSetUtil.TestCase.class
-                //,RateLimiter.TestCase.class
+            //,StorageProvisioner.TestCase.class
+            //,RateLimiter.TestCase.class
         ));
 
         testClasses.addAll(SqlDialect.getAllJUnitTests());

@@ -29,9 +29,32 @@ import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfoGetter;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.DomainURIFactory;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -54,7 +77,12 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -98,7 +126,7 @@ public class StudyManager
     private static final String SCHEMA_NAME = "study";
     private final TableInfo _tableInfoVisitMap;
     private final TableInfo _tableInfoParticipant;
-    private final TableInfo _tableInfoStudyData;
+    //private final TableInfo _tableInfoStudyData;
     private final TableInfo _tableInfoUploadLog;
 
     private final QueryHelper<StudyImpl> _studyHelper;
@@ -160,7 +188,7 @@ public class StudyManager
         _dataSetHelper = new DataSetHelper(dataSetGetter);
         _tableInfoVisitMap = StudySchema.getInstance().getTableInfoVisitMap();
         _tableInfoParticipant = StudySchema.getInstance().getTableInfoParticipant();
-        _tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData();
+        //_tableInfoStudyData = StudySchema.getInstance().getTableInfoStudyData(null);
         _tableInfoUploadLog = StudySchema.getInstance().getTableInfoUploadLog();
     }
 
@@ -218,7 +246,6 @@ public class StudyManager
         public void clearCache(DataSetDefinition def)
         {
             super.clearCache(def);
-            def.unmaterialize();
             clearProperties(def);
         }
     }
@@ -347,6 +374,7 @@ public class StudyManager
         reindex(dataSetDefinition.getContainer());
     }
 
+
     public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
     {
         boolean fTransaction=false;
@@ -380,16 +408,23 @@ public class StudyManager
         {
             if (fTransaction)
                 scope.rollbackTransaction();
+
+            uncache(dataSetDefinition);
         }
         reindex(dataSetDefinition.getContainer());
     }
 
-    public boolean isDataUniquePerParticipant(DataSet dataSet) throws SQLException
+
+    public boolean isDataUniquePerParticipant(DataSetDefinition dataSet) throws SQLException
     {
-        String sql = "SELECT max(n) FROM (select count(*) AS n from study.studydata WHERE container=? AND datasetid=? GROUP BY participantid) x";
-        Integer maxCount = Table.executeSingleton(getSchema(), sql, new Object[] {dataSet.getContainer().getId(), dataSet.getDataSetId()}, Integer.class);
+        // don't use dataSet.getTableInfo() since this method is called during updateDatasetDefinition() and may be in an inconsistent state
+        TableInfo t = dataSet.getStorageTableInfo();
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT max(n) FROM (select count(*) AS n from ").append(t.getFromSQL("DS")).append(" group by participantid) x");
+        Integer maxCount = Table.executeSingleton(getSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
         return maxCount == null || maxCount.intValue() <= 1;
     }
+
 
     public static class VisitCreationException extends RuntimeException
     {
@@ -487,19 +522,23 @@ public class StudyManager
 
     public void deleteVisit(StudyImpl study, VisitImpl visit, User user) throws SQLException
     {
+        // TODO fix deleteVisit
+        _log.error("TODO fix deleteVisit - does not work now there is no single studydata table");
+
+/*
         StudySchema schema = StudySchema.getInstance();
         try
         {
             schema.getSchema().getScope().beginTransaction();
 
             SQLFragment data = new SQLFragment();
-            data.append("SELECT LSID FROM " + schema.getTableInfoStudyData() + " WHERE Container=? AND SequenceNum BETWEEN ? AND ?");
+            data.append("SELECT LSID FROM " + schema.getTableInfoStudyData(null) + " WHERE Container=? AND SequenceNum BETWEEN ? AND ?");
             data.add(study.getContainer().getId());
             data.add(visit.getSequenceNumMin());
             data.add(visit.getSequenceNumMax());
             OntologyManager.deleteOntologyObjects(schema.getSchema(), data, study.getContainer(), false);
             Table.execute(schema.getSchema(),
-                    "DELETE FROM " + schema.getTableInfoStudyData() + "\n" +
+                    "DELETE FROM " + schema.getTableInfoStudyData(null) + "\n" +
                     "WHERE Container=? AND SequenceNum BETWEEN ? AND ?",
                     new Object[] {study.getContainer().getId(),visit.getSequenceNumMin(),visit.getSequenceNumMax()});
             Table.execute(schema.getSchema(),
@@ -531,6 +570,7 @@ public class StudyManager
             if (schema.getSchema().getScope().isTransactionActive())
                 schema.getSchema().getScope().rollbackTransaction();
         }
+        */
     }
 
 
@@ -698,9 +738,12 @@ public class StudyManager
             {
                 return true;
             }
-            Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM " +
-                    StudySchema.getInstance().getTableInfoStudyData() + " WHERE Container = ? AND QCState = ?",
-                    new Object[] { state.getContainer().getId(), state.getRowId() }, Integer.class);
+            SQLFragment f = new SQLFragment();
+            f.append("SELECT COUNT(*) FROM ").append(
+                    StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
+                    " WHERE QCState = ?");
+            f.add(state.getRowId());
+            Integer count = Table.executeSingleton(StudySchema.getInstance().getSchema(), f.getSQL(), f.getParamsArray(), Integer.class);
             return count != null && count.intValue() > 0;
         }
         catch (SQLException e)
@@ -768,18 +811,19 @@ public class StudyManager
         if (dataLsids == null || dataLsids.isEmpty())
             return visits;
 
-        SQLFragment sql = new SQLFragment("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM study.StudyData sd\n" +
+        DataSetDefinition def = getDataSetDefinition(getStudy(container), datasetId);
+        TableInfo ds = def.getTableInfo(null, false);
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT sd.LSID AS LSID, v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
                 "JOIN study.ParticipantVisit pv ON \n" +
                 "\tsd.SequenceNum = pv.SequenceNum AND\n" +
-                "\tsd.Container = pv.Container AND\n" +
                 "\tsd.ParticipantId = pv.ParticipantId\n" +
                 "JOIN study.Visit v ON\n" +
                 "\tpv.VisitRowId = v.RowId AND\n" +
-                "\tpv.Container = v.Container\n" +
-                "WHERE sd.DatasetId = ? AND\n" +
-                "\tsd.Container = ? AND\n" +
-                "\tsd.lsid IN (");
-        sql.add(datasetId);
+                "\tpv.Container = ? AND v.Container = ?\n" +
+                "WHERE sd.lsid IN(");
+        sql.add(container.getId());
         sql.add(container.getId());
         boolean first = true;
         for (String dataLsid : dataLsids)
@@ -874,19 +918,15 @@ public class StudyManager
         {
             if (transactionOwner)
                 scope.beginTransaction();
-
-            SQLFragment sql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoStudyData() + "\n" +
+            // TODO fix updating across study data
+            SQLFragment sql = new SQLFragment("UPDATE " + def.getStorageTableInfo().getSelectName() + "\n" +
                     "SET QCState = ");
             // do string concatenation, rather that using a parameter, for the new state id because Postgres null
             // parameters are typed which causes a cast exception trying to set the value back to null (bug 6370)
             sql.append(newState != null ? newState.getRowId() : "NULL");
             sql.append(", modified = ?");
             sql.add(new Date());
-            sql.append("\nWHERE DatasetId = ? AND\n" +
-                    "\tContainer = ? AND\n" +
-                    "\tlsid IN (");
-            sql.add(datasetId);
-            sql.add(container.getId());
+            sql.append("\nWHERE lsid IN (");
             boolean first = true;
             for (String dataLsid : updateLsids)
             {
@@ -900,8 +940,8 @@ public class StudyManager
 
             Table.execute(StudySchema.getInstance().getSchema(), sql);
 
-            def.deleteFromMaterialized(user, updateLsids);
-            def.insertIntoMaterialized(user, updateLsids);
+            //def.deleteFromMaterialized(user, updateLsids);
+            //def.insertIntoMaterialized(user, updateLsids);
 
             String auditComment = "QC state was changed for " + updateLsids.size() + " record" +
                     (updateLsids.size() == 1 ? "" : "s") + ".  User comment: " + comments;
@@ -1162,13 +1202,16 @@ public class StudyManager
         try
         {
             DataSetDefinition ds = _dataSetHelper.get(s.getContainer(), id, "DataSetId");
-            if (null == ds)
-                return null;
             // update old rows w/o entityid
-            if (null == ds.getEntityId())
+            if (null != ds && null == ds.getEntityId())
             {
                 ds.setEntityId(GUID.makeGUID());
-                updateDataSetDefinition(null, ds);
+                Table.execute(StudySchema.getInstance().getSchema(), "UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL",
+                        new Object[]{ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId()});
+                _dataSetHelper.clearCache(ds);
+                ds = _dataSetHelper.get(s.getContainer(), id, "DataSetId");
+                // calling updateDataSetDefinition() during load (getDatasetDefinition()) may causesrecursion problem
+                //updateDataSetDefinition(null, ds);
             }
             return ds;
         }
@@ -1198,6 +1241,28 @@ public class StudyManager
         }
     }
 
+
+    @Nullable
+    public DataSetDefinition getDataSetDefinitionByEntityId(Study s, String entityId)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
+            filter.addCondition("EntityId", entityId);
+
+            DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
+            if (defs != null && defs.length == 1)
+                return defs[0];
+
+            return null;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+    
+
     @Nullable
     public DataSet getDataSetDefinitionByName(Study s, String name)
     {
@@ -1220,7 +1285,7 @@ public class StudyManager
 
     public List<String> getDatasetLSIDs(User user, DataSetDefinition def) throws ServletException, SQLException
     {
-        TableInfo tInfo = def.getTableInfo(user, true, false);
+        TableInfo tInfo = def.getTableInfo(user, true);
         Set<String> select = Collections.singleton("lsid");
 
         @SuppressWarnings("unchecked")
@@ -1237,7 +1302,6 @@ public class StudyManager
     public void uncache(DataSetDefinition def)
     {
         _dataSetHelper.clearCache(def);
-        def.unmaterialize();
     }
 
 
@@ -1355,12 +1419,10 @@ public class StudyManager
     public int getNumDatasetRows(DataSet dataset)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        TableInfo sdTable = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo sdTable = dataset.getTableInfo(null, false);
 
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS numRows FROM ");
-        sql.append(sdTable);
-        sql.append(" WHERE Container = '").append(dataset.getContainer().getId());
-        sql.append("' AND DatasetId = ").append(dataset.getDataSetId());
+        sql.append(sdTable.getFromSQL("ds"));
 
         try
         {
@@ -1383,48 +1445,57 @@ public class StudyManager
      */
     public int purgeDataset(Study study, DataSetDefinition dataset, Date cutoff, User user)
     {
-        assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
-        Container c = study.getContainer();
-        int count;
-
-        TableInfo data = StudySchema.getInstance().getTableInfoStudyData();
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", c.getId());
-        filter.addCondition("DatasetId", dataset.getDataSetId());
-
-        try
-        {
-            CPUTimer time = new CPUTimer("purge");
-            time.start();
-
-            SQLFragment sub = new SQLFragment("SELECT LSID FROM " + data + " " + "WHERE Container = ? and DatasetId = ?",
-                    c.getId(), dataset.getDataSetId());
-            if (cutoff != null)
-                sub.append(" AND _VisitDate > ?").add(cutoff);
-            OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sub, c, false);
-
-            SQLFragment studyDataFrag = new SQLFragment(
-                    "DELETE FROM " + data + "\n" +
-                    "WHERE Container = ? and DatasetId = ?",
-                    c.getId(), dataset.getDataSetId());
-            if (cutoff != null)
-                studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
-            count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
-
-            time.stop();
-            _log.debug("purgeDataset " + dataset.getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
-        }
-        catch (SQLException s)
-        {
-            throw new RuntimeSQLException(s);
-        }
-        finally
-        {
-            dataset.unmaterialize();
-            StudyManager.fireDataSetChanged(dataset);
-        }
-        return count;
+        return dataset.deleteRows(user, cutoff);
     }
+
+    /**
+     * Delete all rows from a dataset or just those newer than the cutoff date.
+     */
+//    public int purgeDatasetOldSchool(Study study, DataSetDefinition dataset, Date cutoff, User user)
+//    {
+//        assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
+//        Container c = study.getContainer();
+//        int count;
+//
+//        TableInfo data = StudySchema.getInstance().getTableInfoStudyData();
+//        SimpleFilter filter = new SimpleFilter();
+//        filter.addCondition("Container", c.getId());
+//        filter.addCondition("DatasetId", dataset.getDataSetId());
+//
+//        try
+//        {
+//            CPUTimer time = new CPUTimer("purge");
+//            time.start();
+//
+//            SQLFragment sub = new SQLFragment("SELECT LSID FROM " + data + " " + "WHERE Container = ? and DatasetId = ?",
+//                    c.getId(), dataset.getDataSetId());
+//            if (cutoff != null)
+//                sub.append(" AND _VisitDate > ?").add(cutoff);
+//            OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sub, c, false);
+//
+//            SQLFragment studyDataFrag = new SQLFragment(
+//                    "DELETE FROM " + data + "\n" +
+//                    "WHERE Container = ? and DatasetId = ?",
+//                    c.getId(), dataset.getDataSetId());
+//            if (cutoff != null)
+//                studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
+//            count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
+//
+//            time.stop();
+//            _log.debug("purgeDataset " + dataset.getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
+//        }
+//        catch (SQLException s)
+//        {
+//            throw new RuntimeSQLException(s);
+//        }
+//        finally
+//        {
+//            dataset.unmaterialize();
+//            StudyManager.fireDataSetChanged(dataset);
+//        }
+//        return count;
+//    }
+
 
 
     /** delete a dataset definition along with associated type, data, visitmap entries */
@@ -1448,13 +1519,6 @@ public class StudyManager
                 "WHERE Container=? AND DatasetId=?",
                 new Object[] {study.getContainer(), ds.getDataSetId()});
 
-        // UNDONE: This is broken
-        // this._dataSetHelper.delete(ds);
-        Table.execute(StudySchema.getInstance().getSchema(),
-                "DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
-                "WHERE Container=? AND DatasetId=?",
-                new Object[] {study.getContainer(), ds.getDataSetId()});
-
         _dataSetHelper.clearCache(ds);
 
         SecurityManager.deletePolicy(ds);
@@ -1474,7 +1538,7 @@ public class StudyManager
         if (null == ds)
             return;
 
-        purgeDataset(study, ds, user);
+        StorageProvisioner.drop(ds.getDomain());
 
         if (ds.getTypeURI() != null)
         {
@@ -1510,7 +1574,7 @@ public class StudyManager
 
     public void deleteAllStudyData(Container c) throws SQLException
     {
-        deleteAllStudyData(c, null, false, true);
+        deleteAllStudyData(c, null, true, true);
     }
 
     public void deleteAllStudyData(Container c, User user, boolean deleteDatasetData, boolean deleteStudyDesigns) throws SQLException
@@ -1570,8 +1634,8 @@ public class StudyManager
             //
             // participant and assay data (OntologyManager will take care of properties)
             //
-            Table.delete(StudySchema.getInstance().getTableInfoStudyData(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoStudyData());
+            // Table.delete(StudySchema.getInstance().getTableInfoStudyData(null), containerFilter);
+            //assert deletedTables.add(StudySchema.getInstance().getTableInfoStudyData(null));
             Table.delete(StudySchema.getInstance().getTableInfoParticipantVisit(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoParticipantVisit());
             Table.delete(_tableInfoParticipant, containerFilter);
@@ -1604,10 +1668,9 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
 
-            // Materialized tables
+            // dataset tables
             for (DataSetDefinition dsd : dsds)
             {
-                dsd.unmaterialize();
                 fireDataSetChanged(dsd);
             }
 
@@ -1633,6 +1696,11 @@ public class StudyManager
         }
         StringBuilder missed = new StringBuilder();
         for (TableInfo t : StudySchema.getInstance().getSchema().getTables())
+        {
+            if (t.getName().equalsIgnoreCase("studydata") || t.getName().equalsIgnoreCase("studydatatemplate"))
+            {
+                continue; // fixme.
+            }
             if (!deletedTableNames.contains(t.getName()))
             {
                 if (!deleteStudyDesigns && isStudyDesignTable(t))
@@ -1641,6 +1709,7 @@ public class StudyManager
                 missed.append(" ");
                 missed.append(t.getName());
             }
+        }
         assert missed.length() == 0 : "forgot something? " + missed;
     }
 
@@ -1672,7 +1741,7 @@ public class StudyManager
     {
         StringBuilder whereClause = new StringBuilder();
         whereClause.append("LSID IN (");
-        Object[] params = new Object[lsids.size() + 1];
+        Object[] params = new Object[lsids.size()];
         String comma = "";
         int i = 0;
         for (String lsid : lsids)
@@ -1682,8 +1751,7 @@ public class StudyManager
             params[i++] = lsid;
             comma = ",";
         }
-        whereClause.append(") AND Container = ?");
-        params[lsids.size()] = container.getId();
+        whereClause.append(")");
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause(whereClause.toString(), params);
         // We can't use the table layer to map results to our bean class because of the unfortunately named
@@ -1692,7 +1760,8 @@ public class StudyManager
         try
         {
             List<ParticipantDataset> pds = new ArrayList<ParticipantDataset>();
-            rs = Table.select(_tableInfoStudyData, Table.ALL_COLUMNS, filter, null);
+            TableInfo sdti = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(container), null);
+            rs = Table.select(sdti, Table.ALL_COLUMNS, filter, null);
             while (rs.next())
             {
                 ParticipantDataset pd = new ParticipantDataset();
@@ -1779,10 +1848,6 @@ public class StudyManager
         }
     }
 
-    public AllParticipantData getAllParticipantData(Study study, String participantId, QCStateSet qcStateSet)
-    {
-        return AllParticipantData.get(study, participantId, qcStateSet);    
-    }
 
     public SnapshotBean createSnapshot(SnapshotBean bean) throws SQLException, ServletException
     {
@@ -1894,7 +1959,7 @@ public class StudyManager
 
             Map<String,TableSnapshotInfo> datasetSnapshotInfo = new HashMap<String, TableSnapshotInfo>();
             for (DataSetDefinition dsd : study.getDataSets())
-                datasetSnapshotInfo.put(dsd.getName(), new TableSnapshotInfo(dsd.getTableInfo(user, true, false)));
+                datasetSnapshotInfo.put(dsd.getName(), new TableSnapshotInfo(dsd.getTableInfo(user, true)));
 
             tableSnapshotInfo.put("Datasets", datasetSnapshotInfo);
         }
@@ -2073,7 +2138,7 @@ public class StudyManager
                                    List<String> errors)
             throws ServletException, IOException
     {
-        TableInfo tinfo = def.getTableInfo(user, false, false);
+        TableInfo tinfo = def.getTableInfo(user, false);
 
         // We're going to lower-case the keys ourselves later,
         // so this needs to be case-insensitive
@@ -2139,7 +2204,7 @@ public class StudyManager
 
             String matchedURI = matchedCol.getPropertyURI();
 
-            if (! (matchedCol instanceof MvColumn))
+            if (!matchedCol.isMvIndicatorColumn())
             {
                 if (foundProperties.contains(matchedURI))
                 {
@@ -2155,7 +2220,7 @@ public class StudyManager
             {
                 col.setMvEnabled(def.getContainer());
             }
-            else if (matchedCol instanceof MvColumn)
+            else if (matchedCol.isMvIndicatorColumn())
             {
                 col.setMvIndicator(def.getContainer());
             }
@@ -2321,35 +2386,35 @@ public class StudyManager
     {
         for (DataSetDefinition def : changedDatasets)
         {
-            String propertyName = StringUtils.trimToNull(def.getVisitDatePropertyName());
+            String propertyName = StringUtils.trimToNull(def.getVisitDateColumnName());
             if (null == propertyName)
                 continue;
             if (null == StringUtils.trimToNull(def.getTypeURI()))
                 continue;
-            PropertyDescriptor pds[] = OntologyManager.getPropertiesForType(def.getTypeURI(), study.getContainer());
-            if (pds == null)
+
+            TableInfo ti = def.getStorageTableInfo();
+            if (null == ti)
                 continue;
-            PropertyDescriptor pdVisitDate = null;
-            for (PropertyDescriptor pd : pds)
+            
+            ColumnInfo colVisitDate = null;
+            for (ColumnInfo col : ti.getColumns())
             {
-                if (propertyName.equalsIgnoreCase(pd.getName()))
+                if (propertyName.equalsIgnoreCase(col.getName()))
                 {
-                    pdVisitDate = pd;
+                    colVisitDate = col;
                     break;
                 }
             }
-            if (pdVisitDate != null)
+            if (colVisitDate != null)
             {
                 try
                 {
                     DbSchema schema = StudySchema.getInstance().getSchema();
-                    String sqlUpdate =
-                            "UPDATE study.StudyData SET _VisitDate=(SELECT datetimevalue FROM exp.Object O JOIN exp.ObjectProperty OP ON O.ObjectId=OP.ObjectId WHERE O.Container=? AND O.ObjectURI=LSID AND OP.PropertyId=?)\n" +
-                            "WHERE Container=? AND DataSetId=?";
-                    int count = Table.execute(schema, sqlUpdate, new Object[] {study.getContainer(), pdVisitDate.getPropertyId(), study.getContainer(), def.getDataSetId()} );
+                    String sqlUpdate = "UPDATE " + ti.getSelectName() + " SET _VisitDate=" + colVisitDate.getSelectName();
+                    int count = Table.execute(schema, sqlUpdate, null);
                     if (count > 0)
                     {
-                        def.unmaterialize();
+//                        def.unmaterialize();
                         StudyManager.fireDataSetChanged(def);
                     }
                 }
@@ -2485,6 +2550,9 @@ public class StudyManager
 
         public String getDisplayURL(Lsid lsid)
         {
+            // TODO fix getDisplayUrl
+            if (true) throw new RuntimeException("not integrated with hard tables");
+
             String fullNamespace = lsid.getNamespace();
             if (!fullNamespace.startsWith("Study."))
                 return null;
@@ -2499,7 +2567,7 @@ public class StudyManager
                 try
                 {
                     ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                            "SELECT Container, DatasetId, SequenceNum, ParticipantId FROM " + StudySchema.getInstance().getTableInfoStudyData() + " WHERE LSID=?",
+                            "SELECT Container, DatasetId, SequenceNum, ParticipantId FROM " + /*StudySchema.getInstance().getTableInfoStudyData(null) +*/ " WHERE LSID=?",
                             new Object[] {lsid.toString()});
                     if (!rs.next())
                         return null;

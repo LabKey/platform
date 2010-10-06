@@ -399,6 +399,8 @@
       <ns:column columnName="Description"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Project"/>
+      <ns:column columnName="StorageTableName"/>
+      <ns:column columnName="StorageSchemaName"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="PropertyDomain" tableDbType="TABLE">

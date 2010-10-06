@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
@@ -31,6 +32,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -49,7 +51,7 @@ public class DataSetTable extends FilteredTable
 
     public DataSetTable(StudyQuerySchema schema, DataSetDefinition dsd)
     {
-        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), false));
+        super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()));
         setDescription("Contains up to one row of " + dsd.getLabel() + " data for each " +
                 StudyService.get().getSubjectNounSingular(dsd.getContainer()) + (!dsd.isDemographicData() ? "/visit" : "") +
             (dsd.getKeyPropertyName() != null ? "/" + dsd.getKeyPropertyName() : "") + " combination.");
@@ -109,6 +111,10 @@ public class DataSetTable extends FilteredTable
                 // for date-based studies can be quite large (e.g., 20091014).
                 addWrapColumn(baseColumn).setFormat("#");
                 //Don't add to visible cols...
+            }
+            else if (baseColumn.getName().equalsIgnoreCase("VisitRowId")||baseColumn.getName().equalsIgnoreCase("Dataset"))
+            {
+                addWrapColumn(baseColumn);
             }
             else if (baseColumn.getName().equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
@@ -197,6 +203,25 @@ public class DataSetTable extends FilteredTable
             getColumn("SequenceNum").setShownInDetailsView(false);
             getColumn("SequenceNum").setShownInUpdateView(false);
         }
+
+        // columns from the ParticipantVisit table
+
+        TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        if (_schema.getStudy().getTimepointType() == TimepointType.DATE)
+        {
+            ColumnInfo dayColumn = new AliasedColumn(this, "Day", participantVisit.getColumn("Day"));
+            dayColumn.setUserEditable(false);
+            dayColumn.setDimension(false);
+            dayColumn.setMeasure(false);
+            addColumn(dayColumn);
+        }
+
+        ColumnInfo visitRowId = new AliasedColumn(this, "VisitRowId", participantVisit.getColumn("VisitRowId"));
+        visitRowId.setName("VisitRowId");
+        visitRowId.setHidden(true);
+        visitRowId.setUserEditable(false);
+        visitRowId.setMeasure(false);
+        addColumn(visitRowId);
     }
 
     @Override
@@ -206,6 +231,20 @@ public class DataSetTable extends FilteredTable
             return _dsd.getDomain();
         return null;
     }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+
+        SQLFragment from = new SQLFragment();
+        from.append("(SELECT DS.*, PV.Day, PV.VisitRowId\n");
+        from.append("FROM ").append(super.getFromSQL("DS")).append(" LEFT OUTER JOIN ").append(participantVisit.getFromSQL("PV")).append("\n" +
+                " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _schema.getContainer().getId() + "') AS ").append(alias);
+        return from;
+    }   
+
 
     @Override
     public boolean hasContainerContext()
@@ -267,7 +306,7 @@ public class DataSetTable extends FilteredTable
     {
         if (_fromTable == null)
         {
-            _fromTable = _dsd.getTableInfo(_schema.getUser(), _schema.getMustCheckPermissions(), true);
+            _fromTable = _dsd.getTableInfo(_schema.getUser(), _schema.getMustCheckPermissions());
         }
         return _fromTable;
     }

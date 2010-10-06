@@ -73,7 +73,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, StudyCon
             String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t' + (def.isShowByDefault() ? "\t" : "true\t");
 
             TableInfo tinfo = def.getTableInfo(user);
-            String visitDatePropertyName = def.getVisitDatePropertyName();
+            String visitDatePropertyName = def.getVisitDateColumnName();
 
             for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo, def, true))
             {

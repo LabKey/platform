@@ -2,6 +2,7 @@ package org.labkey.study.visitmanager;
 
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
@@ -54,7 +55,7 @@ public class RelativeDateVisitManager extends VisitManager
     {
         Map<VisitMapKey, Integer> visitSummary = new HashMap<VisitMapKey, Integer>();
         DbSchema schema = StudySchema.getInstance().getSchema();
-        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), null);
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
         ResultSet rows = null;
@@ -63,37 +64,40 @@ public class RelativeDateVisitManager extends VisitManager
         {
             if (cohortFilter == null)
             {
-                rows = Table.executeQuery(schema,
+                SQLFragment sqlf = new SQLFragment();
+                sqlf.append(
                         "SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
-                        "FROM " + studyData + " SD\n" +
-                        "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND SD.Container=PV.Container\n" +
-                        "WHERE SD.Container = ? \n" +
-                        (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
+                        "FROM ").append(studyData.getFromSQL("SD")).append("\n" +
+                        "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND ?=PV.Container\n" +
+                        (qcStates != null ? "WHERE " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
                         "GROUP BY DatasetId, Day\n" +
-                        "ORDER BY 1, 2",
-                        new Object[] {_study.getContainer().getId()}, 0, false);
+                        "ORDER BY 1, 2");
+                sqlf.add(getStudy().getContainer());
+                rows = Table.executeQuery(schema, sqlf, 0, false, false);
             }
             else
             {
-                String sql = null;
+                SQLFragment sql = new SQLFragment();
                 switch (cohortFilter.getType())
                 {
                     case DATA_COLLECTION:
                         break;
                     case PTID_CURRENT:
                     case PTID_INITIAL:
-                        sql = "SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
-                            "FROM " + studyData + " SD\n" +
-                            "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND SD.Container=PV.Container\n" +
-                            "JOIN " + participantTable + " P ON SD.ParticipantId=P.ParticipantId AND SD.Container=P.Container\n" +
-                            "WHERE SD.Container = ? AND P." + (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
+                        sql.append("SELECT DatasetId, Day, CAST(COUNT(*) AS INT)\n" +
+                            "FROM ").append(studyData.getFromSQL("SD")).append("\n" +
+                            "JOIN " + participantVisit + " PV ON SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum AND ?=PV.Container\n" +
+                            "JOIN " + participantTable + " P ON SD.ParticipantId=P.ParticipantId AND ?=P.Container\n" +
+                            "WHERE P." + (cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId") + " = ?\n" +
                             (qcStates != null ? "AND " + qcStates.getStateInClause(DataSetTable.QCSTATE_ID_COLNAME) + "\n" : "") +
                             "GROUP BY DatasetId, Day\n" +
-                            "ORDER BY 1, 2";
+                            "ORDER BY 1, 2");
+                        sql.add(getStudy().getContainer());
+                        sql.add(getStudy().getContainer());
 
                         break;
                 }
-                rows = Table.executeQuery(schema, sql, new Object[] { _study.getContainer().getId(), cohortFilter.getCohortId() }, 0, false);
+                rows = Table.executeQuery(schema, sql, 0, false, false);
             }
             VisitMapKey key = null;
             int cumulative = 0;
@@ -132,7 +136,7 @@ public class RelativeDateVisitManager extends VisitManager
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
         TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
 
@@ -141,18 +145,20 @@ public class RelativeDateVisitManager extends VisitManager
             //
             // populate ParticipantVisit
             //
-            String sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit +
+            SQLFragment sqlInsertParticipantVisit = new SQLFragment();
+            sqlInsertParticipantVisit.append("INSERT INTO " + tableParticipantVisit +
                     " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
-                    "SELECT DISTINCT Container, ParticipantId, SequenceNum, _VisitDate, \n(" +
+                    "SELECT DISTINCT ? as Container, ParticipantId, SequenceNum, _VisitDate, \n(").append(
                     getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum") + ") AS ParticipantSequenceKey\n" +
-                    "FROM " + tableStudyData + " SD\n" +
-                    "WHERE Container = ? AND NOT EXISTS (" +
+                    "FROM ").append(tableStudyData.getFromSQL("SD")).append("\n" +
+                    "WHERE NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
-                    "  WHERE Container = ? AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum)";
-            Table.execute(schema, sqlInsertParticipantVisit,
-                    new Object[] {_study.getContainer(), _study.getContainer()});
+                    "  WHERE Container = ? AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum)");
+            sqlInsertParticipantVisit.add(getStudy().getContainer());
+            sqlInsertParticipantVisit.add(getStudy().getContainer());
+            Table.execute(schema, sqlInsertParticipantVisit);
 
-            sqlInsertParticipantVisit = "INSERT INTO " + tableParticipantVisit +
+            String sqlInsertParticipantVisit2 = "INSERT INTO " + tableParticipantVisit +
                     " (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n" +
                     "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, " +
                     schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") + " AS VisitDate, \n(" +
@@ -161,35 +167,35 @@ public class RelativeDateVisitManager extends VisitManager
                     "WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
                     "  WHERE Container = ? AND Specimen.Ptid=PV.ParticipantId AND Specimen.VisitValue=PV.SequenceNum)";
-            Table.execute(schema, sqlInsertParticipantVisit,
-                    new Object[] {_study.getContainer(), _study.getContainer()});
+            Table.execute(schema, sqlInsertParticipantVisit2,
+                    new Object[] {getStudy().getContainer(), getStudy().getContainer()});
             //
             // Delete ParticipantVisit where the participant does not exist anymore
             //
             String sqlDeleteParticiapantVisit = "DELETE FROM " + tableParticipantVisit + " WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM " + tableParticipant + " WHERE Container= ?)";
             Table.execute(schema, sqlDeleteParticiapantVisit,
-                    new Object[] {_study.getContainer(), _study.getContainer()});
+                    new Object[] {getStudy().getContainer(), getStudy().getContainer()});
 
             String sqlStartDate = "(SELECT StartDate FROM " + tableParticipant + " WHERE " + tableParticipant + ".ParticipantId=" + tableParticipantVisit + ".ParticipantId AND " + tableParticipant + ".Container=" + tableParticipantVisit + ".Container)";
             String sqlUpdateDays = "UPDATE " + tableParticipantVisit + " SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE " + schema.getSqlDialect().getDateDiff(Calendar.DATE, "VisitDate", sqlStartDate) + " END WHERE Container=? AND NOT VisitDate IS NULL";
-            Table.execute(schema, sqlUpdateDays, new Object[] {VisitImpl.DEMOGRAPHICS_VISIT, _study.getContainer()});
-            for (DataSetDefinition dataSet : _study.getDataSets())
-            {
-                TableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
-                if (tempTableInfo != null)
-                {
-                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = " + tempTableInfo + ".ParticipantSequenceKey" +
-                            " AND pv.Container = ?)",  _study.getContainer()));
-                }
-            }
+            Table.execute(schema, sqlUpdateDays, new Object[] {VisitImpl.DEMOGRAPHICS_VISIT, getStudy().getContainer()});
+//            for (DataSetDefinition dataSet : _study.getDataSets())
+//            {
+//                TableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
+//                if (tempTableInfo != null)
+//                {
+//                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = " + tempTableInfo + ".ParticipantSequenceKey" +
+//                            " AND pv.Container = ?)",  _study.getContainer()));
+//                }
+//            }
 
             StringBuilder participantSequenceKey = new StringBuilder("(");
-            participantSequenceKey.append(schema.getSqlDialect().concatenate("ParticipantId", "'|'", "CAST(SequenceNum AS VARCHAR)"));
+            participantSequenceKey.append(getParticipantSequenceKeyExpr(schema,"ParticipantId","SequenceNum"));
             participantSequenceKey.append(")");
 
             String sqlUpdateParticipantSeqKey = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceKey = " +
                     participantSequenceKey + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
-            Table.execute(schema, sqlUpdateParticipantSeqKey, new Object[] {_study.getContainer()});
+            Table.execute(schema, sqlUpdateParticipantSeqKey, new Object[] {getStudy().getContainer()});
 
             _updateVisitRowId();
 
@@ -220,7 +226,7 @@ public class RelativeDateVisitManager extends VisitManager
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
         Table.execute(schema, sqlUpdateVisitRowId,
-                new Object[]{_study.getContainer(), _study.getContainer()});
+                new Object[]{getStudy().getContainer(), getStudy().getContainer()});
     }
 
 
@@ -229,7 +235,7 @@ public class RelativeDateVisitManager extends VisitManager
     {
         try
         {
-            String c = _study.getContainer().getId();
+            String c = getStudy().getContainer().getId();
 
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -256,7 +262,7 @@ public class RelativeDateVisitManager extends VisitManager
 
             for (int day : days)
             {
-                StudyManager.getInstance().ensureVisit(_study, user, day, null, "Day " + day);
+                StudyManager.getInstance().ensureVisit(getStudy(), user, day, null, "Day " + day);
             }
 
             if (days.size() > 0)
@@ -272,7 +278,7 @@ public class RelativeDateVisitManager extends VisitManager
     {
         if (null != oldStartDate)
         {
-            String c = _study.getContainer().getId();
+            String c = getStudy().getContainer().getId();
             DbSchema schema = StudySchema.getInstance().getSchema();
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
             TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -292,15 +298,19 @@ public class RelativeDateVisitManager extends VisitManager
                 Table.execute(schema, "DELETE FROM " + tableVisit + " WHERE Container=?", new Object[]{c});
 
                 //Now recompute everything
-                updateParticipantVisits(user, _study.getDataSets());
+                updateParticipantVisits(user, getStudy().getDataSets());
             }
         }
     }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
-    protected String getDatasetSequenceNumsSQL()
+    protected SQLFragment getDatasetSequenceNumsSQL(Study study)
     {
-        String sql = "SELECT sd.datasetid, v.sequencenummin FROM study.StudyData sd \n" +
+        SQLFragment sql = new SQLFragment();
+        sql.append(
+            "SELECT sd.datasetid, v.sequencenummin " +
+            "FROM ").append(StudySchema.getInstance().getTableInfoStudyData(study,null).getFromSQL("SD")).append("\n");
+        sql.append(
             "JOIN study.ParticipantVisit pv ON  \n" +
             "     sd.SequenceNum = pv.SequenceNum AND \n" +
             "     sd.ParticipantId = pv.ParticipantId AND \n" +
@@ -308,9 +318,7 @@ public class RelativeDateVisitManager extends VisitManager
             "JOIN study.Visit v ON \n" +
             "     pv.VisitRowId = v.RowId AND \n" +
             "     pv.Container = v.Container \n" +
-            "WHERE sd.Container = ?\n" +
-            "group by sd.datasetid, v.sequencenummin";
-
+            "GROUP BY sd.datasetid, v.sequencenummin");
         return sql;
     }
 }

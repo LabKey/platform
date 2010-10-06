@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
@@ -76,6 +77,8 @@ public class DatasetImportRunnable implements Runnable
             errors.add("Dataset not defined");
         else if (_datasetDefinition.getTypeURI() == null)
             errors.add("Dataset " + (null != _datasetDefinition.getName() ? _datasetDefinition.getName() + ": " : "") + "type is not defined");
+        else if (null == _datasetDefinition.getStorageTableInfo())
+            errors.add("No database table found for dataset " + _datasetDefinition.getName());
 
         if (_action == AbstractDatasetImportTask.Action.DELETE)
             return;
@@ -182,7 +185,7 @@ public class DatasetImportRunnable implements Runnable
                         msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
                     pj.info(msg);
                     assert cpuCommit.stop();
-                    getDatasetDefinition().unmaterialize();
+//                    getDatasetDefinition().unmaterialize();
                 }
 
                 for (String err : errors)
@@ -246,7 +249,7 @@ public class DatasetImportRunnable implements Runnable
     public String getVisitDatePropertyName()
     {
         if (visitDatePropertyName == null && getDatasetDefinition() != null)
-            return getDatasetDefinition().getVisitDatePropertyName();
+            return getDatasetDefinition().getVisitDateColumnName();
         return visitDatePropertyName;
     }
 
@@ -259,7 +262,9 @@ public class DatasetImportRunnable implements Runnable
     {
         if (visitDatePropertyURI == null)
         {
-            for (ColumnInfo col : _datasetDefinition.getTableInfo(user, false, false).getColumns())
+            TableInfo ti = _datasetDefinition.getTableInfo(user, false);
+            if (null != ti)
+            for (ColumnInfo col : ti.getColumns())
             {
                 if (col.getName().equalsIgnoreCase(getVisitDatePropertyName()))
                     visitDatePropertyURI = col.getPropertyURI();

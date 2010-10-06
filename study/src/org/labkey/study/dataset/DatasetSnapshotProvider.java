@@ -283,20 +283,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     int numRowsDeleted;
                     List<String> newRows;
 
-                    // Synchronize on dataset definition to avoid Java-database deadlock if this thread does
-                    // the purge, which locks tables, and another thread gets the dataset's monitor when trying
-                    // to materialize it, which blocks due to our table lock. We then block waiting for it to release
-                    // the materialization lock during the call to importDatasetData(), deadlocking.
                     List<String> importErrors = new ArrayList<String>();
-                    synchronized (dsDef.getMaterializationLockObject())
-                    {
-                        numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
-                        Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
-                        Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
+                    numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
+                    Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
+                    Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
-                        // import the new data
-                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, importErrors, true, true, null, null);
-                    }
+                    // import the new data
+                    newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), System.currentTimeMillis(), columnMap, importErrors, true, true, null, null);
 
                     for (String error : importErrors)
                         errors.reject(SpringActionController.ERROR_MSG, error);

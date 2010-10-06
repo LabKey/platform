@@ -250,13 +250,11 @@ public class AssayPublishManager implements AssayPublishService.Service
             List<Map<String, Object>> convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
-            dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
-            if (schemaChanged)
-            {
-                dataset.unmaterialize();
-            }
             if (ownsTransaction)
                 scope.commitTransaction();
+            if (schemaChanged)
+                StudyManager.getInstance().uncache(dataset);
+            dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
             Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
             QCState defaultQCState = null;
             if (defaultQCStateId != null)
@@ -369,8 +367,10 @@ public class AssayPublishManager implements AssayPublishService.Service
         return ret;
     }
 
-    private Map<String, String> ensurePropertyDescriptors(Container container, User user, DataSet dataset,
-                                                          List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
+
+    private Map<String, String> ensurePropertyDescriptors(
+            Container container, User user, DataSet dataset,
+            List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
     {
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(dataset.getTypeURI(), container);
         // Strip out any spaces from existing PropertyDescriptors in the dataset
@@ -412,7 +412,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             propertyNamesToUris.put(pd.getName(), pd.getPropertyURI());
 
         // add hard columns to our return map
-        for (ColumnInfo col : dataset.getTableInfo(user).getColumns())
+        for (ColumnInfo col : DataSetDefinition.getTemplateTableInfo().getColumns())
         {
             // Swap out whatever subject column name is used in the target study for 'ParticipantID'.
             // This allows the assay side to use its column name (ParticipantID) to find the study-side
@@ -432,6 +432,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         Map<String, PropertyDescriptor> typeMap = new HashMap<String, PropertyDescriptor>();
         for (PropertyDescriptor pd : types)
             typeMap.put(pd.getName(), pd);
+
         // loop through all new columns, and verify that we have a property already defined:
         DomainDescriptor domainDescriptor = new DomainDescriptor(dataset.getTypeURI(), container);
         int sortOrder = 0;

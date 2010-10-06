@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -32,6 +33,7 @@ import org.labkey.experiment.controllers.property.PropertyController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -105,6 +107,13 @@ public class DomainImpl implements Domain
         }
         return ret;
     }
+
+
+    public String getStorageTableName()
+    {
+        return _dd.getStorageTableName();
+    }
+
 
     public Container[] getInstanceContainers()
     {
@@ -198,6 +207,7 @@ public class DomainImpl implements Domain
     {
         DefaultValueService.get().clearDefaultValues(getContainer(), this);
         OntologyManager.deleteDomain(getTypeURI(), getContainer());
+        StorageProvisioner.drop(this);
         addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
     }
 
@@ -221,6 +231,7 @@ public class DomainImpl implements Domain
             if (isNew())
             {
                 _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
+                StorageProvisioner.create(this);
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
             }
             else if (_ddOld != null)
@@ -231,12 +242,16 @@ public class DomainImpl implements Domain
             boolean propChanged = false;
             int sortOrder = 0;
 
+            List<DomainProperty> propsDropped = new ArrayList<DomainProperty>();
+            List<DomainProperty> propsAdded = new ArrayList<DomainProperty>();
+
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
             {
                 if (impl._deleted)
                 {
                     impl.delete(user);
+                    propsDropped.add(impl);
                     propChanged = true;
                 }
             }
@@ -251,11 +266,13 @@ public class DomainImpl implements Domain
                         if (impl._pd.isRequired())
                             keyColumnsChanged = true;
                         impl.save(user, _dd, sortOrder++);
+                        propsAdded.add(impl);
                         propChanged = true;
                     }
                     else
                     {
                         propChanged |= impl.isDirty();
+
                         if ((impl._pdOld != null && !impl._pdOld.isRequired()) && impl._pd.isRequired())
                             keyColumnsChanged = true;
                         impl.save(user, _dd, sortOrder++);
@@ -264,12 +281,28 @@ public class DomainImpl implements Domain
             }
 
             _new = false;
+
+            DomainKind kind = getDomainKind();
+            boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
+
             if (propChanged)
+            {
+                if (!propsDropped.isEmpty() && hasProvisioner)
+                {
+                    StorageProvisioner.dropProperties(this, propsDropped);
+                }
+
+                if (!propsAdded.isEmpty() && hasProvisioner)
+                {
+                    StorageProvisioner.addProperties(this, propsAdded);
+                }
+
                 addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
+            }
+
 
             if (keyColumnsChanged)
             {
-                DomainKind kind = getDomainKind();
                 if (null != kind)
                 {
                     SQLFragment sqlObjectIds = kind.sqlObjectIdsInDomain(this);
@@ -415,9 +448,15 @@ public class DomainImpl implements Domain
     {
         if (!(obj instanceof DomainImpl))
             return false;
-        // once a domain  has been edited, it no longer equals any other domain:
+        // once a domain has been edited, it no longer equals any other domain:
         if (_ddOld != null || ((DomainImpl) obj)._ddOld != null)
             return false;
         return (_dd.equals(((DomainImpl) obj)._dd));
+    }
+
+    @Override
+    public String toString()
+    {
+        return getTypeURI();
     }
 }

@@ -41,10 +41,18 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @NotNull
     public SQLFragment getFromSQL()
     {
-        // UNDONE: delay sql generation until it is asked for
-        // return _relation.getSql();
-        return _subquery.getFromSQL();
+        throw new IllegalStateException();
     }
+
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        // UNDONE: delay sql generation until it is asked for
+        return _subquery.getFromSQL(alias);
+    }
+    
 
     @Override
     public boolean needsContainerClauseAdded()

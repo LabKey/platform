@@ -16,15 +16,20 @@
 
 package org.labkey.study;
 
-import org.labkey.api.data.*;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.security.User;
-import org.labkey.api.util.MemTracker;
 import org.labkey.study.model.StudyCachable;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,23 +42,11 @@ public class QueryHelper<K extends StudyCachable>
     private Class<K> _objectClass;
     private final Set<String> _cachedFilters = new HashSet<String>();
     private final TableInfoGetter _tableInfoGetter;
-    private final K _missMarker;
 
     public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
     {
         _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
-
-        try
-        {
-            _missMarker = objectClass.newInstance();
-            assert MemTracker.remove(_missMarker);
-        }
-        catch (Exception e)
-        {
-            // Something has gone horribly wrong
-            throw new RuntimeException(e);
-        }
     }
 
     public K[] get(Container c) throws SQLException
@@ -71,31 +64,34 @@ public class QueryHelper<K extends StudyCachable>
         return get(c, filter, null);
     }
 
-    public K[] get(Container c, SimpleFilter filter, String sortString) throws SQLException
+    public K[] get(final Container c, final SimpleFilter filterArg, final String sortString) throws SQLException
     {
-        String cacheId = getCacheId(filter);
+        String cacheId = getCacheId(filterArg);
         if (sortString != null)
             cacheId += "; sort = " + sortString;
-        K[] objs = (K[])StudyCache.getCached(getTableInfo(), c.getId(), cacheId);
-        if (objs == null)
+
+        CacheLoader<String,Object> loader = new CacheLoader<String,Object>()
         {
-            if (filter == null)
-                filter = new SimpleFilter("Container", c.getId());
-            else if (!filter.hasContainerEqualClause())
-                filter.addCondition("Container", c.getId());
-            Sort sort = null;
-            if (sortString != null)
-                sort = new Sort(sortString);
-            objs = Table.select(getTableInfo(), Table.ALL_COLUMNS,
-                    filter, sort, _objectClass);
-            // synchronize just the caching logic that requires _cachedFilters to be in sync with StudyCache
-            synchronized (_cachedFilters)
+            @Override
+            public Object load(String key, Object argument)
             {
-                StudyCache.cache(getTableInfo(), c.getId(), cacheId, objs);
-                _cachedFilters.add(cacheId);
+                SimpleFilter filter = null!=filterArg ? filterArg : new SimpleFilter("Container", c.getId());
+                if (filter.hasContainerEqualClause())
+                    filter.addCondition("Container", c.getId());
+                Sort sort = null;
+                if (sortString != null)
+                    sort = new Sort(sortString);
+                try
+                {
+                    return Table.select(getTableInfo(), Table.ALL_COLUMNS, filter, sort, _objectClass);
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
             }
-        }
-        return objs;
+        };
+        return (K[])StudyCache.get(getTableInfo(), c.getId(), cacheId, loader);
     }
 
     public K get(Container c, double rowId) throws SQLException
@@ -118,19 +114,27 @@ public class QueryHelper<K extends StudyCachable>
         return get(c, (Object)rowId, rowIdColumnName);
     }
 
-    private K get(Container c, Object rowId, String rowIdColumnName) throws SQLException
+    private K get(final Container c, final Object rowId, final String rowIdColumnName) throws SQLException
     {
-        K obj = (K) StudyCache.getCached(getTableInfo(), c.getId(), rowId);
-        if (obj == null)
+        CacheLoader<String, Object> loader = new CacheLoader<String,Object>()
         {
-            SimpleFilter filter = new SimpleFilter("Container", c.getId());
-            filter.addCondition(rowIdColumnName, rowId);
-            obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS, filter, null, _objectClass);
-            if (null == obj)
-                obj = _missMarker;
-            StudyCache.cache(getTableInfo(), c.getId(), rowId, obj);
-        }
-        return (_missMarker == obj ? null : obj);
+            @Override
+            public Object load(String key, Object argument)
+            {
+                SimpleFilter filter = new SimpleFilter("Container", c.getId());
+                filter.addCondition(rowIdColumnName, rowId);
+                try
+                {
+                    return Table.selectObject(getTableInfo(), Table.ALL_COLUMNS, filter, null, _objectClass);
+                }
+                catch (SQLException x)
+                {
+                    throw new RuntimeSQLException(x);
+                }
+            }
+        };
+        Object obj = StudyCache.get(getTableInfo(), c.getId(), rowId, loader);
+        return (K)obj;
     }
 
     public K create(User user, K obj) throws SQLException

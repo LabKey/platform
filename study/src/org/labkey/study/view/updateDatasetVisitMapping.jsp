@@ -93,7 +93,7 @@
             {
         %>
         <tr>
-            <td class="labkey-form-label">Visit Date Column</td><td><%=h(dataset.getVisitDatePropertyName())%></td>
+            <td class="labkey-form-label">Visit Date Column</td><td><%=h(dataset.getVisitDateColumnName())%></td>
         </tr>
         <%
             }

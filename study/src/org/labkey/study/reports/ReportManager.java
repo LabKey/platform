@@ -265,7 +265,7 @@ public class ReportManager implements StudyManager.DataSetListener
         SimpleFilter filter = new SimpleFilter("DatasetId", datasetId);
         if (visit != null)
             visit.addVisitFilter(filter);
-        filter.addCondition("container", ctx.getContainer().getId());
+//        filter.addCondition("container", ctx.getContainer().getId());
 
         filter.addUrlFilters(ctx.getActionURL(), "participantdataset");
 
@@ -274,7 +274,7 @@ public class ReportManager implements StudyManager.DataSetListener
             throw new IllegalStateException("Could not find type for dataset " + datasetId);
 
         // UNDONE: use def.getTableInfo()
-        TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData(study, ctx.getUser());
         ColumnInfo[] propertyColumns = OntologyManager.getColumnsForType(typeURI, tinfo, "LSID", ctx.getContainer(), ctx.getUser());
         if (propertyColumns == null || propertyColumns.length == 0)
             throw new IllegalArgumentException("No columns for type: " + typeURI);

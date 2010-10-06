@@ -17,10 +17,8 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
@@ -30,7 +28,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.StudySchema;
 
 import java.sql.*;
 import java.util.Date;
@@ -42,21 +39,22 @@ import java.util.Map;
 */
 class DatasetImportHelper implements OntologyManager.ImportHelper
 {
+
+    //final TableInfo _tinfo;
     final String _containerId;
     final int _datasetId;
     final String _urnPrefix;
     final Connection _conn;
-    PreparedStatement _stmt = null;
+    //PreparedStatement _stmt = null;
     final Long _lastModified;
     final String _visitDatePropertyURI;
     final String _keyPropertyURI;
     final Study _study;
     final DataSet _dataset;
 
-    TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
-
     DatasetImportHelper(User user, Connection conn, Container c, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
     {
+        //_tinfo = StudySchema.getInstance().getTableInfoStudyData(StudyManager.getInstance().getStudy(c), user);
         _containerId = c.getId();
         _study = StudyManager.getInstance().getStudy(c);
         _datasetId = dataset.getDataSetId();
@@ -64,22 +62,24 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
         _urnPrefix = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + c.getRowId() + ":" + _datasetId + ".";
         _conn = conn;
         _lastModified = lastModified;
+        /*
         if (null != conn)
         {
             SqlDialect dialect = StudyManager.getSchema().getSqlDialect();
             String strType = StudyManager.getSchema().getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
             _stmt = conn.prepareStatement(
-                    "INSERT INTO " + tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState, ParticipantSequenceKey) " +
+                    "INSERT INTO " + _tinfo + " (Container, DatasetId, ParticipantId, SequenceNum, LSID, _VisitDate, Created, Modified, SourceLsid, _key, QCState, ParticipantSequenceKey) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + dialect.concatenate("?", "'|'", "CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType + ")") + ")");
             _stmt.setString(1, _containerId);
             _stmt.setInt(2, _datasetId);
         }
-
+*/
         String visitDatePropertyURI = null;
         String keyPropertyURI = null;
-        for (ColumnInfo col : dataset.getTableInfo(user, false, false).getColumns())
+        TableInfo datasetTable = dataset.getTableInfo(user,false);
+        for (ColumnInfo col : datasetTable.getColumns())
         {
-            if (col.getName().equalsIgnoreCase(dataset.getVisitDatePropertyName()))
+            if (col.getName().equalsIgnoreCase(dataset.getVisitDateColumnName()))
                 visitDatePropertyURI = col.getPropertyURI();
             if (col.getName().equalsIgnoreCase(dataset.getKeyPropertyName()))
                 keyPropertyURI = col.getPropertyURI();
@@ -135,24 +135,60 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
     }
 
 
+    public double getSequenceNum(Map map)
+    {
+        if (_study.getTimepointType() != TimepointType.VISIT)
+        {
+            Date date = (Date)(ConvertUtils.lookup(Date.class).convert(Date.class, map.get(visitDateURI)));
+            if (null != date)
+                return StudyManager.sequenceNumFromDate(date);
+            else
+                return VisitImpl.DEMOGRAPHICS_VISIT;
+        }
+        else
+            return toDouble(map.get(visitSequenceNumURI));
+    }
+
+
+    public String getParticipantId(Map map)
+    {
+        return String.valueOf(map.get(participantURI));
+    }
+
+
+    public Object getKey(Map map)
+    {
+        return null == _keyPropertyURI ? null : map.get(_keyPropertyURI);    
+    }
+
+
+    public Date getVisitDate(Map map)
+    {
+        return (Date) map.get(_visitDatePropertyURI);    
+    }
+
+    public Integer getQCState(Map map)
+    {
+        Number qcState = (Number)map.get(qcStateURI);
+        return null == qcState ? null : qcState instanceof Integer  ? (Integer)qcState : qcState.intValue();
+    }
+
+    public String getSourceLsid(Map map)
+    {
+        return (String)map.get(sourceLsidURI);
+    }
+
     public String beforeImportObject(Map<String, Object> map) throws SQLException
     {
+        throw new RuntimeException("obsolete");
+
+        /*
         if (null == _stmt)
             throw new IllegalStateException("No connection provided");
 
         String uri = getURI(map);
         String ptid = String.valueOf(map.get(participantURI));
-        double visit;
-        if (_study.getTimepointType() != TimepointType.VISIT)
-        {
-            Date date = (Date)(ConvertUtils.lookup(Date.class).convert(Date.class, map.get(visitDateURI)));
-            if (null != date)
-                visit = StudyManager.sequenceNumFromDate(date);
-            else
-                visit = VisitImpl.DEMOGRAPHICS_VISIT;
-        }
-        else
-            visit = toDouble(map.get(visitSequenceNumURI));
+        double visit = getSequenceNum(map);
         Object key = null == _keyPropertyURI ? null : map.get(_keyPropertyURI);
 
         Object created = map.get(createdURI);
@@ -184,6 +220,7 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
 
         _stmt.execute();
         return uri;
+        */
     }
 
 
@@ -208,12 +245,14 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
 
     public void updateStatistics(int currentRow) throws SQLException
     {
-        tinfo.getSqlDialect().updateStatistics(tinfo);
+        // TODO this is likely unneeded
+        //_tinfo.getSqlDialect().updateStatistics(_tinfo);
     }
 
 
     public void done()
     {
+        /*
         try
         {
             if (null != _stmt)
@@ -224,5 +263,6 @@ class DatasetImportHelper implements OntologyManager.ImportHelper
         {
             Logger.getLogger(DatasetImportHelper.class).error("unexpected error", x);
         }
+        */
     }
 }

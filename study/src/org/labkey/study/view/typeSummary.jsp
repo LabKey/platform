@@ -34,7 +34,7 @@
     Study study = dataset.getStudy();
 
     ViewContext context = HttpView.currentContext();
-    List<ColumnInfo> allCols = dataset.getTableInfo(context.getUser(), true, false).getColumns();
+    List<ColumnInfo> allCols = dataset.getTableInfo(context.getUser(), true).getColumns();
 
     List<ColumnInfo> systemColumns = new ArrayList<ColumnInfo>();
     List<ColumnInfo> userColumns = new ArrayList<ColumnInfo>();
@@ -75,10 +75,13 @@
 
     for (ColumnInfo col : systemColumns)
     {
+        String type = col.getFriendlyTypeName();
+        if (col.getName().equalsIgnoreCase("modifiedby")||col.getName().equalsIgnoreCase("createdby"))
+            type = "User (Integer)";
         %><tr>
             <td><%=h(col.getName())%></td>
             <td><%=h(col.getLabel())%></td>
-            <td><%=h(col.getFriendlyTypeName())%></td>
+            <td><%=h(type)%></td>
             <td><%=h(col.getFormat())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
             <td align="center"><input type=checkbox disabled <%=col.isMvEnabled() ? "checked" : ""%>></td>

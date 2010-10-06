@@ -439,7 +439,7 @@ public class MothershipManager
         sql.append("SELECT si.* FROM ");
         sql.append(getTableInfoServerInstallation(), "si");
         sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
-        sql.append(getTableInfoServerSession());
+        sql.append(getTableInfoServerSession(), "ss");
         sql.append(" WHERE earliestknowntime <= ? AND lastknowntime >= ?)");
         sql.add(cal.getTime());
         sql.add(cal.getTime());

@@ -21,6 +21,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.study.importer.SpecimenImporter;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.labkey.study.model.DataSetDefinition;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -236,4 +237,19 @@ public class StudyUpgradeCode implements UpgradeCode
                 scope.closeConnection();
         }
     }
+
+
+    /* called at 10.20->10.21 */
+    public void materializeDatasets(ModuleContext moduleContext)
+    {
+        try
+        {
+            DataSetDefinition.upgradeAll();
+        }
+        catch (SQLException se)
+        {
+            throw UnexpectedException.wrap(se);
+        }
+    }
+
 }

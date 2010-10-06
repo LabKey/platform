@@ -44,22 +44,44 @@ import java.util.Set;
  */
 public class DatasetDomainKind extends AbstractDomainKind
 {
-    public static final String LSID_PREFIX = "StudyDataset";
-
+    public final static String LSID_PREFIX = "StudyDataset";
+    final static String PARTICIPANTID = "participantid";
+    final static String LSID = "lsid";
+    final static String SEQUENCENUM = "sequencenum";
+    final static String SOURCELSID = "sourcelsid";
+    final static String _KEY = "_key";
+    final static String QCSTATE = "qcstate";
+    final static String PARTICIPANTSEQUENCEKEY = "participantsequencekey";
     /*
      * the columns common to all datasets
      */
     final static Set<PropertyStorageSpec> BASE_PROPERTIES;
+    final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
+
     static
     {
         PropertyStorageSpec[] props = {
-            new PropertyStorageSpec("created", Types.TIMESTAMP),
-            new PropertyStorageSpec("modified", Types.TIMESTAMP),
-            new PropertyStorageSpec("createdBy", Types.VARCHAR),
-            new PropertyStorageSpec("modifiedBy", Types.VARCHAR)
+                new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR),
+                new PropertyStorageSpec(LSID, Types.VARCHAR, true, false),
+                new PropertyStorageSpec(SEQUENCENUM, Types.FLOAT),
+                new PropertyStorageSpec(SOURCELSID, Types.VARCHAR),
+                new PropertyStorageSpec(_KEY, Types.VARCHAR),
+                new PropertyStorageSpec(QCSTATE, Types.INTEGER),
+                new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR)
         };
 
         BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
+        BASE_PROPERTIES.addAll(AbstractDomainKind.BASE_PROPERTIES);
+
+        PropertyStorageSpec.Index[] indices = {
+          new PropertyStorageSpec.Index(true, LSID),
+          new PropertyStorageSpec.Index(false, QCSTATE),
+          new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCEKEY),
+          new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY)
+        };
+
+        PROPERTY_INDICES = new HashSet<PropertyStorageSpec.Index>(Arrays.asList(indices));
+
     }
 
     public String getKindName()
@@ -83,7 +105,7 @@ public class DatasetDomainKind extends AbstractDomainKind
         }
         catch (Exception x)
         {
-        /* */
+            /* */
         }
 
         // UNDONE: switch to LSID format to make this easier
@@ -93,25 +115,25 @@ public class DatasetDomainKind extends AbstractDomainKind
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
         if (null == def)
             return new SQLFragment("NULL");
+        TableInfo ti = def.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT ObjectId FROM study.StudyData SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=? AND SD.container=? AND SD.datasetid=?");
+        sql.append("SELECT ObjectId FROM ").append(ti.getSelectName()).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
         sql.add(def.getContainer());
-        sql.add(def.getContainer());
-        sql.add(def.getDataSetId());
         return sql;
     }
 
 
     // Lsid.toString() encodes incorrectly TODO: fix
+    @Override
     public String generateDomainURI(String schemaName, String name, Container container, User user)
     {
         // UNDONE can't use id, because it won't match OntologyManager.importTypes()!
         //String objectid = name == null ? "" : name + "-" + id;
         String objectid = name == null ? "" : name;
-        return (new Lsid("StudyDatasets", "Folder-" + container.getRowId(), objectid)).toString();
+        return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
     }
 
 
@@ -146,7 +168,7 @@ public class DatasetDomainKind extends AbstractDomainKind
         return createURL;
     }
 
-    DataSet getDatasetDefinition(Container c, String domainURI)
+    DataSetDefinition getDatasetDefinition(Container c, String domainURI)
     {
         ResultSet rs = null;
         try
@@ -161,7 +183,7 @@ public class DatasetDomainKind extends AbstractDomainKind
             }
 
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                    "SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?", new Object[] {domainURI});
+                    "SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?", new Object[]{domainURI});
             if (!rs.next())
                 return null;
             String container = rs.getString(1);
@@ -197,6 +219,26 @@ public class DatasetDomainKind extends AbstractDomainKind
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {
-        return BASE_PROPERTIES;
+        Set<PropertyStorageSpec> specs = new HashSet<PropertyStorageSpec>(BASE_PROPERTIES);
+        specs.addAll(super.getBaseProperties());
+        return specs;
+    }
+
+    @Override
+    public Set<PropertyStorageSpec.Index> getPropertyIndices()
+    {
+        return PROPERTY_INDICES;
+    }
+
+    @Override
+    public DbScope getScope()
+    {
+        return StudySchema.getInstance().getSchema().getScope();
+    }
+
+    @Override
+    public String getStorageSchemaName()
+    {
+        return StudySchema.getInstance().getDatasetSchemaName();
     }
 }

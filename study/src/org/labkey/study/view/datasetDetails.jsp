@@ -102,7 +102,7 @@ if (!pipelineSet)
         <td><%= dataset.getCohort() != null ? h(dataset.getCohort().getLabel()) : "All" %></td>
 
         <td class=labkey-form-label><%=visitManager.getLabel()%> Date Column</td>
-        <td><%= h(dataset.getVisitDatePropertyName()) %></td>
+        <td><%= h(dataset.getVisitDateColumnName()) %></td>
     </tr>
     <tr>
         <td class=labkey-form-label>Additional Key Column</td>

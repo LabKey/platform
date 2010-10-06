@@ -20,7 +20,20 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlDialect;
+import org.labkey.api.data.SqlScriptParser;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
@@ -28,8 +41,17 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 
 import javax.servlet.ServletException;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -53,16 +75,16 @@ class SqlDialectPostgreSQL extends SqlDialect
     private SqlDialectPostgreSQL()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
-            "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC",
-            "AUTHORIZATION", "BETWEEN", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT",
-            "CREATE", "CROSS", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC",
-            "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FOR", "FOREIGN", "FREEZE",
-            "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER",
-            "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT",
-            "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NEW", "NOT", "NOTNULL", "NULL", "OFF", "OFFSET",
-            "OLD", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY",
-            "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "THEN",
-            "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
+                "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC",
+                "AUTHORIZATION", "BETWEEN", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLUMN", "CONSTRAINT",
+                "CREATE", "CROSS", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC",
+                "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FOR", "FOREIGN", "FREEZE",
+                "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER",
+                "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LEADING", "LEFT", "LIKE", "LIMIT",
+                "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NEW", "NOT", "NOTNULL", "NULL", "OFF", "OFFSET",
+                "OLD", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY",
+                "REFERENCES", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "THEN",
+                "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VERBOSE", "WHEN", "WHERE"
         ));
     }
 
@@ -295,7 +317,7 @@ class SqlDialectPostgreSQL extends SqlDialect
 
     public String getSubstringFunction(String s, String start, String length)
     {
-        return "substr(" + s + ", " + start + ", " + length + ")"; 
+        return "substr(" + s + ", " + start + ", " + length + ")";
     }
 
     @Override
@@ -477,7 +499,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         if ("55006".equals(e.getSQLState()))
         {
             _log.error("You must close down pgAdmin III and all other applications accessing PostgreSQL.");
-            throw(new ServletException("Close down or disconnect pgAdmin III and all other applications accessing PostgreSQL", e));
+            throw (new ServletException("Close down or disconnect pgAdmin III and all other applications accessing PostgreSQL", e));
         }
         else
         {
@@ -490,6 +512,7 @@ class SqlDialectPostgreSQL extends SqlDialect
     // to CREATE LANGUAGE at this point, however, that requires SUPERUSER permissions and takes us down the path of
     // creating call handlers and other complexities.  It looks like PostgreSQL 8.1 has a simpler form of CREATE LANGUAGE...
     // once we require 8.1 we should consider using it here.
+
     public void prepareNewDatabase(DbSchema schema) throws ServletException
     {
         ResultSet rs = null;
@@ -507,13 +530,20 @@ class SqlDialectPostgreSQL extends SqlDialect
 
             throw new ConfigurationException(message, advice);
         }
-        catch(SQLException e)
+        catch (SQLException e)
         {
             throw new ServletException("Failure attempting to verify language PL/pgSQL", e);
         }
         finally
         {
-            try {if (null != rs) rs.close();} catch(SQLException e) {_log.error("prepareNewDatabase", e);}
+            try
+            {
+                if (null != rs) rs.close();
+            }
+            catch (SQLException e)
+            {
+                _log.error("prepareNewDatabase", e);
+            }
         }
     }
 
@@ -529,6 +559,7 @@ class SqlDialectPostgreSQL extends SqlDialect
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
     // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
+
     private void initializeUserDefinedTypes(DbScope scope, Map<String, Integer> scales) throws SQLException
     {
         // No synchronization on scales, but there's no harm if we execute this query twice.
@@ -563,6 +594,7 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     // Do dialect-specific work after schema load, if necessary
+
     public void prepareNewDbSchema(DbSchema schema)
     {
         ResultSet rsSeq = null;
@@ -665,6 +697,7 @@ class SqlDialectPostgreSQL extends SqlDialect
         jdbc:postgresql://host/database?user=fred&password=secret&ssl=true
         jdbc:postgresql://host:port/database?user=fred&password=secret&ssl=true
     */
+
     public static class PostgreSQLJdbcHelper extends StandardJdbcHelper
     {
         protected PostgreSQLJdbcHelper()
@@ -727,40 +760,61 @@ class SqlDialectPostgreSQL extends SqlDialect
     }
 
     @Override
-    public String getChangeStatement(Change change)
+    public List<String> getChangeStatements(TableChange change)
     {
-        String sql = null;
+        List<String> sql = new ArrayList<String>();
         switch (change.getType())
         {
             case CreateTable:
-                sql =  getCreateTableStatement(change);
+                sql.addAll(getCreateTableStatements(change));
                 break;
             case DropTable:
-                sql = getDropTableStatement(change);
+                sql.add("DROP TABLE " + makeTableIdentifier(change));
                 break;
             case AddColumns:
-                sql = getAddColumnsStatement(change);
+                sql.add(getAddColumnsStatement(change));
                 break;
             case DropColumns:
-                sql = getDropColumnsStatement(change);
+                sql.add(getDropColumnsStatement(change));
+                break;
+            case RenameColumns:
+                    sql.addAll(getRenameColumnsStatement(change));
                 break;
         }
 
         return sql;
     }
 
-    private String getDropColumnsStatement(Change change)
+    private List<String> getRenameColumnsStatement(TableChange change)
+    {
+
+        List<String> statements = new ArrayList<String>();
+        for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
+        {
+            statements.add(String.format("ALTER TABLE %s.%s RENAME COLUMN %s TO %s",
+                    change.getSchemaName(), change.getTableName(),
+                    makePropertyIdentifier(oldToNew.getKey()),
+                    makePropertyIdentifier(oldToNew.getValue())));
+        }
+
+        return statements;
+    }
+
+    private String getDropColumnsStatement(TableChange change)
     {
         List<String> sqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            sqlParts.add("DROP COLUMN " + prop.getName());
+            sqlParts.add("DROP COLUMN " + makePropertyIdentifier(prop.getName()));
         }
 
-        return String.format("ALTER TABLE %s %s", change.getTableName(), StringUtils.join(sqlParts, ", "));
+        return String.format("ALTER TABLE %s %s", makeTableIdentifier(change), StringUtils.join(sqlParts, ", "));
     }
 
-    private String getAddColumnsStatement(Change change)
+    // TODO if there are cases where user-defined columns need indices, this method will need to support
+    // creating indices like getCreateTableStatement does.
+
+    private String getAddColumnsStatement(TableChange change)
     {
         List<String> sqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
@@ -768,44 +822,59 @@ class SqlDialectPostgreSQL extends SqlDialect
             sqlParts.add("ADD COLUMN " + getSqlColumnSpec(prop));
         }
 
-        return String.format("ALTER TABLE %s %s", change.getTableName(), StringUtils.join(sqlParts, ", "));
+        return String.format("ALTER TABLE %s %s", makeTableIdentifier(change), StringUtils.join(sqlParts, ", "));
     }
 
-    private String getCreateTableStatement(Change change)
+    private List<String> getCreateTableStatements(TableChange change)
     {
-        List<String> sqlParts = new ArrayList<String>();
+        List<String> statements = new ArrayList<String>();
+        List<String> createTableSqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            sqlParts.add(getSqlColumnSpec(prop));
-            // if it has a qc note (aka "missing value indicator")
-            // make an additional column for that
-            if (prop.hasQcNote())
-            {
-                sqlParts.add(prop.getQcNoteFieldName() + " VARCHAR");
-            }
+            createTableSqlParts.add(getSqlColumnSpec(prop));
         }
 
-        return String.format("CREATE TABLE %s (%s)", change.getTableName(), StringUtils.join(sqlParts, ", "));
-        // TODO table constraints
+        statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ", ")));
+
+        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
+        {
+            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)", index.isUnique ? "UNIQUE" : "", nameIndex(change.getTableName(), index.columnNames), makeTableIdentifier(change), StringUtils.join(index.columnNames, ", ")));
+        }
+
+        return statements;
     }
 
-    public String getDropTableStatement(Change change)
+    private String nameIndex(String tableName, String[] indexedColumns)
     {
-      return "DROP TABLE " + change.getTableName();  
+        return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
     }
-
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
         List<String> colSpec = new ArrayList<String>();
-        colSpec.add(prop.getName());
+        colSpec.add(makePropertyIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
-        if (prop.isUnique()) colSpec.add("UNIQUE");
-        if (!prop.isNullable()) colSpec.add("NOT NULL");
+        if (prop.isUnique())
+            colSpec.add("UNIQUE");
+// UNDONE : this kills upgrade..., need to figure out how to create for new tables, but not existing???
+//        if (!prop.isNullable())
+//          colSpec.add("NOT NULL");
         // todo auto increment
         // todo indexes
 
         return StringUtils.join(colSpec, ' ');
+    }
+
+    private String makeTableIdentifier(TableChange change)
+    {
+        assert AliasManager.isLegalName(change.getTableName());
+        return change.getSchemaName() + "." + change.getTableName();
+    }
+
+
+    private String makePropertyIdentifier(String name)
+    {
+        return "\"" + name.toLowerCase() + "\"";
     }
 
 
@@ -821,7 +890,7 @@ class SqlDialectPostgreSQL extends SqlDialect
             DbScope scope = coreSchema.getScope();
             String tempSchemaName = getGlobalTempTablePrefix();
             if (tempSchemaName.endsWith("."))
-                tempSchemaName = tempSchemaName.substring(0, tempSchemaName.length()-1);
+                tempSchemaName = tempSchemaName.substring(0, tempSchemaName.length() - 1);
             String dbName = getDatabaseName(scope.getDataSourceName(), scope.getDataSource());
 
             Connection conn = null;
@@ -830,7 +899,7 @@ class SqlDialectPostgreSQL extends SqlDialect
             try
             {
                 conn = scope.getConnection();
-                rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[] {"TABLE"});
+                rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[]{"TABLE"});
                 while (rs.next())
                 {
                     String table = rs.getString("TABLE_NAME");
@@ -982,22 +1051,22 @@ class SqlDialectPostgreSQL extends SqlDialect
         public void testJavaUpgradeCode()
         {
             String goodSql =
-                "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
-                "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
-                "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
-                "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
+                    "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
+                            "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
+                            "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
+                            "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
 
 
             String badSql =
-                "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
-                "   more comment\n" +
-                "*/" +
-                "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
-                "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
-                "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
-                "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
-                "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
-                "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
+                    "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
+                            "   more comment\n" +
+                            "*/" +
+                            "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
+                            "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
+                            "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
+                            "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
+                            "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
+                            "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
             try
             {
@@ -1025,28 +1094,28 @@ class SqlDialectPostgreSQL extends SqlDialect
 
             try
             {
-                String goodUrls =   "jdbc:postgresql:database\n" +
-                                    "jdbc:postgresql://localhost/database\n" +
-                                    "jdbc:postgresql://localhost:8300/database\n" +
-                                    "jdbc:postgresql://www.host.com/database\n" +
-                                    "jdbc:postgresql://www.host.com:8499/database\n" +
-                                    "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
-                                    "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
+                String goodUrls = "jdbc:postgresql:database\n" +
+                        "jdbc:postgresql://localhost/database\n" +
+                        "jdbc:postgresql://localhost:8300/database\n" +
+                        "jdbc:postgresql://www.host.com/database\n" +
+                        "jdbc:postgresql://www.host.com:8499/database\n" +
+                        "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
+                        "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
+                        "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
+                        "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
+                        "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
 
                 for (String url : goodUrls.split("\n"))
                     assertEquals(helper.getDatabase(url), "database");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 fail("Exception running JdbcHelper test: " + e.getMessage());
             }
 
-            String badUrls =    "jddc:postgresql:database\n" +
-                                "jdbc:postgres://localhost/database\n" +
-                                "jdbc:postgresql://www.host.comdatabase";
+            String badUrls = "jddc:postgresql:database\n" +
+                    "jdbc:postgres://localhost/database\n" +
+                    "jdbc:postgresql://www.host.comdatabase";
 
             for (String url : badUrls.split("\n"))
             {

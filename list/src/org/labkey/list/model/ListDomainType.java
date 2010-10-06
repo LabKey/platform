@@ -79,9 +79,9 @@ public class ListDomainType extends AbstractDomainKind
         ListDefinitionImpl listDef = (ListDefinitionImpl) ListService.get().getList(domain);
         if (listDef == null)
             return new SQLFragment("NULL");
-        SQLFragment ret = new SQLFragment("SELECT IndexTable.ObjectId FROM (");
-        ret.append(listDef.getIndexTable().getFromSQL());
-        ret.append(") IndexTable WHERE IndexTable.listId = " + listDef.getListId());
+        SQLFragment ret = new SQLFragment("SELECT IndexTable.ObjectId FROM ");
+        ret.append(listDef.getIndexTable().getFromSQL("IndexTable"));
+        ret.append("\nWHERE IndexTable.listId = " + listDef.getListId());
         return ret;
     }
 

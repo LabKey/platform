@@ -250,7 +250,7 @@ public class CohortManager
             if (null != dataset)
             {
                 TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-                TableInfo cohortDatasetTinfo = dataset.getTableInfo(user, false, true);
+                TableInfo cohortDatasetTinfo = dataset.getTableInfo(user, false);
 
                 //TODO: Use Property URI & Make sure this is set properly
                 ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
@@ -260,9 +260,10 @@ public class CohortManager
 
                     // Find the set of cohorts specified in our dataset
                     SQLFragment sqlFragment = new SQLFragment();
-                    sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getValueSql("CO").getSQL() + " FROM " + cohortDatasetTinfo.getSelectName() + " CO " +
-                            "\nWHERE " + cohortLabelCol.getValueSql("CO").getSQL() + " IS NOT NULL AND " + cohortLabelCol.getValueSql("CO").getSQL() + " NOT IN\n" +
-                            " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
+                    sqlFragment.append("SELECT DISTINCT ").append(cohortLabelCol.getValueSql("CO")).append("\nFROM ");
+                    sqlFragment.append(cohortDatasetTinfo.getFromSQL("CO")).append("\n" +
+                            "WHERE ").append(cohortLabelCol.getValueSql("CO")).append(" IS NOT NULL AND ").append(cohortLabelCol.getValueSql("CO")).append(" NOT IN\n" +
+                            "  (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
                     sqlFragment.add(study.getContainer().getId());
 
                     Set<String> newCohortLabels = new HashSet<String>();
@@ -327,16 +328,15 @@ public class CohortManager
         // assignment never changes.  Participant "NegativeUntil2" starts out negative, then switches to positive in visit
         // 2.  The following code uses this information to fill in the blanks between assignment changes, saving a cohort
         // assignment for every known participant/visit combination based on the results of this query.
-        SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, " + cohortLabelCol.getValueSql("D") +
-                " FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + " PV\n" +
-                "LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " V ON\n" +
-                "\tPV.VisitRowId = V.RowId\n" +
-                "LEFT OUTER JOIN " + cohortDatasetTinfo + " D ON\n" +
-                (!dsd.isDemographicData() ? "\tPV.VisitRowId = D.VisitRowId AND\n" : "") +
-                "\tPV.ParticipantId = D." + StudyService.get().getSubjectColumnName(study.getContainer()) + "\n" +
-                "WHERE PV.Container = ? " + (study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "") +
-                "\nORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
-
+        ColumnInfo subjectCol = ((DataSetDefinition.StudyDataTableInfo)cohortDatasetTinfo).getParticipantColumn();
+        SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
+                "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV") + "\n" +
+                "  LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit().getFromSQL("V") + " ON PV.VisitRowId = V.RowId\n" +
+                "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
+                    (!dsd.isDemographicData() ? "\tPV.SequenceNum = D.SequenceNum AND\n" : "") +
+                    "\tPV.ParticipantId = " + subjectCol.getValueSql("D") + "\n" +
+                "WHERE PV.Container = ? " + (study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "") + "\n" +
+                "ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
         pvCohortSql.add(study.getContainer());
 
         Map<String, Integer> initialCohortAssignments = new HashMap<String, Integer>();

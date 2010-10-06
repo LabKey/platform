@@ -854,7 +854,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                     {
                         ResultSetUtil.close(fstmt);
                         ResultSetUtil.close(frs);
-                        try {schema.getScope().releaseConnection(fconn);} catch (SQLException ex) {};
+                        schema.getScope().releaseConnection(fconn);
                         super.close();
                     }
 
@@ -878,7 +878,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         {
             ResultSetUtil.close(stmt);
             ResultSetUtil.close(rs);
-            if (null != conn) try {schema.getScope().releaseConnection(conn);} catch (SQLException ex) {}
+            if (null != conn) schema.getScope().releaseConnection(conn);
         }
     }
 

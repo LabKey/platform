@@ -144,7 +144,7 @@
             <td><%
                 // UNDONE: use fancy javascript or AJAX here
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), visit.getVisitDateDatasetId());
-                String visitDatePropertyName = (null != def && null != def.getVisitDatePropertyName()) ? def.getVisitDatePropertyName() : "";
+                String visitDatePropertyName = (null != def && null != def.getVisitDateColumnName()) ? def.getVisitDateColumnName() : "";
                 %><input disabled=true value="<%=h(visitDatePropertyName)%>">
             </td>
         </tr>

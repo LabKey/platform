@@ -171,10 +171,12 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
         Object lsid = map.get("lsid");
-        if (lsid != null) {
+        if (lsid != null)
             return lsid.toString();
-        }
-
+        lsid = map.get("LSID");
+        if (lsid != null)
+            return lsid.toString();
+        
         boolean isDemographic = _dataset.isDemographicData();
 
         // if there was no explicit lsid and KeyManagementType == None, there is no non-lsid key that is unique by itself.

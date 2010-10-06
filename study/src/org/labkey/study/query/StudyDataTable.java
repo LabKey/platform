@@ -46,13 +46,13 @@ public class StudyDataTable extends FilteredTable
 
     public StudyDataTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoStudyData(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), schema.getContainer());
         _schema = schema;
 
         List<FieldKey> defaultColumns = new LinkedList<FieldKey>();
 
-        ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSetId"));
-        datasetColumn.setFk(new LookupForeignKey(getDataSetURL(), "datasetId", "datasetId", "Name") {
+        ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
+        datasetColumn.setFk(new LookupForeignKey(getDataSetURL(), "entityId", "entityId", "Name") {
             public TableInfo getLookupTableInfo()
             {
                 return new DataSetsTable(_schema);
@@ -62,20 +62,23 @@ public class StudyDataTable extends FilteredTable
         defaultColumns.add(FieldKey.fromParts("DataSet"));
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
-        ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("ParticipantId"));
+        ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
         participantIdColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
         addColumn(participantIdColumn);
         defaultColumns.add(FieldKey.fromParts(subjectColName));
 
-        ColumnInfo dateColumn = new AliasedColumn(this, "Date", _rootTable.getColumn("_visitdate"));
-        addColumn(dateColumn);
-        defaultColumns.add(FieldKey.fromParts("Date"));
+        if (null != _rootTable.getColumn("Date"))
+        {
+            ColumnInfo dateColumn = new AliasedColumn(this, "Date", _rootTable.getColumn("_visitdate"));
+            addColumn(dateColumn);
+            defaultColumns.add(FieldKey.fromParts("Date"));
+        }
 
-        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
-        addColumn(createdColumn);
+//        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
+//        addColumn(createdColumn);
 
-        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
-        addColumn(modifiedColumn);
+//        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
+//        addColumn(modifiedColumn);
 
         ColumnInfo lsidColumn = new AliasedColumn(this, "LSID", _rootTable.getColumn("lsid"));
         lsidColumn.setHidden(true);
@@ -90,17 +93,17 @@ public class StudyDataTable extends FilteredTable
         sequenceNumColumn.setMeasure(false);
         addColumn(sequenceNumColumn);
 
-        PropertyDescriptor[] pds = EMPTY_PROPERTY_ARRAY;
-        StudyImpl study = _schema.getStudy();
-        if (study != null)
-            pds = study.getSharedProperties();
+//        PropertyDescriptor[] pds = EMPTY_PROPERTY_ARRAY;
+//        StudyImpl study = _schema.getStudy();
+//        if (study != null)
+//            pds = study.getSharedProperties();
 
-        for (PropertyDescriptor pd : pds)
-        {
-            ColumnInfo projectColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
-            addColumn(projectColumn);
-            defaultColumns.add(FieldKey.fromParts(pd.getName()));
-        }
+//        for (PropertyDescriptor pd : pds)
+//        {
+//            ColumnInfo projectColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
+//            addColumn(projectColumn);
+//            defaultColumns.add(FieldKey.fromParts(pd.getName()));
+//        }
 
         setDefaultVisibleColumns(defaultColumns);
 

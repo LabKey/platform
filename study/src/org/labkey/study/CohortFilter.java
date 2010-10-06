@@ -176,7 +176,8 @@ public class CohortFilter
         String cohortIdStr = url.getParameter(Params.cohortId);
         try
         {
-            return Integer.parseInt(cohortIdStr);
+            if (null != cohortIdStr)
+                return Integer.parseInt(cohortIdStr);
         }
         catch (NumberFormatException e)
         {

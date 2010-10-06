@@ -18,6 +18,7 @@ package org.labkey.study.controllers;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import gwt.client.org.labkey.study.dataset.client.Designer;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
@@ -38,6 +39,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -238,7 +240,9 @@ public class StudyController extends BaseStudyController
             if (_def != null)
             {
                 String domainURI = _def.getTypeURI();
-                OntologyManager.ensureDomainDescriptor(domainURI, form.getTypeName(), getContainer());
+                DomainDescriptor newDomainDescriptor = OntologyManager.ensureDomainDescriptor(domainURI, form.getTypeName(), getContainer());
+                Domain newDomain = PropertyService.get().getDomain(newDomainDescriptor.getDomainId());
+                StorageProvisioner.create(new DatasetDomainKind(), newDomain);
                 return true;
             }
             return false;
@@ -597,18 +601,66 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
     @RequiresPermissionClass(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
         private CohortFilter _cohortFilter;
-        private int _datasetId;
+//        private int _datasetId;
         private int _visitId;
         private String _encodedQcState;
+        private DataSetDefinition _def;
+        private Study _study;
 
         public DatasetAction()
         {
             super(DatasetFilterForm.class);
         }
+
+
+        private DataSetDefinition getDataSetDefinition() throws ServletException
+        {
+            if (null == _def)
+            {
+                Object datasetKeyObject = getViewContext().get(DataSetDefinition.DATASETKEY);
+                if (datasetKeyObject instanceof List)
+                {
+                    // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
+                    List<?> list = (List<?>)datasetKeyObject;
+                    datasetKeyObject = list.get(0);
+                }
+                if (null != datasetKeyObject)
+                {
+                    try
+                    {
+                        int id = NumberUtils.toInt(String.valueOf(datasetKeyObject), 0);
+                        _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), id);
+                    }
+                    catch (ConversionException x)
+                    {
+                        HttpView.throwNotFound();
+                    }
+                }
+                else
+                {
+                    String entityId = (String)getViewContext().get("entityId");
+                    if (null != entityId)
+                        _def = StudyManager.getInstance().getDataSetDefinitionByEntityId(getStudy(), entityId);
+                }
+            }
+            if (null == _def)
+                HttpView.throwNotFound();
+            return _def;
+        }
+        
+
+        private Study getStudy() throws ServletException
+        {
+            if (null == _study)
+                _study = StudyController.this.getStudy();
+            return _study;
+        }
+
 
         @Override
         public ModelAndView getView(DatasetFilterForm form, BindException errors) throws Exception
@@ -616,20 +668,12 @@ public class StudyController extends BaseStudyController
             ActionURL url = getViewContext().getActionURL();
             String viewName = url.getParameter("Dataset.viewName");
 
-            Object datasetKeyObject = getViewContext().get(DataSetDefinition.DATASETKEY);
-            if (datasetKeyObject instanceof List)
-            {
-                // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
-                List<?> list = (List<?>)datasetKeyObject;
-                datasetKeyObject = list.get(0);
-            }
-            _datasetId = NumberUtils.toInt(String.valueOf(datasetKeyObject), 0);
 
             // if the view name refers to a report id (legacy style), redirect to use the newer report id parameter
             if (NumberUtils.isDigits(viewName))
             {
                 // one last check to see if there is a view with that name before trying to redirect to the report
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), _datasetId);
+                DataSetDefinition def = getDataSetDefinition();
 
                 if (def != null &&
                     QueryService.get().getCustomView(getUser(), getContainer(), StudyManager.getSchemaName(), def.getLabel(), viewName) == null)
@@ -651,7 +695,7 @@ public class StudyController extends BaseStudyController
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
 
-            StudyImpl study = getStudy();
+            Study study = getStudy();
             _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
@@ -662,7 +706,8 @@ public class StudyController extends BaseStudyController
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
 
             String viewName = (String)context.get("Dataset.viewName");
-            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
+//            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
+            DataSetDefinition def = getDataSetDefinition();
             if (null == def)
                 return new TypeNotFoundAction().getView(form, errors);
             String typeURI = def.getTypeURI();
@@ -679,7 +724,7 @@ public class StudyController extends BaseStudyController
                     HttpView.throwNotFound();
             }
 
-            final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
+            final StudyQuerySchema querySchema = new StudyQuerySchema((StudyImpl)study, getUser(), true);
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
@@ -700,8 +745,8 @@ public class StudyController extends BaseStudyController
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
-                addParticipantListToCache(context, _datasetId, viewName, generateParticipantList(queryView), _cohortFilter, form.getQCState());
-                getExpandedState(context, _datasetId).clear();
+                addParticipantListToCache(context, def.getDataSetId(), viewName, generateParticipantList(queryView), _cohortFilter, form.getQCState());
+                getExpandedState(context, def.getDataSetId()).clear();
 
                 queryView.setShowSourceLinks(hasSourceLsids(table));
             }
@@ -808,14 +853,14 @@ public class StudyController extends BaseStudyController
                     if ((user.isAdministrator() || canWrite))
                     {
                         // manage dataset
-                        ActionButton manageButton = new ActionButton(new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _datasetId), "Manage Dataset");
+                        ActionButton manageButton = new ActionButton(new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", getDataSetDefinition().getDataSetId()), "Manage Dataset");
                         manageButton.setDisplayModes(DataRegion.MODE_GRID);
                         manageButton.setActionType(ActionButton.Action.LINK);
                         manageButton.setDisplayPermission(InsertPermission.class);
                         buttonBar.add(manageButton);
 
                         // bulk import
-                        ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                        ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + getDataSetDefinition().getDataSetId(), "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(InsertPermission.class);
                         buttonBar.add(uploadButton);
                     }
@@ -916,7 +961,14 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, _datasetId, _visitId,  _cohortFilter, _encodedQcState);
+            try
+            {
+            return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId,  _cohortFilter, _encodedQcState);
+            }
+            catch (ServletException x)
+            {
+                return root;
+            }
         }
     }
 
@@ -1197,6 +1249,7 @@ public class StudyController extends BaseStudyController
             study.setSubjectNounSingular(form.getSubjectNounSingular());
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
+// UNDONE: study.isValidSubjectNoun(singular, plural, column);
             StudyManager.getInstance().createStudy(user, study);
         }
     }
@@ -3547,7 +3600,7 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 redirectTypeNotFound(datasetId);
 
-            TableInfo tinfo = def.getTableInfo(getUser(), true, false);
+            TableInfo tinfo = def.getTableInfo(getUser(), true);
 
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
@@ -6436,6 +6489,25 @@ public class StudyController extends BaseStudyController
             return null;
         }
     }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class TestUpgradeAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            DataSetDefinition.upgradeAll();
+            return new HtmlView("OK");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
 
     public static class TSVForm
     {

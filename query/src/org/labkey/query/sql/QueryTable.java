@@ -156,7 +156,7 @@ public class QueryTable extends QueryRelation
 
         String selectName = _tableInfo.getSelectName();
         boolean simpleTable = null != selectName;
-        
+
         if (simpleTable)
             _innerAlias = makeRelationName(selectName);
         else
@@ -188,20 +188,7 @@ public class QueryTable extends QueryRelation
             comma = ", ";
         }
         sql.append("\nFROM ");
-
-        if (simpleTable)
-        {
-            sql.append(selectName);
-            if (!selectName.equals(_innerAlias))
-                sql.append(" AS ").append(_innerAlias);
-        }
-        else
-        {
-            sql.append("(\n");
-            sql.append(_tableInfo.getFromSQL());
-            sql.append(") ");
-            sql.append(_innerAlias);
-        }
+        sql.append(_tableInfo.getFromSQL(_innerAlias));
         for (SQLFragment j : joins.values())
             sql.append(j);
         assert sql.appendComment("</QueryTable@" + System.identityHashCode(this) + ">", _schema.getDbSchema().getSqlDialect());

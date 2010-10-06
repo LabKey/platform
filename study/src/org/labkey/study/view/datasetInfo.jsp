@@ -28,5 +28,5 @@
     <tr><td class=labkey-form-label>Label</td><td><%= h(dataset.getLabel()) %></td></tr>
     <tr><td class=labkey-form-label>Display String</td><td><%= h(dataset.getDisplayString()) %></td></tr>
     <tr><td class=labkey-form-label>Category</td><td><%= h(dataset.getCategory()) %></td></tr>
-    <tr><td class=labkey-form-label>Visit Date Column</td><td><%= h(dataset.getVisitDatePropertyName()) %></td></tr>
+    <tr><td class=labkey-form-label>Visit Date Column</td><td><%= h(dataset.getVisitDateColumnName()) %></td></tr>
 </table>

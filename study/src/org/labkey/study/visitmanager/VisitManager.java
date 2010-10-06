@@ -2,6 +2,7 @@ package org.labkey.study.visitmanager;
 
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.study.Visit;
@@ -51,15 +52,15 @@ public abstract class VisitManager
 
         try
         {
-            CohortManager.getInstance().updateParticipantCohorts(user, _study);
+            CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
 
-        StudyManager.getInstance().clearVisitCache(_study);
-        StudyManager.getInstance().reindex(_study.getContainer());
+        StudyManager.getInstance().clearVisitCache(getStudy());
+        StudyManager.getInstance().reindex(getStudy().getContainer());
     }
 
 
@@ -74,8 +75,10 @@ public abstract class VisitManager
         SqlDialect dialect = schema.getSqlDialect();
         String strType = dialect.sqlTypeNameFromSqlTypeInt(Types.VARCHAR);
 
+        //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
+
         StringBuilder participantSequenceKey = new StringBuilder("(");
-        participantSequenceKey.append(dialect.concatenate(ptidColumnName, "'|'", "CAST(" + sequenceNumColumnName + " AS " + strType + ")"));
+        participantSequenceKey.append(dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")"));
         participantSequenceKey.append(")");
 
         return participantSequenceKey.toString();
@@ -92,16 +95,16 @@ public abstract class VisitManager
     public abstract Map<VisitMapKey, Integer> getVisitSummary(CohortFilter cohortFilter, QCStateSet qcStates) throws SQLException;
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
-    protected abstract String getDatasetSequenceNumsSQL();
+    protected abstract SQLFragment getDatasetSequenceNumsSQL(Study study);
 
     public Map<Integer, List<Double>> getDatasetSequenceNums()
     {
-        String sql = getDatasetSequenceNumsSQL();
+        SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
         ResultSet rs = null;
         Map<Integer, List<Double>> ret = new HashMap<Integer, List<Double>>();
         try
         {
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, new Object[] {_study.getContainer()});
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
             while (rs.next())
             {
                 Integer datasetId  = rs.getInt(1);
@@ -132,7 +135,7 @@ public abstract class VisitManager
      */
     public TreeMap<Double, VisitImpl> getVisitSequenceMap()
     {
-        VisitImpl[] visits = _study.getVisits(Visit.Order.DISPLAY);
+        VisitImpl[] visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<Double, VisitImpl> visitMap = new TreeMap<Double, VisitImpl>();
         for (VisitImpl v : visits)
             visitMap.put(v.getSequenceNumMin(),v);
@@ -194,39 +197,36 @@ public abstract class VisitManager
     {
         try
         {
-            String c = _study.getContainer().getId();
+            String c = getStudy().getContainer().getId();
 
             DbSchema schema = StudySchema.getInstance().getSchema();
-            TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData();
+            TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
             TableInfo tableSpecimen = StudySchema.getInstance().getTableInfoSpecimen();
 
             if (!changedDatasets.isEmpty())
             {
+                TableInfo tableFilteredStudyData = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), changedDatasets);
+
+                // UNDONE: performance, query each dataset separately instead of using StudyData union
                 SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
                         "SELECT DISTINCT ?, participantid\n" +
-                        "FROM " + tableStudyData + "\n" +
-                        "WHERE container = ? AND participantid NOT IN (select participantid from " + tableParticipant + " where container = ?) AND datasetid IN (");
+                        "FROM ").append( tableFilteredStudyData.getFromSQL("SD")).append("\n" +
+                        "WHERE participantid NOT IN (SELECT participantid FROM " + tableParticipant + " WHERE container = ?)");
                 datasetParticipantsSQL.add(c);
                 datasetParticipantsSQL.add(c);
-                datasetParticipantsSQL.add(c);
-                String separator = "";
-                for (DataSetDefinition changedDataset : changedDatasets)
-                {
-                    datasetParticipantsSQL.append(separator);
-                    separator = ", ";
-                    datasetParticipantsSQL.append(changedDataset.getDataSetId());
-                }
-                datasetParticipantsSQL.append(")");
 
                 Table.execute(schema, datasetParticipantsSQL);
             }
-            Table.execute(schema,
-                    "DELETE FROM " + tableParticipant + " WHERE participantid IN (SELECT p.participantid FROM " +
-                            tableParticipant + " p LEFT OUTER JOIN " + tableStudyData + " sd ON p.container = sd.container " +
-                            "AND p.participantid = sd.participantid LEFT OUTER JOIN " + tableSpecimen + " s ON " +
+            SQLFragment del = new SQLFragment();
+            del.append("DELETE FROM " + tableParticipant + " WHERE participantid IN (SELECT p.participantid FROM " +
+                            tableParticipant + " p LEFT OUTER JOIN ").append(tableStudyData.getFromSQL("sd")).append(" ON" +
+                            "   p.participantid = sd.participantid LEFT OUTER JOIN " + tableSpecimen + " s ON " +
                             "p.container = s.container AND s.ptid = p.participantid WHERE sd.participantid IS NULL AND " +
-                            "s.ptid IS NULL AND p.container = ?) AND container = ?", new Object[] {c, c});
+                            "s.ptid IS NULL AND p.container = ?) AND container = ?");
+            del.add(c);
+            del.add(c);
+            Table.execute(schema, del);
 
             updateStartDates(user);
         }
@@ -242,17 +242,18 @@ public abstract class VisitManager
         //See if there are any demographic datasets that contain a start date
         DbSchema schema = StudyManager.getSchema();
 
-        for (DataSetDefinition dataset : _study.getDataSets())
+        for (DataSetDefinition dataset : getStudy().getDataSets())
         {
             if (dataset.isDemographicData())
             {
-                TableInfo tInfo = dataset.getTableInfo(user, false, true);
+                TableInfo tInfo = dataset.getStorageTableInfo();
+                if (null == tInfo) continue;
                 //TODO: Use Property URI & Make sure this is set properly
                 ColumnInfo col = tInfo.getColumn("StartDate");
                 if (null != col)
                 {
-                    String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo + " WHERE " + tInfo + "." +
-                       StudyService.get().getSubjectColumnName(dataset.getContainer()) + " = " + tableParticipant + ".ParticipantId" +
+                    String subselect = "(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
+                            " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
                             " AND " + tableParticipant + ".Container = ?)";
                     String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
                             tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
@@ -260,12 +261,16 @@ public abstract class VisitManager
                     Table.execute(StudyManager.getSchema(), sql, new Object[] { dataset.getContainer().getId(), dataset.getContainer().getId(), dataset.getContainer().getId() });
                     break;
                 }
-
             }
         }
         //No demographic data, so just set to study start date.
         String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
-        Parameter startDateParam = new Parameter(_study.getStartDate(), Types.TIMESTAMP);
-        Table.execute(schema, sqlUpdateStartDates, new Object[] {startDateParam, _study.getContainer()});
+        Parameter startDateParam = new Parameter(getStudy().getStartDate(), Types.TIMESTAMP);
+        Table.execute(schema, sqlUpdateStartDates, new Object[] {startDateParam, getStudy().getContainer()});
+    }
+
+    StudyImpl getStudy()
+    {
+        return _study;
     }
 }

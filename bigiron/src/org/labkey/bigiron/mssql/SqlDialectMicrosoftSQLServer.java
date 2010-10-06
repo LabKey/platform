@@ -20,17 +20,19 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.Change;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.SqlScriptParser;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
@@ -39,8 +41,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -65,22 +69,22 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     protected SqlDialectMicrosoftSQLServer()
     {
         reservedWordSet = new CaseInsensitiveHashSet(PageFlowUtil.set(
-            "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
-            "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
-            "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
-            "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE", "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT",
-            "DELETE", "DENY", "DESC", "DISK", "DISTINCT", "DISTRIBUTED", "DOUBLE", "DROP", "DUMMY", "DUMP", "ELSE", "END", "ERRLVL",
-            "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT", "FETCH", "FILE", "FILLFACTOR", "FOR", "FOREIGN", "FREETEXT",
-            "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT", "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT",
-            "IDENTITYCOL", "IF", "IN", "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT", "LIKE",
-            "LINENO", "LOAD", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL", "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN",
-            "OPENDATASOURCE", "OPENQUERY", "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PLAN",
-            "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR", "READ", "READTEXT", "RECONFIGURE",
-            "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT", "RETURN", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL",
-            "RULE", "SAVE", "SCHEMA", "SELECT", "SESSION_USER", "SET", "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SYSTEM_USER",
-            "TABLE", "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE", "TSEQUAL", "UNION", "UNIQUE",
-            "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
-            "WRITETEXT"
+                "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK", "BROWSE", "BULK",
+                "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE", "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE",
+                "CONSTRAINT", "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE",
+                "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE", "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT",
+                "DELETE", "DENY", "DESC", "DISK", "DISTINCT", "DISTRIBUTED", "DOUBLE", "DROP", "DUMMY", "DUMP", "ELSE", "END", "ERRLVL",
+                "ESCAPE", "EXCEPT", "EXEC", "EXECUTE", "EXISTS", "EXIT", "FETCH", "FILE", "FILLFACTOR", "FOR", "FOREIGN", "FREETEXT",
+                "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT", "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT",
+                "IDENTITYCOL", "IF", "IN", "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT", "LIKE",
+                "LINENO", "LOAD", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL", "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN",
+                "OPENDATASOURCE", "OPENQUERY", "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PLAN",
+                "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR", "READ", "READTEXT", "RECONFIGURE",
+                "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT", "RETURN", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL",
+                "RULE", "SAVE", "SCHEMA", "SELECT", "SESSION_USER", "SET", "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SYSTEM_USER",
+                "TABLE", "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE", "TSEQUAL", "UNION", "UNIQUE",
+                "UPDATE", "UPDATETEXT", "USE", "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
+                "WRITETEXT"
         ));
     }
 
@@ -239,6 +243,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
 
     // Execute a stored procedure/function with the specified parameters
+
     public String execute(DbSchema schema, String procedureName, String parameters)
     {
         return "EXEC " + schema.getName() + "." + procedureName + " " + parameters;
@@ -320,6 +325,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     // UNDONE: why ## instead of #?
+
     public String getTempTablePrefix()
     {
         return "##";
@@ -340,8 +346,8 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     public boolean isSortableDataType(String sqlDataTypeName)
     {
         return !("text".equalsIgnoreCase(sqlDataTypeName) ||
-            "ntext".equalsIgnoreCase(sqlDataTypeName) ||
-            "image".equalsIgnoreCase(sqlDataTypeName));
+                "ntext".equalsIgnoreCase(sqlDataTypeName) ||
+                "image".equalsIgnoreCase(sqlDataTypeName));
     }
 
     public String getDropIndexCommand(String tableName, String indexName)
@@ -355,6 +361,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     // Do nothing
+
     public void prepareNewDbSchema(DbSchema schema)
     {
     }
@@ -398,8 +405,8 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     private static final Set<String> SYSTEM_SCHEMAS = PageFlowUtil.set("db_accessadmin", "db_backupoperator",
-        "db_datareader", "db_datawriter", "db_ddladmin", "db_denydatareader", "db_denydatawriter", "db_owner",
-        "db_securityadmin", "guest", "INFORMATION_SCHEMA", "sys");
+            "db_datareader", "db_datawriter", "db_ddladmin", "db_denydatareader", "db_denydatawriter", "db_owner",
+            "db_securityadmin", "guest", "INFORMATION_SCHEMA", "sys");
 
     @Override
     public boolean isSystemSchema(String schemaName)
@@ -486,6 +493,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
 
     */
+
     public static class JtdsJdbcHelper implements JdbcHelper
     {
         @Override
@@ -532,9 +540,115 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     @Override
-    public String getChangeStatement(Change change)
+    public List<String> getChangeStatements(TableChange change)
     {
-        throw new RuntimeException("TODO: implement SqlDialectMicrosoftSQLServer.getChangeStatement()!");
+        List<String> sql = new ArrayList<String>();
+        switch (change.getType())
+        {
+            case CreateTable:
+                sql.addAll(getCreateTableStatements(change));
+                break;
+            case DropTable:
+                sql.add("DROP TABLE " + change.getSchemaName() + "." + change.getTableName());
+                break;
+            case AddColumns:
+                sql.add(getAddColumnsStatement(change));
+                break;
+            case DropColumns:
+                sql.add(getDropColumnsStatement(change));
+                break;
+            case RenameColumns:
+                sql.addAll(getRenameColumnsStatements(change));
+                /*
+                sql = String.format("EXEC sp_rename '%s.%s','%s','COLUMN'", change.getSchemaName()+"."+change.getTableName(),
+                    change.getOldColumnName(), change.getNewColumnName());
+                    */
+        }
+
+        return sql;
+    }
+
+    private List<String> getCreateTableStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<String>();
+        List<String> createTableSqlParts = new ArrayList<String>();
+        for (PropertyStorageSpec prop : change.getColumns())
+        {
+            createTableSqlParts.add(getSqlColumnSpec(prop));
+            // if it has a qc note (aka "missing value indicator")
+            // make an additional column for that
+// UNDONE WE'RE NOT TRACKING UPDATES SO ALWAYS ADD/DROP NV COLUMN
+//            if (prop.isMvEnabled())
+            {
+                createTableSqlParts.add(String.format("%s.%s %s", change.getSchemaName(), prop.getMvIndicatorColumnName(), sqlTypeNameFromSqlType(Types.VARCHAR)));
+            }
+        }
+
+        statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ", ")));
+
+        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
+        {
+            statements.add(String.format("CREATE %s INDEX %s ON %s.%s (%s)", index.isUnique ? "UNIQUE" : "", nameIndex(change.getTableName(), index.columnNames), makeTableIdentifier(change), StringUtils.join(index.columnNames, ", ")));
+        }
+
+        return statements;
+    }
+
+    private String makeTableIdentifier(TableChange change)
+    {
+        assert AliasManager.isLegalName(change.getTableName());
+        return change.getSchemaName() + "." + change.getTableName();
+    }
+
+    private String nameIndex(String tableName, String[] indexedColumns)
+    {
+        return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
+    }
+
+    private List<String> getRenameColumnsStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<String>();
+        for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
+        {
+            statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
+                    makeTableIdentifier(change), oldToNew.getKey(), oldToNew.getValue()));
+        }
+
+        return statements;
+    }
+
+    private String getDropColumnsStatement(TableChange change)
+    {
+        List<String> sqlParts = new ArrayList<String>();
+        for (PropertyStorageSpec prop : change.getColumns())
+        {
+            sqlParts.add("DROP " + prop.getName());
+        }
+
+        return String.format("ALTER TABLE %s %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ", "));
+    }
+
+    private String getAddColumnsStatement(TableChange change)
+    {
+        List<String> sqlParts = new ArrayList<String>();
+        for (PropertyStorageSpec prop : change.getColumns())
+        {
+            sqlParts.add("ADD " + getSqlColumnSpec(prop));
+        }
+
+        return String.format("ALTER TABLE %s %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ", "));
+    }
+
+    private String getSqlColumnSpec(PropertyStorageSpec prop)
+    {
+        List<String> colSpec = new ArrayList<String>();
+        colSpec.add(prop.getName());
+        colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+        if (prop.isUnique()) colSpec.add("UNIQUE");
+        if (!prop.isNullable()) colSpec.add("NOT NULL");
+        // todo auto increment?
+
+        return StringUtils.join(colSpec, ' ');
     }
 
     public void initializeConnection(Connection conn) throws SQLException
@@ -639,28 +753,28 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         public void testJavaUpgradeCode()
         {
             String goodSql =
-                "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
-                "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
-                "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
-                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
-                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
-                "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
-                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
-                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
-                "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
-                "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+                    "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
+                            "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
+                            "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+                            "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
+                            "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
+                            "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
+                            "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
+                            "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
+                            "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
+                            "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
 
             String badSql =
-                "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
-                "   more comment\n" +
-                "*/" +
-                "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
-                "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
-                "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
-                "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
-                "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
-                "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
-                "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
+                    "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
+                            "   more comment\n" +
+                            "*/" +
+                            "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
+                            "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
+                            "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
+                            "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
+                            "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
+                            "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
+                            "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
 
             try
             {
@@ -689,28 +803,28 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
             try
             {
-                String goodUrls =   "jdbc:jtds:sqlserver://localhost/database\n" +
-                                    "jdbc:jtds:sqlserver://localhost:1433/database\n" +
-                                    "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
-                                    "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com/database\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
-                                    "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
+                String goodUrls = "jdbc:jtds:sqlserver://localhost/database\n" +
+                        "jdbc:jtds:sqlserver://localhost:1433/database\n" +
+                        "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
+                        "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
+                        "jdbc:jtds:sqlserver://www.host.com/database\n" +
+                        "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
+                        "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
+                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
 
                 for (String url : goodUrls.split("\n"))
                     assertEquals(helper.getDatabase(url), "database");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 fail("Exception running JdbcHelper test: " + e.getMessage());
             }
 
-            String badUrls =    "jdb:jtds:sqlserver://localhost/database\n" +
-                                "jdbc:jts:sqlserver://localhost/database\n" +
-                                "jdbc:jtds:sqlerver://localhost/database\n" +
-                                "jdbc:jtds:sqlserver://localhostdatabase\n" +
-                                "jdbc:jtds:sqlserver:database";
+            String badUrls = "jdb:jtds:sqlserver://localhost/database\n" +
+                    "jdbc:jts:sqlserver://localhost/database\n" +
+                    "jdbc:jtds:sqlerver://localhost/database\n" +
+                    "jdbc:jtds:sqlserver://localhostdatabase\n" +
+                    "jdbc:jtds:sqlserver:database";
 
             for (String url : badUrls.split("\n"))
             {
