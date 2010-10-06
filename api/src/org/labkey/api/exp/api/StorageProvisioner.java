@@ -141,7 +141,7 @@ public class StorageProvisioner
 
     private static PropertyStorageSpec makeMvColumn(DomainProperty property)
     {
-        return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, Types.VARCHAR);
+        return new PropertyStorageSpec(property.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, Types.VARCHAR, 50);
     }
 
 

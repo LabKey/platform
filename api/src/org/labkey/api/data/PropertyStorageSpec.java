@@ -37,7 +37,7 @@ public class PropertyStorageSpec
     boolean nullable = true;
     boolean autoIncrement = false;
     boolean isMvEnabled = false;
-    Integer size;
+    Integer size = 4000;
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
     {
@@ -46,7 +46,6 @@ public class PropertyStorageSpec
         setNullable(propertyDescriptor.isNullable());
         setAutoIncrement(propertyDescriptor.isAutoIncrement());
         setMvEnabled(propertyDescriptor.isMvEnabled());
-        // todo size
     }
 
     /**
@@ -68,12 +67,20 @@ public class PropertyStorageSpec
         this.unique = unique;
     }
 
-    public PropertyStorageSpec(String name, int sqlTypeInt, boolean unique, boolean nullable)
+    public PropertyStorageSpec(String name, int sqlTypeInt, int size)
+    {
+        this.sqlTypeInt = sqlTypeInt;
+        this.name = name;
+        this.size = size;
+    }
+
+    public PropertyStorageSpec(String name, int sqlTypeInt, int size, boolean unique, boolean nullable)
     {
         this.name = name;
         this.sqlTypeInt = sqlTypeInt;
         this.unique = unique;
         this.nullable = nullable;
+        this.size = size;
     }
 
     public String getName()
