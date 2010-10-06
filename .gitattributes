@@ -96,7 +96,9 @@ api/src/org/labkey/api/audit/query/DefaultAuditQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
 api/src/org/labkey/api/cache/BasicCache.java -text
+api/src/org/labkey/api/cache/BlockingCache.java -text
 api/src/org/labkey/api/cache/Cache.java -text
+api/src/org/labkey/api/cache/CacheLoader.java -text
 api/src/org/labkey/api/cache/CacheManager.java -text
 api/src/org/labkey/api/cache/CacheProvider.java -text
 api/src/org/labkey/api/cache/CacheStats.java -text
@@ -189,6 +191,7 @@ api/src/org/labkey/api/data/MultiValuedForeignKey.java -text
 api/src/org/labkey/api/data/MultiValuedLookupColumn.java -text
 api/src/org/labkey/api/data/MultiValuedRenderContext.java -text
 api/src/org/labkey/api/data/MvUtil.java -text
+api/src/org/labkey/api/data/NullColumnInfo.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
 api/src/org/labkey/api/data/Ownable.java -text
@@ -215,6 +218,7 @@ api/src/org/labkey/api/data/SqlScriptRunner.java -text
 api/src/org/labkey/api/data/StatementWrapper.java -text
 api/src/org/labkey/api/data/TSVGridWriter.java -text
 api/src/org/labkey/api/data/TSVWriter.java -text
+api/src/org/labkey/api/data/TableChange.java -text
 api/src/org/labkey/api/data/TableInfo.java -text
 api/src/org/labkey/api/data/TableInfoGetter.java -text
 api/src/org/labkey/api/data/TableInfoWriter.java -text
@@ -296,6 +300,7 @@ api/src/org/labkey/api/exp/api/ExperimentService.java -text
 api/src/org/labkey/api/exp/api/ExperimentUrls.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text
 api/src/org/labkey/api/exp/api/ProtocolImplementation.java -text
+api/src/org/labkey/api/exp/api/StorageProvisioner.java -text
 api/src/org/labkey/api/exp/list/ListDefinition.java -text
 api/src/org/labkey/api/exp/list/ListImportProgress.java -text
 api/src/org/labkey/api/exp/list/ListItem.java -text
