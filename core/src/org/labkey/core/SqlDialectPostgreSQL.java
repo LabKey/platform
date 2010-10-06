@@ -248,6 +248,21 @@ class SqlDialectPostgreSQL extends SqlDialect
         return StringUtils.join(args, " || ");
     }
 
+
+    @Override
+    public SQLFragment concatenate(SQLFragment... args)
+    {
+        SQLFragment ret = new SQLFragment();
+        String op = "";
+        for (SQLFragment arg : args)
+        {
+            ret.append(op).append(arg);
+            op = " || ";
+        }
+        return ret;
+    }
+
+
     public String getCharClassLikeOperator()
     {
         return "SIMILAR TO";

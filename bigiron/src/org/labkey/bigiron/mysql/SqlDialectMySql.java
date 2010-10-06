@@ -184,4 +184,19 @@ public class SqlDialectMySql extends SimpleSqlDialect
     {
         return "CONCAT(" + StringUtils.join(args, ", ") + ")";
     }
+
+
+    @Override
+    public SQLFragment concatenate(SQLFragment... args)
+    {
+        SQLFragment ret = new SQLFragment();
+        String op = "CONCAT(";
+        for (SQLFragment arg : args)
+        {
+            ret.append(op).append(arg);
+            op = ", ";
+        }
+        ret.append(")");
+        return ret;
+    }
 }

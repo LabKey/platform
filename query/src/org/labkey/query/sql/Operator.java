@@ -17,6 +17,8 @@
 package org.labkey.query.sql;
 
 
+import org.labkey.api.data.SQLFragment;
+
 import java.util.*;
 
 public enum Operator
@@ -74,13 +76,11 @@ public enum Operator
     {
         public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
-            builder.pushPrefix("");
+            ArrayList<SQLFragment> terms = new ArrayList<SQLFragment>();
             for (QNode operand : operands)
-            {
-                ((QExpr)operand).appendSql(builder);
-                builder.nextPrefix(builder.getConcatOperator());
-            }
-            builder.popPrefix();
+                terms.add(((QExpr)operand).getSqlFragment(builder.getDbSchema()));
+            SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[terms.size()]));
+            builder.append(f);
         }
     },
     not(" NOT ", Precedence.not, SqlTokenTypes.NOT, ResultType.bool)
