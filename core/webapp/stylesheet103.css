@@ -1729,6 +1729,11 @@ a.labkey-text-link:hover {
 	color: #000;
 }
 
+a.no-arrow {
+    background: none !important;
+    padding-right: 2px !important;
+}
+
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 {
     background-image: url(./ext-3.2.2/resources/images/default/form/exclamation.gif)
