@@ -950,6 +950,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         // I want to know if that changes
         assert ci.getName().equalsIgnoreCase(p.getName());
         ci.setName(p.getName());
+        ci.setAlias(p.getName().toLowerCase());
         PropertyColumn.copyAttributes(user, ci, p);
         return ci;
     }
