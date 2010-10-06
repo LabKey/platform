@@ -22,7 +22,8 @@
 <%
     String caption;
     UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
-    ActionURL url = HttpView.currentContext().getActionURL().clone();
+    ActionURL url = getViewContext().cloneActionURL();
+
     if (!form.isInactive())
     {
         url.addParameter("inactive", true);

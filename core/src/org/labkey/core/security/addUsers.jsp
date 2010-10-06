@@ -18,9 +18,14 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.core.user.UserController.*" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.security.SecurityController.AddUsersForm" %>
+<%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
+<%
+    AddUsersForm form = (AddUsersForm)HttpView.currentModel();
+%>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
     var permissionLink_hide = '<a href="#blank" style="display:none" onclick="showUserAccess();">permissions<\/a>';
@@ -59,9 +64,12 @@
 </script>
 
 <form action="addUsers.post" method=post>
-    <labkey:errors />
-
-    <table>
+    <table><%
+            if (getErrors("form").hasErrors());
+            { %>
+        <tr><td colspan="3"><labkey:errors /></td></tr><%
+            }
+        %>
         <tr>
             <td valign="top">Add new users.<br><br>Enter one or more email addresses,&nbsp;<br>each on its own line.</td>
             <td colspan="2">
@@ -90,7 +98,7 @@
         <tr>
             <td>
                 <labkey:button text="Add Users" />
-                <%=PageFlowUtil.generateButton("Show Grid", request.getContextPath() + "/User/showUsers.view?.lastFilter=true")%>
+                <%=PageFlowUtil.generateButton("Done", form.getReturnURLHelper())%><%=generateReturnUrlFormField(form)%>
             </td>
         </tr>
     </table>

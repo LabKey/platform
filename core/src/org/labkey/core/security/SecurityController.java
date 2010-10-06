@@ -130,6 +130,14 @@ public class SecurityController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL getAddUsersURL(Container container, URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(AddUsersAction.class, container);
+            url.addReturnURL(returnURL);
+            return url;
+        }
     }
 
     private static void ensureGroupInContainer(Group group, Container c)
@@ -1202,12 +1210,12 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @ActionNames("showAddUsers, addUsers") @RequiresSiteAdmin
+    @RequiresSiteAdmin
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
         public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<Object>("/org/labkey/core/security/addUsers.jsp", null, errors);
+            return new JspView<Object>("/org/labkey/core/security/addUsers.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

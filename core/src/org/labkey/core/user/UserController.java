@@ -235,7 +235,7 @@ public class UserController extends SpringActionController
 
     private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean siteAdmin, boolean anyAdmin)
     {
-        if (siteAdmin)
+        if (siteAdmin && getContainer().isRoot())
         {
             ActionButton deactivate = new ActionButton(DeactivateUsersAction.class, "Deactivate");
             deactivate.setRequiresSelection(true);
@@ -252,17 +252,13 @@ public class UserController extends SpringActionController
             delete.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(delete);
 
-            // Could allow project admins to do this... but they can already add users when adding to a group
-            ActionButton insert = new ActionButton(new ActionURL(SecurityController.AddUsersAction.class, getContainer()), "Add Users");
+            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(getContainer(), getViewContext().getActionURL()), "Add Users");
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
-            if (getContainer().isRoot())
-            {
-                ActionButton preferences = new ActionButton(ShowUserPreferencesAction.class, "Preferences");
-                preferences.setActionType(ActionButton.Action.LINK);
-                gridButtonBar.add(preferences);
-            }
+            ActionButton preferences = new ActionButton(ShowUserPreferencesAction.class, "Preferences");
+            preferences.setActionType(ActionButton.Action.LINK);
+            gridButtonBar.add(preferences);
         }
 
         if (anyAdmin)
@@ -332,7 +328,7 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors) throws Exception
         {
-            User user = getViewContext().getUser();
+            User user = getUser();
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, null == form.getRedirUrl() ? null : new ActionURL(form.getRedirUrl()));
             if(null != form.getUserId())
             {
