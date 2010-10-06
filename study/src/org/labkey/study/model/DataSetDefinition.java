@@ -1863,6 +1863,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             defs.addAll(Arrays.asList(arr));
         }
 
+        List<DataSetDefinition> defsVerify = new ArrayList<DataSetDefinition>();
+        ModuleUpgrader.getLogger().info("STUDY UPGRADE drop old materialized tables");
+        for (DataSetDefinition def : defs)
+        {
+            defsVerify.add(def.upgradeVerifyDomain());
+        }
+        defs = defsVerify;
+
         ModuleUpgrader.getLogger().info("STUDY UPGRADE drop old materialized tables");
         for (DataSetDefinition def : defs)
             def.dropOldMaterializedTable();
@@ -1882,6 +1890,26 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         // delete exp.objectproperty is in the upgrade script
     }
 
+
+    private DataSetDefinition upgradeVerifyDomain() throws SQLException
+    {
+        String typeURI = getTypeURI();
+        if (null != typeURI)
+        {
+            OntologyManager.ensureDomainDescriptor(typeURI, getName(), getContainer());
+            return this;
+        }
+        else
+        {
+            DataSetDefinition def = this.createMutable();
+            String domainURI = StudyManager.getInstance().getDomainURI(getContainer(), null, def);
+            OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), getContainer());
+            def.setTypeURI(domainURI);
+            StudyManager.getInstance().updateDataSetDefinition(null, def);
+            return StudyManager.getInstance().getDataSetDefinition(getStudy(), getDataSetId());
+        }
+    }
+    
 
     private void upgradeProvision() throws SQLException
     {
@@ -1937,7 +1965,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     ModuleUpgrader.getLogger().error("Could not copy column: " + getContainer().getId()+"-"+getContainer().getPath() + " " + getDataSetId() + "-" + getName() + " " + to.getName());
                     continue;
-//                    throw new IllegalStateException("Could not copy column: " + getContainer().getPath() + " " + getName() + " " + to.getName());
                 }
             }
             insertInto.append(comma).append(to.getSelectName());
@@ -1978,7 +2005,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(study, user);
             TableInfo studyData = StudySchema.getInstance().getSchema().getTable("StudyData");
 
-            List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencekey");
+            List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencekey");
             for (ColumnInfo col : columnsBase)
             {
                 ColumnInfo wrapped = newDatasetColumnInfo(this, col, null);
