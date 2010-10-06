@@ -19,9 +19,8 @@ package org.labkey.study.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.study.Study;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 
 public class StudySchemaProvider extends DefaultSchema.SchemaProvider
 {

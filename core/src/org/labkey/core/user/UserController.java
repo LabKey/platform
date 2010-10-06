@@ -581,20 +581,25 @@ public class UserController extends SpringActionController
         @Override
         protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors) throws Exception
         {
-            VBox vbox = new VBox();
             ImpersonateView impersonateView = new ImpersonateView(getContainer(), false);
 
+            VBox users = new VBox();
+            users.setTitle("Users");
+            users.setFrame(WebPartView.FrameType.PORTAL);
+
             JspView<ShowUsersForm> toggleInactiveView = new JspView<ShowUsersForm>("/org/labkey/core/user/toggleInactive.jsp", form);
-            toggleInactiveView.setTitle("Users");
-            toggleInactiveView.setFrame(WebPartView.FrameType.PORTAL);
-            
+
+            users.addView(toggleInactiveView);
+            users.addView(createQueryView(form, errors, false, "Users"));
+
             if (impersonateView.hasUsers())
             {
-                vbox.addView(impersonateView);
+                return new VBox(impersonateView, users);
             }
-            vbox.addView(toggleInactiveView);
-            vbox.addView(createQueryView(form, errors, false, "Users"));
-            return vbox;
+            else
+            {
+                return users;
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)

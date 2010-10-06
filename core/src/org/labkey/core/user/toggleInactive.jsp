@@ -23,7 +23,7 @@
     String caption;
     UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
     ActionURL url = HttpView.currentContext().getActionURL().clone();
-    if(!form.isInactive())
+    if (!form.isInactive())
     {
         url.addParameter("inactive", true);
         caption = "include inactive users";
@@ -37,7 +37,7 @@
 <table>
     <tr>
         <td>
-            <%=textLink("caption", url.getLocalURIString())%>
+            <%=textLink(caption, url)%>
         </td>
     </tr>
 </table>

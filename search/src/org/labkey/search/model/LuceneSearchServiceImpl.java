@@ -45,6 +45,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -215,19 +216,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             String displayTitle = (String)props.get(PROPERTY.displayTitle.toString());
             String searchTitle = (String)props.get(PROPERTY.searchTitle.toString());
 
-            Map<String, String> customProperties = r.getCustomProperties(User.getSearchUser());
-
-            if (null != customProperties && !customProperties.isEmpty())
+            try
             {
-                assert searchTitle != null;
+                Map<String, String> customProperties = r.getCustomProperties(User.getSearchUser());
 
-                for (String value : customProperties.values())
-                    searchTitle += " " + value;
+                if (null != customProperties && !customProperties.isEmpty())
+                {
+                    assert searchTitle != null;
+
+                    for (String value : customProperties.values())
+                        searchTitle += " " + value;
+                }
+            }
+            catch (UnauthorizedException e)
+            {
+                // Some QueryUpdateService implementation don't special case the search user.  Continue indexing in this
+                // case, but skip the custom properties.
             }
 
             String type = r.getContentType();
 
-            // Don't load content of images or zip files (for now), but allow searching name and properties
+            // Don't load content of images or zip files (for now), but allow searching by name and properties
             if (isImage(type) || isZip(type))
             {
                 body = "";
