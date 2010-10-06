@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -33,7 +34,8 @@ public interface QuerySchema
 
     public TableInfo getTable(String name);
 
-    public QuerySchema getSchema(String name);
+    // Could be null if, for example, provider hides schema when module is inactive.
+    public @Nullable QuerySchema getSchema(String name);
 
     public Set<String> getSchemaNames();
 

@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -34,5 +35,6 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getContainerURL(Container container);
     ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix);
     ActionURL getUpdateMembersURL(Container container, String groupPath, String deleteEmail, boolean quickUI);
+    ActionURL getAddUsersURL(Container container, URLHelper returnURL);
     String getCompleteUserURLPrefix(Container container);
 }
