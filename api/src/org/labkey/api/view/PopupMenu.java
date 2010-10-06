@@ -84,12 +84,9 @@ public class PopupMenu extends DisplayElement
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append("[");
-            out.append("<a href='javascript:void(0)'");
-            out.append("onclick=\"showMenu(this, ").append(PageFlowUtil.jsString(getId(dataRegionName))).append(",'").append(_align.getExtPosition()).append("');\">");
-            out.append(PageFlowUtil.filter(_navTree.getKey())).append(" &gt;&gt;");
-            out.append("</a>");
-            out.append("]");
+            String link = PageFlowUtil.textLink(_navTree.getKey().concat(" &gt;&gt;"), "javascript:void(0)", "showMenu(this, " + PageFlowUtil.jsString(getId(dataRegionName)) + ",'" + _align.getExtPosition() + "');", "");
+            link = link.replace("class='", "class='no-arrow "); // Remove the arrow added by css
+            out.append(link);
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
