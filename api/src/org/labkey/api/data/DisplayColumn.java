@@ -60,8 +60,6 @@ public abstract class DisplayColumn extends RenderColumn
     private String _url;
     private StringExpression _urlExpression;
     private StringExpression _compiled;
-    protected Map<FieldKey,ColumnInfo> _allColumns;
-    
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -912,13 +910,5 @@ public abstract class DisplayColumn extends RenderColumn
         {
             _displayClass = _displayClass + " " + className;
         }
-    }
-
-    public void setAllColumns(Map<FieldKey, ColumnInfo> map)
-    {
-        _allColumns = map;
-        // may need to recompile the _urlExpression
-        if (null != _url)
-            _urlExpression = null;
     }
 }

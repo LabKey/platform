@@ -521,12 +521,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void setAllColumns(Map<FieldKey, ColumnInfo> map)
-    {
-        _column.setAllColumns(map);
-    }
-
-    @Override
     public String getFormatString()
     {
         return _column.getFormatString();

@@ -313,9 +313,6 @@ public class DataRegion extends DisplayElement
 
         LinkedHashMap<FieldKey, ColumnInfo> ret = QueryService.get().getColumns(getTable(), Collections.<FieldKey>emptySet(), columns);
 
-        for (DisplayColumn dc : displayCols)
-            dc.setAllColumns(ret);
-
         return ret;
     }
 
