@@ -241,8 +241,7 @@ public class StudyController extends BaseStudyController
             {
                 String domainURI = _def.getTypeURI();
                 DomainDescriptor newDomainDescriptor = OntologyManager.ensureDomainDescriptor(domainURI, form.getTypeName(), getContainer());
-                Domain newDomain = PropertyService.get().getDomain(newDomainDescriptor.getDomainId());
-                StorageProvisioner.create(new DatasetDomainKind(), newDomain);
+                ((DataSetDefinition)_def).provisionTable();
                 return true;
             }
             return false;

@@ -231,7 +231,8 @@ public class DomainImpl implements Domain
             if (isNew())
             {
                 _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
-                StorageProvisioner.create(this);
+// CONSIDER put back if we want automatic provisioning for serveral DomainKinds
+//                StorageProvisioner.create(this);
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
             }
             else if (_ddOld != null)

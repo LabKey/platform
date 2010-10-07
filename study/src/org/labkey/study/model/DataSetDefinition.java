@@ -37,6 +37,7 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -405,14 +406,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    // CONSIDER: move this method to StorageProvisioner
-    private TableInfo loadStorageTableInfo()
+    private synchronized TableInfo loadStorageTableInfo()
     {
         if (null == getTypeURI())
             return null;
-        Domain d = ensureDomain();
 
-        TableInfo ti = StorageProvisioner.createTableInfo(new DatasetDomainKind(), d, StudySchema.getInstance().getSchema());
+        Domain d = ensureDomain();
+        DomainKind kind = new DatasetDomainKind();
+
+        // create table may set storageTableName() so uncache _domain
+        if (null == d.getStorageTableName())
+            _domain = null;
+
+        TableInfo ti = StorageProvisioner.createTableInfo(kind, d, StudySchema.getInstance().getSchema());
 
         TableInfo template = getTemplateTableInfo();
 
@@ -428,8 +434,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
+    /**
+     *  just a wrapper for StorageProvisioner.create()
+     */
+    public synchronized void provisionTable()
+    {
+        _domain = null;
+        loadStorageTableInfo();
+        StudyManager.getInstance().uncache(this);
+    }
+
+
     private TableInfo _storageTable = null;
     
+
     /** I think the caching semantics of the dataset are such that I can cache the StorageTableInfo in a member */
     public TableInfo getStorageTableInfo() throws UnauthorizedException
     {
@@ -942,7 +960,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         assert ci.getName().equalsIgnoreCase(p.getName());
         ci.setName(p.getName());
         ci.setAlias(from.getAlias());
-        PropertyColumn.copyAttributes(user, ci, p);
         return ci;
     }
 
@@ -1017,6 +1034,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         assert getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
+
 
     public static String getSequenceNumURI()
     {
@@ -1808,7 +1826,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DataSetDefObjectFactory()
         {
             super(DataSetDefinition.class);
-            _readableProperties.remove("storageTableInfo");
+            boolean found;
+            found = _readableProperties.remove("storageTableInfo");
+            assert found;
+            found = _readableProperties.remove("domain");
+            assert found;
         }
     }
 
@@ -1907,9 +1929,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         if (null == getTypeURI())
             return;
-        Domain d = ensureDomain();
-        StorageProvisioner.create(new DatasetDomainKind(), d);
-//        CPUTimer.dumpAllTimers(ModuleUpgrader.getLogger());
+        provisionTable();
     }
 
 
