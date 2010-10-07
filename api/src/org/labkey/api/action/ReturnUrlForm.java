@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.URLException;
 
 import java.net.URISyntaxException;
@@ -66,6 +67,12 @@ public class ReturnUrlForm
         {
             throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
         }
+    }
+
+    @Nullable
+    public ActionURL getReturnActionURL()
+    {
+        return (null == _returnUrl ? null : new ActionURL(_returnUrl));
     }
 
     // Return the passed-in default URL if returnURL param is missing or unparseable
