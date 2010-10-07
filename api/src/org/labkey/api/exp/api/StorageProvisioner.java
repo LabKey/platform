@@ -147,6 +147,8 @@ public class StorageProvisioner
 
     public static void drop(Domain domain)
     {
+        if (null == domain)
+            return;
         DomainKind kind = domain.getDomainKind();
         if (kind == null)
         {
