@@ -65,7 +65,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(Ext.TabPanel, {
                 var found = false;
                 for (var j = 0; j < newSortArray.length; j++)
                 {
-                    if (sort.fieldKey == userSort.fieldKey)
+                    if (sort.fieldKey == newSortArray[j].fieldKey)
                     {
                         found = true;
                         break;
@@ -684,6 +684,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         config = Ext.applyIf({
             title: "Columns",
+            cls: "test-columns-tab",
             layout: "border",
             items: [{
                 ref: "fieldsTree",
@@ -922,7 +923,7 @@ LABKEY.DataRegion.FilterItemPanel = Ext.extend(Ext.Container, {
         },{
             ref: 'opCombo',
             xtype: 'labkey-filterOpCombo',
-            cls: 'item-op',
+            cls: 'item-op test-item-op',
             applyValue: 'op',
             fieldMetaStore: this.fieldMetaStore,
             listeners: {
@@ -1015,6 +1016,7 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         config = Ext.applyIf({
             title: "Filter",
+            cls: "test-filter-tab",
             layout: {
                 type: "hbox",
                 align: "stretch"
@@ -1058,16 +1060,16 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     scope: this
                 },
                 items: [{
-                    ref: "../moveDownButton",
+                    ref: "../moveUpButton",
 //                        icon: LABKEY.contextPath + "/query/moveup.gif",
                     icon: LABKEY.contextPath + "/_images/uparrow.gif",
-                    tooltip: "Move Down",
+                    tooltip: "Move Up",
                     handler: this.onMoveUpClick
                 },{
-                    ref: "../moveUpButton",
+                    ref: "../moveDownButton",
 //                        icon: LABKEY.contextPath + "/query/movedown.gif",
                     icon: LABKEY.contextPath + "/_images/downarrow.gif",
-                    tooltip: "Move Up",
+                    tooltip: "Move Down",
                     handler: this.onMoveDownClick
                 },{
                     ref: "../deleteButton",
@@ -1191,6 +1193,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
 
         config = Ext.applyIf({
             title: "Sort",
+            cls: "test-sort-tab",
             layout: {
                 type: "hbox",
                 align: "stretch"
@@ -1223,6 +1226,7 @@ LABKEY.DataRegion.SortTab = Ext.extend(LABKEY.DataRegion.Tab, {
                     fieldMetaStore: this.fieldMetaStore
                 },{
                     xtype: 'combo',
+                    cls: 'test-item-op',
                     renderTarget: 'div.item-dir',
                     applyValue: 'dir',
                     store: [["+", "Ascending"], ["-", "Descending"]],
