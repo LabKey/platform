@@ -416,10 +416,14 @@ public class AuthenticationManager
             }
             else if (null != emailAddress)
             {
+                // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
+                AuditLogService.get().addEvent(User.guest, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, null, emailAddress + message);
                 _log.warn(emailAddress + message);
             }
             else
             {
+                // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
+                AuditLogService.get().addEvent(User.guest, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, null, message);
                 _log.warn("Unknown user " + message);
             }
         }
@@ -429,8 +433,8 @@ public class AuthenticationManager
 
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP).  This is for the case
-    //  where you have an id & password in hand (from a post or get) and want to ignore SSO and other delegated
-    //  authentication mechanisms that rely on cookies, browser redirects, etc.
+    // where you have an id & password in hand and want to ignore SSO and other delegated authentication mechanisms that
+    // rely on cookies, browser redirects, etc.  Current usages include basic auth and test cases.
 
     // Returns null if credentials are incorrect, user doesn't exist, or user is inactive
     public static User authenticate(String id, String password) throws ValidEmail.InvalidEmailException
