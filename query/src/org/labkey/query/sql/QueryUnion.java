@@ -159,6 +159,13 @@ public class QueryUnion extends QueryRelation
 		for (QueryRelation term : _termList)
 		{
 			SQLFragment sql = term.getSql();
+
+            if (term.getSelectedColumnCount() != _unionColumns.size())
+            {
+                _query.getParseErrors().add(new QueryParseException("All subqueries in a UNION must have the same number of columns", null, _qunion.getLine(), _qunion.getColumn()));
+                return null;
+            }
+            
             if (null == sql)
             {
                 if (_query.getParseErrors().size() > 0)
@@ -264,6 +271,13 @@ public class QueryUnion extends QueryRelation
 	}
 
 
+    @Override
+    int getSelectedColumnCount()
+    {
+        return _unionColumns.size();
+    }
+    
+
     RelationColumn getColumn(String name)
     {
         initColumns();
@@ -352,18 +366,12 @@ public class QueryUnion extends QueryRelation
             return _first.getSqlTypeInt();
         }
 
-        ColumnInfo getColumnInfo()
-        {
-            ColumnInfo ci = new ColumnInfo(_name);
-            copyColumnAttributesTo(ci);
-            return ci;
-        }
-
         @Override
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);
             to.setFk(null);
+            to.setKeyField(false);
         }
     }
 }

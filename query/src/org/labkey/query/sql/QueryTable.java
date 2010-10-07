@@ -60,7 +60,14 @@ public class QueryTable extends QueryRelation
     {
     }
 
-    
+
+    @Override
+    int getSelectedColumnCount()
+    {
+        return _selectedColumns.size();
+    }
+
+
     RelationColumn getColumn(String name)
     {
         FieldKey k = new FieldKey(null, name);
@@ -82,6 +89,8 @@ public class QueryTable extends QueryRelation
         LinkedHashMap<String,RelationColumn> map = new LinkedHashMap<String,RelationColumn>(columns.size()*2);
         for (ColumnInfo ci : columns)
         {
+            if (ci.isUnselectable())
+                continue;
             RelationColumn r = getColumn(ci.getName());
             assert null != r;
             map.put(ci.getName(),r);
@@ -250,12 +259,6 @@ public class QueryTable extends QueryRelation
         {
             to.copyAttributesFrom(_col);
             to.copyURLFrom(_col, null, null);
-        }
-
-        @Override
-        public boolean isUnselectable()
-        {
-            return _col.isUnselectable();
         }
     }
 

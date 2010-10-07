@@ -105,6 +105,8 @@ public abstract class QueryRelation
 
     abstract @Nullable RelationColumn getColumn(@NotNull String name);
 
+    abstract int getSelectedColumnCount();
+
     /** In general we want to push lookups down as far as possible in the tree.  Sometimes this is not possible and
      * these methods may return null.  Then the caller should try parent.getLookupColumn()
      */
@@ -190,12 +192,6 @@ public abstract class QueryRelation
         protected static SqlDialect getDialect(RelationColumn c)
         {
             return c.getTable()._schema.getDbSchema().getSqlDialect();
-        }
-
-        // expose this without having to call copyColumnAttributesTo
-        public boolean isUnselectable()
-        {
-            return false;
         }
     }
 

@@ -198,12 +198,8 @@ public class QuerySelect extends QueryRelation
                             parseError("Can't resolve column: " + node.getSourceText(), node);
                             continue;
                         }
-                        for (Map.Entry<String,RelationColumn> e :  r.getAllColumns().entrySet())
+                        for (String name :  r.getAllColumns().keySet())
                         {
-                            String name = e.getKey();
-                            RelationColumn rc = e.getValue();
-                            if (rc.isUnselectable())
-                                continue;
                             columnList.add(new SelectColumn(new FieldKey(parent,name)));
                         }
                         continue;
@@ -1081,6 +1077,12 @@ loop:
     }
 
 
+    int getSelectedColumnCount()
+    {
+        return _columns.size();
+    }
+
+
     SelectColumn getColumn(String name)
     {
         FieldKey key = new FieldKey(null,name);
@@ -1288,6 +1290,9 @@ loop:
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)
                 to.copyURLFromStrict(col, Collections.singletonMap(fk,to.getFieldKey()));
+
+            if (_from.size() != 1)
+                to.setKeyField(false);
         }
 
         public void appendSource(SourceBuilder builder)

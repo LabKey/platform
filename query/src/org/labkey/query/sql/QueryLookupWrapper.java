@@ -118,6 +118,13 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
+    int getSelectedColumnCount()
+    {
+        return _selectedColumns.size();
+    }
+    
+
     RelationColumn getColumn(String name)
     {
         FieldKey k = new FieldKey(null, name);
