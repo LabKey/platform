@@ -2635,7 +2635,7 @@ public class StudyController extends BaseStudyController
                 map.put(dsd.getLabel(), Collections.<String,Integer>emptyMap());
             }
         }
-        return sortMap;
+        return new CaseInsensitiveHashMap<Integer>(sortMap);
     }
 
     private static String getParticipantListCacheKey(int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
