@@ -577,7 +577,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             createTableSqlParts.add(getSqlColumnSpec(prop));
         }
 
-        statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ", ")));
+        statements.add(String.format("CREATE TABLE %s (%s)", makeTableIdentifier(change), StringUtils.join(createTableSqlParts, ",\n")));
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
@@ -622,7 +622,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             sqlParts.add("DROP " + prop.getName());
         }
 
-        return String.format("ALTER TABLE %s %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ", "));
+        return String.format("ALTER TABLE %s %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
     }
 
     private String getAddColumnsStatement(TableChange change)
@@ -630,10 +630,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         List<String> sqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            sqlParts.add("ADD " + getSqlColumnSpec(prop));
+            sqlParts.add(getSqlColumnSpec(prop));
         }
 
-        return String.format("ALTER TABLE %s %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ", "));
+        return String.format("ALTER TABLE %s ADD %s", change.getSchemaName() + "." + change.getTableName(), StringUtils.join(sqlParts, ",\n"));
     }
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
