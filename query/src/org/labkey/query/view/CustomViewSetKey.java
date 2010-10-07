@@ -19,6 +19,7 @@ package org.labkey.query.view;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.util.MemTracker;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
@@ -109,6 +110,9 @@ public class CustomViewSetKey implements Serializable
         }
         map.put(view.getName(), view);
         setMap(request, fullMap);
+        
+        // Stop tracking session views
+        assert MemTracker.remove(view);
         return view;
     }
 
