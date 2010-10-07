@@ -775,29 +775,20 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 sequenceNumCol.setHidden(true);
                 sequenceNumCol.setUserEditable(false);
 
-                ColumnInfo dateCol = null == visitDateColumn ?
-                        new NullColumnInfo(this, "Date", getSqlDialect().getDefaultDateTimeDataType()) :
-                        new AliasedColumn(this, "Date", visitDateColumn);
-                dateCol.setNullable(false);
-                columns.add(insertVisitDatePos++, dateCol);
-
-                 ColumnInfo dayColumn = null;
-//                if (study.getTimepointType() == TimepointType.DATE)
-//                {
-//                    dayColumn = newDatasetColumnInfo(this, participantVisit.getColumn("Day"));
-//                    dayColumn.setName("Day");
-//                    dayColumn.setUserEditable(false);
-//                    dayColumn.setDimension(false);
-//                    dayColumn.setMeasure(false);
-//                    columns.add(insertVisitDatePos, dayColumn);
-//                }
-
-                if (def.isDemographicData())
+                // TODO: wes should prevent creating a property called Date on a date-based study
+                boolean hasDateColumn = null!=getColumn("Date");
+                if (!hasDateColumn)
                 {
-                    dateCol.setHidden(true);
-                    dateCol.setUserEditable(false);
-                    if (dayColumn != null)
-                        dayColumn.setHidden(true);
+                    ColumnInfo dateCol = null == visitDateColumn ?
+                            new NullColumnInfo(this, "Date", getSqlDialect().getDefaultDateTimeDataType()) :
+                            new AliasedColumn(this, "Date", visitDateColumn);
+                    dateCol.setNullable(false);
+                    if (def.isDemographicData())
+                    {
+                        dateCol.setHidden(true);
+                        dateCol.setUserEditable(false);
+                    }
+                    columns.add(insertVisitDatePos++, dateCol);
                 }
             }
 
