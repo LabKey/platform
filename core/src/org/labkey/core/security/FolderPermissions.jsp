@@ -140,7 +140,7 @@ Ext.onReady(function(){
     var items = [];
     items.push(
         {
-            activeItem : 0,
+            activeItem : isRoot ? 1 :   0,
             autoScroll : autoScroll,
             autoHeight : !autoScroll,
             border:true,
@@ -291,7 +291,7 @@ Ext.onReady(function(){
             btnEl.on("click", submit);
         }
         return groupsPanel;
-    };
+    }
 
     if (<%=c.isRoot() ? "false" : "true"%>)
         tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString("Groups for project " + (null != c.getProject() ? c.getProject().getName() : ""))%>, autoScroll:autoScroll, autoHeight: !autoScroll});
