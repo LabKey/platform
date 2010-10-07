@@ -522,25 +522,26 @@ public class StudyManager
 
     public void deleteVisit(StudyImpl study, VisitImpl visit, User user) throws SQLException
     {
-        // TODO fix deleteVisit
-        _log.error("TODO fix deleteVisit - does not work now there is no single studydata table");
-
-/*
         StudySchema schema = StudySchema.getInstance();
         try
         {
             schema.getSchema().getScope().beginTransaction();
 
-            SQLFragment data = new SQLFragment();
-            data.append("SELECT LSID FROM " + schema.getTableInfoStudyData(null) + " WHERE Container=? AND SequenceNum BETWEEN ? AND ?");
-            data.add(study.getContainer().getId());
-            data.add(visit.getSequenceNumMin());
-            data.add(visit.getSequenceNumMax());
-            OntologyManager.deleteOntologyObjects(schema.getSchema(), data, study.getContainer(), false);
-            Table.execute(schema.getSchema(),
-                    "DELETE FROM " + schema.getTableInfoStudyData(null) + "\n" +
-                    "WHERE Container=? AND SequenceNum BETWEEN ? AND ?",
-                    new Object[] {study.getContainer().getId(),visit.getSequenceNumMin(),visit.getSequenceNumMax()});
+            for (DataSetDefinition def : study.getDataSets())
+            {
+                TableInfo t = def.getStorageTableInfo();
+                if (null == t)
+                    continue;
+
+                SQLFragment sqlf = new SQLFragment();
+                sqlf.append("DELETE FROM " + t.getSelectName() + " WHERE SequenceNum BETWEEN ? AND ?");
+                sqlf.add(visit.getSequenceNumMin());
+                sqlf.add(visit.getSequenceNumMax());
+                int count = Table.execute(schema.getSchema(), sqlf);
+                if (count > 0)
+                    StudyManager.fireDataSetChanged(def);
+            }
+
             Table.execute(schema.getSchema(),
                     "DELETE FROM " + schema.getTableInfoParticipantVisit() + "\n" +
                     "WHERE Container = ? and VisitRowId = ?",
@@ -557,12 +558,6 @@ public class StudyManager
 
             schema.getSchema().getScope().commitTransaction();
 
-            for (DataSetDefinition def : getDataSetDefinitions(study))
-            {
-                def.unmaterialize();
-                StudyManager.fireDataSetChanged(def);
-            }
-
             getVisitManager(study).updateParticipantVisits(user, study.getDataSets());
         }
         finally
@@ -570,7 +565,6 @@ public class StudyManager
             if (schema.getSchema().getScope().isTransactionActive())
                 schema.getSchema().getScope().rollbackTransaction();
         }
-        */
     }
 
 
