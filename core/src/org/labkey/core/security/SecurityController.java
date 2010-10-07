@@ -92,6 +92,13 @@ public class SecurityController extends SpringActionController
             return new ActionURL(ProjectAction.class, container);
         }
 
+        public ActionURL getProjectURL(Container container, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(ProjectAction.class, container);
+            url.addReturnURL(returnURL);
+            return url;
+        }
+
         public ActionURL getContainerURL(Container container)
         {
             return new ActionURL(ProjectAction.class, container);
@@ -207,13 +214,12 @@ public class SecurityController extends SpringActionController
     {
         public ModelAndView getView(PermissionsForm form, BindException errors) throws Exception
         {
-            String root = getContainer().getId();
-            String resource = root;
-            ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : null;
+            String resource = getContainer().getId();
+            ActionURL doneURL = form.isWizard() ? getContainer().getFolderType().getStartURL(getContainer(), getUser()) : form.getReturnActionURL();
 
             Container container = getViewContext().getContainer();
 
-            FolderPermissions permsView = new FolderPermissions(root, resource, doneURL);
+            FolderPermissions permsView = new FolderPermissions(resource, doneURL);
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setTitle("Permissions for " + container.getPath());
@@ -242,7 +248,7 @@ public class SecurityController extends SpringActionController
         public final String resource;
         public final ActionURL doneURL;
         
-        FolderPermissions(String root, String resource, ActionURL doneURL)
+        FolderPermissions(String resource, ActionURL doneURL)
         {
             super(SecurityController.class, "FolderPermissions.jsp", null);
             this.setModelBean(this);
@@ -487,7 +493,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    public static class PermissionsForm
+    public static class PermissionsForm extends ReturnUrlForm
     {
         private boolean _wizard;
         private String _inherit;
