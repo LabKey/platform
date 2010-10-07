@@ -2036,7 +2036,7 @@ public class OntologyManager
     {
         assert dd.getDomainId() != 0;
         dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        domainDescCache.put(getCacheKey(dd),dd);
+        domainDescCache.remove(getCacheKey(dd));
         return dd;
     }
 
@@ -2295,13 +2295,6 @@ public class OntologyManager
         {
             PropertyDescriptor pdInserted = OntologyManager.ensurePropertyDescriptor(pdToInsert);
             list.add(pdInserted);
-        }
-
-        // provision new hard tables
-        // XXX - probably not always appropriate
-        for (DomainDescriptor dd : domainMap.values())
-        {
-            StorageProvisioner.create(PropertyService.get().getDomain(dd.getDomainId()));
         }
 
         return list.toArray(new PropertyDescriptor[list.size()]);
