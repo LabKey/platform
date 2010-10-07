@@ -1036,8 +1036,21 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int[] executeBatch()
             throws SQLException
     {
-        // UNDONE: logging
-        return _stmt.executeBatch();
+        beforeExecute();
+        Exception ex = null;
+        try
+        {
+            return _stmt.executeBatch();
+        }
+        catch (SQLException sqlx)
+        {
+            ex = sqlx;
+            throw sqlx;
+        }
+        finally
+        {
+            _logStatement(_debugSql, ex);
+        }
     }
 
     public Connection getConnection()
