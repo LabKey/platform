@@ -2225,6 +2225,12 @@ public class StudyManager
                 // this case, it's necessary to explicitly modify 'col' to match 'matchedCol'.
                 col.setMvDisabled();
             }
+
+            if (matchedCol.getName().equalsIgnoreCase("createdby") || matchedCol.getName().equalsIgnoreCase("modifiedby"))
+            {
+                // might be email names instead of userid
+                col.clazz = String.class;
+            }
         }
 
         // make sure that our QC state columns are understood by this tab loader; we'll need to find QCStateLabel columns
