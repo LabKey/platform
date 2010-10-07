@@ -854,14 +854,10 @@ class SqlDialectPostgreSQL extends SqlDialect
         List<String> colSpec = new ArrayList<String>();
         colSpec.add(makePropertyIdentifier(prop.getName()));
         colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
+        if (prop.getSqlTypeInt() == Types.VARCHAR)
+            colSpec.add("(" + prop.getSize() + ")");
         if (prop.isUnique())
             colSpec.add("UNIQUE");
-// UNDONE : this kills upgrade..., need to figure out how to create for new tables, but not existing???
-//        if (!prop.isNullable())
-//          colSpec.add("NOT NULL");
-        // todo auto increment
-        // todo indexes
-
         return StringUtils.join(colSpec, ' ');
     }
 

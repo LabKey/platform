@@ -370,7 +370,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public TableInfo getTableInfo(@NotNull User user, boolean checkPermission) throws UnauthorizedException
+    public TableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
     {
         //noinspection ConstantConditions
         if (user == null && checkPermission)
@@ -745,7 +745,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 {
                     ColumnInfo mvColumn = new ColumnInfo(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, this);
                     mvColumn.setPropertyURI(wrapped.getPropertyURI());
-                    mvColumn.setAlias(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
+                    mvColumn.setAlias(col.getAlias() + "_" + MvColumn.MV_INDICATOR_SUFFIX);
                     mvColumn.setNullable(true);
                     mvColumn.setUserEditable(false);
                     mvColumn.setHidden(true);
@@ -950,7 +950,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         // I want to know if that changes
         assert ci.getName().equalsIgnoreCase(p.getName());
         ci.setName(p.getName());
-        ci.setAlias(p.getName().toLowerCase());
+        ci.setAlias(from.getAlias());
         PropertyColumn.copyAttributes(user, ci, p);
         return ci;
     }
