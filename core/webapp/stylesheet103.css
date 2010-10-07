@@ -1222,7 +1222,6 @@ table.labkey-main
 }*/
 
 td.labkey-site-nav-panel {
-    padding: 0;
     background-color: #f8f8f8;
     padding-top: 10px;
     padding-left: 5px;
@@ -1234,6 +1233,8 @@ td.labkey-site-nav-panel {
 	border-spacing: 2px;
     vertical-align: top;
     width: 120px;
+	overflow: auto;
+	white-space: nowrap;
 }
 
 /* The project area (the rest of the page besides the side and top panels) */
