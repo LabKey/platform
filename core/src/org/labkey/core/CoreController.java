@@ -112,7 +112,9 @@ public class CoreController extends SpringActionController
             Container project = c.getProject();
             LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
 
-            return getRevisionURL(ThemeStylesheetAction.class, project);
+            if (laf.hasProperties())
+                return getRevisionURL(ThemeStylesheetAction.class, project);
+            return null;
         }
 
         public ActionURL getCustomStylesheetURL()
