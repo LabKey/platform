@@ -53,10 +53,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
 * User: adam
@@ -200,10 +202,20 @@ public class ListWriter
     private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData)
     {
         Collection<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>();
+        Set<ColumnInfo> pks = new HashSet<ColumnInfo>(tinfo.getPkColumns());
+
+        assert pks.size() == 1;
 
         for (ColumnInfo column : tinfo.getColumns())
         {
-            if (column.isUserEditable() || (metaData && column.isKeyField()))
+            /*
+                We export:
+
+                - All user-editable columns (meta data & values)
+                - All primary keys, including the values of auto-increment key columns (meta data & values)
+                - Other key columns (meta data only) 
+             */
+            if (column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField()))
             {
                 columns.add(column);
 
