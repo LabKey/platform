@@ -68,7 +68,6 @@ public class StudyUnionTableInfo extends VirtualTable
             sqlf.append(unionAll);
             sqlf.append("SELECT '" + def.getEntityId() + "' AS dataset, " + def.getDataSetId() + " AS datasetid");
 
-            // UNDONE: need to change this if propertyname doesn't match storage column name
             String visitPropertyName = def.getVisitDatePropertyName();
             ColumnInfo visitColumn = null==visitPropertyName ? null : ti.getColumn(visitPropertyName);
             if (null != visitPropertyName && (null == visitColumn || visitColumn.getSqlTypeInt() != Types.TIMESTAMP))

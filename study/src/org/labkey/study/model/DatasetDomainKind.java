@@ -16,6 +16,9 @@
 
 package org.labkey.study.model;
 
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -42,9 +45,11 @@ import java.util.Set;
  * Date: May 4, 2007
  * Time: 1:01:43 PM
  */
-public class DatasetDomainKind extends AbstractDomainKind
+public abstract class DatasetDomainKind extends AbstractDomainKind
 {
     public final static String LSID_PREFIX = "StudyDataset";
+
+    final static String DATE = "date";
     final static String PARTICIPANTID = "participantid";
     final static String LSID = "lsid";
     final static String SEQUENCENUM = "sequencenum";
@@ -52,22 +57,25 @@ public class DatasetDomainKind extends AbstractDomainKind
     final static String _KEY = "_key";
     final static String QCSTATE = "qcstate";
     final static String PARTICIPANTSEQUENCEKEY = "participantsequencekey";
+
     /*
      * the columns common to all datasets
      */
-    final static Set<PropertyStorageSpec> BASE_PROPERTIES;
-    final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
+    private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
+    private final static Set<PropertyStorageSpec.Index> PROPERTY_INDICES;
+    protected final static PropertyStorageSpec DATE_PROPERTY = new PropertyStorageSpec(DATE, Types.TIMESTAMP);
 
     static
     {
-        PropertyStorageSpec[] props = {
-                new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR, 32),
-                new PropertyStorageSpec(LSID, Types.VARCHAR, 200, true, false),
-                new PropertyStorageSpec(SEQUENCENUM, Types.FLOAT),
-                new PropertyStorageSpec(SOURCELSID, Types.VARCHAR, 200),
-                new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
-                new PropertyStorageSpec(QCSTATE, Types.INTEGER),
-                new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR, 200)
+        PropertyStorageSpec[] props =
+        {
+            new PropertyStorageSpec(PARTICIPANTID, Types.VARCHAR, 32),
+            new PropertyStorageSpec(LSID, Types.VARCHAR, 200, true, false),
+            new PropertyStorageSpec(SEQUENCENUM, Types.FLOAT),
+            new PropertyStorageSpec(SOURCELSID, Types.VARCHAR, 200),
+            new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
+            new PropertyStorageSpec(QCSTATE, Types.INTEGER),
+            new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR, 200),
         };
 
         BASE_PROPERTIES = new HashSet<PropertyStorageSpec>(Arrays.asList(props));
@@ -81,41 +89,26 @@ public class DatasetDomainKind extends AbstractDomainKind
         };
 
         PROPERTY_INDICES = new HashSet<PropertyStorageSpec.Index>(Arrays.asList(indices));
-
     }
 
-    public String getKindName()
+
+    protected DatasetDomainKind()
     {
-        return LSID_PREFIX;
     }
 
+
+    abstract public String getKindName();
+
+    
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
     }
 
 
-    public boolean isDomainType(String domainURI)
-    {
-        try
-        {
-            Lsid lsid = new Lsid(domainURI);
-            if (LSID_PREFIX.equalsIgnoreCase(lsid.getNamespacePrefix()))
-                return true;
-        }
-        catch (Exception x)
-        {
-            /* */
-        }
-
-        // UNDONE: switch to LSID format to make this easier
-        return getDatasetDefinition(null, domainURI) != null;
-    }
-
-
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        DataSetDefinition def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null == def)
             return new SQLFragment("NULL");
         TableInfo ti = def.getStorageTableInfo();
@@ -136,6 +129,12 @@ public class DatasetDomainKind extends AbstractDomainKind
         return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
     }
 
+    public static String generateDomainURI(String name, Container container)
+    {
+        String objectid = name == null ? "" : name;
+        return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
+    }
+
 
     public Pair<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containers)
     {
@@ -145,7 +144,7 @@ public class DatasetDomainKind extends AbstractDomainKind
 
     public ActionURL urlShowData(Domain domain)
     {
-        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSet def = getDatasetDefinition(domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, domain.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
@@ -154,11 +153,12 @@ public class DatasetDomainKind extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain)
     {
-        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
+        DataSet def = getDatasetDefinition(domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.EditTypeAction.class, domain.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
     }
+
 
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
@@ -168,54 +168,55 @@ public class DatasetDomainKind extends AbstractDomainKind
         return createURL;
     }
 
-    DataSetDefinition getDatasetDefinition(Container c, String domainURI)
+
+
+    // consider move into StudyManager
+    static Cache domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map"); 
+    CacheLoader loader = new CacheLoader()
     {
-        ResultSet rs = null;
-        try
+        @Override
+        public Object load(Object key, Object argument)
         {
+            String domainURI = (String)key;
             SQLFragment sql = new SQLFragment();
             sql.append("SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?");
             sql.add(domainURI);
-            if (null != c)
+            ResultSet rs = null;
+            try
             {
-                sql.append(" AND Container=?");
-                sql.add(c.getId());
-            }
-
-            rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                    "SELECT container, datasetid FROM study.Dataset WHERE TypeURI=?", new Object[]{domainURI});
-            if (!rs.next())
-                return null;
-            String container = rs.getString(1);
-            int id = rs.getInt(2);
-            rs.close();
-            rs = null;
-
-            if (null == c)
-            {
-                c = ContainerManager.getForId(container);
-                if (null == c)
+                rs = Table.executeQuery(StudySchema.getInstance().getSchema(),sql);
+                if (!rs.next())
                     return null;
+                else
+                    return new Pair(rs.getString(1), rs.getInt(2));
             }
-            Study study = StudyManager.getInstance().getStudy(c);
-            return StudyManager.getInstance().getDataSetDefinition(study, id);
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
         }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
+    };
 
-    public Set<String> getReservedPropertyNames(Domain domain)
+
+    DataSetDefinition getDatasetDefinition(String domainURI)
     {
-        DataSet def = getDatasetDefinition(domain.getContainer(), domain.getTypeURI());
-        return def.getDefaultFieldNames();
+        Pair<String,Integer> p = (Pair<String,Integer>)domainCache.get(domainURI, null, loader);
+        if (null == p)
+            return null;
+
+        Container c = ContainerManager.getForId(p.first);
+        Study study = StudyManager.getInstance().getStudy(c);
+        return StudyManager.getInstance().getDataSetDefinition(study, p.second);
     }
 
+
+    public abstract Set<String> getReservedPropertyNames(Domain domain);
+
+    
     @Override
     public Set<PropertyStorageSpec> getBaseProperties()
     {

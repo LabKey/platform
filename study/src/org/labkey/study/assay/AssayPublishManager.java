@@ -123,10 +123,14 @@ public class AssayPublishManager implements AssayPublishService.Service
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
                                           List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
+        TimepointType timetype = StudyManager.getInstance().getStudy(targetContainer).getTimepointType();
+        
         List<PropertyDescriptor> propertyDescriptors = new ArrayList<PropertyDescriptor>();
         for (Map.Entry<String, PropertyType> entry : types.entrySet())
         {
             String pdName = entry.getKey();
+            if ("Date".equalsIgnoreCase(pdName) && TimepointType.VISIT != timetype)
+                continue;
             PropertyType type = types.get(pdName);
             String typeURI = type.getTypeUri();
             PropertyDescriptor pd = new PropertyDescriptor(null,
@@ -359,6 +363,11 @@ public class AssayPublishManager implements AssayPublishService.Service
             for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
                 String uri = propertyNamesToUris.get(entry.getKey());
+                if (null == uri)
+                {
+                    if ("Date".equalsIgnoreCase(entry.getKey()))
+                        uri = DataSetDefinition.getVisitDateURI();
+                }
                 assert uri != null : "Expected all properties to already be present in assay type";
                 newMap.put(uri, entry.getValue());
             }
@@ -428,6 +437,8 @@ public class AssayPublishManager implements AssayPublishService.Service
         Set<String> newPdNames = new TreeSet<String>();
         for (Map<String, Object> dataMap : dataMaps)
             newPdNames.addAll(dataMap.keySet());
+        if (dataset.getStudy().getTimepointType() != TimepointType.VISIT)  // don't try to create a propertydescriptor for date
+            newPdNames.remove("Date");
 
         Map<String, PropertyDescriptor> typeMap = new HashMap<String, PropertyDescriptor>();
         for (PropertyDescriptor pd : types)

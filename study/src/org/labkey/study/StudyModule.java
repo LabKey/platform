@@ -92,10 +92,12 @@ import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.CohortDomainKind;
-import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyDomainKind;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
@@ -191,7 +193,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DefaultSchema.registerProvider("plate", new PlateSchema.Provider());
         DefaultSchema.registerProvider("assay", new AssaySchemaImpl.Provider());
 
-        PropertyService.get().registerDomainKind(new DatasetDomainKind());
+        PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
+        PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
+        PropertyService.get().registerDomainKind(new ContinuousDatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
@@ -240,7 +244,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             Collection<String> list = new LinkedList<String>();
             list.add("Study: " + study.getLabel());
             long participants = StudyManager.getInstance().getParticipantCount(study);
-            list.add("" + participants + " " + StudyService.get().getSubjectNounPlural(c));
+            if (0 < participants)
+                list.add("" + participants + " " + StudyService.get().getSubjectNounPlural(c));
+            int datasets = study.getDataSets().size();
+            if (0 < datasets)
+                list.add("" + datasets + " datasets");
             return list;
         }
         else

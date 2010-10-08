@@ -471,7 +471,8 @@
         <ns:propertyURI>http://cpas.labkey.com/Study#SequenceNum</ns:propertyURI>
         <ns:nullable>false</ns:nullable>
       </ns:column>
-      <ns:column columnName="_VisitDate">
+        <!-- the actual column name is Date, should migrate this -->
+      <ns:column columnName="VisitDate">
         <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
       </ns:column>
       <ns:column columnName="_key"/>

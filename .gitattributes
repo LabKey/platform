@@ -2473,11 +2473,13 @@ study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
 study/src/org/labkey/study/model/CohortDomainKind.java -text
 study/src/org/labkey/study/model/CohortImpl.java -text
 study/src/org/labkey/study/model/CohortManager.java -text
+study/src/org/labkey/study/model/ContinuousDatasetDomainKind.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DataSetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
 study/src/org/labkey/study/model/DatasetImportHelper.java -text
 study/src/org/labkey/study/model/DatasetReorderer.java -text
+study/src/org/labkey/study/model/DateDatasetDomainKind.java -text
 study/src/org/labkey/study/model/DerivativeType.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
@@ -2507,6 +2509,7 @@ study/src/org/labkey/study/model/StudyManager.java -text
 study/src/org/labkey/study/model/UploadLog.java -text
 study/src/org/labkey/study/model/VisitDataSet.java -text
 study/src/org/labkey/study/model/VisitDataSetType.java -text
+study/src/org/labkey/study/model/VisitDatasetDomainKind.java -text
 study/src/org/labkey/study/model/VisitImpl.java -text
 study/src/org/labkey/study/model/VisitMapKey.java -text
 study/src/org/labkey/study/pipeline/AbstractDatasetImportTask.java -text

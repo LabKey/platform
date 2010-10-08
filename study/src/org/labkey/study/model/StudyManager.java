@@ -2376,10 +2376,12 @@ public class StudyManager
             return getDomainURI(c, u, def.getName());
     }
 
+
     private static String getDomainURI(Container c, User u, String name)
     {
-        return new DatasetDomainKind().generateDomainURI(StudyQuerySchema.SCHEMA_NAME, name, c, u);
+        return DatasetDomainKind.generateDomainURI(name, c);
     }
+
 
     /** NOTE: this is usually handled at import time, this is only useful if DataSetDefinition.visitDatePropertyName changes */
     public void recomputeStudyDataVisitDate(StudyImpl study, Collection<DataSetDefinition> changedDatasets)

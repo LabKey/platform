@@ -30,7 +30,6 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
@@ -92,6 +91,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 /**
  * User: brittp
@@ -170,9 +170,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "ParticipantSequenceKey"
     };
 
-    private static final CaseInsensitiveHashSet DEFAULT_ABSOLUTE_DATE_FIELDS;
-    private static final CaseInsensitiveHashSet DEFAULT_RELATIVE_DATE_FIELDS;
-    private static final CaseInsensitiveHashSet DEFAULT_VISIT_FIELDS;
+    static final CaseInsensitiveHashSet DEFAULT_ABSOLUTE_DATE_FIELDS;
+    static final CaseInsensitiveHashSet DEFAULT_RELATIVE_DATE_FIELDS;
+    static final CaseInsensitiveHashSet DEFAULT_VISIT_FIELDS;
     private static final CaseInsensitiveHashSet HIDDEN_DEFAULT_FIELDS = new CaseInsensitiveHashSet(HIDDEN_DEFAULT_FIELD_NAMES_ARRAY);
 
     static
@@ -205,25 +205,31 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _showByDefault = true;
     }
 
+
     public static boolean isDefaultFieldName(String fieldName, Study study)
     {
         String subjectCol = StudyService.get().getSubjectColumnName(study.getContainer());
+        if (subjectCol.equalsIgnoreCase(fieldName))
+            return true;
+        
         switch (study.getTimepointType())
         {
             case VISIT:
-                return DEFAULT_VISIT_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
+                return DEFAULT_VISIT_FIELDS.contains(fieldName);
             case CONTINUOUS:
-                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
+                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
             case DATE:
             default:
-                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName) || subjectCol.equalsIgnoreCase(fieldName);
+                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
         }
     }
+
 
     public static boolean showOnManageView(String fieldName, Study study)
     {
         return !HIDDEN_DEFAULT_FIELDS.contains(fieldName);
     }
+
 
     public Set<String> getDefaultFieldNames()
     {
@@ -410,7 +416,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return null;
 
         Domain d = ensureDomain();
-        DomainKind kind = new DatasetDomainKind();
+        DomainKind kind = getDomainKind();
 
         // create table may set storageTableName() so uncache _domain
         if (null == d.getStorageTableName())
@@ -420,7 +426,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         TableInfo template = getTemplateTableInfo();
 
-        for (PropertyStorageSpec pss : DatasetDomainKind.BASE_PROPERTIES)
+        for (PropertyStorageSpec pss : kind.getBaseProperties())
         {
             ColumnInfo c = ti.getColumn(pss.getName());
             ColumnInfo t = template.getColumn(pss.getName());
@@ -691,9 +697,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _storage = def.getStorageTableInfo();
             this._template = getTemplateTableInfo();
             
-            //
-            // Built-in/shared columns
-            //
+            // PartipantId
 
             {
             // StudyData columns
@@ -711,6 +715,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columns.add(_ptid);
             }
 
+            // base columns
+
             for (String name : Arrays.asList("lsid","ParticipantSequenceKey","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
             {
                 ColumnInfo col = getStorageColumn(name);
@@ -721,20 +727,35 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 columns.add(wrapped);
             }
 
-            int insertVisitDatePos = columns.size();
+            // SequenceNum
 
             ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, getStorageColumn("SequenceNum"), getSequenceNumURI());
             sequenceNumCol.setName("SequenceNum");
             sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
             sequenceNumCol.setMeasure(false);
-
             if (def.isDemographicData())
             {
                 sequenceNumCol.setHidden(true);
                 sequenceNumCol.setUserEditable(false);
             }
-
+            if (study.getTimepointType() != TimepointType.VISIT)
+            {
+                sequenceNumCol.setNullable(true);
+                sequenceNumCol.setHidden(true);
+                sequenceNumCol.setUserEditable(false);
+            }
             columns.add(sequenceNumCol);
+
+            // Date
+
+            if (study.getTimepointType() != TimepointType.VISIT)
+            {
+                ColumnInfo visitDateCol = newDatasetColumnInfo(this, getStorageColumn("Date"), getVisitDateURI());
+                visitDateCol.setNullable(false);
+                columns.add(visitDateCol);
+            }
+
+            // QCState
 
             ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DataSetTable.QCSTATE_ID_COLNAME), getQCStateURI());
             // UNDONE: make the QC column user editable.  This is turned off for now because DatasetSchemaTableInfo is not
@@ -744,9 +765,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columns.add(qcStateCol);
 
             // Property columns (see OntologyManager.getColumnsForType())
+
             Domain d = def.getDomain();
             DomainProperty[] properties = null==d ? new DomainProperty[0] : d.getProperties();
-            ColumnInfo visitDateColumn = null;
             for (DomainProperty p : properties)
             {
                 ColumnInfo col = getStorageColumn(d, p);
@@ -780,40 +801,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     wrapped.setDisplayColumnFactory(new MVDisplayColumnFactory());
                     wrapped.setMvColumnName(mvColumn.getName());
                 }
-
-                if (null != def._visitDatePropertyName && wrapped.getName().equalsIgnoreCase(def._visitDatePropertyName))
-                    visitDateColumn = wrapped;
             }
-
-            if (study.getTimepointType() != TimepointType.VISIT)
-            {
-                sequenceNumCol.setNullable(true);
-                sequenceNumCol.setHidden(true);
-                sequenceNumCol.setUserEditable(false);
-
-                // TODO: we should prevent creating a property called Date on a date-based study
-                boolean hasDateColumn = null!=getColumn("Date");
-                if (!hasDateColumn)
-                {
-                    ColumnInfo dateCol = null == visitDateColumn ?
-                            new NullColumnInfo(this, "Date", getSqlDialect().getDefaultDateTimeDataType()) :
-                            new AliasedColumn(this, "Date", visitDateColumn);
-                    dateCol.setNullable(false);
-                    if (def.isDemographicData())
-                    {
-                        dateCol.setHidden(true);
-                        dateCol.setUserEditable(false);
-                    }
-                    columns.add(insertVisitDatePos++, dateCol);
-                }
-            }
-
-//            ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
-//            visitRowId.setName("VisitRowId");
-//            visitRowId.setHidden(true);
-//            visitRowId.setUserEditable(false);
-//            visitRowId.setMeasure(false);
-//            columns.add(visitRowId);
 
             // If we have an extra key, and it's server-managed, make it non-editable
             if (def.getKeyManagementType() != KeyManagementType.None)
@@ -827,7 +815,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
             }
 
-            // Add the dataset table via a foreign key lookup
+            // Dataset
+
             ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("'" + def.getEntityId() + "'"), Types.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
@@ -843,9 +832,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             datasetColumn.setDimension(false);
             columns.add(datasetColumn);
 
-            // HACK reset colMap
+            // reset colMap
             colMap = null;
-
             setPkColumnNames(Arrays.asList("LSID"));
         }
 
@@ -901,12 +889,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @NotNull
         public SQLFragment getFromSQL(String alias)
         {
-            SqlDialect d = getSqlDialect();
-            SQLFragment from = new SQLFragment();
-            from.appendComment("<DataSetDefinition: " + getName() + ">", d); // UNDONE stash name
-
             if (null == _storage)
             {
+                SqlDialect d = getSqlDialect();
+                SQLFragment from = new SQLFragment();
+                from.appendComment("<DataSetDefinition: " + getName() + ">", d); // UNDONE stash name
                 String comma = " ";
                 from.append("(SELECT ");
                 for (ColumnInfo ci : _template.getColumns())
@@ -915,24 +902,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     comma = ", ";
                 }
                 from.append("\nWHERE 0=1) AS ").append(alias);
+                from.appendComment("</DataSetDefinition>", d);
+                return from;
             }
             else
             {
-                return new SQLFragment(_storage.getSelectName() + " AS " + alias);
-/*
-                TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-
-                from.append(
-                        "(SELECT DS.*, PV.Day, PV.VisitRowId");
-                if (!"participantid".equalsIgnoreCase(StudyService.get().getSubjectColumnName(_container)))
-                    from.append(", DS.participantId AS " + StudyService.get().getSubjectColumnName(_container));
-                from.append("\n" +
-                        "FROM ").append(_storage.getFromSQL("DS")).append(" LEFT OUTER JOIN " + participantVisit + " PV\n" +
-                        " ON DS.ParticipantId=PV.ParticipantId AND DS.SequenceNum=PV.SequenceNum AND PV.Container = '" + _container.getId() + "') AS ").append(alias);
-*/
+                return _storage.getFromSQL(alias);
             }
-            from.appendComment("</DataSetDefinition>", d);
-            return from;
         }
     }
 
@@ -978,9 +954,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (propertyURI == null)
                         continue;
                     String name = col.getName();
-                    // hack: _visitdate is private, but we want VisitDate (for now)
-                    if (name.equalsIgnoreCase("_VisitDate"))
-                        name = "VisitDate";
                     PropertyType type = PropertyType.getFromClass(col.getJavaObjectClass());
                     PropertyDescriptor pd = new PropertyDescriptor(
                             propertyURI, type.getTypeUri(), name, ContainerManager.getSharedContainer());
@@ -1003,6 +976,21 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return _domain;
     }
 
+
+    public DomainKind getDomainKind()
+    {
+        switch (getStudy().getTimepointType())
+        {
+            case VISIT:
+                return new VisitDatasetDomainKind();
+            case DATE:
+            case CONTINUOUS:
+                return new DateDatasetDomainKind();
+            default:
+                return null;
+        }
+    }
+    
 
     public static Map<String,PropertyDescriptor> getStandardPropertiesMap()
     {
@@ -1120,8 +1108,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         TableInfo data = getStorageTableInfo();
         SimpleFilter filter = new SimpleFilter();
-//        filter.addCondition("Container", c.getId());
-//        filter.addCondition("DatasetId", getDataSetId());
         filter.addInClause("LSID", rowLSIDs);
 
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
@@ -1499,6 +1485,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private List<String> _insertPropertyMaps(Study study, User user, List<Map<String, Object>> dataMaps, long lastModified, boolean ensureObjects, Logger logger, DbScope scope)
             throws SQLException, ValidationException
     {
+        TimepointType timetype = study.getTimepointType();
         NumberFormat sequenceFormat = new DecimalFormat("0.0000");
         assert ExperimentService.get().getSchema().getScope().isTransactionActive();
 
@@ -1590,18 +1577,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 double sequenceNum = helper.getSequenceNum(row);
                 Object key = helper.getKey(row);
                 String participantSequenceKey = participantId + "|" + sequenceFormat.format(sequenceNum);
-//                Date visitDate = helper.getVisitDate(row);
+                Date visitDate = helper.getVisitDate(row);
                 Integer qcState = helper.getQCState(row);
                 String sourceLsid = helper.getSourceLsid(row);
 
                 insertMap.put("participantsequencekey", participantSequenceKey);
-//                insertMap.put("_visitdate", visitDate);
                 insertMap.put("participantid", participantId);
                 insertMap.put("sequencenum", sequenceNum);
                 insertMap.put("_key", key==null ? "" : String.valueOf(key));
                 insertMap.put("lsid", lsid);
                 insertMap.put("qcstate", qcState);
                 insertMap.put("sourcelsid", sourceLsid);
+                if (timetype != TimepointType.VISIT)
+                    insertMap.put("date", visitDate);
 
                 Table.insert(user, table, insertMap);
 
@@ -2006,7 +1994,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencekey");
             for (ColumnInfo col : columnsBase)
             {
-                ColumnInfo wrapped = newDatasetColumnInfo(this, col, null);
+                ColumnInfo wrapped = new ColumnInfo(col, this);
+                columns.add(wrapped);
+            }
+            if (def.getStudy().getTimepointType() != TimepointType.VISIT)
+            {
+                ColumnInfo wrapped = new AliasedColumn(this, "Date", studyData.getColumn("_VisitDate"));
                 columns.add(wrapped);
             }
 
