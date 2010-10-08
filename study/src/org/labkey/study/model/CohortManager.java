@@ -18,7 +18,6 @@ package org.labkey.study.model;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.data.*;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
@@ -328,7 +327,7 @@ public class CohortManager
         // assignment never changes.  Participant "NegativeUntil2" starts out negative, then switches to positive in visit
         // 2.  The following code uses this information to fill in the blanks between assignment changes, saving a cohort
         // assignment for every known participant/visit combination based on the results of this query.
-        ColumnInfo subjectCol = ((DataSetDefinition.StudyDataTableInfo)cohortDatasetTinfo).getParticipantColumn();
+        ColumnInfo subjectCol = ((DataSetDefinition.DatasetSchemaTableInfo)cohortDatasetTinfo).getParticipantColumn();
         SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, " + cohortLabelCol.getValueSql("D") + "\n" +
                 "FROM " + StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV") + "\n" +
                 "  LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit().getFromSQL("V") + " ON PV.VisitRowId = V.RowId\n" +

@@ -36,12 +36,11 @@ import java.util.Map;
  * User: kevink
  * Date: Jan 11, 2010 4:31:18 PM
  *
- * Proof of concept.  Eventually just use DataSetDefinition.StudyDataTableInfo.
+ * Provides a Query-ized TableInfo that contains every row from every dataset in the study.
+ * Eventually merge with StudyUnionTableInfo.
  */
 public class StudyDataTable extends FilteredTable
 {
-    private static final PropertyDescriptor[] EMPTY_PROPERTY_ARRAY = new PropertyDescriptor[0];
-
     StudyQuerySchema _schema;
 
     public StudyDataTable(StudyQuerySchema schema)
@@ -93,17 +92,17 @@ public class StudyDataTable extends FilteredTable
         sequenceNumColumn.setMeasure(false);
         addColumn(sequenceNumColumn);
 
-//        PropertyDescriptor[] pds = EMPTY_PROPERTY_ARRAY;
-//        StudyImpl study = _schema.getStudy();
-//        if (study != null)
-//            pds = study.getSharedProperties();
+        StudyImpl study = _schema.getStudy();
+        if (study != null)
+        {
+            PropertyDescriptor[] pds = study.getSharedProperties();
 
-//        for (PropertyDescriptor pd : pds)
-//        {
-//            ColumnInfo projectColumn = new PropertyColumn(pd, lsidColumn, _schema.getContainer().getId(), _schema.getUser());
-//            addColumn(projectColumn);
-//            defaultColumns.add(FieldKey.fromParts(pd.getName()));
-//        }
+            for (PropertyDescriptor pd : pds)
+            {
+                addWrapColumn(_rootTable.getColumn(pd.getName()));
+                defaultColumns.add(FieldKey.fromParts(pd.getName()));
+            }
+        }
 
         setDefaultVisibleColumns(defaultColumns);
 

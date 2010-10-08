@@ -69,7 +69,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
-import org.labkey.study.query.DataSetsTable;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.Connection;
@@ -116,7 +115,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private @NotNull KeyManagementType _keyManagementType = KeyManagementType.None;
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
-    private transient TableInfo _tableInfoProperties;
     private Integer _cohortId;
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
@@ -380,7 +378,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (checkPermission && !canRead(user) && user != User.getSearchUser())
             HttpView.throwUnauthorized();
 
-        return new StudyDataTableInfo(this, user);
+        return new DatasetSchemaTableInfo(this, user);
     }
 
 
@@ -660,7 +658,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      * so that this object can be cached...
      */
 
-    public static class StudyDataTableInfo extends SchemaTableInfo
+    public static class DatasetSchemaTableInfo extends SchemaTableInfo
     {
         private Container _container;
         ColumnInfo _ptid;
@@ -684,7 +682,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
 
 
-        StudyDataTableInfo(DataSetDefinition def, final User user)
+        DatasetSchemaTableInfo(DataSetDefinition def, final User user)
         {
             super(def.getLabel(), StudySchema.getInstance().getSchema());
             _container = def.getContainer();
@@ -739,7 +737,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columns.add(sequenceNumCol);
 
             ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DataSetTable.QCSTATE_ID_COLNAME), getQCStateURI());
-            // UNDONE: make the QC column user editable.  This is turned off for now because StudyDataTableInfo is not
+            // UNDONE: make the QC column user editable.  This is turned off for now because DatasetSchemaTableInfo is not
             // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
             // Note that QC state can still be modified via the standard update UI.
             qcStateCol.setUserEditable(false);
@@ -793,7 +791,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 sequenceNumCol.setHidden(true);
                 sequenceNumCol.setUserEditable(false);
 
-                // TODO: wes should prevent creating a property called Date on a date-based study
+                // TODO: we should prevent creating a property called Date on a date-based study
                 boolean hasDateColumn = null!=getColumn("Date");
                 if (!hasDateColumn)
                 {
@@ -961,12 +959,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         ci.setName(p.getName());
         ci.setAlias(from.getAlias());
         return ci;
-    }
-
-
-    static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from)
-    {
-        return newDatasetColumnInfo(tinfo, from, (String)null);
     }
 
 
@@ -1993,12 +1985,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         ModuleUpgrader.getLogger().info("Migrating data for [" + getContainer().getPath() + "]  '" + getName() + "'");
         Table.execute(StudySchema.getInstance().getSchema(), insertInto);
     }
-
-
-    private void upgradeClean() throws SQLException
-    {
-    }
-
 
     @Deprecated
     private static class StudyDataTableInfoUpgrade extends SchemaTableInfo

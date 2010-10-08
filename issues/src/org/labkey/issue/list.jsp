@@ -37,16 +37,15 @@
 %>
 
 <table><tr>
+    <td nowrap><form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, context.getContainer()) %>" method="get">
     <%
         if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
         {
     %>
-            <td><%=PageFlowUtil.generateButton("New " + names.singularName, new ActionURL(IssuesController.InsertAction.class, context.getContainer()))%></td><td>&nbsp;</td>
+            <%=PageFlowUtil.generateButton("New " + names.singularName, new ActionURL(IssuesController.InsertAction.class, context.getContainer()))%>&nbsp;&nbsp;&nbsp;
     <%
         }
-    %>
-    <td nowrap><form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, context.getContainer()) %>" method="get">
-        <input type="text" size="5" name="issueId"/>
+    %><input type="text" size="5" name="issueId"/>
         <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName, "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap><form action="<%= new ActionURL(IssuesController.SearchAction.class, context.getContainer()) %>" method="get">

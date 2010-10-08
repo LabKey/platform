@@ -41,6 +41,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.*;
 
+/** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DataSetTable extends FilteredTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
@@ -258,6 +259,16 @@ public class DataSetTable extends FilteredTable
         return _dsd.getContainer();
     }
 
+    @Override
+    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
+    {
+        // First apply all the metadata from study.StudyData so that it doesn't have to be duplicated for
+        // every dataset
+        super.overlayMetadata(StudyQuerySchema.STUDY_DATA_TABLE_NAME, schema, errors);
+
+        // Then include the specific overrides for this dataset
+        super.overlayMetadata(tableName, schema, errors);
+    }
 
     private class QCStateDisplayColumn extends DataColumn
     {

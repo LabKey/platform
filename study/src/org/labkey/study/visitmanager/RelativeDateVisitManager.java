@@ -309,7 +309,8 @@ public class RelativeDateVisitManager extends VisitManager
         SQLFragment sql = new SQLFragment();
         sql.append(
             "SELECT sd.datasetid, v.sequencenummin " +
-            "FROM ").append(StudySchema.getInstance().getTableInfoStudyData(study,null).getFromSQL("SD")).append("\n");
+            // There's only on implementation of Study, so it's safe enough to cast it
+            "FROM ").append(StudySchema.getInstance().getTableInfoStudyData((StudyImpl)study, null).getFromSQL("SD")).append("\n");
         sql.append(
             "JOIN study.ParticipantVisit pv ON  \n" +
             "     sd.SequenceNum = pv.SequenceNum AND \n" +

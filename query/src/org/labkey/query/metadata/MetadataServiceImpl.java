@@ -120,10 +120,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setConditionalFormats(formats);
         }
 
-        QueryDef queryDef = QueryServiceImpl.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
+        QueryDef queryDef = QueryServiceImpl.get().findMetadataOverrideImpl(schema.getContainer(), schema.getSchemaName(), tableName, false);
         if (queryDef == null)
         {
-            queryDef = QueryServiceImpl.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, true);
+            queryDef = QueryServiceImpl.get().findMetadataOverrideImpl(schema.getContainer(), schema.getSchemaName(), tableName, true);
             if (queryDef != null)
             {
                 gwtTableInfo.setUserDefinedQuery(true);

@@ -3,7 +3,6 @@ package org.labkey.study.visitmanager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.study.Visit;
 import org.labkey.study.model.QCStateSet;
@@ -206,7 +205,7 @@ public abstract class VisitManager
 
             if (!changedDatasets.isEmpty())
             {
-                TableInfo tableFilteredStudyData = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), changedDatasets);
+                TableInfo tableFilteredStudyData = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), changedDatasets, user);
 
                 // UNDONE: performance, query each dataset separately instead of using StudyData union
                 SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +

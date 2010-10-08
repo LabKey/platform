@@ -18,9 +18,6 @@ package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlError;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,7 +36,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.data.SimpleUserSchema;
 import org.labkey.query.persist.*;
 import org.labkey.query.sql.Query;
@@ -680,45 +676,18 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-
-    public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema, Collection<QueryException> errors)
+    public String findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery)
     {
-        if (tableInfo instanceof AbstractTableInfo && tableInfo.isMetadataOverrideable())
-        {
-            QueryDef queryDef = findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
-
-            // Only bother parsing if there's some actual content, otherwise skip the override completely
-            if (queryDef != null && StringUtils.isNotBlank(queryDef.getMetaData()))
-            {
-                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-                List<XmlError> xmlErrors = new ArrayList<XmlError>();
-                options.setErrorListener(xmlErrors);
-                try
-                {
-                    TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetaData(), options);
-                    TablesDocument.Tables tables = doc.getTables();
-                    if (tables != null && tables.sizeOfTableArray() > 0)
-                        ((AbstractTableInfo)tableInfo).loadFromXML(schema, tables.getTableArray(0), errors);
-                }
-                catch (XmlException e)
-                {
-                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(e)));
-                }
-                for (XmlError xmle : xmlErrors)
-                {
-                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
-                }
-            }
-        }
-
-        return tableInfo;
+        QueryDef queryDef = findMetadataOverrideImpl(container, schemaName, tableName, customQuery);
+        return queryDef == null ? null : queryDef.getMetaData();
     }
+
 
     /**
      * Looks in the current folder, parent folders up to and including the project, and the shared
      * container
      */
-    public QueryDef findMetadataOverride(Container container, String schemaName, String tableName, boolean customQuery)
+    public QueryDef findMetadataOverrideImpl(Container container, String schemaName, String tableName, boolean customQuery)
     {
         Container originalContainer = container;
         QueryDef queryDef;

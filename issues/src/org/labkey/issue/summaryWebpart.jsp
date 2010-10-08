@@ -20,10 +20,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     IssuesController.SummaryBean bean = ((JspView<IssuesController.SummaryBean>) HttpView.currentView()).getModelBean();
     User user = getViewContext().getUser();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(HttpView.currentContext().getContainer());
 
     if (bean.hasPermission)
     {
@@ -47,8 +49,8 @@
     </tr>
 <% } %>
 </table>
-<%=textLink("view open issues", bean.listURL + "Issues.Status~eq=open")%>
-<%=textLink("submit new issue", bean.insertURL)%>
+<%=textLink("view open " + names.pluralName, bean.listURL + "Issues.Status~eq=open")%>
+<%=textLink("submit new " + names.singularName, bean.insertURL)%>
 <%
     }
     else

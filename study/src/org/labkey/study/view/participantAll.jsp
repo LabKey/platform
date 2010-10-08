@@ -82,7 +82,7 @@
     url.addParameter("participantId", bean.getParticipantId());
 
     StudyManager manager = StudyManager.getInstance();
-    Study study = manager.getStudy(context.getContainer());
+    StudyImpl study = manager.getStudy(context.getContainer());
 
     User user = (User) request.getUserPrincipal();
     DataSetDefinition[] allDatasets = manager.getDataSetDefinitions(study);
@@ -129,7 +129,7 @@
     Sort sort = new Sort("SequenceNum");
     SQLFragment f = new SQLFragment();
     f.append("SELECT ParticipantId, SequenceNum, DatasetId, COUNT(*) AS _RowCount FROM ");
-    f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets).getFromSQL("SD"));
+    f.append(StudySchema.getInstance().getTableInfoStudyDataFiltered(study, datasets, user).getFromSQL("SD"));
     f.append("\n");
     f.append("GROUP BY ParticipantId, SequenceNum, DatasetId");
     rs = Table.executeQuery(dbSchema, f);

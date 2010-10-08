@@ -388,7 +388,7 @@ public class IssuesController extends SpringActionController
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
-            getPageConfig().setTitle("" + _issue.getIssueId() + " : " + _issue.getTitle().getSource());
+            getPageConfig().setTitle(getSingularEntityName() + " " + _issue.getIssueId() + ": " + _issue.getTitle().getSource());
 
             return new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
         }
@@ -403,6 +403,11 @@ public class IssuesController extends SpringActionController
         {
             return issueURL(DetailsAction.class).addParameter("issueId", _issue.getIssueId());
         }
+    }
+
+    private HString getSingularEntityName()
+    {
+        return IssueManager.getEntryTypeNames(getContainer()).singularName;
     }
 
 
@@ -848,7 +853,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new DetailsAction(_issue, getViewContext()).appendNavTrail(root)
-                    .addChild("(update) " + _issue.getTitle().getSource());
+                    .addChild("Update " + getSingularEntityName() + ": " + _issue.getTitle().getSource());
         }
     }
 
@@ -2107,7 +2112,7 @@ public class IssuesController extends SpringActionController
             //set specified web part title
             Object title = context.get("title");
             if (title == null)
-                title = "Issues Summary";
+                title = IssueManager.getEntryTypeNames(getViewContext().getContainer()).pluralName + " Summary";
             setTitle(title.toString());
 
             User u = context.getUser();

@@ -2364,6 +2364,7 @@ study/src/org/labkey/study/StudyMacroProvider.java -text
 study/src/org/labkey/study/StudyModule.java -text
 study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudyServiceImpl.java -text
+study/src/org/labkey/study/StudyUnionTableInfo.java -text
 study/src/org/labkey/study/StudyUpgradeCode.java -text
 study/src/org/labkey/study/StudyUpgrader.java -text
 study/src/org/labkey/study/assay/AssayDomainKind.java -text

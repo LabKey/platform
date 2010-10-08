@@ -205,12 +205,6 @@ public class ListTable extends FilteredTable
     }
 
     @Override
-    public boolean isMetadataOverrideable()
-    {
-        return true;
-    }
-
-    @Override
     public QueryUpdateService getUpdateService()
     {
         return new ListQueryUpdateService(this, getList());

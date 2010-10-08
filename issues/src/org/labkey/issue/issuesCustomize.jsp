@@ -19,11 +19,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.util.HString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     String title = webPart.getPropertyMap().get("title");
+    HString singularName = IssueManager.getEntryTypeNames(me.getViewContext().getContainer()).singularName;
 %>
 <% // Post to current action; URL includes pageId and index parameters %>
 <form name="frmCustomize" method="post">
@@ -33,7 +36,7 @@
       Enter title for the Issues Summary web part.
     </td>
     <td>
-      <input name="title" size="25" type="text" value="<%=null == title ? "Issues Summary" : h(title) %>">
+      <input name="title" size="25" type="text" value="<%=null == title ? singularName + " Summary" : h(title) %>">
     </td>
   </tr>
   <tr>
