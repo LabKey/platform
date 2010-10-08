@@ -16,20 +16,22 @@
 
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -176,6 +178,8 @@ public interface TableInfo
 
     public ContainerFilter getContainerFilter();
 
+    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors);
+
     public boolean isMetadataOverrideable();
 
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name);
@@ -186,7 +190,6 @@ public interface TableInfo
 
     /**
      * Get Domain associated with this TableInfo if any.
-     * @return
      */
     @Nullable
     public Domain getDomain();
@@ -194,7 +197,6 @@ public interface TableInfo
     /**
      * Get DomainKind associated with this TableInfo if any.
      * Domain may or may not exist even if DomainKind is available.
-     * @return
      */
     @Nullable
     public DomainKind getDomainKind();

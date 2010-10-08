@@ -24,7 +24,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.permissions.Permission;
 
-abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
+abstract public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 {
     public Container getContainer();
 

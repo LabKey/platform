@@ -16,8 +16,12 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -38,6 +42,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 
 import javax.script.ScriptException;
 import java.io.IOException;
@@ -614,15 +619,41 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return null;
     }
 
-    /**
-     * @return whether this table allows its metadata to be overriden. User-defined tables typically allow
-     * direct editing of their metadata, so they don't need the override functionality.
-     */
     public boolean isMetadataOverrideable()
     {
         return true;
     }
 
+    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
+    {
+        if (isMetadataOverrideable())
+        {
+            String metadataXML = QueryService.get().findMetadataOverride(schema.getContainer(), schema.getSchemaName(), tableName, false);
+
+            // Only bother parsing if there's some actual content, otherwise skip the override completely
+            if (metadataXML != null && StringUtils.isNotBlank(metadataXML))
+            {
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                List<XmlError> xmlErrors = new ArrayList<XmlError>();
+                options.setErrorListener(xmlErrors);
+                try
+                {
+                    TablesDocument doc = TablesDocument.Factory.parse(metadataXML, options);
+                    TablesDocument.Tables tables = doc.getTables();
+                    if (tables != null && tables.sizeOfTableArray() > 0)
+                        loadFromXML(schema, tables.getTableArray(0), errors);
+                }
+                catch (XmlException e)
+                {
+                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(e)));
+                }
+                for (XmlError xmle : xmlErrors)
+                {
+                    errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
+                }
+            }
+        }
+    }
 
     public String getSelectName()
     {

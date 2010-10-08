@@ -825,7 +825,13 @@ public class SchemaTableInfo implements TableInfo
 
     public boolean isMetadataOverrideable()
     {
-        return true;
+        return false;
+    }
+
+    @Override
+    public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
+    {
+        // no-op, we don't support metadata overrides
     }
 
     public ButtonBarConfig getButtonBarConfig()

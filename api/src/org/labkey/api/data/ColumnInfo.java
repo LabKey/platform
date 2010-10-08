@@ -506,7 +506,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }
 
         if (isStringType())
-            return displayWidth = String.valueOf(Math.min(getScale() * 6, 200));
+            return displayWidth = String.valueOf(Math.max(10, Math.min(getScale() * 6, 200)));
         else if (isDateTimeType())
             return displayWidth = "90";
         else          

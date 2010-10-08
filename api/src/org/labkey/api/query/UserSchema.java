@@ -99,7 +99,7 @@ abstract public class UserSchema extends AbstractSchema
         if (table != null)
         {
             if (includeExtraMetadata)
-                table = QueryService.get().overlayMetadata(table, name, this, errors);
+                table.overlayMetadata(name, this, errors);
             afterConstruct(table);
             return table;
         }
