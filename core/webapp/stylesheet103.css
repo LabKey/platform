@@ -246,7 +246,6 @@ table.labkey-no-spacing
 /* Used for messages across the site */
 .labkey-message
 {
-    font-size: 8pt;
     color: #008000;
 }
 
@@ -469,6 +468,7 @@ a.labkey-button:visited {
     font-size: 10px;
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
+    white-space: nowrap;
 
     border-radius: 5px;
     -moz-border-radius: 5px;
@@ -3154,11 +3154,6 @@ li.labkey-tab-inactive a
 {
     padding-right: 5px;
     white-space: nowrap;
-}
-
-td.labkey-tab-space
-{
-    background-color:#ffffff;
 }
 
 
