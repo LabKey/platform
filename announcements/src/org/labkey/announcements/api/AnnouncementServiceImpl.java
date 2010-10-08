@@ -55,17 +55,17 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
         }
         catch (AttachmentService.DuplicateFilenameException e)
         {
-
+            throw new RuntimeException(e);
         }
         catch (IOException e)
         {
-
+            throw new RuntimeException(e);
         }
         catch (SQLException e)
         {
-
+            throw new RuntimeSQLException(e);
         }
-        
+
         AnnouncementImpl announcement = new AnnouncementImpl(insert);
         return announcement;
     }
