@@ -174,12 +174,6 @@ public class SqlDialectMySql extends SimpleSqlDialect
     }
 
     @Override
-    public String getConcatenationOperator()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String concatenate(String... args)
     {
         return "CONCAT(" + StringUtils.join(args, ", ") + ")";
@@ -198,5 +192,11 @@ public class SqlDialectMySql extends SimpleSqlDialect
         }
         ret.append(")");
         return ret;
+    }
+
+    @Override
+    public boolean isSystemSchema(String schemaName)
+    {
+        return "INFORMATION_SCHEMA".equalsIgnoreCase(schemaName);
     }
 }

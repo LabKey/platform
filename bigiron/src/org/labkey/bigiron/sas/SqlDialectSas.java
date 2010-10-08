@@ -109,12 +109,6 @@ public abstract class SqlDialectSas extends SimpleSqlDialect
         return false;
     }
 
-    public String getConcatenationOperator()
-    {
-        return "||";
-    }
-
-
     @Override
     public String concatenate(String... args)
     {

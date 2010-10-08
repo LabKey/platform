@@ -244,6 +244,13 @@ public class HtmlRenderer implements WikiRenderer
             else
                 substitution = new FormattedHtml("<br><font class='error' color='red'>Error: unknown type, \"labkey." + definition.getType() + "\"</font>");
 
+            // Case where we're indexing wikis for search
+            if (null == substitution)
+            {
+                sb.replace(definition.getStart(), definition.getEnd(), "");
+                continue;
+            }
+
             sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml());
 
             if (substitution.isVolatile())

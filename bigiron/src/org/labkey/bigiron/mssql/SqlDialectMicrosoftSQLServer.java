@@ -250,12 +250,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
 
-    public String getConcatenationOperator()
-    {
-        return "+";
-    }
-
-
     @Override
     public String concatenate(String... args)
     {

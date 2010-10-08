@@ -22,11 +22,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.*;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
@@ -34,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -312,23 +315,16 @@ class WikiWebdavProvider implements WebdavService.Provider
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
             super(folder.getPath(), docName);
-            _folder = folder;
-            setPolicy(_folder._c.getPolicy());
+            init(_folder._c, wiki.getName().getSource(), wiki.getEntityId(), folder, folder._c.getPolicy(), new HashMap<String, Object>());
 
-            _c = _folder._c;
-            _containerId = _c.getId();
-            _name = wiki.getName().getSource();
-            _entityId = wiki.getEntityId();
             _wiki = wiki;
             WikiVersion v = getWikiVersion();
 
-            _properties = new HashMap<String, Object>();
-            _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
             if (null != v)
             {
-                _body = getWikiVersion().getBody();
-                _title = getWikiVersion().getTitle();
                 _type = getWikiVersion().getRendererTypeEnum();
+                _body = getHtml(getWikiVersion().getBody(), _type);
+                _title = getWikiVersion().getTitle();
                 _properties.put(SearchService.PROPERTY.displayTitle.toString(), v.getTitle().getSource());
             }
         }
@@ -337,17 +333,34 @@ class WikiWebdavProvider implements WebdavService.Provider
         WikiPageResource(Container c, String name, String entityId, String body, WikiRendererType rendererType, Map<String, Object> m)
         {
             super(new Path("wiki", c.getId(), name));
+            init(c, name, entityId, null, c.getPolicy(), m);
 
+            _type = rendererType;
+            _body = getHtml(body, rendererType);
+        }
+
+
+        private static String getHtml(String body, WikiRendererType type)
+        {
+            WikiService service = ServiceRegistry.get().getService(WikiService.class);
+
+            if (null == service)
+                throw new IllegalStateException("WikiService not found");
+
+            return service.getRenderer(type).format(body).getHtml();
+        }
+
+
+        private void init(Container c, String name, String entityId, WikiFolder folder, SecurityPolicy policy, Map<String, Object> properties)
+        {
             _c = c;
             _containerId = _c.getId();
             _name = name;
             _entityId = entityId;
-            _folder = null;
-            setPolicy(c.getPolicy());
-            _type = rendererType;
-            _body = body;
-            _properties = m;
-            _properties.put(SearchService.PROPERTY.categories.toString(),WikiManager.searchCategory.getName());
+            _folder = folder;
+            setPolicy(policy);
+            _properties = properties;
+            _properties.put(SearchService.PROPERTY.categories.toString(), WikiManager.searchCategory.getName());
         }
 
 
@@ -404,14 +417,14 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public FileStream getFileStream(User user) throws IOException
         {
-            byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
+            byte[] buf = (null == _body ? "" : _body).getBytes("UTF-8");
             return new FileStream.ByteArrayFileStream(buf);
         }
 
 
         public InputStream getInputStream(User user) throws IOException
         {
-            byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
+            byte[] buf = (null == _body ? "" : _body).getBytes("UTF-8");
             return new ByteArrayInputStream(buf);
         }
 
@@ -509,14 +522,14 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public String getContentType()
         {
-            return _type.getContentType();
+            return "text/html";
         }
 
         public long getContentLength()
         {
             try
             {
-                byte[] buf = (null==_body?"":_body).getBytes("UTF-8");
+                byte[] buf = (null == _body ? "" : _body).getBytes("UTF-8");
                 return buf.length;
             }
             catch (UnsupportedEncodingException e)
