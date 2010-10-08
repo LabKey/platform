@@ -94,18 +94,34 @@ public class StorageProvisioner
             tableName = makeTableName(kind, domain);
 
             TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.CreateTable);
+
+            CaseInsensitiveHashSet reserved = new CaseInsensitiveHashSet(kind.getReservedPropertyNames(domain));
+            CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+            
+            for (PropertyStorageSpec spec : kind.getBaseProperties())
+            {
+                change.addColumn(spec);
+                base.add(spec.getName());
+            }
+
             for (DomainProperty property : domain.getProperties())
             {
+                if (reserved.contains(property.getName()))
+                    throw new IllegalArgumentException("Property name is reserved: " + property.getName());
+
+                if (base.contains(property.getName()))
+                {
+                    // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
+                    // name as a built-in column. e.g. to allow setting overrides?
+                    log.info("StorageProvisioner ignored property with name of build-in column: " + property.getPropertyURI());
+                    continue;
+                }
+
                 change.addColumn(property.getPropertyDescriptor());
                 if (property.isMvEnabled())
                 {
                     change.addColumn(makeMvColumn(property));
                 }
-            }
-
-            for (PropertyStorageSpec spec : kind.getBaseProperties())
-            {
-                change.addColumn(spec);
             }
 
             change.setIndexedColumns(kind.getPropertyIndices());
@@ -128,6 +144,10 @@ public class StorageProvisioner
             if (!outerTransaction)
                 scope.commitTransaction();
             return tableName;
+        }
+        catch (SQLException x)
+        {
+            throw x;
         }
         finally
         {
@@ -212,9 +232,23 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.AddColumns);
 
+        CaseInsensitiveHashSet reserved = new CaseInsensitiveHashSet(kind.getReservedPropertyNames(domain));
+        CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+        for (PropertyStorageSpec s : kind.getBaseProperties())
+            base.add(s.getName());
 
         for (DomainProperty prop : properties)
         {
+            if (reserved.contains(prop.getName()))
+                throw new IllegalArgumentException("Property name is reserved: " + prop.getName());
+
+            if (base.contains(prop.getName()))
+            {
+                // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
+                // name as a built-in column. e.g. to allow setting overrides?
+                log.info("StorageProvisioner ignored property with name of build-in column: " + prop.getPropertyURI());
+                continue;
+            }
             change.addColumn(prop.getPropertyDescriptor());
             if (prop.isMvEnabled())
             {
@@ -322,9 +356,15 @@ public class StorageProvisioner
 
         String tableName = domain.getStorageTableName();
 
+        CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+        for (PropertyStorageSpec s : kind.getBaseProperties())
+            base.add(s.getName());
+
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropColumns);
         for (DomainProperty prop : properties)
         {
+            if (base.contains(prop.getName()))
+                continue;
             change.addColumn(prop.getPropertyDescriptor());
             if (prop.isMvEnabled())
             {
@@ -368,11 +408,25 @@ public class StorageProvisioner
             con = scope.getConnection();
             TableChange renamePropChange = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.RenameColumns);
 
+            CaseInsensitiveHashSet base = new CaseInsensitiveHashSet();
+            for (PropertyStorageSpec s : kind.getBaseProperties())
+                base.add(s.getName());
+
             for (Map.Entry<DomainProperty, String> rename : propsRenamed.entrySet())
             {
                 PropertyStorageSpec prop = new PropertyStorageSpec(rename.getKey().getPropertyDescriptor());
                 String oldPropName = rename.getValue();
                 renamePropChange.addColumnRename(oldPropName, prop.getName());
+
+                if (base.contains(oldPropName))
+                {
+                    throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);    
+                }
+                else if (base.contains(prop.getName()))
+                {
+                    throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
+                }
+                
                 if (prop.isMvEnabled())
                 {
                     renamePropChange.addColumnRename(prop.getMvIndicatorColumnName(oldPropName), prop.getMvIndicatorColumnName(prop.getName()));
@@ -392,6 +446,7 @@ public class StorageProvisioner
             scope.releaseConnection(con);
         }
     }
+
 
     public static String makeTableName(DomainKind kind, Domain domain)
     {

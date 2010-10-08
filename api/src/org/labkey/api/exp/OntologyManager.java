@@ -2075,7 +2075,7 @@ public class OntologyManager
     }
 
 
-    public static PropertyDescriptor[] importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
+    public static @NotNull PropertyDescriptor[] importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
             throws SQLException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
