@@ -25,7 +25,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.menu.*;
+import org.labkey.api.view.menu.ContainerMenu;
+import org.labkey.api.view.menu.FolderAdminMenu;
+import org.labkey.api.view.menu.NavTreeMenu;
+import org.labkey.api.view.menu.ProjectAdminMenu;
+import org.labkey.api.view.menu.ProjectsMenu;
+import org.labkey.api.view.menu.SiteAdminMenu;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.radeox.api.engine.RenderEngine;
@@ -51,7 +56,6 @@ import org.radeox.util.StringBufferWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.MessageFormat;
-import java.text.ParsePosition;
 import java.util.Map;
 
 
@@ -59,8 +63,6 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 {
     private static MimeMap mimeMap = new MimeMap();
 
-    boolean _asWiki = true;
-    boolean _translateSpace = true;
     String _linkClassName = "link";
     String _missingClassName = "missing";
 
@@ -105,25 +107,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         return new FormattedHtml(render(text, context), false);  // TODO: Are there wiki pages we don't want to cache?
     }
 
-    public Object parseObject(String s, ParsePosition parsePosition)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-
     public static class MyInitialRenderContext
             extends BaseInitialRenderContext
     {
         public MyInitialRenderContext()
         {
-//          Locale languageLocale = Locale.getDefault();
-//          Locale locale = new Locale("mywiki", "mywiki");
-//          set(RenderContext.INPUT_LOCALE, locale);
-//          set(RenderContext.OUTPUT_LOCALE, locale);
-//          set(RenderContext.LANGUAGE_LOCALE, languageLocale);
             set(RenderContext.INPUT_BUNDLE_NAME, "org.labkey.api.util.wiki_markup");
             set(RenderContext.OUTPUT_BUNDLE_NAME, "org.labkey.api.util.wiki_markup");
-//          set(RenderContext.LANGUAGE_BUNDLE_NAME, "my_messages");
         }
     }
 

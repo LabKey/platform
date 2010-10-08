@@ -136,7 +136,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
     public HString getTitle()
     {
         if (null == _title)
-            _title = (null == _wikiName || HString.eq(_wikiName,"default")) ? new HString("Wiki",false) : _wikiName;
+            _title = (null == _wikiName || HString.eq(_wikiName, "default")) ? new HString("Wiki", false) : _wikiName;
         return _title;
     }
 
