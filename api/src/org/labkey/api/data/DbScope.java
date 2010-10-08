@@ -683,18 +683,20 @@ public class DbScope
         _log.info("Attempting to create database \"" + dbName + "\"");
 
         String masterUrl = StringUtils.replace(props.getUrl(), dbName, dialect.getMasterDataBaseName());
+        String createSql = "(undefined)";
 
         try
         {
             conn = DriverManager.getConnection(masterUrl, props.getUsername(), props.getPassword());
             // get version specific dialect
             dialect = SqlDialect.getFromMetaData(conn.getMetaData());
-            stmt = conn.prepareStatement(dialect.getCreateDatabaseSql(dbName));
+            createSql = dialect.getCreateDatabaseSql(dbName);
+            stmt = conn.prepareStatement(createSql);
             stmt.execute();
         }
         catch (SQLException e)
         {
-            _log.error("createDataBase() failed", e);
+            _log.error("Create database failed, SQL: " + createSql, e);
             dialect.handleCreateDatabaseException(e);
         }
         finally

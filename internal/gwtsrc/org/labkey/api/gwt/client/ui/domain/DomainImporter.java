@@ -15,13 +15,23 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.ChangeListener;
+import com.google.gwt.user.client.ui.FormHandler;
+import com.google.gwt.user.client.ui.FormPanel;
+import com.google.gwt.user.client.ui.FormSubmitCompleteEvent;
+import com.google.gwt.user.client.ui.FormSubmitEvent;
+import com.google.gwt.user.client.ui.Grid;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.Panel;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.FileUploadWithListeners;
@@ -30,7 +40,12 @@ import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * GWT Class for defining a domain from a file,
@@ -248,9 +263,9 @@ public class DomainImporter
     }
 
     /*
-         The "import data" stage supports both synchronous and asynchronous imports.  A synchronous service will finish
-         the entire import and then return a status object indicating "complete."  An asynchronous service will initiate
-         the import in a background thread and return an "incomplete" status included a jobId.  The client uses the
+         The "import data" stage supports both synchronous and asynchronous imports. A synchronous service will finish
+         the entire import and then return a status object indicating "complete." An asynchronous service will initiate
+         the import in a background thread and return an "incomplete" status including a jobId. The client uses the
          jobId to query import progress periodically via a timer and to cancel the import if requested.
      */
     protected void importData(final GWTDomain domain)
