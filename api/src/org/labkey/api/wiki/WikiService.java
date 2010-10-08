@@ -21,8 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.WebPartView;
 
-import java.util.List;
-
 /**
  * User: Mark Igra
  * Date: Jun 12, 2006

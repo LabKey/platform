@@ -82,12 +82,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean isSystemSchema(String schemaName)
-    {
-        return false;
-    }
-
-    @Override
     public boolean isEditable()
     {
         return false;

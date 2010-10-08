@@ -52,7 +52,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     protected String _containerId;
     
     protected String _etag = null;
-    protected Map<String,Object> _properties = null;
+    protected Map<String, Object> _properties = null;
 
     protected AbstractWebdavResource(Path path)
     {

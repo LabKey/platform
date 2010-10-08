@@ -435,9 +435,6 @@ public abstract class SqlDialect
 
     public abstract String execute(DbSchema schema, String procedureName, String parameters);
 
-    @Deprecated  // not compatible with MySql... use concatenate() instead  TODO: eliminate
-    public abstract String getConcatenationOperator();
-
     public abstract String concatenate(String... args);
 
     public abstract SQLFragment concatenate(SQLFragment... args);
