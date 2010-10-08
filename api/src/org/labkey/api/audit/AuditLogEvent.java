@@ -17,7 +17,6 @@
 package org.labkey.api.audit;
 
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 
 import java.util.Date;
 
