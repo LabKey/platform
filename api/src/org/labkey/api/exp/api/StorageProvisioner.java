@@ -84,7 +84,7 @@ public class StorageProvisioner
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId(), true);
             if (null == dd)
             {
-                Logger.getLogger(StorageProvisioner.class).error("HUH?? " + domain.getTypeId() + " " + domain.getTypeURI());
+                Logger.getLogger(StorageProvisioner.class).warn("Can't find domain desciptor: " + domain.getTypeId() + " " + domain.getTypeURI());
                 return null;
             }
             String tableName = dd.getStorageTableName();
@@ -225,7 +225,7 @@ public class StorageProvisioner
         String tableName = domain.getStorageTableName();
         if (null == tableName)
         {
-            log.error("addProperties() called before table is provisioned: " + domain.getTypeURI());
+            log.warn("addProperties() called before table is provisioned: " + domain.getTypeURI());
             tableName = _create(scope, kind, domain);
             return;
         }
