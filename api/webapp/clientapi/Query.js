@@ -138,6 +138,28 @@ LABKEY.Query = new function()
     return {
 
         /**
+         * An enumeration of the various container filters available.
+         * The options are as follows:
+         * <ul>
+         * <li><b>current:</b> Include the current folder only</li>
+         * <li><b>currentAndSubfolders:</b> Include the current folder and all subfolders</li>
+         * <li><b>currentPlusProject:</b> Include the current folder and the project that contains it</li>
+         * <li><b>currentAndParents:</b> Include the current folder and its parent folders</li>
+         * <li><b>currentPlusProjectAndShared:</b> Include the current folder plus its project plus any shared folders</li>
+         * <li><b>allFolders:</b> Include all folders for which the user has read permission</li>
+         * </ul>
+         */
+        containerFilter : {
+            current: "Current",
+            currentAndSubfolders: "CurrentAndSubfolders",
+            currentPlusProject: "CurrentPlusProject",
+            currentAndParents: "CurrentAndParents",
+            currentPlusProjectAndShared: "CurrentPlusProjectAndShared",
+            allFolders: "AllFolders"
+        },
+
+
+        /**
          * Execute arbitrary LabKey SQL. For more information, see the
          * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
          * LabKey SQL Reference</a>.
@@ -146,16 +168,8 @@ LABKEY.Query = new function()
          * @param {String} config.sql The LabKey SQL to execute.
          * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
          *       if different than the current container. If not supplied, the current container's path will be used.
-         * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
-        *       Supported values include:
-                <ul>
-                    <li><b>"Current":</b> Include the current folder only</li>
-                    <li><b>"CurrentAndSubfolders":</b> Include the current folder and all subfolders</li>
-                    <li><b>"CurrentPlusProject":</b> Include the current folder and the project that contains it</li>
-                    <li><b>"CurrentAndParents":</b> Include the current folder and its parent folders</li>
-                    <li><b>"CurrentPlusProjectAndShared":</b> Include the current folder plus its project plus any shared folders</li>
-                    <li><b>"AllFolders":</b> Include all folders for which the user has read permission</li>
-                </ul>
+         * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
+         *       the scope of this query
          * @param {Function} config.successCallback
 				Function called when the "selectRows" function executes successfully. Will be called with three arguments:
 				the parsed response data ({@link LABKEY.Query.SelectRowsResults}), the XMLHttpRequest object and

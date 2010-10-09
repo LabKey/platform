@@ -117,6 +117,7 @@
  * @param {Object} [config.scope] An object to use as the callback function's scope. Defaults to this.
  * @param {int} [config.timeout] A timeout for the AJAX call, in milliseconds. Default is 30000 (30 seconds).
  * @param {String} [config.containerPath] The container path in which the schema and query name are defined. If not supplied, the current container path will be used.
+ * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets the scope of this query. If not supplied, the current folder will be used. 
  * @example
  * &lt;div id='queryTestDiv1'/&gt;
  * &lt;script type="text/javascript"&gt;
@@ -257,6 +258,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         params[this.dataRegionName + ".queryName"] = this.queryName;
         if (this.viewName)
             params[this.dataRegionName + ".viewName"] = this.viewName;
+        if (this.containerFilter)
+            params[this.dataRegionName + ".containerFilterName"] = this.containerFilter;
 
         //add user filters (already in encoded form)
         if (this.userFilters)
