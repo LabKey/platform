@@ -850,6 +850,8 @@ class SqlDialectPostgreSQL extends SqlDialect
         colSpec.add(sqlTypeNameFromSqlTypeInt(prop.getSqlTypeInt()));
         if (prop.getSqlTypeInt() == Types.VARCHAR)
             colSpec.add("(" + prop.getSize() + ")");
+        else if (prop.getSqlTypeInt() == Types.NUMERIC)
+            colSpec.add("(15,4)");
         if (prop.isUnique())
             colSpec.add("UNIQUE");
         return StringUtils.join(colSpec, ' ');
