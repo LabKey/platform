@@ -15,8 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.query.AliasedColumn;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.ExprColumn;
 
 import java.util.*;
 
@@ -149,7 +149,11 @@ public class GroupTableInfo extends VirtualTable
 
     protected ColumnInfo createGroupByColumn(ColumnInfo sourceCol)
     {
-        return new AliasedColumn(this, sourceCol.getAlias(), sourceCol);
+        // All lookup columns have already been flattened into a subselect for us, so we just need to pluck out the
+        // values by alias
+        ExprColumn result = new ExprColumn(this, sourceCol.getAlias(), new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + sourceCol.getAlias()), sourceCol.getSqlTypeInt());
+        result.copyAttributesFrom(sourceCol);
+        return result;
     }
 
     protected ColumnInfo createAggregateColumn(CrosstabMeasure measure)
