@@ -517,6 +517,8 @@ public class AssayPublishManager implements AssayPublishService.Service
                 newDataSet.setProtocolId(protocol.getRowId());
 
             StudyManager.getInstance().createDataSetDefinition(user, newDataSet);
+            newDataSet.provisionTable();
+
             if (ownTransaction)
             {
                 schema.getScope().commitTransaction();

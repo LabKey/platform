@@ -53,16 +53,16 @@
     ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
 %>
 
-<table>
 <%  if (def != null) { %>
+<table>
     <tr><td class="labkey-form-label">Name</td><td><%=h(def.getName())%></td>
-<%  } %>
     <tr><td class="labkey-form-label">Created By</td><td><%=h(def.getCreatedBy())%></td>
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
     <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
     <tr><td class="labkey-form-label">Last Updated</td><td><%=StringUtils.trimToEmpty(DateUtil.formatDateTime(def.getLastUpdated()))%></td>
     <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=def.getQueryDefinition(context.getUser()).getSql()%></textarea></td>
 </table>
+<%  } %>
 
 <form action="" method="post" onsubmit="return confirm('Updating will replace all existing data with a new set of data. Continue?');">
     <input type="hidden" name="updateSnapshot" value="true">

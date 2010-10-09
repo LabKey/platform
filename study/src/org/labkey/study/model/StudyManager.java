@@ -1513,7 +1513,13 @@ public class StudyManager
                 "WHERE Container=? AND DatasetId=?",
                 new Object[] {study.getContainer(), ds.getDataSetId()});
 
-        _dataSetHelper.clearCache(ds);
+        // UNDONE: This is broken
+        // this._dataSetHelper.delete(ds);
+        Table.execute(StudySchema.getInstance().getSchema(),
+                "DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
+                "WHERE Container=? AND DatasetId=?",
+                new Object[] {study.getContainer(), ds.getDataSetId()});
+        _dataSetHelper.clearCache(study.getContainer());
 
         SecurityManager.deletePolicy(ds);
 
