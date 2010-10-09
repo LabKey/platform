@@ -73,11 +73,11 @@ public class StudyDataTable extends FilteredTable
             defaultColumns.add(FieldKey.fromParts("Date"));
         }
 
-//        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
-//        addColumn(createdColumn);
+        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
+        addColumn(createdColumn);
 
-//        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
-//        addColumn(modifiedColumn);
+        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
+        addColumn(modifiedColumn);
 
         ColumnInfo lsidColumn = new AliasedColumn(this, "LSID", _rootTable.getColumn("lsid"));
         lsidColumn.setHidden(true);

@@ -95,7 +95,7 @@ public class StudyUnionTableInfo extends VirtualTable
                 }
                 else
                 {
-                    sqlf.append(", NULL AS " + pd.getName());
+                    sqlf.append(", NULL AS " + getSqlDialect().makeLegalIdentifier(pd.getName()));
                 }
             }
 
