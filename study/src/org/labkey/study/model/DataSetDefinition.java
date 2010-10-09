@@ -817,7 +817,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // Dataset
 
-            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("'" + def.getEntityId() + "'"), Types.VARCHAR);
+            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS VARCHAR)"), Types.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 public TableInfo getLookupTableInfo()

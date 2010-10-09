@@ -5140,6 +5140,7 @@ public class StudyController extends BaseStudyController
                 }
                 DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(getUser(),
                         study, form.getSnapshotName(), additionalKey, null, isDemographicData, null);
+
                 if (def != null)
                 {
                     form.setSnapshotDatasetId(def.getDataSetId());
@@ -5150,6 +5151,9 @@ public class StudyController extends BaseStudyController
 
                         StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
                     }
+
+                    // def may not be provisioned yet, create before we start adding properties
+                    def.provisionTable();
 
                     String domainURI = def.getTypeURI();
                     OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
