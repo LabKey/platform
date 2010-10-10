@@ -1,5 +1,6 @@
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
 
@@ -12,17 +13,18 @@ import org.labkey.api.util.Filter;
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
  * (readers block while someone is creating an object)
  */
-public class BlockingCache<K,V> implements BasicCache<K,V>
+public class BlockingCache<K, V> implements BasicCache<K, V>
 {
-    protected Cache<K,Object> _cache;
-    protected CacheLoader<K,V> _loader;
+    protected final Cache<K, Object> _cache;
+    protected final CacheLoader<K, V> _loader;
 
     public static final Object UNINITIALIZED = new Object() {public String toString() { return "UNINITIALIZED";}};
 
 
     protected static class Wrapper<V>
     {
-        protected Object value = UNINITIALIZED;
+        @SuppressWarnings({"unchecked"})
+        protected V value = (V)UNINITIALIZED;
 
         void setValue(V v)
         {
@@ -31,7 +33,7 @@ public class BlockingCache<K,V> implements BasicCache<K,V>
 
         V getValue()
         {
-            return value==UNINITIALIZED ? null : (V)value;
+            return value == UNINITIALIZED ? null : value;
         }
     }
 
@@ -48,11 +50,13 @@ public class BlockingCache<K,V> implements BasicCache<K,V>
     }
 
 
-    protected BlockingCache()
-    {}
+    public BlockingCache(Cache<K, Object> cache)
+    {
+        this(cache, null);
+    }
 
 
-    public BlockingCache(Cache<K,Object> cache, CacheLoader<K,V> loader)
+    public BlockingCache(Cache<K, Object> cache, @Nullable CacheLoader<K,V> loader)
     {
         _cache = cache;
         _loader = loader;

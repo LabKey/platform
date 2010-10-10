@@ -129,7 +129,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
 
     private BlockingCache getCache()
     {
-        return new BlockingCache<String,Object>(DbCache.getCache(_table), null);
+        return new BlockingCache<String, Object>(DbCache.getCache(_table), null);
     }
 
 
