@@ -15,9 +15,11 @@
  */
 package org.labkey.search.view;
 
+import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.view.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
 
 /**
  * User: adam
@@ -57,7 +59,15 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
     public static boolean includeSubfolders(Portal.WebPart part)
     {
         String value = part.getPropertyMap().get("includeSubfolders");
-        return !("0".equals(value) || "off".equals(value));
+
+        try
+        {
+            return BooleanFormat.getInstance().parseObject(value);
+        }
+        catch (ParseException e)
+        {
+            return false;
+        }
     }
 }
 
