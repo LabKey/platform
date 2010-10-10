@@ -16,6 +16,9 @@
 
 package org.labkey.api.wiki;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User: adam
  * Date: Aug 6, 2007
@@ -23,18 +26,12 @@ package org.labkey.api.wiki;
  */
 public class FormattedHtml
 {
-    private String _html;
-
     // Indicates that rendered HTML can change even if passed in content remains static.  This can happen when
     // renderer uses external resources, for example, URL parameters pulled from ThreadLocal, AppProps, etc.
     // If the formatted HTML is volatile, we shouldn't cache the formatted contents.
-    private boolean _volatile;
-
-
-    private FormattedHtml()
-    {
-
-    }
+    private final boolean _volatile;
+    private final String _html;
+    private final Set<String> _dependencies;
 
     public FormattedHtml(String html)
     {
@@ -43,8 +40,14 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile)
     {
+        this(html, isVolatile, new HashSet<String>());
+    }
+
+    public FormattedHtml(String html, boolean isVolatile, Set<String> dependencies)
+    {
         _html = html;
         _volatile = isVolatile;
+        _dependencies = dependencies;
     }
 
     public String getHtml()
@@ -52,18 +55,13 @@ public class FormattedHtml
         return _html;
     }
 
-    public void setHtml(String html)
-    {
-        _html = html;
-    }
-
     public boolean isVolatile()
     {
         return _volatile;
     }
 
-    public void setVolatile(boolean aVolatile)
+    public Set<String> getDependencies()
     {
-        _volatile = aVolatile;
+        return _dependencies;
     }
 }
