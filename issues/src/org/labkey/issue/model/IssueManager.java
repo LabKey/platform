@@ -898,7 +898,7 @@ public class IssueManager
         m.put(SearchService.PROPERTY.displayTitle.toString(), id + " : " + title);
         m.put("comment",null);
         m.put("_row",null);
-        task.addResource(new IssueResource(id, m,comments), SearchService.PRIORITY.item);
+        task.addResource(new IssueResource(id, m, comments), SearchService.PRIORITY.item);
     }
 
 

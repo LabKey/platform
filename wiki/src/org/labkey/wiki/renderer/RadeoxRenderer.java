@@ -56,26 +56,28 @@ import org.radeox.util.StringBufferWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 
 public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine, WikiRenderer
 {
     private static MimeMap mimeMap = new MimeMap();
 
-    String _linkClassName = "link";
-    String _missingClassName = "missing";
+    private static final String LINK_CLASS_NAME = "link";
+    private static final String MISSING_CLASS_NAME = "missing";
+    private static final String WIKI_DEPENDENCIES_KEY = "~~wiki.dependencies~~";
 
-    String _wikiHrefPrefix = "?name=";
-    String _createPrefix = null;
-    String _attachmentPrefix = null;
+    private String _wikiHrefPrefix = "?name=";
+    private String _createPrefix = null;
+    private String _attachmentPrefix = null;
 
-    MessageFormat _wikiLinkFormat = new MessageFormat("<a class=\"{2}\" href=\"{0}\">{1}</a>");
-    MessageFormat _wikiImgFormat = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
-    MessageFormat _wikiCreateLinkFormat = new MessageFormat("<a class=\"{2}\" href=\"{0}\">Create Page: {1}</a>");
+    private static final MessageFormat WIKI_LINK_FORMAT = new MessageFormat("<a class=\"{2}\" href=\"{0}\">{1}</a>");
+    private static final MessageFormat WIKI_IMG_FORMAT = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
 
-    Map<HString, WikiLinkable> _pages;
-    Attachment[] _attachments;
+    private Map<HString, WikiLinkable> _pages;
+    private Attachment[] _attachments;
 
     public RadeoxRenderer()
     {
@@ -102,9 +104,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         if (text == null)
             text = "";
 
+        Set<String> dependencies = new HashSet<String>();
         RenderContext context = new BaseRenderContext();
         context.setRenderEngine(this);
-        return new FormattedHtml(render(text, context), false);  // TODO: Are there wiki pages we don't want to cache?
+        context.set(WIKI_DEPENDENCIES_KEY, dependencies);
+        String html = render(text, context);
+
+        return new FormattedHtml(html, false, dependencies);  // TODO: Are there wiki pages we don't want to cache?
     }
 
     public static class MyInitialRenderContext
@@ -343,13 +349,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     public void appendLink(StringBuffer sb, String name, String view)
     {
-        _appendLink(sb, name, view, null, _linkClassName);
+        _appendLink(sb, name, view, null, LINK_CLASS_NAME);
     }
 
 
     public void appendLink(StringBuffer sb, String name, String view, String hash)
     {
-        _appendLink(sb, name, view, hash, _linkClassName);
+        _appendLink(sb, name, view, hash, LINK_CLASS_NAME);
     }
 
 
@@ -359,11 +365,11 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         if (null != mime)
         {
             // CONSIDER: upload link?
-            sb.append("<span class=\"" + _missingClassName + "\">" + name + "</span>");
+            sb.append("<span class=\"" + MISSING_CLASS_NAME + "\">").append(name).append("</span>");
         }
         else
         {
-            _appendLink(sb, name, wikiName, null, _missingClassName);
+            _appendLink(sb, name, wikiName, null, MISSING_CLASS_NAME);
         }
     }
 
@@ -391,19 +397,19 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             String mime = mimeMap.getContentTypeFor(name.toLowerCase());
             if (null != mime && mime.startsWith("image/"))
             {
-                _wikiImgFormat.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
+                WIKI_IMG_FORMAT.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
             }
             else
             {
                 // CONSIDER document icon...
-                _wikiLinkFormat.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
+                WIKI_LINK_FORMAT.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
             }
             return;
         }
 
-        _wikiLinkFormat.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
+        WIKI_LINK_FORMAT.format(new Object[]{PageFlowUtil.filter(href), PageFlowUtil.filter(view), className}, sb, null);
         if (null != hash)
-            sb.append("#" + hash);
+            sb.append("#").append(hash);
     }
 
 
@@ -494,7 +500,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
         public void handleMatch(StringBuffer buffer, MatchResult result, FilterContext context)
         {
-            RenderEngine engine = context.getRenderContext().getRenderEngine();
+            RenderContext renderContext = context.getRenderContext();
+            RenderEngine engine = renderContext.getRenderEngine();
 
             if (engine instanceof WikiRenderEngine)
             {
@@ -553,12 +560,14 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                         if (interWiki.contains(extSpace))
                         {
                             String view = name;
+
                             if (-1 != pipeIndex)
                             {
                                 view = alias;
                             }
 
                             name = name.substring(0, atIndex);
+
                             try
                             {
                                 if (-1 != hashIndex)
@@ -616,6 +625,11 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                             // cannot display/create wiki, so just display the text
                             buffer.append(name);
                         }
+
+
+                        @SuppressWarnings({"unchecked"})
+                        Set<String> dependencies = (Set<String>)renderContext.get(WIKI_DEPENDENCIES_KEY);
+                        dependencies.add(name);
                     }
                 }
                 else

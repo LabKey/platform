@@ -347,7 +347,7 @@ public class WikiController extends SpringActionController
     public class ManageAction extends FormViewAction<WikiManageForm>
     {
         Wiki _wiki = null;
-        WikiVersion _wikiversion = null;
+        WikiVersion _wikiVersion = null;
 
         public ManageAction()
         {
@@ -440,15 +440,15 @@ public class WikiController extends SpringActionController
             if (versionOld.getTitle().compareTo(title) != 0)
             {
                 // Make a copy, otherwise we're chaning the cached copy, and updateWiki() will think nothing changed.
-                _wikiversion = new WikiVersion(versionOld);
-                _wikiversion.setTitle(title);
+                _wikiVersion = new WikiVersion(versionOld);
+                _wikiVersion.setTitle(title);
             }
             else
             {
-                _wikiversion = null;
+                _wikiVersion = null;
             }
 
-            WikiManager.updateWiki(getUser(), _wiki, _wikiversion);
+            WikiManager.updateWiki(getUser(), _wiki, _wikiVersion);
 
             if (SHOW_CHILD_REORDERING)
             {
@@ -482,10 +482,10 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            if (null == _wikiversion)
-                _wikiversion = WikiManager.getLatestVersion(_wiki);
-            return (new PageAction(_wiki,_wikiversion).appendNavTrail(root))
-                    .addChild("Manage \"" + _wikiversion.getTitle().getSource() + "\"");
+            if (null == _wikiVersion)
+                _wikiVersion = WikiManager.getLatestVersion(_wiki);
+            return (new PageAction(_wiki, _wikiVersion).appendNavTrail(root))
+                    .addChild("Manage \"" + _wikiVersion.getTitle().getSource() + "\"");
         }
 
         public ActionURL getUrl()
