@@ -25,8 +25,17 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.Version;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
@@ -39,12 +48,19 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.*;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.ActionResource;
@@ -57,7 +73,14 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -228,10 +251,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         searchTitle += " " + value;
                 }
             }
-            catch (UnauthorizedException e)
+            catch (RuntimeException e)
             {
-                // Some QueryUpdateService implementation don't special case the search user.  Continue indexing in this
-                // case, but skip the custom properties.
+                try
+                {
+                    throw e.getCause();
+                }
+                catch (UnauthorizedException ue)
+                {
+                    // Some QueryUpdateService implementation don't special case the search user.  Continue indexing in this
+                    // case, but skip the custom properties.
+                }
             }
 
             String type = r.getContentType();
