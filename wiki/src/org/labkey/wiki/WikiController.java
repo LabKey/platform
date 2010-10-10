@@ -428,20 +428,25 @@ public class WikiController extends SpringActionController
             }
 
             BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowUpdate(_wiki))
+            if (!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
-
-            _wikiversion = WikiManager.getLatestVersion(_wiki);
 
             _wiki.setName(newName);
             _wiki.setParent(form.getParent());
-
             HString title = form.getTitle() == null ? newName : form.getTitle();
+            WikiVersion versionOld = WikiManager.getLatestVersion(_wiki);
+
             //update version only if title has changed
-            if (_wikiversion.getTitle().compareTo(title) != 0)
+            if (versionOld.getTitle().compareTo(title) != 0)
+            {
+                // Make a copy, otherwise we're chaning the cached copy, and updateWiki() will think nothing changed.
+                _wikiversion = new WikiVersion(versionOld);
                 _wikiversion.setTitle(title);
+            }
             else
+            {
                 _wikiversion = null;
+            }
 
             WikiManager.updateWiki(getUser(), _wiki, _wikiversion);
 
@@ -1985,7 +1990,7 @@ public class WikiController extends SpringActionController
         static public NavTree[] getNavTree(ViewContext context)
         {
             Container cToc = getTocContainer(context);
-            return WikiCache.getNavTree(cToc);
+            return WikiManager.getNavTree(cToc);
         }
 
         public WikiTOC(ViewContext context)
@@ -2966,12 +2971,11 @@ public class WikiController extends SpringActionController
             String message = WikiManager.updateAttachments(getUser(), wiki, names, getAttachmentFileList());
             if (null != message)
             {
-                warnings.put("files",message);
+                warnings.put("files", message);
             }
 
-            //uncache the wikis in the current container so that
-            //changes to the attachments are reflected
-            WikiCache.uncache(getViewContext().getContainer());
+            // uncache just this wiki TODO: check this... previous code uncached the whole container at this point
+            WikiCache.uncache(getViewContext().getContainer(), wiki, false);
 
             //build the response
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -2983,11 +2987,12 @@ public class WikiController extends SpringActionController
             assert(null != wikiUpdated);
 
             List<Object> attachments = new ArrayList<Object>();
+
             if (null != wikiUpdated.getAttachments())
             {
-                for(Attachment att : wikiUpdated.getAttachments())
+                for (Attachment att : wikiUpdated.getAttachments())
                 {
-                    Map<String,Object> attProps = new HashMap<String,Object>();
+                    Map<String, Object> attProps = new HashMap<String,Object>();
                     attProps.put("name", att.getName());
                     attProps.put("iconUrl", getViewContext().getContextPath() + att.getFileIcon());
                     attProps.put("downloadUrl", att.getDownloadUrl("wiki"));
@@ -3093,7 +3098,7 @@ public class WikiController extends SpringActionController
 
             Container container = getViewContext().getContainer();
 
-            NavTree[] toc = WikiCache.getNavTree(container);
+            NavTree[] toc = WikiManager.getNavTree(container);
 
             List<Map<String,Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);

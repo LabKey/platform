@@ -18,15 +18,14 @@ package org.labkey.wiki.model;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.MemTracker;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HString;
-import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.wiki.ServiceImpl;
-import org.labkey.wiki.WikiManager;
+import org.labkey.wiki.WikiContentCache;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -49,7 +48,6 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
     private Date _created;
     private WikiRendererType _rendererType;
 
-    private String _html = null;
     private HString _wikiName;
 
     public WikiVersion()
@@ -96,7 +94,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
 
     public void setCreatedBy(int createdBy)
     {
-        this._createdBy = createdBy;
+        _createdBy = createdBy;
     }
 
     public Date getCreated()
@@ -106,7 +104,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
 
     public void setCreated(Date created)
     {
-        this._created = created;
+        _created = created;
     }
 
     public String getPageEntityId()
@@ -122,15 +120,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
     // TODO: WikiVersion should know its wiki & container
     public String getHtml(Container c, Wiki wiki) throws SQLException
     {
-        if (null != _html)
-            return _html;
-
-        FormattedHtml formattedHtml = WikiManager.formatWiki(c, wiki, this);
-
-        if (!formattedHtml.isVolatile())
-            _html = formattedHtml.getHtml();
-
-        return formattedHtml.getHtml();
+        return WikiContentCache.getHtml(c, wiki, this);
     }
 
     public HString getTitle()

@@ -16,17 +16,18 @@
 
 package org.labkey.wiki;
 
-import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.wiki.WikiRenderer;
+import org.labkey.api.wiki.WikiRenderer.WikiLinkable;
+import org.labkey.wiki.WikiManager.WikiAndVersion;
 import org.labkey.wiki.model.Wiki;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -43,122 +44,86 @@ public class WikiCache
     private static final String TOC_NAME = "~~nvtoc~~";
     private static final boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
     private static final StringKeyCache<Object> WIKI_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wikis, Versions, and TOC");
+    private static final BlockingCache<String, Object> BLOCKING_CACHE = new BlockingCache<String, Object>(WIKI_CACHE);
+
+    // Always passing in Container as "argument" eliminates need to create loader instances when caching lists (but doesn't help with wikis)
+    public abstract static class WikiCacheLoader<V> implements CacheLoader<String, V>
+    {
+        abstract V load(String key, Container c);
+
+        @Override
+        public V load(String key, Object argument)
+        {
+            return load(key, (Container)argument);
+        }
+    }
+
+    public static WikiAndVersion getWikiAndVersion(Container c, String name, WikiCacheLoader<WikiAndVersion> loader)
+    {
+        return get(c, name, loader);
+    }
+
+    public static Map<HString, Wiki> getPageMap(Container c, WikiCacheLoader<Map<HString, Wiki>> loader) throws SQLException
+    {
+        return get(c, PAGES_NAME, loader);
+    }
+
+    public static List<Wiki> getOrderedPageList(Container c, WikiCacheLoader<List<Wiki>> loader)
+    {
+        return get(c, ORDERED_PAGE_LIST, loader);
+    }
+
+    public static Map<HString, WikiLinkable> getVersionMap(Container c, WikiCacheLoader<Map<HString, WikiLinkable>> loader)
+    {
+        return get(c, VERSIONS_NAME, loader);
+    }
+
+    public static NavTree[] getNavTree(Container c, WikiCacheLoader<NavTree[]> loader)
+    {
+        return get(c, TOC_NAME, loader);
+    }
+
+    public static void uncache(Container c, Wiki wiki, boolean uncacheContainerContent)
+    {
+        String name = wiki.getName().getSource();
+        WIKI_CACHE.remove(_cachedName(c, name));
+
+        if (uncacheContainerContent)
+        {
+            WikiContentCache.uncache(c);
+            uncacheLists(c);
+        }
+        else
+        {
+            WikiContentCache.uncache(c, name);
+        }
+    }
+
+    // This is drastic and rarely necessary
+    public static void uncache(Container c)
+    {
+        WIKI_CACHE.removeUsingPrefix(_cachedName(c, ""));
+        WikiContentCache.uncache(c);
+        uncacheLists(c);
+    }
+
+    // Private methods below
 
     private static String _cachedName(Container c, String name)
     {
         return "Pages/" + c.getId() + "/" + c.getPath() + "/" + name;
     }
 
-    private static void cache(Container c, String mapName, Map map)
+    private static <V> V get(Container c, String name, WikiCacheLoader<V> loader)
     {
-        _cache(c, mapName, map);
-    }
+        if (c == null || name == null)
+            return null;
 
-    private static void cache(Container c, String collectionName, Collection collection)
-    {
-        _cache(c, collectionName, collection);
-    }
-
-    static void cache(Container c, WikiManager.WikiAndVersion wikipair)
-    {
-        _cache(c, wikipair.getWiki().getName().getSource(), wikipair);
-    }
-
-    private static void cache(Container c, NavTree[] wikiToc)
-    {
-        _cache(c, TOC_NAME, wikiToc);
-    }
-
-    static void _cache(Container c, String name, Object o)
-    {
         if (useCache)
-            WIKI_CACHE.put(_cachedName(c, name), o, CacheManager.HOUR);
-    }
-
-    static void uncache(Container c)
-    {
-        uncacheUsingPrefix(c, "");
-    }
-
-    static void cachePageMap(Container c, Map<HString, Wiki> tree)
-    {
-        WikiCache.cache(c, WikiCache.PAGES_NAME, tree);
-    }
-
-    static Map<HString, Wiki> getCachedPageMap(Container c)
-    {
-        //noinspection unchecked
-        return (Map<HString, Wiki>) getCached(c, WikiCache.PAGES_NAME);
-    }
-
-    static void cacheOrderedPageList(Container c, List<Wiki> list)
-    {
-        WikiCache.cache(c, WikiCache.ORDERED_PAGE_LIST, list);
-    }
-
-    static List<Wiki> getCachedOrderedPageList(Container c)
-    {
-        //noinspection unchecked
-        return (List<Wiki>) getCached(c, WikiCache.ORDERED_PAGE_LIST);
-    }
-
-    static void cacheVersionMap(Container c, Map<HString, WikiRenderer.WikiLinkable> map)
-    {
-        WikiCache.cache(c, WikiCache.VERSIONS_NAME, map);
-    }
-
-    static Map<HString, WikiRenderer.WikiLinkable> getCachedVersionMap(Container c)
-    {
-        //noinspection unchecked
-        return (Map<HString, WikiRenderer.WikiLinkable>) WikiCache.getCached(c, WikiCache.VERSIONS_NAME);
-    }
-
-    /**
-     * Returns an array of NavTree nodes representing the Wiki table of contents. This method will
-     * create the nodes if necessary, cache them, and return them.
-     * @param c The Container
-     * @return An array of NavTree nodes.
-     */
-    @NotNull
-    static synchronized NavTree[] getNavTree(Container c)
-    {
-        //need to make a deep copy of the NavTree so that
-        //the caller can apply per-session expand state
-        //and per-request selection state
-        NavTree[] toc = (NavTree[])getCached(c, TOC_NAME);
-        if (null == toc)
-        {
-            toc = createNavTree(WikiManager.getWikisByParentId(c.getId(), -1), "Wiki-TOC-" + c.getId());
-            cache(c, toc);
-        }
-
-        NavTree[] copy = new NavTree[toc.length];
-        for (int idx = 0; idx < toc.length; ++idx)
-        {
-            copy[idx] = new NavTree(toc[idx]);
-        }
-        return copy;
-    }
-
-    static private NavTree[] createNavTree(List<Wiki> pageList, String rootId)
-    {
-        ArrayList<NavTree> elements = new ArrayList<NavTree>();
-        //add all pages to the nav tree
-        for (Wiki page : pageList)
-        {
-            NavTree node = new NavTree(page.latestVersion().getTitle().getSource(), page.getPageLink(), true);
-            node.addChildren(createNavTree(page.getChildren(), rootId));
-            node.setId(rootId);
-            elements.add(node);
-        }
-        return elements.toArray(new NavTree[elements.size()]);
-    }
-
-
-    public static void uncache(Container c, String name)
-    {
-        WIKI_CACHE.remove(_cachedName(c, name));
-        uncacheLists(c);
+            //noinspection unchecked
+            return (V)BLOCKING_CACHE.get(_cachedName(c, name), c, (WikiCacheLoader<Object>)loader);
+        else
+            return loader.load(_cachedName(c, name), c);
     }
 
     private static void uncacheLists(Container c)
@@ -166,22 +131,6 @@ public class WikiCache
         WIKI_CACHE.remove(_cachedName(c, ORDERED_PAGE_LIST));
         WIKI_CACHE.remove(_cachedName(c, PAGES_NAME));
         WIKI_CACHE.remove(_cachedName(c, VERSIONS_NAME));
-    }
-
-    private static void uncacheUsingPrefix(Container c, String prefix)
-    {
-        WIKI_CACHE.removeUsingPrefix(_cachedName(c, prefix));
-        uncacheLists(c);
-    }
-
-    static Object getCached(Container c, String name)
-    {
-        if (c == null || name == null)
-            return null;
-
-        Object cached = null;
-        if (useCache)
-            cached = WIKI_CACHE.get(_cachedName(c, name));
-        return cached;
+        WIKI_CACHE.remove(_cachedName(c, TOC_NAME));
     }
 }

@@ -2925,6 +2925,7 @@ wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/ServiceImpl.java -text
 wiki/src/org/labkey/wiki/WikiCache.java -text
 wiki/src/org/labkey/wiki/WikiContainerListener.java -text
+wiki/src/org/labkey/wiki/WikiContentCache.java -text
 wiki/src/org/labkey/wiki/WikiManager.java -text
 wiki/src/org/labkey/wiki/WikiModule.java -text
 wiki/src/org/labkey/wiki/WikiTOCFactory.java -text

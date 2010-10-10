@@ -171,8 +171,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
 
     // consider move into StudyManager
-    static Cache domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map"); 
-    CacheLoader loader = new CacheLoader()
+    private static Cache domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
+
+    private CacheLoader loader = new CacheLoader()
     {
         @Override
         public Object load(Object key, Object argument)
