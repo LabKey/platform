@@ -34,7 +34,7 @@ import java.util.HashMap;
  * to display when false, and "null" is the string to display when null.
  * <p>
  * This class also implements the parse side of java.text.Format, which allows you to parse
- * Booleans form a string containing one or more tokens. The list of known string to boolean
+ * Booleans from a string containing one or more tokens. The list of known string to boolean
  * associations is stored in a static HashMap.
  * <p>
  * If all you need to do is parse, use the static <code>getInstance()</code> method to get
