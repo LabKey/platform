@@ -103,7 +103,10 @@ public abstract class EmailPrefsSelector
                     return false;
         }
         else
-            assert AnnouncementManager.EMAIL_PREFERENCE_ALL == emailPreference;
+        {
+            // Shouldn't be here if preference is NONE.
+            assert AnnouncementManager.EMAIL_PREFERENCE_NONE != emailPreference;
+        }
 
         Permissions perm = AnnouncementsController.getPermissions(_c, user, settings);
 
