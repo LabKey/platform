@@ -509,6 +509,11 @@ String projectInfo(Container c, boolean returnID)
     if (!form.isWebPart() && searchConfig.includeAdvancedUI())
     {
 %>
+<style type="text/css">
+    .x-panel-body {
+        background-color: transparent; /* Fix 10930: Advanced search background is solid white. */
+    }
+</style>
 <script type="text/javascript">
     var params = LABKEY.ActionURL.getParameters();
     function establishParams()
