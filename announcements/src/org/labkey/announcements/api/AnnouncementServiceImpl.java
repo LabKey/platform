@@ -15,8 +15,11 @@
  */
 package org.labkey.announcements.api;
 
+import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.AnnouncementManager;
+import org.labkey.announcements.model.Permissions;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.attachments.AttachmentFile;
@@ -24,12 +27,12 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -43,6 +46,12 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body)
     {
+        DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
+        Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
+
+        if (!perm.allowInsert())
+            HttpView.throwUnauthorized();
+                              
         AnnouncementModel insert = new AnnouncementModel();
         insert.setTitle(title);
         insert.setBody(body);
@@ -71,12 +80,21 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     }
 
     @Override
-    public Announcement getAnnouncement(Container container, int RowId)
+    public Announcement getAnnouncement(Container container, User user, int RowId)
     {
         AnnouncementModel model = new AnnouncementModel();
+        DiscussionService.Settings settings = AnnouncementsController.getSettings(container);
+        Permissions perm = AnnouncementsController.getPermissions(container, user, settings);
         try
         {
-            model = AnnouncementManager.getAnnouncement(container, RowId);
+            if (RowId != 0)
+                model = AnnouncementManager.getAnnouncement(container, RowId);
+
+            if (null == model)
+                return null;
+            
+            if(!perm.allowRead(model))
+                return null;
         }
         catch (SQLException e)
         {
@@ -90,11 +108,17 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     {
         List<Announcement> announcements = new ArrayList<Announcement>();
 
-        AnnouncementModel[] announcementModels = AnnouncementManager.getAnnouncements(containers);
-        
+        AnnouncementModel[] announcementModels = AnnouncementManager.getAnnouncements(containers); // doesn't allow a filter to be applied
+
         for (AnnouncementModel announcementModel : announcementModels)
         {
             Announcement announcement = new AnnouncementImpl(announcementModel);
+            DiscussionService.Settings settings = AnnouncementsController.getSettings(announcement.getContainer());
+            Permissions perm = AnnouncementsController.getPermissions(announcement.getContainer(), HttpView.getRootContext().getUser(), settings);
+
+            if (!perm.allowRead(announcementModel))
+                continue; // skip over announcements the user cannot read.
+            
             announcements.add(announcement);
         }
 
@@ -104,10 +128,17 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     @Override
     public Announcement updateAnnouncement(int RowId, Container c, User u, String title, String body)
     {
-        AnnouncementModel model = new AnnouncementModel();
+        AnnouncementModel model;
+        DiscussionService.Settings settings = AnnouncementsController.getSettings(c);
+        Permissions perm = AnnouncementsController.getPermissions(c, u, settings);
+        
         try
         {
             model = AnnouncementManager.getAnnouncement(c, RowId);
+
+            if (!perm.allowUpdate(model))
+                HttpView.throwUnauthorized();
+            
             model.setTitle(title);
             model.setBody(body);
             AnnouncementManager.updateAnnouncement(u, model);
@@ -122,9 +153,16 @@ public class AnnouncementServiceImpl implements AnnouncementService.Interface
     @Override
     public void deleteAnnouncement(Announcement announcement)
     {
+        Container container = announcement.getContainer();
+        DiscussionService.Settings settings = AnnouncementsController.getSettings(container);
+        Permissions perm = AnnouncementsController.getPermissions(container, HttpView.getRootContext().getUser(), settings);
+        
         try
         {
-            AnnouncementManager.deleteAnnouncement(announcement.getContainer(), announcement.getRowId());
+            if (!perm.allowDeleteAnyThread())
+                HttpView.throwUnauthorized();
+            
+            AnnouncementManager.deleteAnnouncement(container, announcement.getRowId());
         }
         catch (SQLException e)
         {
