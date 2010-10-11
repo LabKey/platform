@@ -8,5 +8,6 @@ LovCombo|1.3|{link:Ext.ux.form.LovCombo|http://lovcombo.extjs.eu/}|{link:LGPL|ht
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|daves|Basis for the range slider used for m/z range filter
 TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|daves|HTML WYSIWYG editor
 YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
+Protovis|3.2|{link:Protovis|http://vis.stanford.edu/protovis/}|{link:BSD|http://vis.stanford.edu/protovis/}|klum|Graphical Toolkit for Visualization
 {table}
 
