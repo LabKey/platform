@@ -45,10 +45,10 @@ public class AnnouncementService
     public interface Interface
     {
         // IRUD (Insert, Read, Update, Delete)
-        Announcement insertAnnouncement(Container c, User u, String title, String body);
+        Announcement insertAnnouncement(Container container, User u, String title, String body);
 
         // Get One
-        Announcement getAnnouncement(Container container, int RowId);
+        Announcement getAnnouncement(Container container, User user, int RowId);
         
         // Get Many
         List<Announcement> getAnnouncements(Container... containers);
