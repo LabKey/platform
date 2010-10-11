@@ -390,6 +390,7 @@ table.labkey-button-bar
     padding: 4px;
     position: relative;
     vertical-align: middle;
+    white-space: nowrap;
 
     color: #808080;
     text-transform: uppercase;
@@ -397,6 +398,12 @@ table.labkey-button-bar
     font-weight: bold;
     font-family: Verdana, Arial, Helvetica, sans serif;
     cursor: default;
+
+    line-height: 2.3em;
+    *line-height: 1.2em;
+    *height: 1%; /* hack for IE 7, so it sets its 'hasLayout' DOM property.  This
+                    is required for IE to recognize its position attribute, which in
+                    turn enables relative positioning of our menu button arrow gif. */
 }
 
 /* this keeps the space between text and menu down arrows */
