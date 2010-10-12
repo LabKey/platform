@@ -83,7 +83,10 @@ public class SampleSetDomainType extends AbstractDomainKind
 
     public String getTypeLabel(Domain domain)
     {
-        return "Sample Set '" + domain.getName() + "'";
+        ExpSampleSet ss = getSampleSet(domain);
+        if (null == ss)
+            return "Sample Set '" + domain.getName() + "'";
+        return ss.getName();
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)

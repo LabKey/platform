@@ -102,7 +102,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     
     public String getTypeLabel(Domain domain)
     {
-        return domain.getName();
+        DataSetDefinition def = getDatasetDefinition(domain.getTypeURI());
+        if (null == def)
+            return domain.getName();
+        return def.getName();
     }
 
 
