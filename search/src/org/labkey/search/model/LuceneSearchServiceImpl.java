@@ -961,6 +961,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.summary = doc.get(FIELD_NAMES.summary.toString());
             hit.url = doc.get(FIELD_NAMES.url.toString());
 
+            // BUG patch see 10734 : Bad URLs for files in search results
+            // this is only a partial fix, need to rebuild index
+            if (hit.url.contains("/%40files?renderAs=DEFAULT/"))
+            {
+                int in = hit.url.indexOf("?renderAs=DEFAULT/");
+                hit.url = hit.url.substring(0,in) + hit.url.substring(in+"?renderAs=DEFAULT".length()) + "?renderAs=DEFAULT";
+            }
             if (null != hit.docid)
             {
                 String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
