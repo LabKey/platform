@@ -235,7 +235,7 @@ LABKEY.Query = new function()
                 qsParams = {"query.sort": config.sort};
 
             return Ext.Ajax.request({
-                url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
+                url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
                 method : 'POST',
                 success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
