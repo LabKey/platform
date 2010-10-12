@@ -151,10 +151,11 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     {
         String[] values = StringUtils.split(_snapshotDef.getColumns(), "&");
         List<FieldKey> ret = new ArrayList<FieldKey>();
-        for (String entry : values)
-        {
-            ret.add(FieldKey.fromString(PageFlowUtil.decode(entry)));
-        }
+        if (values != null)
+            for (String entry : values)
+            {
+                ret.add(FieldKey.fromString(PageFlowUtil.decode(entry)));
+            }
         return Collections.unmodifiableList(ret);
     }
 
