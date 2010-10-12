@@ -526,6 +526,7 @@ public class Table
     {
         STRING(String.class) { String getObject(ResultSet rs) throws SQLException { return rs.getString(1); }},
         INTEGER(Integer.class) { Integer getObject(ResultSet rs) throws SQLException { int i = rs.getInt(1); return rs.wasNull() ? null : i ; }},
+        DOUBLE(Double.class) { Double getObject(ResultSet rs) throws SQLException { double d = rs.getDouble(1); return rs.wasNull() ? null : d ; }},
         BOOLEAN(Boolean.class) { Boolean getObject(ResultSet rs) throws SQLException { boolean f = rs.getBoolean(1); return rs.wasNull() ? null : f ; }},
         LONG(Long.class) { Long getObject(ResultSet rs) throws SQLException { long l = rs.getLong(1); return rs.wasNull() ? null : l; }},
         UTIL_DATE(Date.class) { Date getObject(ResultSet rs) throws SQLException { return rs.getTimestamp(1); }},
