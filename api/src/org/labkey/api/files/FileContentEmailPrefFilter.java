@@ -59,7 +59,7 @@ public class FileContentEmailPrefFilter extends EmailPrefFilter
     {
         List<User> users = new ArrayList<User>();
 
-        for (User user : SecurityManager.getProjectMembers(c))
+        for (User user : SecurityManager.getProjectUsers(c))
         {
             if (c.hasPermission(user, ReadPermission.class))
                 users.add(user);

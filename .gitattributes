@@ -677,6 +677,7 @@ api/src/org/labkey/api/script/ScriptService.java -text
 api/src/org/labkey/api/search/AbstractDocumentParser.java -text
 api/src/org/labkey/api/search/AbstractXMLDocumentParser.java -text
 api/src/org/labkey/api/search/SearchService.java -text
+api/src/org/labkey/api/search/SearchUtils.java -text
 api/src/org/labkey/api/security/ActionNames.java -text
 api/src/org/labkey/api/security/AdminConsoleAction.java -text
 api/src/org/labkey/api/security/AuthenticatedRequest.java -text

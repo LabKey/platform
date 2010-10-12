@@ -29,7 +29,7 @@ import org.labkey.api.util.URLHelper;
 public interface UserUrls extends UrlProvider
 {
     ActionURL getSiteUsersURL();
-    ActionURL getProjectMembersURL(Container container);
+    ActionURL getProjectUsersURL(Container container);
     ActionURL getUserAccessURL(Container container, int userId);
     ActionURL getUserDetailsURL(Container container, int userId, @Nullable URLHelper returnURL);
     ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL);

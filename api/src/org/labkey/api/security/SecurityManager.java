@@ -1361,9 +1361,9 @@ public class SecurityManager
     }
 
 
-    public static List<User> getProjectMembers(Container c)
+    public static List<User> getProjectUsers(Container c)
     {
-        return getProjectMembers(c, false);
+        return getProjectUsers(c, false);
     }
 
     /**
@@ -1463,31 +1463,31 @@ public class SecurityManager
     }
 
 
-    // TODO: Redundant with getProjectMembers() -- this approach should be more efficient for simple cases
+    // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
     // TODO: Also redundant with getFolderUserids()
     // TODO: Cache this set
-    public static Set<Integer> getProjectMembersIds(Container c)
+    public static Set<Integer> getProjectUsersIds(Container c)
     {
-        SQLFragment sql = SecurityManager.getProjectMembersSQL(c.getProject());
+        SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
         sql.insert(0, "SELECT DISTINCT members.UserId ");
 
-        Integer[] projectMembers;
+        Integer[] projectUsers;
 
         try
         {
-            projectMembers = Table.executeArray(core.getSchema(), sql, Integer.class);
+            projectUsers = Table.executeArray(core.getSchema(), sql, Integer.class);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
 
-        return PageFlowUtil.set(projectMembers);
+        return PageFlowUtil.set(projectUsers);
     }
 
 
     // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
-    public static SQLFragment getProjectMembersSQL(Container c)
+    public static SQLFragment getProjectUsersSQL(Container c)
     {
         return new SQLFragment("FROM " + core.getTableInfoMembers() + " members INNER JOIN " + core.getTableInfoUsers() + " users ON members.UserId = users.UserId\n" +
                                     "INNER JOIN " + core.getTableInfoPrincipals() + " groups ON members.GroupId = groups.UserId\n" +
@@ -1495,7 +1495,7 @@ public class SecurityManager
     }
 
     // TODO: Should return a set
-    public static List<User> getProjectMembers(Container c, boolean includeGlobal)
+    public static List<User> getProjectUsers(Container c, boolean includeGlobal)
     {
         if (c != null && !c.isProject())
             c = c.getProject();
@@ -1504,7 +1504,7 @@ public class SecurityManager
         Set<String> emails = new HashSet<String>();
 
        //get members for each group
-        ArrayList<User> projectMembers = new ArrayList<User>();
+        ArrayList<User> projectUsers = new ArrayList<User>();
         String[] members;
 
         try
@@ -1526,11 +1526,11 @@ public class SecurityManager
                     for (String member : members)
                     {
                         if (emails.add(member))
-                            projectMembers.add(UserManager.getUser(new ValidEmail(member)));
+                            projectUsers.add(UserManager.getUser(new ValidEmail(member)));
                     }
                 }
             }
-            return projectMembers;
+            return projectUsers;
         }
         catch (SQLException e)
         {
