@@ -165,7 +165,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 else
                 {
                     out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
-                            "This specimen is unavailable an administrator has overridden its availability status.<br><br>" +
+                            "This specimen is unavailable because an administrator has overridden its availability status.<br><br>" +
                                     "Contact a system administrator for more information.", true));
                 }
             }
