@@ -45,7 +45,7 @@
         <th>Last Name</th>
         <th>Display Name</th>
         <th>Email Option</th>
-        <th>Project Member?</th>
+        <th>Project User?</th>
     </tr>
 
 <%

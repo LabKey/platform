@@ -243,7 +243,7 @@ public class AnnouncementsController extends SpringActionController
             }
 
             DisplayColumn colGroupMembership = new GroupMembershipDisplayColumn(c);
-            colGroupMembership.setCaption("Project&nbsp;Member?");
+            colGroupMembership.setCaption("Project&nbsp;User?");
             rgn.addDisplayColumn(colGroupMembership);
 
             DisplayColumn colFirstName = rgn.getDisplayColumn("FirstName");

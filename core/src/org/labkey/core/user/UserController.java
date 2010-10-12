@@ -636,9 +636,9 @@ public class UserController extends SpringActionController
             if (!c.hasPermission(user, AdminPermission.class))
                 HttpView.throwUnauthorized();
 
-            // ...and user must be a project member
+            // ...and user must be a project user
             if (!SecurityManager.getProjectUsersIds(c).contains(userId))
-                HttpView.throwUnauthorized("Project administrators can only " + action + " project members");
+                HttpView.throwUnauthorized("Project administrators can only " + action + " project users");
         }
     }
 
@@ -690,8 +690,8 @@ public class UserController extends SpringActionController
             }
             else
             {
-                root.addChild("Project Members", new UserUrlsImpl().getProjectUsersURL(getContainer()));
-                return root.addChild("Project Members History");
+                root.addChild("Project Users", new UserUrlsImpl().getProjectUsersURL(getContainer()));
+                return root.addChild("Project Users History");
             }
         }
     }
@@ -992,7 +992,7 @@ public class UserController extends SpringActionController
         else
         {
             if (c.hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Project Members", new UserUrlsImpl().getProjectUsersURL(c));
+                root.addChild("Project Users", new UserUrlsImpl().getProjectUsersURL(c));
         }
 
         if (null == userId)
