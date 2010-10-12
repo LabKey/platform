@@ -176,6 +176,7 @@ public class DavController extends SpringActionController
         catch (Exception e)
         {
             _log.error("unexpected exception", e);
+            ExceptionUtil.logExceptionToMothership(request, e);
             _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, e);
         }
         for (Map.Entry e : closables.entrySet())
