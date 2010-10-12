@@ -22,21 +22,31 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>                 
 <%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.util.*" %>
-<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.search.SearchController" %>
 <%@ page import="org.labkey.search.SearchController.IndexAction" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm" %>
 <%@ page import="org.labkey.search.SearchController.SearchForm.SearchScope" %>
+<%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">
@@ -91,11 +101,9 @@
 
     if (form.getIncludeHelpLink())
     {
-        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", new HelpTopic("luceneSearch").getHelpTopicLink())%><%
+        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", SearchUtils.getHelpURL())%><%
     }
         
-    %></td></tr><%
-
     String category = form.getCategory();
     String queryString = form.getQueryString();
 
@@ -128,6 +136,7 @@
         <input type="hidden" id="hidden-include-folders" name="includeSubfolders" value="0" > 
     <%
     } %>
+        </td></tr>
     </table>
 </form>
 <%
@@ -155,7 +164,8 @@
     {
         %><table cellspacing=0 cellpadding=0 style="margin-top:10px;">
         <tr><td valign="top" align="left" style="padding-right:10px;"><img title="" src="<%=contextPathStr%>/_.gif" width=500 height=1>
-           <div id="searchResults" class="labkey-search-results"><%
+           <div id="searchResults" class="labkey-search-results">
+               <%
 
         int hitsPerPage = 20;
         int offset = form.getOffset();
@@ -299,10 +309,17 @@
                 }
             }
         }
+        catch (HtmlParseException html)
+        {
+            out.write("</div>");
+            SearchUtils.renderError(out, html.getMessage(), html.includesSpecialSymbol(), html.includesBooleanOperator());
+            out.write("</td>");
+        }
         catch (IOException e)
         {
-            out.write(h("Error: " + e.getMessage()));
-            out.write("</div></td>");
+            out.write("</div>");
+            SearchUtils.renderError(out, h(e.getMessage()), true, false);  // Assume it's special characters
+            out.write("</td>");
         } %>
         </tr>
     </table><%

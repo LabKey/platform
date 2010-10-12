@@ -1455,10 +1455,10 @@ public class IssuesController extends SpringActionController
 
         public void validateCommand(AssignedToGroupForm form, Errors errors)
         {
-            if (form.getAssignedToMethod().equals("ProjectMembers"))
+            if (form.getAssignedToMethod().equals("ProjectUsers"))
             {
                 if (form.getAssignedToGroup() != 0)
-                    errors.reject("assignedToGroup", "Project members setting shouldn't include a group!");
+                    errors.reject("assignedToGroup", "Project users setting shouldn't include a group!");
             }
             else if (form.getAssignedToMethod().equals("Group"))
             {

@@ -321,7 +321,7 @@ public class AnnouncementsController extends SpringActionController
             try
             {
                 rs = AnnouncementManager.getEmailPrefsResultset(c);
-                List<User> memberList = SecurityManager.getProjectMembers(c.getProject(), false);
+                List<User> memberList = SecurityManager.getProjectUsers(c.getProject(), false);
 
                 //get resultset data
                 while(rs.next())
@@ -1655,12 +1655,12 @@ public class AnnouncementsController extends SpringActionController
             Container c = getContainer();
 
             User user = getUser();
-            List<User> projectMembers = SecurityManager.getProjectMembers(c, false);
+            List<User> projectUsers = SecurityManager.getProjectUsers(c, false);
 
             int emailOption = AnnouncementManager.getUserEmailOption(c, user);
             if (emailOption == AnnouncementManager.EMAIL_PREFERENCE_DEFAULT)
             {
-                if (projectMembers.contains(user))
+                if (projectUsers.contains(user))
                     emailOption = AnnouncementManager.getDefaultEmailOption(c);
                 else
                     emailOption = AnnouncementManager.EMAIL_PREFERENCE_BROADCAST;
@@ -1681,7 +1681,7 @@ public class AnnouncementsController extends SpringActionController
             page.message = _message;
             page.hasMemberList = settings.hasMemberList();
             page.conversationName = settings.getConversationName().toLowerCase();
-            page.isProjectMember = projectMembers.contains(user);
+            page.isProjectMember = projectUsers.contains(user);
 
             return view;
         }
@@ -2722,7 +2722,7 @@ public class AnnouncementsController extends SpringActionController
         public GroupMembershipDisplayColumn(Container c)
         {
             super();
-            _memberList = SecurityManager.getProjectMembers(c.getProject(), false);
+            _memberList = SecurityManager.getProjectUsers(c.getProject(), false);
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException

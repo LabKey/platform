@@ -485,7 +485,7 @@ public class IssueManager
                 }
                 else
                 {
-                    initialAssignedTo.addAll(SecurityManager.getProjectMembers(c.getProject()));
+                    initialAssignedTo.addAll(SecurityManager.getProjectUsers(c.getProject()));
                 }
 
                 // Cache an unmodifiable version

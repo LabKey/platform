@@ -106,9 +106,9 @@
                         <tr><td colspan="2">&nbsp;</td></tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectMembers"<%=null == bean.assignedToGroup ? " checked" : ""%> />
+                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=null == bean.assignedToGroup ? " checked" : ""%> />
                             </td>
-                            <td>All Project Members</td>
+                            <td>All Project Users</td>
                         </tr>
                         <tr>
                             <td>

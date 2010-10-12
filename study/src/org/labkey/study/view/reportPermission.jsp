@@ -54,7 +54,7 @@
     Container project = study.getContainer().getProject();
     Group[] globalGroups = SecurityManager.getGroups(null, false);
     Group[] projectGroups = SecurityManager.getGroups(project, false);
-    List<User> projectUsers = SecurityManager.getProjectMembers(project, false);
+    List<User> projectUsers = SecurityManager.getProjectUsers(project, false);
     Map mapPrincipals = new HashMap();
     for (Group g : globalGroups)
         mapPrincipals.put(g.getUserId(), g);

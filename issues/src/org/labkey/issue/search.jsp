@@ -31,6 +31,8 @@
 <%@ page import="java.io.IOException" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="org.labkey.api.search.SearchUtils.*" %>
+<%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -108,11 +110,16 @@
                 %><%-- <div style='margin-left:10px; color:green;'><%=h(href)%></div> --%>
                 <br><%
             }
+
+            %></div><%
+        }
+        catch (HtmlParseException html)
+        {
+            SearchUtils.renderError(out, html.getMessage(), html.includesSpecialSymbol(), html.includesBooleanOperator());
         }
         catch (IOException e)
         {
-            out.write("<br>" + h("Error: " + e.getMessage()));
+            SearchUtils.renderError(out, h(e.getMessage()), true, false);  // Assume it's special characters
         }
-    %></div><%
     }
 %>

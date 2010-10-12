@@ -74,7 +74,7 @@ public class UserController extends SpringActionController
             // TODO: Always add lastFilter?
         }
 
-        public ActionURL getProjectMembersURL(Container container)
+        public ActionURL getProjectUsersURL(Container container)
         {
             return new ActionURL(ShowUsersAction.class, container);
         }
@@ -201,7 +201,7 @@ public class UserController extends SpringActionController
 
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
-        ActionButton showGrid = new ActionButton("showUsers.view?.lastFilter=true", c.isRoot() ? "Show All Users" : "Show Project Members");
+        ActionButton showGrid = new ActionButton("showUsers.view?.lastFilter=true", c.isRoot() ? "Show All Users" : "Show Project Users");
         showGrid.setActionType(ActionButton.Action.LINK);
 
         ButtonBar detailsButtonBar = new ButtonBar();
@@ -614,7 +614,7 @@ public class UserController extends SpringActionController
     }
 
     // Site admins can act on any user
-    // Project admins can only act on users who are project members
+    // Project admins can only act on users who are project users
     private void authorizeUserAction(Integer userId, String action) throws UnauthorizedException
     {
         User user = getUser();
@@ -637,7 +637,7 @@ public class UserController extends SpringActionController
                 HttpView.throwUnauthorized();
 
             // ...and user must be a project member
-            if (!SecurityManager.getProjectMembersIds(c).contains(userId))
+            if (!SecurityManager.getProjectUsersIds(c).contains(userId))
                 HttpView.throwUnauthorized("Project administrators can only " + action + " project members");
         }
     }
@@ -661,7 +661,7 @@ public class UserController extends SpringActionController
         }
         else
         {
-            SQLFragment sql = SecurityManager.getProjectMembersSQL(c.getProject());
+            SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
             sql.insert(0, userIdColumnName + " IN (SELECT members.UserId ");
             sql.append(")");
 
@@ -690,7 +690,7 @@ public class UserController extends SpringActionController
             }
             else
             {
-                root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(getContainer()));
+                root.addChild("Project Members", new UserUrlsImpl().getProjectUsersURL(getContainer()));
                 return root.addChild("Project Members History");
             }
         }
@@ -992,7 +992,7 @@ public class UserController extends SpringActionController
         else
         {
             if (c.hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Project Members", new UserUrlsImpl().getProjectMembersURL(c));
+                root.addChild("Project Members", new UserUrlsImpl().getProjectUsersURL(c));
         }
 
         if (null == userId)
@@ -1523,7 +1523,7 @@ public class UserController extends SpringActionController
                 if(container.isRoot())
                     users = Arrays.asList(UserManager.getActiveUsers());
                 else
-                    users = SecurityManager.getProjectMembers(container, true);
+                    users = SecurityManager.getProjectUsers(container, true);
             }
 
             if(null != users)
@@ -1574,10 +1574,10 @@ public class UserController extends SpringActionController
             else
             {
                 // Filter to project users
-                List<User> projectMembers = SecurityManager.getProjectMembers(c);
-                emails = new ArrayList<String>(projectMembers.size());
+                List<User> projectUsers = SecurityManager.getProjectUsers(c);
+                emails = new ArrayList<String>(projectUsers.size());
 
-                for (User member : projectMembers)
+                for (User member : projectUsers)
                     emails.add(member.getEmail());
 
                 Collections.sort(emails);

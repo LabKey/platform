@@ -96,7 +96,7 @@ public class AnnouncementListener implements ContainerManager.ContainerListener,
         {
             User user = (User)p;
             Container cProject = ContainerManager.getForId(g.getContainer());
-            List<User> memberList = org.labkey.api.security.SecurityManager.getProjectMembers(cProject, false);
+            List<User> memberList = org.labkey.api.security.SecurityManager.getProjectUsers(cProject, false);
 
             //if user is no longer a member of any project group, delete any EmailPrefs records
             if (!memberList.contains(user))

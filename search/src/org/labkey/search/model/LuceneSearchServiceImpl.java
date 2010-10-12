@@ -48,6 +48,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchUtils;
+import org.labkey.api.search.SearchUtils.*;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -478,6 +480,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Permissions problem, network drive disappeared, file disappeared, etc.
             logAsWarning(r, e);
         }
+        catch (SAXException e)
+        {
+            // Malformed XML/HTML
+            logAsWarning(r, e);
+        }
         catch (Throwable e)
         {
             logAsPreProcessingException(r, e);
@@ -876,11 +883,45 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         catch (ParseException x)
         {
-            throw new IOException(x.getMessage());
+            // The default ParseException message is quite awful, not suitable for users.  Unfortunately, the exception
+            // doesn't provide the useful bits individually, so we have to parse the message to get them. #10596
+            LuceneMessageParser mp = new LuceneMessageParser(x.getMessage());
+
+            if (mp.isParseable())
+            {
+                String message;
+                int problemLocation;
+
+                if ("<EOF>".equals(mp.getEncountered()))
+                {
+                    message = PageFlowUtil.filter("Query string is incomplete");
+                    problemLocation = queryString.length();
+                }
+                else
+                {
+                    if (1 == mp.getLine())
+                    {
+                        message = "Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>";
+                        problemLocation = mp.getColumn();
+                    }
+                    else
+                    {
+                        // Multiline query?!?  Don't try to highlight, just report the location (1-based)
+                        message = PageFlowUtil.filter("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
+                        problemLocation = -1;
+                    }
+                }
+
+                throw new HtmlParseException(message, queryString, problemLocation);
+            }
+            else
+            {
+                throw new IOException(x.getMessage());  // Default message starts with "Cannot parse '<query string>':"
+            }
         }
         catch (IllegalArgumentException x)
         {
-            throw new IOException("Cannot parse '" + queryString + "': " + x.getMessage());
+            throw new IOException(SearchUtils.getStandardPrefix(queryString) + x.getMessage());
         }
 
         if (null != categories)
@@ -1063,7 +1104,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public Map<String, Object> getIndexerStats()
     {
-        Map<String, Object> map = new LinkedHashMap<String,Object>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
 
         try
         {
@@ -1131,7 +1172,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         if (null != _externalIndex)
         {
-            SecurityPolicy policy = org.labkey.api.security.SecurityManager.getPolicy(_externalIndex);
+            SecurityPolicy policy = SecurityManager.getPolicy(_externalIndex);
             if (policy.hasPermission(user, AdminPermission.class))
                 return Collections.singletonList((SecurableResource)_externalIndex);
         }

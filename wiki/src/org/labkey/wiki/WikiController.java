@@ -1335,7 +1335,7 @@ public class WikiController extends SpringActionController
                 HttpView.throwNotFound();
 
             DiffMatchPatch diffTool = new DiffMatchPatch();
-            LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(_wikiVersion1.getBody(), _wikiVersion2.getBody());
+            LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(StringUtils.trimToEmpty(_wikiVersion1.getBody()), StringUtils.trimToEmpty(_wikiVersion2.getBody()));
             String htmlDiffs = diffTool.diff_prettyHtml(diffs);
             HtmlView htmlView = new HtmlView(htmlDiffs);
             htmlView.setTitle("Source Differences");
