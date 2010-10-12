@@ -118,7 +118,7 @@ public class SearchUtils
         {
             super(getHtml(htmlMessage, queryString, problemLocation));
             _includesSpecialSymbol = has(queryString, SPECIAL_SYMBOLS_SET, false);
-            _includesBooleanOperator = has(queryString, PageFlowUtil.set("AND", "BUT", "OR"), true);
+            _includesBooleanOperator = has(queryString, PageFlowUtil.set("AND", "NOT", "OR"), true);
         }
 
         private static String getHtml(String htmlMessage, String queryString, int problemLocation)
