@@ -90,11 +90,15 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     if (o != null)
                     {
                         try {
-                            rowMap.put(prop.getName(), DomainUtil.getFormattedDefaultValue(user, prop, o));
+                            String fmt = DomainUtil.getFormattedDefaultValue(user, prop, o);
+                            
+                            if (!String.valueOf(o).equals(fmt) && !rowMap.containsKey(prop.getName() + "_displayValue"))
+                                rowMap.put(prop.getName() + "_displayValue", fmt);
+                            rowMap.put(prop.getName(), o);
                         }
                         catch (Exception e)
                         {
-                            //throw new QueryUpdateServiceException(e);
+                            throw new QueryUpdateServiceException(e);
                         }
                     }
                 }

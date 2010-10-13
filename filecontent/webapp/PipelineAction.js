@@ -378,6 +378,14 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             p.attr = 'ext:qtip="' + msg + '"';
             return msg;
         };
+        var lookupRenderer = function(value, p, record, rIdx, cIdx) {
+            var displayCol = this.dataIndex + '_displayValue';
+
+            if (record.data[displayCol])
+                return Ext.util.Format.htmlEncode(record.data[displayCol]);
+            else
+                return Ext.util.Format.htmlEncode(value);
+        };
 
         if (this.fileFields)
         {
@@ -386,8 +394,11 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
                 var prop = this.fileFields[i];
                 var idx = prop.rangeURI.indexOf('#multiLine');
 
-                // multiline fields will have a tooltip to display the entire contents
-                columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: idx != -1 ? ttRenderer : Ext.util.Format.htmlEncode, sortable:true});
+                if (prop.lookupQuery && prop.lookupSchema)
+                    columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: lookupRenderer, sortable:true});
+                else
+                    // multiline fields will have a tooltip to display the entire contents
+                    columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: idx != -1 ? ttRenderer : Ext.util.Format.htmlEncode, sortable:true});
             }
         }
         return columns; 
@@ -414,7 +425,14 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             for (var i=0; i < this.fileFields.length; i++)
             {
                 var prop = this.fileFields[i];
-                config.extraDataFields.push({name: prop.name, mapping: 'propstat/prop/custom/' + prop.name.toLowerCase()});
+                var mapName = prop.name.toLowerCase();
+
+                if (prop.lookupQuery && prop.lookupSchema){
+                    // for lookup columns, show the display value
+                    var displayValueName = mapName + '_displayValue';
+                    config.extraDataFields.push({name: displayValueName, mapping: 'propstat/prop/custom/' + displayValueName});
+                }
+                config.extraDataFields.push({name: prop.name, mapping: 'propstat/prop/custom/' + mapName});
             }
         }
         return config;
