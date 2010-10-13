@@ -586,7 +586,10 @@ public class FileSystemResource extends AbstractWebdavResource
             {
                 Set<String> customPropertyNames = new CaseInsensitiveHashSet();
                 for (ObjectProperty prop : data.getObjectProperties().values())
+                {
+                    customPropertyNames.add(prop.getName() + "_displayvalue");                    
                     customPropertyNames.add(prop.getName());
+                }
 
                 TableInfo ti = ExpSchema.TableType.Datas.createTable(new ExpSchema(user, getContainer()));
                 QueryUpdateService qus = ti.getUpdateService();
